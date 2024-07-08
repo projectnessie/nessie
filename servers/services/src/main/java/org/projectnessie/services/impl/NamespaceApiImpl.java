@@ -231,7 +231,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       // same key.
       if (!explicitNamespaceKeys.isEmpty()) {
         Map<ContentKey, ContentResult> namespaceValues =
-            getStore().getValues(refWithHash.getHash(), explicitNamespaceKeys);
+            getStore().getValues(refWithHash.getHash(), explicitNamespaceKeys, false);
         namespaceValues.values().stream()
             .map(ContentResult::content)
             .filter(Namespace.class::isInstance)
@@ -313,7 +313,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
   private Optional<Content> getExplicitlyCreatedNamespace(Namespace namespace, Hash hash)
       throws ReferenceNotFoundException {
-    return Optional.ofNullable(getStore().getValue(hash, namespace.toContentKey()))
+    return Optional.ofNullable(getStore().getValue(hash, namespace.toContentKey(), false))
         .map(ContentResult::content);
   }
 

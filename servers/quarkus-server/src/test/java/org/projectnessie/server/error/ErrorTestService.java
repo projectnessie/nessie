@@ -132,17 +132,12 @@ public class ErrorTestService {
   @Consumes(MediaType.APPLICATION_JSON)
   public String unhandledExceptionInTvsStore(@PathParam("exception") String exception)
       throws ReferenceNotFoundException {
-    Exception ex;
-    switch (exception) {
-      case "runtime":
-        ex = new RuntimeException("Store.getValues-throwing");
-        break;
-      case "throttle":
-        ex = new BackendLimitExceededException("Store.getValues-throttled");
-        break;
-      default:
-        throw new IllegalArgumentException("test code error");
-    }
+    Exception ex =
+        switch (exception) {
+          case "runtime" -> new RuntimeException("Store.getValues-throwing");
+          case "throttle" -> new BackendLimitExceededException("Store.getValues-throttled");
+          default -> throw new IllegalArgumentException("test code error");
+        };
 
     Persist persist = Mockito.mock(Persist.class);
     Mockito.when(persist.fetchReference(any())).thenThrow(ex);

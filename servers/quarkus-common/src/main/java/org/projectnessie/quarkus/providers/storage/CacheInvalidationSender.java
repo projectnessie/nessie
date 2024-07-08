@@ -17,10 +17,10 @@ package org.projectnessie.quarkus.providers.storage;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static java.util.Collections.emptyList;
+import static org.projectnessie.nessie.networktools.AddressResolver.LOCAL_ADDRESSES;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_SERVICE_NAMES;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST;
-import static org.projectnessie.quarkus.providers.storage.AddressResolver.LOCAL_ADDRESSES;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
 import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
@@ -43,16 +43,18 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.nessie.networktools.AddressResolver;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
 import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidation;
@@ -95,7 +97,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
       @ServerInstanceId String serverInstanceId) {
     this.vertx = vertx;
 
-    this.addressResolver = new AddressResolver(vertx.createDnsClient());
+    this.addressResolver = new AddressResolver(vertx);
     this.requestTimeout =
         config
             .cacheInvalidationRequestTimeout()
@@ -111,18 +113,13 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
     this.token = config.cacheInvalidationValidTokens().map(l -> l.get(0)).orElse(null);
     if (!serviceNames.isEmpty()) {
       try {
-        List<String> resolved =
-            updateServiceNames().toCompletionStage().toCompletableFuture().get();
+        LOGGER.info("Sending remote cache invalidations to service name(s) {}", serviceNames);
+        updateServiceNames().toCompletionStage().toCompletableFuture().get();
         if (config.cacheInvalidationValidTokens().isEmpty()) {
           LOGGER.warn(
               "No token configured for cache invalidation messages - will not send any invalidation message. You need to configure the token(s) via {}.{}",
               NESSIE_VERSION_STORE_PERSIST,
               CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS);
-        } else {
-          LOGGER.info(
-              "Sending remote cache invalidations to {}, currently resolved to {}",
-              serviceNames,
-              resolved);
         }
       } catch (Exception e) {
         throw new RuntimeException(
@@ -138,37 +135,44 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   private Future<List<String>> updateServiceNames() {
+    Set<String> previous = new HashSet<>(resolvedAddresses);
     return resolveServiceNames(serviceNames)
-        .map(all -> all.filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
+        .map(all -> all.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
         .onSuccess(
             all -> {
               // refresh addresses regularly
               scheduleServiceNameResolution();
 
-              LOGGER.debug("Resolved service names {} to {}", serviceNames, all);
-              resolvedAddresses = all;
-            });
-  }
+              Set<String> resolved = new HashSet<>(all);
+              if (!resolved.equals(previous)) {
+                LOGGER.info(
+                    "Service names for remote cache invalidations {} now resolve to {}",
+                    serviceNames,
+                    all);
+              }
 
-  private void updateServiceNamesHandleFailure() {
-    updateServiceNames()
+              updateResolvedAddresses(all);
+            })
         .onFailure(
-            failure -> {
+            t -> {
               // refresh addresses regularly
               scheduleServiceNameResolution();
 
-              LOGGER.warn(
-                  "Failed to resolve service names {} for remote cache invalidations",
-                  serviceNames);
+              LOGGER.warn("Failed to resolve service names: {}", t.toString());
             });
   }
 
+  @VisibleForTesting
+  void updateResolvedAddresses(List<String> all) {
+    resolvedAddresses = all;
+  }
+
   private void scheduleServiceNameResolution() {
-    vertx.setTimer(serviceNameLookupIntervalMillis, x -> updateServiceNamesHandleFailure());
+    vertx.setTimer(serviceNameLookupIntervalMillis, x -> updateServiceNames());
   }
 
   @VisibleForTesting
-  Future<Stream<String>> resolveServiceNames(List<String> serviceNames) {
+  Future<List<String>> resolveServiceNames(List<String> serviceNames) {
     return addressResolver.resolveAll(serviceNames);
   }
 

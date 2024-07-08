@@ -22,7 +22,7 @@ plugins {
   alias(libs.plugins.jmh)
 }
 
-extra["maven.name"] = "Nessie - Services - Microbenchmarks"
+publishingHelper { mavenName = "Nessie - Services - Microbenchmarks" }
 
 dependencies {
   implementation(project(":nessie-model"))

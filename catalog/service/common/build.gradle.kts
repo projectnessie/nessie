@@ -19,12 +19,14 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Catalog - Service Common"
+publishingHelper { mavenName = "Nessie - Catalog - Service Common" }
 
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-model"))
+  implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-tasks-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 

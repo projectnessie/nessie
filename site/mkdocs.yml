@@ -13,8 +13,8 @@ use_directory_urls: true
 theme:
   name: material
   custom_dir: overrides
-  logo: img/small.svg
-  favicon: img/fav2.png
+  logo: img/nessie.svg
+  favicon: img/fav3.png
 
   features:
     - navigation.tabs
@@ -33,7 +33,7 @@ extra_css:
 
 extra:
   versions:
-    nessie: 0.90.4
+    nessie: 0.91.3
     iceberg: 1.5.2
   analytics:
     provider: google

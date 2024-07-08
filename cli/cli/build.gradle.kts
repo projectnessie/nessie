@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - CLI"
+publishingHelper { mavenName = "Nessie - CLI" }
 
 configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
 

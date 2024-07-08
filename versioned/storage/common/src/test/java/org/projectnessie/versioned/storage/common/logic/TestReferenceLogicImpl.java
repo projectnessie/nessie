@@ -131,7 +131,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
 
   @ParameterizedTest
   @MethodSource("createRecoverScenarios")
-  public void createRecoverScenarios(CreateFailures createFailure, PostActions postCreateAction)
+  void createRecoverScenarios(CreateFailures createFailure, PostActions postCreateAction)
       throws Exception {
     ReferenceLogicImpl refLogic = new ReferenceLogicImpl(persist);
     ObjId initialPointer = objIdFromString("0000");
@@ -213,7 +213,7 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
 
   @ParameterizedTest
   @MethodSource("deleteRecoverScenarios")
-  public void deleteRecoverScenarios(DeleteFailures deleteFailure, PostActions postAction)
+  void deleteRecoverScenarios(DeleteFailures deleteFailure, PostActions postAction)
       throws Exception {
     ReferenceLogicImpl refLogic = new ReferenceLogicImpl(persist);
     ObjId initialPointer = randomObjId();

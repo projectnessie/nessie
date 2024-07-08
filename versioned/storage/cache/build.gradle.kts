@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Cache"
+publishingHelper { mavenName = "Nessie - Storage - Cache" }
 
 description = "Provides caching functionality, bounded by heap pressure."
 

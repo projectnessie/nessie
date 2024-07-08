@@ -181,8 +181,8 @@ public final class TypeMapping {
     // than the outer separator because longer ContentKeys are greater than shorter ContentKeys.
     int len = 4; // MAIN_UNIVERSE + separator + separator + discriminator
     int num = keyElements.size();
-    for (int i = 0; i < num; i++) {
-      len += keyElements.get(i).length() + 1;
+    for (String keyElement : keyElements) {
+      len += keyElement.length() + 1;
     }
     StringBuilder sb = new StringBuilder(len);
     sb.append(MAIN_UNIVERSE);

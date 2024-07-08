@@ -61,7 +61,7 @@ public final class AdlsClientSupplier {
     return fileSystem.getFileClient(path);
   }
 
-  private DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
+  DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
     ConfigurationBuilder clientConfig = new ConfigurationBuilder();
     adlsOptions.configurationOptions().forEach(clientConfig::putProperty);
 
@@ -127,8 +127,12 @@ public final class AdlsClientSupplier {
                 case FIXED_DELAY:
                   FixedDelayOptions fixedDelayOptions =
                       new FixedDelayOptions(
-                          fileSystemOptions.maxRetries().orElseThrow(),
-                          fileSystemOptions.retryDelay().orElseThrow());
+                          fileSystemOptions
+                              .maxRetries()
+                              .orElseThrow(() -> new IllegalStateException("max-retries missing")),
+                          fileSystemOptions
+                              .retryDelay()
+                              .orElseThrow(() -> new IllegalStateException("max-relay missing")));
                   return Optional.of(new RetryOptions(fixedDelayOptions));
                 default:
                   throw new IllegalArgumentException("Invalid retry strategy: " + strategy);

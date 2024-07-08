@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.service.impl;
 
-import java.util.function.Consumer;
-import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
+plugins { id("nessie-conventions-server") }
 
-public class CatalogObjTypeBundle implements ObjTypeBundle {
-  @Override
-  public void register(Consumer<ObjType> registrar) {
-    registrar.accept(EntityObj.OBJ_TYPE);
-    registrar.accept(EntitySnapshotObj.OBJ_TYPE);
-  }
+publishingHelper { mavenName = "Nessie - Network Tools" }
+
+dependencies {
+  compileOnly(libs.vertx.core)
+  implementation(libs.slf4j.api)
+  implementation(libs.guava)
+
+  testImplementation(platform(libs.junit.bom))
+  testImplementation(libs.bundles.junit.testing)
+
+  testImplementation(libs.vertx.core)
+  testRuntimeOnly(libs.logback.classic)
 }

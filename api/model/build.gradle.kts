@@ -26,6 +26,8 @@ plugins {
   alias(libs.plugins.smallrye.openapi)
 }
 
+publishingHelper { mavenName = "Nessie - Model" }
+
 dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")

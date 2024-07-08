@@ -22,7 +22,7 @@ plugins {
   alias(libs.plugins.annotations.stripper)
 }
 
-extra["maven.name"] = "Nessie - Client"
+publishingHelper { mavenName = "Nessie - Client" }
 
 dependencies {
   api(project(":nessie-model"))
@@ -87,6 +87,10 @@ dependencies {
   testImplementation(libs.wiremock)
 
   testRuntimeOnly(libs.logback.classic)
+
+  testCompileOnly(libs.immutables.builder)
+  testCompileOnly(libs.immutables.value.annotations)
+  testAnnotationProcessor(libs.immutables.value.processor)
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
@@ -162,6 +166,12 @@ testing {
 
       configurations.named("testJackson_${safeName}Implementation") {
         extendsFrom(configurations.getByName("testImplementation"))
+      }
+      configurations.named("testJackson_${safeName}CompileOnly") {
+        extendsFrom(configurations.getByName("testCompileOnly"))
+      }
+      configurations.named("testJackson_${safeName}AnnotationProcessor") {
+        extendsFrom(configurations.getByName("testAnnotationProcessor"))
       }
     }
   }

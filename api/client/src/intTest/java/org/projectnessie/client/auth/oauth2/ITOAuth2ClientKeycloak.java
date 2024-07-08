@@ -17,17 +17,17 @@ package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN_TYPE;
+import static org.projectnessie.client.NessieConfigConstants.CURRENT_ACCESS_TOKEN;
+import static org.projectnessie.client.NessieConfigConstants.CURRENT_REFRESH_TOKEN;
 import static org.projectnessie.client.auth.oauth2.GrantType.AUTHORIZATION_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.CLIENT_CREDENTIALS;
 import static org.projectnessie.client.auth.oauth2.GrantType.DEVICE_CODE;
 import static org.projectnessie.client.auth.oauth2.GrantType.PASSWORD;
-import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_ACCESS_TOKEN;
-import static org.projectnessie.client.auth.oauth2.TokenExchangeConfig.CURRENT_REFRESH_TOKEN;
 import static org.projectnessie.client.auth.oauth2.TypedToken.URN_ID_TOKEN;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -159,13 +159,13 @@ public class ITOAuth2ClientKeycloak {
       OAuth2ClientConfig config1 =
           clientConfig("Private1", true, false)
               .grantType(CLIENT_CREDENTIALS)
-              .tokenExchangeConfig(
-                  TokenExchangeConfig.builder()
+              .tokenExchangeConfig(TokenExchangeConfig.builder().audience("Private1").build())
+              .impersonationConfig(
+                  ImpersonationConfig.builder()
                       .enabled(true)
                       .clientId("Private1")
                       .clientSecret("s3cr3t")
                       .issuerUrl(issuerUrl)
-                      .audience("Private1")
                       .addScope("exchange")
                       .build())
               .build();
@@ -396,7 +396,7 @@ public class ITOAuth2ClientKeycloak {
     }
     Map<String, String> config =
         ImmutableMap.of(
-            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED,
             "true",
             CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
             subjectToken.getPayload(),
@@ -429,7 +429,7 @@ public class ITOAuth2ClientKeycloak {
     }
     Map<String, String> config =
         ImmutableMap.of(
-            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED,
             "true",
             CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
             CURRENT_ACCESS_TOKEN,
@@ -457,7 +457,7 @@ public class ITOAuth2ClientKeycloak {
   void testOAuth2ClientTokenExchangeDelegation3() {
     Map<String, String> config =
         ImmutableMap.of(
-            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED,
             "true",
             CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
             CURRENT_REFRESH_TOKEN,
@@ -488,7 +488,7 @@ public class ITOAuth2ClientKeycloak {
     }
     Map<String, String> config =
         ImmutableMap.of(
-            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED,
             "true",
             CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
             subjectToken.getPayload(),
@@ -514,7 +514,7 @@ public class ITOAuth2ClientKeycloak {
   void testOAuth2ClientTokenExchangeImpersonation2() {
     Map<String, String> config =
         ImmutableMap.of(
-            CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED,
+            CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED,
             "true",
             CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_SUBJECT_TOKEN,
             CURRENT_ACCESS_TOKEN);

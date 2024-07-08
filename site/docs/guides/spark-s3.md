@@ -107,7 +107,7 @@ software.amazon.awssdk:url-connection-client:2.20.131 \
 Note the `s3.endpoint` catalog property. it should point to the appropriate Minio endpoint. In this example it points 
 to the local Minio server running in Docker.
 
-# Running DDL and DML in Spark SQL Shell
+## Running DDL and DML in Spark SQL Shell
 
 Once the Spark session initializes, issue a `use` statement to make `nessie` the current catalog:
 ```
@@ -135,7 +135,7 @@ Branches, merges and other git-like commands can be run as well, as explained in
 
 Note: The above example uses the `spark-sql` shell, but the same configuration options apply to `spark-shell`.
 
-# Authentication
+## Authentication
 
 This example uses implicit AWS authentication via credentials configured in a credentials file plus the `AWS_PROFILE`
 environment variable.

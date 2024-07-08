@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.service.impl;
+package org.projectnessie.catalog.service.objtypes;
 
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.customObjType;
+import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieEntity;
+import org.projectnessie.model.Content;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -44,6 +47,12 @@ public interface EntityObj extends UpdateableObj {
   NessieEntity entity();
 
   ObjType OBJ_TYPE = customObjType("catalog-entity", "c-e", EntityObj.class);
+
+  static ObjId entityObjIdForContent(Content content) {
+    return objIdHasher("NessieEntity")
+        .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
+        .generate();
+  }
 
   static Builder builder() {
     return ImmutableEntityObj.builder();

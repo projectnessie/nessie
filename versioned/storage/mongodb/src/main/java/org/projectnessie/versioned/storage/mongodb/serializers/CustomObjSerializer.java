@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.mongodb.serializers;
 
 import org.bson.Document;
 import org.bson.types.Binary;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -40,8 +39,8 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public void objToDoc(Obj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+  public void objToDoc(
+      Obj obj, Document doc, int incrementalIndexLimit, int maxSerializedIndexSize) {
     doc.put(
         COL_CUSTOM_DATA,
         new Binary(

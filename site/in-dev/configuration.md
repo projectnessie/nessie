@@ -59,20 +59,64 @@ Related Quarkus settings:
 !!! info
     A complete set of configuration options for Quarkus can be found on [quarkus.io](https://quarkus.io/guides/all-config)
 
+!!! info
+    **Reverse Proxy Settings**
+
+    These config options are mentioned only for documentation purposes. Consult the
+    [Quarkus documentation](https://quarkus.io/guides/http-reference#reverse-proxy)
+    for "Running behind a reverse proxy" and configure those depending on your actual needs.
+
+    Do NOT enable these option unless your reverse proxy (for example istio or nginx)
+    is properly setup to set these headers but also filter those from incoming requests.
+
 ### Catalog and Iceberg REST Settings
 
 {% include './generated-docs/smallrye-nessie_catalog.md' %}
 
+#### Warehouse defaults
+
+{% include './generated-docs/smallrye-nessie_catalog_warehouseDefaults.md' %}
+
+#### Warehouses
+
+{% include './generated-docs/smallrye-nessie_catalog_warehouses.md' %}
+
 #### S3 settings
 
 {% include './generated-docs/smallrye-nessie_catalog_service_s3.md' %}
+
+##### S3 transport
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3_transport.md' %}
+
+##### S3 STS, assume-role global settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3_sts.md' %}
+
+##### S3 default bucket settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3_default_options.md' %}
+
+##### S3 per bucket settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_s3_buckets.md' %}
 
 #### Google Cloud Storage settings
 
 !!! note
     Support for GCS is experimental.
 
-{% include './generated-docs/smallrye-nessie_catalog_service_gcs.md' %}
+##### GCS transport
+
+{% include './generated-docs/smallrye-nessie_catalog_service_gcs_transport.md' %}
+
+##### GCS default bucket settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_gcs_default_options.md' %}
+
+##### GCS per bucket settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_gcs_buckets.md' %}
 
 #### ADLS settings
 
@@ -80,6 +124,18 @@ Related Quarkus settings:
     Support for ADLS is experimental.
 
 {% include './generated-docs/smallrye-nessie_catalog_service_adls.md' %}
+
+##### ADLS transport
+
+{% include './generated-docs/smallrye-nessie_catalog_service_adls_transport.md' %}
+
+##### ADLS default file-system settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_adls_default_options.md' %}
+
+##### ADLS per file-system  settings
+
+{% include './generated-docs/smallrye-nessie_catalog_service_adls_buckets.md' %}
 
 #### Advanced catalog settings
 
@@ -208,8 +264,55 @@ Related Quarkus settings:
 {% include './generated-docs/smallrye-nessie_server_authorization.md' %}
 
 ### Metrics
-Metrics are published using prometheus and can be collected via standard methods. See:
-[Prometheus](https://prometheus.io).
+
+Metrics are published using Micrometer; they are available from Nessie's management interface (port
+9000 by default) under the path `/q/metrics`. For example, if the server is running on localhost,
+the metrics can be accessed via http://localhost:9000/q/metrics.
+
+Metrics can be scraped by Prometheus or any compatible metrics scraping server. See:
+[Prometheus](https://prometheus.io) for more information.
+
+Additional tags can be added to the metrics by setting the `nessie.metrics.tags.*` property. Each
+tag is a key-value pair, where the key is the tag name and the value is the tag value. For example,
+to add a tag `environment=prod` to all metrics, set `nessie.metrics.tags.environment=prod`. Many
+tags can be added, such as below:
+
+```properties
+nessie.metrics.tags.service=nessie
+nessie.metrics.tags.environment=prod
+nessie.metrics.tags.region=us-west-2
+```
+
+Note that by default Nessie adds one tag: `application=Nessie`. You can override this tag by setting
+the `nessie.metrics.tags.application=<new-value>` property.
+
+A standard Grafana dashboard is available in the `grafana` directory of the Nessie repository [here]
+(https://github.com/projectnessie/nessie/blob/main/grafana/nessie.json). You can use this dashboard
+to visualize the metrics scraped by Prometheus. Note that this dashboard is a starting point and may
+need to be customized to fit your specific needs. 
+
+This Grafana dashboard expects the metrics to have a few tags defined: `service` and `instance`. The
+`instance` tag is generally added by Prometheus automatically, but the `service` tag needs to be
+added manually. You can configure Nessie to add this tag to all metrics by setting the below
+property:
+
+```properties
+nessie.metrics.tags.service=<service-name>
+```
+
+Alternatively, you can modify the dashboard to remove unnecessary tags, or configure Prometheus to
+add the missing ones. Here is an example configuration showing how to have the `service` tag added
+by Prometheus:
+
+```yaml
+scrape_configs:
+  - job_name: 'nessie'
+    metrics_path: /q/metrics
+    static_configs:
+      - targets: ['nessie:9000']
+        labels:
+          service: nessie
+```
 
 ### Traces
 
@@ -241,7 +344,7 @@ running and that the URL is correct.
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
 via [localhost:9000/q/swagger-ui](http://localhost:9000/q/swagger-ui/)
 
-# Docker image options
+## Docker image options
 
 By default, Nessie listens on port 19120. To expose that port on the host, use `-p 19120:19120`. 
 To expose that port on a different port on the host system, use the `-p` option and map the
@@ -264,11 +367,11 @@ and expose it to the host system also on 8080, use the following command:
 docker run -p 8080:8080 -e QUARKUS_HTTP_PORT=8080 ghcr.io/projectnessie/nessie
 ```
 
-## Nessie Docker image types
+### Nessie Docker image types
 
 Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) image running on OpenJDK 17.
 
-## Advanced Docker image tuning (Java images only)
+### Advanced Docker image tuning (Java images only)
 
 There are many environment variables available to configure the Docker image. If in doubt, leave
 everything at its default. You can configure the behavior using the following environment
@@ -277,14 +380,14 @@ variables. They come from the base image used by Nessie,
 The extensive list of supported environment variables can be found 
 [here](https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html/red_hat_java_s2i_for_openshift/reference#configuration_environment_variables).
 
-### Examples
+#### Examples
 
 | Example                                    | `docker run` option                                                                                                |
 |--------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | Using another GC                           | `-e GC_CONTAINER_OPTIONS="-XX:+UseShenandoahGC"` lets Nessie use Shenandoah GC instead of the default parallel GC. |
 | Set the Java heap size to a _fixed_ amount | `-e JAVA_OPTS_APPEND="-Xms8g -Xmx8g"` lets Nessie use a Java heap of 8g.                                           | 
 
-### Reference
+#### Reference
 
 | Environment variable             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 |----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

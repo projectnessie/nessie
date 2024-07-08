@@ -21,20 +21,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
 @Value.Immutable
 public interface AdlsConfig {
+
+  /**
+   * Override the default maximum number of HTTP connections that Nessie can use against all ADLS
+   * Gen2 object stores.
+   */
+  @ConfigItem(section = "transport")
   OptionalInt maxHttpConnections();
 
+  /**
+   * Override the default TCP connect timeout for HTTP connections against ADLS Gen2 object stores.
+   */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectTimeout();
 
+  /** Override the default idle timeout for HTTP connections. */
+  @ConfigItem(section = "transport")
   Optional<Duration> connectionIdleTimeout();
 
+  /** Override the default write timeout for HTTP connections. */
+  @ConfigItem(section = "transport")
   Optional<Duration> writeTimeout();
 
+  /** Override the default read timeout for HTTP connections. */
+  @ConfigItem(section = "transport")
   Optional<Duration> readTimeout();
-
-  Optional<Duration> responseTimeout();
 
   /** For configuration options, see {@link com.azure.core.util.Configuration}. */
   Map<String, String> configurationOptions();
@@ -43,6 +58,7 @@ public interface AdlsConfig {
     return ImmutableAdlsConfig.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder maxHttpConnections(int maxHttpConnections);
@@ -58,9 +74,6 @@ public interface AdlsConfig {
 
     @CanIgnoreReturnValue
     Builder readTimeout(Duration readTimeout);
-
-    @CanIgnoreReturnValue
-    Builder responseTimeout(Duration responseTimeout);
 
     @CanIgnoreReturnValue
     Builder putConfigurationOptions(String key, String value);

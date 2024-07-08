@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.model.schema.types;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -81,7 +80,7 @@ public interface NessieTypeSpec extends Hashable {
   class NessieTypeSpecDeserializer extends JsonDeserializer<NessieTypeSpec> {
     @Override
     public NessieTypeSpec deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JacksonException {
+        throws IOException {
       return p.readValueAs(NessieTypeSpecSerialized.class).unwrap();
     }
   }

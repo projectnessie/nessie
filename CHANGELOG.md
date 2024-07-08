@@ -14,13 +14,68 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Improve indicated health check errors
+- Catalog/GCS: Support using the default application credentials
+- Catalog/S3: Allow custom key+trust stores
+- Catalog: Check privileges earlier
+
 ### Changes
+
+- Helm chat improvements
 
 ### Deprecations
 
 ### Fixes
 
+- Fix potential class-loader deadlock via `Namespace.EMPTY`
+- Catalog: Fix double write of metadata objects to S3
+- GC/ADLS: Handle `BlobNotFound` as well
+
 ### Commits
+
+## [0.91.3] Release (2024-06-28)
+
+### Breaking changes
+
+- The config properties for the object storage defaults for S3, GCS and ADLS have been moved under the
+  `default-options` composite object. Inconsistent property names between the old defaults and the per-bucket
+  property names have been resolved.
+
+### New Features
+
+- Nessie CLI now has its own Docker images. Running Nessie CLI is now as simple as: `docker run -it
+  ghcr.io/projectnessie/nessie-cli`. Read more about it
+  [here](https://projectnessie.org/nessie-latest/cli/).
+
+### Fixes
+
+- Fix console output during `CONNECT` in CLI/REPL (the bug was introduced in 0.91.1)
+
+## [0.91.2] Release (2024-06-24)
+
+### Breaking changes
+
+- We have improved Nessie client's support for impersonation scenarios using the token exchange
+  grant type. A few options starting with `nessie.authentication.oauth2.token-exchange.*` were
+  renamed to `nessie.authentication.oauth2.impersonation.*`. Check the [Nessie authentication
+  settings] for details. Please note that token exchange and impersonation are both considered in
+  beta state. Their APIs and configuration options are subject to change at any time.
+
+## [0.91.1] Release (2024-06-22)
+
+### New Features
+
+- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
+  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
+  Such tags are added to all metrics published by Nessie.
+- Readiness/health check testing the general availability of the object stores configured for the warehouses.
+- Helm chart with support for Iceberg REST
+
+### Fixes
+
+- S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
+  S3 request signing before 1.5.0 works now. 
+- Fix service-name resolution in k8s, spamming the Nessie log.
 
 ## [0.90.4] Release (2024-06-13)
 
@@ -524,7 +579,10 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...HEAD
+[0.91.3]: https://github.com/projectnessie/nessie/compare/nessie-0.91.2...nessie-0.91.3
+[0.91.2]: https://github.com/projectnessie/nessie/compare/nessie-0.91.1...nessie-0.91.2
+[0.91.1]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...nessie-0.91.1
 [0.90.4]: https://github.com/projectnessie/nessie/compare/nessie-0.90.2...nessie-0.90.4
 [0.90.2]: https://github.com/projectnessie/nessie/compare/nessie-0.83.2...nessie-0.90.2
 [0.83.2]: https://github.com/projectnessie/nessie/compare/nessie-0.82.0...nessie-0.83.2

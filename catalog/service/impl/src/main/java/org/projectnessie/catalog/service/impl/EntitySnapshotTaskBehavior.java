@@ -22,6 +22,7 @@ import static org.projectnessie.nessie.tasks.api.TaskState.runningState;
 
 import java.time.Clock;
 import java.time.Instant;
+import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjType;

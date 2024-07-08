@@ -113,12 +113,12 @@ In June 2022 the Nessie code tree changed to the Gradle build tool. Existing clo
 can be migrated as follows:
 
 1. Close your IDE
-2. Run `git clean -xdf`
-3. Run `git pull`
-4. Run `./gradlew testClasses` to ensure the build works fine. The very first build will be slower,
+1. Run `git clean -xdf`
+1. Run `git pull`
+1. Run `./gradlew testClasses` to ensure the build works fine. The very first build will be slower,
    because it has to assemble the build plugins and download dependencies.
-6. Make sure that your IDE has no more "references to Maven" (nothing to do when using IntelliJ) 
-7. Open Nessie in your IDE
+1. Make sure that your IDE has no more "references to Maven" (nothing to do when using IntelliJ) 
+1. Open Nessie in your IDE
 
 Note: The Gradle build does *not* use the local Maven repository and dependencies there will not be
 used by default. See [Local Maven reposotiry](#local-maven-repository).

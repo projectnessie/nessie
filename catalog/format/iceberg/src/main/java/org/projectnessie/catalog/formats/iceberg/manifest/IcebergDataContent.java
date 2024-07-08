@@ -19,5 +19,4 @@ public enum IcebergDataContent {
   DATA,
   POSITION_DELETES,
   EQUALITY_DELETES,
-  ;
 }

@@ -109,14 +109,16 @@ public class TestVendedS3CredentialsExpiry {
       return ImmutableMap.<String, String>builder()
           .put("nessie.catalog.default-warehouse", "warehouse")
           .put("nessie.catalog.warehouses.warehouse.location", "s3://test-bucket")
-          .put("nessie.catalog.service.s3.region", "us-west-2")
-          .put("nessie.catalog.service.s3.auth-mode", S3ClientAuthenticationMode.ASSUME_ROLE.name())
-          .put("nessie.catalog.service.s3.client-session-duration", "PT5H")
-          .put("nessie.catalog.service.s3.role-session-name", "test-session-name")
-          .put("nessie.catalog.service.s3.assumed-role", "test-role")
-          .put("nessie.catalog.service.s3.external-id", "test-external-id")
-          .put("nessie.catalog.service.s3.access-key.name", "test-access-key")
-          .put("nessie.catalog.service.s3.access-key.secret", "test-secret-key")
+          .put("nessie.catalog.service.s3.default-options.region", "us-west-2")
+          .put(
+              "nessie.catalog.service.s3.default-options.auth-mode",
+              S3ClientAuthenticationMode.ASSUME_ROLE.name())
+          .put("nessie.catalog.service.s3.default-options.client-session-duration", "PT5H")
+          .put("nessie.catalog.service.s3.default-options.role-session-name", "test-session-name")
+          .put("nessie.catalog.service.s3.default-options.assume-role", "test-role")
+          .put("nessie.catalog.service.s3.default-options.external-id", "test-external-id")
+          .put("nessie.catalog.service.s3.default-options.access-key.name", "test-access-key")
+          .put("nessie.catalog.service.s3.default-options.access-key.secret", "test-secret-key")
           .build();
     }
   }

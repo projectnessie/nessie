@@ -175,7 +175,7 @@ public class TestMarkAndSweep {
 
   @ParameterizedTest
   @MethodSource("markAndSweep")
-  public void markAndSweep(MarkAndSweep markAndSweep) throws Exception {
+  void markAndSweep(MarkAndSweep markAndSweep) throws Exception {
 
     InMemoryPersistenceSpi storage = new InMemoryPersistenceSpi();
     LiveContentSetsRepository repository =

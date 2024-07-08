@@ -17,5 +17,4 @@ package org.projectnessie.catalog.model.snapshot;
 
 public enum TableFormat {
   ICEBERG,
-  ;
 }

@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - GC - Mocked Iceberg data for tests"
+publishingHelper { mavenName = "Nessie - GC - Mocked Iceberg data for tests" }
 
 dependencies {
   compileOnly(platform(libs.iceberg.bom))

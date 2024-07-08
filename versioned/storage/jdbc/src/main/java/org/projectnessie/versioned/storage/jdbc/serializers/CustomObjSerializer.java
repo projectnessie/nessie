@@ -24,7 +24,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.function.Function;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
@@ -59,7 +58,7 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
       int maxSerializedIndexSize,
       Function<String, Integer> nameToIdx,
       DatabaseSpecific databaseSpecific)
-      throws SQLException, ObjTooLargeException {
+      throws SQLException {
     serializeBytes(
         ps,
         nameToIdx.apply(COL_CUSTOM_DATA),
@@ -75,7 +74,6 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
                   }
                 })),
         databaseSpecific);
-    ;
   }
 
   @Override

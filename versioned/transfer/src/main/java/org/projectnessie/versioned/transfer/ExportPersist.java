@@ -33,7 +33,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.BranchName;
@@ -50,13 +49,10 @@ import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.versionstore.RefMapping;
-import org.projectnessie.versioned.storage.versionstore.TypeMapping;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.OperationType;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
@@ -70,6 +66,18 @@ final class ExportPersist extends ExportCommon {
   ExportPersist(
       ExportFileSupplier exportFiles, NessieExporter exporter, ExportVersion exportVersion) {
     super(exportFiles, exporter);
+
+    switch (exportVersion) {
+      case V1:
+        throw new IllegalArgumentException(
+            "Cannot export using export-version " + exportVersion.getNumber());
+      case V2:
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unimplemented export-version " + exportVersion.getNumber());
+    }
+
     this.exportVersion = exportVersion;
   }
 
@@ -104,10 +112,9 @@ final class ExportPersist extends ExportCommon {
         new IdentifyHeadsAndForkPoints(
             exporter.expectedCommitCount(), exporter.persist().config().currentTimeMicros());
 
-    String referencePrefix = exportVersion == ExportVersion.V2 ? null : RefMapping.REFS;
     exporter
         .referenceLogic()
-        .queryReferences(referencesQuery(referencePrefix))
+        .queryReferences(referencesQuery())
         .forEachRemaining(
             ref -> {
               Deque<ObjId> commitsToProcess = new ArrayDeque<>();
@@ -144,29 +151,17 @@ final class ExportPersist extends ExportCommon {
 
   @Override
   void exportReferences(ExportContext exportContext) {
-    String referencePrefix = exportVersion == ExportVersion.V2 ? null : RefMapping.REFS;
     for (PagedResult<Reference, String> refs =
-            exporter.referenceLogic().queryReferences(referencesQuery(referencePrefix));
+            exporter.referenceLogic().queryReferences(referencesQuery());
         refs.hasNext(); ) {
       Reference reference = refs.next();
-      if (exportVersion == ExportVersion.V1) {
-        NamedRef namedRef = RefMapping.referenceToNamedRef(reference);
-        NamedReference.Builder namedReference =
-            NamedReference.newBuilder()
-                .setRefType(refType(namedRef))
-                .setName(namedRef.getName())
-                .setCommitId(reference.pointer().asBytes());
-        // reference.extendedInfoObj() cannot be exported in V1
-        exportContext.writeNamedReference(namedReference.build());
-      } else {
-        ObjId extendedInfoObj = reference.extendedInfoObj();
-        Ref.Builder refBuilder =
-            Ref.newBuilder().setName(reference.name()).setPointer(reference.pointer().asBytes());
-        if (extendedInfoObj != null) {
-          refBuilder.setExtendedInfoObj(extendedInfoObj.asBytes());
-        }
-        exportContext.writeRef(refBuilder.build());
+      ObjId extendedInfoObj = reference.extendedInfoObj();
+      Ref.Builder refBuilder =
+          Ref.newBuilder().setName(reference.name()).setPointer(reference.pointer().asBytes());
+      if (extendedInfoObj != null) {
+        refBuilder.setExtendedInfoObj(extendedInfoObj.asBytes());
       }
+      exportContext.writeRef(refBuilder.build());
       exporter.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
     }
   }
@@ -243,16 +238,6 @@ final class ExportPersist extends ExportCommon {
             .setCommitSequence(c.seq())
             .setCreatedTimeMicros(c.created());
 
-    if (exportVersion == ExportVersion.V1) {
-      try {
-        CommitMeta commitMeta = TypeMapping.toCommitMeta(c);
-        byte[] commitMetaBytes = exporter.objectMapper().writeValueAsBytes(commitMeta);
-        b.setMetadata(ByteString.copyFrom(commitMetaBytes));
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
     c.headers()
         .keySet()
         .forEach(h -> b.addHeadersBuilder().setName(h).addAllValues(c.headers().getAll(h)));
@@ -265,11 +250,7 @@ final class ExportPersist extends ExportCommon {
               CommitOp content = op.content();
               Operation.Builder opBuilder = b.addOperationsBuilder().setPayload(content.payload());
 
-              if (exportVersion == ExportVersion.V1) {
-                opBuilder.addAllContentKey(TypeMapping.storeKeyToKey(op.key()).getElements());
-              } else {
-                opBuilder.addContentKey(op.key().rawString());
-              }
+              opBuilder.addContentKey(op.key().rawString());
 
               ObjId valueId = content.value();
               if (valueId != null) {

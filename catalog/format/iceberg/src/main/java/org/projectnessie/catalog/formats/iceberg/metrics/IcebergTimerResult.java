@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.formats.iceberg.metrics;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -64,8 +63,7 @@ public interface IcebergTimerResult {
 
   final class TimeUnitDeserializer extends JsonDeserializer<TimeUnit> {
     @Override
-    public TimeUnit deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JacksonException {
+    public TimeUnit deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return TimeUnit.valueOf(p.getText().toUpperCase());
     }
   }

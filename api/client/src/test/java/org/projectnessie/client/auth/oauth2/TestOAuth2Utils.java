@@ -22,11 +22,14 @@ import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.Function;
 import java.util.stream.Stream;
+import org.immutables.value.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -159,57 +162,122 @@ class TestOAuth2Utils {
             now.plus(defaultLifespan)));
   }
 
-  @ParameterizedTest
+  static final Instant NOW = Instant.ofEpochSecond(42);
+
+  @ParameterizedTest(name = "{0}")
   @MethodSource
-  void testShortestDelay(
-      Instant now,
-      Instant accessExp,
-      Instant refreshExp,
-      Duration safetyWindow,
-      Duration minRefreshDelay,
-      Duration expected) {
+  void testShortestDelay(ShortestDelayTestCase testcase, ShortestDelayExpectation expectation) {
     Duration actual =
-        OAuth2Utils.shortestDelay(now, accessExp, refreshExp, safetyWindow, minRefreshDelay);
-    assertThat(actual).isEqualTo(expected);
+        OAuth2Utils.shortestDelay(
+            NOW,
+            NOW.plus(testcase.getAccessExp()),
+            testcase.getRefreshExp() == null ? null : NOW.plus(testcase.getRefreshExp()),
+            testcase.getSafetyWindow(),
+            testcase.getMinRefreshDelay());
+    assertThat(actual).isEqualTo(expectation.apply(testcase));
   }
 
+  @Value.Immutable
+  interface ShortestDelayTestCase {
+
+    String getName();
+
+    Duration getAccessExp();
+
+    @Nullable
+    Duration getRefreshExp();
+
+    @Value.Default
+    default Duration getSafetyWindow() {
+      return Duration.ofSeconds(10);
+    }
+
+    @Value.Default
+    default Duration getMinRefreshDelay() {
+      return Duration.ofSeconds(1);
+    }
+  }
+
+  @FunctionalInterface
+  interface ShortestDelayExpectation extends Function<ShortestDelayTestCase, Duration> {}
+
   static Stream<Arguments> testShortestDelay() {
-    Instant now = Instant.now();
-    Duration oneMinute = Duration.ofMinutes(1);
-    Duration thirtySeconds = Duration.ofSeconds(30);
-    Duration defaultWindow = Duration.ofSeconds(10);
-    Duration oneSecond = Duration.ofSeconds(1);
+    Duration big = Duration.ofMinutes(5);
+    Duration small = Duration.ofMinutes(2);
     return Stream.of(
-        // refresh token < access token
         Arguments.of(
-            now,
-            now.plus(oneMinute),
-            now.plus(thirtySeconds),
-            defaultWindow,
-            oneSecond,
-            thirtySeconds.minus(defaultWindow)),
-        // refresh token > access token
+            ImmutableShortestDelayTestCase.builder()
+                .name("refresh token < access token -> refresh token - safety window")
+                .accessExp(big)
+                .refreshExp(small)
+                .build(),
+            (ShortestDelayExpectation)
+                testCase -> testCase.getRefreshExp().minus(testCase.getSafetyWindow())),
         Arguments.of(
-            now,
-            now.plus(thirtySeconds),
-            now.plus(oneMinute),
-            defaultWindow,
-            oneSecond,
-            thirtySeconds.minus(defaultWindow)),
-        // access token already expired: MIN_REFRESH_DELAY
+            ImmutableShortestDelayTestCase.builder()
+                .name("access token < refresh token -> access token - safety window")
+                .accessExp(small)
+                .refreshExp(big)
+                .build(),
+            (ShortestDelayExpectation)
+                testCase -> testCase.getAccessExp().minus(testCase.getSafetyWindow())),
         Arguments.of(
-            now, now.minus(oneMinute), now.plus(oneMinute), defaultWindow, oneSecond, oneSecond),
-        // refresh token already expired: MIN_REFRESH_DELAY
+            ImmutableShortestDelayTestCase.builder()
+                .name("no refresh token -> access token - safety window")
+                .accessExp(big)
+                .build(),
+            (ShortestDelayExpectation)
+                testCase -> testCase.getAccessExp().minus(testCase.getSafetyWindow())),
         Arguments.of(
-            now, now.plus(oneMinute), now.minus(oneMinute), defaultWindow, oneSecond, oneSecond),
-        // expirationTime - safety window > MIN_REFRESH_DELAY
+            ImmutableShortestDelayTestCase.builder()
+                .name("access token expired -> minRefreshDelay")
+                .accessExp(small.negated())
+                .refreshExp(big)
+                .build(),
+            (ShortestDelayExpectation) ShortestDelayTestCase::getMinRefreshDelay),
         Arguments.of(
-            now, now.plus(oneMinute), now.plus(oneMinute), thirtySeconds, oneSecond, thirtySeconds),
-        // expirationTime - safety window <= MIN_REFRESH_DELAY
+            ImmutableShortestDelayTestCase.builder()
+                .name("refresh token expired -> minRefreshDelay")
+                .accessExp(big)
+                .refreshExp(small.negated())
+                .build(),
+            (ShortestDelayExpectation) ShortestDelayTestCase::getMinRefreshDelay),
         Arguments.of(
-            now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, oneSecond, oneSecond),
-        // expirationTime - safety window <= ZERO (immediate refresh use case)
-        Arguments.of(now, now.plus(oneMinute), now.plus(oneMinute), oneMinute, ZERO, ZERO));
+            ImmutableShortestDelayTestCase.builder()
+                .name("access token - safety window < minRefreshDelay -> minRefreshDelay")
+                .accessExp(small)
+                .refreshExp(big)
+                .safetyWindow(small)
+                .build(),
+            (ShortestDelayExpectation) ShortestDelayTestCase::getMinRefreshDelay),
+        Arguments.of(
+            ImmutableShortestDelayTestCase.builder()
+                .name("refresh token - safety window < minRefreshDelay -> minRefreshDelay")
+                .accessExp(big)
+                .refreshExp(small)
+                .safetyWindow(small)
+                .build(),
+            (ShortestDelayExpectation) ShortestDelayTestCase::getMinRefreshDelay),
+        Arguments.of(
+            ImmutableShortestDelayTestCase.builder()
+                .name(
+                    "access token - safety window <= ZERO + no refreshDelay -> ZERO (immediate refresh use case)")
+                .accessExp(small)
+                .refreshExp(big)
+                .safetyWindow(small)
+                .minRefreshDelay(ZERO)
+                .build(),
+            (ShortestDelayExpectation) testCase -> ZERO),
+        Arguments.of(
+            ImmutableShortestDelayTestCase.builder()
+                .name(
+                    "refresh token - safety window <= ZERO + no refreshDelay -> ZERO (immediate refresh use case)")
+                .accessExp(big)
+                .refreshExp(small)
+                .safetyWindow(small)
+                .minRefreshDelay(ZERO)
+                .build(),
+            (ShortestDelayExpectation) testCase -> ZERO));
   }
 
   private RequestHandler handler(String wellKnownPath, String data) {

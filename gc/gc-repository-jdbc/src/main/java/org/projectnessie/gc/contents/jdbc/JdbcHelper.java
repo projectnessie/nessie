@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 public final class JdbcHelper {
   private JdbcHelper() {}
 
+  @SuppressWarnings("SqlSourceToSinkFlow")
   public static void createTables(Connection connection, boolean ifNotExists) throws SQLException {
     try (Statement st = connection.createStatement()) {
       Map<String, String> createTableStatements = getCreateTableStatements();
@@ -43,6 +44,7 @@ public final class JdbcHelper {
     }
   }
 
+  @SuppressWarnings({"SqlSourceToSinkFlow", "SqlDialectInspection", "SqlNoDataSourceInspection"})
   public static void dropTables(Connection connection) throws SQLException {
     try (Statement st = connection.createStatement()) {
       for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
@@ -69,7 +71,8 @@ public final class JdbcHelper {
     return SqlDmlDdl.ALL_CREATES;
   }
 
-  static Exception forClose(List<AutoCloseable> closeables, Exception e) {
+  static Exception forClose(List<AutoCloseable> closeables) {
+    Exception e = null;
     for (int i = closeables.size() - 1; i >= 0; i--) {
       try {
         closeables.get(i).close();

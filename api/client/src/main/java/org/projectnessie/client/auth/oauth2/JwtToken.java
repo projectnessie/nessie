@@ -57,7 +57,7 @@ class JwtToken {
     if (token != null) {
       @SuppressWarnings("StringSplitter")
       String[] parts = token.split("\\.");
-      if (parts.length == 3 && parts[1].length() > 0) {
+      if (parts.length == 3 && !parts[1].isEmpty()) {
         try {
           JsonNode payload = OBJECT_MAPPER.readTree(Base64.getUrlDecoder().decode(parts[1]));
           return new JwtToken(payload);

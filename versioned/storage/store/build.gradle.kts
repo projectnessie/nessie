@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Version Store"
+publishingHelper { mavenName = "Nessie - Storage - Version Store" }
 
 description = "VersionStore implementation relying on 'Persist'."
 

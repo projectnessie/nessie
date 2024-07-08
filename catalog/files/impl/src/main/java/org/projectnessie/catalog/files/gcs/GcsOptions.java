@@ -18,24 +18,91 @@ package org.projectnessie.catalog.files.gcs;
 import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
 
 import com.google.common.collect.ImmutableList;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions.GcsPerBucketOptions;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBucketOptions {
+public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
+
+  /**
+   * Default bucket configuration, default/fallback values for all buckets are taken from this one.
+   */
+  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  Optional<PER_BUCKET> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
    * setting. If no per-bucket setting is present, uses the defaults from the top-level GCS
    * settings.
    */
+  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("bucket-name")
   Map<String, PER_BUCKET> buckets();
+
+  /** Override the default read timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> readTimeout();
+
+  /** Override the default connection timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> connectTimeout();
+
+  /** Override the default maximum number of attempts. */
+  @ConfigItem(section = "transport")
+  OptionalInt maxAttempts();
+
+  /** Override the default logical request timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> logicalTimeout();
+
+  /** Override the default total timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> totalTimeout();
+
+  /** Override the default initial retry delay. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> initialRetryDelay();
+
+  /** Override the default maximum retry delay. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> maxRetryDelay();
+
+  /** Override the default retry delay multiplier. */
+  @ConfigItem(section = "transport")
+  OptionalDouble retryDelayMultiplier();
+
+  /** Override the default initial RPC timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> initialRpcTimeout();
+
+  /** Override the default maximum RPC timeout. */
+  @ConfigItem(section = "transport")
+  Optional<Duration> maxRpcTimeout();
+
+  /** Override the default RPC timeout multiplier. */
+  @ConfigItem(section = "transport")
+  OptionalDouble rpcTimeoutMultiplier();
+
+  /** The read chunk size in bytes. */
+  @ConfigItem(section = "transport")
+  OptionalInt readChunkSize();
+
+  /** The write chunk size in bytes. */
+  @ConfigItem(section = "transport")
+  OptionalInt writeChunkSize();
+
+  /** The delete batch size. */
+  @ConfigItem(section = "transport")
+  OptionalInt deleteBatchSize();
 
   default GcsBucketOptions effectiveOptionsForBucket(
       Optional<String> bucketName, SecretsProvider secretsProvider) {
@@ -76,14 +143,22 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> extends GcsBuck
 
   default GcsBucketOptions resolveSecrets(
       String filesystemName, GcsBucketOptions specific, SecretsProvider secretsProvider) {
-    GcsPerBucketOptions.Builder builder = GcsPerBucketOptions.builder().from(this);
+    GcsBucketOptions defaultOptions =
+        defaultOptions().map(GcsBucketOptions.class::cast).orElse(GcsPerBucketOptions.FALLBACK);
+
+    GcsPerBucketOptions.Builder builder = GcsPerBucketOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
 
     return secretsProvider
         .applySecrets(
-            builder, "object-stores.gcs", this, filesystemName, specific, SECRET_ATTRIBUTES)
+            builder,
+            "object-stores.gcs",
+            defaultOptions,
+            filesystemName,
+            specific,
+            SECRET_ATTRIBUTES)
         .build();
   }
 }

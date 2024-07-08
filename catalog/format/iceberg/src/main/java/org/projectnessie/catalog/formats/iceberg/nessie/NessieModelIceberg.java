@@ -18,6 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.nessie;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.time.Instant.now;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace.icebergNamespace;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
@@ -28,6 +29,7 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.IN
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.INITIAL_PARTITION_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.NO_SNAPSHOT_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergViewHistoryEntry.icebergViewHistoryEntry;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.RESERVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.ReuseOrCreate.reuseOrCreate;
 import static org.projectnessie.catalog.model.id.NessieId.transientNessieId;
@@ -521,8 +523,17 @@ public class NessieModelIceberg {
         .icebergLocation(iceberg.location())
         .lastUpdatedTimestamp(Instant.ofEpochMilli(iceberg.lastUpdatedMs()))
         .icebergLastColumnId(iceberg.lastColumnId())
-        .icebergLastPartitionId(iceberg.lastPartitionId())
-        .properties(iceberg.properties());
+        .icebergLastPartitionId(iceberg.lastPartitionId());
+
+    snapshot.properties(emptyMap());
+    iceberg
+        .properties()
+        .forEach(
+            (k, v) -> {
+              if (!DERIVED_PROPERTIES.contains(k)) {
+                snapshot.putProperty(k, v);
+              }
+            });
 
     int currentSchemaId =
         extractCurrentId(iceberg.currentSchemaId(), iceberg.schema(), IcebergSchema::schemaId);
@@ -1080,7 +1091,7 @@ public class NessieModelIceberg {
     String uuid = u.uuid();
     Preconditions.checkArgument(uuid != null, "Null entity UUID is not permitted.");
     Preconditions.checkArgument(
-        uuid.equals(Objects.requireNonNull(snapshot.entity().icebergUuid()).toString()),
+        uuid.equals(Objects.requireNonNull(snapshot.entity().icebergUuid())),
         "UUID mismatch: assigned: %s, new: %s",
         snapshot.entity().icebergUuid(),
         uuid);
@@ -1542,8 +1553,7 @@ public class NessieModelIceberg {
   public static Content icebergMetadataToContent(
       String location, IcebergViewMetadata snapshot, String contentId) {
     IcebergViewVersion version = snapshot.currentVersion();
-    return IcebergView.of(
-        contentId, location, snapshot.currentVersionId(), version.schemaId(), "", "");
+    return IcebergView.of(contentId, location, snapshot.currentVersionId(), version.schemaId());
   }
 
   public static String typeToEntityName(Content.Type type) {

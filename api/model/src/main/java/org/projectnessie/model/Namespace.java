@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Util.DOT_STRING;
 import static org.projectnessie.model.Util.FIRST_ALLOWED_KEY_CHAR;
 
@@ -48,6 +49,18 @@ public abstract class Namespace extends Content {
   static final String ERROR_MSG_TEMPLATE =
       "'%s' is not a valid namespace identifier (should not end with '.')";
 
+  /** This separate static class is needed to prevent class loader deadlocks. */
+  public static final class Empty {
+    private Empty() {}
+
+    public static final Namespace EMPTY_NAMESPACE = builder().build();
+  }
+
+  /**
+   * Refactor all code references to this constant to use {@link Empty#EMPTY_NAMESPACE}, there's a
+   * non-zero risk of causing a class loader deadlock.
+   */
+  @Deprecated
   public static final Namespace EMPTY = builder().elements(Collections.emptyList()).build();
 
   public static ImmutableNamespace.Builder builder() {
@@ -104,7 +117,7 @@ public abstract class Namespace extends Content {
   public Namespace getParentOrEmpty() {
     List<String> elements = getElements();
     if (elements.size() <= 1) {
-      return Namespace.EMPTY;
+      return EMPTY_NAMESPACE;
     }
     return Namespace.of(elements.subList(0, elements.size() - 1));
   }
@@ -149,7 +162,7 @@ public abstract class Namespace extends Content {
   public static Namespace of(Map<String, String> properties, String... elements) {
     Objects.requireNonNull(elements, "elements must be non-null");
     if (elements.length == 0 || (elements.length == 1 && "".equals(elements[0]))) {
-      return EMPTY;
+      return EMPTY_NAMESPACE;
     }
 
     for (String e : elements) {
@@ -219,7 +232,7 @@ public abstract class Namespace extends Content {
   public static Namespace parse(String identifier) {
     Objects.requireNonNull(identifier, "identifier must be non-null");
     if (identifier.isEmpty()) {
-      return EMPTY;
+      return EMPTY_NAMESPACE;
     }
     if (identifier.endsWith(DOT_STRING)) {
       throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));

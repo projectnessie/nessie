@@ -126,7 +126,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.fetchOption(),
             params.filter(),
             params.pageToken(),
-            new PagedCountingResponseHandler<ReferencesResponse, Reference>(maxRecords) {
+            new PagedCountingResponseHandler<>(maxRecords) {
               final ImmutableReferencesResponse.Builder builder = ReferencesResponse.builder();
 
               @Override
@@ -205,7 +205,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             params.filter(),
             params.pageToken(),
             params.withContent(),
-            new PagedCountingResponseHandler<EntriesResponse, EntriesResponse.Entry>(maxRecords) {
+            new PagedCountingResponseHandler<>(maxRecords) {
               @Override
               public EntriesResponse build() {
                 return builder.build();
@@ -243,8 +243,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.hashWithRelativeSpec(),
             params.filter(),
             params.pageToken(),
-            new PagedCountingResponseHandler<LogResponse, LogEntry>(
-                maxRecords, MAX_COMMIT_LOG_ENTRIES) {
+            new PagedCountingResponseHandler<>(maxRecords, MAX_COMMIT_LOG_ENTRIES) {
               final ImmutableLogResponse.Builder builder = ImmutableLogResponse.builder();
 
               @Override
@@ -279,7 +278,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             to.name(),
             to.hashWithRelativeSpec(),
             params.pageToken(),
-            new PagedCountingResponseHandler<DiffResponse, DiffEntry>(maxRecords) {
+            new PagedCountingResponseHandler<>(maxRecords) {
               @Override
               public DiffResponse build() {
                 return builder.build();
@@ -337,26 +336,29 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
-  public ContentResponse getContent(ContentKey key, String ref, boolean withDocumentation)
+  public ContentResponse getContent(
+      ContentKey key, String ref, boolean withDocumentation, boolean forWrite)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     return content()
-        .getContent(key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation);
+        .getContent(
+            key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation, forWrite);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public GetMultipleContentsResponse getSeveralContents(
-      String ref, List<String> keys, boolean withDocumentation) throws NessieNotFoundException {
+      String ref, List<String> keys, boolean withDocumentation, boolean forWrite)
+      throws NessieNotFoundException {
     ImmutableGetMultipleContentsRequest.Builder request = GetMultipleContentsRequest.builder();
     keys.forEach(k -> request.addRequestedKeys(ContentKey.fromPathString(k)));
-    return getMultipleContents(ref, request.build(), withDocumentation);
+    return getMultipleContents(ref, request.build(), withDocumentation, forWrite);
   }
 
   @JsonView(Views.V2.class)
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      String ref, GetMultipleContentsRequest request, boolean withDocumentation)
+      String ref, GetMultipleContentsRequest request, boolean withDocumentation, boolean forWrite)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     return content()
@@ -364,7 +366,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.name(),
             reference.hashWithRelativeSpec(),
             request.getRequestedKeys(),
-            withDocumentation);
+            withDocumentation,
+            forWrite);
   }
 
   @JsonView(Views.V2.class)

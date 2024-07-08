@@ -21,7 +21,7 @@ plugins {
   id("nessie-shadow-jar")
 }
 
-extra["maven.name"] = "Nessie - Relocated Protobuf ${libs.protobuf.java.get().version}"
+publishingHelper { mavenName = "Nessie - Relocated Protobuf ${libs.protobuf.java.get().version}" }
 
 dependencies { compileOnly(libs.protobuf.java) }
 

@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Inmemory - Tests"
+publishingHelper { mavenName = "Nessie - Storage - Inmemory - Tests" }
 
 description = "Base test code for creating test backends using in-memory backend."
 

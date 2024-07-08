@@ -102,7 +102,8 @@ develocity {
       }
     }
   } else {
-    buildScan { publishing { onlyIf { gradle.startParameter.isBuildScan } } }
+    val isBuildScan = gradle.startParameter.isBuildScan
+    buildScan { publishing { onlyIf { isBuildScan } } }
   }
 }
 

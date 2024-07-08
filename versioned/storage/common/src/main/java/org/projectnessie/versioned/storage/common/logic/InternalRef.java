@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.persist.Reference.INTERNAL_PREFIX;
 
@@ -61,7 +59,7 @@ public interface InternalRef {
   InternalRef REF_REPO = internalReference("repo");
 
   static List<InternalRef> allInternalRefs() {
-    return unmodifiableList(asList(REF_REPO, REF_REFS));
+    return List.of(REF_REPO, REF_REFS);
   }
 
   StoreKey KEY_REPO_DESCRIPTION = key("repo", "description");

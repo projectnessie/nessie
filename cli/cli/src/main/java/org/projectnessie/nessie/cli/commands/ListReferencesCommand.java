@@ -49,6 +49,7 @@ public class ListReferencesCommand extends NessieListingCommand<ListReferencesCo
       }
     }
 
+    @SuppressWarnings("resource")
     GetAllReferencesBuilder refs = cli.mandatoryNessieApi().getAllReferences().fetch(fetchOption);
 
     if (filter != null) {

@@ -103,7 +103,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
         redirectUriFuture
             .thenApply(this::extractAuthorizationCode)
             .thenApply(this::fetchNewTokens)
-            .whenComplete(this::log);
+            .whenComplete((tokens, error) -> log(error));
     closeFuture.thenRun(this::doClose);
     server =
         createServer(config.getAuthorizationCodeFlowWebServerPort().orElse(0), this::doRequest);
@@ -228,7 +228,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
     return tokens;
   }
 
-  private void log(Tokens tokens, Throwable error) {
+  private void log(Throwable error) {
     if (LOGGER.isDebugEnabled()) {
       if (error == null) {
         LOGGER.debug("Authorization Code Flow: tokens received");

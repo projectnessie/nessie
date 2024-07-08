@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - Minio testcontainer"
+publishingHelper { mavenName = "Nessie - Minio testcontainer" }
 
 description = "JUnit extension providing a Minio instance."
 

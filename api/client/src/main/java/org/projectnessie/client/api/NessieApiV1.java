@@ -118,6 +118,7 @@ public interface NessieApiV1 extends NessieApi {
    * RefLogResponse.getToken()} in the next invocation of {@code getRefLog()} as the {@code
    * pageToken} parameter.
    */
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
   GetRefLogBuilder getRefLog();
 

@@ -37,7 +37,6 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.ImmutableSigningResponse;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningResponse;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
@@ -62,7 +61,6 @@ class TestIcebergS3SignParams {
 
   @Mock CatalogService catalogService;
   @Mock RequestSigner signer;
-  @Mock S3BucketOptions s3options;
 
   final String baseLocation = "s3://bucket/warehouse/ns/table1_cafebabe";
   final String oldBaseLocation = "s3://old-bucket/ns/table1";
@@ -121,7 +119,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"GET", "HEAD", "OPTIONS", "TRACE"})
   void verifyAndSignSuccessRead(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(false)))
+        .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
@@ -134,7 +133,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"PUT", "POST", "DELETE", "PATCH"})
   void verifyAndSignSuccessWrite(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
+        .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
@@ -166,7 +166,7 @@ class TestIcebergS3SignParams {
             key,
             view,
             nessieViewSnapshot);
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull()))
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
         .thenReturn(CompletableFuture.completedStage(snapshotResponse));
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner = newBuilder().build();
@@ -176,7 +176,7 @@ class TestIcebergS3SignParams {
 
   @Test
   void verifyAndSignSuccessContentNotFound() throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull()))
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
         .thenThrow(new NessieContentNotFoundException(key, "main"));
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner = newBuilder().build();
@@ -186,7 +186,7 @@ class TestIcebergS3SignParams {
 
   @Test
   void verifyAndSignFailureReferenceNotFound() throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull()))
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
         .thenThrow(new NessieReferenceNotFoundException("ref not found"));
     IcebergS3SignParams icebergSigner = newBuilder().build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
@@ -197,7 +197,8 @@ class TestIcebergS3SignParams {
   void verifyAndSignSuccessImportFailed() throws Exception {
     CompletionStage<SnapshotResponse> importFailedStage =
         CompletableFuture.failedStage(new RuntimeException("import failed"));
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(importFailedStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
+        .thenReturn(importFailedStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner = newBuilder().build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
@@ -207,7 +208,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"GET", "HEAD", "OPTIONS", "TRACE"})
   void verifyAndSignSuccessReadMetadataLocation(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(false)))
+        .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
@@ -220,7 +222,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"PUT", "POST", "DELETE", "PATCH"})
   void verifyAndSignFailureWriteMetadataLocation(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
+        .thenReturn(successStage);
     IcebergS3SignParams icebergSigner =
         newBuilder()
             .request(
@@ -237,7 +240,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"GET", "HEAD", "OPTIONS", "TRACE"})
   void verifyAndSignSuccessReadAncientLocation(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(false)))
+        .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
@@ -255,7 +259,8 @@ class TestIcebergS3SignParams {
   @ParameterizedTest
   @ValueSource(strings = {"PUT", "POST", "DELETE", "PATCH"})
   void verifyAndSignFailureWriteAncientLocation(String method) throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
+        .thenReturn(successStage);
     IcebergS3SignParams icebergSigner =
         newBuilder()
             .request(
@@ -271,7 +276,8 @@ class TestIcebergS3SignParams {
 
   @Test
   void verifyAndSignFailureWrongBaseLocation() throws Exception {
-    when(catalogService.retrieveSnapshot(any(), eq(key), isNull())).thenReturn(successStage);
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
+        .thenReturn(successStage);
     IcebergS3SignParams icebergSigner =
         newBuilder().baseLocation("s3://wrong-bucket/warehouse/ns/table1_cafebabee").build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
@@ -285,8 +291,7 @@ class TestIcebergS3SignParams {
         .key(key)
         .baseLocation(baseLocation)
         .catalogService(catalogService)
-        .signer(signer)
-        .s3options(s3options);
+        .signer(signer);
   }
 
   private void expectSuccess(Uni<IcebergS3SignResponse> response) {

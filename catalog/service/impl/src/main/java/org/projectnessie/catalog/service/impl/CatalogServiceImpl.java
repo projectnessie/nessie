@@ -15,10 +15,13 @@
  */
 package org.projectnessie.catalog.service.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
@@ -31,10 +34,10 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.api.NessieSnapshotResponse.nessieSnapshotResponse;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
+import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snapshotObjIdForContent;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
-import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
@@ -50,6 +53,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -81,27 +85,21 @@ import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
+import org.projectnessie.catalog.service.impl.MultiTableUpdate.SingleTableUpdate;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.GetContentBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
-import org.projectnessie.error.ErrorCode;
-import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.Namespace;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
 import org.projectnessie.storage.uri.StorageUri;
@@ -156,9 +154,12 @@ public class CatalogServiceImpl implements CatalogService {
             c -> {
               ObjId snapshotId;
               try {
-                snapshotId = snapshotIdFromContent(c.getContent());
+                snapshotId = snapshotObjIdForContent(c.getContent());
               } catch (Exception e) {
-                e.printStackTrace();
+                // This silently handles the case when `c` refers neither to an Iceberg table nor a
+                // view.`
+                LOGGER.debug(
+                    "Failed to retrieve snapshot ID for {}: {}", c.getContent(), e.toString());
                 return null;
               }
               return (Supplier<CompletionStage<SnapshotResponse>>)
@@ -182,7 +183,10 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<SnapshotResponse> retrieveSnapshot(
-      SnapshotReqParams reqParams, ContentKey key, @Nullable Content.Type expectedType)
+      SnapshotReqParams reqParams,
+      ContentKey key,
+      @Nullable Content.Type expectedType,
+      boolean forWrite)
       throws NessieNotFoundException {
 
     ParsedReference reference = reqParams.ref();
@@ -198,6 +202,7 @@ public class CatalogServiceImpl implements CatalogService {
             .getContent()
             .refName(reference.name())
             .hashOnRef(reference.hashWithRelativeSpec())
+            .forWrite(forWrite)
             .getSingle(key);
     Content content = contentResponse.getContent();
     if (expectedType != null && !content.getType().equals(expectedType)) {
@@ -205,7 +210,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
     Reference effectiveReference = contentResponse.getEffectiveReference();
 
-    ObjId snapshotId = snapshotIdFromContent(content);
+    ObjId snapshotId = snapshotObjIdForContent(content);
 
     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
         new IcebergStuff(objectIO, persist, tasksService, executor)
@@ -242,14 +247,6 @@ public class CatalogServiceImpl implements CatalogService {
     Object result;
     String fileName;
 
-    Consumer<Map<String, String>> tablePropertiesTweak =
-        properties -> {
-          properties.put("nessie.catalog.content-id", snapshot.entity().nessieContentId());
-          properties.put("nessie.catalog.snapshot-id", snapshot.id().idAsString());
-          properties.put("nessie.commit.id", effectiveReference.getHash());
-          properties.put("nessie.commit.ref", effectiveReference.toPathString());
-        };
-
     switch (reqParams.snapshotFormat()) {
       case NESSIE_SNAPSHOT:
         fileName =
@@ -268,7 +265,9 @@ public class CatalogServiceImpl implements CatalogService {
         // TODO Add a check that the original table format was Iceberg (not Delta)
         result =
             nessieTableSnapshotToIceberg(
-                snapshot, optionalIcebergSpec(reqParams.reqVersion()), tablePropertiesTweak);
+                snapshot,
+                optionalIcebergSpec(reqParams.reqVersion()),
+                metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
         break;
@@ -280,6 +279,15 @@ public class CatalogServiceImpl implements CatalogService {
         effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
+  private Consumer<Map<String, String>> metadataPropertiesTweak(
+      NessieEntitySnapshot<?> snapshot, Reference effectiveReference) {
+    return properties -> {
+      properties.put(NESSIE_CONTENT_ID, snapshot.entity().nessieContentId());
+      properties.put(NESSIE_COMMIT_ID, effectiveReference.getHash());
+      properties.put(NESSIE_COMMIT_REF, effectiveReference.getName());
+    };
+  }
+
   private SnapshotResponse snapshotViewResponse(
       ContentKey key,
       Content content,
@@ -288,14 +296,6 @@ public class CatalogServiceImpl implements CatalogService {
       Reference effectiveReference) {
     Object result;
     String fileName;
-
-    Consumer<Map<String, String>> tablePropertiesTweak =
-        properties -> {
-          properties.put("nessie.catalog.content-id", snapshot.entity().nessieContentId());
-          properties.put("nessie.catalog.snapshot-id", snapshot.id().idAsString());
-          properties.put("nessie.commit.id", effectiveReference.getHash());
-          properties.put("nessie.commit.ref", effectiveReference.toPathString());
-        };
 
     switch (reqParams.snapshotFormat()) {
       case NESSIE_SNAPSHOT:
@@ -315,7 +315,9 @@ public class CatalogServiceImpl implements CatalogService {
         // TODO Add a check that the original table format was Iceberg (not Delta)
         result =
             nessieViewSnapshotToIceberg(
-                snapshot, optionalIcebergSpec(reqParams.reqVersion()), tablePropertiesTweak);
+                snapshot,
+                optionalIcebergSpec(reqParams.reqVersion()),
+                metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
         break;
@@ -327,18 +329,23 @@ public class CatalogServiceImpl implements CatalogService {
         effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
-  @Override
-  public CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+  CompletionStage<MultiTableUpdate> commit(ParsedReference reference, CatalogCommit commit)
       throws BaseNessieClientServerException {
 
     GetContentBuilder contentRequest =
         nessieApi
             .getContent()
             .refName(reference.name())
-            .hashOnRef(reference.hashWithRelativeSpec());
+            .hashOnRef(reference.hashWithRelativeSpec())
+            .forWrite(true);
     commit.getOperations().forEach(op -> contentRequest.key(op.getKey()));
     GetMultipleContentsResponse contentsResponse = contentRequest.getWithResponse();
+
+    checkArgument(
+        requireNonNull(contentsResponse.getEffectiveReference()) instanceof Branch,
+        "Can only commit to a branch, but %s %s",
+        contentsResponse.getEffectiveReference().getType(),
+        reference.name());
 
     Branch target =
         Branch.of(
@@ -354,7 +361,7 @@ public class CatalogServiceImpl implements CatalogService {
     CommitMultipleOperationsBuilder nessieCommit =
         nessieApi.commitMultipleOperations().branch(target);
 
-    MultiTableUpdate multiTableUpdate = new MultiTableUpdate(nessieCommit);
+    MultiTableUpdate multiTableUpdate = new MultiTableUpdate(nessieCommit, target);
 
     LOGGER.trace(
         "Executing commit containing {} operations against '{}@{}'",
@@ -362,7 +369,7 @@ public class CatalogServiceImpl implements CatalogService {
         target.getName(),
         target.getHash());
 
-    CompletionStage<MultiTableUpdate> commitBuilderStage = completedStage(null);
+    CompletionStage<MultiTableUpdate> commitBuilderStage = completedStage(multiTableUpdate);
     StringBuilder message = new StringBuilder();
     if (commit.getOperations().size() > 1) {
       message.append("Catalog commit with ");
@@ -396,52 +403,68 @@ public class CatalogServiceImpl implements CatalogService {
 
     nessieCommit.commitMeta(CommitMeta.fromMessage(message.toString()));
 
-    CompletionStage<CommitResponse> committedStage =
-        commitBuilderStage.thenCompose(
+    return commitBuilderStage
+        // Perform the Nessie commit. At this point, all metadata files have been written.
+        .thenApply(
             updates -> {
               try {
-                CommitResponse commitResponse = multiTableUpdate.nessieCommit.commitWithResponse();
-                Map<ContentKey, String> addedContentsMap =
-                    commitResponse.getAddedContents() != null
-                        ? commitResponse.toAddedContentsMap()
-                        : emptyMap();
-                CompletionStage<NessieEntitySnapshot<?>> current = null;
-                for (SingleTableUpdate tableUpdate : multiTableUpdate.tableUpdates) {
-                  Content content = tableUpdate.content;
-                  if (content.getId() == null) {
-                    content = content.withId(addedContentsMap.get(tableUpdate.key));
-                  }
-                  NessieId snapshotId = objIdToNessieId(snapshotIdFromContent(content));
-
-                  // Although the `TasksService` triggers the operation regardless of whether the
-                  // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to "wait"
-                  // for those to complete so that we keep the "request scoped context" alive.
-                  CompletionStage<NessieEntitySnapshot<?>> stage =
-                      icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
-                  if (current == null) {
-                    current = stage;
-                  } else {
-                    current = current.thenCombine(stage, (snap1, snap2) -> snap1);
-                  }
-                }
-                return requireNonNull(current).thenApply(x -> commitResponse);
+                return updates.commit();
+              } catch (RuntimeException e) {
+                throw e;
               } catch (Exception e) {
-                // TODO cleanup files that were written but are now obsolete/unreferenced
                 throw new RuntimeException(e);
               }
-            });
+            })
+        // Persist the Nessie catalog/snapshot objects. Those cannot be stored earlier in the
+        // applyIcebergTable/ViewCommitOperation(), because those might not have a Nessie content-ID
+        // at that point, because those have to be assigned during a Nessie commit for new contents.
+        .thenCompose(
+            updates -> {
+              Map<ContentKey, String> addedContentsMap = updates.addedContentsMap();
+              CompletionStage<NessieEntitySnapshot<?>> current =
+                  CompletableFuture.completedStage(null);
+              for (SingleTableUpdate tableUpdate : updates.tableUpdates()) {
+                Content content = tableUpdate.content;
+                if (content.getId() == null) {
+                  // Need the content-ID especially to (eagerly) build the
+                  // `NessieEntitySnapshot`.
+                  content = content.withId(addedContentsMap.get(tableUpdate.key));
+                }
+                NessieId snapshotId = objIdToNessieId(snapshotObjIdForContent(content));
 
-    return committedStage.thenApply(
-        commitResponse ->
-            multiTableUpdate.tableUpdates.stream()
-                .map(
-                    singleTableUpdate ->
-                        snapshotResponse(
-                            singleTableUpdate.key,
-                            singleTableUpdate.content,
-                            reqParams,
-                            singleTableUpdate.snapshot,
-                            commitResponse.getTargetBranch())));
+                // Although the `TasksService` triggers the operation regardless of whether the
+                // `CompletionStage` returned by `storeSnapshot()` is consumed, we have to
+                // "wait"
+                // for those to complete so that we keep the "request scoped context" alive.
+                CompletionStage<NessieEntitySnapshot<?>> stage =
+                    icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
+                if (current == null) {
+                  current = stage;
+                } else {
+                  current = current.thenCombine(stage, (snap1, snap2) -> snap1);
+                }
+              }
+              return current.thenApply(x -> updates);
+            });
+  }
+
+  @Override
+  public CompletionStage<Stream<SnapshotResponse>> commit(
+      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+      throws BaseNessieClientServerException {
+    return commit(reference, commit)
+        // Finally, transform each MultiTableUpdate.SingleTableUpdate to a SnapshotResponse
+        .thenApply(
+            updates ->
+                updates.tableUpdates().stream()
+                    .map(
+                        singleTableUpdate ->
+                            snapshotResponse(
+                                singleTableUpdate.key,
+                                singleTableUpdate.content,
+                                reqParams,
+                                singleTableUpdate.snapshot,
+                                updates.targetBranch())));
   }
 
   private static void verifyIcebergOperation(
@@ -477,8 +500,7 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage)
-      throws NessieContentNotFoundException {
+      CompletionStage<MultiTableUpdate> commitBuilderStage) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -521,17 +543,11 @@ public class CatalogServiceImpl implements CatalogService {
                   String metadataJsonLocation =
                       icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
                   IcebergTableMetadata icebergMetadata =
-                      storeTableSnapshot(metadataJsonLocation, nessieSnapshot);
+                      storeTableSnapshot(metadataJsonLocation, nessieSnapshot, multiTableUpdate);
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
 
-                  ObjId snapshotId;
-                  try {
-                    snapshotId = snapshotIdFromContent(updated);
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                  }
+                  ObjId snapshotId = snapshotObjIdForContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
@@ -542,7 +558,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     // Form a chain of stages that complete sequentially and populate the commit builder.
     commitBuilderStage =
-        contentStage.thenCombine(commitBuilderStage, (singleTableUpdate, nothing) -> null);
+        contentStage.thenCombine(
+            commitBuilderStage, (singleTableUpdate, nothing) -> multiTableUpdate);
     return commitBuilderStage;
   }
 
@@ -551,8 +568,7 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage)
-      throws NessieContentNotFoundException {
+      CompletionStage<MultiTableUpdate> commitBuilderStage) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -595,16 +611,10 @@ public class CatalogServiceImpl implements CatalogService {
                   String metadataJsonLocation =
                       icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
                   IcebergViewMetadata icebergMetadata =
-                      storeViewSnapshot(metadataJsonLocation, nessieSnapshot);
+                      storeViewSnapshot(metadataJsonLocation, nessieSnapshot, multiTableUpdate);
                   Content updated =
                       icebergMetadataToContent(metadataJsonLocation, icebergMetadata, contentId);
-                  ObjId snapshotId;
-                  try {
-                    snapshotId = snapshotIdFromContent(updated);
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                  }
+                  ObjId snapshotId = snapshotObjIdForContent(updated);
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
@@ -615,7 +625,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     // Form a chain of stages that complete sequentially and populate the commit builder.
     commitBuilderStage =
-        contentStage.thenCombine(commitBuilderStage, (singleTableUpdate, nothing) -> null);
+        contentStage.thenCombine(
+            commitBuilderStage, (singleTableUpdate, nothing) -> multiTableUpdate);
     return commitBuilderStage;
   }
 
@@ -646,103 +657,48 @@ public class CatalogServiceImpl implements CatalogService {
     return prunedUpdates;
   }
 
-  static final class MultiTableUpdate {
-    final CommitMultipleOperationsBuilder nessieCommit;
-    final List<SingleTableUpdate> tableUpdates = new ArrayList<>();
-
-    MultiTableUpdate(CommitMultipleOperationsBuilder nessieCommit) {
-      this.nessieCommit = nessieCommit;
-    }
-
-    void addUpdate(ContentKey key, SingleTableUpdate singleTableUpdate) {
-      synchronized (this) {
-        tableUpdates.add(singleTableUpdate);
-        nessieCommit.operation(Operation.Put.of(key, singleTableUpdate.content));
-      }
-    }
-  }
-
-  static final class SingleTableUpdate {
-    final NessieEntitySnapshot<?> snapshot;
-    final Content content;
-    final ContentKey key;
-
-    SingleTableUpdate(NessieEntitySnapshot<?> snapshot, Content content, ContentKey key) {
-      this.snapshot = snapshot;
-      this.content = content;
-      this.key = key;
-    }
-  }
-
-  private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content)
-      throws NessieContentNotFoundException {
-    ObjId snapshotId = snapshotIdFromContent(content);
+  private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content) {
+    ObjId snapshotId = snapshotObjIdForContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);
   }
 
-  private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content)
-      throws NessieContentNotFoundException {
-    ObjId snapshotId = snapshotIdFromContent(content);
+  private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content) {
+    ObjId snapshotId = snapshotObjIdForContent(content);
     return new IcebergStuff(objectIO, persist, tasksService, executor)
         .retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private IcebergTableMetadata storeTableSnapshot(
-      String metadataJsonLocation, NessieTableSnapshot snapshot) {
+      String metadataJsonLocation,
+      NessieTableSnapshot snapshot,
+      MultiTableUpdate multiTableUpdate) {
     IcebergTableMetadata tableMetadata =
         nessieTableSnapshotToIceberg(snapshot, Optional.empty(), p -> {});
-    try (OutputStream out = objectIO.writeObject(StorageUri.of(metadataJsonLocation))) {
-      IcebergJson.objectMapper().writeValue(out, tableMetadata);
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);
-    }
-    return tableMetadata;
+    return storeSnapshot(metadataJsonLocation, tableMetadata, multiTableUpdate);
   }
 
   private IcebergViewMetadata storeViewSnapshot(
-      String metadataJsonLocation, NessieViewSnapshot snapshot) {
+      String metadataJsonLocation, NessieViewSnapshot snapshot, MultiTableUpdate multiTableUpdate) {
     IcebergViewMetadata viewMetadata =
         nessieViewSnapshotToIceberg(snapshot, Optional.empty(), p -> {});
+    return storeSnapshot(metadataJsonLocation, viewMetadata, multiTableUpdate);
+  }
+
+  private <M> M storeSnapshot(
+      String metadataJsonLocation, M metadata, MultiTableUpdate multiTableUpdate) {
+    multiTableUpdate.addStoredLocation(metadataJsonLocation);
     try (OutputStream out = objectIO.writeObject(StorageUri.of(metadataJsonLocation))) {
-      IcebergJson.objectMapper().writeValue(out, viewMetadata);
+      IcebergJson.objectMapper().writeValue(out, metadata);
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
-    return viewMetadata;
+    return metadata;
   }
 
   private static Optional<IcebergSpec> optionalIcebergSpec(OptionalInt specVersion) {
     return specVersion.isPresent()
         ? Optional.of(IcebergSpec.forVersion(specVersion.getAsInt()))
         : Optional.empty();
-  }
-
-  /** Compute the ID for the given Nessie {@link Content} object. */
-  private ObjId snapshotIdFromContent(Content content) throws NessieContentNotFoundException {
-    if (content instanceof IcebergTable) {
-      IcebergTable icebergTable = (IcebergTable) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergTable.getMetadataLocation())
-          .hash(icebergTable.getSnapshotId())
-          .generate();
-    }
-    if (content instanceof IcebergView) {
-      IcebergView icebergView = (IcebergView) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergView.getMetadataLocation())
-          .hash(icebergView.getVersionId())
-          .generate();
-    }
-    if (content instanceof Namespace) {
-      throw new NessieContentNotFoundException(
-          ImmutableNessieError.builder()
-              .errorCode(ErrorCode.CONTENT_NOT_FOUND)
-              .message("No snapshots for Namespace: " + content)
-              .reason("Not a table")
-              .status(404)
-              .build());
-    }
-    throw new UnsupportedOperationException("IMPLEMENT ME FOR " + content);
   }
 }

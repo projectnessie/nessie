@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - GC - Base Implementation Tests"
+publishingHelper { mavenName = "Nessie - GC - Base Implementation Tests" }
 
 dependencies {
   implementation(nessieProject("nessie-model"))

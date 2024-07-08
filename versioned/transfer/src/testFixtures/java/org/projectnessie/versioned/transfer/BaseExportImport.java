@@ -274,8 +274,10 @@ public abstract class BaseExportImport {
                     .map(e -> e.getKey().contentKey())
                     .collect(Collectors.toSet());
             try {
-              Map<ContentKey, ContentResult> targetValues = targetVersionStore().getValues(c, keys);
-              Map<ContentKey, ContentResult> sourceValues = sourceVersionStore().getValues(c, keys);
+              Map<ContentKey, ContentResult> targetValues =
+                  targetVersionStore().getValues(c, keys, false);
+              Map<ContentKey, ContentResult> sourceValues =
+                  sourceVersionStore().getValues(c, keys, false);
               soft.assertThat(targetValues).containsExactlyInAnyOrderEntriesOf(sourceValues);
             } catch (ReferenceNotFoundException e) {
               throw new RuntimeException(e);

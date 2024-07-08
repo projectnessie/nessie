@@ -16,16 +16,16 @@
 package org.projectnessie.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
 import org.junit.jupiter.api.Test;
-import org.projectnessie.model.Namespace;
 
 public class TestNamespaceApi {
 
   @Test
   public void emptyNamespaceCreation() {
     NamespaceApiImpl api = new NamespaceApiImpl(null, null, null, null);
-    assertThatThrownBy(() -> api.createNamespace("main", Namespace.EMPTY))
+    assertThatThrownBy(() -> api.createNamespace("main", EMPTY_NAMESPACE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Namespace name must not be empty");
   }

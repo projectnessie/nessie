@@ -41,8 +41,7 @@ public enum IcebergUnit {
 
     try {
       return valueOf(key.toUpperCase(Locale.ENGLISH));
-    } catch (IllegalArgumentException var2) {
-      IllegalArgumentException e = var2;
+    } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(String.format("Invalid unit: %s", key), e);
     }
   }

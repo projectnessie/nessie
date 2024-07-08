@@ -27,7 +27,6 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.TagObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -56,8 +55,10 @@ public class TagObjSerializer extends ObjSerializer<TagObj> {
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void serialize(
-      TagObj obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      TagObj obj,
+      BoundStatementBuilder stmt,
+      int incrementalIndexLimit,
+      int maxSerializedIndexSize) {
     stmt.setString(COL_TAG_MESSAGE.name(), obj.message());
     Headers.Builder hb = Headers.newBuilder();
     CommitHeaders headers = obj.headers();

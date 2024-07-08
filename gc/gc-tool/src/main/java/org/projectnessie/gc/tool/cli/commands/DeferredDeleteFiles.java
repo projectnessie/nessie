@@ -70,7 +70,7 @@ public class DeferredDeleteFiles extends BaseLiveSetCommand {
                             "@|italic,yellow "
                                 + String.format(
                                     "Deleted %d files from %s.", summary.deleted(), path)
-                                + "|@"))); ) {
+                                + "|@")))) {
       try (Stream<FileReference> deferredDeletions = liveContentSet.fetchFileDeletions()) {
         deferredDeletions.forEach(batchDelete::add);
       } finally {

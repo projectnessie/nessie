@@ -20,5 +20,4 @@ public enum SnapshotResultFormat {
   ICEBERG,
   /** Snapshot in native Nessie Catalog format. */
   NESSIE,
-  ;
 }

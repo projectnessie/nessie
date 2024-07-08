@@ -25,7 +25,9 @@ import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Disposes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -93,8 +95,8 @@ public class CatalogProducers {
   @Produces
   @Singleton
   @CatalogS3Client
-  public SdkHttpClient sdkHttpClient(CatalogS3Config s3config) {
-    return S3Clients.apacheHttpClient(s3config);
+  public SdkHttpClient sdkHttpClient(CatalogS3Config s3config, SecretsProvider secretsProvider) {
+    return S3Clients.apacheHttpClient(s3config, secretsProvider);
   }
 
   public void closeSdkHttpClient(@Disposes @CatalogS3Client SdkHttpClient client) {
@@ -133,8 +135,9 @@ public class CatalogProducers {
   public S3SessionsManager s3SessionsManager(
       S3Options<?> s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
-      MeterRegistry meterRegistry) {
-    return new S3SessionsManager(s3options, sdkClient, meterRegistry);
+      @Any Instance<MeterRegistry> meterRegistry) {
+    return new S3SessionsManager(
+        s3options, sdkClient, meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces
@@ -212,19 +215,7 @@ public class CatalogProducers {
       maxThreads = Math.min(16, Math.max(2, Runtime.getRuntime().availableProcessors()));
     }
 
-    ScheduledThreadPoolExecutor executorService =
-        new ScheduledThreadPoolExecutor(
-            1,
-            new ThreadFactory() {
-              private final ThreadGroup group = Thread.currentThread().getThreadGroup();
-              private final AtomicInteger num = new AtomicInteger();
-
-              @Override
-              public Thread newThread(Runnable r) {
-                return new Thread(group, r, "tasks-async-" + num.incrementAndGet());
-              }
-            });
-    executorService.allowCoreThreadTimeOut(true);
+    ScheduledThreadPoolExecutor executorService = buildScheduledExecutor();
     executorService.setKeepAliveTime(
         config.tasksThreadsKeepAlive().toMillis(), TimeUnit.MILLISECONDS);
     executorService.setMaximumPoolSize(maxThreads);
@@ -246,6 +237,23 @@ public class CatalogProducers {
     // With Vert.x Quarkus runs into this warning quite often:
     //   WARN  [io.qua.ope.run.QuarkusContextStorage] (executor-thread-1) Context in storage not the
     //     expected context, Scope.close was not called correctly. Details: OTel context before:
+  }
+
+  private static ScheduledThreadPoolExecutor buildScheduledExecutor() {
+    ScheduledThreadPoolExecutor executorService =
+        new ScheduledThreadPoolExecutor(
+            1,
+            new ThreadFactory() {
+              private final ThreadGroup group = Thread.currentThread().getThreadGroup();
+              private final AtomicInteger num = new AtomicInteger();
+
+              @Override
+              public Thread newThread(Runnable r) {
+                return new Thread(group, r, "tasks-async-" + num.incrementAndGet());
+              }
+            });
+    executorService.allowCoreThreadTimeOut(true);
+    return executorService;
   }
 
   @Produces

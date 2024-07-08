@@ -26,6 +26,8 @@ public interface AdlsFileSystemOptions {
    * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"} and account key,
    * configured using the {@code name} and {@code secret} fields. If not specified, it will be
    * queried via the configured credentials provider.
+   *
+   * <p><b>It is strongly recommended to use the SAS token instead of a shared account!</b>
    */
   Optional<BasicCredentials> account();
 

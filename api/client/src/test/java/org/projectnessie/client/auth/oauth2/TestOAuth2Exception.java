@@ -31,24 +31,22 @@ class TestOAuth2Exception {
       ImmutableErrorResponse.builder().errorCode("invalid_request").build();
 
   @Test
-  void testGetMessage() {
-    assertThat(new OAuth2Exception(Status.BAD_REQUEST, errorResponse).getMessage())
-        .isEqualTo(
-            "OAuth2 server replied with HTTP status code 400 and error code \"invalid_request\": Try Again");
-    assertThat(new OAuth2Exception(Status.BAD_REQUEST, errorResponseNoDescription).getMessage())
-        .isEqualTo(
-            "OAuth2 server replied with HTTP status code 400 and error code \"invalid_request\"");
-  }
-
-  @Test
   void testGetStatus() {
-    OAuth2Exception exception = new OAuth2Exception(Status.BAD_REQUEST, errorResponseNoDescription);
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
     assertThat(exception.getStatus()).isEqualTo(Status.BAD_REQUEST);
   }
 
   @Test
   void testGetErrorCode() {
-    OAuth2Exception exception = new OAuth2Exception(Status.BAD_REQUEST, errorResponseNoDescription);
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
     assertThat(exception.getErrorCode()).isEqualTo("invalid_request");
+  }
+
+  @Test
+  void testGetErrorDescription() {
+    OAuth2Exception exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponse);
+    assertThat(exception.getErrorDescription()).isEqualTo("Try Again");
+    exception = new OAuth2Exception("message", Status.BAD_REQUEST, errorResponseNoDescription);
+    assertThat(exception.getErrorDescription()).isNull();
   }
 }

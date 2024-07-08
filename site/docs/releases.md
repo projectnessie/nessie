@@ -2,6 +2,124 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.91.3 Release (June 28, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.3).
+
+### Breaking changes
+
+- The config properties for the object storage defaults for S3, GCS and ADLS have been moved under the
+  `default-options` composite object. Inconsistent property names between the old defaults and the per-bucket
+  property names have been resolved.
+
+### New Features
+
+- Nessie CLI now has its own Docker images. Running Nessie CLI is now as simple as: `docker run -it
+  ghcr.io/projectnessie/nessie-cli`. Read more about it
+  [here](https://projectnessie.org/nessie-latest/cli/).
+
+### Fixes
+
+- Fix console output during `CONNECT` in CLI/REPL (the bug was introduced in 0.91.1)
+
+### Commits
+* Fix a bunch of IntelliJ inspections, rather nits + cosmetic (#8955)
+* nit: fix typo in NessieConfigConstants (#8959)
+* Site: display download options for each artifact in tabs (#8946)
+* Just add comments when adding new images. (#8958)
+* Nessie CLI: publish Docker images (#8935)
+* Fix STDOUT in `ConnectCommand` (#8953)
+* Remove unused `Cloud` enum (#8951)
+* Fix flaky `TestCacheInvalidationSender.regularServiceNameLookups` (#8950)
+* Helm chart: remove build-time property quarkus.log.min-level (#8948)
+* Helm chart: fix catalogStorageEnv template (#8944)
+* Clarify OpenAPI doc for updateRepositoryConfig (#8945)
+* Migrate default bucket options to `default-options` composite property (#8933)
+* Site: new placeholders for nightly version, tag and unstable suffix (#8939)
+* Replace usage of `Project.extra` for `PublishingHelperPlugin` + explicitly disable Gradle config cache (#8942)
+* create-gh-release-notes.sh: don't include h1 title in release notes (#8938)
+* Site: nicer word-break for config references (#8936)
+* Site / downloads fixes + reorg (#8934)
+* Follow-up of stream-to-list refactor (#8931)
+* OAuth2: nit: clarify trust relationship required for impersonation (#8928)
+* GH WFs: Fix comment + job parameter description (#8924)
+
+## 0.91.2 Release (June 24, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.2).
+
+### Breaking changes
+
+- We have improved Nessie client's support for impersonation scenarios using the token exchange
+  grant type. A few options starting with `nessie.authentication.oauth2.token-exchange.*` were
+  renamed to `nessie.authentication.oauth2.impersonation.*`. Check the [Nessie authentication
+  settings] for details. Please note that token exchange and impersonation are both considered in
+  beta state. Their APIs and configuration options are subject to change at any time.
+
+### Commits
+*  OAuth2Client: differentiate token exchange from impersonation (#8847)
+* Migrate off deprecated `AwsS3V4Signer` to `AwsV4HttpSigner` (#8923)
+* OAuthClient: improve next token refresh computation (#8922)
+* Docker compose: expose Nessie management port (#8888)
+* Site: update headers to appear in ToC (#8916)
+
+## 0.91.1 Release (June 22, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.1).
+
+### New Features
+
+- Nessie's metrics now support custom, user-defined tags (dimensional labels). To 
+  define a custom tag, set the `nessie.metrics.tags.<tag-name>=<tag-value>` configuration property.
+  Such tags are added to all metrics published by Nessie.
+- Readiness/health check testing the general availability of the object stores configured for the warehouses.
+- Helm chart with support for Iceberg REST
+
+### Fixes
+
+- S3 request signing, when using Iceberg REST, did not work with Iceberg (Java) before 1.5.0. Iceberg
+  S3 request signing before 1.5.0 works now. 
+- Fix service-name resolution in k8s, spamming the Nessie log.
+
+### Commits
+* Fix flaky tests in `:nessie-gc-iceberg-files` (#8913)
+* Fix patch version
+* Ninja: bump sonatype timeout + bump snapshot-version for next release
+* Revert release 0.91.0
+* CI: split Quarkus intTest jobs (#8898)
+* Site: exchange "black" Nessie (#8908)
+* Fix Helm chart CI (#8900)
+* NInja: changelog
+* Possibly fix Java stream issuue w/ name resolution (#8899)
+* Expose object store(s) availability as a readiness check (#8893)
+* ADLS: advice against shared account name/key (#8895)
+* Use correct IcebergView.of (#8896)
+* Update nessie-IDs in returned metadata properties, simplify some code (#8879)
+* Catalog/ADLS: Expose the endpoint and sas-token using the correct Iceberg properties (#8894)
+* Add admin command: delete-catalog-tasks (#8869)
+* TestOAuth2Authentication: fix flaky test (#8892)
+* Metrics: support user-defined tags (#8890)
+* Prevent console spam when connecting to a non-Iceberg-REST endpoint (#8885)
+* Add the nice Nessie images (#8880)
+* Add docs and docker-compose illustrating the use of a reverse proxy (#8864)
+* Helm chart: support for REST Catalog (#8831)
+* Docker compose: add examples with Prometheus and Grafana (#8883)
+* Fix heading in index-release.md (#8881)
+* Bump regsync from 0.4.7 to 0.6.1 (#8873)
+* Fix test failure in `TestResolvConf` in macOS CI job (#8874)
+* Make S3 signing work with Iceberg before 1.5.0 (#8871)
+* Relax image registry sync (#8872)
+* Disable Iceberg GC by default (#8870)
+* AdlsConfig: remove unused option (#8868)
+* Support v2 iceberg tables with gzip (#8848)
+* OAuth2 client: improve error reporting (#8861)
+* Use `search` in `resolv.conf` to resolve service names (#8849)
+* REST Catalog: disable metrics by default (#8853)
+* Proper `N commits since x.y.z` in release notes (#8823)
+* Fix release-publish (#8822)
+* Attempt to fix flaky test #8819 (#8821)
+* Increase test worker heap size (#8820)
+
 ## 0.90.4 Release (June 13, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.90.4).

@@ -15,6 +15,8 @@
  */
 package org.projectnessie.gc.contents.jdbc;
 
+import static java.lang.String.format;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -68,13 +70,13 @@ public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi 
     }
   }
 
+  @SuppressWarnings("SqlSourceToSinkFlow")
   @Override
   protected void assertDeleted(UUID id) throws Exception {
     try (Connection conn = dataSource.getConnection()) {
       for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
         try (PreparedStatement st =
-            conn.prepareStatement(
-                String.format("SELECT * FROM %s WHERE live_set_id = ?", tableName))) {
+            conn.prepareStatement(format("SELECT * FROM %s WHERE live_set_id = ?", tableName))) {
           st.setString(1, id.toString());
           try (ResultSet rs = st.executeQuery()) {
             soft.assertThat(rs.next()).as(tableName).isFalse();

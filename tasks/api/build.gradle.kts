@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.jmh)
 }
 
-extra["maven.name"] = "Nessie - Tasks - API"
+publishingHelper { mavenName = "Nessie - Tasks - API" }
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))

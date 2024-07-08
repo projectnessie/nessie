@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -274,7 +275,7 @@ class TestContentKey {
             "a.b.table"),
         //
         new ContentKeyOfParse(
-            ContentKey.of(Namespace.EMPTY, "table"),
+            ContentKey.of(EMPTY_NAMESPACE, "table"),
             singletonList("table"),
             "table",
             Namespace.parse(""),

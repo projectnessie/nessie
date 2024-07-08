@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - Quarkus CLI"
+publishingHelper { mavenName = "Nessie - Server Admin Tool" }
 
 // Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
@@ -54,6 +54,11 @@ dependencies {
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
+
+  implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-tasks-api"))
+
+  implementation(libs.guava)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation("io.quarkus:quarkus-core-deployment")
@@ -155,7 +160,7 @@ if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
 tasks.named<Test>("intTest").configure {
   // Reduce likelihood of OOM due to too many Quarkus apps in memory;
   // Ideally, set this number to the number of IT classes to run for each backend.
-  forkEvery = 4
+  forkEvery = 5
   // Optional; comma-separated list of backend names to test against;
   // see NessieServerAdminTestBackends for valid values.
   systemProperty("backends", System.getProperty("backends"))

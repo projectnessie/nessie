@@ -44,6 +44,7 @@ public interface IcebergTableMetadata {
   int INITIAL_PARTITION_ID = MIN_PARTITION_ID - 1;
 
   String STAGED_PROPERTY = "nessie.staged";
+  String GC_ENABLED = "gc.enabled";
 
   int formatVersion();
 

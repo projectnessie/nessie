@@ -15,12 +15,14 @@
  */
 package org.projectnessie.gc.iceberg.files;
 
+import static java.util.Collections.synchronizedSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -41,7 +43,7 @@ public abstract class AbstractFiles {
   public void iceberg() throws Exception {
     StorageUri baseUri = storageUri("/path/");
 
-    Set<String> keys = new TreeSet<>();
+    Set<String> keys = synchronizedSet(new TreeSet<>());
     keys.add("path/file-1");
     keys.add("path/file-2");
     keys.add("path/file-3");
@@ -103,7 +105,7 @@ public abstract class AbstractFiles {
     Set<String> keys =
         IntStream.range(0, numFiles)
             .mapToObj(i -> String.format("path/%d/%d", i % 100, i))
-            .collect(Collectors.toCollection(HashSet::new));
+            .collect(Collectors.toCollection(ConcurrentHashMap::newKeySet));
 
     try (ObjectStorageMock.MockServer server = createServer(keys);
         IcebergFiles icebergFiles = createIcebergFiles(server)) {

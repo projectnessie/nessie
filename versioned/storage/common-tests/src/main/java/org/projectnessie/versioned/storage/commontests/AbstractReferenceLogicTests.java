@@ -547,7 +547,7 @@ public abstract class AbstractReferenceLogicTests {
     ReferenceLogic refLogic = referenceLogic(persist);
     List<Reference> created =
         rangeClosed('A', 'E')
-            .mapToObj(c -> "" + ((char) c) + "/")
+            .mapToObj(c -> ((char) c) + "/")
             .flatMap(pre -> rangeClosed('A', 'E').mapToObj(c -> pre + (char) c))
             .map(
                 n -> {

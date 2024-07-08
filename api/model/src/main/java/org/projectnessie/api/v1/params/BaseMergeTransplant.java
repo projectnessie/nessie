@@ -36,6 +36,7 @@ public interface BaseMergeTransplant {
       message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
+  @SuppressWarnings("DeprecatedIsStillUsed")
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)

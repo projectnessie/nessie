@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 import static org.projectnessie.versioned.storage.common.objtypes.TagObj.tag;
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
+import static org.projectnessie.versioned.storage.common.persist.ObjTypes.objTypeByName;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -55,7 +56,6 @@ import org.projectnessie.versioned.storage.common.persist.ImmutableReference;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.common.proto.StorageTypes;
@@ -508,7 +508,7 @@ public final class ProtoSerialization {
   }
 
   private static Obj deserializeCustom(ObjId id, CustomProto custom, String versionToken) {
-    ObjType type = ObjTypes.forShortName(custom.getObjType());
+    ObjType type = objTypeByName(custom.getObjType());
     if (versionToken == null) {
       // versionToken is set when reading objects from the database, but cache-deserialization has
       // the versionToken in the object

@@ -8,6 +8,10 @@ described below.
     are interested in deploying Nessie via an operator, please [get in
     touch](https://projectnessie.org/community/).
 
+!!! note
+    See [separate page](reverse-proxy.md) about how to configure Nessie for using a reverse proxy
+    like istio or nginx. 
+
 For more information on Helm and Helm charts, see the [Helm docs](https://helm.sh/docs/).
 
 ## Installing the Helm chart
@@ -328,3 +332,163 @@ To uninstall the Helm chart and delete the `nessie` release from the `nessie-ns`
 ```bash
 helm uninstall -n nessie-ns nessie
 ```
+
+## Troubleshooting
+
+The first step in troubleshooting a Nessie Kubernetes deployment is to check the logs of the Nessie
+server pod. You can do this by running:
+
+```bash
+kubectl logs -n <namespace> <pod>
+```
+
+You can also check the status of the pod:
+
+```bash
+kubectl describe pod -n <namespace> <pod>
+```
+
+It's also possible to get a terminal into the Nessie pod's main container:
+
+```bash
+kubectl exec -it -n <namespace> <pod> -- /bin/bash
+```
+
+But beware that the container does not have some tools installed, e.g. `curl`, `wget`, etc. are not
+present.
+
+### Troubleshooting connectivity
+
+Connectivity issues require more powerful tools. One useful technique is to run an ephemeral
+container in the same pod as the Nessie server, which shares the same network namespace and can
+access the Nessie server as `localhost`. This can be done with the `kubectl debug` command:
+
+```bash
+kubectl debug -it -n <namespace> <pod> --image=nicolaka/netshoot --target=nessie --share-processes
+```
+
+The above example uses the `nicolaka/netshoot` image, which contains a lot of useful tools for
+debugging. See the [nicolaka/netshoot Docker Hub page](https://hub.docker.com/r/nicolaka/netshoot)
+for more information. The command should give you a shell in the Nessie pod, where you can use
+`curl`, `wget`, `netstat`, `dig`, `tcpdump`, etc. 
+
+For example, once you get a shell in the debug container, you can:
+
+* Check which processes are running in the Nessie pod with `ps aux`;
+* Check Nessie's management API on port 9000 to see if the server is healthy:
+    ```bash
+    curl http://127.0.0.1:9000/q/health
+    ```
+* Check the Nessie server's API endpoint on port 19120:
+    ```bash
+    curl http://127.0.0.1:19120/api/v2/config
+    ```
+
+### Advanced Nessie JVM troubleshooting
+
+JVM issues such as memory leaks, high CPU usage, etc. can be debugged using JVM tools.
+
+The Nessie container ships with few utilities, but it does have `jcmd`, a command-line utility for
+interacting with the JVM, installed.
+
+First, get a shell in the Nessie container:
+
+```bash
+kubectl exec -it -n <namespace> <pod> -c nessie -- /bin/bash
+```
+
+Then, you can use `jcmd` to capture a thread dump, heap dump, etc.:
+
+```bash
+jcmd 1 Thread.print
+jcmd 1 GC.heap_dump /tmp/heapdump.hprof
+```
+
+!!! Tip
+    Nessie server PID is usually 1. You can double-check with `ps aux` or `jps`.
+
+If you need other JVM tools, such as `jfr` or `async-profiler`, a more complex setup is required.
+
+First, restart the Nessie pod with some extra JVM options. The most
+useful option to add is the `--XX:+StartAttachListener` JVM option; without it, the JVM will not
+allow attaching to it and tools like `jcmd` will fail.
+
+This can be done by modifying the pod template spec in the deployment spec, and adding/updating the
+`JAVA_OPTS_APPEND` environment variable:
+
+```bash
+java_opts_append=$(kubectl get deployment -n <namespace> <deployment> -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="JAVA_OPTS_APPEND")].value}')
+kubectl set env -n <namespace> deployment <deployment> JAVA_OPTS_APPEND="$java_opts_append -XX:+StartAttachListener"
+```
+
+!!! Warning
+    The above command will restart all Nessie pods! Unfortunately that's inevitable, because 
+    environment variables cannot be changed in the pod spec directly, if it belongs to a deployment.
+
+Once the target pod is ready to be attached, you will need an image with the required tools. One
+example is the `lightrun-platform/koolkits/koolkit-jvm` image, which contains a JVM-based toolset
+for debugging Java applications:
+
+```bash
+kubectl debug -it -n <namespace> <pod> --image=lightruncom/koolkits:jvm --target=nessie --share-processes
+```
+
+See the [JVM KoolKits page](https://github.com/lightrun-platform/koolkits/blob/main/jvm/README.md)
+for more information. Beware that the image is quite large, so it may take some time to download.
+
+A few preliminary commands may need to be executed prior to be able to use the tools, for example if
+users don't match: the Nessie process runs as a non-root user (UID 185), while in many debug
+containers, the running user is root (UID 0). If that is the case, you won't be able to attach to
+Nessie JVM. You can solve the problem by creating a new user with the same UID and GID as the Nessie
+process. In the case of JVM KoolKits, you also need to copy a few files before switching to the new
+user; here is the whole snippet to run:
+
+```bash
+adduser --home /home/debug --uid 185 --gid 0 --disabled-password --gecos "" debug
+cp -Rf /root/.sdkman/ /home/debug/ && chown -R 185:0 /home/debug/.sdkman
+cp /root/.bashrc /home/debug/ && chown 185:0 /home/debug/.bashrc 
+su - debug
+```
+
+After running the above commands, you should be able to use `jps`, `jcmd`, `jmap`, etc. as well as
+other tools like `jfr` (Java Flight Recorder), etc. For example, you can use JFR to record a
+profile for 30 seconds:
+
+```bash
+jcmd 1 JFR.start duration=30s filename=/tmp/profile.jfr
+```
+
+Note that the profile will be saved in the Nessie container, not the debug container. You can copy
+it to your local machine with `kubectl cp`:
+
+```bash
+kubectl cp -n <namespace> <pod>:/tmp/profile.jfr profile.jfr
+```
+
+### Remote debugging
+
+If the above doesn't help, you can also enable remote debugging, by attaching to the Nessie pod with
+a remote debugger.
+
+Again, this will require restarting the Nessie pod with some extra JVM options. The most useful
+option to add is the `-agentlib:jdwp` JVM option, which enables the Java Debug Wire Protocol (JDWP).
+
+This can be done more easily done by simply setting the `JAVA_DEBUG` and `JAVA_DEBUG_PORT`
+environment variables in the deployment spec:
+
+```bash
+kubectl set env -n <namespace> deployment <deployment> JAVA_DEBUG="true" JAVA_DEBUG_PORT="*:5005"
+```
+
+Once the pod is ready to be debugged, you must forward the 5005 port to your local machine:
+
+```bash
+kubectl port-forward -n <namespace> <pod> 5005:5005
+```
+
+Then you can attach to the Nessie server with your favorite IDE or command-line debugger.
+
+!!! Tip
+    If you are using IntelliJ IDEA, you should create a new "Remote JVM Debug" run configuration. 
+    Using the "Attach to process..." option will not work, since it only supports attaching to local 
+    JVM processes.

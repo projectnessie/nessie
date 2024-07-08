@@ -23,6 +23,7 @@ import com.google.api.gax.retrying.RetrySettings;
 import com.google.auth.Credentials;
 import com.google.auth.http.HttpTransportFactory;
 import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.OAuth2Credentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.auth.oauth2.UserCredentials;
@@ -43,13 +44,15 @@ public final class GcsClients {
   private GcsClients() {}
 
   public static Storage buildStorage(
-      GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
+      GcsOptions<?> gcsOptions,
+      GcsBucketOptions bucketOptions,
+      HttpTransportFactory transportFactory) {
     HttpTransportOptions.Builder transportOptions =
         HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory);
-    bucketOptions
+    gcsOptions
         .connectTimeout()
         .ifPresent(d -> transportOptions.setConnectTimeout((int) d.toMillis()));
-    bucketOptions.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
+    gcsOptions.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
 
     StorageOptions.Builder builder =
         StorageOptions.http()
@@ -59,29 +62,29 @@ public final class GcsClients {
     bucketOptions.quotaProjectId().ifPresent(builder::setQuotaProjectId);
     bucketOptions.host().map(URI::toString).ifPresent(builder::setHost);
     bucketOptions.clientLibToken().ifPresent(builder::setClientLibToken);
-    builder.setRetrySettings(buildRetrySettings(bucketOptions));
+    builder.setRetrySettings(buildRetrySettings(gcsOptions));
     // TODO ??
     // bucketOptions.buildStorageRetryStrategy().ifPresent(builder::setStorageRetryStrategy);
 
     return builder.build().getService();
   }
 
-  static RetrySettings buildRetrySettings(GcsBucketOptions bucketOptions) {
+  static RetrySettings buildRetrySettings(GcsOptions<?> gcsOptions) {
     Function<Duration, org.threeten.bp.Duration> duration =
         d -> org.threeten.bp.Duration.ofMillis(d.toMillis());
 
     RetrySettings.Builder retry = RetrySettings.newBuilder();
-    bucketOptions.maxAttempts().ifPresent(retry::setMaxAttempts);
-    bucketOptions.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
-    bucketOptions.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
+    gcsOptions.maxAttempts().ifPresent(retry::setMaxAttempts);
+    gcsOptions.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
+    gcsOptions.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
 
-    bucketOptions.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
-    bucketOptions.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
-    bucketOptions.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
+    gcsOptions.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
+    gcsOptions.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
+    gcsOptions.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
 
-    bucketOptions.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
-    bucketOptions.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
-    bucketOptions.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
+    gcsOptions.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
+    gcsOptions.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
+    gcsOptions.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
 
     return retry.build();
   }
@@ -124,7 +127,11 @@ public final class GcsClients {
         try {
           return UserCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
+                  bucketOptions
+                      .authCredentialsJson()
+                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
+                      .key()
+                      .getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -133,18 +140,31 @@ public final class GcsClients {
         try {
           return ServiceAccountCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
+                  bucketOptions
+                      .authCredentialsJson()
+                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
+                      .key()
+                      .getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       case ACCESS_TOKEN:
-        TokenSecret oauth2token = bucketOptions.oauth2Token().orElseThrow();
+        TokenSecret oauth2token =
+            bucketOptions
+                .oauth2Token()
+                .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
         AccessToken accessToken =
             new AccessToken(
                 oauth2token.token(),
                 oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
         return OAuth2Credentials.create(accessToken);
+      case APPLICATION_DEFAULT:
+        try {
+          return GoogleCredentials.getApplicationDefault();
+        } catch (IOException e) {
+          throw new IllegalArgumentException("Unable to load default credentials", e);
+        }
       default:
         throw new IllegalArgumentException("Unsupported auth type " + authType);
     }

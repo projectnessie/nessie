@@ -17,9 +17,7 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -35,12 +33,6 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
   @Override
   Optional<String> userProject();
-
-  @Override
-  Optional<Duration> readTimeout();
-
-  @Override
-  Optional<Duration> connectTimeout();
 
   @Override
   Optional<String> projectId();
@@ -60,33 +52,6 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
   @Override
   Optional<TokenSecret> oauth2Token();
-
-  @Override
-  OptionalInt maxAttempts();
-
-  @Override
-  Optional<Duration> logicalTimeout();
-
-  @Override
-  Optional<Duration> totalTimeout();
-
-  @Override
-  Optional<Duration> initialRetryDelay();
-
-  @Override
-  Optional<Duration> maxRetryDelay();
-
-  @Override
-  OptionalDouble retryDelayMultiplier();
-
-  @Override
-  Optional<Duration> initialRpcTimeout();
-
-  @Override
-  Optional<Duration> maxRpcTimeout();
-
-  @Override
-  OptionalDouble rpcTimeoutMultiplier();
 
   @Override
   OptionalInt readChunkSize();

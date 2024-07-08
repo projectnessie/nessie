@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - Quarkus Server"
+publishingHelper { mavenName = "Nessie - Quarkus Server" }
 
 val quarkusRunner by
   configurations.creating {
@@ -151,6 +151,7 @@ dependencies {
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
+  testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
   testFixturesApi(project(":nessie-minio-testcontainer"))
   testFixturesApi(project(":nessie-object-storage-mock"))
@@ -177,14 +178,13 @@ dependencies {
   intTestImplementation("software.amazon.awssdk:sts")
 }
 
-val pullOpenApiSpec by tasks.registering(Sync::class)
-
 val openApiSpecDir = layout.buildDirectory.dir("openapi-extra")
 
-pullOpenApiSpec.configure {
-  destinationDir = openApiSpecDir.get().asFile
-  from(openapiSource) { include("openapi.yaml") }
-}
+val pullOpenApiSpec by
+  tasks.registering(Sync::class) {
+    destinationDir = openApiSpecDir.get().asFile
+    from(openapiSource) { include("openapi.yaml") }
+  }
 
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())

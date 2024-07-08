@@ -23,7 +23,7 @@ plugins {
   alias(libs.plugins.nessie.run)
 }
 
-extra["maven.name"] = "Nessie - Perf Test - Simulations"
+publishingHelper { mavenName = "Nessie - Perf Test - Simulations" }
 
 dependencies {
   if (System.getProperty("idea.sync.active").toBoolean()) {

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.local;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,11 +23,20 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
 
 /** An {@link ObjectIO} implementation purely for unit tests - and nothing else. */
 public class LocalObjectIO implements ObjectIO {
+  @Override
+  public void ping(StorageUri uri) throws IOException {
+    Path path = filePath(uri);
+    if (!Files.isDirectory(path)) {
+      throw new FileNotFoundException(path.toString());
+    }
+  }
+
   @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     return Files.newInputStream(filePath(uri));
@@ -41,6 +51,26 @@ public class LocalObjectIO implements ObjectIO {
     } catch (FileSystemNotFoundException e) {
       throw new UnsupportedOperationException(
           "Writing to " + uri.scheme() + " URIs is not supported", e);
+    }
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) throws IOException {
+    IOException ex = null;
+    for (StorageUri uri : uris) {
+      Path path = LocalObjectIO.filePath(uri);
+      try {
+        Files.deleteIfExists(path);
+      } catch (IOException e) {
+        if (ex == null) {
+          ex = e;
+        } else {
+          ex.addSuppressed(e);
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
     }
   }
 

@@ -416,7 +416,7 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
                     file.toString(), null, null, null, null, false, OPEN_OPTIONS, null, null))
         .extracting(Response::getValue)
         .extracting(PathProperties::getContentType, PathProperties::getFileSize)
-        .containsExactly("application/octet-stream", data.getLength().longValue());
+        .containsExactly("application/octet-stream", data.getLength());
     soft.assertThat(file).content().isEqualTo("Hello World");
 
     List<String> contents =

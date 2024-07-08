@@ -16,6 +16,7 @@
 package org.projectnessie.server.catalog;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import java.net.URI;
 import java.util.Map;
 import org.projectnessie.minio.MinioContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
@@ -26,19 +27,21 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
 
   private final MinioContainer minio =
       new MinioContainer().withRegion(TEST_REGION).withStartupAttempts(5);
+  private URI warehouseLocation;
 
   @Override
   public Map<String, String> start() {
     minio.start();
+    warehouseLocation = minio.s3BucketUri("");
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.service.s3.endpoint", minio.s3endpoint())
-        .put("nessie.catalog.service.s3.path-style-access", "true")
-        .put("nessie.catalog.service.s3.sts.endpoint", minio.s3endpoint())
-        .put("nessie.catalog.service.s3.region", TEST_REGION)
-        .put("nessie.catalog.service.s3.access-key.name", minio.accessKey())
-        .put("nessie.catalog.service.s3.access-key.secret", minio.secretKey())
+        .put("nessie.catalog.service.s3.default-options.endpoint", minio.s3endpoint())
+        .put("nessie.catalog.service.s3.default-options.path-style-access", "true")
+        .put("nessie.catalog.service.s3.default-options.sts-endpoint", minio.s3endpoint())
+        .put("nessie.catalog.service.s3.default-options.region", TEST_REGION)
+        .put("nessie.catalog.service.s3.default-options.access-key.name", minio.accessKey())
+        .put("nessie.catalog.service.s3.default-options.access-key.secret", minio.secretKey())
         .put("nessie.catalog.default-warehouse", "warehouse")
-        .put("nessie.catalog.warehouses.warehouse.location", minio.s3BucketUri("").toString())
+        .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();
   }
 
@@ -50,5 +53,8 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
   @Override
   public void inject(TestInjector testInjector) {
     testInjector.injectIntoFields(minio, new TestInjector.MatchesType(MinioContainer.class));
+    testInjector.injectIntoFields(
+        warehouseLocation,
+        new TestInjector.AnnotatedAndMatchesType(WarehouseLocation.class, URI.class));
   }
 }

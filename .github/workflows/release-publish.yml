@@ -83,7 +83,7 @@ jobs:
     name: Publish to Maven Central
     runs-on: ubuntu-22.04
     environment: release
-    timeout-minutes: 60
+    timeout-minutes: 150
     needs:
       - prepare
     env:
@@ -149,7 +149,7 @@ jobs:
           cp tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip "${ARTIFACTS}"
 
       - name: Archive release artifacts
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: nessie-release-artifacts
           path: build-artifacts
@@ -212,6 +212,23 @@ jobs:
             -d "Dockerfile-admintool" \
             ghcr.io/projectnessie/nessie-server-admin
 
+      - name: Publish Nessie CLI
+        run: |
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-cli" \
+            -p "cli/cli" \
+            -d "Dockerfile-cli" \
+            ghcr.io/projectnessie/nessie-cli
+
+      # NOTE: GH container registry behaves a bit weird when new images are added.
+      # The first push/publication of a _new_ image (package) fails with a HTTP/403,
+      # but the next one works.
+      # See also the note in .github/docker-sync/regsync.yml about quay.io.
+      #
+      # Also make sure to add the new image to the site, currently in:
+      #   site/docs/downloads/index.md
+      #   site/in-dev/index.md
+      #   site/in-dev/index-release.md
 
   publish-helm:
     name: Publish Helm Chart
@@ -252,7 +269,7 @@ jobs:
           gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml -f message="Publishing Nessie Helm chart ${RELEASE_VERSION}" -f content=$(base64 -w0 index.yaml) -f sha=${index_sha} || true
 
       - name: Archive Helm chart artifact
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: nessie-release-helm
           path: ./nessie-helm-*.tgz
@@ -292,7 +309,7 @@ jobs:
         run: cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml ./nessie-openapi-${RELEASE_VERSION}.yaml
 
       - name: Archive OpenAPI artifact
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: nessie-release-openapi
           path: ./nessie-openapi-*.yaml
@@ -341,7 +358,7 @@ jobs:
         run: mkdir current-release-artifacts
 
       - name: Get release + OpenAPI + Helm chart artifacts
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           path: current-release-artifacts
           merge-multiple: true

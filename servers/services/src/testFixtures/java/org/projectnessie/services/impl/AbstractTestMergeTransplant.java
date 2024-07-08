@@ -159,7 +159,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     table1 =
         (IcebergTable)
             contentApi()
-                .getContent(key1, committed1.getName(), committed1.getHash(), false)
+                .getContent(key1, committed1.getName(), committed1.getHash(), false, false)
                 .getContent();
 
     Branch committed2 =
@@ -496,7 +496,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     table1 =
         (IcebergTable)
             contentApi()
-                .getContent(key1, committed1.getName(), committed1.getHash(), false)
+                .getContent(key1, committed1.getName(), committed1.getHash(), false, false)
                 .getContent();
 
     Branch committed2 =
@@ -663,7 +663,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
 
     ContentResponse tableOnRootAfterMerge =
         contentApi()
-            .getContent(setup.key, rootAfterMerge.getName(), rootAfterMerge.getHash(), false);
+            .getContent(
+                setup.key, rootAfterMerge.getName(), rootAfterMerge.getHash(), false, false);
 
     soft.assertThat(setup.tableOnWork.getContent().getId())
         .isEqualTo(tableOnRootAfterMerge.getContent().getId());
@@ -728,7 +729,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(root).isNotEqualTo(lastRoot);
 
     ContentResponse tableOnRoot =
-        contentApi().getContent(key, root.getName(), root.getHash(), false);
+        contentApi().getContent(key, root.getName(), root.getHash(), false, false);
     soft.assertThat(tableOnRoot.getEffectiveReference()).isEqualTo(root);
 
     Branch work = createBranch("recreateBranch", root);
@@ -748,7 +749,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(work).isNotEqualTo(lastWork);
 
     ContentResponse tableOnWork =
-        contentApi().getContent(key, work.getName(), work.getHash(), false);
+        contentApi().getContent(key, work.getName(), work.getHash(), false, false);
     soft.assertThat(tableOnWork.getEffectiveReference()).isEqualTo(work);
 
     soft.assertThat(tableOnWork.getContent().getId())

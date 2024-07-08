@@ -27,7 +27,7 @@ plugins {
 
 apply<ReleaseSupportPlugin>()
 
-extra["maven.name"] = "Nessie"
+publishingHelper { mavenName = "Nessie" }
 
 description = "Transactional Catalog for Data Lakes"
 
@@ -62,46 +62,52 @@ tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.Distribut
 //    closeAndReleaseSonatypeStagingRepository
 nexusPublishing {
   transitionCheckOptions {
-    // default==60 (10 minutes), wait up to 60 minutes
-    maxRetries = 360
+    // default==60 (10 minutes), wait up to 120 minutes
+    maxRetries = 720
     // default 10s
     delayBetween = java.time.Duration.ofSeconds(10)
   }
   repositories { sonatype() }
 }
 
-val buildToolIntegrationGradle by tasks.registering(Exec::class)
+val buildToolIntegrationGradle by
+  tasks.registering(Exec::class) {
+    group = "Verification"
+    description =
+      "Checks whether the bom works fine with Gradle, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-buildToolIntegrationGradle.configure {
-  group = "Verification"
-  description =
-    "Checks whether the bom works fine with Gradle, requires preceding publishToMavenLocal in a separate Gradle invocation"
+    workingDir = file("build-tools-integration-tests")
+    commandLine("${project.projectDir}/gradlew", "-p", workingDir, "test")
+  }
 
-  workingDir = file("build-tools-integration-tests")
-  commandLine("${project.projectDir}/gradlew", "-p", workingDir, "test")
-}
+val buildToolIntegrationMaven by
+  tasks.registering(Exec::class) {
+    group = "Verification"
+    description =
+      "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-val buildToolIntegrationMaven by tasks.registering(Exec::class)
+    workingDir = file("build-tools-integration-tests")
+    commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
+  }
 
-buildToolIntegrationMaven.configure {
-  group = "Verification"
-  description =
-    "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
+val buildToolsIntegrationTest by
+  tasks.registering {
+    group = "Verification"
+    description =
+      "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-  workingDir = file("build-tools-integration-tests")
-  commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
-}
+    dependsOn(buildToolIntegrationGradle)
+    dependsOn(buildToolIntegrationMaven)
+  }
 
-val buildToolsIntegrationTest by tasks.registering
+val buildToolsIntegrationClean by
+  tasks.registering(Delete::class) {
+    delete("build-tools-integration-tests/.gradle")
+    delete("build-tools-integration-tests/build")
+    delete("build-tools-integration-tests/target")
+  }
 
-buildToolsIntegrationTest.configure {
-  group = "Verification"
-  description =
-    "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
-
-  dependsOn(buildToolIntegrationGradle)
-  dependsOn(buildToolIntegrationMaven)
-}
+val clean by tasks.getting(Delete::class) { dependsOn(buildToolsIntegrationClean) }
 
 publishingHelper {
   nessieRepoName = "nessie"

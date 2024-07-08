@@ -207,10 +207,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 .collect(Collectors.toList()));
 
     // Verify that 'get contents' for the HEAD commit returns exactly the committed contents
-    List<ContentKey> allKeys =
+    ContentKey[] allKeys =
         contentAndOps.stream()
             .map(contentAndOperationType -> contentAndOperationType.operation.getKey())
-            .collect(Collectors.toList());
+            .toArray(ContentKey[]::new);
     Map<ContentKey, Content> expected =
         contentAndOps.stream()
             .map(
@@ -226,7 +226,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    soft.assertThat(contents(committed, allKeys.toArray(new ContentKey[0])))
+    soft.assertThat(contents(committed, allKeys))
         .containsOnlyKeys(expected.keySet())
         .allSatisfy(
             (key, content) -> assertThat(clearIdOnContent(content)).isEqualTo(expected.get(key)));
@@ -292,7 +292,8 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       // Compare content on HEAD commit with the committed content
       soft.assertThat(
               contentApi()
-                  .getContent(fixedContentKey, committed.getName(), committed.getHash(), false))
+                  .getContent(
+                      fixedContentKey, committed.getName(), committed.getHash(), false, false))
           .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(put.getContent());
@@ -318,7 +319,8 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       soft.assertThatThrownBy(
               () ->
                   contentApi()
-                      .getContent(fixedContentKey, committed.getName(), committed.getHash(), false))
+                      .getContent(
+                          fixedContentKey, committed.getName(), committed.getHash(), false, false))
           .isInstanceOf(NessieNotFoundException.class);
 
       // Compare operation on HEAD commit with the committed operation
@@ -340,7 +342,8 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       // Compare content on HEAD commit with the committed content
       soft.assertThat(
               contentApi()
-                  .getContent(fixedContentKey, committed.getName(), committed.getHash(), false))
+                  .getContent(
+                      fixedContentKey, committed.getName(), committed.getHash(), false, false))
           .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(contentAndOperationType.prepare.getContent());

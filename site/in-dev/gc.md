@@ -27,14 +27,9 @@ databases.
     for production use. Any JDBC compliant database can be used, but it must be created and the
     schema initialized before running the Nessie GC tool.
 
-## Running locally
+## Running the standalone uber jar
 
-The Nessie GC tool can be downloaded from the [GitHub
-Releases](https://github.com/projectnessie/nessie/releases) page, for example:
-
-```shell
-curl -L -o nessie-gc.jar https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::.jar
-```
+Check download options in the [Nessie download page](../downloads/index.md).
 
 To see the available commands and options, run:
 
@@ -92,7 +87,7 @@ docker run --rm -e POSTGRES_USER=pguser -e POSTGRES_PASSWORD=mysecretpassword -e
 Create the database schema if required:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: create-sql-schema \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: create-sql-schema \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
@@ -101,16 +96,16 @@ docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: create-sql-sc
 Now we can run the Nessie GC tool:
 
 ```shell
-docker run --rm ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: gc \
+docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: gc \
   --jdbc-url jdbc:postgresql://127.0.0.1:5432/nessie_gc \
   --jdbc-user pguser \
   --jdbc-password mysecretpassword
 ```
 
 The GC tool has a great number of options, which can be seen by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: --help`. The main command is `gc`, which is followed by
-subcommands and options. Check the available subcommands and options by running `docker run --rm
-ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION:: gc --help`.
+ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: --help`. The main command is `gc`,
+which is followed by subcommands and options. Check the available subcommands and options by running
+`docker run --rm ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX:: gc --help`.
 
 ## Running with Kubernetes
 
@@ -142,7 +137,7 @@ spec:
     spec:
       containers:
       - name: nessie-gc
-        image: ghcr.io/projectnessie/nessie-gc:::NESSIE_VERSION::
+        image: ghcr.io/projectnessie/nessie-gc::NESSIE_DOCKER_SUFFIX::
         args: 
           - gc
           - --uri

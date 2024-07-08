@@ -15,17 +15,28 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
+
+import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ParallelTransferOptions;
 import com.azure.storage.file.datalake.DataLakeFileClient;
+import com.azure.storage.file.datalake.DataLakeFileSystemClient;
 import com.azure.storage.file.datalake.options.DataLakeFileInputStreamOptions;
 import com.azure.storage.file.datalake.options.DataLakeFileOutputStreamOptions;
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdlsObjectIO implements ObjectIO {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AdlsObjectIO.class);
 
   private final AdlsClientSupplier clientSupplier;
 
@@ -34,11 +45,30 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public InputStream readObject(StorageUri uri) {
+  public void ping(StorageUri uri) throws IOException {
+    AdlsLocation location = adlsLocation(uri);
+
+    DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
+    try {
+      fileSystem.getAccessPolicy();
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  }
+
+  @Override
+  public InputStream readObject(StorageUri uri) throws IOException {
     DataLakeFileClient file = clientSupplier.fileClientForLocation(uri);
     DataLakeFileInputStreamOptions options = new DataLakeFileInputStreamOptions();
     clientSupplier.adlsOptions().readBlockSize().ifPresent(options::setBlockSize);
-    return file.openInputStream(options).getInputStream();
+    try {
+      return file.openInputStream(options).getInputStream();
+    } catch (BlobStorageException e) {
+      if (e.getStatusCode() == 404) {
+        throw new IOException(e.getServiceMessage(), e);
+      }
+      throw e;
+    }
   }
 
   @Override
@@ -49,5 +79,41 @@ public class AdlsObjectIO implements ObjectIO {
     clientSupplier.adlsOptions().writeBlockSize().ifPresent(transferOptions::setBlockSizeLong);
     options.setParallelTransferOptions(transferOptions);
     return new BufferedOutputStream(file.getOutputStream(options));
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) throws IOException {
+    // Note: the default container is mapped to an empty string
+    Map<String, List<AdlsLocation>> bucketToUris =
+        uris.stream()
+            .map(AdlsLocation::adlsLocation)
+            .collect(Collectors.groupingBy(l -> l.container().orElse("")));
+
+    IOException ex = null;
+    for (List<AdlsLocation> locations : bucketToUris.values()) {
+      DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(locations.get(0));
+
+      // No batch-delete ... yay
+      for (AdlsLocation location : locations) {
+        String path = location.path();
+        if (path.startsWith("/")) {
+          path = path.substring(1);
+        }
+        try {
+          fileSystem.deleteFileIfExists(path);
+        } catch (BlobStorageException e) {
+          if (e.getStatusCode() != 404) {
+            if (ex == null) {
+              ex = new IOException(e.getServiceMessage(), e);
+            } else {
+              ex.addSuppressed(e);
+            }
+          }
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
+    }
   }
 }

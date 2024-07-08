@@ -151,7 +151,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
   }
 
   static class MongoHolder implements CloseableResource {
-    MongoDBBackendTestFactory mongo = new MongoDBBackendTestFactory();
+    final MongoDBBackendTestFactory mongo = new MongoDBBackendTestFactory();
 
     boolean started;
 
@@ -163,7 +163,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
     }
 
     @Override
-    public void close() throws Throwable {
+    public void close() {
       mongo.stop();
     }
   }

@@ -556,9 +556,9 @@ class TestEventsVersionStore {
   void testGetValue() throws Exception {
     ContentResult contentResult =
         contentResult(identifiedContentKeyFromContent(key1, table1, x -> null), table1, null);
-    when(delegate.getValue(branch1, key1)).thenReturn(contentResult);
+    when(delegate.getValue(branch1, key1, false)).thenReturn(contentResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    ContentResult result = versionStore.getValue(branch1, key1);
+    ContentResult result = versionStore.getValue(branch1, key1, false);
     assertThat(result).isEqualTo(contentResult);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);
@@ -572,10 +572,10 @@ class TestEventsVersionStore {
         contentResult(identifiedContentKeyFromContent(key2, table2, x -> null), table2, null);
     Map<ContentKey, ContentResult> expected =
         ImmutableMap.of(key1, contentResult1, key2, contentResult2);
-    when(delegate.getValues(branch1, Arrays.asList(key1, key2))).thenReturn(expected);
+    when(delegate.getValues(branch1, Arrays.asList(key1, key2), false)).thenReturn(expected);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     Map<ContentKey, ContentResult> result =
-        versionStore.getValues(branch1, Arrays.asList(key1, key2));
+        versionStore.getValues(branch1, Arrays.asList(key1, key2), false);
     assertThat(result).isEqualTo(expected);
     verifyNoMoreInteractions(delegate);
     verifyNoInteractions(sink);

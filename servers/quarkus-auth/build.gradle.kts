@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Auth for Quarkus based servers"
+publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
 
 dependencies {
   implementation(project(":nessie-model"))

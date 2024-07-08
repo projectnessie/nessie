@@ -15,7 +15,12 @@
  */
 package org.projectnessie.catalog.files;
 
+import java.io.IOException;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsObjectIO;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -34,9 +39,17 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
       S3ClientSupplier s3ClientSupplier,
       AdlsClientSupplier adlsClientSupplier,
       GcsStorageSupplier gcsStorageSupplier) {
-    this.s3ObjectIO = new S3ObjectIO(s3ClientSupplier, Clock.systemUTC());
-    this.gcsObjectIO = new GcsObjectIO(gcsStorageSupplier);
-    this.adlsObjectIO = new AdlsObjectIO(adlsClientSupplier);
+    this(
+        new S3ObjectIO(s3ClientSupplier, Clock.systemUTC()),
+        new GcsObjectIO(gcsStorageSupplier),
+        new AdlsObjectIO(adlsClientSupplier));
+  }
+
+  public ResolvingObjectIO(
+      S3ObjectIO s3ObjectIO, GcsObjectIO gcsObjectIO, AdlsObjectIO adlsObjectIO) {
+    this.s3ObjectIO = s3ObjectIO;
+    this.gcsObjectIO = gcsObjectIO;
+    this.adlsObjectIO = adlsObjectIO;
   }
 
   @Override
@@ -57,6 +70,27 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
         return adlsObjectIO;
       default:
         throw new IllegalArgumentException("Unknown or unsupported scheme: " + scheme);
+    }
+  }
+
+  @Override
+  public void deleteObjects(List<StorageUri> uris) throws IOException {
+    IOException ex = null;
+    Map<ObjectIO, List<StorageUri>> perObjectIO = new IdentityHashMap<>();
+    uris.forEach(uri -> perObjectIO.computeIfAbsent(resolve(uri), x -> new ArrayList<>()).add(uri));
+    for (Map.Entry<ObjectIO, List<StorageUri>> perObjIO : perObjectIO.entrySet()) {
+      try {
+        perObjIO.getKey().deleteObjects(perObjIO.getValue());
+      } catch (IOException e) {
+        if (ex == null) {
+          ex = e;
+        } else {
+          ex.addSuppressed(e);
+        }
+      }
+    }
+    if (ex != null) {
+      throw ex;
     }
   }
 }

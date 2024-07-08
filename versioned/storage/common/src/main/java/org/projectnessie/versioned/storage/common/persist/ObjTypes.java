@@ -34,25 +34,30 @@ public final class ObjTypes {
   }
 
   @Nonnull
-  public static ObjType forName(@Nonnull String name) {
-    ObjType type = Registry.BY_NAME.get(name);
+  public static ObjType objTypeByName(@Nonnull String name) {
+    ObjType type = Registry.BY_ANY_NAME.get(name);
     checkArgument(type != null, "Unknown object type name: %s", name);
     return type;
   }
 
   @Nonnull
+  @Deprecated(forRemoval = true)
+  public static ObjType forName(@Nonnull String name) {
+    return objTypeByName(name);
+  }
+
+  @Nonnull
+  @Deprecated(forRemoval = true)
   public static ObjType forShortName(@Nonnull String shortName) {
-    ObjType type = Registry.BY_SHORT_NAME.get(shortName);
-    checkArgument(type != null, "Unknown object type short name: %s", shortName);
-    return type;
+    return objTypeByName(shortName);
   }
 
   private static final class Registry {
-    private static final Map<String, ObjType> BY_NAME;
-    private static final Map<String, ObjType> BY_SHORT_NAME;
+    private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
 
     static {
+      Map<String, ObjType> byAnyName = new TreeMap<>();
       Map<String, ObjType> byName = new TreeMap<>();
       Map<String, ObjType> byShortName = new HashMap<>();
       for (ObjTypeBundle bundle : ServiceLoader.load(ObjTypeBundle.class)) {
@@ -65,10 +70,19 @@ public final class ObjTypes {
                 throw new IllegalStateException(
                     "Duplicate object type short name: " + objType.shortName());
               }
+              if (byAnyName.containsKey(objType.name())
+                  || byAnyName.containsKey(objType.shortName())) {
+                throw new IllegalStateException(
+                    "Duplicate object type name/short name: "
+                        + objType.name()
+                        + "/"
+                        + objType.shortName());
+              }
+              byAnyName.put(objType.name(), objType);
+              byAnyName.put(objType.shortName(), objType);
             });
       }
-      BY_NAME = Collections.unmodifiableMap(byName);
-      BY_SHORT_NAME = Collections.unmodifiableMap(byShortName);
+      BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());
     }
   }

@@ -24,7 +24,6 @@ import java.util.Set;
 import org.projectnessie.versioned.storage.cassandra.CassandraSerde;
 import org.projectnessie.versioned.storage.cassandra.CqlColumn;
 import org.projectnessie.versioned.storage.cassandra.CqlColumnType;
-import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -62,8 +61,7 @@ public class StringObjSerializer extends ObjSerializer<StringObj> {
       StringObj obj,
       BoundStatementBuilder stmt,
       int incrementalIndexLimit,
-      int maxSerializedIndexSize)
-      throws ObjTooLargeException {
+      int maxSerializedIndexSize) {
     stmt.setString(COL_STRING_CONTENT_TYPE.name(), obj.contentType());
     stmt.setString(COL_STRING_COMPRESSION.name(), obj.compression().name());
     stmt.setString(COL_STRING_FILENAME.name(), obj.filename());

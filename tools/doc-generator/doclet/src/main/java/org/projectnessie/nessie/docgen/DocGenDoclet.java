@@ -124,32 +124,37 @@ public class DocGenDoclet implements Doclet {
       }
     }
 
-    for (SmallRyeConfigMappingInfo configMappingInfo : smallryeConfigs.getConfigMappingInfos()) {
+    for (SmallRyeConfigSection configSection : smallryeConfigs.buildConfigSections(environment)) {
       Path file =
-          outputDirectory.resolve("smallrye-" + safeFileName(configMappingInfo.prefix) + ".md");
+          outputDirectory.resolve("smallrye-" + safeFileName(configSection.prefix()) + ".md");
       try (BufferedWriter fw = Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING);
           PrintWriter writer = new PrintWriter(fw)) {
 
-        TypeElement typeElem = configMappingInfo.element;
+        TypeElement typeElem = configSection.element();
         if (typeElem != null) {
           MarkdownTypeFormatter typeFormatter =
-              new MarkdownTypeFormatter(configMappingInfo.element, configMappingInfo.typeComment);
+              new MarkdownTypeFormatter(configSection.element(), configSection.typeComment());
           writer.println(typeFormatter.description().trim());
           writer.println();
         }
 
-        writer.println("| Property | Default Value | Type | Description |");
-        writer.println("|----------|---------------|------|-------------|");
-        configMappingInfo
-            .properties(environment)
-            .forEach(
-                prop ->
-                    writeProperty(
-                        prop,
-                        writer,
-                        configMappingInfo.prefix + '.',
-                        smallryeConfigs,
-                        environment));
+        List<SmallRyeConfigPropertyInfo> properties = configSection.properties();
+        SmallRyeConfigPropertyInfo first = properties.isEmpty() ? null : properties.get(0);
+        if (first != null && first.firstIsSectionDoc()) {
+          MarkdownTypeFormatter typeFormatter =
+              new MarkdownTypeFormatter(first.propertyElement(), first.doc());
+          writer.println(typeFormatter.description().trim());
+          writer.println();
+        }
+
+        if (!properties.isEmpty()) {
+          writer.println("| Property | Default Value | Type | Description |");
+          writer.println("|----------|---------------|------|-------------|");
+          properties.forEach(
+              prop ->
+                  writeProperty(
+                      prop, writer, configSection.prefix() + '.', smallryeConfigs, environment));
+        }
       } catch (IOException ex) {
         throw new RuntimeException(ex);
       }
@@ -174,25 +179,27 @@ public class DocGenDoclet implements Doclet {
       }
       String fullName = propertyNamePrefix + propertyName;
 
-      writer.print("| ");
-      String fullNameCode = ('`' + fullName + '`').replaceAll("``", "");
-      writer.print(fullNameCode);
-      writer.print(" | ");
-      String dv = prop.defaultValue();
-      if (dv != null) {
-        if (dv.isEmpty()) {
-          writer.print("(empty)");
-        } else {
-          writer.print('`');
-          writer.print(dv);
-          writer.print('`');
+      if (!prop.firstIsSectionDoc()) {
+        writer.print("| ");
+        String fullNameCode = ('`' + fullName + '`').replaceAll("``", "");
+        writer.print(fullNameCode);
+        writer.print(" | ");
+        String dv = prop.defaultValue();
+        if (dv != null) {
+          if (dv.isEmpty()) {
+            writer.print("(empty)");
+          } else {
+            writer.print('`');
+            writer.print(dv);
+            writer.print('`');
+          }
         }
+        writer.print(" | ");
+        writer.print(md.propertyType());
+        writer.print(" | ");
+        writer.print(md.description().replaceAll("\n", "<br>"));
+        writer.println(" |");
       }
-      writer.print(" | ");
-      writer.print(md.propertyType());
-      writer.print(" | ");
-      writer.print(md.description().replaceAll("\n", "<br>"));
-      writer.println(" |");
 
       if (groupType.isPresent()) {
         String pre = fullName + '.';

@@ -49,7 +49,7 @@ final class Util {
         return c;
       }
       Optional<ExtensionContext> parent = c.getParent();
-      if (!parent.isPresent()) {
+      if (parent.isEmpty()) {
         throw new IllegalArgumentException(
             String.format("Context %s has no class part", context.getUniqueId()));
       }

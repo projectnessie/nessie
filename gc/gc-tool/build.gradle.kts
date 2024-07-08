@@ -24,7 +24,7 @@ plugins {
   id("nessie-license-report")
 }
 
-extra["maven.name"] = "Nessie - GC - Standalone command line tool"
+publishingHelper { mavenName = "Nessie - GC - Standalone command line tool" }
 
 dependencies {
   implementation(nessieProject("nessie-client"))
@@ -128,10 +128,11 @@ val generateAutoComplete by
 
     mainClass = "picocli.AutoComplete"
     classpath(configurations.named("runtimeClasspath"), compileJava)
+    workingDir(projectDir)
     args(
       "--force",
       "-o",
-      completionScriptsDir.get().dir("nessie-gc-completion").toString(),
+      completionScriptsDir.get().dir("nessie-gc-completion").asFile.relativeTo(projectDir),
       mainClassName
     )
 
@@ -148,16 +149,15 @@ listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val copyUberJar by tasks.registering(Copy::class)
-
-copyUberJar.configure {
-  group = "build"
-  description = "Copies the uber-jar to build/executable"
-  dependsOn(shadowJar)
-  from(shadowJar.get().archiveFile)
-  into(project.layout.buildDirectory.dir("executable"))
-  rename { "nessie-gc.jar" }
-}
+val copyUberJar by
+  tasks.registering(Copy::class) {
+    group = "build"
+    description = "Copies the uber-jar to build/executable"
+    dependsOn(shadowJar)
+    from(shadowJar.get().archiveFile)
+    into(project.layout.buildDirectory.dir("executable"))
+    rename { "nessie-gc.jar" }
+  }
 
 shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }

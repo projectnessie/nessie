@@ -39,7 +39,6 @@ import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
@@ -83,12 +82,10 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
                 pom {
                   name.set(
-                    project.provider {
-                      if (project.extra.has("maven.name")) {
-                        project.extra["maven.name"].toString()
-                      } else {
-                        project.name
-                      }
+                    if (e.mavenName.isPresent) {
+                      e.mavenName.get()
+                    } else {
+                      project.name
                     }
                   )
                   description.set(project.description)
@@ -147,7 +144,9 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                         url.set("https://github.com/projectnessie/$nessieRepoName/issues")
                       }
                       developers {
-                        file(rootProject.file("gradle/developers.csv"))
+                        rootProject.layout.projectDirectory
+                          .file("gradle/developers.csv")
+                          .asFile
                           .readLines()
                           .map { line -> line.trim() }
                           .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
@@ -166,7 +165,9 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                           }
                       }
                       contributors {
-                        file(rootProject.file("gradle/contributors.csv"))
+                        rootProject.layout.projectDirectory
+                          .file("gradle/contributors.csv")
+                          .asFile
                           .readLines()
                           .map { line -> line.trim() }
                           .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
@@ -359,6 +360,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 }
 
 abstract class PublishingHelperExtension {
+  abstract val mavenName: Property<String>
   abstract val nessieRepoName: Property<String>
   abstract val inceptionYear: Property<String>
 }

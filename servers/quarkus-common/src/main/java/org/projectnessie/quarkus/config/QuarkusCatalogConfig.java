@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +31,14 @@ public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
   @WithName("warehouses")
   Map<String, QuarkusWarehouseConfig> warehouses();
+
+  /**
+   * Nessie tries to verify the connectivity to the object stores configured for each warehouse and
+   * exposes this information as a readiness check. It is recommended to leave this setting enabled.
+   */
+  @WithName("object-stores.health-check.enabled")
+  @WithDefault("true")
+  boolean objectStoresHealthCheck();
 
   @Override
   @WithName("iceberg-config-defaults")

@@ -23,7 +23,7 @@ plugins {
   alias(libs.plugins.protobuf)
 }
 
-extra["maven.name"] = "Nessie - Export/Import - Serialization (Proto)"
+publishingHelper { mavenName = "Nessie - Export/Import - Serialization (Proto)" }
 
 dependencies { api(project(path = ":nessie-protobuf-relocated", configuration = "shadow")) }
 

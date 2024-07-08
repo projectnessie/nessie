@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class Closeables implements AutoCloseable {
-  private List<AutoCloseable> autoCloseables = new ArrayList<>();
+  private final List<AutoCloseable> autoCloseables = new ArrayList<>();
 
   @Override
   public void close() throws Exception {

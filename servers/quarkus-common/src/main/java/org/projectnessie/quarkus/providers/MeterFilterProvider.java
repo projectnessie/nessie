@@ -15,19 +15,27 @@
  */
 package org.projectnessie.quarkus.providers;
 
-import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.config.MeterFilter;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class MeterFilterProvider {
 
-  public static final String APPLICATION_TAG_NAME = "application";
-  public static final String APPLICATION_TAG_VALUE = "Nessie";
+  @Inject
+  @ConfigProperty(name = "nessie.metrics.tags")
+  Map<String, String> tags;
 
   @Produces
   @Singleton
   public MeterFilter produceGlobalMeterFilter() {
-    return MeterFilter.commonTags(Tags.of(APPLICATION_TAG_NAME, APPLICATION_TAG_VALUE));
+    return MeterFilter.commonTags(
+        this.tags.entrySet().stream()
+            .map(e -> Tag.of(e.getKey(), e.getValue()))
+            .collect(Collectors.toSet()));
   }
 }

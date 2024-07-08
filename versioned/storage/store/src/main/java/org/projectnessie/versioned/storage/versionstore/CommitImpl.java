@@ -504,12 +504,9 @@ class CommitImpl extends BaseCommitHelper {
               x -> {
                 try {
                   UUID generatedContentId;
-                  while (true) {
+                  do {
                     generatedContentId = UUID.randomUUID();
-                    if (persist.storeObj(uniqueId("content-id", generatedContentId))) {
-                      break;
-                    }
-                  }
+                  } while (!persist.storeObj(uniqueId("content-id", generatedContentId)));
                   return generatedContentId.toString();
                 } catch (ObjTooLargeException e) {
                   throw new RuntimeException(e);

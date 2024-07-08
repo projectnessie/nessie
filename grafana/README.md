@@ -12,32 +12,27 @@ We use the `kube-prometheus-stack` which includes Prometheus & Grafana.
 To scrape Nessie metrics we use a [ServiceMonitor](https://github.com/projectnessie/nessie/blob/main/helm/nessie/templates/servicemonitor.yaml).
 
 1. Add Prometheus repo:
-```sh
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-2. Install Prometheus
-```sh
-helm -n nessie-ns install prometheus prometheus-community/kube-prometheus-stack
-```
-
-3. Install Nessie (see also https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md)
-```sh
-helm repo add nessie-helm https://charts.projectnessie.org
-helm repo update
-helm install --namespace nessie-ns nessie nessie-helm/nessie --set 'serviceMonitor.labels.release=prometheus'
-```
-
-4. Add port forwarding for Prometheus & Grafana
-```sh
-nohup kubectl -n nessie-ns port-forward svc/prometheus-kube-prometheus-prometheus 9090 &
-nohup kubectl -n nessie-ns port-forward svc/prometheus-grafana 3000:80 &
-```
-
-5. Connect to Grafana on http://localhost:3000 with Username: `admin`, password: `prom-operator`
-
-6. Import the `nessie.json` Dashboard into Grafana
+    ```sh
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    ```
+1. Install Prometheus
+    ```sh
+    helm -n nessie-ns install prometheus prometheus-community/kube-prometheus-stack
+    ```
+1. Install Nessie (see also https://github.com/projectnessie/nessie/blob/main/helm/nessie/README.md)
+    ```sh
+    helm repo add nessie-helm https://charts.projectnessie.org
+    helm repo update
+    helm install --namespace nessie-ns nessie nessie-helm/nessie --set 'serviceMonitor.labels.release=prometheus'
+    ```
+1. Add port forwarding for Prometheus & Grafana
+    ```sh
+    nohup kubectl -n nessie-ns port-forward svc/prometheus-kube-prometheus-prometheus 9090 &
+    nohup kubectl -n nessie-ns port-forward svc/prometheus-grafana 3000:80 &
+    ```
+1. Connect to Grafana on http://localhost:3000 with Username: `admin`, password: `prom-operator`
+1. Import the `nessie.json` Dashboard into Grafana
 
 
 ## Stop/Uninstall everything

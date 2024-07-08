@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -70,13 +72,16 @@ public class S3SessionCacheResourceBench {
       server = mockServer(mock -> {});
 
       S3Config s3config = S3Config.builder().build();
-      httpClient = S3Clients.apacheHttpClient(s3config);
+      httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
 
       S3Options<S3BucketOptions> s3options =
           S3ProgrammaticOptions.builder()
-              .accessKey(basicCredentials("foo", "bar"))
-              .region("eu-central-1")
-              .pathStyleAccess(true)
+              .defaultOptions(
+                  S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                      .accessKey(basicCredentials("foo", "bar"))
+                      .region("eu-central-1")
+                      .pathStyleAccess(true)
+                      .build())
               .build();
 
       s3SessionsManager =
@@ -100,7 +105,7 @@ public class S3SessionCacheResourceBench {
                           .region(regions.get(i % regions.size()))
                           .roleSessionName("roleSessionName" + i)
                           .stsEndpoint(stsEndpoint)
-                          .roleArn("roleArn" + i)
+                          .assumeRole("roleArn" + i)
                           .build())
               .toArray(S3ProgrammaticOptions.S3PerBucketOptions[]::new);
     }

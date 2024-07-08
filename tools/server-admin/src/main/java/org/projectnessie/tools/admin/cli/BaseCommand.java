@@ -16,13 +16,17 @@
 package org.projectnessie.tools.admin.cli;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.IN_MEMORY;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
 import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
 import org.projectnessie.quarkus.providers.UninitializedRepository;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.storage.common.persist.Persist;
+import org.projectnessie.versioned.storage.versionstore.RefMapping;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
@@ -49,9 +53,28 @@ public abstract class BaseCommand implements Callable<Integer> {
               spec.commandLine()
                   .getColorScheme()
                   .errorText(
-                      "****************************************************************************************\n"
-                          + "** Repository information & maintenance for an in-memory implementation is meaningless\n"
-                          + "****************************************************************************************\n"));
+                      """
+                      ****************************************************************************************
+                      ** Repository information & maintenance for an in-memory implementation is meaningless
+                      ****************************************************************************************
+                      """));
     }
+  }
+
+  protected Hash hash(String hash, String ref) throws ReferenceNotFoundException {
+    if (hash != null) {
+      return Hash.of(hash);
+    }
+
+    String effectiveRef = ref;
+    if (effectiveRef == null) {
+      effectiveRef = serverConfig.getDefaultBranch();
+    }
+
+    return resolveRefHead(effectiveRef);
+  }
+
+  private Hash resolveRefHead(String effectiveRef) throws ReferenceNotFoundException {
+    return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
   }
 }

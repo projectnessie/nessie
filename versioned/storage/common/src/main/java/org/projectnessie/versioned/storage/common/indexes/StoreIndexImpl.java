@@ -474,8 +474,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
       List<StoreIndexElement<V>> elements = this.elements;
       boolean onlyLazy;
       StoreIndexElement<V> previous = null;
-      for (int i = 0; i < elements.size(); i++) {
-        StoreIndexElement<V> el = elements.get(i);
+      for (StoreIndexElement<V> el : elements) {
         ByteBuffer keyBuf = null;
         if (el.getClass() == LazyStoreIndexElement.class) {
           LazyStoreIndexElement lazyEl = (LazyStoreIndexElement) el;
@@ -483,6 +482,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
           // by _not_ fully materializing the  `StoreKey`. This is possible if (and only if!) the
           // current and the previous element are `LazyStoreIndexElement`s, where the previous
           // element is exactly the one that has been deserialized.
+          //noinspection RedundantIfStatement
           if (lazyEl.prefixLen == 0 || lazyEl.previous == previous) {
             // Can use the optimized serialization in `LazyStoreIndexElement`, if the current
             // element has no prefix of if the previously serialized element was also a

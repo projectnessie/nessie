@@ -38,11 +38,12 @@ public class ITNessieStatementsViaIcebergRest extends AbstractNessieSparkSqlExte
     NessieProcess.start(
         "-Dnessie.catalog.default-warehouse=warehouse",
         "-Dnessie.catalog.warehouses.warehouse.location=s3://bucket/",
-        "-Dnessie.catalog.service.s3.endpoint=" + objectStorage.getS3BaseUri().toString(),
-        "-Dnessie.catalog.service.s3.path-style-access=true",
-        "-Dnessie.catalog.service.s3.region=eu-central-1",
-        "-Dnessie.catalog.service.s3.access-key.name=accessKey",
-        "-Dnessie.catalog.service.s3.access-key.secret=secretKey");
+        "-Dnessie.catalog.service.s3.default-options.endpoint="
+            + objectStorage.getS3BaseUri().toString(),
+        "-Dnessie.catalog.service.s3.default-options.path-style-access=true",
+        "-Dnessie.catalog.service.s3.default-options.region=eu-central-1",
+        "-Dnessie.catalog.service.s3.default-options.access-key.name=accessKey",
+        "-Dnessie.catalog.service.s3.default-options.access-key.secret=secretKey");
   }
 
   @BeforeEach

@@ -26,6 +26,7 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
+import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
@@ -65,6 +66,7 @@ public class IcebergStuff {
   }
 
   @SuppressWarnings("unchecked")
+  @Nonnull
   private <S extends NessieEntitySnapshot<?>> CompletionStage<S> triggerIcebergSnapshot(
       EntitySnapshotTaskRequest snapshotTaskRequest) {
     // TODO Handle hash-collision - when entity-snapshot refers to a different(!) snapshot
@@ -85,6 +87,7 @@ public class IcebergStuff {
             });
   }
 
+  @Nonnull
   public <S extends NessieEntitySnapshot<?>> CompletionStage<S> storeSnapshot(
       S snapshot, Content content) {
     EntitySnapshotTaskRequest snapshotTaskRequest =

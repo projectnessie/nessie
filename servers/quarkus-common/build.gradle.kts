@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Quarkus Common"
+publishingHelper { mavenName = "Nessie - Quarkus Common" }
 
 dependencies {
   implementation(project(":nessie-model"))
@@ -31,6 +31,7 @@ dependencies {
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-service-common"))
   implementation(project(":nessie-catalog-secrets-api"))
+  implementation(project(":nessie-network-tools"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 

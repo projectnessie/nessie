@@ -53,81 +53,38 @@ spec:
               mountPath: /bigtable-nessie
           {{- end }}
           env:
-            {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") }}
-            {{- if .Values.dynamodb.secret }}
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.dynamodb.secret.name }}
-                  key: {{ .Values.dynamodb.secret.awsAccessKeyId }}
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.dynamodb.secret.name }}
-                  key: {{ .Values.dynamodb.secret.awsSecretAccessKey }}
-            {{- end }}
-            {{- end }}
+            {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
+            {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsAccessKeyId" "AWS_ACCESS_KEY_ID" ) | trim | nindent 12 -}}
+            {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsSecretAccessKey" "AWS_SECRET_ACCESS_KEY" ) | trim | nindent 12 -}}
+            {{- end -}}
             {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") }}
-            {{- if .Values.mongodb.secret.name }}
-            - name: QUARKUS_MONGODB_CREDENTIALS_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.mongodb.secret.name }}
-                  key: {{ .Values.mongodb.secret.username }}
-            - name: QUARKUS_MONGODB_CREDENTIALS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.mongodb.secret.name }}
-                  key: {{ .Values.mongodb.secret.password }}
-            {{- end }}
-            {{- end }}
+            {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "username" "quarkus.mongodb.credentials.username" ) | trim | nindent 12 -}}
+            {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "password" "quarkus.mongodb.credentials.password" ) | trim | nindent 12 -}}
+            {{- end -}}
             {{- if eq .Values.versionStoreType "CASSANDRA" }}
-            {{- if .Values.cassandra.secret.name }}
-            - name: QUARKUS_CASSANDRA_AUTH_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cassandra.secret.name }}
-                  key: {{ .Values.cassandra.secret.username }}
-            - name: QUARKUS_CASSANDRA_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.cassandra.secret.name }}
-                  key: {{ .Values.cassandra.secret.password }}
-            {{- end }}
-            {{- end }}
+            {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "username" "quarkus.cassandra.auth.username" ) | trim | nindent 12 -}}
+            {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "password" "quarkus.cassandra.auth.password" ) | trim | nindent 12 -}}
+            {{- end -}}
             {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
             {{- $oldConfig := .Values.postgres | default dict }}
             {{- $newConfig := .Values.jdbc | default dict }}
             {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl }}
-            {{- $oldSecret := $oldConfig.secret | default dict }}
-            {{- $newSecret := $newConfig.secret | default dict }}
-            {{- $secretName := coalesce $oldSecret.name $newSecret.name }}
-            {{- $secretUsername := coalesce $oldSecret.username $newSecret.username }}
-            {{- $secretPassword := coalesce $oldSecret.password $newSecret.password }}
+            {{- $secret := coalesce $oldConfig.secret $newConfig.secret }}
             {{- $dbKind := include "nessie.dbKind" $jdbcUrl }}
-            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $secretName }}
-                  key: {{ $secretUsername }}
-            - name: QUARKUS_DATASOURCE_{{- upper $dbKind -}}_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $secretName }}
-                  key: {{ $secretPassword }}
-            {{- end }}
+            {{- include "nessie.secretToEnv" (list $secret "username" (printf "quarkus.datasource.%s.username" $dbKind)) | trim | nindent 12 }}
+            {{- include "nessie.secretToEnv" (list $secret "password" (printf "quarkus.datasource.%s.password" $dbKind)) | trim | nindent 12 }}
+            {{- end -}}
             {{- if eq .Values.versionStoreType "BIGTABLE" }}
             {{- if .Values.bigtable.secret }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /bigtable-nessie/sa_credentials.json
             {{- end }}
-            {{- end }}
-            {{- if .Values.authentication.oidcClientSecret -}}
-            - name: QUARKUS_OIDC_CREDENTIALS_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.authentication.oidcClientSecret.name }}
-                  key: {{ .Values.authentication.oidcClientSecret.key }}
+            {{- end -}}
+            {{- if .Values.authentication.enabled -}}
+            {{- include "nessie.secretToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.credentials.secret" ) | trim | nindent 12 -}}
+            {{- end -}}
+            {{- if .Values.catalog.enabled -}}
+            {{- include "nessie.catalogStorageEnv" .Values.catalog.storage | trim | nindent 12 -}}
             {{- end -}}
             {{- if .Values.extraEnv }}
             {{- toYaml .Values.extraEnv | nindent 12 }}

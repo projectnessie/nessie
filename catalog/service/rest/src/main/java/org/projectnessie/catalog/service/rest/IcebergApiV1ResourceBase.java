@@ -17,27 +17,39 @@ package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
+import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
 import static org.projectnessie.catalog.service.rest.DecodedPrefix.decodedPrefix;
 import static org.projectnessie.catalog.service.rest.NamespaceRef.namespaceRef;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
 import com.google.common.base.Splitter;
+import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import java.io.IOException;
 import java.net.URI;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
+import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.CatalogService;
+import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.client.api.NessieApiV2;
@@ -48,6 +60,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.Namespace;
@@ -119,11 +132,12 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     TableRef fromTableRef = decodeTableRef(prefix, renameTableRequest.source());
     TableRef toTableRef = decodeTableRef(prefix, renameTableRequest.destination());
 
+    ParsedReference ref = requireNonNull(fromTableRef.reference());
     GetMultipleContentsResponse contents =
         nessieApi
             .getContent()
-            .refName(fromTableRef.reference().name())
-            .hashOnRef(fromTableRef.reference().hashWithRelativeSpec())
+            .refName(ref.name())
+            .hashOnRef(ref.hashWithRelativeSpec())
             .key(toTableRef.contentKey())
             .key(fromTableRef.contentKey())
             .getWithResponse();
@@ -176,7 +190,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       throws NessieNotFoundException {
     TableRef tableRef = decodeTableRef(prefix, encodedNs, table);
 
-    ParsedReference reference = tableRef.reference();
+    ParsedReference reference = requireNonNull(tableRef.reference());
     if (reference.hashWithRelativeSpec() == null) {
       Reference ref = nessieApi.getReference().refName(reference.name()).get();
       reference = ParsedReference.parsedReference(ref.getName(), ref.getHash(), ref.getType());
@@ -213,7 +227,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
   public static Namespace decodeNamespace(String encodedNs) {
     if (encodedNs == null) {
-      return Namespace.EMPTY;
+      return EMPTY_NAMESPACE;
     }
 
     return Namespace.of(NAMESPACE_ESCAPED_SPLITTER.splitToList(encodedNs).toArray(new String[0]));
@@ -265,5 +279,82 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
         catalogUriResolver.icebergSnapshot(
             snap.effectiveReference(), snap.contentKey(), snap.nessieSnapshot());
     return metadataLocation.toString();
+  }
+
+  static Map<String, String> createEntityProperties(Map<String, String> providedProperties) {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
+    providedProperties.forEach(
+        (k, v) -> {
+          if (!DERIVED_PROPERTIES.contains(k)) {
+            properties.put(k, v);
+          }
+        });
+    return properties;
+  }
+
+  void createEntityVerifyNotExists(TableRef tableRef, Content.Type type)
+      throws NessieNotFoundException, CatalogEntityAlreadyExistsException {
+    ParsedReference ref = requireNonNull(tableRef.reference());
+    GetMultipleContentsResponse contentResponse =
+        nessieApi
+            .getContent()
+            .refName(ref.name())
+            .hashOnRef(ref.hashWithRelativeSpec())
+            .key(tableRef.contentKey())
+            .forWrite(true)
+            .getWithResponse();
+    if (!contentResponse.getContents().isEmpty()) {
+      Content existing = contentResponse.getContents().get(0).getContent();
+      throw new CatalogEntityAlreadyExistsException(
+          false, type, tableRef.contentKey(), existing.getType());
+    }
+    checkBranch(contentResponse.getEffectiveReference());
+  }
+
+  ContentResponse fetchIcebergEntity(
+      TableRef tableRef, Content.Type expectedType, String expectedTypeName, boolean forWrite)
+      throws NessieNotFoundException {
+    ParsedReference ref = requireNonNull(tableRef.reference());
+    ContentResponse content =
+        nessieApi
+            .getContent()
+            .refName(ref.name())
+            .hashOnRef(ref.hashWithRelativeSpec())
+            .forWrite(forWrite)
+            .getSingle(tableRef.contentKey());
+    checkArgument(
+        content.getContent().getType().equals(expectedType),
+        "Expecting an Iceberg %s, but got type %s",
+        expectedTypeName,
+        content.getContent().getType());
+    return content;
+  }
+
+  Uni<SnapshotResponse> createOrUpdateEntity(
+      TableRef tableRef, IcebergUpdateEntityRequest updateEntityRequest, Content.Type contentType)
+      throws IOException {
+
+    IcebergCatalogOperation op =
+        IcebergCatalogOperation.builder()
+            .updates(updateEntityRequest.updates())
+            .requirements(updateEntityRequest.requirements())
+            .key(tableRef.contentKey())
+            .warehouse(tableRef.warehouse())
+            .type(contentType)
+            .build();
+
+    CatalogCommit commit = CatalogCommit.builder().addOperations(op).build();
+
+    SnapshotReqParams reqParams =
+        SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null);
+
+    return Uni.createFrom()
+        .completionStage(catalogService.commit(tableRef.reference(), commit, reqParams))
+        .map(Stream::findFirst)
+        .map(
+            o ->
+                o.orElseThrow(
+                    () -> new IllegalStateException("Catalog commit returned no response")));
   }
 }

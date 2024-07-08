@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Tasks - Async"
+publishingHelper { mavenName = "Nessie - Tasks - Async" }
 
 dependencies {
   compileOnly(libs.vertx.core)

@@ -1,0 +1,137 @@
+#
+# Copyright (C) 2024 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '3'
+
+services:
+
+  ## IMPORTANT
+  ##
+  ##
+  ## 1. Generate the Nessie Catalog image, run:
+  ##
+  ##      tools/dockerbuild/build-push-images.sh --gradle-project :nessie-quarkus  --project-dir servers/quarkus-server --local localhost/projectnessie/nessie
+  ##
+  ## 2. Start the pods:
+  ##
+  ##      podman compose -f docker/catalog-nginx-https/docker-compose.yml up
+  ##
+  ## 3. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
+  ##    The script will ask for the client secret, it is 's3cr3t' for all three clients.
+  ##
+  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --iceberg https://nessie-nginx.localhost.localdomain:8443/iceberg/main
+  ##
+  ##    Run the "standard smoketest SQL":
+  ##
+  ##      CREATE NAMESPACE nessie.sales;
+  ##      CREATE NAMESPACE nessie.eng;
+  ##
+  ##      USE nessie.sales;
+  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      SELECT * FROM city;
+  ##
+  ##      USE nessie.eng;
+  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+  ##      SELECT * FROM city;
+  ##
+  nessie:
+    image: localhost/projectnessie/nessie:latest
+    ports:
+      # Nessie API port not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
+      #   - "19120:19120"
+      # only Nessie's management port is available externally for testing purposes
+      - "9001:9000"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      # Version store settings.
+      # This example uses ephemeral storage, data is lost during reset.
+      - nessie.version.store.type=IN_MEMORY
+      # Object store settings.
+      # This example uses MinIO as the object store.
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
+      - nessie.catalog.service.s3.default-options.region=us-east-1
+      - nessie.catalog.service.s3.default-options.path-style-access=true
+      - nessie.catalog.service.s3.default-options.access-key.name=minioadmin
+      - nessie.catalog.service.s3.default-options.access-key.secret=minioadmin
+      # MinIO endpoint for Nessie server
+      - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
+      # MinIO endpoint for clients (on the Podman/Docker host)
+      - nessie.catalog.service.s3.default-options.external-endpoint=http://127.0.0.1:9002/
+      # X-Forwarded headers - see https://quarkus.io/guides/http-reference#reverse-proxy
+      - quarkus.http.proxy.proxy-address-forwarding=true
+      - quarkus.http.proxy.allow-x-forwarded=true
+      - quarkus.http.proxy.enable-forwarded-host=true
+      - quarkus.http.proxy.enable-forwarded-prefix=true
+    healthcheck:
+      test: "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /q/health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+
+  nginx:
+    image: docker.io/nginx:1.27.0
+    ports:
+      # http://nessie-nginx.localhost.localdomain:8080/nessie/ ...
+      #   redirected to https
+      - "8080:8080"
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/iceberg/v1/config
+      # https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2/config
+      - "8443:8443"
+    depends_on:
+      nessie:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/certs
+
+  # MinIO
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
+    ports:
+      # API port, used by Nessie
+      - "9000:9000"
+      # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
+      - "9092:9090"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ADDRESS=:9000
+      - MINIO_CONSOLE_ADDRESS=:9090
+    command: server /data
+    healthcheck:
+      test: "bash -c '[[ \"$(exec 3<>/dev/tcp/localhost/9000 && echo -e '\"'\"'GET /minio/health/live HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n'\"'\"' >&3 && cat <&3 | head -n 1)\" == *\"200 OK\"* ]] || exit 1'"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+
+  # Create MinIO bucket
+  minio-setup:
+    image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    restart: "no"
+    command: [
+      "-c",
+      "mc alias set myminio http://minio:9000/ minioadmin minioadmin ; mc admin info myminio ; mc mb myminio/demobucket"
+      ]

@@ -53,7 +53,7 @@ public class TestLayeredIndexImpl {
 
     StoreIndex<CommitOp> updates = newStoreIndex(COMMIT_OP_SERIALIZER);
     for (char c = 'a'; c <= 'z'; c++) {
-      updates.add(indexElement(key("" + c + "foo"), commitOp(ADD, 0, null)));
+      updates.add(indexElement(key(c + "foo"), commitOp(ADD, 0, null)));
     }
     StoreIndex<CommitOp> layered = layeredIndex(reference, updates);
     soft.assertThat(updates.isModified()).isTrue();

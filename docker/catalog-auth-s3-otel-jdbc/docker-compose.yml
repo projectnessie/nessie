@@ -20,6 +20,14 @@
 # Then use the access token in the Authorization header:
 # curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
 
+# To connect using Nessie CLI:
+# connect to http://127.0.0.1:19120/api/v2 using
+#   "nessie.authentication.type"="OAUTH2" AND
+#   "nessie.authentication.oauth2.client-id"=client1 AND
+#   "nessie.authentication.oauth2.client-secret"=s3cr3t AND
+#   "nessie.authentication.oauth2.issuer-url"="http://127.0.0.1:8080/realms/iceberg/"
+
+
 version: '3'
 
 services:
@@ -60,7 +68,10 @@ services:
   nessie:
     image: localhost/projectnessie/nessie:latest
     ports:
+      # API port
       - "19120:19120"
+      # Management port (metrics and health checks)
+      - "9000:9000"
     depends_on:
       jaeger:
         condition: service_healthy
@@ -86,15 +97,14 @@ services:
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
-      - nessie.catalog.service.s3.cloud=private
-      - nessie.catalog.service.s3.region=us-east-1
-      - nessie.catalog.service.s3.path-style-access=true
-      - nessie.catalog.service.s3.access-key.name=minioadmin
-      - nessie.catalog.service.s3.access-key.secret=minioadmin
+      - nessie.catalog.service.s3.default-options.region=us-east-1
+      - nessie.catalog.service.s3.default-options.path-style-access=true
+      - nessie.catalog.service.s3.default-options.access-key.name=minioadmin
+      - nessie.catalog.service.s3.default-options.access-key.secret=minioadmin
       # MinIO endpoint for Nessie server
-      - nessie.catalog.service.s3.endpoint=http://minio:9000/
+      - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
       # MinIO endpoint for clients (on the Podman/Docker host)
-      - nessie.catalog.service.s3.external-endpoint=http://127.0.0.1:9000/
+      - nessie.catalog.service.s3.default-options.external-endpoint=http://127.0.0.1:9002/
       # OpenTelemetry settings.
       # This example uses Jaeger as the OpenTelemetry traces collector.
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
@@ -113,9 +123,41 @@ services:
       timeout: 2s
       retries: 15
 
+  # Prometheus
+  prometheus:
+    image: docker.io/prom/prometheus:v2.53.0
+    ports:
+      # Prometheus UI, browse to http://localhost:9093 to view metrics
+      - "9093:9090"
+    depends_on:
+      nessie:
+        condition: service_healthy
+    volumes:
+      - ../catalog-auth-s3-otel/prometheus/:/etc/prometheus/
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    healthcheck:
+        test: "wget -O /dev/null -o /dev/null http://localhost:9090"
+        interval: 5s
+        timeout: 2s
+        retries: 15
+
+  # Grafana
+  grafana:
+    image: docker.io/grafana/grafana:11.1.0
+    depends_on:
+      - prometheus
+    ports:
+      # Grafana UI, browse to http://localhost:3000 to view dashboards
+      - "3000:3000"
+    volumes:
+      - ../catalog-auth-s3-otel/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ../catalog-auth-s3-otel/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/main.yaml
+      - ../../grafana/nessie.json:/var/lib/grafana/dashboards/nessie.json
+
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:1.58.0
+    image: docker.io/jaegertracing/all-in-one:1.58.1
     ports:
       # Jaeger gRPC collector, used by Nessie
       - "4317:4317"
@@ -131,12 +173,12 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-06-13T22-53-53Z
+    image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
     ports:
-      # API port, used by Nessie
-      - "9000:9000"
-      # MinIO UI, browse to http://localhost:9090 to view the MinIO Object Browser
-      - "9090:9090"
+      # API port
+      - "9001:9000"
+      # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
+      - "9092:9090"
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
@@ -151,7 +193,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-06-13T22-53-53Z
+    image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
     depends_on:
       minio:
         condition: service_healthy
@@ -174,7 +216,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0.0
+    image: quay.io/keycloak/keycloak:25.0.1
     depends_on:
       - postgres
     ports:

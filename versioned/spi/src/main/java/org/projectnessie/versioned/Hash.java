@@ -69,12 +69,10 @@ public abstract class Hash implements Ref {
     checkArgument(
         len % 2 == 0 && len > 0, "hash length needs to be a multiple of two, was %s", len);
 
-    switch (len >> 1) {
-      case 32:
-        return new Hash256(hash);
-      default:
-        return new GenericHash(hash);
+    if (len >> 1 == 32) {
+      return new Hash256(hash);
     }
+    return new GenericHash(hash);
   }
 
   /**
@@ -85,12 +83,10 @@ public abstract class Hash implements Ref {
    * @throws NullPointerException if {@code hash} is {@code null}
    */
   public static Hash of(@Nonnull ByteString bytes) {
-    switch (bytes.size()) {
-      case 32:
-        return new Hash256(bytes);
-      default:
-        return new GenericHash(bytes);
+    if (bytes.size() == 32) {
+      return new Hash256(bytes);
     }
+    return new GenericHash(bytes);
   }
 
   @Override

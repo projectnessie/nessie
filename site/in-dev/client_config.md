@@ -31,19 +31,51 @@ See also [Authentication Settings](#authentication-settings) below.
 
 ### OAuth2 settings
 
-See also [Authentication Settings](#authentication-settings) below.
+General OAuth2 settings. See also [Authentication Settings](#authentication-settings) below.
 
 {% include './generated-docs/client-config-OAuth2_Authentication.md' %}
 
-#### OAuth2 Token Exchange settings
+#### OAuth2 Resource Owner Password Credentials settings
 
-The Nessie client now supports token exchange, which allows the client to exchange an access token
-for another access token.
+OAuth2 settings relevant when using the `password` grant type. See [below](#authentication-settings) for details.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Password.md' %}
+
+#### OAuth2 Authorization Code Grant settings
+
+OAuth2 settings relevant when using the `authorization_code` grant type. See [below](#authentication-settings) for details.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Authorization_Code.md' %}
+
+#### OAuth2 Device Authorization Grant settings
+
+OAuth2 settings relevant when using the `device_code` grant type. See [below](#authentication-settings) for details.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Device_Code.md' %}
+
+#### OAuth2 Token Exchange Grant settings
+
+OAuth2 settings relevant when using the `token_exchange` grant type. See [below](#authentication-settings) for details.
 
 !!! warning
-    The feature is still experimental and subject to change.
+    The feature is experimental and subject to change.
 
 {% include './generated-docs/client-config-OAuth2_Authentication_Token_Exchange.md' %}
+
+#### OAuth2 impersonation settings
+
+OAuth2 settings relevant when using impersonation. See [below](#authentication-settings) for details.
+
+!!! warning
+    The feature is experimental and subject to change.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Impersonation.md' %}
+
+#### OAuth2 token refresh settings
+
+OAuth2 settings related to token refreshes. You should rarely need to change the defaults.
+
+{% include './generated-docs/client-config-OAuth2_Authentication_Token_Refresh.md' %}
 
 ### AWS authentication settings
 
@@ -178,40 +210,120 @@ nessie.server.authentication.enabled=true
 quarkus.oidc.auth-server-url=https://<keycloak-server>/realms/<realm-name>
 ```
 
-The most important property is `authentication.oauth2.grant-type`, which defines the grant type to
-use when authenticating against the OAuth2 server. Valid values are: 
+OAuth is a complex framework and usually requires many configuration settings on the client side.
+The full list of available settings is [shown above](#oauth2-settings), but here are some general
+configuration guidelines:
+
+#### Configuring endpoints
+
+The Nessie client interacts with the OAuth2 server by contacting its _endpoints_, in order to
+authenticate and obtain access tokens, using various _grants_. The main endpoint is the _token
+endpoint_ and is always required, but other endpoints may also be required, depending on the grant
+type being used. 
+
+The endpoints can be provided with the following properties:
+
+* Token endpoint: `nessie.authentication.oauth2.token-endpoint` (always required);
+* Authorization endpoint: `nessie.authentication.oauth2.auth-endpoint` (required when using the
+  `authorization_code` grant);
+* Device authorization endpoint: `nessie.authentication.oauth2.device-auth-endpoint` (required when 
+  using the `device_code` grant).
+
+However, instead of specifying the endpoints individually, it is recommended to use the all-in-one
+property `nessie.authentication.oauth2.issuer-url` whenever possible. When this property is
+provided, the client is capable of discovering all the required endpoints automatically by querying
+the authorization server well-known metadata endpoint.
+
+#### Configuring grant types
+
+Another important property is `authentication.oauth2.grant-type`, which defines the grant type to
+use when authenticating against the OAuth2 server. Valid values are:
 
 * `client_credentials` : enables the [Client Credentials grant] (default);
 * `password` : enables the [Resource Owner Password Credentials grant];
 * `authorization_code` : enables the [Authorization Code grant];
-* `device_code` : enables the [Device Authorization grant].
+* `device_code` : enables the [Device Authorization grant];
+* `token_exchange` : enables the [Token Exchange grant].
 
 [Client Credentials grant]: https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
 [Resource Owner Password Credentials grant]: https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
 [Authorization Code grant]: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1
 [Device Authorization grant]: https://datatracker.ietf.org/doc/html/rfc8628
+[Token Exchange grant]: https://datatracker.ietf.org/doc/html/rfc8693
 
-The full list of available properties is shown above.
+!!! note
+    The Device Authorization grant can also be specified using its canonical URN: 
+    `urn:ietf:params:oauth:grant-type:device_code`.
 
-#### Which grant type to use?
+!!! note
+    The Token Exchange grant can also be specified using its canonical URN: 
+    `urn:ietf:params:oauth:grant-type:token-exchange`.
 
-The "client_credentials" grant type is the simplest one, but it requires the client to be granted
+The `client_credentials` grant type is the simplest one, but it requires the client to be granted
 enough permissions to access the Nessie server on behalf of the user. This is not always possible,
-and should be avoided if the resource owner (the user) is a human.
+and should be avoided if the session is interactive (that is, when the client is being controlled
+by a human).
 
-The "password" grant type is also simple, but it requires passing the user's password to the client,
-which may not be acceptable in some cases for security reasons.
+For this grant type, the following properties must be provided:
+
+* `nessie.authentication.oauth2.issuer-url` or `nessie.authentication.oauth2.token-endpoint`;
+* `nessie.authentication.oauth2.client-id`;
+* `nessie.authentication.oauth2.client-secret` (unless the client is public).
+
+The `password` grant type is also simple, but it requires passing the user's password to the client,
+which may not be acceptable in some cases for security reasons. Many identity providers forbid its
+usage. 
+
+All the properties required for `client_credentials` are also required for this grant type, as well
+as the following ones:
+
+* `nessie.authentication.oauth2.username`;
+* `nessie.authentication.oauth2.password`.
 
 For real users trying to authenticate within a terminal session, such as a Spark shell, the
-"authorization_code" grant type is recommended. It requires the user to authenticate in a browser
-window, thus sparing the need to provide the user's password directly to the client. The user will 
-be prompted to authenticate in a separate browser window, and the Nessie client will be notified 
-when the authentication is complete.
+`authorization_code` grant type is recommended. It requires the user to authenticate in a browser
+window, thus sparing the need to provide the user's password directly to the client. The user will
+be prompted to authenticate in a separate browser window, and the Nessie client will be notified
+when the authentication is complete. 
+
+All the properties required for `client_credentials` are also required for this grant type. As
+explained above, if `nessie.authentication.oauth2.issuer-url` is provided, then no further
+configuration is required. Otherwise, in addition to the token endpoint, the authorization endpoint
+must also be provided (`nessie.authentication.oauth2.auth-endpoint`).
 
 If the terminal session is running remotely however, on inside an embedded device, then the
-"authorization_code" grant type may not be suitable, as the browser and the terminal session must 
-be running on the same machine. In this case, the "device_code" grant type is recommended. Similar 
-to the "authorization_code" grant type, it requires the user to authenticate in a browser window, 
-but it does not require the browser and the terminal session to be running on the same machine. The 
-user will be prompted to authenticate in a local browser window, and the remote Nessie client will
-poll the OAuth2 server for the authentication status, until the authentication is complete.
+`authorization_code` grant type may not be suitable, as the browser and the terminal session must be
+running on the same machine. In this case, the `device_code` grant type is recommended. Similar to
+the `authorization_code` grant type, it requires the user to authenticate in a browser window, but
+it does not require the browser and the terminal session to be running on the same machine. The user
+will be prompted to authenticate in a local browser window, and the remote Nessie client will poll
+the OAuth2 server for the authentication status, until the authentication is complete. 
+
+All the properties required for `client_credentials` are also required for this grant type. As
+explained above, if `nessie.authentication.oauth2.issuer-url` is provided, then no further
+configuration is required. Otherwise, in addition to the token endpoint, the device authorization
+endpoint must also be provided (`nessie.authentication.oauth2.device-auth-endpoint`).
+
+Finally, the `token_exchange` grant type is the most complex one. In-depth configuration of a token
+exchange grant is outside the scope of this document but in general, two use cases can be envisaged:
+
+1. Initial token exchange: enabled when `authentication.oauth2.grant-type` is `token_exchange`. In
+   this scenario, the client will use token exchange as the primary grant. A subject token must be
+   provided with `nessie.authentication.oauth2.token-exchange.subject-token`. Other properties under
+   `nessie.authentication.oauth2.token-exchange.*` may also be required.
+
+2. Impersonation or delegation: this is the most typical usage, enabled when
+   `nessie.authentication.oauth2.impersonation.enabled` is `true`. Here, the client will first
+   obtain an initial token using another grant type, then exchange the received access token for
+   another access token, possibly from a second OAuth2 server. If a second OAuth2 server must be
+   contacted, use the properties under `nessie.authentication.oauth2.impersonation.*`. And finally,
+   since impersonation uses the token exchange grant type behind the scenes, properties under
+   `nessie.authentication.oauth2.token-exchange.*` may also be relevant.
+
+!!! warning
+    When using impersonation, the property `authentication.oauth2.grant-type` _must_ be another
+    grant type than `token_exchange`.
+
+!!! warning
+    If a second OAuth2 server is required to perform impersonation, the admin user is responsible 
+    for configuring the trust relationship between the two servers.

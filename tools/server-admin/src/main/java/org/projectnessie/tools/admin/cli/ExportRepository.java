@@ -188,28 +188,25 @@ public class ExportRepository extends BaseCommand {
   }
 
   private ExportFileSupplier createExportFileSupplier() {
-    ExportFileSupplier exportFileSupplier;
-    switch (exportFormat()) {
-      case ZIP:
+    return switch (exportFormat()) {
+      case ZIP -> {
         if (Files.isRegularFile(path)) {
           throw new PicocliException(
               String.format(
                   "Export file %s already exists, please delete it first, if you want to overwrite it.",
                   path));
         }
-        exportFileSupplier = ZipArchiveExporter.builder().outputFile(path).build();
-        break;
-      case DIRECTORY:
+        yield ZipArchiveExporter.builder().outputFile(path).build();
+      }
+      case DIRECTORY -> {
         if (Files.isRegularFile(path)) {
           throw new PicocliException(
               String.format("%s refers to a file, but export type is %s.", path, Format.DIRECTORY));
         }
-        exportFileSupplier = FileExporter.builder().targetDirectory(path).build();
-        break;
-      default:
-        throw new IllegalStateException(exportFormat().toString());
-    }
-    return exportFileSupplier;
+        yield FileExporter.builder().targetDirectory(path).build();
+      }
+      default -> throw new IllegalStateException(exportFormat().toString());
+    };
   }
 
   private Format exportFormat() {

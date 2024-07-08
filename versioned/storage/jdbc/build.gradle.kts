@@ -21,7 +21,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - JDBC"
+publishingHelper { mavenName = "Nessie - Storage - JDBC" }
 
 description =
   "Storage implementation for JDBC, supports H2, PostgreSQL, CockroachDB, MariaDB and MySQL (via MariaDB Driver)."

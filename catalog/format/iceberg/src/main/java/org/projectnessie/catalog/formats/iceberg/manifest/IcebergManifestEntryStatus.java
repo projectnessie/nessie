@@ -18,5 +18,5 @@ package org.projectnessie.catalog.formats.iceberg.manifest;
 public enum IcebergManifestEntryStatus {
   EXISTING,
   ADDED,
-  DELETED;
+  DELETED,
 }

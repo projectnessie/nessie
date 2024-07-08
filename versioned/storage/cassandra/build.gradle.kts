@@ -21,7 +21,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Storage - Cassandra & ScyllaDB"
+publishingHelper { mavenName = "Nessie - Storage - Cassandra & ScyllaDB" }
 
 description = "Storage implementation for Cassandra & ScyllaDB."
 

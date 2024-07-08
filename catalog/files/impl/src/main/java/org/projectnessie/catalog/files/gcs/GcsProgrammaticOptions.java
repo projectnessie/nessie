@@ -19,6 +19,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.TokenSecret;
@@ -26,12 +27,16 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 @Value.Immutable
 public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
   @Override
+  Optional<GcsBucketOptions> defaultOptions();
+
+  @Override
   Map<String, GcsBucketOptions> buckets();
 
   static Builder builder() {
     return ImmutableGcsProgrammaticOptions.builder();
   }
 
+  @SuppressWarnings("unused")
   interface Builder {
     @CanIgnoreReturnValue
     Builder putBuckets(String bucket, GcsBucketOptions bucketOptions);
@@ -43,28 +48,7 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     Builder buckets(Map<String, ? extends GcsBucketOptions> bucketOptions);
 
     @CanIgnoreReturnValue
-    Builder host(URI host);
-
-    @CanIgnoreReturnValue
-    Builder externalHost(URI externalHost);
-
-    @CanIgnoreReturnValue
-    Builder projectId(String projectId);
-
-    @CanIgnoreReturnValue
-    Builder quotaProjectId(String quotaProjectId);
-
-    @CanIgnoreReturnValue
-    Builder clientLibToken(String clientLibToken);
-
-    @CanIgnoreReturnValue
-    Builder authType(GcsAuthType authType);
-
-    @CanIgnoreReturnValue
-    Builder authCredentialsJson(KeySecret authCredentialsJson);
-
-    @CanIgnoreReturnValue
-    Builder oauth2Token(TokenSecret oauth2token);
+    Builder defaultOptions(GcsBucketOptions defaultOptions);
 
     @CanIgnoreReturnValue
     Builder maxAttempts(int maxAttempts);
@@ -93,27 +77,6 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     @CanIgnoreReturnValue
     Builder rpcTimeoutMultiplier(double rpcTimeoutMultiplier);
 
-    @CanIgnoreReturnValue
-    Builder readChunkSize(int readChunkSize);
-
-    @CanIgnoreReturnValue
-    Builder writeChunkSize(int writeChunkSize);
-
-    @CanIgnoreReturnValue
-    Builder encryptionKey(KeySecret encryptionKey);
-
-    @CanIgnoreReturnValue
-    Builder decryptionKey(KeySecret decryptionKey);
-
-    @CanIgnoreReturnValue
-    Builder userProject(String userProject);
-
-    @CanIgnoreReturnValue
-    Builder readTimeout(Duration readTimeout);
-
-    @CanIgnoreReturnValue
-    Builder connectTimeout(Duration connectTimeout);
-
     GcsProgrammaticOptions build();
   }
 
@@ -123,6 +86,8 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
     static Builder builder() {
       return ImmutableGcsPerBucketOptions.builder();
     }
+
+    GcsPerBucketOptions FALLBACK = GcsPerBucketOptions.builder().build();
 
     interface Builder {
       @CanIgnoreReturnValue
@@ -153,39 +118,6 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder oauth2Token(TokenSecret oauth2token);
 
       @CanIgnoreReturnValue
-      Builder maxAttempts(int maxAttempts);
-
-      @CanIgnoreReturnValue
-      Builder logicalTimeout(Duration logicalTimeout);
-
-      @CanIgnoreReturnValue
-      Builder totalTimeout(Duration totalTimeout);
-
-      @CanIgnoreReturnValue
-      Builder initialRetryDelay(Duration initialRetryDelay);
-
-      @CanIgnoreReturnValue
-      Builder maxRetryDelay(Duration maxRetryDelay);
-
-      @CanIgnoreReturnValue
-      Builder retryDelayMultiplier(double retryDelayMultiplier);
-
-      @CanIgnoreReturnValue
-      Builder initialRpcTimeout(Duration initialRpcTimeout);
-
-      @CanIgnoreReturnValue
-      Builder maxRpcTimeout(Duration maxRpcTimeout);
-
-      @CanIgnoreReturnValue
-      Builder rpcTimeoutMultiplier(double rpcTimeoutMultiplier);
-
-      @CanIgnoreReturnValue
-      Builder readChunkSize(int readChunkSize);
-
-      @CanIgnoreReturnValue
-      Builder writeChunkSize(int writeChunkSize);
-
-      @CanIgnoreReturnValue
       Builder encryptionKey(KeySecret encryptionKey);
 
       @CanIgnoreReturnValue
@@ -195,10 +127,13 @@ public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
       Builder userProject(String userProject);
 
       @CanIgnoreReturnValue
-      Builder readTimeout(Duration readTimeout);
+      Builder readChunkSize(int readChunkSize);
 
       @CanIgnoreReturnValue
-      Builder connectTimeout(Duration connectTimeout);
+      Builder writeChunkSize(int writeChunkSize);
+
+      @CanIgnoreReturnValue
+      Builder deleteBatchSize(int deleteBatchSize);
 
       GcsPerBucketOptions build();
     }

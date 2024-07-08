@@ -23,7 +23,7 @@ plugins {
   alias(libs.plugins.protobuf)
 }
 
-extra["maven.name"] = "Nessie - Storage - Common proto"
+publishingHelper { mavenName = "Nessie - Storage - Common proto" }
 
 description = "Protobuf definition for the serialization for storage objects."
 

@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Combined Client and Server"
+publishingHelper { mavenName = "Nessie - Combined Client and Server" }
 
 dependencies {
   api(project(":nessie-client"))

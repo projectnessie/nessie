@@ -29,7 +29,7 @@ jobs:
         uses: ./.github/actions/dev-tool-java
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9336dac04dea2507a617466bc058a3def92b18b # v3
+        uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3
         with:
           cache-disabled: true
 
@@ -71,7 +71,7 @@ jobs:
         uses: ./.github/actions/dev-tool-java
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9336dac04dea2507a617466bc058a3def92b18b # v3
+        uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3
         with:
           cache-disabled: true
 
@@ -105,3 +105,18 @@ jobs:
             -p "tools/server-admin" \
             -d "Dockerfile-admintool" \
             ghcr.io/projectnessie/nessie-server-admin-unstable
+          tools/dockerbuild/build-push-images.sh \
+            -g ":nessie-cli" \
+            -p "cli/cli" \
+            -d "Dockerfile-cli" \
+            ghcr.io/projectnessie/nessie-cli-unstable
+
+      # NOTE: GH container registry behaves a bit weird when new images are added.
+      # The first push/publication of a _new_ image (package) fails with a HTTP/403,
+      # but the next one works.
+      # See also the note in .github/docker-sync/regsync.yml about quay.io.
+      #
+      # Also make sure to add the new image to the site, currently in:
+      #   site/docs/downloads/index.md
+      #   site/in-dev/index.md
+      #   site/in-dev/index-release.md

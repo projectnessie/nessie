@@ -55,19 +55,7 @@ interface TokenResponseBase {
                 .expirationTime(refreshExpiresIn == null ? null : now.plusSeconds(refreshExpiresIn))
                 .build();
 
-    return new Tokens() {
-
-      @Override
-      public AccessToken getAccessToken() {
-        return accessToken;
-      }
-
-      @Nullable
-      @Override
-      public RefreshToken getRefreshToken() {
-        return refreshToken;
-      }
-    };
+    return Tokens.of(accessToken, refreshToken);
   }
 
   /**

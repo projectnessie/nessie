@@ -17,22 +17,12 @@ package org.projectnessie.server.catalog;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.net.URI;
 import java.util.Map;
 import org.projectnessie.testing.gcs.GcsContainer;
 
 public class GcsEmulatorTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager {
-
-  @Documented
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.FIELD)
-  public @interface WarehouseLocation {}
 
   private final GcsContainer gcs = new GcsContainer().withStartupAttempts(5);
 
@@ -43,10 +33,10 @@ public class GcsEmulatorTestResourceLifecycleManager
     gcs.start();
     warehouseLocation = URI.create("gs://" + gcs.bucket() + "/warehouse");
     return ImmutableMap.<String, String>builder()
-        .put("nessie.catalog.service.gcs.host", gcs.baseUri())
-        .put("nessie.catalog.service.gcs.project-id", gcs.projectId())
-        .put("nessie.catalog.service.gcs.auth-type", "ACCESS_TOKEN")
-        .put("nessie.catalog.service.gcs.oauth2-token.token", gcs.oauth2token())
+        .put("nessie.catalog.service.gcs.default-options.host", gcs.baseUri())
+        .put("nessie.catalog.service.gcs.default-options.project-id", gcs.projectId())
+        .put("nessie.catalog.service.gcs.default-options.auth-type", "ACCESS_TOKEN")
+        .put("nessie.catalog.service.gcs.default-options.oauth2-token.token", gcs.oauth2token())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

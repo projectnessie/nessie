@@ -92,20 +92,26 @@ public interface ExternalBaseUri {
   }
 
   /**
-   * The URI to sign a request to S3 for a specific content key.
+   * The path, without a leading slash, of the URI to sign a request to S3 for a specific content
+   * key.
+   *
+   * <p>Must use both {@code s3.signer.uri} and {@code s3.signer.endpoint}, because Iceberg before
+   * 1.5.0 does not handle full URIs passed via {@code s3.signer.endpoint}. This was changed via <a
+   * href="https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216">this
+   * Iceberg PR</a> first released in Iceberg 1.5.0. It's unclear how other language implementations
+   * deal with this.
    *
    * @param prefix the prefix of the request (warehouse and reference)
    * @param contentKey the content key to sign the request for
    * @param currentBaseLocation the current base location, used to authorize signing for staged
    *     tables mostly
    */
-  default URI icebergS3SignerUri(String prefix, ContentKey contentKey, String currentBaseLocation) {
-    return icebergBaseURI()
-        .resolve(
-            format(
-                "v1/%s/s3-sign/%s?loc=%s",
-                encode(prefix, UTF_8),
-                encode(contentKey.toPathString(), UTF_8),
-                encode(currentBaseLocation, UTF_8)));
+  default String icebergS3SignerPath(
+      String prefix, ContentKey contentKey, String currentBaseLocation) {
+    return format(
+        "v1/%s/s3-sign/%s?loc=%s",
+        encode(prefix, UTF_8),
+        encode(contentKey.toPathString(), UTF_8),
+        encode(currentBaseLocation, UTF_8));
   }
 }

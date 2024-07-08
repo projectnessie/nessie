@@ -107,6 +107,8 @@ public interface HttpConfigApi extends ConfigApi {
   @APIResponses({
     @APIResponse(
         responseCode = "200",
+        description =
+            "The configuration was updated. The response body contains the previous configuration value.",
         content =
             @Content(
                 mediaType = "application/json",

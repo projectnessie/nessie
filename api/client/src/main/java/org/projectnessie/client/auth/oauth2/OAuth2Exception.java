@@ -18,30 +18,23 @@ package org.projectnessie.client.auth.oauth2;
 import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.Status;
 
+/** An exception thrown when the server replies with an OAuth2 error. */
 public class OAuth2Exception extends HttpClientResponseException {
 
   private final String errorCode;
+  private final String errorDescription;
 
-  OAuth2Exception(Status status, ErrorResponse errorResponse) {
-    super(createMessage(status, errorResponse), status);
+  OAuth2Exception(String message, Status status, ErrorResponse errorResponse) {
+    super(message, status);
     this.errorCode = errorResponse.getErrorCode();
-  }
-
-  private static String createMessage(Status status, ErrorResponse errorResponse) {
-    StringBuilder builder =
-        new StringBuilder()
-            .append("OAuth2 server replied with HTTP status code ")
-            .append(status.getCode())
-            .append(" and error code \"")
-            .append(errorResponse.getErrorCode())
-            .append("\"");
-    if (errorResponse.getErrorDescription() != null) {
-      builder.append(": ").append(errorResponse.getErrorDescription());
-    }
-    return builder.toString();
+    this.errorDescription = errorResponse.getErrorDescription();
   }
 
   public String getErrorCode() {
     return errorCode;
+  }
+
+  public String getErrorDescription() {
+    return errorDescription;
   }
 }

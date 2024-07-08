@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - GC - Iceberg content functionality"
+publishingHelper { mavenName = "Nessie - GC - Iceberg content functionality" }
 
 dependencies {
   implementation(platform(libs.iceberg.bom))

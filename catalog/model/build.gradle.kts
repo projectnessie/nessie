@@ -20,7 +20,7 @@ plugins {
   alias(libs.plugins.annotations.stripper)
 }
 
-extra["maven.name"] = "Nessie - Catalog - Schema Model"
+publishingHelper { mavenName = "Nessie - Catalog - Schema Model" }
 
 description = "Nessie Catalog Schema Model classes"
 

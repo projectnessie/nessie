@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.transfer;
 
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -124,9 +125,12 @@ final class ExportContents extends ExportCommon {
         Map<ContentKey, ContentResult> values =
             store.getValues(
                 ref.getHash(),
-                batch.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toList()));
+                batch.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toList()),
+                false);
         for (Map.Entry<ContentKey, ContentResult> entry : values.entrySet()) {
-          Operation op = putOperationFromCommit(entry.getKey(), entry.getValue().content()).build();
+          Operation op =
+              putOperationFromCommit(entry.getKey(), requireNonNull(entry.getValue().content()))
+                  .build();
           hasher.putBytes(op.toByteArray());
           commitBuilder.addOperations(op);
         }

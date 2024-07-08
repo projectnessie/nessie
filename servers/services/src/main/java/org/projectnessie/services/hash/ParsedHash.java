@@ -36,7 +36,7 @@ import org.projectnessie.versioned.RelativeCommitSpec;
  * <p>It is package-private, because it is only used by {@link HashResolver}.
  */
 @Value.Immutable
-interface ParsedHash {
+public interface ParsedHash {
 
   Optional<Hash> getAbsolutePart();
 

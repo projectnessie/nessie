@@ -248,7 +248,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
     return Iterators.partition(input.iterator(), batchSize);
   }
 
-  private void processLines(NessieApiV2 api, Branch ref, InputStream input) throws IOException {
+  private void processLines(NessieApiV2 api, Branch ref, InputStream input) {
     var parser = keySelector.fileKeySelector.keyParser();
     var batches =
         Iterators.partition(

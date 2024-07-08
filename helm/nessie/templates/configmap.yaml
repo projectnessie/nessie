@@ -21,9 +21,6 @@ data:
     {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.file.level" .Values.logLevel -}}
-    {{- if or (eq .Values.logLevel "DEBUG") (eq .Values.logLevel "TRACE") -}}
-    {{- $_ = set $map "quarkus.log.min-level" .Values.logLevel -}}
-    {{- end -}}
     {{- end -}}
 
     {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
@@ -111,7 +108,7 @@ data:
     {{- else if eq .Values.tracing.sample "none" -}}
     {{- $_ = set $map "quarkus.otel.traces.sampler" "always_off" -}}
     {{- else -}}
-    {{- $_ = set $map "quarkus.otel.traces.sampler=" "parentbased_traceidratio" -}}
+    {{- $_ = set $map "quarkus.otel.traces.sampler" "parentbased_traceidratio" -}}
     {{- $_ = set $map "quarkus.otel.traces.sampler.arg" .Values.tracing.sample -}}
     {{- end -}}
     {{- end -}}
@@ -119,8 +116,38 @@ data:
     {{- $_ = set $map "quarkus.otel.sdk.disabled" true -}}
     {{- end -}}
 
+    {{- if .Values.metrics.enabled -}}
+    {{- range $name, $value := .Values.metrics.tags -}}
+    {{- $_ = set $map (print "nessie.metrics.tags." $name) $value -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.micrometer.enabled" "false" -}}
+    {{- end -}}
+
+    {{- if .Values.catalog.enabled -}}
+    {{- list .Values.catalog.iceberg $map | include "nessie.applyCatalogIcebergOptions" -}}
+    {{- list .Values.catalog.storage.s3 "nessie.catalog.service.s3." $map | include "nessie.applyCatalogStorageS3RootOptions" }}
+    {{- list .Values.catalog.storage.s3.defaultOptions "nessie.catalog.service.s3.default-options." $map | include "nessie.applyCatalogStorageS3BucketOptions" }}
+    {{- range $i, $bucket := .Values.catalog.storage.s3.buckets -}}
+    {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.s3.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
+    {{- list $bucket ( printf "nessie.catalog.service.s3.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageS3BucketOptions" }}
+    {{- end -}}
+    {{- list .Values.catalog.storage.gcs "nessie.catalog.service.gcs." $map | include "nessie.applyCatalogStorageGcsRootOptions" }}
+    {{- list .Values.catalog.storage.gcs.defaultOptions "nessie.catalog.service.gcs.default-options." $map | include "nessie.applyCatalogStorageGcsBucketOptions" }}
+    {{- range $i, $bucket := .Values.catalog.storage.gcs.buckets -}}
+    {{- if not $bucket.name -}}{{- required ( printf "catalog.storage.gcs.buckets[%d]: missing bucket name" $i ) $bucket.name -}}{{- end -}}
+    {{ list $bucket ( printf "nessie.catalog.service.gcs.buckets.%s." (quote $bucket.name ) ) $map | include "nessie.applyCatalogStorageGcsBucketOptions" }}
+    {{- end -}}
+    {{- list .Values.catalog.storage.adls "nessie.catalog.service.adls." $map | include "nessie.applyCatalogStorageAdlsRootOptions" }}
+    {{- list .Values.catalog.storage.adls.defaultOptions "nessie.catalog.service.adls.default-options." $map | include "nessie.applyCatalogStorageAdlsFileSystemOptions" }}
+    {{- range $i, $filesystem := .Values.catalog.storage.adls.filesystems -}}
+    {{- if not $filesystem.name -}}{{- required ( printf "catalog.storage.adls.filesystems[%d]: missing filesystem name" $i ) $filesystem.name -}}{{- end -}}
+    {{- list $filesystem ( printf "nessie.catalog.service.adls.file-systems.%s." (quote $filesystem.name ) ) $map | include "nessie.applyCatalogStorageAdlsFileSystemOptions" }}
+    {{- end -}}
+    {{- end -}}
+
     {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
 
     {{- range $k, $v := $map }}
-    {{ printf "%s=%s" $k ( toString $v ) }}
+    {{ printf "%s=%s" $k ( eq $v nil | ternary "" ( toString $v )) }}
     {{- end }}

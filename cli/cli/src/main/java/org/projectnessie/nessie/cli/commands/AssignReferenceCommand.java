@@ -58,7 +58,6 @@ public class AssignReferenceCommand extends NessieCommand<AssignReferenceCommand
       default:
         throw new IllegalArgumentException("Unknown reference type: " + spec.getRefType());
     }
-    ;
 
     Reference assigned = api.assignReference().reference(ref).assignTo(toRef).assignAndGet();
 

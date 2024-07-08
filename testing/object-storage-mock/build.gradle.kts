@@ -16,7 +16,7 @@
 
 plugins { id("nessie-conventions-iceberg") }
 
-extra["maven.name"] = "Nessie - S3/ADLS/GCS object storage mock"
+publishingHelper { mavenName = "Nessie - S3/ADLS/GCS object storage mock" }
 
 description = "Rudimentary S3, ADLS-Gen2, GCS endpoint delegating to functions to serve content."
 

@@ -19,7 +19,7 @@ plugins {
   id("nessie-jacoco")
 }
 
-extra["maven.name"] = "Nessie - Catalog - Service Implementation"
+publishingHelper { mavenName = "Nessie - Catalog - Service Implementation" }
 
 dependencies {
   implementation(project(":nessie-catalog-files-api"))
@@ -63,4 +63,18 @@ dependencies {
   testFixturesApi(project(":nessie-tasks-service-impl"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-catalog-format-iceberg-fixturegen"))
+  testFixturesApi(project(":nessie-catalog-secrets-api"))
+  testFixturesApi(project(":nessie-object-storage-mock"))
+  testFixturesApi(project(":nessie-combined-cs"))
+  testFixturesApi(project(":nessie-services"))
+  testFixturesApi(project(":nessie-services-config"))
+  testFixturesApi(project(":nessie-versioned-spi"))
+  testFixturesApi(project(":nessie-versioned-storage-store"))
+  testFixturesApi(project(":nessie-rest-services"))
+
+  testImplementation(platform(libs.awssdk.bom))
+  testImplementation("software.amazon.awssdk:s3")
+  testImplementation("software.amazon.awssdk:url-connection-client")
+  testCompileOnly(project(":nessie-immutables"))
+  testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 }

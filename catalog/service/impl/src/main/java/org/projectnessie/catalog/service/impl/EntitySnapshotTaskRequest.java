@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.service.impl;
 
-import static org.projectnessie.catalog.service.impl.EntitySnapshotObj.OBJ_TYPE;
+import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.OBJ_TYPE;
 
 import jakarta.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
+import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;

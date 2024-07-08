@@ -17,7 +17,6 @@ package org.projectnessie.catalog.formats.iceberg.types;
 
 import static java.lang.Integer.parseInt;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -108,8 +107,7 @@ final class IcebergTypes {
 
   static final class IcebergTypeDeserializer extends JsonDeserializer<IcebergType> {
     @Override
-    public IcebergType deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JacksonException {
+    public IcebergType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       switch (p.currentToken()) {
         case VALUE_STRING:
           return primitiveFromString(p.getValueAsString());
