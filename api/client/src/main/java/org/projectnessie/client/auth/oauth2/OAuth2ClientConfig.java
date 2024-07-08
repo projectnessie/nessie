@@ -135,13 +135,16 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
   @Value.Lazy
   JsonNode getOpenIdProviderMetadata() {
-    URI issuerUrl = getIssuerUrl().orElseThrow(IllegalStateException::new);
+    URI issuerUrl = getIssuerUrl().orElseThrow(() -> new IllegalStateException("No issuer-URL"));
     return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 
   @Value.Lazy
   JsonNode getImpersonationOpenIdProviderMetadata() {
-    URI issuerUrl = getImpersonationConfig().getIssuerUrl().orElseThrow(IllegalStateException::new);
+    URI issuerUrl =
+        getImpersonationConfig()
+            .getIssuerUrl()
+            .orElseThrow(() -> new IllegalStateException("No issuer-URL"));
     return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
   }
 

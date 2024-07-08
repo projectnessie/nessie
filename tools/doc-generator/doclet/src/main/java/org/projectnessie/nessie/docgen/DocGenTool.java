@@ -86,7 +86,9 @@ public class DocGenTool implements Callable<Integer> {
   @Override
   public Integer call() throws Exception {
     DocumentationTool docTool =
-        ServiceLoader.load(DocumentationTool.class).findFirst().orElseThrow();
+        ServiceLoader.load(DocumentationTool.class)
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No DocumentationTool instance present"));
 
     Files.createDirectories(output);
 

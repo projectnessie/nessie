@@ -127,7 +127,11 @@ public final class GcsClients {
         try {
           return UserCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
+                  bucketOptions
+                      .authCredentialsJson()
+                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
+                      .key()
+                      .getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -136,13 +140,20 @@ public final class GcsClients {
         try {
           return ServiceAccountCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions.authCredentialsJson().orElseThrow().key().getBytes(UTF_8)),
+                  bucketOptions
+                      .authCredentialsJson()
+                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
+                      .key()
+                      .getBytes(UTF_8)),
               transportFactory);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
       case ACCESS_TOKEN:
-        TokenSecret oauth2token = bucketOptions.oauth2Token().orElseThrow();
+        TokenSecret oauth2token =
+            bucketOptions
+                .oauth2Token()
+                .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
         AccessToken accessToken =
             new AccessToken(
                 oauth2token.token(),

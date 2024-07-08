@@ -123,7 +123,10 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
   private IcebergLoadViewResponse loadViewResultFromSnapshotResponse(
       SnapshotResponse snap, IcebergLoadViewResponse.Builder builder) {
     IcebergView content = (IcebergView) snap.content();
-    IcebergViewMetadata viewMetadata = (IcebergViewMetadata) snap.entityObject().orElseThrow();
+    IcebergViewMetadata viewMetadata =
+        (IcebergViewMetadata)
+            snap.entityObject()
+                .orElseThrow(() -> new IllegalStateException("entity object missing"));
     return loadViewResult(content.getMetadataLocation(), viewMetadata, builder);
   }
 
@@ -248,7 +251,9 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         .map(
             snap -> {
               IcebergViewMetadata viewMetadata =
-                  (IcebergViewMetadata) snap.entityObject().orElseThrow();
+                  (IcebergViewMetadata)
+                      snap.entityObject()
+                          .orElseThrow(() -> new IllegalStateException("entity object missing"));
               return IcebergLoadViewResponse.builder()
                   .metadata(viewMetadata)
                   .metadataLocation(snapshotMetadataLocation(snap))

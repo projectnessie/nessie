@@ -209,7 +209,10 @@ final class ImportSnapshotWorker {
                   viewMetadata.versions().stream()
                       .filter(v -> v.versionId() == viewMetadata.currentVersionId())
                       .findFirst()
-                      .orElseThrow()
+                      .orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "Iceberg view has no version element with the id for the current-version-ID"))
                       .timestampMs());
 
       snapshot = icebergViewSnapshotToNessie(snapshotId, null, view, viewMetadata);
