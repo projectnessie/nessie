@@ -46,7 +46,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMI
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.objtypes.Compression.NONE;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
-import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeBundle.newGenericObjType;
+import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.newGenericObjType;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;

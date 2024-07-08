@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import java.util.function.Consumer;
+import jakarta.annotation.Nonnull;
 
-public interface ObjTypeBundle {
-
-  void register(Consumer<ObjType> registrar);
+public interface ObjTypeMapper {
+  @Nonnull
+  ObjType mapGenericObjType(String nameOrShortName);
 }

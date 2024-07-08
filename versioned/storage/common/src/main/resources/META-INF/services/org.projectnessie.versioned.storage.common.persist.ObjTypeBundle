@@ -15,4 +15,3 @@
 #
 
 org.projectnessie.versioned.storage.common.objtypes.StandardObjTypeBundle
-org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeBundle

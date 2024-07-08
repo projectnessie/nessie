@@ -33,31 +33,19 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
+import org.projectnessie.versioned.storage.common.persist.ObjTypeMapper;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
-/** Registers a "fallback" handler to handle otherwise unhandled object types. */
-public class GenericObjTypeBundle implements ObjTypeBundle, ObjTypeBundle.ObjTypeMapper {
-  @Override
-  public void register(Consumer<ObjType> registrar) {
-    // no own object types
-  }
-
-  @Override
-  public Optional<ObjTypeMapper> genericObjTypeMapper() {
-    return Optional.of(this);
-  }
-
+/** Used to handle otherwise unhandled object types. */
+public class GenericObjTypeMapper implements ObjTypeMapper {
   @Override
   @Nonnull
   public ObjType mapGenericObjType(String nameOrShortName) {
-    return genericTypes.computeIfAbsent(nameOrShortName, GenericObjTypeBundle::newGenericObjType);
+    return genericTypes.computeIfAbsent(nameOrShortName, GenericObjTypeMapper::newGenericObjType);
   }
 
   @VisibleForTesting
@@ -96,5 +84,5 @@ public class GenericObjTypeBundle implements ObjTypeBundle, ObjTypeBundle.ObjTyp
 
   @Documented
   @Target({ElementType.FIELD, ElementType.METHOD})
-  static @interface AllowNulls {}
+  @interface AllowNulls {}
 }

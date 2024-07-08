@@ -15,16 +15,14 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import jakarta.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
+import org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper;
 
 public final class ObjTypes {
 
@@ -40,7 +38,6 @@ public final class ObjTypes {
     if (type == null) {
       type = Registry.maybeMapped(name);
     }
-    checkArgument(type != null, "Unknown object type name: %s", name);
     return type;
   }
 
@@ -59,17 +56,16 @@ public final class ObjTypes {
   private static final class Registry {
     private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
-    private static final Optional<ObjTypeBundle.ObjTypeMapper> OBJ_TYPE_MAPPER;
+    private static final ObjTypeMapper OBJ_TYPE_MAPPER;
 
     static ObjType maybeMapped(String name) {
-      return OBJ_TYPE_MAPPER.map(m -> m.mapGenericObjType(name)).orElse(null);
+      return OBJ_TYPE_MAPPER.mapGenericObjType(name);
     }
 
     static {
       Map<String, ObjType> byAnyName = new TreeMap<>();
       Map<String, ObjType> byName = new TreeMap<>();
       Map<String, ObjType> byShortName = new HashMap<>();
-      ObjTypeBundle.ObjTypeMapper objTypeMapper = null;
       for (ObjTypeBundle bundle : ServiceLoader.load(ObjTypeBundle.class)) {
         bundle.register(
             objType -> {
@@ -91,21 +87,10 @@ public final class ObjTypes {
               byAnyName.put(objType.name(), objType);
               byAnyName.put(objType.shortName(), objType);
             });
-        if (bundle.genericObjTypeMapper().isPresent()) {
-          ObjTypeBundle.ObjTypeMapper mapper = bundle.genericObjTypeMapper().get();
-          if (objTypeMapper != null) {
-            throw new IllegalStateException(
-                "There is more than one generic object type mapper: "
-                    + objTypeMapper.getClass().getName()
-                    + " and "
-                    + mapper.getClass().getName());
-          }
-          objTypeMapper = mapper;
-        }
       }
       BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());
-      OBJ_TYPE_MAPPER = Optional.ofNullable(objTypeMapper);
+      OBJ_TYPE_MAPPER = new GenericObjTypeMapper();
     }
   }
 }

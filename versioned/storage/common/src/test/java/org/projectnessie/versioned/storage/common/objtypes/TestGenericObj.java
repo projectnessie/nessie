@@ -17,7 +17,7 @@ package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
-import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeBundle.newGenericObjType;
+import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.newGenericObjType;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeBundle.GenericObj;
+import org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.GenericObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
