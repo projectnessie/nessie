@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static java.util.stream.Collectors.toList;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
@@ -413,6 +414,22 @@ public class CatalogServiceImpl implements CatalogService {
                 throw e;
               } catch (Exception e) {
                 throw new RuntimeException(e);
+              }
+            })
+        // Add a failure handler, that cover the commitWithResponse() above but also all write
+        // failure that can happen in the stages added by
+        // applyIcebergTable/ViewCommitOperation().
+        .whenComplete(
+            (r, e) -> {
+              if (e != null) {
+                try {
+                  objectIO.deleteObjects(
+                      multiTableUpdate.storedLocations().stream()
+                          .map(StorageUri::of)
+                          .collect(toList()));
+                } catch (Exception ex) {
+                  e.addSuppressed(ex);
+                }
               }
             })
         // Persist the Nessie catalog/snapshot objects. Those cannot be stored earlier in the
