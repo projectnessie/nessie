@@ -425,6 +425,7 @@ public class CatalogServiceImpl implements CatalogService {
               if (e instanceof CompletionException) {
                 e = e.getCause();
               }
+              // Unwrap a `throw new RuntimeException(exception)`
               if (e.getClass() == RuntimeException.class
                   && e.getMessage().equals(e.getCause().toString())) {
                 e = e.getCause();
