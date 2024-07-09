@@ -22,7 +22,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,27 +99,29 @@ class TestNessieApiCompatibilityFilter {
     HttpClient.Builder builder =
         HttpClient.builder()
             .setBaseUri(URI.create(wireMock.getHttpBaseUrl()))
-            .setObjectMapper(new ObjectMapper())
-            .addRequestFilter(ctx -> fail("Request filter should not be called"))
-            .addResponseFilter(ctx -> fail("Response filter should not be called"));
+            .setObjectMapper(new ObjectMapper());
 
-    NessieApiCompatibilityFilter filter = new NessieApiCompatibilityFilter(builder, client);
+    NessieApiCompatibilityFilter filter = new NessieApiCompatibilityFilter(client);
 
-    if (expectation == Expectation.OK) {
+    try (HttpClient httpClient = builder.build()) {
+      filter.setHttpClient(httpClient);
 
-      assertThatCode(() -> filter.filter(null)).doesNotThrowAnyException();
+      if (expectation == Expectation.OK) {
 
-    } else {
+        assertThatCode(() -> filter.filter(null)).doesNotThrowAnyException();
 
-      assertThatThrownBy(() -> filter.filter(null))
-          .hasMessageContaining(expectation.expectedErrorMessage())
-          .asInstanceOf(type(NessieApiCompatibilityException.class))
-          .extracting(
-              NessieApiCompatibilityException::getClientApiVersion,
-              NessieApiCompatibilityException::getMinServerApiVersion,
-              NessieApiCompatibilityException::getMaxServerApiVersion,
-              NessieApiCompatibilityException::getActualServerApiVersion)
-          .containsExactly(client, serverMin, serverMax, serverActual);
+      } else {
+
+        assertThatThrownBy(() -> filter.filter(null))
+            .hasMessageContaining(expectation.expectedErrorMessage())
+            .asInstanceOf(type(NessieApiCompatibilityException.class))
+            .extracting(
+                NessieApiCompatibilityException::getClientApiVersion,
+                NessieApiCompatibilityException::getMinServerApiVersion,
+                NessieApiCompatibilityException::getMaxServerApiVersion,
+                NessieApiCompatibilityException::getActualServerApiVersion)
+            .containsExactly(client, serverMin, serverMax, serverActual);
+      }
     }
   }
 

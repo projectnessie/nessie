@@ -269,21 +269,30 @@ public class NessieHttpClientBuilderImpl
       builder.addTracing();
     }
 
+    NessieApiCompatibilityFilter nessieApiCompatibilityFilter = null;
     if (apiVersion.isAssignableFrom(HttpApiV1.class)) {
       if (enableApiCompatibilityCheck) {
-        builder.addRequestFilter(new NessieApiCompatibilityFilter(builder, 1));
+        nessieApiCompatibilityFilter = new NessieApiCompatibilityFilter(1);
+        builder.addRequestFilter(nessieApiCompatibilityFilter);
       }
       builder.setJsonView(Views.V1.class);
       HttpClient httpClient = HttpClients.buildClient(tracing, builder);
+      if (nessieApiCompatibilityFilter != null) {
+        nessieApiCompatibilityFilter.setHttpClient(httpClient);
+      }
       return apiVersion.cast(new HttpApiV1(new RestV1Client(httpClient)));
     }
 
     if (apiVersion.isAssignableFrom(HttpApiV2.class)) {
       if (enableApiCompatibilityCheck) {
-        builder.addRequestFilter(new NessieApiCompatibilityFilter(builder, 2));
+        nessieApiCompatibilityFilter = new NessieApiCompatibilityFilter(2);
+        builder.addRequestFilter(nessieApiCompatibilityFilter);
       }
       builder.setJsonView(Views.V2.class);
       HttpClient httpClient = HttpClients.buildClient(tracing, builder);
+      if (nessieApiCompatibilityFilter != null) {
+        nessieApiCompatibilityFilter.setHttpClient(httpClient);
+      }
       return apiVersion.cast(new HttpApiV2(httpClient));
     }
 
