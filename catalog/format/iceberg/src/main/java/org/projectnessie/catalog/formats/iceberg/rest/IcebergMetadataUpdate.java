@@ -17,6 +17,7 @@ package org.projectnessie.catalog.formats.iceberg.rest;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergStatisticsFileToNessie;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -234,7 +235,7 @@ public interface IcebergMetadataUpdate {
     default void applyToTable(IcebergTableMetadataUpdateState state) {
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
       if (snapshotId == snapshotId()) {
-        state.builder().addStatisticsFile(icebergStatisticsFileToNessie(statistics()));
+        state.builder().statisticsFiles(singleton(icebergStatisticsFileToNessie(statistics())));
       }
     }
   }
@@ -270,8 +271,10 @@ public interface IcebergMetadataUpdate {
       if (snapshotId == partitionStatistics().snapshotId()) {
         state
             .builder()
-            .addPartitionStatisticsFile(
-                NessieModelIceberg.icebergPartitionStatisticsFileToNessie(partitionStatistics()));
+            .partitionStatisticsFiles(
+                singleton(
+                    NessieModelIceberg.icebergPartitionStatisticsFileToNessie(
+                        partitionStatistics())));
       }
     }
   }
