@@ -176,7 +176,7 @@ services:
     image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
     ports:
       # API port
-      - "9001:9000"
+      - "9002:9000"
       # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
       - "9092:9090"
     environment:
