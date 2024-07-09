@@ -37,12 +37,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.ObjTypeMapper;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
-/** Used to handle otherwise unhandled object types. */
-public class GenericObjTypeMapper implements ObjTypeMapper {
-  @Override
+/** <em>Internal</em> class used to handle otherwise unhandled object types. */
+public final class GenericObjTypeMapper {
   @Nonnull
   public ObjType mapGenericObjType(String nameOrShortName) {
     return genericTypes.computeIfAbsent(nameOrShortName, GenericObjTypeMapper::newGenericObjType);

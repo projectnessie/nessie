@@ -56,7 +56,7 @@ public final class ObjTypes {
   private static final class Registry {
     private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
-    private static final ObjTypeMapper OBJ_TYPE_MAPPER;
+    private static final GenericObjTypeMapper OBJ_TYPE_MAPPER;
 
     static ObjType maybeMapped(String name) {
       return OBJ_TYPE_MAPPER.mapGenericObjType(name);
