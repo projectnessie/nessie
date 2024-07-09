@@ -94,7 +94,7 @@ services:
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3://demobucket/
       - nessie.catalog.service.s3.default-options.region=us-east-1
-      - nessie.catalog.service.s3.path-style-access=true
+      - nessie.catalog.service.s3.default-options.path-style-access=true
       - nessie.catalog.service.s3.default-options.access-key.name=minioadmin
       - nessie.catalog.service.s3.default-options.access-key.secret=minioadmin
       # MinIO endpoint for Nessie server
@@ -172,7 +172,7 @@ services:
     image: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
     ports:
       # API port
-      - "9001:9000"
+      - "9002:9000"
       # MinIO UI, browse to http://localhost:9092 to view the MinIO Object Browser
       - "9092:9090"
     environment:
