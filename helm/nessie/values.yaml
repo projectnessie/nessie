@@ -192,6 +192,17 @@ catalog:
         accessPoint: ~
         # -- Authorize cross-region calls when contacting an access point. The default is false.
         allowCrossRegionAccessPoint: false
+        # -- Controls the authentication mode for the Catalog server. Valid values are:
+        # - DEFAULT: Default credentials provider chain.
+        # - STATIC: Static credentials (access-key-id and secret-access-key).
+        # - ENV_VARIABLE: Environment variables.
+        # - SYSTEM_PROPERTY: System properties.
+        # - PROFILE: AWS profile.
+        # - INSTANCE_PROFILE: AWS Instance profile.
+        # - CONTAINER: Container credentials.
+        # - ANONYMOUS: No authentication.
+        # The default is STATIC.
+        serverAuthenticationMode: ~  # STATIC
         # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
         # are:
         # - REQUEST_SIGNING: Each client I/O request is individually authorized (signed) by the
@@ -224,8 +235,7 @@ catalog:
           # associated with the warehouse. If unset, a default of one hour is assumed.
           clientSessionDuration: ~
 
-        # -- AWS credentials. For STS, this defines the Access Key ID and Secret Key ID to be used as
-        # a basic credential for obtaining temporary session credentials.
+        # -- AWS credentials. Required when serverAuthenticationMode is STATIC.
         accessKeySecret:
           # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
           # credentials provider chain is used.
@@ -234,6 +244,9 @@ catalog:
           awsAccessKeyId: ~
           # -- The secret key storing the AWS secret access key.
           awsSecretAccessKey: ~
+
+        # -- AWS profile name. Required when serverAuthenticationMode is PROFILE.
+        profile: ~
 
       # -- Per-bucket S3 settings. Override the general settings above.
       buckets: []

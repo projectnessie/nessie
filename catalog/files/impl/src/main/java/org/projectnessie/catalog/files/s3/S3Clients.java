@@ -28,18 +28,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.List;
-import java.util.Optional;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretsProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.TlsTrustManagersProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -120,21 +115,12 @@ public class S3Clients {
     return httpClient.buildWithDefaults(options.build());
   }
 
-  public static AwsCredentialsProvider basicCredentialsProvider(
-      Optional<BasicCredentials> accessKey) {
-    return accessKey
-        .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
-        .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
-        .orElse(DefaultCredentialsProvider.create());
-  }
-
   public static AwsCredentialsProvider awsCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
-    Optional<String> role = bucketOptions.assumeRole();
-    if (role.isEmpty()) {
-      return basicCredentialsProvider(bucketOptions.accessKey());
+    if (bucketOptions.assumeRole().isPresent()) {
+      return sessions.assumeRoleForServer(bucketOptions);
     }
-    return sessions.assumeRoleForServer(bucketOptions);
+    return bucketOptions.effectiveServerAuthenticationMode().newCredentialsProvider(bucketOptions);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {
