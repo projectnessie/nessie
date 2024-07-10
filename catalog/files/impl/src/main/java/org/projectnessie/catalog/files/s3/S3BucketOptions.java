@@ -101,7 +101,9 @@ public interface S3BucketOptions {
    * <p>Valid values are:
    *
    * <ul>
-   *   <li>{@code APPLICATION_GLOBAL}: Default credentials provider chain.
+   *   <li>{@code APPLICATION_GLOBAL}: Use the AWSSDK <a
+   *       href="https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html">default
+   *       credentials provider</a>.
    *   <li>{@code STATIC}: Static credentials provided through the {@code access-key} option.
    * </ul>
    */

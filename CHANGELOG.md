@@ -14,7 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 - Catalog: The `nessie.catalog.s3.default-options.auth-mode` configuration property has been renamed
   to `nessie.catalog.s3.default-options.client-auth-mode` to better reflect its purpose. The old
-  property name is not supported anymore.
+  property name is not supported anymore and must be updated in customized Helm values and/or 
+  Quarkus configurations.
 
 ### New Features
 
