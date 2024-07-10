@@ -101,14 +101,17 @@ public interface S3BucketOptions {
    * <p>Valid values are:
    *
    * <ul>
-   *   <li>{@code DEFAULT} - Default credentials provider chain.
-   *   <li>{@code STATIC} - Static credentials (access-key-id and secret-access-key).
-   *   <li>{@code ENV_VARIABLE} - Environment variables.
-   *   <li>{@code SYSTEM_PROPERTY} - System properties.
-   *   <li>{@code PROFILE} - AWS profile.
-   *   <li>{@code INSTANCE_PROFILE} - AWS Instance profile.
-   *   <li>{@code CONTAINER} - Container credentials.
-   *   <li>{@code ANONYMOUS} - Anonymous access.
+   *   <li>{@code DEFAULT}: Default credentials provider chain.
+   *   <li>{@code STATIC}: Static credentials provided through the {@code access-key} option.
+   *   <li>{@code ENV_VARIABLE}: Loads credentials from the {@code AWS_ACCESS_KEY_ID}, {@code
+   *       AWS_SECRET_ACCESS_KEY} and {@code AWS_SESSION_TOKEN} environment variables.
+   *   <li>{@code SYSTEM_PROPERTY}: Loads credentials from the system properties {@code
+   *       aws.accessKeyId} and {@code aws.secretAccessKey}.
+   *   <li>{@code PROFILE}: Loads credentials from AWS profile files.
+   *   <li>{@code INSTANCE_PROFILE}: Loads credentials from the Amazon EC2 metadata service.
+   *   <li>{@code CONTAINER}: Loads credentials from a local metadata service on ECS or AWS
+   *       Greengrass.
+   *   <li>{@code ANONYMOUS}: Anonymous access.
    * </ul>
    */
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();

@@ -193,14 +193,14 @@ catalog:
         # -- Authorize cross-region calls when contacting an access point. The default is false.
         allowCrossRegionAccessPoint: false
         # -- Controls the authentication mode for the Catalog server. Valid values are:
-        # - DEFAULT: Default credentials provider chain.
-        # - STATIC: Static credentials (access-key-id and secret-access-key).
-        # - ENV_VARIABLE: Environment variables.
-        # - SYSTEM_PROPERTY: System properties.
-        # - PROFILE: AWS profile.
-        # - INSTANCE_PROFILE: AWS Instance profile.
-        # - CONTAINER: Container credentials.
-        # - ANONYMOUS: No authentication.
+        # - DEFAULT: Use the default AWS credentials provider chain.
+        # - STATIC: Static credentials provided through the accessKeySecret option.
+        # - ENV_VARIABLE: Loads credentials from the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN environment variables.
+        # - SYSTEM_PROPERTY: Loads credentials from the system properties aws.accessKeyId and aws.secretAccessKey.
+        # - PROFILE: Loads credentials from AWS profile files.
+        # - INSTANCE_PROFILE: Loads credentials from the Amazon EC2 metadata service.
+        # - CONTAINER: Loads credentials from a local metadata service on ECS or AWS Greengrass.
+        # - ANONYMOUS: Anonymous access.
         # The default is STATIC.
         serverAuthenticationMode: ~  # STATIC
         # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
@@ -237,8 +237,7 @@ catalog:
 
         # -- AWS credentials. Required when serverAuthenticationMode is STATIC.
         accessKeySecret:
-          # -- The secret name to pull AWS credentials from. Optional; if not present, the default AWS
-          # credentials provider chain is used.
+          # -- The secret name to pull AWS credentials from.
           name: ~
           # -- The secret key storing the AWS secret key id.
           awsAccessKeyId: ~

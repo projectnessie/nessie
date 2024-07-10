@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.catalog.files.s3;
 
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
@@ -28,6 +27,8 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider;
 
 /**
+ * Authentication modes for S3.
+ *
  * @see <a
  *     href="https://github.com/quarkiverse/quarkus-amazon-services/blob/4ecc71767857d476767ffd36f0fac98c1b2b7de1/common/runtime/src/main/java/io/quarkus/amazon/common/runtime/AwsCredentialsProviderType.java">Quarkus
  *     AWS AwsCredentialsProviderType</a>
@@ -55,7 +56,7 @@ public enum S3ServerAuthenticationMode {
           .orElseThrow(
               () ->
                   new IllegalArgumentException(
-                      "Missing access key and secret for STATIC auth type"));
+                      "Missing access key and secret for STATIC authentication mode"));
     }
   },
 
@@ -80,7 +81,9 @@ public enum S3ServerAuthenticationMode {
           .profile()
           .map(ProfileCredentialsProvider::create)
           .orElseThrow(
-              () -> new IllegalArgumentException("Missing profile name for PROFILE auth type"));
+              () ->
+                  new IllegalArgumentException(
+                      "Missing profile name for PROFILE authentication mode"));
     }
   },
 

@@ -19,9 +19,9 @@ import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
+import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
