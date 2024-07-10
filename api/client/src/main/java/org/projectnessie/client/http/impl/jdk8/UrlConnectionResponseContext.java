@@ -42,12 +42,6 @@ final class UrlConnectionResponseContext implements ResponseContext {
   }
 
   @Override
-  @Deprecated
-  public Status getResponseCode() {
-    return getStatus();
-  }
-
-  @Override
   public Status getStatus() {
     return status;
   }

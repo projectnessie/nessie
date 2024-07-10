@@ -48,12 +48,6 @@ class TestOAuth2ResponseFilter {
     ResponseContext context =
         new ResponseContext() {
           @Override
-          @Deprecated
-          public Status getResponseCode() {
-            return getStatus();
-          }
-
-          @Override
           public Status getStatus() {
             return status;
           }

@@ -232,12 +232,6 @@ public class TestResponseFilter {
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
                       @Override
-                      @Deprecated
-                      public Status getResponseCode() {
-                        return getStatus();
-                      }
-
-                      @Override
                       public Status getStatus() {
                         return Status.UNAUTHORIZED;
                       }
@@ -280,12 +274,6 @@ public class TestResponseFilter {
             () ->
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
-                      @Override
-                      @Deprecated
-                      public Status getResponseCode() {
-                        return getStatus();
-                      }
-
                       @Override
                       public Status getStatus() {
                         return Status.NOT_IMPLEMENTED;
@@ -399,12 +387,6 @@ public class TestResponseFilter {
     TestResponseContext(Status code, JsonNode error) {
       this.code = code;
       this.error = error;
-    }
-
-    @Override
-    @Deprecated
-    public Status getResponseCode() {
-      return getStatus();
     }
 
     @Override
