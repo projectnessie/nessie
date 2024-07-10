@@ -62,25 +62,28 @@ public abstract class BaseHttpRequest extends HttpRequest {
 
   @Override
   public HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
-    URI uri = uriBuilder.build();
-    RequestContext requestContext = new RequestContextImpl(headers, uri, method, body);
     ResponseContext responseContext = null;
     RuntimeException error = null;
     try {
-      prepareRequest(requestContext);
-      responseContext = processResponse(uri, method, body, requestContext);
-      processResponseFilters(responseContext);
-      mimicUrlConnectionBehavior(method, responseContext, uri);
-      return config.responseFactory().make(responseContext, config.getMapper());
+      URI uri = uriBuilder.build();
+      RequestContext requestContext = new RequestContextImpl(headers, uri, method, body);
+      try {
+        prepareRequest(requestContext);
+        responseContext = processResponse(uri, method, body, requestContext);
+        processResponseFilters(responseContext);
+        mimicUrlConnectionBehavior(method, responseContext, uri);
+        return config.responseFactory().make(responseContext, config.getMapper());
+      } catch (RuntimeException e) {
+        error = e;
+        throw e;
+      } finally {
+        processCallbacks(requestContext, responseContext, error);
+      }
     } catch (RuntimeException e) {
       error = e;
       throw e;
     } finally {
-      try {
-        processCallbacks(requestContext, responseContext, error);
-      } finally {
-        cleanUp(responseContext, error);
-      }
+      cleanUp(responseContext, error);
     }
   }
 
@@ -171,7 +174,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
       @Nullable RuntimeException error) {
     List<BiConsumer<ResponseContext, Exception>> callbacks = requestContext.getResponseCallbacks();
     if (callbacks != null) {
-      RuntimeException toThrow = null;
+      RuntimeException toThrow = error;
       for (BiConsumer<ResponseContext, Exception> callback : callbacks) {
         try {
           callback.accept(responseContext, error);
