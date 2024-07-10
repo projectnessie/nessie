@@ -77,6 +77,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsExc
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -84,8 +85,6 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObjs;
 
 public class BigTablePersist implements Persist {
 
@@ -582,7 +581,7 @@ public class BigTablePersist implements Persist {
     mutation
         .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized))
         .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue);
-    UpdateableObjs.extractVersionToken(obj)
+    UpdateableObj.extractVersionToken(obj)
         .map(ByteString::copyFromUtf8)
         .ifPresent(bs -> mutation.setCell(FAMILY_OBJS, QUALIFIER_OBJ_VERS, CELL_TIMESTAMP, bs));
     return mutation;

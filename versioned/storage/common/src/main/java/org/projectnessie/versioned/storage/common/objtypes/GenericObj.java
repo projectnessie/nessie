@@ -35,7 +35,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
 @Value.Style(jdkOnly = true)
-public abstract class GenericObj implements Obj {
+abstract class GenericObj implements Obj {
 
   public static final String VERSION_TOKEN_ATTRIBUTE = "versionToken";
 

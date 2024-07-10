@@ -66,14 +66,13 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObjs;
 
 public class CassandraPersist implements Persist {
 
@@ -425,7 +424,7 @@ public class CassandraPersist implements Persist {
       throws ObjTooLargeException {
     ObjId id = obj.id();
     ObjType type = obj.type();
-    String versionToken = UpdateableObjs.extractVersionToken(obj).orElse(null);
+    String versionToken = UpdateableObj.extractVersionToken(obj).orElse(null);
 
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 

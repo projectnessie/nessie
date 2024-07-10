@@ -34,7 +34,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj;
 

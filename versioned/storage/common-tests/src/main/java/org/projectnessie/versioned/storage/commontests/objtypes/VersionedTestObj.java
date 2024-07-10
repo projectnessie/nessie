@@ -19,8 +19,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.objtypes.CustomObjType;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableVersionedTestObj.class)
