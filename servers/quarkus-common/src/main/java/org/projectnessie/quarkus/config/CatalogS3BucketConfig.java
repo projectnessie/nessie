@@ -52,9 +52,6 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
 
   @Override
-  Optional<String> profile();
-
-  @Override
   Optional<URI> stsEndpoint();
 
   @Override

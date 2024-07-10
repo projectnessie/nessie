@@ -123,16 +123,6 @@ public interface S3BucketOptions {
   Optional<BasicCredentials> accessKey();
 
   /**
-   * The profile name to use when loading AWS credentials from the standard AWS configuration files.
-   *
-   * <p>Required when {@code server-authentication-mode} is {@code PROFILE}.
-   *
-   * <p>For STS, this defines the profile name to be used as a basic credential provider for
-   * obtaining temporary session credentials.
-   */
-  Optional<String> profile();
-
-  /**
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token
    * Service</a> endpoint.
    *
