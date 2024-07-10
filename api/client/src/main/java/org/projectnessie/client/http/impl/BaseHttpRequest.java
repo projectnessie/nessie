@@ -62,29 +62,23 @@ public abstract class BaseHttpRequest extends HttpRequest {
 
   @Override
   public HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
+    URI uri = uriBuilder.build();
+    RequestContext requestContext = new RequestContextImpl(headers, uri, method, body);
     ResponseContext responseContext = null;
     RuntimeException error = null;
     try {
-      URI uri = uriBuilder.build();
-      RequestContext requestContext = new RequestContextImpl(headers, uri, method, body);
-      try {
-        prepareRequest(requestContext);
-        responseContext = processResponse(uri, method, body, requestContext);
-        processResponseFilters(responseContext);
-        mimicUrlConnectionBehavior(method, responseContext, uri);
-        return config.responseFactory().make(responseContext, config.getMapper());
-      } catch (RuntimeException e) {
-        error = e;
-        throw e;
-      } finally {
-        processCallbacks(requestContext, responseContext, error);
-      }
+      prepareRequest(requestContext);
+      responseContext = processResponse(uri, method, body, requestContext);
+      processResponseFilters(responseContext);
+      mimicUrlConnectionBehavior(method, responseContext, uri);
+      return config.responseFactory().make(responseContext, config.getMapper());
     } catch (RuntimeException e) {
       error = e;
-      throw e;
     } finally {
+      error = processCallbacks(requestContext, responseContext, error);
       cleanUp(responseContext, error);
     }
+    throw error;
   }
 
   protected void prepareRequest(RequestContext context) {
@@ -168,28 +162,26 @@ public abstract class BaseHttpRequest extends HttpRequest {
     }
   }
 
-  protected void processCallbacks(
+  protected RuntimeException processCallbacks(
       RequestContext requestContext,
       @Nullable ResponseContext responseContext,
-      @Nullable RuntimeException error) {
+      @Nullable RuntimeException originalError) {
     List<BiConsumer<ResponseContext, Exception>> callbacks = requestContext.getResponseCallbacks();
+    RuntimeException error = originalError;
     if (callbacks != null) {
-      RuntimeException toThrow = error;
       for (BiConsumer<ResponseContext, Exception> callback : callbacks) {
         try {
-          callback.accept(responseContext, error);
+          callback.accept(responseContext, originalError);
         } catch (RuntimeException e) {
-          if (toThrow == null) {
-            toThrow = e;
+          if (error == null) {
+            error = e;
           } else {
-            toThrow.addSuppressed(e);
+            error.addSuppressed(e);
           }
         }
       }
-      if (toThrow != null) {
-        throw toThrow;
-      }
     }
+    return error;
   }
 
   protected void cleanUp(ResponseContext responseContext, RuntimeException error) {
