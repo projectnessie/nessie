@@ -94,6 +94,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObjs;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.mongodb.serializers.ObjSerializers;
 
@@ -691,12 +692,7 @@ public class MongoDBPersist implements Persist {
     Document inner = new Document();
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
-    if (obj instanceof UpdateableObj) {
-      String versionToken = ((UpdateableObj) obj).versionToken();
-      if (versionToken != null) {
-        doc.put(COL_OBJ_VERS, versionToken);
-      }
-    }
+    UpdateableObjs.extractVersionToken(obj).ifPresent(token -> doc.put(COL_OBJ_VERS, token));
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =

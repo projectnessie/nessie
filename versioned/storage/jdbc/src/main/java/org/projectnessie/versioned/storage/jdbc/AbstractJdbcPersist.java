@@ -77,6 +77,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObjs;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
@@ -515,8 +516,7 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
         serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
-        String versionToken =
-            (obj instanceof UpdateableObj) ? ((UpdateableObj) obj).versionToken() : null;
+        String versionToken = UpdateableObjs.extractVersionToken(obj).orElse(null);
         if (versionToken != null) {
           ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), versionToken);
         } else {

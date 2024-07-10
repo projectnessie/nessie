@@ -77,6 +77,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObjs;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.dynamodb.serializers.ObjSerializers;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
@@ -629,12 +630,8 @@ public class DynamoDBPersist implements Persist {
     Map<String, AttributeValue> inner = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
-    if (obj instanceof UpdateableObj) {
-      String versionToken = ((UpdateableObj) obj).versionToken();
-      if (versionToken != null) {
-        item.put(COL_OBJ_VERS, fromS(versionToken));
-      }
-    }
+    UpdateableObjs.extractVersionToken(obj)
+        .ifPresent(token -> item.put(COL_OBJ_VERS, fromS(token)));
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
     int indexSizeLimit =

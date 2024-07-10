@@ -15,29 +15,13 @@
  */
 package org.projectnessie.versioned.storage.common.objtypes;
 
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_ID_KEY;
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_TYPE_KEY;
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.OBJ_VERS_KEY;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.uncachedObjType;
 
-import com.fasterxml.jackson.annotation.JacksonInject;
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 /** <em>Internal</em> class used to handle otherwise unhandled object types. */
 public final class GenericObjTypeMapper {
@@ -52,35 +36,4 @@ public final class GenericObjTypeMapper {
   }
 
   private final Map<String, ObjType> genericTypes = new ConcurrentHashMap<>();
-
-  @Value.Immutable
-  @Value.Style(jdkOnly = true)
-  @JsonSerialize(as = ImmutableGenericObj.class)
-  @JsonDeserialize(as = ImmutableGenericObj.class)
-  abstract static class GenericObj implements UpdateableObj {
-    @Override
-    @JsonIgnore
-    @JacksonInject(OBJ_TYPE_KEY)
-    public abstract ObjType type();
-
-    @Override
-    @JsonIgnore
-    @JacksonInject(OBJ_ID_KEY)
-    public abstract ObjId id();
-
-    @Override
-    @JsonIgnore
-    @JacksonInject(OBJ_VERS_KEY)
-    @Nullable
-    public abstract String versionToken();
-
-    @JsonAnyGetter
-    @JsonAnySetter
-    @AllowNulls
-    public abstract Map<String, Object> attributes();
-  }
-
-  @Documented
-  @Target({ElementType.FIELD, ElementType.METHOD})
-  @interface AllowNulls {}
 }
