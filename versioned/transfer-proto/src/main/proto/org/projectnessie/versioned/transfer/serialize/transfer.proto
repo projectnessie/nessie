@@ -28,6 +28,9 @@ message ExportMeta {
   repeated string named_references_files = 5;
   repeated string commits_files = 6;
   optional string nessie_version = 7;
+  // added in V3
+  optional int64 generic_obj_count = 8;
+  repeated string generic_obj_files = 9;
 }
 
 enum ExportVersion {
@@ -44,6 +47,13 @@ enum ExportVersion {
    * - importing a V1 export into a V2 capable Nessie version works
    */
   V2 = 2;
+  /*
+   * V3 changes:
+   *
+   * - builds on V2
+   * - adds ability to transfer specific custom object types
+   */
+  V3 = 3;
 }
 
 message HeadsAndForks {
@@ -52,21 +62,23 @@ message HeadsAndForks {
   int64 scan_started_at_in_micros = 3;
 }
 
-// used by V2
+// used by V2 + V3
 message Ref {
   string name = 2;
   bytes pointer = 3;
   optional bytes extended_info_obj = 4;
+  // V3
+  optional int64 created_at_micros = 5;
 }
 
-// used by V1, not used by V2
+// used by V1, not used by V2 & V3
 message NamedReference {
   RefType ref_type = 1;
   string name = 2;
   bytes commit_id = 3;
 }
 
-// used by V1, not used by V2
+// used by V1, not used by V2 & V3
 enum RefType {
   Branch = 0;
   Tag = 1;
@@ -112,4 +124,25 @@ message RepositoryDescriptionProto {
   optional int64 oldest_commit_timestamp_millis = 3;
   optional int64 repository_created_timestamp_millis = 4;
   optional string default_branch_name = 5;
+}
+
+enum Encoding {
+  Unknown_Encoding = 0;
+  Smile = 1;
+}
+
+// Custom objects and special standard objects
+message RelatedObj {
+  bytes id = 1;
+  // the short name or full name of the (custom) obj type
+  string type_name = 2;
+  bytes data = 3;
+  // UpdateableObj
+  optional string version_token = 4;
+  // custom obj
+  optional Encoding encoding = 5;
+  // the value of `o.p.versioned.storage.common.objtypes.Compression.valueString()`
+  optional string compression = 6;
+  // UniqueIdObj
+  optional string space = 7;
 }

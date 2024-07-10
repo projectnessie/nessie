@@ -322,9 +322,30 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   public Reference createReference(
       @Nonnull String name, @Nonnull ObjId pointer, @Nullable ObjId extendedInfoObj)
       throws RefAlreadyExistsException, RetryTimeoutException {
+    long refCreatedTimestamp = persist.config().currentTimeMicros();
+    return createReferenceInternal(name, pointer, extendedInfoObj, refCreatedTimestamp);
+  }
+
+  @Override
+  @Nonnull
+  public Reference createReferenceForImport(
+      @Nonnull String name,
+      @Nonnull ObjId pointer,
+      @Nullable ObjId extendedInfoObj,
+      long createdAtMicros)
+      throws RefAlreadyExistsException, RetryTimeoutException {
+    return createReferenceInternal(name, pointer, extendedInfoObj, createdAtMicros);
+  }
+
+  @Nonnull
+  private Reference createReferenceInternal(
+      @Nonnull String name,
+      @Nonnull ObjId pointer,
+      @Nullable ObjId extendedInfoObj,
+      long refCreatedTimestamp)
+      throws RefAlreadyExistsException, RetryTimeoutException {
     checkArgument(!isInternalReferenceName(name));
 
-    long refCreatedTimestamp = persist.config().currentTimeMicros();
     while (true) {
       CommitReferenceResult commitToIndex =
           commitCreateReference(name, pointer, extendedInfoObj, refCreatedTimestamp);

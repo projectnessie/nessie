@@ -19,6 +19,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Exported Nessie repositories now include the contents for Nessie Catalog
 - Catalog: Improve indicated health check errors
 - Catalog/GCS: Support using the default application credentials
 - Catalog/S3: Allow custom key+trust stores

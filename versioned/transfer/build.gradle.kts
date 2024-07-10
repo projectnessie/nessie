@@ -23,6 +23,11 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Import/Export" }
 
+sourceSets {
+  // This implicitly also adds all required Gradle tasks and configurations.
+  register("relatedObjects")
+}
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-spi"))
@@ -30,6 +35,7 @@ dependencies {
   implementation(project(":nessie-versioned-transfer-related"))
   implementation(project(":nessie-versioned-storage-batching"))
   implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-versioned-storage-common-serialize"))
   implementation(project(":nessie-versioned-storage-store"))
   runtimeOnly(project(":nessie-catalog-service-transfer"))
 
@@ -40,6 +46,7 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
+  implementation(libs.agrona)
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
@@ -78,9 +85,35 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+
+  add("relatedObjectsCompileOnly", project(":nessie-versioned-transfer-related"))
+  add("relatedObjectsCompileOnly", project(":nessie-versioned-storage-common"))
+  add("relatedObjectsCompileOnly", project(":nessie-model"))
+  add("relatedObjectsCompileOnly", platform(libs.jackson.bom))
+  add("relatedObjectsCompileOnly", "com.fasterxml.jackson.core:jackson-annotations")
 }
 
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest").configure { this.enabled = false }
+}
+
+val relatedObjectsJar by
+  tasks.registering(Jar::class) {
+    group = "build"
+    archiveBaseName = "related-objects-for-tests"
+    from(tasks.named("compileRelatedObjectsJava"), tasks.named("processRelatedObjectsResources"))
+  }
+
+tasks.named("test", Test::class.java) {
+  dependsOn(relatedObjectsJar)
+  systemProperty(
+    "related-objects-jar",
+    relatedObjectsJar
+      .get()
+      .archiveFile
+      .get()
+      .asFile
+      .relativeTo(project.layout.projectDirectory.asFile)
+  )
 }

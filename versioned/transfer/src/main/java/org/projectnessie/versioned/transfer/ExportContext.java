@@ -19,8 +19,8 @@ import java.io.IOException;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RelatedObj;
 
 final class ExportContext {
 
@@ -28,6 +28,7 @@ final class ExportContext {
 
   final SizeLimitedOutput namedReferenceOutput;
   final SizeLimitedOutput commitOutput;
+  final SizeLimitedOutput genericOutput;
 
   ExportContext(
       ExportFileSupplier exportFiles, NessieExporter exporter, ExportMeta.Builder exportMeta) {
@@ -46,28 +47,37 @@ final class ExportContext {
             NessieExporter.COMMITS_PREFIX,
             exportMeta::addCommitsFiles,
             exportMeta::setCommitCount);
+    genericOutput =
+        new SizeLimitedOutput(
+            exportFiles,
+            exporter,
+            NessieExporter.CUSTOM_PREFIX,
+            exportMeta::addGenericObjFiles,
+            exportMeta::setGenericObjCount);
   }
 
   public void writeRef(Ref ref) {
     namedReferenceOutput.writeEntity(ref);
   }
 
-  void writeNamedReference(NamedReference namedReference) {
-    namedReferenceOutput.writeEntity(namedReference);
-  }
-
   void writeCommit(Commit commit) {
     commitOutput.writeEntity(commit);
+  }
+
+  void writeGeneric(RelatedObj custom) {
+    genericOutput.writeEntity(custom);
   }
 
   ExportMeta finish() throws IOException {
     namedReferenceOutput.finish();
     commitOutput.finish();
+    genericOutput.finish();
     return exportMeta.build();
   }
 
   void closeSilently() {
     namedReferenceOutput.closeSilently();
     commitOutput.closeSilently();
+    genericOutput.closeSilently();
   }
 }

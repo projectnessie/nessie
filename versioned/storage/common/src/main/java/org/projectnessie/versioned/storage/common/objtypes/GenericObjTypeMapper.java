@@ -57,7 +57,8 @@ public final class GenericObjTypeMapper {
   @Value.Style(jdkOnly = true)
   @JsonSerialize(as = ImmutableGenericObj.class)
   @JsonDeserialize(as = ImmutableGenericObj.class)
-  abstract static class GenericObj implements UpdateableObj {
+  @VisibleForTesting
+  public abstract static class GenericObj implements UpdateableObj {
     @Override
     @JsonIgnore
     @JacksonInject(OBJ_TYPE_KEY)

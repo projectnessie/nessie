@@ -19,8 +19,13 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
@@ -50,6 +55,7 @@ public class ExportRepository extends BaseCommand {
   static final String CONTENT_BATCH_SIZE = "--content-batch-size";
   static final String COMMIT_BATCH_SIZE = "--commit-batch-size";
   static final String EXPORT_VERSION = "--export-version";
+  static final String GENERIC_OBJECT_RESOLVERS = "--object-resolvers";
 
   enum Format {
     ZIP,
@@ -134,6 +140,14 @@ public class ExportRepository extends BaseCommand {
           "The export version, defaults to " + ExportImportConstants.DEFAULT_EXPORT_VERSION + ".")
   private int exportVersion;
 
+  @CommandLine.Option(
+      names = GENERIC_OBJECT_RESOLVERS,
+      description = {
+        "Additional jars that provide `TransferRelatedObjects` implementations.",
+        "Jars can be provided as file paths or as URLs."
+      })
+  private List<String> genericObjectResolvers = new ArrayList<>();
+
   @Override
   public Integer call() throws Exception {
     if (!repositoryLogic(persist).repositoryExists()) {
@@ -153,7 +167,9 @@ public class ExportRepository extends BaseCommand {
 
     spec.commandLine()
         .getOut()
-        .printf("Exporting from a %s version store...%n", versionStoreConfig.getVersionStoreType());
+        .printf(
+            "Exporting from a %s version store using export version %s...%n",
+            versionStoreConfig.getVersionStoreType(), exportVersion);
 
     try (ExportFileSupplier exportFileSupplier = createExportFileSupplier()) {
       NessieExporter.Builder builder =
@@ -177,6 +193,16 @@ public class ExportRepository extends BaseCommand {
       }
       if (commitBatchSize != null) {
         builder.commitBatchSize(commitBatchSize);
+      }
+
+      for (String resolver : genericObjectResolvers) {
+        URL url;
+        try {
+          url = new URL(resolver);
+        } catch (MalformedURLException e) {
+          url = Paths.get(resolver).toUri().toURL();
+        }
+        builder.addGenericObjectResolvers(url);
       }
 
       PrintWriter out = spec.commandLine().getOut();
@@ -234,11 +260,13 @@ public class ExportRepository extends BaseCommand {
       switch (progress) {
         case FINISHED:
           out.printf(
-              "Exported Nessie repository, %d commits into %d files, %d named references into %d files.%n",
+              "Exported Nessie repository, %d commits into %d files, %d named references into %d files, %d generic objects into %d files.%n",
               exportMeta.getCommitCount(),
               exportMeta.getCommitsFilesCount(),
               exportMeta.getNamedReferencesCount(),
-              exportMeta.getNamedReferencesFilesCount());
+              exportMeta.getNamedReferencesFilesCount(),
+              exportMeta.getGenericObjCount(),
+              exportMeta.getGenericObjFilesCount());
           break;
         case END_META:
           this.exportMeta = meta;
@@ -254,12 +282,25 @@ public class ExportRepository extends BaseCommand {
           }
           out.printf("%d commits exported.%n%n", count);
           break;
+        case START_GENERIC:
+          out.println("Exporting generic objects...");
+          count = 0;
+          dot = false;
+          break;
+        case END_GENERIC:
+          if (dot) {
+            out.println();
+          }
+          out.printf("%d generic objects exported.%n%n", count);
+          break;
         case START_NAMED_REFERENCES:
           out.println("Exporting named references...");
           count = 0;
           dot = false;
           break;
         case COMMIT_WRITTEN:
+          // GENERIC_WRITTEN isn't actually "produced", but adding the value here for posterity.
+        case GENERIC_WRITTEN:
         case NAMED_REFERENCE_WRITTEN:
           count++;
           if ((count % 10) == 0) {

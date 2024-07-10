@@ -35,7 +35,7 @@ public interface TransferRelatedObjects {
     return emptySet();
   }
 
-  default Set<ObjId> commitRelatedObjects(CommitObj content) {
+  default Set<ObjId> commitRelatedObjects(CommitObj commitObj) {
     return emptySet();
   }
 
