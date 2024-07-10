@@ -152,7 +152,8 @@ public abstract class NessieImporter {
       case V1:
         return new ImportPersistV1(exportMeta, this).importRepo();
       case V2:
-        return new ImportPersistV2(exportMeta, this).importRepo();
+      case V3:
+        return new ImportPersistV23(exportMeta, this).importRepo();
       default:
         throw new IllegalStateException(
             String.format(

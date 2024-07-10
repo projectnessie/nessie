@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.co
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -35,14 +34,10 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
-import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;
 import org.projectnessie.versioned.storage.common.logic.IdentifyHeadsAndForkPoints;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
-import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -56,34 +51,12 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndFork
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.OperationType;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.RefType;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.RepositoryDescriptionProto;
 
 final class ExportPersist extends ExportCommon {
 
-  private final ExportVersion exportVersion;
-
   ExportPersist(
       ExportFileSupplier exportFiles, NessieExporter exporter, ExportVersion exportVersion) {
-    super(exportFiles, exporter);
-
-    switch (exportVersion) {
-      case V1:
-        throw new IllegalArgumentException(
-            "Cannot export using export-version " + exportVersion.getNumber());
-      case V2:
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unimplemented export-version " + exportVersion.getNumber());
-    }
-
-    this.exportVersion = exportVersion;
-  }
-
-  @Override
-  ExportVersion getExportVersion() {
-    return exportVersion;
+    super(exportFiles, exporter, exportVersion);
   }
 
   @Override
@@ -155,42 +128,18 @@ final class ExportPersist extends ExportCommon {
             exporter.referenceLogic().queryReferences(referencesQuery());
         refs.hasNext(); ) {
       Reference reference = refs.next();
+
+      handleGenericObjs(transferRelatedObjects.referenceRelatedObjects(reference));
+
       ObjId extendedInfoObj = reference.extendedInfoObj();
       Ref.Builder refBuilder =
           Ref.newBuilder().setName(reference.name()).setPointer(reference.pointer().asBytes());
       if (extendedInfoObj != null) {
         refBuilder.setExtendedInfoObj(extendedInfoObj.asBytes());
       }
+      refBuilder.setCreatedAtMicros(reference.createdAtMicros());
       exportContext.writeRef(refBuilder.build());
       exporter.progressListener().progress(ProgressEvent.NAMED_REFERENCE_WRITTEN);
-    }
-  }
-
-  private RefType refType(NamedRef namedRef) {
-    if (namedRef instanceof TagName) {
-      return RefType.Tag;
-    }
-    if (namedRef instanceof BranchName) {
-      return RefType.Branch;
-    }
-    throw new IllegalArgumentException("Unknown named reference type " + namedRef);
-  }
-
-  @Override
-  void writeRepositoryDescription() throws IOException {
-    RepositoryDescription repositoryDescription =
-        exporter.repositoryLogic().fetchRepositoryDescription();
-    if (repositoryDescription != null) {
-      writeRepositoryDescription(
-          RepositoryDescriptionProto.newBuilder()
-              .putAllProperties(repositoryDescription.properties())
-              .setRepositoryId(exporter.persist().config().repositoryId())
-              .setRepositoryCreatedTimestampMillis(
-                  repositoryDescription.repositoryCreatedTime().toEpochMilli())
-              .setOldestCommitTimestampMillis(
-                  repositoryDescription.oldestPossibleCommitTime().toEpochMilli())
-              .setDefaultBranchName(repositoryDescription.defaultBranchName())
-              .build());
     }
   }
 
@@ -200,6 +149,9 @@ final class ExportPersist extends ExportCommon {
     for (CommitObj c : commitObjs) {
       Commit commit = mapCommitObj(c, objs);
       exportContext.writeCommit(commit);
+
+      handleGenericObjs(transferRelatedObjects.commitRelatedObjects(c));
+
       exporter.progressListener().progress(ProgressEvent.COMMIT_WRITTEN);
     }
   }
@@ -263,6 +215,8 @@ final class ExportPersist extends ExportCommon {
                   opBuilder
                       .setContentId(value.contentId())
                       .setValue(ByteString.copyFrom(modelContentBytes));
+
+                  handleGenericObjs(transferRelatedObjects.contentRelatedObjects(modelContent));
                 } catch (JsonProcessingException e) {
                   throw new RuntimeException(e);
                 }

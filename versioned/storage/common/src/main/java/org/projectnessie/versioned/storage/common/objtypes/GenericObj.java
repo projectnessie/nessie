@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.annotations.VisibleForTesting;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -35,7 +36,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 @Value.Immutable
 @Value.Style(jdkOnly = true)
-abstract class GenericObj implements Obj {
+@VisibleForTesting
+public abstract class GenericObj implements Obj {
 
   public static final String VERSION_TOKEN_ATTRIBUTE = "versionToken";
 

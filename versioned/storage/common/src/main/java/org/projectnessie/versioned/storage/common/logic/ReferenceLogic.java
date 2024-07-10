@@ -83,6 +83,18 @@ public interface ReferenceLogic {
       throws RefAlreadyExistsException, RetryTimeoutException;
 
   /**
+   * Like {@link #createReference(String, ObjId, ObjId)} allowing to specify the reference creation
+   * timestamp, used in the special scenario when importing a reference.
+   */
+  @Nonnull
+  Reference createReferenceForImport(
+      @Nonnull String name,
+      @Nonnull ObjId pointer,
+      @Nullable ObjId extendedInfoObj,
+      long createdAtMicros)
+      throws RefAlreadyExistsException, RetryTimeoutException;
+
+  /**
    * Deletes a reference.
    *
    * @param name name of the reference to be deleted

@@ -107,7 +107,7 @@ public abstract class AbstractExportImport {
             ExportMeta::getCommitsFilesCount,
             ExportMeta::getNamedReferencesFilesCount,
             ExportMeta::getVersion)
-        .containsExactly(0L, 1L, 0, 1, ExportVersion.V2);
+        .containsExactly(0L, 1L, 0, 1, ExportVersion.V3);
 
     List<String> fileNames = listFiles(targetDir);
     soft.assertThat(fileNames)
@@ -212,7 +212,7 @@ public abstract class AbstractExportImport {
             .mapToObj(i -> String.format("commits-%08d", i))
             .collect(Collectors.toList());
 
-    int expectedNamedRefsFileCount = 5;
+    int expectedNamedRefsFileCount = 6;
     List<String> expectedNamesRefsFileNames =
         IntStream.rangeClosed(1, expectedNamedRefsFileCount)
             .mapToObj(i -> String.format("named-refs-%08d", i))
@@ -231,7 +231,7 @@ public abstract class AbstractExportImport {
             (long) numNamedRefs,
             expectedCommitsFileCount,
             expectedNamedRefsFileCount,
-            ExportVersion.V2);
+            ExportVersion.V3);
     soft.assertThat(exportMeta.getCommitsFilesList())
         .containsExactlyElementsOf(expectedCommitsFileNames);
     soft.assertThat(exportMeta.getNamedReferencesFilesList())
@@ -470,7 +470,9 @@ public abstract class AbstractExportImport {
                 Thread.currentThread().getContextClassLoader(),
                 new Class[] {ReferenceLogic.class},
                 (proxy, method, args) -> {
-                  if (method.getName().equals("createReference")) {
+                  boolean createReferenceForImport =
+                      method.getName().equals("createReferenceForImport");
+                  if (method.getName().equals("createReference") || createReferenceForImport) {
                     String name = (String) args[0];
                     ObjId pointer = (ObjId) args[1];
                     assertThat(name).startsWith("refs/heads/branch-");
@@ -478,12 +480,11 @@ public abstract class AbstractExportImport {
                     assertThat(pointer).isEqualTo(intToObjId(refNum));
                     assertThat(createdReferences.get(refNum)).isFalse();
                     createdReferences.set(refNum);
-                    return reference(
-                        name,
-                        pointer,
-                        false,
-                        TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
-                        null);
+                    long timeMicros =
+                        createReferenceForImport
+                            ? (Long) args[3]
+                            : TimeUnit.NANOSECONDS.toMicros(System.nanoTime());
+                    return reference(name, pointer, false, timeMicros, null);
                   }
                   throw new UnsupportedOperationException(method.toString());
                 });
