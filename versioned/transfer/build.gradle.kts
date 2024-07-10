@@ -24,7 +24,7 @@ plugins {
 publishingHelper { mavenName = "Nessie - Import/Export" }
 
 sourceSets {
-  // This implicitly als adds all required Gradle tasks and configurations.
+  // This implicitly also adds all required Gradle tasks and configurations.
   register("relatedObjects")
 }
 
