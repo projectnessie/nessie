@@ -22,7 +22,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
-- Helm chat improvements
+- Helm chart improvements
 
 ### Deprecations
 
