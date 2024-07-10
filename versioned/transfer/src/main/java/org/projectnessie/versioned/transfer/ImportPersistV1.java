@@ -33,10 +33,10 @@ import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.versionstore.RefMapping;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.NamedReference;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RelatedObj;
 
 final class ImportPersistV1 extends ImportPersistCommon {
 
@@ -126,5 +126,5 @@ final class ImportPersistV1 extends ImportPersistCommon {
   }
 
   @Override
-  void processGeneric(TransferTypes.GenericObj genericObj) {}
+  void processGeneric(RelatedObj genericObj) {}
 }

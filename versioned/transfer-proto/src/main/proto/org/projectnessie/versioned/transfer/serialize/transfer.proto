@@ -132,7 +132,7 @@ enum Encoding {
 }
 
 // Custom objects and special standard objects
-message GenericObj {
+message RelatedObj {
   bytes id = 1;
   // the short name or full name of the (custom) obj type
   string type_name = 2;

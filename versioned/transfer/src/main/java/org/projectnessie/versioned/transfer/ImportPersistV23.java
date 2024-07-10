@@ -46,6 +46,7 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RelatedObj;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.RepositoryDescriptionProto;
 
 final class ImportPersistV23 extends ImportPersistCommon {
@@ -153,7 +154,7 @@ final class ImportPersistV23 extends ImportPersistCommon {
   }
 
   @Override
-  void processGeneric(TransferTypes.GenericObj genericObj) throws ObjTooLargeException {
+  void processGeneric(RelatedObj genericObj) throws ObjTooLargeException {
     ObjType type = objTypeByName(genericObj.getTypeName());
     ObjId id = objIdFromBytes(genericObj.getId());
 

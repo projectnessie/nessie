@@ -19,8 +19,8 @@ import java.io.IOException;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Commit;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.GenericObj;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RelatedObj;
 
 final class ExportContext {
 
@@ -64,7 +64,7 @@ final class ExportContext {
     commitOutput.writeEntity(commit);
   }
 
-  void writeGeneric(GenericObj custom) {
+  void writeGeneric(RelatedObj custom) {
     genericOutput.writeEntity(custom);
   }
 

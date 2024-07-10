@@ -41,8 +41,8 @@ import org.projectnessie.versioned.transfer.related.TransferRelatedObjects;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
-import org.projectnessie.versioned.transfer.serialize.TransferTypes.GenericObj;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes.RelatedObj;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.RepositoryDescriptionProto;
 
 abstract class ExportCommon {
@@ -106,7 +106,7 @@ abstract class ExportCommon {
         exporter.progressListener().progress(ProgressEvent.END_NAMED_REFERENCES);
 
         exporter.progressListener().progress(ProgressEvent.START_META);
-        writeRepositoryDescription();
+        writeRepositoryInformation();
 
       } finally {
         this.genericObjBatcher = null;
@@ -150,7 +150,7 @@ abstract class ExportCommon {
 
   abstract HeadsAndForks exportCommits(ExportContext exportContext);
 
-  void writeRepositoryDescription() throws IOException {
+  void writeRepositoryInformation() throws IOException {
     handleGenericObjs(transferRelatedObjects.repositoryRelatedObjects());
 
     RepositoryDescription repositoryDescription =
@@ -200,15 +200,15 @@ abstract class ExportCommon {
 
   private void mapGenericObjs(List<Obj> objs, ExportContext exportContext) {
     for (Obj o : objs) {
-      GenericObj custom = mapGenericObj(o);
+      RelatedObj custom = mapGenericObj(o);
       exportContext.writeGeneric(custom);
       // use the same progress value than commits
       exporter.progressListener().progress(ProgressEvent.GENERIC_WRITTEN);
     }
   }
 
-  private GenericObj mapGenericObj(Obj obj) {
-    GenericObj.Builder genericObj = GenericObj.newBuilder().setId(obj.id().asBytes());
+  private RelatedObj mapGenericObj(Obj obj) {
+    RelatedObj.Builder genericObj = RelatedObj.newBuilder().setId(obj.id().asBytes());
     ObjType objType = obj.type();
     if (objType.equals(UNIQUE)) {
       UniqueIdObj uniqueIdObj = (UniqueIdObj) obj;
