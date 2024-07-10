@@ -35,7 +35,7 @@ final class CompositeTransferRelatedObjects implements TransferRelatedObjects {
   private final List<TransferRelatedObjects> transferRelatedObjectsImpls;
 
   /**
-   * One "related" objects might be referenced by multiple content objects or commits or references.
+   * One "related" object might be referenced by multiple content objects or commits or references.
    * This implementation avoid exporting the same "related" object more than once. This set of
    * {@link ObjId}s is unbounded, like the collections in {@link IdentifyHeadsAndForkPoints}.
    */
