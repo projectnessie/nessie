@@ -76,8 +76,11 @@ public abstract class BaseHttpRequest extends HttpRequest {
       error = e;
       throw e;
     } finally {
-      processCallbacks(requestContext, responseContext, error);
-      cleanUp(responseContext, error);
+      try {
+        processCallbacks(requestContext, responseContext, error);
+      } finally {
+        cleanUp(responseContext, error);
+      }
     }
   }
 
