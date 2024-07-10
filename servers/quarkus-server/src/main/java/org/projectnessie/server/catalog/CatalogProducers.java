@@ -186,7 +186,6 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public ObjectIO objectIO(
-      BackendExceptionMapper exceptionMapper,
       CatalogS3Config s3config,
       @CatalogS3Client SdkHttpClient sdkClient,
       CatalogAdlsConfig adlsConfig,
