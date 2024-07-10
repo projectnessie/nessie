@@ -12,6 +12,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- Catalog: The `nessie.catalog.s3.default-options.auth-mode` configuration property has been renamed
+  to `nessie.catalog.s3.default-options.client-auth-mode` to better reflect its purpose. The old
+  property name is not supported anymore.
+
 ### New Features
 
 - Catalog: Improve indicated health check errors
