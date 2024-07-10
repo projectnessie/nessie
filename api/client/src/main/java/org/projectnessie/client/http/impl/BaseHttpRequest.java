@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.http.impl;
 
-import static org.projectnessie.client.http.impl.HttpUtils.ACCEPT_ENCODING;
 import static org.projectnessie.client.http.impl.HttpUtils.GZIP;
+import static org.projectnessie.client.http.impl.HttpUtils.GZIP_DEFLATE;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT_ENCODING;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_ENCODING;
@@ -50,12 +50,8 @@ import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class BaseHttpRequest extends HttpRequest {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(BaseHttpRequest.class);
 
   private static final TypeReference<Map<String, Object>> MAP_TYPE =
       new TypeReference<Map<String, Object>>() {};
@@ -73,6 +69,8 @@ public abstract class BaseHttpRequest extends HttpRequest {
     try {
       prepareRequest(requestContext);
       responseContext = processResponse(uri, method, body, requestContext);
+      processResponseFilters(responseContext);
+      mimicUrlConnectionBehavior(method, responseContext, uri);
       return config.responseFactory().make(responseContext, config.getMapper());
     } catch (RuntimeException e) {
       error = e;
@@ -94,7 +92,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
     }
 
     if (!config.isDisableCompression()) {
-      headers.put(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING);
+      headers.put(HEADER_ACCEPT_ENCODING, GZIP_DEFLATE);
       if (context.doesOutput()) {
         headers.put(HEADER_CONTENT_ENCODING, GZIP);
       }
@@ -112,10 +110,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
   protected ResponseContext processResponse(
       URI uri, Method method, Object body, RequestContext requestContext) {
     try {
-      ResponseContext responseContext = sendAndReceive(uri, method, body, requestContext);
-      processResponseFilters(responseContext);
-      mimicUrlConnectionBehavior(method, responseContext, uri);
-      return responseContext;
+      return sendAndReceive(uri, method, body, requestContext);
     } catch (ProtocolException e) {
       throw new HttpClientException(
           String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),
@@ -173,12 +168,20 @@ public abstract class BaseHttpRequest extends HttpRequest {
       @Nullable RuntimeException error) {
     List<BiConsumer<ResponseContext, Exception>> callbacks = requestContext.getResponseCallbacks();
     if (callbacks != null) {
+      RuntimeException toThrow = null;
       for (BiConsumer<ResponseContext, Exception> callback : callbacks) {
         try {
           callback.accept(responseContext, error);
-        } catch (Exception e) {
-          LOGGER.warn("Callback invocation failed", e);
+        } catch (RuntimeException e) {
+          if (toThrow == null) {
+            toThrow = e;
+          } else {
+            toThrow.addSuppressed(e);
+          }
         }
+      }
+      if (toThrow != null) {
+        throw toThrow;
       }
     }
   }
