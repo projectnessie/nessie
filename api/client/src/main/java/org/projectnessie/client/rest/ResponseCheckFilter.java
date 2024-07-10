@@ -15,6 +15,10 @@
  */
 package org.projectnessie.client.rest;
 
+import static org.projectnessie.client.http.Status.INTERNAL_SERVER_ERROR_CODE;
+import static org.projectnessie.client.http.Status.SERVICE_UNAVAILABLE_CODE;
+import static org.projectnessie.client.http.Status.UNAUTHORIZED_CODE;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -65,14 +69,14 @@ public class ResponseCheckFilter {
     // exception with some level of break-down by sub-class to allow for intelligent exception
     // handling on the caller side.
     Exception exception;
-    switch (status) {
-      case INTERNAL_SERVER_ERROR:
+    switch (status.getCode()) {
+      case INTERNAL_SERVER_ERROR_CODE:
         exception = new NessieInternalServerException(error);
         break;
-      case SERVICE_UNAVAILABLE:
+      case SERVICE_UNAVAILABLE_CODE:
         exception = new NessieUnavailableException(error);
         break;
-      case UNAUTHORIZED:
+      case UNAUTHORIZED_CODE:
         // Note: UNAUTHORIZED at this point cannot be a Nessie-controlled error.
         // It must be an error reported at a higher level HTTP service in front of the Nessie
         // Server.

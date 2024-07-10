@@ -68,7 +68,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 import org.projectnessie.client.util.HttpTestServer;
@@ -471,8 +470,17 @@ public abstract class BaseTestHttpClient {
     }
   }
 
+  static Stream<Status> testHttpResponses() {
+    IntStream l2 = IntStream.rangeClosed(200, 206);
+    IntStream l3 = IntStream.rangeClosed(300, 308);
+    IntStream l4 = IntStream.rangeClosed(400, 440);
+    IntStream l5 = IntStream.rangeClosed(500, 510);
+    return IntStream.concat(l2, IntStream.concat(l3, IntStream.concat(l4, l5)))
+        .mapToObj(Status::fromCode);
+  }
+
   @ParameterizedTest
-  @EnumSource(Status.class)
+  @MethodSource
   void testHttpResponses(Status status) throws Exception {
     // HTTP/304 defines that no response body must be sent
     assumeThat(status).isNotEqualTo(Status.NOT_MODIFIED);
