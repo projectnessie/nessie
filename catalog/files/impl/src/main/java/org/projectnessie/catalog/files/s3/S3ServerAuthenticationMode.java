@@ -15,32 +15,17 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider;
 
-/**
- * Authentication modes for S3.
- *
- * @see <a
- *     href="https://github.com/quarkiverse/quarkus-amazon-services/blob/4ecc71767857d476767ffd36f0fac98c1b2b7de1/common/runtime/src/main/java/io/quarkus/amazon/common/runtime/AwsCredentialsProviderType.java">Quarkus
- *     AWS AwsCredentialsProviderType</a>
- */
+/** Server authentication modes for S3. */
 public enum S3ServerAuthenticationMode {
   DEFAULT {
     @Override
     public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return DefaultCredentialsProvider.builder()
-          .asyncCredentialUpdateEnabled(false)
-          .reuseLastProviderEnabled(true)
-          .build();
+      return DefaultCredentialsProvider.create(); // actually a singleton
     }
   },
 
@@ -49,62 +34,12 @@ public enum S3ServerAuthenticationMode {
     public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
       return bucketOptions
           .accessKey()
-          // TODO support session token: AwsSessionCredentials.create(accessKeyId, secretAccessKey,
-          // sessionToken)
           .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
           .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
           .orElseThrow(
               () ->
                   new IllegalArgumentException(
                       "Missing access key and secret for STATIC authentication mode"));
-    }
-  },
-
-  SYSTEM_PROPERTY {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return SystemPropertyCredentialsProvider.create();
-    }
-  },
-
-  ENV_VARIABLE {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return EnvironmentVariableCredentialsProvider.create();
-    }
-  },
-
-  PROFILE {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return bucketOptions
-          .profile()
-          .map(ProfileCredentialsProvider::create)
-          .orElseThrow(
-              () ->
-                  new IllegalArgumentException(
-                      "Missing profile name for PROFILE authentication mode"));
-    }
-  },
-
-  CONTAINER {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return ContainerCredentialsProvider.builder().build();
-    }
-  },
-
-  INSTANCE_PROFILE {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return InstanceProfileCredentialsProvider.builder().build();
-    }
-  },
-
-  ANONYMOUS {
-    @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return AnonymousCredentialsProvider.create();
     }
   },
   ;

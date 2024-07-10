@@ -160,7 +160,6 @@ Apply S3 catalog options.
 {{- if .allowCrossRegionAccessPoint -}}{{- $_ := set $map ( print $prefix "allow-cross-region-access-point" ) .allowCrossRegionAccessPoint -}}{{- end -}}
 {{- if .serverAuthenticationMode -}}{{- $_ := set $map ( print $prefix "server-auth-mode" ) .serverAuthenticationMode -}}{{- end -}}
 {{- if .clientAuthenticationMode -}}{{- $_ := set $map ( print $prefix "client-auth-mode" ) .clientAuthenticationMode -}}{{- end -}}
-{{- if .profile -}}{{- $_ := set $map ( print $prefix "profile" ) .profile -}}{{- end -}}
 {{- if .assumeRole -}}
 {{- if .assumeRole.stsEndpoint -}}{{- $_ := set $map ( print $prefix "sts-endpoint" ) .assumeRole.stsEndpoint -}}{{- end -}}
 {{- if .assumeRole.roleArn -}}{{- $_ := set $map ( print $prefix "assume-role" ) .assumeRole.roleArn -}}{{- end -}}

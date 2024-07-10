@@ -111,7 +111,7 @@ public class TestVendedS3CredentialsExpiry {
           .put("nessie.catalog.warehouses.warehouse.location", "s3://test-bucket")
           .put("nessie.catalog.service.s3.default-options.region", "us-west-2")
           .put(
-              "nessie.catalog.service.s3.default-options.auth-mode",
+              "nessie.catalog.service.s3.default-options.client-auth-mode",
               S3ClientAuthenticationMode.ASSUME_ROLE.name())
           .put("nessie.catalog.service.s3.default-options.client-session-duration", "PT5H")
           .put("nessie.catalog.service.s3.default-options.role-session-name", "test-session-name")

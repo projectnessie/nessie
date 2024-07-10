@@ -195,12 +195,6 @@ catalog:
         # -- Controls the authentication mode for the Catalog server. Valid values are:
         # - DEFAULT: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
-        # - ENV_VARIABLE: Loads credentials from the AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN environment variables.
-        # - SYSTEM_PROPERTY: Loads credentials from the system properties aws.accessKeyId and aws.secretAccessKey.
-        # - PROFILE: Loads credentials from AWS profile files.
-        # - INSTANCE_PROFILE: Loads credentials from the Amazon EC2 metadata service.
-        # - CONTAINER: Loads credentials from a local metadata service on ECS or AWS Greengrass.
-        # - ANONYMOUS: Anonymous access.
         # The default is STATIC.
         serverAuthenticationMode: ~  # STATIC
         # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
@@ -243,9 +237,6 @@ catalog:
           awsAccessKeyId: ~
           # -- The secret key storing the AWS secret access key.
           awsSecretAccessKey: ~
-
-        # -- AWS profile name. Required when serverAuthenticationMode is PROFILE.
-        profile: ~
 
       # -- Per-bucket S3 settings. Override the general settings above.
       buckets: []
