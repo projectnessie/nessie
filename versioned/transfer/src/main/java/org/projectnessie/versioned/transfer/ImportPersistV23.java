@@ -164,6 +164,11 @@ final class ImportPersistV23 extends ImportPersistCommon {
       ByteBuffer data = genericObj.getData().asReadOnlyByteBuffer();
       String versionToken = genericObj.hasVersionToken() ? genericObj.getVersionToken() : null;
 
+      if (genericObj.getEncodingValue() != TransferTypes.Encoding.Smile_VALUE) {
+        throw new IllegalArgumentException(
+            "Unsupported generic object encoding " + genericObj.getEncoding());
+      }
+
       obj =
           SmileSerialization.deserializeObj(
               id, versionToken, data, type, Compression.fromValue(genericObj.getCompression()));
