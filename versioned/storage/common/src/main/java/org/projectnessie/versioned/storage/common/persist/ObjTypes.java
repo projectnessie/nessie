@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import jakarta.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +22,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
+import org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper;
 
 public final class ObjTypes {
 
@@ -36,7 +35,9 @@ public final class ObjTypes {
   @Nonnull
   public static ObjType objTypeByName(@Nonnull String name) {
     ObjType type = Registry.BY_ANY_NAME.get(name);
-    checkArgument(type != null, "Unknown object type name: %s", name);
+    if (type == null) {
+      type = Registry.maybeMapped(name);
+    }
     return type;
   }
 
@@ -55,6 +56,11 @@ public final class ObjTypes {
   private static final class Registry {
     private static final Map<String, ObjType> BY_ANY_NAME;
     private static final Set<ObjType> OBJ_TYPES;
+    private static final GenericObjTypeMapper OBJ_TYPE_MAPPER;
+
+    static ObjType maybeMapped(String name) {
+      return OBJ_TYPE_MAPPER.mapGenericObjType(name);
+    }
 
     static {
       Map<String, ObjType> byAnyName = new TreeMap<>();
@@ -84,6 +90,7 @@ public final class ObjTypes {
       }
       BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());
+      OBJ_TYPE_MAPPER = new GenericObjTypeMapper();
     }
   }
 }

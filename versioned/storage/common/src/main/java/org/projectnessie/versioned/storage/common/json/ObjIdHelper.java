@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 public final class ObjIdHelper {
 
@@ -33,16 +33,21 @@ public final class ObjIdHelper {
 
   public static final String OBJ_VERS_KEY = "nessie.storage.ObjVersion";
 
+  public static final String OBJ_TYPE_KEY = "nessie.storage.ObjType";
+
   /**
-   * Returns an {@link ObjectReader} for the given target {@link Obj} class, with the given {@link
+   * Returns an {@link ObjectReader} for the given target {@link ObjType}, with the given {@link
    * ObjId} injectable under the key {@value #OBJ_ID_KEY} and version token using the key {@value
    * #OBJ_VERS_KEY}.
    */
   public static ObjectReader readerWithObjIdAndVersionToken(
-      ObjectMapper mapper, Class<? extends Obj> targetClass, ObjId id, String objVersionToken) {
+      ObjectMapper mapper, ObjType objType, ObjId id, String objVersionToken) {
     InjectableValues values =
-        new InjectableValues.Std().addValue(OBJ_ID_KEY, id).addValue(OBJ_VERS_KEY, objVersionToken);
-    return mapper.reader(values).forType(targetClass);
+        new InjectableValues.Std()
+            .addValue(OBJ_ID_KEY, id)
+            .addValue(OBJ_VERS_KEY, objVersionToken)
+            .addValue(OBJ_TYPE_KEY, objType);
+    return mapper.reader(values).forType(objType.targetClass());
   }
 
   private ObjIdHelper() {}

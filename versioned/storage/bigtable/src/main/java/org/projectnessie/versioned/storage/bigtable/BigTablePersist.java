@@ -374,7 +374,7 @@ public class BigTablePersist implements Persist {
       ObjTypes.allObjTypes().stream()
           .collect(
               ImmutableMap.toImmutableMap(
-                  Function.identity(), (ObjType type) -> ByteString.copyFromUtf8(type.name())));
+                  Function.identity(), (ObjType type) -> copyFromUtf8(type.name())));
 
   @Nonnull
   private ConditionalRowMutation mutationForStoreObj(
@@ -574,15 +574,19 @@ public class BigTablePersist implements Persist {
   }
 
   static <M extends MutationApi<M>> M objToMutation(Obj obj, M mutation, byte[] serialized) {
+    ByteString objTypeValue = OBJ_TYPE_VALUES.get(obj.type());
+    if (objTypeValue == null) {
+      objTypeValue = copyFromUtf8(obj.type().name());
+    }
     mutation
         .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized))
-        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, OBJ_TYPE_VALUES.get(obj.type()));
+        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue);
     if (obj instanceof UpdateableObj) {
-      mutation.setCell(
-          FAMILY_OBJS,
-          QUALIFIER_OBJ_VERS,
-          CELL_TIMESTAMP,
-          ByteString.copyFromUtf8(((UpdateableObj) obj).versionToken()));
+      String versionToken = ((UpdateableObj) obj).versionToken();
+      if (versionToken != null) {
+        mutation.setCell(
+            FAMILY_OBJS, QUALIFIER_OBJ_VERS, CELL_TIMESTAMP, copyFromUtf8(versionToken));
+      }
     }
     return mutation;
   }

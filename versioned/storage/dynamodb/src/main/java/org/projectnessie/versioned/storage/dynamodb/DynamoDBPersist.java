@@ -630,7 +630,10 @@ public class DynamoDBPersist implements Persist {
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
     if (obj instanceof UpdateableObj) {
-      item.put(COL_OBJ_VERS, fromS(((UpdateableObj) obj).versionToken()));
+      String versionToken = ((UpdateableObj) obj).versionToken();
+      if (versionToken != null) {
+        item.put(COL_OBJ_VERS, fromS(versionToken));
+      }
     }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();

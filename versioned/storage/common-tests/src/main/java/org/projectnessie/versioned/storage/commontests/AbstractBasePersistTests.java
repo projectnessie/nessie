@@ -27,6 +27,7 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_INCREMENTAL_INDEX_SIZE;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_MAX_SERIALIZED_INDEX_SIZE;
@@ -34,6 +35,7 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
@@ -44,6 +46,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMI
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.objtypes.Compression.NONE;
 import static org.projectnessie.versioned.storage.common.objtypes.ContentValueObj.contentValue;
+import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.newGenericObjType;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexObj.index;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj.indexSegments;
 import static org.projectnessie.versioned.storage.common.objtypes.IndexStripe.indexStripe;
@@ -65,6 +68,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -78,6 +82,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -90,6 +95,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -116,6 +122,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.AnotherTestObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.ImmutableJsonTestBean;
 import org.projectnessie.versioned.storage.commontests.objtypes.JsonTestBean;
@@ -132,6 +139,80 @@ public class AbstractBasePersistTests {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @NessiePersist protected Persist persist;
+
+  @ParameterizedTest
+  @MethodSource
+  public void genericObj(
+      @SuppressWarnings("unused") ObjType realType, Function<ObjId, Obj> realObjBuilder)
+      throws Exception {
+    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+
+    ObjId idReal = randomObjId();
+    ObjId idGeneric = randomObjId();
+    Obj realObj = realObjBuilder.apply(idReal);
+
+    soft.assertThat(persist.storeObj(realObj)).isTrue();
+
+    ObjType genericType = newGenericObjType("genericType_" + UUID.randomUUID());
+    String versionToken =
+        (realObj instanceof UpdateableObj) ? ((UpdateableObj) realObj).versionToken() : null;
+    String json = mapper.writeValueAsString(realObj);
+
+    Obj genericObj =
+        readerWithObjIdAndVersionToken(mapper, genericType, idGeneric, versionToken)
+            .readValue(json, genericType.targetClass());
+    soft.assertThat(persist.storeObj(genericObj)).isTrue();
+
+    Obj genericFetched = persist.fetchObj(idGeneric);
+    soft.assertThat(genericFetched).isEqualTo(genericObj);
+  }
+
+  static Stream<Arguments> genericObj() {
+    return Stream.of(
+        arguments(
+            SimpleTestObj.TYPE,
+            (Function<ObjId, Obj>)
+                id ->
+                    SimpleTestObj.builder()
+                        .id(id)
+                        .addList("one", "two", "three")
+                        .putMap("a", "A")
+                        .putMap("b", "B")
+                        .text("some text")
+                        .build()),
+        //
+        arguments(
+            AnotherTestObj.TYPE,
+            (Function<ObjId, Obj>)
+                id ->
+                    AnotherTestObj.builder()
+                        .id(id)
+                        .addList("one", "two", "three")
+                        .putMap("a", "A")
+                        .putMap("b", "B")
+                        .text("some text")
+                        .build()),
+        //
+        arguments(
+            VersionedTestObj.TYPE,
+            (Function<ObjId, Obj>)
+                id ->
+                    VersionedTestObj.builder()
+                        .id(id)
+                        .someValue("some value")
+                        .versionToken("my version token")
+                        .build()),
+        //
+        arguments(
+            VersionedTestObj2.TYPE,
+            (Function<ObjId, Obj>)
+                id ->
+                    VersionedTestObj2.builder()
+                        .id(id)
+                        .otherValue("other value")
+                        .versionToken("my version token")
+                        .build()));
+  }
 
   @Test
   public void singleReferenceCreateMarkDeletedPurge() throws Exception {

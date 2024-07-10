@@ -692,7 +692,10 @@ public class MongoDBPersist implements Persist {
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
     if (obj instanceof UpdateableObj) {
-      doc.put(COL_OBJ_VERS, ((UpdateableObj) obj).versionToken());
+      String versionToken = ((UpdateableObj) obj).versionToken();
+      if (versionToken != null) {
+        doc.put(COL_OBJ_VERS, versionToken);
+      }
     }
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
