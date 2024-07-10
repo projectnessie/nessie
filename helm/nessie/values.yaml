@@ -193,7 +193,7 @@ catalog:
         # -- Authorize cross-region calls when contacting an access point. The default is false.
         allowCrossRegionAccessPoint: false
         # -- Controls the authentication mode for the Catalog server. Valid values are:
-        # - DEFAULT: Use the default AWS credentials provider chain.
+        # - APPLICATION_GLOBAL: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
         # The default is STATIC.
         serverAuthenticationMode: ~  # STATIC

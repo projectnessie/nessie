@@ -101,7 +101,7 @@ public interface S3BucketOptions {
    * <p>Valid values are:
    *
    * <ul>
-   *   <li>{@code DEFAULT}: Default credentials provider chain.
+   *   <li>{@code APPLICATION_GLOBAL}: Default credentials provider chain.
    *   <li>{@code STATIC}: Static credentials provided through the {@code access-key} option.
    * </ul>
    */

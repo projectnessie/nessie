@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;

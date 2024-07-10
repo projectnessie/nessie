@@ -22,7 +22,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /** Server authentication modes for S3. */
 public enum S3ServerAuthenticationMode {
-  DEFAULT {
+  APPLICATION_GLOBAL {
     @Override
     public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
       return DefaultCredentialsProvider.create(); // actually a singleton
