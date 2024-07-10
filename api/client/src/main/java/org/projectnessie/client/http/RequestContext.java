@@ -40,10 +40,14 @@ public interface RequestContext {
 
   Optional<Object> getBody();
 
+  default boolean doesOutput() {
+    return (getMethod() == Method.PUT || getMethod() == Method.POST) && getBody().isPresent();
+  }
+
   /**
    * Adds a callback to be called when the request has finished. The {@code responseCallback} {@link
    * BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the HTTP
-   * request technically succeeded. The The {@code responseCallback} {@link BiConsumer consumer} is
+   * request technically succeeded. The {@code responseCallback} {@link BiConsumer consumer} is
    * called with a non-{@code null} {@link Exception} object, if the HTTP request technically
    * failed.
    *

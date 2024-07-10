@@ -27,20 +27,35 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.zip.GZIPOutputStream;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientReadTimeoutException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.HttpRequest;
+import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.RequestContext;
+import org.projectnessie.client.http.ResponseContext;
+import org.projectnessie.client.http.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseHttpRequest extends HttpRequest {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(BaseHttpRequest.class);
 
   private static final TypeReference<Map<String, Object>> MAP_TYPE =
       new TypeReference<Map<String, Object>>() {};
@@ -49,42 +64,132 @@ public abstract class BaseHttpRequest extends HttpRequest {
     super(config, baseUri);
   }
 
-  protected boolean prepareRequest(RequestContext context) {
+  @Override
+  public HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
+    URI uri = uriBuilder.build();
+    RequestContext requestContext = new RequestContextImpl(headers, uri, method, body);
+    ResponseContext responseContext = null;
+    RuntimeException error = null;
+    try {
+      prepareRequest(requestContext);
+      responseContext = processResponse(uri, method, body, requestContext);
+      return config.responseFactory().make(responseContext, config.getMapper());
+    } catch (RuntimeException e) {
+      error = e;
+      throw e;
+    } finally {
+      processCallbacks(requestContext, responseContext, error);
+      cleanUp(responseContext, error);
+    }
+  }
+
+  protected void prepareRequest(RequestContext context) {
     headers.put(HEADER_ACCEPT, accept);
 
     Method method = context.getMethod();
-    boolean postOrPut = method == Method.PUT || method == Method.POST;
-    if (postOrPut) {
+    if (method == Method.PUT || method == Method.POST) {
       // Need to set the Content-Type even if body==null, otherwise the server responds with
       // RESTEASY003065: Cannot consume content type
       headers.put(HEADER_CONTENT_TYPE, contentsType);
     }
 
-    boolean doesOutput = postOrPut && context.getBody().isPresent();
     if (!config.isDisableCompression()) {
       headers.put(HEADER_ACCEPT_ENCODING, ACCEPT_ENCODING);
-      if (doesOutput) {
+      if (context.doesOutput()) {
         headers.put(HEADER_CONTENT_ENCODING, GZIP);
       }
     }
 
-    if (!bypassFilters) {
-      config.getRequestFilters().forEach(a -> a.filter(context));
-    }
+    processRequestFilters(context);
 
     HttpAuthentication auth = this.auth;
     if (auth != null) {
       auth.applyToHttpRequest(context);
       auth.start();
     }
-
-    return doesOutput;
   }
 
-  protected void cleanUp() {
+  protected ResponseContext processResponse(
+      URI uri, Method method, Object body, RequestContext requestContext) {
+    try {
+      ResponseContext responseContext = sendAndReceive(uri, method, body, requestContext);
+      processResponseFilters(responseContext);
+      mimicUrlConnectionBehavior(method, responseContext, uri);
+      return responseContext;
+    } catch (ProtocolException e) {
+      throw new HttpClientException(
+          String.format("Cannot perform request against '%s'. Invalid protocol %s", uri, method),
+          e);
+    } catch (MalformedURLException e) {
+      throw new HttpClientException(
+          String.format("Cannot perform %s request. Malformed Url for %s", method, uri), e);
+    } catch (SocketTimeoutException e) {
+      throw new HttpClientReadTimeoutException(
+          String.format(
+              "Cannot finish %s request against '%s'. Timeout while waiting for response with a timeout of %ds",
+              method, uri, config.getReadTimeoutMillis() / 1000),
+          e);
+    } catch (IOException e) {
+      throw new HttpClientException(
+          String.format("Failed to execute %s request against '%s'.", method, uri), e);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected abstract ResponseContext sendAndReceive(
+      URI uri, Method method, Object body, RequestContext requestContext)
+      throws IOException, InterruptedException;
+
+  protected void processRequestFilters(RequestContext requestContext) {
+    if (!bypassFilters) {
+      config.getRequestFilters().forEach(requestFilter -> requestFilter.filter(requestContext));
+    }
+  }
+
+  protected void processResponseFilters(ResponseContext responseContext) {
+    if (!bypassFilters) {
+      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
+    }
+  }
+
+  /**
+   * This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that throws an
+   * IOException for some status codes.
+   */
+  protected void mimicUrlConnectionBehavior(
+      Method method, ResponseContext responseContext, URI uri) {
+    Status status = responseContext.getStatus();
+    if (status.getCode() >= 400) {
+      throw new HttpClientResponseException(
+          String.format("%s request to %s failed with HTTP/%d", method, uri, status.getCode()),
+          status);
+    }
+  }
+
+  protected void processCallbacks(
+      RequestContext requestContext,
+      @Nullable ResponseContext responseContext,
+      @Nullable RuntimeException error) {
+    List<BiConsumer<ResponseContext, Exception>> callbacks = requestContext.getResponseCallbacks();
+    if (callbacks != null) {
+      for (BiConsumer<ResponseContext, Exception> callback : callbacks) {
+        try {
+          callback.accept(responseContext, error);
+        } catch (Exception e) {
+          LOGGER.warn("Callback invocation failed", e);
+        }
+      }
+    }
+  }
+
+  protected void cleanUp(ResponseContext responseContext, RuntimeException error) {
     HttpAuthentication auth = this.auth;
     if (auth != null) {
       auth.close();
+    }
+    if (responseContext != null) {
+      responseContext.close(error);
     }
   }
 

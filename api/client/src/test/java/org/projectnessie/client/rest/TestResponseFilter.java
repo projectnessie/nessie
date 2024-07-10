@@ -232,7 +232,13 @@ public class TestResponseFilter {
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
                       @Override
+                      @Deprecated
                       public Status getResponseCode() {
+                        return getStatus();
+                      }
+
+                      @Override
+                      public Status getStatus() {
                         return Status.UNAUTHORIZED;
                       }
 
@@ -275,7 +281,13 @@ public class TestResponseFilter {
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
                       @Override
+                      @Deprecated
                       public Status getResponseCode() {
+                        return getStatus();
+                      }
+
+                      @Override
+                      public Status getStatus() {
                         return Status.NOT_IMPLEMENTED;
                       }
 
@@ -390,7 +402,13 @@ public class TestResponseFilter {
     }
 
     @Override
+    @Deprecated
     public Status getResponseCode() {
+      return getStatus();
+    }
+
+    @Override
+    public Status getStatus() {
       return code;
     }
 

@@ -37,7 +37,7 @@ public class HttpResponse {
   @SuppressWarnings("TypeParameterUnusedInFormals")
   private <V> V readEntity(ObjectReader reader) {
     try {
-      if (responseContext.getResponseCode().getCode() == Status.NO_CONTENT.getCode()) {
+      if (responseContext.getStatus().getCode() == Status.NO_CONTENT.getCode()) {
         // In case the Nessie server returns no content (because it's on an older version)
         // but the client expects a response, just return null here and cross fingers that
         // the code doesn't expect a non-null value.
@@ -59,7 +59,7 @@ public class HttpResponse {
   }
 
   private void nonJsonResponse() throws IOException {
-    Status status = responseContext.getResponseCode();
+    Status status = responseContext.getStatus();
     throw new NessieBadResponseException(
         ImmutableNessieError.builder()
             .status(status.getCode())
@@ -84,10 +84,6 @@ public class HttpResponse {
   }
 
   public Status getStatus() {
-    try {
-      return responseContext.getResponseCode();
-    } catch (IOException e) {
-      throw new HttpClientException(e);
-    }
+    return responseContext.getStatus();
   }
 }

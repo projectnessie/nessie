@@ -22,7 +22,22 @@ import java.net.URI;
 /** Interface for the important parts of a response. This is created after executing the request. */
 public interface ResponseContext {
 
+  /**
+   * Get the status of the response.
+   *
+   * @deprecated use {@link #getStatus()} instead
+   */
+  @Deprecated
   Status getResponseCode() throws IOException;
+
+  /** Get the status of the response. */
+  default Status getStatus() {
+    try {
+      return getResponseCode();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   InputStream getInputStream() throws IOException;
 
@@ -43,4 +58,14 @@ public interface ResponseContext {
   String getContentType();
 
   URI getRequestedUri();
+
+  /**
+   * Close the response context.
+   *
+   * @param error if the request failed, this is the exception that caused the failure; will be null
+   *     otherwise
+   */
+  default void close(Exception error) {
+    // no-op
+  }
 }

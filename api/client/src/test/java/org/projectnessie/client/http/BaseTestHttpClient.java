@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Splitter;
 import java.io.BufferedReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -508,14 +507,7 @@ public abstract class BaseTestHttpClient {
       }
       soft.assertThat(responseContext.get())
           .isNotNull()
-          .extracting(
-              rc -> {
-                try {
-                  return rc.getResponseCode();
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-              })
+          .extracting(ResponseContext::getStatus)
           .isEqualTo(status);
     }
   }
@@ -534,14 +526,7 @@ public abstract class BaseTestHttpClient {
             .isInstanceOf(HttpClientException.class);
         soft.assertThat(responseContext.get())
             .isNotNull()
-            .extracting(
-                rc -> {
-                  try {
-                    return rc.getResponseCode();
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .extracting(ResponseContext::getStatus)
             .isEqualTo(Status.INTERNAL_SERVER_ERROR);
 
         responseContext.set(null);
@@ -587,13 +572,9 @@ public abstract class BaseTestHttpClient {
           });
       builder.addResponseFilter(
           con -> {
-            try {
-              soft.assertThat(con.getResponseCode()).isEqualTo(Status.OK);
-              responseFilterCalled.set(true);
-              responseContextGotFilter.set(con);
-            } catch (IOException e) {
-              throw new IOError(e);
-            }
+            soft.assertThat(con.getStatus()).isEqualTo(Status.OK);
+            responseFilterCalled.set(true);
+            responseContextGotFilter.set(con);
           });
       try (HttpClient client = builder.build()) {
         client.newRequest().get();

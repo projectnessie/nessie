@@ -90,16 +90,6 @@ public class RequestContextImpl implements RequestContext {
             .isPresent();
   }
 
-  /**
-   * Adds a callback to be called when the request has finished. The {@code responseCallback} {@link
-   * BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the HTTP
-   * request technically succeeded. The {@code responseCallback} {@link BiConsumer consumer} is
-   * called with a non-{@code null} {@link Exception} object, if the HTTP request technically
-   * failed.
-   *
-   * @param responseCallback callback that receives either a non-{@code null} {@link
-   *     ResponseContext} or a non-{@code null} {@link Exception}.
-   */
   @Override
   public void addResponseCallback(BiConsumer<ResponseContext, Exception> responseCallback) {
     if (responseCallbacks == null) {
