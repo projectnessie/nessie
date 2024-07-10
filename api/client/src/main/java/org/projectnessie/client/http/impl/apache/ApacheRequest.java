@@ -58,8 +58,6 @@ final class ApacheRequest extends BaseHttpRequest {
 
     boolean doesOutput = prepareRequest(context);
 
-    config.getRequestFilters().forEach(a -> a.filter(context));
-
     for (HttpHeader header : headers.allHeaders()) {
       for (String value : header.getValues()) {
         request.addHeader(header.getName(), value);
@@ -85,7 +83,11 @@ final class ApacheRequest extends BaseHttpRequest {
         callbacks.forEach(callback -> callback.accept(responseContext, null));
       }
 
-      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
+      if (!bypassFilters) {
+        config
+            .getResponseFilters()
+            .forEach(responseFilter -> responseFilter.filter(responseContext));
+      }
 
       if (response.getCode() >= 400) {
         Status status = Status.fromCode(response.getCode());

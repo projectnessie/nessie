@@ -140,9 +140,11 @@ final class JavaRequest extends BaseHttpRequest {
           callbacks.forEach(callback -> callback.accept(responseContext, null));
         }
 
-        config
-            .getResponseFilters()
-            .forEach(responseFilter -> responseFilter.filter(responseContext));
+        if (!bypassFilters) {
+          config
+              .getResponseFilters()
+              .forEach(responseFilter -> responseFilter.filter(responseContext));
+        }
 
         if (response.statusCode() >= 400) {
           // This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that

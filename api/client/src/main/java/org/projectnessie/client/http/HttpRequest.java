@@ -35,6 +35,7 @@ public abstract class HttpRequest
   protected String contentsType = "application/json; charset=utf-8";
   protected String accept = "application/json; charset=utf-8";
   protected HttpAuthentication auth;
+  protected boolean bypassFilters;
 
   protected HttpRequest(HttpRuntimeConfig config, URI baseUri) {
     requireNonNull(baseUri, "Base URI cannot be null");
@@ -95,6 +96,11 @@ public abstract class HttpRequest
 
   public HttpRequest header(String name, String value) {
     headers.put(name, value);
+    return this;
+  }
+
+  HttpRequest bypassFilters() {
+    this.bypassFilters = true;
     return this;
   }
 

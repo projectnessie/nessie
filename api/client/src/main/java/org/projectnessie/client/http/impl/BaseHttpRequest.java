@@ -67,7 +67,10 @@ public abstract class BaseHttpRequest extends HttpRequest {
         headers.put(HEADER_CONTENT_ENCODING, GZIP);
       }
     }
-    config.getRequestFilters().forEach(a -> a.filter(context));
+
+    if (!bypassFilters) {
+      config.getRequestFilters().forEach(a -> a.filter(context));
+    }
 
     HttpAuthentication auth = this.auth;
     if (auth != null) {
