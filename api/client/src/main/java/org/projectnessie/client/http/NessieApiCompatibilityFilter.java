@@ -28,22 +28,24 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
   private static final String MAX_API_VERSION = "maxSupportedApiVersion";
   private static final String ACTUAL_API_VERSION = "actualApiVersion";
 
-  private HttpClient.Builder builder;
   private final int clientApiVersion;
   private final AtomicBoolean checkDone = new AtomicBoolean(false);
 
-  NessieApiCompatibilityFilter(HttpClient.Builder builder, int clientApiVersion) {
-    this.builder = builder.copy().clearRequestFilters().clearResponseFilters();
+  private HttpClient httpClient;
+
+  NessieApiCompatibilityFilter(int clientApiVersion) {
     this.clientApiVersion = clientApiVersion;
+  }
+
+  void setHttpClient(HttpClient httpClient) {
+    this.httpClient = httpClient;
   }
 
   @Override
   public void filter(RequestContext context) {
-    if (checkDone.compareAndSet(false, true)) {
-      try (HttpClient httpClient = builder.build()) {
+    if (httpClient != null) {
+      if (checkDone.compareAndSet(false, true)) {
         check(clientApiVersion, httpClient);
-      } finally {
-        builder = null;
       }
     }
   }

@@ -185,8 +185,6 @@ public class TestHttpClientBuilder {
         HttpClient.builder()
             .setSslNoCertificateVerification(true)
             .setObjectMapper(new ObjectMapper());
-    assertThatCode(() -> builder1.copy().build().close()).doesNotThrowAnyException();
-    assertThatCode(() -> builder1.copy().build().close()).doesNotThrowAnyException();
     assertThatCode(() -> builder1.build().close()).doesNotThrowAnyException();
   }
 
@@ -199,10 +197,6 @@ public class TestHttpClientBuilder {
             .setObjectMapper(new ObjectMapper());
     assertThatIllegalArgumentException()
         .isThrownBy(() -> builder1.build().close())
-        .withMessage(
-            "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> builder1.copy().build().close())
         .withMessage(
             "Cannot construct Http client, must not combine nessie.ssl.no-certificate-verification and an explicitly configured SSLContext");
   }

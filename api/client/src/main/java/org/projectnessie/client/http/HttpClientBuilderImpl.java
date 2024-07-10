@@ -97,12 +97,6 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     this.cancellationFuture = other.cancellationFuture;
   }
 
-  /** Creates a (shallow) copy of this builder. */
-  @Override
-  public HttpClient.Builder copy() {
-    return new HttpClientBuilderImpl(this);
-  }
-
   @CanIgnoreReturnValue
   public HttpClient.Builder setClientSpec(int clientSpec) {
     this.clientSpec = clientSpec;

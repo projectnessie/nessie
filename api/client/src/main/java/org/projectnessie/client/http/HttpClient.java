@@ -53,8 +53,6 @@ public interface HttpClient extends AutoCloseable {
   void close();
 
   interface Builder {
-    Builder copy();
-
     @SuppressWarnings("unused")
     @CanIgnoreReturnValue
     Builder setClientSpec(int clientSpec);
@@ -119,12 +117,6 @@ public interface HttpClient extends AutoCloseable {
      */
     @CanIgnoreReturnValue
     Builder addResponseFilter(ResponseFilter filter);
-
-    @CanIgnoreReturnValue
-    Builder clearRequestFilters();
-
-    @CanIgnoreReturnValue
-    Builder clearResponseFilters();
 
     /**
      * Add tracing to the client. This will load the opentracing libraries. It is not possible to
