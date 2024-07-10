@@ -35,7 +35,7 @@ public interface ResponseContext {
     try {
       return getResponseCode();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new HttpClientException(e);
     }
   }
 
