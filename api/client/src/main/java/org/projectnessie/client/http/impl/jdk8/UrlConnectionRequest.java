@@ -83,7 +83,11 @@ final class UrlConnectionRequest extends BaseHttpRequest {
         throw e;
       }
 
-      config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
+      if (!bypassFilters) {
+        config
+            .getResponseFilters()
+            .forEach(responseFilter -> responseFilter.filter(responseContext));
+      }
 
       return config.responseFactory().make(responseContext, config.getMapper());
     } catch (ProtocolException e) {
