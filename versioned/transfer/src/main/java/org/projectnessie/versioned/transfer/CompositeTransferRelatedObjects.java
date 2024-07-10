@@ -44,7 +44,7 @@ final class CompositeTransferRelatedObjects implements TransferRelatedObjects {
   public CompositeTransferRelatedObjects(List<URL> jarUrls) {
     // Exporter runs as a Quarkus CLI application, so "just adding additional jars via `java
     // -classpath`" doesn't work here. The artifacts that implement TransferRelatedObjects are
-    // rather lightweight and only depends on code that's present in Nessie's server-admin-tool (in
+    // rather lightweight and only depend on code that's present in Nessie's server-admin-tool (in
     // the thread's context class loader).
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (!jarUrls.isEmpty()) {
