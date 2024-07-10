@@ -31,7 +31,7 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
   private final int clientApiVersion;
   private final AtomicBoolean checkDone = new AtomicBoolean(false);
 
-  private volatile HttpClient httpClient;
+  private HttpClient httpClient;
 
   NessieApiCompatibilityFilter(int clientApiVersion) {
     this.clientApiVersion = clientApiVersion;
