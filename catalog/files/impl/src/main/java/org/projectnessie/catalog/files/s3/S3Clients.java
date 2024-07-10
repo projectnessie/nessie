@@ -28,15 +28,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.List;
-import java.util.Optional;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretsProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.TlsTrustManagersProvider;
@@ -118,31 +115,11 @@ public class S3Clients {
     return httpClient.buildWithDefaults(options.build());
   }
 
-  public static AwsCredentialsProvider basicCredentialsProvider(
-      Optional<String> accessKeyIdRef, Optional<String> secretAccessKeyIdRef) {
-    String key =
-        accessKeyIdRef.orElseThrow(
-            () -> new IllegalStateException("Secret reference to S3 access key ID is not defined"));
-
-    String secret =
-        secretAccessKeyIdRef.orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Secret reference to S3 secret access key is not defined"));
-
-    return () -> AwsBasicCredentials.create(key, secret);
-  }
-
   public static AwsCredentialsProvider awsCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
-    Optional<String> role = bucketOptions.assumeRole();
-    if (role.isEmpty()) {
-      return basicCredentialsProvider(
-          bucketOptions.accessKey().map(BasicCredentials::name),
-          bucketOptions.accessKey().map(BasicCredentials::secret));
-    }
-
-    return sessions.assumeRoleForServer(bucketOptions);
+    return bucketOptions.assumeRole().isPresent()
+        ? sessions.assumeRoleForServer(bucketOptions)
+        : bucketOptions.effectiveServerAuthenticationMode().newCredentialsProvider(bucketOptions);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {

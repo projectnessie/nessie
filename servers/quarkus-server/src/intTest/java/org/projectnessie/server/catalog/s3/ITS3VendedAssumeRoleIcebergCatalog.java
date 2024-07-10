@@ -136,7 +136,7 @@ public class ITS3VendedAssumeRoleIcebergCatalog {
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
           .put(
-              "nessie.catalog.service.s3.default-options.auth-mode",
+              "nessie.catalog.service.s3.default-options.client-auth-mode",
               S3ClientAuthenticationMode.ASSUME_ROLE.name())
           .put("nessie.catalog.service.s3.default-options.session-iam-policy", IAM_POLICY)
           .put(

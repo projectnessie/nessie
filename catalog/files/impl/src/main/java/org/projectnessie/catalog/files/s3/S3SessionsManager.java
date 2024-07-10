@@ -18,7 +18,6 @@ package org.projectnessie.catalog.files.s3;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.projectnessie.catalog.files.s3.S3Clients.basicCredentialsProvider;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -39,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -175,8 +173,13 @@ public class S3SessionsManager {
 
   private Credentials fetchCredentials(SessionKey sessionKey, Optional<Duration> sessionDuration) {
     // Note: StsClients may be shared across repositories.
+    String region =
+        sessionKey
+            .bucketOptions()
+            .region()
+            .orElseThrow(() -> new IllegalArgumentException("Missing S3 region"));
     StsClientKey clientKey =
-        ImmutableStsClientKey.of(sessionKey.stsEndpoint(), sessionKey.region());
+        ImmutableStsClientKey.of(sessionKey.bucketOptions().stsEndpoint(), region);
     StsClient client = clients.get(clientKey, clientBuilder);
 
     return sessionCredentialsFetcher.fetchCredentials(client, sessionKey, sessionDuration);
@@ -185,11 +188,12 @@ public class S3SessionsManager {
   private Credentials executeAssumeRoleRequest(
       StsClient client, SessionKey sessionKey, Optional<Duration> sessionDuration) {
     AssumeRoleRequest.Builder request = AssumeRoleRequest.builder();
+    S3BucketOptions bucketOptions = sessionKey.bucketOptions();
     request.roleSessionName(
-        sessionKey.roleSessionName().orElse(S3BucketOptions.DEFAULT_SESSION_NAME));
-    request.roleArn(sessionKey.roleArn());
-    sessionKey.externalId().ifPresent(request::externalId);
-    sessionKey.iamPolicy().ifPresent(request::policy);
+        bucketOptions.roleSessionName().orElse(S3BucketOptions.DEFAULT_SESSION_NAME));
+    bucketOptions.assumeRole().ifPresent(request::roleArn);
+    bucketOptions.externalId().ifPresent(request::externalId);
+    bucketOptions.sessionIamPolicy().ifPresent(request::policy);
     sessionDuration.ifPresent(
         duration -> {
           long seconds = duration.toSeconds();
@@ -199,9 +203,10 @@ public class S3SessionsManager {
         });
 
     request.overrideConfiguration(
-        builder ->
-            builder.credentialsProvider(
-                basicCredentialsProvider(sessionKey.accessKeyId(), sessionKey.secretAccessKey())));
+        builder -> {
+          S3ServerAuthenticationMode authMode = bucketOptions.effectiveServerAuthenticationMode();
+          builder.credentialsProvider(authMode.newCredentialsProvider(bucketOptions));
+        });
 
     AssumeRoleResponse response = client.assumeRole(request.build());
     return response.credentials();
@@ -224,24 +229,7 @@ public class S3SessionsManager {
   private static SessionKey buildSessionKey(String repositoryId, S3BucketOptions options) {
     // Client parameters are part of the credential's key because clients in different regions may
     // issue different credentials.
-    return ImmutableSessionKey.builder()
-        .repositoryId(repositoryId)
-        .region(
-            options
-                .region()
-                .orElseThrow(() -> new IllegalArgumentException("S3 region must be provided")))
-        .stsEndpoint(options.stsEndpoint())
-        .roleArn(
-            options
-                .assumeRole()
-                .orElseThrow(() -> new IllegalArgumentException("Role ARN must be configured")))
-        .accessKeyId(options.accessKey().map(BasicCredentials::name))
-        .secretAccessKey(options.accessKey().map(BasicCredentials::secret))
-        .stsEndpoint(options.stsEndpoint())
-        .iamPolicy(options.sessionIamPolicy())
-        .roleSessionName(options.roleSessionName())
-        .externalId(options.externalId())
-        .build();
+    return ImmutableSessionKey.builder().repositoryId(repositoryId).bucketOptions(options).build();
   }
 
   private static StsClient client(StsClientKey parameters, SdkHttpClient sdkClient) {
@@ -263,21 +251,7 @@ public class S3SessionsManager {
   interface SessionKey {
     String repositoryId();
 
-    String region();
-
-    String roleArn();
-
-    Optional<URI> stsEndpoint();
-
-    Optional<String> accessKeyId();
-
-    Optional<String> secretAccessKey();
-
-    Optional<String> iamPolicy();
-
-    Optional<String> roleSessionName();
-
-    Optional<String> externalId();
+    S3BucketOptions bucketOptions();
   }
 
   @NessieImmutable

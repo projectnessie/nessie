@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
+import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
@@ -46,6 +47,10 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   @Override
   Optional<Boolean> allowCrossRegionAccessPoint();
 
+  @WithName("server-auth-mode")
+  @Override
+  Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
+
   @Override
   Optional<URI> stsEndpoint();
 
@@ -61,7 +66,7 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   @Override
   Optional<String> externalId();
 
-  @WithName("auth-mode")
+  @WithName("client-auth-mode")
   @Override
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
 

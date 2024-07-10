@@ -33,10 +33,16 @@ public interface S3BucketOptions {
       Duration.ofHours(1); // 1 hour lifetime is common for session credentials in S3
 
   /**
+   * Default value for {@link #serverAuthenticationMode()}, being {@link
+   * S3ServerAuthenticationMode#STATIC}.
+   */
+  S3ServerAuthenticationMode DEFAULT_SERVER_AUTHENTICATION_MODE = S3ServerAuthenticationMode.STATIC;
+
+  /**
    * Default value for {@link #clientAuthenticationMode()}, being {@link
    * S3ClientAuthenticationMode#REQUEST_SIGNING}.
    */
-  S3ClientAuthenticationMode DEFAULT_AUTHENTICATION_MODE =
+  S3ClientAuthenticationMode DEFAULT_CLIENT_AUTHENTICATION_MODE =
       S3ClientAuthenticationMode.REQUEST_SIGNING;
 
   /**
@@ -89,10 +95,32 @@ public interface S3BucketOptions {
   Optional<String> region();
 
   /**
+   * The authentication mode to use by the Catalog server. If not set, the default is {@code
+   * STATIC}. Depending on the authentication mode, other properties may be required.
+   *
+   * <p>Valid values are:
+   *
+   * <ul>
+   *   <li>{@code APPLICATION_GLOBAL}: Use the AWSSDK <a
+   *       href="https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html">default
+   *       credentials provider</a>.
+   *   <li>{@code STATIC}: Static credentials provided through the {@code access-key} option.
+   * </ul>
+   */
+  Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
+
+  default S3ServerAuthenticationMode effectiveServerAuthenticationMode() {
+    return serverAuthenticationMode().orElse(DEFAULT_SERVER_AUTHENTICATION_MODE);
+  }
+
+  /**
    * An access-key-id and secret-access-key must be configured using the {@code name} and {@code
-   * secret} fields, either per bucket or in the top-level S3 settings. For STS, this defines the
-   * Access Key ID and Secret Key ID to be used as a basic credential for obtaining temporary
-   * session credentials.
+   * secret} fields, either per bucket or in the top-level S3 settings.
+   *
+   * <p>Required when {@code server-authentication-mode} is {@code STATIC}.
+   *
+   * <p>For STS, this defines the Access Key ID and Secret Key ID to be used as a basic credential
+   * for obtaining temporary session credentials.
    */
   Optional<BasicCredentials> accessKey();
 
@@ -109,6 +137,9 @@ public interface S3BucketOptions {
    * The <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html">ARN</a> of
    * the role to assume for accessing S3 data. This parameter is required for Amazon S3, but may not
    * be required for other storage providers (e.g. Minio does not use it at all).
+   *
+   * <p>If this option is defined, the server will attempt to assume the role at startup and cache
+   * the returned session credentials.
    */
   Optional<String> assumeRole();
 
@@ -147,7 +178,7 @@ public interface S3BucketOptions {
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
 
   default S3ClientAuthenticationMode effectiveClientAuthenticationMode() {
-    return clientAuthenticationMode().orElse(DEFAULT_AUTHENTICATION_MODE);
+    return clientAuthenticationMode().orElse(DEFAULT_CLIENT_AUTHENTICATION_MODE);
   }
 
   /**
