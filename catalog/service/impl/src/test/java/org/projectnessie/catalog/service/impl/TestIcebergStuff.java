@@ -108,11 +108,7 @@ public class TestIcebergStuff {
   @MethodSource("icebergTableImports")
   public void icebergTableImports(
       @SuppressWarnings("unused") String testName, String icebergTableMetadata) throws Exception {
-    BackendExceptionMapper exceptionMapper =
-        BackendExceptionMapper.builder()
-            .clock(Clock.systemUTC())
-            .retryAfterThrottled(Duration.ofMillis(1))
-            .build();
+    BackendExceptionMapper exceptionMapper = BackendExceptionMapper.builder().build();
 
     ObjectIO objectIO = new LocalObjectIO();
     IcebergStuff icebergStuff =
@@ -120,7 +116,7 @@ public class TestIcebergStuff {
             objectIO,
             persist,
             tasksService,
-            new EntitySnapshotTaskBehavior(exceptionMapper),
+            new EntitySnapshotTaskBehavior(exceptionMapper, Duration.ofMillis(1)),
             executor);
 
     ObjId snapshotId = randomObjId();

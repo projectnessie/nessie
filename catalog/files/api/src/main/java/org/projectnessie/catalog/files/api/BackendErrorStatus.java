@@ -20,38 +20,28 @@ import static org.projectnessie.catalog.files.api.BackendErrorCode.NOT_FOUND;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.UNAUTHORIZED;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.UNKNOWN;
 
-import java.time.Instant;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 public interface BackendErrorStatus {
   BackendErrorCode statusCode();
 
-  boolean isRetryable();
-
-  Instant reattemptAfter();
-
   Throwable cause();
 
-  default BackendErrorStatus withReattemptAfter(Instant reattemptAfter) {
-    return ImmutableBackendErrorStatus.builder().from(this).reattemptAfter(reattemptAfter).build();
-  }
-
-  static BackendErrorStatus of(BackendErrorCode statusCode, boolean retryable, Throwable cause) {
-    // Use Instant.EPOCH for `reattemptAfter` here. The reattempt delay may be re-assigned later.
-    return ImmutableBackendErrorStatus.of(statusCode, retryable, Instant.EPOCH, cause);
+  static BackendErrorStatus of(BackendErrorCode statusCode, Throwable cause) {
+    return ImmutableBackendErrorStatus.of(statusCode, cause);
   }
 
   static BackendErrorStatus fromHttpStatusCode(int httpStatusCode, Throwable cause) {
     switch (httpStatusCode) {
       case 401:
-        return BackendErrorStatus.of(UNAUTHORIZED, false, cause);
+        return BackendErrorStatus.of(UNAUTHORIZED, cause);
       case 403:
-        return BackendErrorStatus.of(FORBIDDEN, false, cause);
+        return BackendErrorStatus.of(FORBIDDEN, cause);
       case 404:
-        return BackendErrorStatus.of(NOT_FOUND, false, cause);
+        return BackendErrorStatus.of(NOT_FOUND, cause);
       default:
-        return BackendErrorStatus.of(UNKNOWN, false, cause);
+        return BackendErrorStatus.of(UNKNOWN, cause);
     }
   }
 }

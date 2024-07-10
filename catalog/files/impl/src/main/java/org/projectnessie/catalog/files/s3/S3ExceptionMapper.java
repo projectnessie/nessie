@@ -32,7 +32,7 @@ public class S3ExceptionMapper implements BackendExceptionMapper.Analyzer {
     if (th instanceof SdkServiceException) {
       SdkServiceException e = (SdkServiceException) th;
       if (e.isThrottlingException()) {
-        return BackendErrorStatus.of(THROTTLED, true, th);
+        return BackendErrorStatus.of(THROTTLED, th);
       }
 
       return BackendErrorStatus.fromHttpStatusCode(e.statusCode(), e);

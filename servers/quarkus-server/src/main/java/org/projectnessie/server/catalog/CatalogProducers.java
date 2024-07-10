@@ -217,15 +217,13 @@ public class CatalogProducers {
   @Singleton
   public EntitySnapshotTaskBehavior entitySnapshotTaskBehavior(
       CatalogServiceConfig config, BackendExceptionMapper mapper) {
-    return new EntitySnapshotTaskBehavior(mapper);
+    return new EntitySnapshotTaskBehavior(mapper, config.retryAfterThrottled());
   }
 
   @Produces
   @Singleton
-  public BackendExceptionMapper objectIOExceptionMapper(CatalogServiceConfig config) {
+  public BackendExceptionMapper objectIOExceptionMapper() {
     return BackendExceptionMapper.builder()
-        .clock(systemUTC())
-        .retryAfterThrottled(config.retryAfterThrottled())
         .addAnalyzer(PreviousTaskExceptionMapper.INSTANCE)
         .addAnalyzer(AdlsExceptionMapper.INSTANCE)
         .addAnalyzer(GcsExceptionMapper.INSTANCE)

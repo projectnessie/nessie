@@ -16,9 +16,6 @@
 package org.projectnessie.catalog.files.api;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -27,10 +24,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 public abstract class BackendExceptionMapper {
 
   protected abstract List<Analyzer> analyzers();
-
-  protected abstract Duration retryAfterThrottled();
-
-  protected abstract Clock clock();
 
   public static Builder builder() {
     return ImmutableBackendExceptionMapper.builder();
@@ -41,9 +34,6 @@ public abstract class BackendExceptionMapper {
       for (Analyzer analyzer : analyzers()) {
         BackendErrorStatus status = analyzer.analyze(th);
         if (status != null) {
-          if (status.statusCode() == BackendErrorCode.THROTTLED) {
-            return Optional.of(status.withReattemptAfter(retryAfter(retryAfterThrottled())));
-          }
           return Optional.of(status);
         }
       }
@@ -52,21 +42,11 @@ public abstract class BackendExceptionMapper {
     return Optional.empty();
   }
 
-  private Instant retryAfter(Duration delay) {
-    return clock().instant().plus(delay);
-  }
-
   public interface Analyzer {
     BackendErrorStatus analyze(Throwable th);
   }
 
   public interface Builder {
-    @CanIgnoreReturnValue
-    Builder clock(Clock clock);
-
-    @CanIgnoreReturnValue
-    Builder retryAfterThrottled(Duration retryDelay);
-
     @CanIgnoreReturnValue
     Builder addAnalyzer(Analyzer analyzer);
 

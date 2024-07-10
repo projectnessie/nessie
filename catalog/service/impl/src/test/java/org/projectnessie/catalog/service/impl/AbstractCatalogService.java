@@ -201,12 +201,9 @@ public abstract class AbstractCatalogService {
     catalogService.executor = executor;
     catalogService.nessieApi = api;
 
-    BackendExceptionMapper exceptionMapper =
-        BackendExceptionMapper.builder()
-            .clock(Clock.systemUTC())
-            .retryAfterThrottled(Duration.ofMillis(1))
-            .build();
-    catalogService.snapshotTaskBehavior = new EntitySnapshotTaskBehavior(exceptionMapper);
+    BackendExceptionMapper exceptionMapper = BackendExceptionMapper.builder().build();
+    catalogService.snapshotTaskBehavior =
+        new EntitySnapshotTaskBehavior(exceptionMapper, Duration.ofMillis(1));
   }
 
   private void setupObjectIO() {

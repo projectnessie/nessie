@@ -26,9 +26,7 @@ public class PreviousTaskExceptionMapper implements BackendExceptionMapper.Analy
   @Override
   public BackendErrorStatus analyze(Throwable th) {
     if (th instanceof PreviousTaskException) {
-      // Note: retryable errors are not converted to PreviousTaskException,
-      // so a reverse conversion must mean a non-retryable error.
-      return BackendErrorStatus.of(((PreviousTaskException) th).getErrorCode(), false, th);
+      return BackendErrorStatus.of(((PreviousTaskException) th).getErrorCode(), th);
     }
     return null;
   }
