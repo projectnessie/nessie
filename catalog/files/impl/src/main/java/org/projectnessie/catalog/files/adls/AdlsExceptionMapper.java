@@ -27,7 +27,7 @@ public class AdlsExceptionMapper implements BackendExceptionMapper.Analyzer {
   @Override
   public BackendErrorStatus analyze(Throwable th) {
     if (th instanceof BlobStorageException) {
-      return BackendErrorStatus.of(((BlobStorageException) th).getStatusCode(), th);
+      return BackendErrorStatus.fromHttpStatusCode(((BlobStorageException) th).getStatusCode(), th);
     }
     return null;
   }

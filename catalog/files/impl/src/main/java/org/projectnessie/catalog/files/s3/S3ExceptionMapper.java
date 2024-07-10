@@ -35,7 +35,7 @@ public class S3ExceptionMapper implements BackendExceptionMapper.Analyzer {
         return BackendErrorStatus.of(THROTTLED, true, th);
       }
 
-      return BackendErrorStatus.of(e.statusCode(), e);
+      return BackendErrorStatus.fromHttpStatusCode(e.statusCode(), e);
     }
     return null;
   }

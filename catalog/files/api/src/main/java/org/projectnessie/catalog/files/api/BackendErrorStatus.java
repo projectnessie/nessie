@@ -42,7 +42,7 @@ public interface BackendErrorStatus {
     return ImmutableBackendErrorStatus.of(statusCode, retryable, Instant.EPOCH, cause);
   }
 
-  static BackendErrorStatus of(int httpStatusCode, Throwable cause) {
+  static BackendErrorStatus fromHttpStatusCode(int httpStatusCode, Throwable cause) {
     switch (httpStatusCode) {
       case 401:
         return BackendErrorStatus.of(UNAUTHORIZED, false, cause);
