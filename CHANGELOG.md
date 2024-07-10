@@ -22,7 +22,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
-- Helm chat improvements
+- Helm chart improvements
 
 ### Deprecations
 
@@ -32,7 +32,7 @@ as necessary. Empty sections will not end in the release notes.
 - Catalog: Fix double write of metadata objects to S3
 - GC/ADLS: Handle `BlobNotFound` as well
 - Fix behavior of metadata-update/set-statistics + set-partition-statistics
-- Fix duplicate OAuth interactive flows when the Nessie API compatibilty filter is enabled
+- Fix duplicate OAuth interactive flows when the Nessie API compatibility filter is enabled
 
 ### Commits
 
