@@ -13,7 +13,7 @@ Running Nessie on your laptop and accessing it using Spark SQL and Iceberg REST 
 The following starts Nessie with Minio and a predefined bucket.
 
 ```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/projectnessie/nessie/main/docker/catalog-auth-s3-otel/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/projectnessie/nessie/main/docker/catalog-auth-s3/docker-compose.yml
 
 docker-compose -f docker-compose.yml up
 # or use podman-compose, if you're using Podman
@@ -23,7 +23,7 @@ Once all the containers are running, you can run Spark-SQL:
 
 ```bash
 spark-sql  \
-  --packages "org.projectnessie.nessie-integrations:nessie-spark-extensions-3.5_2.12:{{ versions.nessie }},org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:{{ versions.iceberg }}" \
+  --packages "org.projectnessie.nessie-integrations:nessie-spark-extensions-3.5_2.12:{{ versions.nessie }},org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:{{ versions.iceberg }},org.apache.iceberg:iceberg-aws-bundle:{{ versions.iceberg }}" \
   --conf spark.sql.extensions=org.projectnessie.spark.extensions.NessieSparkSessionExtensions,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
   --conf spark.sql.catalogImplementation=in-memory \
   --conf "spark.sql.catalog.nessie.scope=catalog sign" \
