@@ -20,16 +20,11 @@ services:
 
   ## IMPORTANT
   ##
-  ##
-  ## 1. Generate the Nessie Catalog image, run:
-  ##
-  ##      tools/dockerbuild/build-push-images.sh --gradle-project :nessie-quarkus  --project-dir servers/quarkus-server --local localhost/projectnessie/nessie
-  ##
-  ## 2. Start the pods:
+  ## 1. Start the pods:
   ##
   ##      podman compose -f docker/catalog-nginx-https/docker-compose.yml up
   ##
-  ## 3. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
+  ## 2. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
   ##    The script will ask for the client secret, it is 's3cr3t' for all three clients.
   ##
   ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --iceberg https://nessie-nginx.localhost.localdomain:8443/iceberg/main
@@ -50,7 +45,7 @@ services:
   ##      SELECT * FROM city;
   ##
   nessie:
-    image: localhost/projectnessie/nessie:latest
+    image: ghcr.io/projectnessie/nessie:0.91.3
     ports:
       # Nessie API port not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
       #   - "19120:19120"
