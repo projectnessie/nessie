@@ -25,6 +25,11 @@ import java.util.Map;
 import java.util.Objects;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 
+/**
+ * Utility methods for HTTP clients.
+ *
+ * <p>This class should only be used by Nessie HTTP client implementations.
+ */
 public final class HttpUtils {
 
   public static final String GZIP = "gzip";

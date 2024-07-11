@@ -185,12 +185,15 @@ public abstract class BaseHttpRequest extends HttpRequest {
   }
 
   protected void cleanUp(ResponseContext responseContext, RuntimeException error) {
-    HttpAuthentication auth = this.auth;
-    if (auth != null) {
-      auth.close();
-    }
-    if (responseContext != null) {
-      responseContext.close(error);
+    try {
+      HttpAuthentication auth = this.auth;
+      if (auth != null) {
+        auth.close();
+      }
+    } finally {
+      if (responseContext != null) {
+        responseContext.close(error);
+      }
     }
   }
 
