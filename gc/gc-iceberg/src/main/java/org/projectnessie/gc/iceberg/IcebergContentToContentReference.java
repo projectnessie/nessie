@@ -15,11 +15,16 @@
  */
 package org.projectnessie.gc.iceberg;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.identify.ContentToContentReference;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergContent;
 
 public final class IcebergContentToContentReference implements ContentToContentReference {
 
@@ -30,12 +35,25 @@ public final class IcebergContentToContentReference implements ContentToContentR
 
   @Override
   public ContentReference contentToReference(Content content, String commitId, ContentKey key) {
-    if (!(content instanceof IcebergTable)) {
-      throw new IllegalArgumentException("Expect ICEBERG_TABLE, but got " + content.getType());
-    }
-    IcebergTable table = (IcebergTable) content;
+    Content.Type contentType = content.getType();
+    if (contentType.equals(ICEBERG_TABLE) || contentType.equals(ICEBERG_VIEW)) {
+      checkArgument(
+          contentType.type().isInstance(content),
+          "Expect %s, but got %s",
+          contentType.type().getSimpleName(),
+          content.getClass().getName());
+      IcebergContent icebergContent = (IcebergContent) content;
 
-    return ContentReference.icebergTable(
-        content.getId(), commitId, key, table.getMetadataLocation(), table.getSnapshotId());
+      return icebergContent(
+          contentType,
+          content.getId(),
+          commitId,
+          key,
+          icebergContent.getMetadataLocation(),
+          icebergContent.getVersionId());
+    } else {
+      throw new IllegalArgumentException(
+          "Expect ICEBERG_TABLE/ICEBERG_VIEW, but got " + contentType);
+    }
   }
 }

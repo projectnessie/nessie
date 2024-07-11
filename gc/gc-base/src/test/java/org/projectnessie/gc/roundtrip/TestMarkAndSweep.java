@@ -15,11 +15,13 @@
  */
 package org.projectnessie.gc.roundtrip;
 
-import static java.util.Collections.singleton;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
 import static org.projectnessie.gc.identify.CutoffPolicy.atTimestamp;
 import static org.projectnessie.gc.identify.CutoffPolicy.numCommits;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -38,7 +40,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.LiveContentSet.Status;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
@@ -60,6 +61,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.LogResponse.LogEntry;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -67,6 +69,8 @@ import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestMarkAndSweep {
+  public static final ImmutableSet<Content.Type> ICEBERG_CONTENT_TYPES =
+      ImmutableSet.of(ICEBERG_TABLE, ICEBERG_VIEW);
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -142,6 +146,10 @@ public class TestMarkAndSweep {
     }
 
     Content numToContent(long l) {
+      if ((l & 1L) == 1L) {
+        return IcebergView.of(
+            numToContentId(l), numToBaseLocation(l).resolve("metadata-" + l).toString(), l, 1);
+      }
       return IcebergTable.of(
           numToBaseLocation(l).resolve("metadata-" + l).toString(), l, 1, 2, 3, numToContentId(l));
     }
@@ -186,23 +194,17 @@ public class TestMarkAndSweep {
                 new ContentTypeFilter() {
                   @Override
                   public boolean test(Content.Type type) {
-                    return ICEBERG_TABLE == type;
+                    return ICEBERG_CONTENT_TYPES.contains(type);
                   }
 
                   @Override
                   public Set<Content.Type> validTypes() {
-                    return singleton(ICEBERG_TABLE);
+                    return ICEBERG_CONTENT_TYPES;
                   }
                 })
             .cutOffPolicySupplier(markAndSweep.cutOffPolicySupplier())
             .contentToContentReference(
-                (content, commitId, key) ->
-                    ContentReference.icebergTable(
-                        content.getId(),
-                        commitId,
-                        key,
-                        ((IcebergTable) content).getMetadataLocation(),
-                        ((IcebergTable) content).getSnapshotId()))
+                (content, commitId, key) -> icebergContent(commitId, key, content))
             .liveContentSetsRepository(repository)
             .repositoryConnector(
                 new RepositoryConnector() {

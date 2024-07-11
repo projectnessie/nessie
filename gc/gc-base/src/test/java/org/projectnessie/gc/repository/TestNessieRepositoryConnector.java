@@ -15,10 +15,12 @@
  */
 package org.projectnessie.gc.repository;
 
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -61,6 +63,9 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
 @NessieBackend(InmemoryBackendTestFactory.class)
 public class TestNessieRepositoryConnector {
+  public static final ImmutableSet<Content.Type> ICEBERG_CONTENT_TYPES =
+      ImmutableSet.of(ICEBERG_TABLE, ICEBERG_VIEW);
+
   @InjectSoftAssertions SoftAssertions soft;
 
   @NessiePersist static Persist persist;
@@ -171,8 +176,7 @@ public class TestNessieRepositoryConnector {
         Entry<String, Entry<String, List<Operation>>> current = commitsOnBranch.get(i);
 
         try (Stream<Entry<ContentKey, Content>> contents =
-            nessie.allContents(
-                Detached.of(current.getKey()), singleton(Content.Type.ICEBERG_TABLE))) {
+            nessie.allContents(Detached.of(current.getKey()), ICEBERG_CONTENT_TYPES)) {
           soft.assertThat(contents)
               .map(e -> Maps.immutableEntry(e.getKey(), e.getValue().withId(null)))
               .containsExactlyInAnyOrderElementsOf(expectedContents.entrySet());

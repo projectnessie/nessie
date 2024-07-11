@@ -16,6 +16,8 @@
 package org.projectnessie.gc.iceberg;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -28,7 +30,8 @@ import org.projectnessie.model.types.ContentTypes;
 public class TestIcebergContentTypeFilter {
 
   static Stream<Content.Type> nonIcebergTable() {
-    return Arrays.stream(ContentTypes.all()).filter(t -> !Content.Type.ICEBERG_TABLE.equals(t));
+    return Arrays.stream(ContentTypes.all())
+        .filter(t -> !ICEBERG_TABLE.equals(t) && !ICEBERG_VIEW.equals(t));
   }
 
   @ParameterizedTest
@@ -39,6 +42,7 @@ public class TestIcebergContentTypeFilter {
 
   @Test
   public void icebergTable() {
-    assertThat(IcebergContentTypeFilter.INSTANCE.test(Content.Type.ICEBERG_TABLE)).isTrue();
+    assertThat(IcebergContentTypeFilter.INSTANCE.test(ICEBERG_TABLE)).isTrue();
+    assertThat(IcebergContentTypeFilter.INSTANCE.test(ICEBERG_VIEW)).isTrue();
   }
 }

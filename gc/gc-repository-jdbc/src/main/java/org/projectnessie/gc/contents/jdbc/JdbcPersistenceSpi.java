@@ -16,6 +16,7 @@
 package org.projectnessie.gc.contents.jdbc;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
 import static org.projectnessie.gc.contents.jdbc.JdbcHelper.isIntegrityConstraintViolation;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.ADD_CONTENT;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_FILE_DELETIONS;
@@ -37,6 +38,8 @@ import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.SELECT_FILE_DELETIONS
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.SELECT_LIVE_CONTENT_SET;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.START_EXPIRE;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.START_IDENTIFY;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -230,17 +233,17 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
             stmt.setString(3, ref.commitId());
             stmt.setString(4, ref.contentKey().toPathString());
             stmt.setString(5, ref.contentType().name());
-            if (ref.contentType().equals(Content.Type.ICEBERG_TABLE)) {
+            if (ref.contentType().equals(ICEBERG_TABLE) || ref.contentType().equals(ICEBERG_VIEW)) {
               stmt.setString(
                   6,
                   Objects.requireNonNull(
                       ref.metadataLocation(),
-                      "Illegal null metadataLocation in ContentReference for ICEBERG_TABLE"));
+                      "Illegal null metadataLocation in ContentReference for ICEBERG_TABLE/ICEBERG_VIEW"));
               stmt.setLong(
                   7,
                   Objects.requireNonNull(
                       ref.snapshotId(),
-                      "Illegal null snapshotId in ContentReference for ICEBERG_TABLE"));
+                      "Illegal null snapshotId in ContentReference for ICEBERG_TABLE/ICEBERG_VIEW"));
             } else {
               throw new UnsupportedOperationException(
                   "Unsupported content type " + ref.contentType());
@@ -405,11 +408,11 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
     String commitId = rs.getString(2);
     ContentKey contentKey = ContentKey.fromPathString(rs.getString(3));
     Content.Type contentType = ContentTypes.forName(rs.getString(4));
-    if (contentType.equals(Content.Type.ICEBERG_TABLE)) {
+    if (contentType.equals(ICEBERG_TABLE) || contentType.equals(ICEBERG_VIEW)) {
       String metadataLocation = rs.getString(5);
       long snapshotId = rs.getLong(6);
-      return ContentReference.icebergTable(
-          contentId, commitId, contentKey, metadataLocation, snapshotId);
+      return icebergContent(
+          contentType, contentId, commitId, contentKey, metadataLocation, snapshotId);
     } else {
       throw new IllegalStateException(
           "Unsupported content type '" + contentType + "' in repository");

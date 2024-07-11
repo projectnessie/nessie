@@ -42,9 +42,11 @@ public abstract class IcebergView extends IcebergContent {
   @jakarta.validation.constraints.NotNull
   @NotBlank
   @jakarta.validation.constraints.NotBlank
+  @Override
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentVersionId}. */
+  @Override
   public abstract long getVersionId();
 
   public abstract int getSchemaId();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.gc.contentes;
+package org.projectnessie.gc.contents;
 
 import java.util.UUID;
 import org.assertj.core.api.SoftAssertions;
@@ -21,9 +21,6 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.gc.contents.AddContents;
-import org.projectnessie.gc.contents.LiveContentSet;
-import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 

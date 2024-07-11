@@ -15,4 +15,8 @@
  */
 package org.projectnessie.model;
 
-public abstract class IcebergContent extends Content {}
+public abstract class IcebergContent extends Content {
+  public abstract String getMetadataLocation();
+
+  public abstract long getVersionId();
+}

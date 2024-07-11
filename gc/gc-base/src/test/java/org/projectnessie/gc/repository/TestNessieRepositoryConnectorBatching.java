@@ -24,7 +24,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.gc.repository.NessieRepositoryConnector.CONTENT_BATCH_SIZE;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.IntFunction;
@@ -47,6 +50,9 @@ import org.projectnessie.model.IcebergTable;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestNessieRepositoryConnectorBatching {
+  public static final ImmutableSet<Content.Type> ICEBERG_CONTENT_TYPES =
+      ImmutableSet.of(ICEBERG_TABLE, ICEBERG_VIEW);
+
   @InjectSoftAssertions SoftAssertions soft;
 
   @Test
@@ -62,7 +68,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getEntries()).thenReturn(getEntries);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE))).isEmpty();
+      soft.assertThat(nessie.allContents(ref, ICEBERG_CONTENT_TYPES)).isEmpty();
     }
 
     verify(api, times(1)).getEntries();
@@ -77,9 +83,7 @@ public class TestNessieRepositoryConnectorBatching {
 
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i ->
-            EntriesResponse.Entry.entry(
-                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
+        i -> EntriesResponse.Entry.entry(key.apply(i), ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -94,7 +98,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getContent()).thenReturn(getContent);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE))).isEmpty();
+      soft.assertThat(nessie.allContents(ref, singleton(ICEBERG_TABLE))).isEmpty();
     }
 
     verify(api, times(1)).getEntries();
@@ -110,9 +114,7 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i ->
-            EntriesResponse.Entry.entry(
-                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
+        i -> EntriesResponse.Entry.entry(key.apply(i), ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -130,7 +132,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getContent()).thenReturn(getContent);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
+      soft.assertThat(nessie.allContents(ref, ICEBERG_CONTENT_TYPES))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
 
@@ -147,9 +149,7 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i ->
-            EntriesResponse.Entry.entry(
-                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
+        i -> EntriesResponse.Entry.entry(key.apply(i), ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -170,7 +170,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getContent()).thenReturn(getContent);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
+      soft.assertThat(nessie.allContents(ref, ICEBERG_CONTENT_TYPES))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
 
@@ -187,9 +187,7 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i ->
-            EntriesResponse.Entry.entry(
-                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
+        i -> EntriesResponse.Entry.entry(key.apply(i), ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -223,7 +221,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getContent()).thenReturn(getContent1).thenReturn(getContent2);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
+      soft.assertThat(nessie.allContents(ref, ICEBERG_CONTENT_TYPES))
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }
 
@@ -240,9 +238,7 @@ public class TestNessieRepositoryConnectorBatching {
     IntFunction<ContentKey> key = i -> ContentKey.of("key-" + i);
     IntFunction<Content> content = i -> IcebergTable.of("meta-" + i, 42, 43, 44, 45, "cid-" + i);
     IntFunction<EntriesResponse.Entry> keyEntry =
-        i ->
-            EntriesResponse.Entry.entry(
-                key.apply(i), Content.Type.ICEBERG_TABLE, UUID.randomUUID().toString());
+        i -> EntriesResponse.Entry.entry(key.apply(i), ICEBERG_TABLE, UUID.randomUUID().toString());
 
     GetEntriesBuilder getEntries = mock(GetEntriesBuilder.class);
     when(getEntries.reference(ref)).thenReturn(getEntries);
@@ -279,7 +275,7 @@ public class TestNessieRepositoryConnectorBatching {
     when(api.getContent()).thenReturn(firstGetContent, nextGetContent);
 
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(api)) {
-      soft.assertThat(nessie.allContents(ref, singleton(Content.Type.ICEBERG_TABLE)))
+      soft.assertThat(nessie.allContents(ref, ICEBERG_CONTENT_TYPES))
           .hasSize(CONTENT_BATCH_SIZE * 10)
           .containsExactlyInAnyOrderElementsOf(expected.entrySet());
     }

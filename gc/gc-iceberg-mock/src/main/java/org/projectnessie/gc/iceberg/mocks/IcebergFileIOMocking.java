@@ -15,11 +15,12 @@
  */
 package org.projectnessie.gc.iceberg.mocks;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.ByteBufferInputStream;
@@ -28,6 +29,8 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.io.PositionOutputStream;
 import org.apache.iceberg.io.SeekableInputStream;
+import org.apache.iceberg.view.ViewMetadata;
+import org.apache.iceberg.view.ViewMetadataParser;
 
 public abstract class IcebergFileIOMocking implements FileIO {
 
@@ -36,6 +39,10 @@ public abstract class IcebergFileIOMocking implements FileIO {
   }
 
   public static String tableMetadataLocation(String tableUuid, long snapshotId) {
+    return String.format("%s%d/foo.metadata.json", tableBase(tableUuid), snapshotId);
+  }
+
+  public static String viewMetadataLocation(String tableUuid, long snapshotId) {
     return String.format("%s%d/foo.metadata.json", tableBase(tableUuid), snapshotId);
   }
 
@@ -82,6 +89,19 @@ public abstract class IcebergFileIOMocking implements FileIO {
             manifestFile.get().write(output);
             return output.toInputFile();
           }
+        }
+        return notFound(path);
+      }
+    };
+  }
+
+  public static IcebergFileIOMocking forSingleVersion(ViewMetadata viewMetadata) {
+    return new IcebergFileIOMocking() {
+      @Override
+      public InputFile newInputFile(String path) {
+        String meta = tableMetadataLocation(viewMetadata.uuid(), viewMetadata.currentVersionId());
+        if (path.equals(meta)) {
+          return inputFile(meta, ViewMetadataParser.toJson(viewMetadata).getBytes(UTF_8));
         }
         return notFound(path);
       }
@@ -166,7 +186,7 @@ public abstract class IcebergFileIOMocking implements FileIO {
   }
 
   public static InputFile inputFile(String location, JsonNode jsonNode) {
-    return inputFile(location, jsonNode.toString().getBytes(StandardCharsets.UTF_8));
+    return inputFile(location, jsonNode.toString().getBytes(UTF_8));
   }
 
   public static InputFile inputFile(String location, byte[] data) {

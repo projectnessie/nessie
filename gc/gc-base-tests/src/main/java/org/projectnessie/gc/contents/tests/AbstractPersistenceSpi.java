@@ -18,6 +18,9 @@ package org.projectnessie.gc.contents.tests;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -79,7 +82,8 @@ public abstract class AbstractPersistenceSpi {
           IntStream.range(0, numRefs)
               .mapToObj(
                   i ->
-                      ContentReference.icebergTable(
+                      icebergContent(
+                          (i & 1) == 1 ? ICEBERG_VIEW : ICEBERG_TABLE,
                           "cid-" + i,
                           "123456780" + i,
                           ContentKey.of("a", "b-" + id, "c-" + i),

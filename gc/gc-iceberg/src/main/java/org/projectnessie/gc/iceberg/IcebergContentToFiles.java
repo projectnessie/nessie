@@ -15,6 +15,8 @@
  */
 package org.projectnessie.gc.iceberg;
 
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 import static org.projectnessie.storage.uri.StorageUri.SCHEME_FILE;
 
 import com.google.common.base.Preconditions;
@@ -35,10 +37,13 @@ import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.view.ViewMetadata;
+import org.apache.iceberg.view.ViewMetadataParser;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.expire.ContentToFiles;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.model.Content;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,65 +91,42 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   @Override
   @MustBeClosed
   public Stream<FileReference> extractFiles(ContentReference contentReference) {
+    Content.Type contentType = contentReference.contentType();
+    if (contentType.equals(ICEBERG_TABLE)) {
+      return extractTableFiles(contentReference);
+    } else if (contentType.equals(ICEBERG_VIEW)) {
+      return extractViewFiles(contentReference);
+    } else {
+      throw new IllegalArgumentException(
+          "Expect ICEBERG_TABLE/ICEBERG_VIEW, but got " + contentType);
+    }
+  }
+
+  private Stream<FileReference> extractViewFiles(ContentReference contentReference) {
+    FileIO io = io();
+
+    ViewMetadata viewMetadata;
+    try {
+      viewMetadata = ViewMetadataParser.read(io.newInputFile(contentReference.metadataLocation()));
+    } catch (Exception notFoundCandidate) {
+      return handleNotFound(contentReference, notFoundCandidate, "View");
+    }
+
+    Stream<StorageUri> allFiles = Stream.of(metadataStorageUri(contentReference));
+
+    StorageUri baseUri = baseUri(viewMetadata, contentReference);
+
+    return extractFilesRelativize(allFiles, baseUri);
+  }
+
+  private Stream<FileReference> extractTableFiles(ContentReference contentReference) {
     FileIO io = io();
 
     TableMetadata tableMetadata;
     try {
       tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
     } catch (Exception notFoundCandidate) {
-      boolean notFound = false;
-      for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
-        switch (c.getClass().getName()) {
-          case ICEBERG_NOT_FOUND_EXCEPTION:
-          case S3_KEY_NOT_FOUND_EXCEPTION:
-            notFound = true;
-            break;
-          case GCS_STORAGE_EXCEPTION:
-            if (c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
-              notFound = true;
-            }
-            break;
-          case ADLS_BLOB_STORAGE_EXCEPTION:
-            String message = c.getMessage();
-            if (message.contains(ADLS_PATH_NOT_FOUND_CODE)
-                || message.contains(ADLS_BLOB_NOT_FOUND_CODE)) {
-              notFound = true;
-            }
-            break;
-          default:
-            break;
-        }
-
-        if (notFound || c == c.getCause()) {
-          break;
-        }
-      }
-
-      if (notFound) {
-        // It is safe to assume that a missing table-metadata means no referenced files.
-        // A table-metadata can be missing, because a previous Nessie GC "sweep" phase deleted it.
-        LOGGER.info(
-            "Table metadata {} for snapshot ID {} for content-key {} at Nessie commit {} does not exist, probably already deleted, assuming no files",
-            contentReference.metadataLocation(),
-            contentReference.snapshotId(),
-            contentReference.contentKey(),
-            contentReference.commitId());
-        return Stream.empty();
-      }
-
-      String msg =
-          "Failed to extract content of "
-              + contentReference.contentType()
-              + " "
-              + contentReference.contentKey()
-              + ", content-ID "
-              + contentReference.contentId()
-              + " at commit "
-              + contentReference.commitId()
-              + " via "
-              + contentReference.metadataLocation();
-      LOGGER.error("{}", msg, notFoundCandidate);
-      throw new RuntimeException(msg, notFoundCandidate);
+      return handleNotFound(contentReference, notFoundCandidate, "Table");
     }
 
     long snapshotId =
@@ -192,7 +174,70 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
     StorageUri baseUri = baseUri(tableMetadata, contentReference);
 
+    return extractFilesRelativize(allFiles, baseUri);
+  }
+
+  private static Stream<FileReference> extractFilesRelativize(
+      Stream<StorageUri> allFiles, StorageUri baseUri) {
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
+  }
+
+  private static Stream<FileReference> handleNotFound(
+      ContentReference contentReference, Exception notFoundCandidate, String kind) {
+    boolean notFound = false;
+    for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
+      switch (c.getClass().getName()) {
+        case ICEBERG_NOT_FOUND_EXCEPTION:
+        case S3_KEY_NOT_FOUND_EXCEPTION:
+          notFound = true;
+          break;
+        case GCS_STORAGE_EXCEPTION:
+          if (c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
+            notFound = true;
+          }
+          break;
+        case ADLS_BLOB_STORAGE_EXCEPTION:
+          String message = c.getMessage();
+          if (message.contains(ADLS_PATH_NOT_FOUND_CODE)
+              || message.contains(ADLS_BLOB_NOT_FOUND_CODE)) {
+            notFound = true;
+          }
+          break;
+        default:
+          break;
+      }
+
+      if (notFound || c == c.getCause()) {
+        break;
+      }
+    }
+
+    if (notFound) {
+      // It is safe to assume that a missing table-metadata means no referenced files.
+      // A table-metadata can be missing, because a previous Nessie GC "sweep" phase deleted it.
+      LOGGER.info(
+          "{} metadata {} for snapshot ID {} for content-key {} at Nessie commit {} does not exist, probably already deleted, assuming no files",
+          kind,
+          contentReference.metadataLocation(),
+          contentReference.snapshotId(),
+          contentReference.contentKey(),
+          contentReference.commitId());
+      return Stream.empty();
+    }
+
+    String msg =
+        "Failed to extract content of "
+            + contentReference.contentType()
+            + " "
+            + contentReference.contentKey()
+            + ", content-ID "
+            + contentReference.contentId()
+            + " at commit "
+            + contentReference.commitId()
+            + " via "
+            + contentReference.metadataLocation();
+    LOGGER.error("{}", msg, notFoundCandidate);
+    throw new RuntimeException(msg, notFoundCandidate);
   }
 
   /**
@@ -294,13 +339,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
   static Stream<StorageUri> elementaryUrisFromSnapshot(
       Snapshot snapshot, ContentReference contentReference) {
-    String metadataLocation =
-        Preconditions.checkNotNull(
-            contentReference.metadataLocation(),
-            "Iceberg content is expected to have a non-null metadata-location for content-key %s on commit %s",
-            contentReference.contentKey(),
-            contentReference.commitId());
-    StorageUri metadataLoc = checkUri("metadata", metadataLocation, contentReference);
+    StorageUri metadataLoc = metadataStorageUri(contentReference);
 
     if (snapshot == null) {
       return Stream.of(metadataLoc);
@@ -319,9 +358,28 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return Stream.of(metadataLoc, manifestListLoc);
   }
 
+  private static StorageUri metadataStorageUri(ContentReference contentReference) {
+    String metadataLocation =
+        Preconditions.checkNotNull(
+            contentReference.metadataLocation(),
+            "Iceberg content is expected to have a non-null metadata-location for content-key %s on commit %s",
+            contentReference.contentKey(),
+            contentReference.commitId());
+    StorageUri metadataLoc = checkUri("metadata", metadataLocation, contentReference);
+    return metadataLoc;
+  }
+
   static StorageUri baseUri(
       @Nonnull TableMetadata tableMetadata, @Nonnull ContentReference contentReference) {
-    String location = tableMetadata.location();
+    return baseUri(tableMetadata.location(), contentReference);
+  }
+
+  static StorageUri baseUri(
+      @Nonnull ViewMetadata viewMetadata, @Nonnull ContentReference contentReference) {
+    return baseUri(viewMetadata.location(), contentReference);
+  }
+
+  static StorageUri baseUri(@Nonnull String location, @Nonnull ContentReference contentReference) {
     String loc = location.endsWith("/") ? location : (location + "/");
     return checkUri("location", loc, contentReference);
   }

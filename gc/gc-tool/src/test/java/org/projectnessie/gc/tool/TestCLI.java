@@ -18,7 +18,9 @@ package org.projectnessie.gc.tool;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
 import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -47,7 +49,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.ext.NessieClientUri;
-import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.jdbc.AgroalJdbcDataSourceProvider;
 import org.projectnessie.gc.contents.jdbc.JdbcHelper;
 import org.projectnessie.gc.contents.jdbc.JdbcPersistenceSpi;
@@ -352,13 +353,15 @@ public class TestCLI {
       persistenceSpi.addIdentifiedLiveContent(
           id,
           Stream.of(
-              ContentReference.icebergTable(
+              icebergContent(
+                  ICEBERG_TABLE,
                   "cid-1",
                   "12345678",
                   ContentKey.of("hello", "world"),
                   "meta://data/location1",
                   42L),
-              ContentReference.icebergTable(
+              icebergContent(
+                  ICEBERG_TABLE,
                   "cid-1",
                   "44444444",
                   ContentKey.of("hello", "world"),
