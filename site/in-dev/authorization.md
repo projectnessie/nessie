@@ -75,32 +75,46 @@ Rule definitions are of the form `nessie.server.authorization.rules.<ruleId>=<ru
 
 `<rule_expression>` is basically a CEL expression string, which allows lots of flexibility on a given set of variables. 
 
-Available variables within the `<rule_expression>` are: **'op'** / **'role'** / **'ref'** / **'path'**.
+Available variables within the `<rule_expression>` are: **'op'** / **'role'** / **'roles'** / **'ref'** / **'path'** / **'contentType'**.
 
-* The **'op'** variable in the `<rule_expression>` refers to the type of operation can be any of the following.
+The **'op'** variable in the `<rule_expression>` refers to the type of operation can be any of the following.
   See [BatchAccessChecker](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/BatchAccessChecker.java)
-  and [Check](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/Check.java) types.
-  * Arguments to the CEL script for the following check-types:
+  and [Check](https://github.com/projectnessie/nessie/blob/main/servers/services/src/main/java/org/projectnessie/services/authz/Check.java) types for details.
+
+* Checks for Reference operations:
+  * Available variables: 
     * **'role'** refers to the user's role and can be any string.
+    * **'roles'** refers to the list of all known user roles.
     * **'ref'** refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
-    * **'path'** refers to the [content key](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/model/ContentKey.java) for the contents of an object and can be any string
-  * `VIEW_REFERENCE`
-  * `CREATE_REFERENCE`
-  * `DELETE_REFERENCE`
-  * `READ_ENTRIES`
-  * `READ_CONTENT_KEY`
-  * `LIST_COMMIT_LOG`
-  * `COMMIT_CHANGE_AGAINST_REFERENCE`
-  * `ASSIGN_REFERENCE_TO_HASH`
-  * `CREATE_ENTITY`
-  * `UPDATE_ENTITY`
-  * `READ_ENTITY_VALUE`
-  * `DELETE_ENTITY`
-* The following values for the **'op'**
-  * `READ_REPOSITORY_CONFIG`
-  * `UPDATE_REPOSITORY_CONFIG`
-  * Arguments to the CEL script for the repository config check-types:
+  * **'op'** types:
+    * `VIEW_REFERENCE`
+    * `CREATE_REFERENCE`
+    * `DELETE_REFERENCE`
+    * `ASSIGN_REFERENCE_TO_HASH`
+    * `DELETE_REFERENCE`
+    * `READ_ENTRIES`
+    * `LIST_COMMIT_LOG`
+* Checks for Content operations:
+  * Available variables:
+    * **'role'** refers to the user's role and can be any string.
+    * **'roles'** refers to the list of all known user roles.
+    * **'ref'** refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
+    * **'path'** refers to the [content key](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/ContentKey.java) for the contents of an object and can be any string
+    * **'contentType'** refers to a (possibly empty) string representing object's [content type](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/Content.java).
+  * **'op'** types:
+    * `READ_CONTENT_KEY`
+    * `READ_ENTITY_VALUE`
+    * `CREATE_ENTITY`
+    * `UPDATE_ENTITY`
+    * `DELETE_ENTITY`
+* Checks for Repository Config operations
+  * Available variables:
+    * **'role'** refers to the user's role and can be any string.
+    * **'roles'** refers to the list of all known user roles.
     * **'type'** argument that refers to the repository config type to be retrieved or updated.
+  * **'op'** types:
+    * `READ_REPOSITORY_CONFIG`
+    * `UPDATE_REPOSITORY_CONFIG`
 
 Since all available authorization rule variables are strings, the relevant CEL-specific things that are worth mentioning are shown below:
 
