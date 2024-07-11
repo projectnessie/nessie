@@ -27,6 +27,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsExc
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 
 /**
  * Low-level storage layer interface providing <em>low-level</em> functionality to manage references

@@ -59,6 +59,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.agrona.collections.Hashing;
@@ -70,13 +71,13 @@ import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializer;
 import org.projectnessie.versioned.storage.jdbc.serializers.ObjSerializers;
 
@@ -515,10 +516,9 @@ abstract class AbstractJdbcPersist implements Persist {
         ps.setString(storeObjSqlParams.get(COL_REPO_ID), config.repositoryId());
         serializeObjId(ps, storeObjSqlParams.get(COL_OBJ_ID), id, databaseSpecific);
         ps.setString(storeObjSqlParams.get(COL_OBJ_TYPE), type.name());
-        String versionToken =
-            (obj instanceof UpdateableObj) ? ((UpdateableObj) obj).versionToken() : null;
-        if (versionToken != null) {
-          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), versionToken);
+        Optional<String> versionToken = UpdateableObj.extractVersionToken(obj);
+        if (versionToken.isPresent()) {
+          ps.setString(storeObjSqlParams.get(COL_OBJ_VERS), versionToken.get());
         } else {
           ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
         }

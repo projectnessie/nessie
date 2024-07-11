@@ -25,9 +25,9 @@ import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieEntity;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.immutables.NessieImmutable;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableEntityObj.class)

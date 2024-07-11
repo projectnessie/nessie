@@ -19,9 +19,9 @@ import static org.projectnessie.nessie.tasks.api.TaskObjUtil.TASK_DEFAULT_CACHE_
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.projectnessie.versioned.storage.common.objtypes.CustomObjType.CacheExpireCalculation;
+import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
-import org.projectnessie.versioned.storage.common.persist.UpdateableObj;
 
 /** Base interface for objects that represent task state and value. */
 public interface TaskObj extends UpdateableObj {
