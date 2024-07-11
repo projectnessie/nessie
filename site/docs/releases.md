@@ -2,6 +2,90 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.92.0 Release (July 11, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.92.0).
+
+### Breaking changes
+
+- Catalog: The `nessie.catalog.s3.default-options.auth-mode` configuration property has been renamed
+  to `nessie.catalog.s3.default-options.client-auth-mode` to better reflect its purpose. The old
+  property name is not supported anymore and must be updated in customized Helm values and/or 
+  Quarkus configurations.
+
+### New Features
+
+- Catalog: Exported Nessie repositories now include the contents for Nessie Catalog
+- Catalog: Improve indicated health check errors
+- Catalog/GCS: Support using the default application credentials
+- Catalog/S3: Allow custom key+trust stores
+- Catalog: Check privileges earlier
+- Catalog: cleanup non-committed metadata objects
+
+### Changes
+
+- Helm chart improvements
+
+### Fixes
+
+- Fix potential class-loader deadlock via `Namespace.EMPTY`
+- Catalog: Fix double write of metadata objects to S3
+- GC/ADLS: Handle `BlobNotFound` as well
+- Fix behavior of metadata-update/set-statistics + set-partition-statistics
+- Fix duplicate OAuth interactive flows when the Nessie API compatibility filter is enabled
+
+### Commits
+* Fix Iceberg REST "getting started" examples (#9065)
+* HTTP client: refactor BaseHttpRequest (#9055)
+* Persist: make GenericObj implement Obj (#9059)
+* Remove superfluous `\` in CLI welcome message (#9066)
+* Make `o.p.client.http.Status` safe against unknown HTTP status codes (#9062)
+* Export related objects (#9034)
+* Catalog S3: use DefaultCredentialsProvider if no access key configured (#8987)
+* nit: fix typo in changelog (#9051)
+* Compatibility filter: bypass filters when contacting the config endpoint (#9050)
+* Add ability to (de)serialize generic custom `ObjType`s (#9032)
+* Refactor Nessie HTTP compatibility filter (#9047)
+* Fix Docker Compose ports (#9046)
+* Fix behavior of metadata-update/set-statistics + set-partition-statistics (#9045)
+* SQL Extension SHOW LOG with AT (#8294)
+* Committing operations: cleanup metadata after failures (#8889)
+* Ability to identify related objects for Nessie export (#9033)
+* Docs: Update REST catalog config for Trino (#9016)
+* ninja: changelog
+* Fix concurrency issue in flaky test `TestIceberg*Files.iceberg()` (#9039)
+* Allow Smallrye config sections to have no properties (#9023)
+* Catalog: Improve warehouse health/readiness checks (#9036)
+* Add at least some reason to `Optional.orElseThrow()` (#9037)
+* Nit: move EntityObj ID calculation from impl class (#9030)
+* Unify obj-type namespaces (#9031)
+* Fix older-client/server dependency resolution errors (#9029)
+* Implement early access-checks for Iceberg REST operations (#8768)
+* Export: remove ability to export a new repo using the legacy export version (#9017)
+* GC/ADLS: Handle BlobNotFound (#9015)
+* ninja: changelog
+* Catalog/S3: Allow custom trust and key stores (#9012)
+* Ninja: changelog
+* Ninja: changelog updates
+* Catalog/Bug: Fix double-write for S3 (#9008)
+* Support using the default application credentials for google client (#9004)
+* Docs: improve tabbed display of code blocks (#9006)
+* Helm chart: fix advanced config examples (#9005)
+* Refactor `MultiTableUpdate` (#9001)
+* Exclude DNS test on macOS (#9003)
+* Add `for-write` query parameter to Nessie API v2 (#8993)
+* Move `AddressResolve` to a separate module, so it's reusable (#8992)
+* Add initial unit tests for `CatalogServiceImpl` (#8998)
+* Make address resolution more resilient (#8984)
+* Add `returnNotFound` for `VersionStore.getValue(s)` (#8983)
+* Adopt to change from Gradle 8.0 to 8.1 (#8985)
+* Helm chart: don't call template if feature is disabled (#8982)
+* Add `ObjectIO.deleteObjects()` (#8981)
+* Site: add docs on Kubernetes troubleshooting (#8966)
+* Fix potential class-loader deadlock via `Namespace.EMPTY` (#8963)
+* Clean site directories and built-tools-IT directories during `clean` (#8969)
+* Fix more IJ inspections (#8962)
+
 ## 0.91.3 Release (June 28, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.91.3).

@@ -12,6 +12,20 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.92.0] Release (2024-07-11)
+
+### Breaking changes
+
 - Catalog: The `nessie.catalog.s3.default-options.auth-mode` configuration property has been renamed
   to `nessie.catalog.s3.default-options.client-auth-mode` to better reflect its purpose. The old
   property name is not supported anymore and must be updated in customized Helm values and/or 
@@ -30,8 +44,6 @@ as necessary. Empty sections will not end in the release notes.
 
 - Helm chart improvements
 
-### Deprecations
-
 ### Fixes
 
 - Fix potential class-loader deadlock via `Namespace.EMPTY`
@@ -39,8 +51,6 @@ as necessary. Empty sections will not end in the release notes.
 - GC/ADLS: Handle `BlobNotFound` as well
 - Fix behavior of metadata-update/set-statistics + set-partition-statistics
 - Fix duplicate OAuth interactive flows when the Nessie API compatibility filter is enabled
-
-### Commits
 
 ## [0.91.3] Release (2024-06-28)
 
@@ -588,7 +598,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.92.0...HEAD
+[0.92.0]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...nessie-0.92.0
 [0.91.3]: https://github.com/projectnessie/nessie/compare/nessie-0.91.2...nessie-0.91.3
 [0.91.2]: https://github.com/projectnessie/nessie/compare/nessie-0.91.1...nessie-0.91.2
 [0.91.1]: https://github.com/projectnessie/nessie/compare/nessie-0.90.4...nessie-0.91.1
@@ -619,5 +630,5 @@ as necessary. Empty sections will not end in the release notes.
 [0.67.0]: https://github.com/projectnessie/nessie/compare/nessie-0.66.0...nessie-0.67.0
 [0.66.0]: https://github.com/projectnessie/nessie/compare/nessie-0.65.1...nessie-0.66.0
 [0.65.1]: https://github.com/projectnessie/nessie/compare/nessie-0.65.0...nessie-0.65.1
-[0.65.0]: https://github.com/projectnessie/nessie/compare/nessie-0.64.0...nessie-0.65.0
+[0.65.0]: https://github.com/projectnessie/nessie/commits/nessie-0.65.0
 [Nessie authentication settings]: https://projectnessie.org/tools/client_config/#authentication-settings
