@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
@@ -68,7 +69,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.projectnessie.client.auth.BasicAuthenticationProvider;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.Status;
@@ -378,8 +379,9 @@ public class ITOAuth2ClientKeycloak {
       // expire.
       revokeAccessToken(validatingClient, tokens.getAccessToken());
       soft.assertThatThrownBy(() -> tryUseAccessToken(validatingClient, tokens.getAccessToken()))
-          .isInstanceOf(HttpClientException.class)
-          .hasMessageContaining("401");
+          .asInstanceOf(throwable(HttpClientResponseException.class))
+          .extracting(HttpClientResponseException::getStatus)
+          .isEqualTo(Status.UNAUTHORIZED);
     }
   }
 
@@ -674,7 +676,14 @@ public class ITOAuth2ClientKeycloak {
         .setBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()))
         .setObjectMapper(new ObjectMapper())
         .setDisableCompression(true)
-        .setAuthentication(authentication);
+        .setAuthentication(authentication)
+        .addResponseFilter(
+            resp -> {
+              if (resp.getStatus() != Status.OK) {
+                throw new HttpClientResponseException(
+                    "Failed to obtain UMA ticket", resp.getStatus());
+              }
+            });
   }
 
   private ResourceOwnerEmulator newResourceOwner(GrantType initialGrantType) throws IOException {

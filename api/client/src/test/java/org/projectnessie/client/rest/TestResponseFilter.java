@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -38,7 +39,6 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -238,12 +238,6 @@ public class TestResponseFilter {
 
                       @Override
                       public InputStream getInputStream() {
-                        Assertions.fail();
-                        return null;
-                      }
-
-                      @Override
-                      public InputStream getErrorStream() {
                         return new StringInputStream("this will fail");
                       }
 
@@ -281,12 +275,6 @@ public class TestResponseFilter {
 
                       @Override
                       public InputStream getInputStream() {
-                        Assertions.fail();
-                        return null;
-                      }
-
-                      @Override
-                      public InputStream getErrorStream() {
                         // Quarkus may sometimes produce JSON error responses like this
                         return new StringInputStream(
                             "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
@@ -395,13 +383,7 @@ public class TestResponseFilter {
     }
 
     @Override
-    public InputStream getInputStream() {
-      Assertions.fail();
-      return null;
-    }
-
-    @Override
-    public InputStream getErrorStream() throws IOException {
+    public InputStream getInputStream() throws JsonProcessingException {
       if (error == null) {
         return null;
       }

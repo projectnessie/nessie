@@ -22,10 +22,12 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.client.auth.oauth2.OAuth2ClientConfig.OBJECT_MAPPER;
 import static org.projectnessie.client.util.HttpTestUtil.writeResponseBody;
 
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -989,21 +991,28 @@ class TestOAuth2Client {
     public ObjectReader readerFor(Class<?> type) {
       return new TestObjectReader(super.readerFor(type));
     }
+  }
 
-    class TestObjectReader extends ObjectReader {
+  class TestObjectReader extends ObjectReader {
 
-      TestObjectReader(ObjectReader delegate) {
-        super(delegate, delegate.getConfig());
-      }
+    TestObjectReader(ObjectReader delegate) {
+      super(delegate, delegate.getConfig());
+    }
 
-      @Override
-      public <T> T readValue(InputStream src) throws IOException {
-        T value = super.readValue(src);
-        if (value instanceof TokenResponseBase) {
-          lastResponse = (TokenResponseBase) value;
-        }
-        return value;
-      }
+    @Override
+    public <T> MappingIterator<T> readValues(InputStream src) throws IOException {
+      MappingIterator<T> iterator = spy(super.readValues(src));
+      doAnswer(
+              invocation -> {
+                Object value = invocation.callRealMethod();
+                if (value instanceof TokenResponseBase) {
+                  lastResponse = (TokenResponseBase) value;
+                }
+                return value;
+              })
+          .when(iterator)
+          .nextValue();
+      return iterator;
     }
   }
 }

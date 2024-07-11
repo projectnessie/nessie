@@ -42,15 +42,10 @@ final class JavaResponseContext implements ResponseContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaResponseContext.class);
 
   private final HttpResponse<InputStream> response;
-  private final InputStream inputStream;
+  private InputStream inputStream;
 
   JavaResponseContext(HttpResponse<InputStream> response) {
     this.response = response;
-    try {
-      this.inputStream = maybeDecompress();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Override
@@ -59,12 +54,10 @@ final class JavaResponseContext implements ResponseContext {
   }
 
   @Override
-  public InputStream getInputStream() {
-    return inputStream;
-  }
-
-  @Override
-  public InputStream getErrorStream() {
+  public InputStream getInputStream() throws IOException {
+    if (inputStream == null) {
+      inputStream = maybeDecompress();
+    }
     return inputStream;
   }
 

@@ -18,6 +18,7 @@ package org.projectnessie.client.http;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.projectnessie.client.util.HttpTestUtil.writeEmptyResponse;
@@ -59,7 +60,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import org.assertj.core.api.AbstractThrowableAssert;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -69,6 +69,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
+import org.projectnessie.client.rest.NessieBadResponseException;
 import org.projectnessie.client.util.HttpTestServer;
 import org.projectnessie.model.CommitMeta;
 
@@ -469,7 +470,7 @@ public abstract class BaseTestHttpClient {
     }
   }
 
-  static Stream<Status> testHttpResponses() {
+  static Stream<Status> httpResponses() {
     IntStream l2 = IntStream.rangeClosed(200, 206);
     IntStream l3 = IntStream.rangeClosed(300, 308);
     IntStream l4 = IntStream.rangeClosed(400, 440);
@@ -479,31 +480,107 @@ public abstract class BaseTestHttpClient {
   }
 
   @ParameterizedTest
-  @MethodSource
+  @MethodSource("httpResponses")
   void testHttpResponses(Status status) throws Exception {
-    // HTTP/304 defines that no response body must be sent
-    assumeThat(status).isNotEqualTo(Status.NOT_MODIFIED);
-
+    ExampleBean expected = new ExampleBean("x", 1, NOW);
     HttpTestServer.RequestHandler handler =
         (req, resp) -> {
           resp.setStatus(status.getCode());
-          resp.setContentType("application/json");
-          try (OutputStream os = resp.getOutputStream()) {
-            MAPPER.writeValue(os, new ExampleBean());
+          if (status != Status.NO_CONTENT && status != Status.NOT_MODIFIED) {
+            resp.setContentType("application/json");
+            try (OutputStream os = resp.getOutputStream()) {
+              MAPPER.writeValue(os, expected);
+            }
           }
         };
     try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
       AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
-      AbstractThrowableAssert<?, ? extends Throwable> reqAssert;
       try (HttpClient client =
           createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
-        reqAssert =
-            soft.assertThatCode(() -> client.newRequest().get().readEntity(ExampleBean.class));
+        ExampleBean actual = client.newRequest().get().readEntity(ExampleBean.class);
+        if (status == Status.NO_CONTENT || status == Status.NOT_MODIFIED) {
+          soft.assertThat(actual).isNull();
+        } else {
+          soft.assertThat(actual).isNotNull().isEqualTo(expected);
+        }
       }
-      if (status.getCode() < 400) {
-        reqAssert.doesNotThrowAnyException();
-      } else {
-        reqAssert.isInstanceOf(HttpClientException.class);
+      soft.assertThat(responseContext.get())
+          .isNotNull()
+          .extracting(ResponseContext::getStatus)
+          .isEqualTo(status);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("httpResponses")
+  void testHttpResponsesNoJsonEntity(Status status) throws Exception {
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          resp.setStatus(status.getCode());
+          if (status != Status.NO_CONTENT && status != Status.NOT_MODIFIED) {
+            resp.setContentType("text/plain");
+            try (OutputStream os = resp.getOutputStream()) {
+              MAPPER.writeValue(os, "Hello, World!");
+            }
+          }
+        };
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
+      AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
+      try (HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
+        if (status == Status.NO_CONTENT || status == Status.NOT_MODIFIED) {
+          ExampleBean actual = client.newRequest().get().readEntity(ExampleBean.class);
+          soft.assertThat(actual).isNull();
+        } else {
+          soft.assertThatThrownBy(() -> client.newRequest().get().readEntity(ExampleBean.class))
+              .asInstanceOf(throwable(NessieBadResponseException.class))
+              .extracting(NessieBadResponseException::getError)
+              .satisfies(
+                  error -> {
+                    assertThat(error.getStatus()).isEqualTo(status.getCode());
+                    assertThat(error.getMessage()).contains("text/plain");
+                  });
+        }
+      }
+      soft.assertThat(responseContext.get())
+          .isNotNull()
+          .extracting(ResponseContext::getStatus)
+          .isEqualTo(status);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("httpResponses")
+  void testHttpResponsesJsonNoEntity(Status status) throws Exception {
+    HttpTestServer.RequestHandler handler =
+        (req, resp) -> {
+          resp.setStatus(status.getCode());
+          resp.setContentType("application/json");
+        };
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
+      AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
+      try (HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
+        ExampleBean actual = client.newRequest().get().readEntity(ExampleBean.class);
+        soft.assertThat(actual).isNull();
+      }
+      soft.assertThat(responseContext.get())
+          .isNotNull()
+          .extracting(ResponseContext::getStatus)
+          .isEqualTo(status);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("httpResponses")
+  void testHttpResponsesNoJsonNoEntity(Status status) throws Exception {
+    HttpTestServer.RequestHandler handler = (req, resp) -> resp.setStatus(status.getCode());
+    try (HttpTestServer server = new HttpTestServer("/a/b", handler)) {
+      AtomicReference<ResponseContext> responseContext = new AtomicReference<>();
+      try (HttpClient client =
+          createClient(server.getUri(), b -> b.addResponseFilter(responseContext::set))) {
+        ExampleBean actual = client.newRequest().get().readEntity(ExampleBean.class);
+        soft.assertThat(actual).isNull();
       }
       soft.assertThat(responseContext.get())
           .isNotNull()
@@ -523,7 +600,7 @@ public abstract class BaseTestHttpClient {
 
         soft.assertThatThrownBy(
                 () -> client.newRequest().path("a/{b}").get().readEntity(ExampleBean.class))
-            .isInstanceOf(HttpClientException.class);
+            .isInstanceOf(NessieBadResponseException.class);
         soft.assertThat(responseContext.get())
             .isNotNull()
             .extracting(ResponseContext::getStatus)
