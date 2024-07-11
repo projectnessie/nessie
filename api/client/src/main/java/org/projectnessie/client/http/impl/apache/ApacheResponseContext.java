@@ -37,7 +37,7 @@ final class ApacheResponseContext implements ResponseContext {
   }
 
   @Override
-  public Status getResponseCode() {
+  public Status getStatus() {
     return Status.fromCode(response.getCode());
   }
 

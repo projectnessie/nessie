@@ -29,6 +29,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements Nessie HTTP response processing using Java's new {@link HttpClient}, which is rather
@@ -37,12 +39,13 @@ import org.projectnessie.client.http.Status;
 @SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11
 final class JavaResponseContext implements ResponseContext {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(JavaResponseContext.class);
+
   private final HttpResponse<InputStream> response;
   private final InputStream inputStream;
 
   JavaResponseContext(HttpResponse<InputStream> response) {
     this.response = response;
-
     try {
       this.inputStream = maybeDecompress();
     } catch (IOException e) {
@@ -51,7 +54,7 @@ final class JavaResponseContext implements ResponseContext {
   }
 
   @Override
-  public Status getResponseCode() {
+  public Status getStatus() {
     return Status.fromCode(response.statusCode());
   }
 
@@ -73,6 +76,21 @@ final class JavaResponseContext implements ResponseContext {
   @Override
   public URI getRequestedUri() {
     return response.uri();
+  }
+
+  public void close(Exception error) {
+    if (error != null) {
+      try {
+        LOGGER.debug(
+            "Closing unprocessed input stream for {} request to {} delegating to {} ...",
+            response.request().method(),
+            response.uri(),
+            response.body());
+        response.body().close();
+      } catch (IOException e) {
+        // ignore
+      }
+    }
   }
 
   private InputStream maybeDecompress() throws IOException {

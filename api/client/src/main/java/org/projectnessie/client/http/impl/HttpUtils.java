@@ -25,11 +25,16 @@ import java.util.Map;
 import java.util.Objects;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 
+/**
+ * Utility methods for HTTP clients.
+ *
+ * <p>This class should only be used by Nessie HTTP client implementations.
+ */
 public final class HttpUtils {
 
   public static final String GZIP = "gzip";
   public static final String DEFLATE = "deflate";
-  public static final String ACCEPT_ENCODING = GZIP + ";q=1.0, " + DEFLATE + ";q=0.9";
+  public static final String GZIP_DEFLATE = GZIP + ";q=1.0, " + DEFLATE + ";q=0.9";
   public static final String HEADER_ACCEPT = "Accept";
   public static final String HEADER_ACCEPT_ENCODING = "Accept-Encoding";
   public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";

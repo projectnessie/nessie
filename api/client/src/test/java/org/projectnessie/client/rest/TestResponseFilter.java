@@ -232,7 +232,7 @@ public class TestResponseFilter {
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
                       @Override
-                      public Status getResponseCode() {
+                      public Status getStatus() {
                         return Status.UNAUTHORIZED;
                       }
 
@@ -275,7 +275,7 @@ public class TestResponseFilter {
                 ResponseCheckFilter.checkResponse(
                     new ResponseContext() {
                       @Override
-                      public Status getResponseCode() {
+                      public Status getStatus() {
                         return Status.NOT_IMPLEMENTED;
                       }
 
@@ -390,7 +390,7 @@ public class TestResponseFilter {
     }
 
     @Override
-    public Status getResponseCode() {
+    public Status getStatus() {
       return code;
     }
 

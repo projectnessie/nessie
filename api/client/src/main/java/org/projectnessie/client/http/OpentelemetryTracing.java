@@ -24,7 +24,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
-import java.io.IOException;
 import org.projectnessie.api.NessieVersion;
 
 final class OpentelemetryTracing {
@@ -53,18 +52,14 @@ final class OpentelemetryTracing {
                     .setAttribute(HTTP_METHOD, context.getMethod().name())
                     .setAttribute(NESSIE_VERSION, NessieVersion.NESSIE_VERSION);
 
+            //noinspection DataFlowIssue
             W3CTraceContextPropagator.getInstance()
                 .inject(Context.current().with(span), context, RequestContext::putHeader);
 
             context.addResponseCallback(
                 (responseContext, exception) -> {
                   if (responseContext != null) {
-                    try {
-                      span.setAttribute(
-                          HTTP_STATUS_CODE, responseContext.getResponseCode().getCode());
-                    } catch (IOException e) {
-                      // There's not much we can (and probably should) do here.
-                    }
+                    span.setAttribute(HTTP_STATUS_CODE, responseContext.getStatus().getCode());
                   }
                   if (exception != null) {
                     span.setStatus(StatusCode.ERROR).recordException(exception);

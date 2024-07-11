@@ -38,7 +38,7 @@ class OAuth2ResponseFilter implements ResponseFilter {
   public void filter(ResponseContext responseContext) {
     try {
       URI uri = responseContext.getRequestedUri();
-      Status status = responseContext.getResponseCode();
+      Status status = responseContext.getStatus();
       // The only normal responses are 200 OK and 302 Found (in the authorization code flow).
       if (status != Status.OK && status != Status.FOUND) {
         String body = null;

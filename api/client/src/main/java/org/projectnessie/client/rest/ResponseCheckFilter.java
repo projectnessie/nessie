@@ -48,7 +48,7 @@ public class ResponseCheckFilter {
     final NessieError error;
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
-    status = con.getResponseCode();
+    status = con.getStatus();
     if (status.getCode() > 199 && status.getCode() < 300) {
       return;
     }

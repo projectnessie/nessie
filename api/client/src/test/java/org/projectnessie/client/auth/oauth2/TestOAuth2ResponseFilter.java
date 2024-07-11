@@ -48,7 +48,7 @@ class TestOAuth2ResponseFilter {
     ResponseContext context =
         new ResponseContext() {
           @Override
-          public Status getResponseCode() {
+          public Status getStatus() {
             return status;
           }
 

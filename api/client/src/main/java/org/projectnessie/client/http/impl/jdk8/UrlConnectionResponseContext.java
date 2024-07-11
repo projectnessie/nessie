@@ -33,15 +33,17 @@ final class UrlConnectionResponseContext implements ResponseContext {
 
   private final HttpURLConnection connection;
   private final URI uri;
+  private final Status status;
 
-  UrlConnectionResponseContext(HttpURLConnection connection, URI uri) {
+  UrlConnectionResponseContext(HttpURLConnection connection, URI uri, Status status) {
     this.connection = connection;
     this.uri = uri;
+    this.status = status;
   }
 
   @Override
-  public Status getResponseCode() throws IOException {
-    return Status.fromCode(connection.getResponseCode());
+  public Status getStatus() {
+    return status;
   }
 
   @Override
