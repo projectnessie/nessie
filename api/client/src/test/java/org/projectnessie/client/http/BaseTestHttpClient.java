@@ -226,7 +226,7 @@ public abstract class BaseTestHttpClient {
 
   @ParameterizedTest
   @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-  void testWriteWithVariousSizes(boolean ssl, boolean http2) throws Exception {
+  void testWriteWithVariousSizes(boolean ssl, boolean http2) {
     // Old URLConnection based client cannot handle HTTP/2
     assumeThat(!http2 || supportsHttp2()).isTrue();
 
@@ -662,10 +662,7 @@ public abstract class BaseTestHttpClient {
           assertThat(values).containsExactly("y", "z");
           writeEmptyResponse(resp);
         });
-    URI baseUri = httpServer.getUri();
-    try (HttpClient client = createClient(baseUri, b -> {})) {
-      client.newRequest().header("x", "y").header("x", "z").get();
-    }
+    client.newRequest().header("x", "y").header("x", "z").get();
   }
 
   @ParameterizedTest

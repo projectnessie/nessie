@@ -17,14 +17,16 @@ package org.projectnessie.client.http.impl.apache;
 
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_CONTENT_TYPE;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
+import org.projectnessie.client.http.impl.ResponseClosingInputStream;
 
 final class ApacheResponseContext implements ResponseContext {
 
@@ -44,11 +46,12 @@ final class ApacheResponseContext implements ResponseContext {
 
   @Override
   public InputStream getInputStream() throws IOException {
-    if (response.getEntity() == null) {
+    InputStream base = safeGetInputStream();
+    if (base == null) {
       return null;
     }
     if (inputStream == null) {
-      inputStream = new RequestClosingInputStream(response);
+      inputStream = new ResponseClosingInputStream(base, response);
     }
     return inputStream;
   }
@@ -64,30 +67,33 @@ final class ApacheResponseContext implements ResponseContext {
     return uri;
   }
 
-  private static final class RequestClosingInputStream extends FilterInputStream {
-    private final ClassicHttpResponse response;
-
-    RequestClosingInputStream(ClassicHttpResponse response) throws IOException {
-      super(closeOnFail(response));
-      this.response = response;
-    }
-
-    private static InputStream closeOnFail(ClassicHttpResponse response) throws IOException {
+  @Override
+  public void close(Exception error) {
+    if (error != null) {
       try {
-        return response.getEntity().getContent();
+        EntityUtils.consume(response.getEntity());
       } catch (IOException e) {
-        response.close();
-        throw e;
+        error.addSuppressed(e);
+      } finally {
+        try {
+          response.close();
+        } catch (IOException e) {
+          error.addSuppressed(e);
+        }
       }
     }
+  }
 
-    @Override
-    public void close() throws IOException {
-      try {
-        super.close();
-      } finally {
-        response.close();
+  private InputStream safeGetInputStream() throws IOException {
+    try {
+      HttpEntity entity = response.getEntity();
+      if (entity == null) {
+        return null;
       }
+      return entity.getContent();
+    } catch (IOException e) {
+      response.close();
+      throw e;
     }
   }
 }
