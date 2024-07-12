@@ -81,7 +81,7 @@ final class JavaResponseContext implements ResponseContext {
             response.body());
         response.body().close();
       } catch (IOException e) {
-        // ignore
+        error.addSuppressed(e);
       }
     }
   }
