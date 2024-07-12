@@ -115,8 +115,18 @@ public class IcebergErrorMapper {
         // Convert storage-side "not found" into `IllegalArgumentException`.
         // In most cases this results from bad locations in Iceberg metadata.
         return errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
+      case UNKNOWN:
+        return null; // generic HTTP/500 error
       default:
-        return null;
+        return errorResponse(
+            500,
+            "IllegalStateException",
+            message(
+                status,
+                new IllegalStateException(
+                    String.format(
+                        "Unhandled backend error status: %s: %s", status.statusCode(), ex))),
+            ex);
     }
   }
 
