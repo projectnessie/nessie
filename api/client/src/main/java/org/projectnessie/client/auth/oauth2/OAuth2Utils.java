@@ -26,6 +26,7 @@ import java.util.Random;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpResponse;
+import org.projectnessie.client.http.Status;
 
 class OAuth2Utils {
 
@@ -56,8 +57,13 @@ class OAuth2Utils {
     for (String path : WELL_KNOWN_PATHS) {
       try {
         HttpResponse response = httpClient.newRequest(issuerUrl).path(path).get();
+        if (response.getStatus() != Status.OK) {
+          throw new HttpClientException(
+              "Failed to fetch OpenID provider metadata: OpenID provider replied with "
+                  + response.getStatus());
+        }
         JsonNode data = response.readEntity(JsonNode.class);
-        if (!data.has("issuer") || !data.has("authorization_endpoint")) {
+        if (data == null || !data.has("issuer") || !data.has("authorization_endpoint")) {
           throw new HttpClientException("Invalid OpenID provider metadata");
         }
         return data;

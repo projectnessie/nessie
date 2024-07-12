@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -25,9 +26,14 @@ public interface ResponseContext {
   /** Get the status of the response. */
   Status getStatus();
 
+  /**
+   * Get the input stream for the response. Returns null if the response did not contain any
+   * readable entity.
+   *
+   * @implSpec Calling this method multiple times should return the same input stream.
+   */
+  @Nullable
   InputStream getInputStream() throws IOException;
-
-  InputStream getErrorStream() throws IOException;
 
   default boolean isJsonCompatibleResponse() {
     String contentType = getContentType();

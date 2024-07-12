@@ -44,12 +44,10 @@ import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientReadTimeoutException;
-import org.projectnessie.client.http.HttpClientResponseException;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
-import org.projectnessie.client.http.Status;
 
 public abstract class BaseHttpRequest extends HttpRequest {
 
@@ -70,7 +68,6 @@ public abstract class BaseHttpRequest extends HttpRequest {
       prepareRequest(requestContext);
       responseContext = processResponse(uri, method, body, requestContext);
       processResponseFilters(responseContext);
-      mimicUrlConnectionBehavior(method, responseContext, uri);
       return config.responseFactory().make(responseContext, config.getMapper());
     } catch (RuntimeException e) {
       error = e;
@@ -145,20 +142,6 @@ public abstract class BaseHttpRequest extends HttpRequest {
   protected void processResponseFilters(ResponseContext responseContext) {
     if (!bypassFilters) {
       config.getResponseFilters().forEach(responseFilter -> responseFilter.filter(responseContext));
-    }
-  }
-
-  /**
-   * This mimics the (weird) behavior of java.net.HttpURLConnection.getResponseCode() that throws an
-   * IOException for some status codes.
-   */
-  protected void mimicUrlConnectionBehavior(
-      Method method, ResponseContext responseContext, URI uri) {
-    Status status = responseContext.getStatus();
-    if (status.getCode() >= 400) {
-      throw new HttpClientResponseException(
-          String.format("%s request to %s failed with HTTP/%d", method, uri, status.getCode()),
-          status);
     }
   }
 

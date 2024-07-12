@@ -79,7 +79,7 @@ class TestRestV1Client {
       assertThatThrownBy(api::getDefaultBranch)
           .isInstanceOf(NessieBadResponseException.class)
           .hasMessageStartingWith(
-              "Expected the server to return a JSON compatible response, but the server returned with Content-Type 'text/html' from ");
+              "OK (HTTP/200): Expected the server to return a JSON compatible response, but the server replied with Content-Type 'text/html' from ");
     }
   }
 

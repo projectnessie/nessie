@@ -30,6 +30,7 @@ final class ApacheResponseContext implements ResponseContext {
 
   private final ClassicHttpResponse response;
   private final URI uri;
+  private InputStream inputStream;
 
   ApacheResponseContext(ClassicHttpResponse response, URI uri) {
     this.response = response;
@@ -43,25 +44,13 @@ final class ApacheResponseContext implements ResponseContext {
 
   @Override
   public InputStream getInputStream() throws IOException {
-    return reader();
-  }
-
-  @Override
-  public InputStream getErrorStream() throws IOException {
-    return reader();
-  }
-
-  @Override
-  public boolean isJsonCompatibleResponse() {
-    String contentType = getContentType();
-    if (contentType == null) {
-      return false;
+    if (response.getEntity() == null) {
+      return null;
     }
-    int i = contentType.indexOf(';');
-    if (i > 0) {
-      contentType = contentType.substring(0, i);
+    if (inputStream == null) {
+      inputStream = new RequestClosingInputStream(response);
     }
-    return contentType.endsWith("/json") || contentType.endsWith("+json");
+    return inputStream;
   }
 
   @Override
@@ -73,10 +62,6 @@ final class ApacheResponseContext implements ResponseContext {
   @Override
   public URI getRequestedUri() {
     return uri;
-  }
-
-  private InputStream reader() throws IOException {
-    return new RequestClosingInputStream(response);
   }
 
   private static final class RequestClosingInputStream extends FilterInputStream {

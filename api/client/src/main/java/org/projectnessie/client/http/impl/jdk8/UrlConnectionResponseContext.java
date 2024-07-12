@@ -34,6 +34,7 @@ final class UrlConnectionResponseContext implements ResponseContext {
   private final HttpURLConnection connection;
   private final URI uri;
   private final Status status;
+  private InputStream inputStream;
 
   UrlConnectionResponseContext(HttpURLConnection connection, URI uri, Status status) {
     this.connection = connection;
@@ -48,12 +49,12 @@ final class UrlConnectionResponseContext implements ResponseContext {
 
   @Override
   public InputStream getInputStream() throws IOException {
-    return maybeDecompress(connection.getInputStream());
-  }
-
-  @Override
-  public InputStream getErrorStream() throws IOException {
-    return maybeDecompress(connection.getErrorStream());
+    if (inputStream == null) {
+      InputStream base =
+          status.getCode() >= 400 ? connection.getErrorStream() : connection.getInputStream();
+      inputStream = maybeDecompress(base);
+    }
+    return inputStream;
   }
 
   @Override

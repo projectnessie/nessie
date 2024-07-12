@@ -22,8 +22,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import javax.net.ssl.HttpsURLConnection;
 import org.projectnessie.client.http.HttpClient.Method;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpResponse;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
@@ -55,27 +53,7 @@ final class UrlConnectionRequest extends BaseHttpRequest {
       writeToOutputStream(requestContext, con.getOutputStream());
     }
     con.connect();
-    int code = con.getResponseCode(); // call to ensure http request is complete
-    return new UrlConnectionResponseContext(con, uri, Status.fromCode(code));
-  }
-
-  @Override
-  public HttpResponse get() throws HttpClientException {
-    return executeRequest(Method.GET, null);
-  }
-
-  @Override
-  public HttpResponse delete() throws HttpClientException {
-    return executeRequest(Method.DELETE, null);
-  }
-
-  @Override
-  public HttpResponse post(Object obj) throws HttpClientException {
-    return executeRequest(Method.POST, obj);
-  }
-
-  @Override
-  public HttpResponse put(Object obj) throws HttpClientException {
-    return executeRequest(Method.PUT, obj);
+    Status status = Status.fromCode(con.getResponseCode());
+    return new UrlConnectionResponseContext(con, uri, status);
   }
 }
