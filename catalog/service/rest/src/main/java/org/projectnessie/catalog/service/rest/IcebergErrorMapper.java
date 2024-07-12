@@ -57,13 +57,13 @@ public class IcebergErrorMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(IcebergErrorMapper.class);
 
   private final ExceptionConfig exceptionConfig;
-  private final BackendExceptionMapper ioExceptionMapper;
+  private final BackendExceptionMapper backendExceptionMapper;
 
   @Inject
   public IcebergErrorMapper(
-      ExceptionConfig exceptionConfig, BackendExceptionMapper ioExceptionMapper) {
+      ExceptionConfig exceptionConfig, BackendExceptionMapper backendExceptionMapper) {
     this.exceptionConfig = exceptionConfig;
-    this.ioExceptionMapper = ioExceptionMapper;
+    this.backendExceptionMapper = backendExceptionMapper;
   }
 
   public Response toResponse(Throwable ex, IcebergEntityKind kind) {
@@ -82,9 +82,11 @@ public class IcebergErrorMapper {
       }
     }
 
-    Optional<BackendErrorStatus> status = ioExceptionMapper.analyze(ex);
-    if (status.isPresent()) {
-      body = mapStorageFailure(status.get(), ex);
+    if (body == null) {
+      Optional<BackendErrorStatus> status = backendExceptionMapper.analyze(ex);
+      if (status.isPresent()) {
+        body = mapStorageFailure(status.get(), ex);
+      }
     }
 
     if (body == null) {
