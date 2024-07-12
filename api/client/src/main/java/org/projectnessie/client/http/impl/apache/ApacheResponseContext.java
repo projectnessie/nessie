@@ -92,7 +92,11 @@ final class ApacheResponseContext implements ResponseContext {
       }
       return entity.getContent();
     } catch (IOException e) {
-      response.close();
+      try {
+        response.close();
+      } catch (IOException ex) {
+        e.addSuppressed(ex);
+      }
       throw e;
     }
   }
