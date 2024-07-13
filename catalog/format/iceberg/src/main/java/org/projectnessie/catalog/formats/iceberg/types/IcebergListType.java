@@ -62,10 +62,16 @@ public interface IcebergListType extends IcebergComplexType {
     return schema;
   }
 
-  @SuppressWarnings("unused")
+  static Builder builder() {
+    return ImmutableIcebergListType.builder();
+  }
+
   interface Builder {
     @CanIgnoreReturnValue
     Builder clear();
+
+    @CanIgnoreReturnValue
+    Builder from(IcebergType instance);
 
     @CanIgnoreReturnValue
     Builder elementId(int elementId);

@@ -32,6 +32,9 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergViewHistoryE
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.RESERVED_PROPERTIES;
 import static org.projectnessie.catalog.formats.iceberg.nessie.ReuseOrCreate.reuseOrCreate;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_LIST;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_MAP;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_STRUCT;
 import static org.projectnessie.catalog.model.id.NessieId.transientNessieId;
 import static org.projectnessie.catalog.model.schema.types.NessieType.DEFAULT_TIME_PRECISION;
 import static org.projectnessie.catalog.model.snapshot.NessieViewRepresentation.NessieViewSQLRepresentation.nessieViewSQLRepresentation;
@@ -45,12 +48,15 @@ import static org.projectnessie.model.Content.Type.NAMESPACE;
 import com.google.common.base.Preconditions;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -1135,17 +1141,7 @@ public class NessieModelIceberg {
     Map<Integer, Integer> remappedFieldIds = new HashMap<>();
     if (snapshot.schemas().isEmpty()) {
       // new table, assign fresh IDs (as Iceberg does)
-      IcebergSchema.Builder newSchemaBuilder = IcebergSchema.builder().from(schema);
-      newSchemaBuilder.schemaId(INITIAL_SCHEMA_ID).fields(emptyList());
-      int nextId = 1;
-      for (IcebergNestedField field : schema.fields()) {
-        int newFieldId = nextId++;
-        IcebergNestedField newField =
-            IcebergNestedField.builder().from(field).id(newFieldId).build();
-        remappedFieldIds.put(field.id(), newFieldId);
-        newSchemaBuilder.addField(newField);
-      }
-      schema = newSchemaBuilder.build();
+      schema = icebergInitialSchema(schema, remappedFieldIds);
     }
 
     checkArgument(
@@ -1178,14 +1174,118 @@ public class NessieModelIceberg {
 
     state.remappedFields(remappedFieldIds);
 
-    int newLastColumnId = icebergFields.keySet().stream().mapToInt(x -> x).max().orElse(1);
-    newLastColumnId = Math.max(u.lastColumnId(), newLastColumnId);
+    int schemaMaxFieldId = icebergSchemaMaxFieldId(schema);
+    int newLastColumnId = Math.max(u.lastColumnId(), schemaMaxFieldId);
     Integer lastColumnId = snapshot.icebergLastColumnId();
     if (lastColumnId == null || newLastColumnId > lastColumnId) {
       state.builder().icebergLastColumnId(newLastColumnId);
     }
 
     state.schemaAdded(schema.schemaId());
+  }
+
+  public static int icebergSchemaMaxFieldId(IcebergSchema schema) {
+    Set<Integer> fieldIds = new HashSet<>();
+    fieldIds.add(INITIAL_COLUMN_ID);
+    int max = 0;
+    for (IcebergNestedField field : schema.fields()) {
+      max = Math.max(max, icebergSchemaMaxFieldId(field, fieldIds));
+    }
+    return max;
+  }
+
+  public static int icebergSchemaMaxFieldId(IcebergNestedField field, Set<Integer> fieldIds) {
+    checkArgument(fieldIds.add(field.id()), "Duplicate field ID %d", field.id());
+    return Math.max(field.id(), icebergTypeMaxFieldId(field.type(), fieldIds));
+  }
+
+  public static int icebergTypeMaxFieldId(IcebergType type, Set<Integer> fieldIds) {
+    int max = 0;
+    switch (type.type()) {
+      case TYPE_STRUCT:
+        IcebergStructType srcStruct = (IcebergStructType) type;
+        for (IcebergNestedField f : srcStruct.fields()) {
+          max = Math.max(max, icebergSchemaMaxFieldId(f, fieldIds));
+        }
+        break;
+      case TYPE_LIST:
+        IcebergListType srcList = (IcebergListType) type;
+        max = Math.max(max, srcList.elementId());
+        max = Math.max(max, icebergTypeMaxFieldId(srcList.element(), fieldIds));
+        break;
+      case TYPE_MAP:
+        IcebergMapType srcMap = (IcebergMapType) type;
+        checkArgument(fieldIds.add(srcMap.keyId()), "Duplicate field ID %d", srcMap.keyId());
+        checkArgument(fieldIds.add(srcMap.valueId()), "Duplicate field ID %d", srcMap.valueId());
+        max = Math.max(max, srcMap.keyId());
+        max = Math.max(max, srcMap.valueId());
+        max = Math.max(max, icebergTypeMaxFieldId(srcMap.key(), fieldIds));
+        max = Math.max(max, icebergTypeMaxFieldId(srcMap.value(), fieldIds));
+        break;
+      default:
+        break;
+    }
+    return max;
+  }
+
+  public static IcebergSchema icebergInitialSchema(
+      IcebergSchema schema, Map<Integer, Integer> remappedFieldIds) {
+    IcebergSchema.Builder newSchemaBuilder = IcebergSchema.builder().from(schema);
+    newSchemaBuilder.schemaId(INITIAL_SCHEMA_ID).fields(emptyList());
+    AtomicInteger nextId = new AtomicInteger();
+    for (IcebergNestedField field : schema.fields()) {
+      IcebergNestedField newField = icebergInitialSchemaField(field, nextId, remappedFieldIds);
+      newSchemaBuilder.addField(newField);
+    }
+    return newSchemaBuilder.build();
+  }
+
+  private static IcebergNestedField icebergInitialSchemaField(
+      IcebergNestedField field, AtomicInteger nextId, Map<Integer, Integer> remappedFieldIds) {
+    int newFieldId = nextId.incrementAndGet();
+    IcebergNestedField.Builder newField = IcebergNestedField.builder().from(field).id(newFieldId);
+    remappedFieldIds.put(field.id(), newFieldId);
+    IcebergType type = maybeRemapNested(field.type(), nextId, remappedFieldIds);
+    return newField.type(type).build();
+  }
+
+  private static IcebergType maybeRemapNested(
+      IcebergType type, AtomicInteger nextId, Map<Integer, Integer> remappedFieldIds) {
+    switch (type.type()) {
+      case TYPE_STRUCT:
+        IcebergStructType srcStruct = (IcebergStructType) type;
+        IcebergStructType.Builder struct =
+            IcebergStructType.builder().from(srcStruct).fields(emptyList());
+        for (IcebergNestedField f : srcStruct.fields()) {
+          struct.addField(icebergInitialSchemaField(f, nextId, remappedFieldIds));
+        }
+        type = struct.build();
+        break;
+      case TYPE_LIST:
+        IcebergListType srcList = (IcebergListType) type;
+        IcebergListType.Builder list =
+            IcebergListType.builder()
+                .from(srcList)
+                .elementId(nextId.incrementAndGet())
+                .element(maybeRemapNested(srcList.element(), nextId, remappedFieldIds));
+        type = list.build();
+        break;
+      case TYPE_MAP:
+        IcebergMapType srcMap = (IcebergMapType) type;
+
+        IcebergMapType.Builder map =
+            IcebergMapType.builder()
+                .from(srcMap)
+                .keyId(nextId.incrementAndGet())
+                .key(maybeRemapNested(srcMap.key(), nextId, remappedFieldIds))
+                .valueId(nextId.incrementAndGet())
+                .value(maybeRemapNested(srcMap.value(), nextId, remappedFieldIds));
+        type = map.build();
+        break;
+      default:
+        break;
+    }
+    return type;
   }
 
   public static void addSchema(AddSchema u, IcebergViewMetadataUpdateState state) {

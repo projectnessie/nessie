@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog: fix field-ID reassignment and last-column-id calculation
+
 ### Commits
 
 ## [0.92.0] Release (2024-07-11)
