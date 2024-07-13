@@ -22,6 +22,7 @@ import com.azure.core.http.policy.ExponentialBackoffOptions;
 import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.util.ConfigurationBuilder;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import com.azure.storage.common.policy.RetryPolicyType;
@@ -89,10 +90,7 @@ public final class AdlsClientSupplier {
       String accountKey = fileSystemOptions.account().get().secret();
       clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
     } else {
-      throw new IllegalStateException(
-          "Neither an SAS token nor account name and key are available for ADLS file system '"
-              + location.path()
-              + "'");
+      clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
     }
 
     buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);

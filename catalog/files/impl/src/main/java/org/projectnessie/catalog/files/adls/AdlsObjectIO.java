@@ -50,7 +50,7 @@ public class AdlsObjectIO implements ObjectIO {
 
     DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
     try {
-      fileSystem.getAccessPolicy();
+      fileSystem.getProperties();
     } catch (Exception e) {
       throw new IOException(e);
     }
