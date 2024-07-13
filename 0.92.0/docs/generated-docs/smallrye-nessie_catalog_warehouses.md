@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.catalog.warehouses.warehouses.`_`<warehouse-name>`_ |  | `` | Map of warehouse names to warehouse configurations.  |

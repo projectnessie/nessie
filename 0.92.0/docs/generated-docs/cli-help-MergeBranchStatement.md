@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Merges a branch or tag into another branch, supporting manual conflict resolution.
 
 The optional `DRY` keyword defines that Nessie shall simulate a merge operation. This is useful to
