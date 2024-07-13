@@ -15,13 +15,16 @@
  */
 package org.projectnessie.client.http;
 
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import org.projectnessie.client.rest.NessieBadResponseException;
+import org.projectnessie.client.rest.io.CapturingInputStream;
 import org.projectnessie.error.ImmutableNessieError;
+import org.projectnessie.error.NessieError;
 
 /** Simple holder for http response object. */
 public class HttpResponse {
@@ -34,49 +37,77 @@ public class HttpResponse {
     this.mapper = mapper;
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  private <V> V readEntity(ObjectReader reader) {
+  /**
+   * Read the entity from the underlying HTTP response.
+   *
+   * @return the entity, or null if the response has no content
+   * @throws HttpClientException if the entity cannot be read
+   * @throws NessieBadResponseException if the entity is not JSON compatible
+   */
+  public <V> V readEntity(Class<V> clazz) {
+    ObjectReader reader = mapper.readerFor(clazz);
     try {
-      if (responseContext.getStatus().getCode() == Status.NO_CONTENT.getCode()) {
-        // In case the Nessie server returns no content (because it's on an older version)
-        // but the client expects a response, just return null here and cross fingers that
-        // the code doesn't expect a non-null value.
-        // This situation happened when `TreeApi.createReference()` started to return a value
-        // but the tests in :nessie-versioned-gc-iceberg were running Nessie 0.4 server, which
-        // doesn't return a value, so `org.projectnessie.versioned.gc.TestUtils#resetData` failed.
-        return null;
-      }
-      try (InputStream is = responseContext.getInputStream()) {
-        if (!responseContext.isJsonCompatibleResponse()) {
-          nonJsonResponse();
-        }
-
-        return reader.readValue(is);
-      }
+      return decodeEntity(reader, responseContext.getInputStream());
     } catch (IOException e) {
-      throw new HttpClientException("Cannot parse response.", e);
+      throw new HttpClientException("Failed to read entity", e);
     }
   }
 
-  private void nonJsonResponse() throws IOException {
-    Status status = responseContext.getStatus();
-    throw new NessieBadResponseException(
-        ImmutableNessieError.builder()
-            .status(status.getCode())
-            .message(status.getReason())
-            .reason(
-                String.format(
-                    "Expected the server to return a JSON compatible response, "
-                        + "but the server returned with Content-Type '%s' from '%s'. "
-                        + "Check the Nessie REST API base URI. "
-                        + "Nessie REST API base URI usually end in '/api/v1', but your service "
-                        + "provider may have a different URL pattern.",
-                    responseContext.getContentType(), responseContext.getRequestedUri()))
-            .build());
+  private <V> V decodeEntity(ObjectReader reader, InputStream is) throws IOException {
+    if (is != null) {
+      CapturingInputStream capturing = new CapturingInputStream(is);
+      try {
+        if (responseContext.isJsonCompatibleResponse()) {
+          // readValues tolerates empty responses and returns an empty iterator in that case;
+          // this allows to handle these cases gracefully
+          MappingIterator<V> values = reader.readValues(capturing);
+          if (values.hasNextValue()) {
+            return values.nextValue();
+          }
+        } else {
+          String captured = capturing.capture();
+          if (!captured.isEmpty()) {
+            throw unparseableResponse(captured, null);
+          }
+        }
+      } catch (IOException e) {
+        throw unparseableResponse(capturing.capture(), e);
+      } finally {
+        capturing.close();
+      }
+    }
+    // In case the Nessie server returns no content (e.g. because it's on an older version)
+    // but the client expects a response, just return null here and cross fingers that
+    // the code doesn't expect a non-null value.
+    return null;
   }
 
-  public <V> V readEntity(Class<V> clazz) {
-    return readEntity(mapper.readerFor(clazz));
+  private NessieBadResponseException unparseableResponse(String captured, Exception cause) {
+    captured = captured.trim();
+    Status status = responseContext.getStatus();
+    String message =
+        String.format(
+            "Expected the server to return a JSON compatible response, "
+                + "but the server replied with Content-Type '%s' from '%s' %s. "
+                + "Check the Nessie REST API base URI. "
+                + "Nessie REST API base URI usually ends in '/api/v1' or '/api/v2', "
+                + "but your service provider may have a different URL pattern.",
+            responseContext.getContentType(),
+            responseContext.getRequestedUri(),
+            captured.isEmpty()
+                ? "and no response body"
+                : "and a response body beginning with: \"" + captured + "\"");
+    NessieError error =
+        ImmutableNessieError.builder()
+            .message(message)
+            .status(status.getCode())
+            .reason(status.getReason())
+            .build();
+    NessieBadResponseException exception = new NessieBadResponseException(error);
+    if (cause != null) {
+      exception.initCause(cause);
+    }
+    return exception;
   }
 
   public URI getRequestUri() {

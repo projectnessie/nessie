@@ -17,7 +17,6 @@ package org.projectnessie.client.auth.oauth2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.HttpClientResponseException;
@@ -43,9 +42,9 @@ class OAuth2ResponseFilter implements ResponseFilter {
       if (status != Status.OK && status != Status.FOUND) {
         String body = null;
         IOException decodeError = null;
-        InputStream errorStream = responseContext.getErrorStream();
-        if (errorStream != null) {
-          try (CapturingInputStream capturing = new CapturingInputStream(errorStream)) {
+        if (responseContext.getInputStream() != null) {
+          try (CapturingInputStream capturing =
+              new CapturingInputStream(responseContext.getInputStream())) {
             if (responseContext.isJsonCompatibleResponse()) {
               try {
                 ErrorResponse errorResponse =

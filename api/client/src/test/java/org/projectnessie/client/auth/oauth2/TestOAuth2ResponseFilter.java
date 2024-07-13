@@ -61,11 +61,6 @@ class TestOAuth2ResponseFilter {
           }
 
           @Override
-          public InputStream getErrorStream() {
-            return getInputStream();
-          }
-
-          @Override
           public String getContentType() {
             return json ? "application/json" : "text/plain";
           }

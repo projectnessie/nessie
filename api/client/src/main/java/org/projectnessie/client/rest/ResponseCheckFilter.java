@@ -55,7 +55,7 @@ public class ResponseCheckFilter {
 
     // this could IOException, in which case the error will be passed up to the client as an
     // HttpClientException
-    try (InputStream is = con.getErrorStream()) {
+    try (InputStream is = con.getInputStream()) {
       error = decodeErrorObject(status, is, MAPPER.reader());
     }
 
@@ -127,8 +127,7 @@ public class ResponseCheckFilter {
                 .message(
                     cap.isEmpty()
                         ? "got empty response body from server"
-                        : ("Could not parse error object in response beginning with: "
-                            + capturing.captured()))
+                        : ("Could not parse error object in response beginning with: " + cap))
                 .status(status.getCode())
                 .reason(status.getReason())
                 .clientProcessingError(e.toString())
