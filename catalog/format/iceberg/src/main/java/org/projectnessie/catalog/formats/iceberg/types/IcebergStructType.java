@@ -90,10 +90,16 @@ public interface IcebergStructType extends IcebergComplexType {
     return Schema.createRecord(recordName, null, null, false, fields);
   }
 
-  @SuppressWarnings("unused")
+  static Builder builder() {
+    return ImmutableIcebergStructType.builder();
+  }
+
   interface Builder {
     @CanIgnoreReturnValue
     Builder clear();
+
+    @CanIgnoreReturnValue
+    Builder from(IcebergType instance);
 
     @CanIgnoreReturnValue
     Builder type(String type);
