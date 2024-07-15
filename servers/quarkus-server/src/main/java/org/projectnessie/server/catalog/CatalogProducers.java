@@ -225,7 +225,7 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public BackendExceptionMapper objectIOExceptionMapper() {
+  public BackendExceptionMapper backendExceptionMapper() {
     return BackendExceptionMapper.builder()
         .addAnalyzer(PreviousTaskExceptionMapper.INSTANCE)
         .addAnalyzer(NessieExceptionMapper.INSTANCE)
