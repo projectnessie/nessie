@@ -17,6 +17,7 @@ package org.projectnessie.catalog.files.api;
 
 import static org.projectnessie.catalog.files.api.BackendErrorCode.FORBIDDEN;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.NOT_FOUND;
+import static org.projectnessie.catalog.files.api.BackendErrorCode.THROTTLED;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.UNAUTHORIZED;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.UNKNOWN;
 
@@ -40,6 +41,8 @@ public interface BackendErrorStatus {
         return BackendErrorStatus.of(FORBIDDEN, cause);
       case 404:
         return BackendErrorStatus.of(NOT_FOUND, cause);
+      case 429:
+        return BackendErrorStatus.of(THROTTLED, cause);
       default:
         return BackendErrorStatus.of(UNKNOWN, cause);
     }
