@@ -169,7 +169,7 @@ public class TestMarkAndSweep {
 
     PerRefCutoffPolicySupplier cutOffPolicySupplier() {
       Instant cutOff = now.minus(numCommits - numExpired, ChronoUnit.SECONDS);
-      return atTimestamp ? r -> atTimestamp(cutOff) : r -> numCommits((int) numCommits);
+      return atTimestamp ? r -> atTimestamp(cutOff) : r -> numCommits((int) numCommits - 1);
     }
   }
 

@@ -20,6 +20,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: Fix behavior of cutoff policy "num commits", it was 'off by one' and considered the n-th commit as non-live
+  vs the n-th commit as the last live one.
+
 ### Commits
 
 ## [0.92.1] Release (2024-07-13)
