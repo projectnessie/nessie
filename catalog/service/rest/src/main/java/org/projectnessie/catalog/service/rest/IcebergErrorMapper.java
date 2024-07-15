@@ -108,7 +108,7 @@ public class IcebergErrorMapper {
 
     switch (status.statusCode()) {
       case THROTTLED:
-        return errorResponse(429, "RuntimeException", message(status, ex), ex);
+        return errorResponse(429, "TooManyRequestsException", message(status, ex), ex);
       case UNAUTHORIZED:
         return errorResponse(401, "NotAuthorizedException", message(status, ex), ex);
       case FORBIDDEN:
