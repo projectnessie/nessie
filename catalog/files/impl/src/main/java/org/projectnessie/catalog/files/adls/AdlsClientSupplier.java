@@ -80,8 +80,7 @@ public final class AdlsClientSupplier {
 
     String accountName = account.map(BasicCredentials::name).orElse(location.storageAccount());
 
-    clientBuilder.endpoint(
-        fileSystemOptions.endpoint().orElse(location.getUri().resolve("/").toString()));
+    fileSystemOptions.endpoint().ifPresent(clientBuilder::endpoint);
 
     if (fileSystemOptions.sasToken().isPresent()) {
       clientBuilder.sasToken(fileSystemOptions.sasToken().get().key());
