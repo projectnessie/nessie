@@ -66,6 +66,9 @@ import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.impl.EntitySnapshotTaskBehavior;
+import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
+import org.projectnessie.catalog.service.impl.IllegalArgumentExceptionMapper;
+import org.projectnessie.catalog.service.impl.NessieExceptionMapper;
 import org.projectnessie.catalog.service.impl.PreviousTaskExceptionMapper;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -225,6 +228,9 @@ public class CatalogProducers {
   public BackendExceptionMapper objectIOExceptionMapper() {
     return BackendExceptionMapper.builder()
         .addAnalyzer(PreviousTaskExceptionMapper.INSTANCE)
+        .addAnalyzer(NessieExceptionMapper.INSTANCE)
+        .addAnalyzer(IllegalArgumentExceptionMapper.INSTANCE)
+        .addAnalyzer(IcebergExceptionMapper.INSTANCE)
         .addAnalyzer(AdlsExceptionMapper.INSTANCE)
         .addAnalyzer(GcsExceptionMapper.INSTANCE)
         .addAnalyzer(S3ExceptionMapper.INSTANCE)

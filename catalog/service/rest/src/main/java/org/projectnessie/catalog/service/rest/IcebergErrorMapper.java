@@ -68,25 +68,9 @@ public class IcebergErrorMapper {
 
   public Response toResponse(Throwable ex, IcebergEntityKind kind) {
     IcebergErrorResponse body = null;
-    for (Throwable th = ex; th != null; th = th.getCause()) {
-      if (th instanceof BaseNessieClientServerException) {
-        BaseNessieClientServerException e = (BaseNessieClientServerException) th;
-        body = mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
-        break;
-      } else if (th instanceof IllegalArgumentException) {
-        body = errorResponse(400, "IllegalArgumentException", th.getMessage(), th);
-        break;
-      } else if (th instanceof IcebergException) {
-        body = ((IcebergException) th).toErrorResponse();
-        break;
-      }
-    }
-
-    if (body == null) {
-      Optional<BackendErrorStatus> status = backendExceptionMapper.analyze(ex);
-      if (status.isPresent()) {
-        body = mapStorageFailure(status.get(), ex);
-      }
+    Optional<BackendErrorStatus> status = backendExceptionMapper.analyze(ex);
+    if (status.isPresent()) {
+      body = mapStorageFailure(status.get(), ex, kind);
     }
 
     if (body == null) {
@@ -102,11 +86,25 @@ public class IcebergErrorMapper {
     return String.format("%s (due to: %s)", ex.getMessage(), status.cause().toString());
   }
 
-  private IcebergErrorResponse mapStorageFailure(BackendErrorStatus status, Throwable ex) {
+  private IcebergErrorResponse mapStorageFailure(
+      BackendErrorStatus status, Throwable ex, IcebergEntityKind kind) {
     // Log full stack trace on the server side for troubleshooting
     LOGGER.info("Propagating storage failure to client: {}", status, ex);
 
     switch (status.statusCode()) {
+      case NESSIE_ERROR:
+        if (status.cause() instanceof BaseNessieClientServerException) {
+          BaseNessieClientServerException e = (BaseNessieClientServerException) status.cause();
+          return mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
+        }
+        return null;
+      case ICEBERG_ERROR:
+        if (status.cause() instanceof IcebergException) {
+          return ((IcebergException) status.cause()).toErrorResponse();
+        }
+        return null;
+      case BAD_REQUEST:
+        return errorResponse(400, "IllegalArgumentException", status.cause().getMessage(), ex);
       case THROTTLED:
         return errorResponse(429, "TooManyRequestsException", message(status, ex), ex);
       case UNAUTHORIZED:

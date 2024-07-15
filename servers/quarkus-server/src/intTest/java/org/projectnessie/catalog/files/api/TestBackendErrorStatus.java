@@ -25,11 +25,12 @@ class TestBackendErrorStatus {
 
   @ParameterizedTest
   @CsvSource({
-    "42,UNKNOWN",
-    "401,UNAUTHORIZED",
-    "403,FORBIDDEN",
-    "404,NOT_FOUND",
-    "429,THROTTLED",
+    "42, UNKNOWN",
+    "400, BAD_REQUEST",
+    "401, UNAUTHORIZED",
+    "403, FORBIDDEN",
+    "404, NOT_FOUND",
+    "429, THROTTLED",
   })
   void testFromHttpStatusCode(int inputCode, BackendErrorCode expected) {
     Assertions.assertThat(BackendErrorStatus.fromHttpStatusCode(inputCode, CAUSE))

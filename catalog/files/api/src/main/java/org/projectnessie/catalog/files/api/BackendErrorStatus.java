@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.api;
 
+import static org.projectnessie.catalog.files.api.BackendErrorCode.BAD_REQUEST;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.FORBIDDEN;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.NOT_FOUND;
 import static org.projectnessie.catalog.files.api.BackendErrorCode.THROTTLED;
@@ -35,6 +36,8 @@ public interface BackendErrorStatus {
 
   static BackendErrorStatus fromHttpStatusCode(int httpStatusCode, Throwable cause) {
     switch (httpStatusCode) {
+      case 400:
+        return BackendErrorStatus.of(BAD_REQUEST, cause);
       case 401:
         return BackendErrorStatus.of(UNAUTHORIZED, cause);
       case 403:

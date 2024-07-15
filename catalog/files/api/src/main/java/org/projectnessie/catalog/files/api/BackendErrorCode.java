@@ -21,4 +21,7 @@ public enum BackendErrorCode {
   NOT_FOUND,
   UNAUTHORIZED,
   FORBIDDEN,
+  BAD_REQUEST,
+  NESSIE_ERROR,
+  ICEBERG_ERROR,
 }
