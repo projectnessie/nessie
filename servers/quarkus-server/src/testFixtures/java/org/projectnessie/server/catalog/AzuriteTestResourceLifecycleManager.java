@@ -57,5 +57,11 @@ public class AzuriteTestResourceLifecycleManager implements QuarkusTestResourceL
     testInjector.injectIntoFields(
         warehouseLocation,
         new TestInjector.AnnotatedAndMatchesType(WarehouseLocation.class, URI.class));
+    testInjector.injectIntoFields(
+        azurite.account(),
+        new TestInjector.AnnotatedAndMatchesType(WarehouseAccount.class, String.class));
+    testInjector.injectIntoFields(
+        azurite.secretBase64(),
+        new TestInjector.AnnotatedAndMatchesType(WarehouseAccountSecret.class, String.class));
   }
 }

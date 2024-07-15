@@ -272,25 +272,6 @@ public class IcebergConfigurer {
     gcsBucketOptions
         .deleteBatchSize()
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
-    // FIXME it is not safe to send de/encryption keys and oauth2 tokens
-    gcsBucketOptions
-        .decryptionKey()
-        .ifPresent(key -> configOverrides.put(GCS_DECRYPTION_KEY, key.key()));
-    gcsBucketOptions
-        .encryptionKey()
-        .ifPresent(key -> configOverrides.put(GCS_ENCRYPTION_KEY, key.key()));
-    gcsBucketOptions
-        .oauth2Token()
-        .ifPresent(
-            token -> {
-              configOverrides.put(GCS_OAUTH2_TOKEN, token.token());
-              token
-                  .expiresAt()
-                  .ifPresent(
-                      e ->
-                          configOverrides.put(
-                              GCS_OAUTH2_TOKEN_EXPIRES_AT, String.valueOf(e.toEpochMilli())));
-            });
     if (gcsBucketOptions.authType().isPresent()
         && gcsBucketOptions.authType().get() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
@@ -304,18 +285,6 @@ public class IcebergConfigurer {
     Optional<String> fileSystem = location.container();
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
-    // FIXME send account key and token?
-    fileSystemOptions
-        .account()
-        .ifPresent(
-            key -> {
-              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, key.name());
-              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_KEY, key.secret());
-            });
-    fileSystemOptions
-        .sasToken()
-        .ifPresent(
-            s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + location.storageAccount(), s.key()));
     fileSystemOptions
         .endpoint()
         .ifPresent(

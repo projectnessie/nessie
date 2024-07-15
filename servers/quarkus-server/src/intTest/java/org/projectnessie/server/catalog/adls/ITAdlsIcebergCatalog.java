@@ -17,6 +17,7 @@ package org.projectnessie.server.catalog.adls;
 
 import static java.util.UUID.randomUUID;
 
+import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
@@ -24,6 +25,8 @@ import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.AzuriteTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.WarehouseAccount;
+import org.projectnessie.server.catalog.WarehouseAccountSecret;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
 @QuarkusTestResource(
@@ -33,10 +36,18 @@ import org.projectnessie.server.catalog.WarehouseLocation;
 public class ITAdlsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @WarehouseLocation URI warehouseLocation;
+  @WarehouseAccount String account;
+  @WarehouseAccountSecret String accountSecret;
 
   @Override
   protected Map<String, String> catalogOptions() {
-    return Map.of(CatalogProperties.WAREHOUSE_LOCATION, warehouseLocation.toString());
+    return ImmutableMap.of(
+        CatalogProperties.WAREHOUSE_LOCATION,
+        warehouseLocation.toString(),
+        "adls.auth.shared-key.account.name",
+        account,
+        "adls.auth.shared-key.account.key",
+        accountSecret);
   }
 
   @Override

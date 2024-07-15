@@ -16,6 +16,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Catalog: ADLS + GCS credentials are no longer sent to the client. It is considered insecure to expose the
+  server's credentials to clients, even if this is likely very convenient. Unless we have a secure mechanism
+  to provide per-client/table credentials, users have to configure object store credentials when using GCS or
+  ADLS via the local Iceberg configuration(s).
+
 ### Deprecations
 
 ### Fixes
