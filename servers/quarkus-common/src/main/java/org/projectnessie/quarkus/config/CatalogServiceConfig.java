@@ -23,10 +23,10 @@ import java.time.Duration;
 @ConfigMapping(prefix = "nessie.catalog.service")
 public interface CatalogServiceConfig {
   /**
-   * Interval after which a request is retried when storage I/O responds with some "retry later"
-   * response.
+   * Advanced property. The time interval after which a request is retried when storage I/O responds
+   * with some "retry later" response.
    */
-  @WithName("throttled-retry-after")
+  @WithName("error-handling.throttled-retry-after")
   @WithDefault("PT10S")
   Duration retryAfterThrottled();
 
