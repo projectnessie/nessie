@@ -159,7 +159,7 @@ public abstract class ContentKey implements Comparable<ContentKey> {
 
   @JsonCreator
   public static ContentKey of(@JsonProperty("elements") List<String> elements) {
-    Objects.requireNonNull(elements);
+    Objects.requireNonNull(elements, "elements argument is null");
     return ImmutableContentKey.of(elements);
   }
 

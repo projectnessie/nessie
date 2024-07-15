@@ -25,8 +25,8 @@ public final class GcsLocation {
   private final String path;
 
   private GcsLocation(String bucket, String path) {
-    this.bucket = requireNonNull(bucket);
-    this.path = requireNonNull(path);
+    this.bucket = requireNonNull(bucket, "bucket argument missing");
+    this.path = requireNonNull(path, "path argument missing");
   }
 
   public static GcsLocation gcsLocation(String bucket, String path) {

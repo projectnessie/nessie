@@ -107,7 +107,7 @@ public abstract class Content {
    * @return The return value
    */
   public <T> Optional<T> unwrap(Class<T> clazz) {
-    Objects.requireNonNull(clazz);
+    Objects.requireNonNull(clazz, "class argument");
     if (clazz.isAssignableFrom(getClass())) {
       return Optional.of(clazz.cast(this));
     }

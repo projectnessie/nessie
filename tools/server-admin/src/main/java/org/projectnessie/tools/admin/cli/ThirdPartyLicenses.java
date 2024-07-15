@@ -44,7 +44,8 @@ public class ThirdPartyLicenses implements Callable<Integer> {
 
     URL url =
         ThirdPartyLicenses.class.getClassLoader().getResource("META-INF/resources/NOTICE.txt");
-    try (InputStream in = requireNonNull(url).openConnection().getInputStream()) {
+    try (InputStream in =
+        requireNonNull(url, "NOTICE.txt file missing").openConnection().getInputStream()) {
       out.print(new String(in.readAllBytes(), UTF_8));
     } catch (IOException e) {
       throw new RuntimeException("Failed to load resource " + url, e);

@@ -30,9 +30,10 @@ public final class AdlsLocation {
 
   private AdlsLocation(StorageUri uri, String storageAccount, String container, String path) {
     this.uri = uri;
-    this.storageAccount = requireNonNull(storageAccount);
+    this.storageAccount = requireNonNull(storageAccount, "storageAccount argument missing");
     this.container = container;
-    this.path = requireNonNull(path);
+    this.path =
+        requireNonNull(path, "path argument missing, add a trailing '/' to the storage location");
   }
 
   public static AdlsLocation adlsLocation(StorageUri location) {

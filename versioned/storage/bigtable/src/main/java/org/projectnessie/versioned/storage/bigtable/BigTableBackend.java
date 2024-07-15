@@ -153,7 +153,7 @@ public final class BigTableBackend implements Backend {
   }
 
   private void checkTable(String table, String family) {
-    BigtableTableAdminClient client = requireNonNull(tableAdminClient);
+    BigtableTableAdminClient client = requireNonNull(tableAdminClient, "tableAdminClient");
     try {
       client.getTable(table);
     } catch (NotFoundException nf) {
