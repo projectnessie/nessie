@@ -54,7 +54,9 @@ public final class AdlsLocation {
       storageAccount = authority;
     }
 
-    return new AdlsLocation(location, storageAccount, container, location.path());
+    String path = location.path();
+    path = path == null ? "" : path.startsWith("/") ? path.substring(1) : path;
+    return new AdlsLocation(location, storageAccount, container, path);
   }
 
   public StorageUri getUri() {
@@ -71,6 +73,6 @@ public final class AdlsLocation {
   }
 
   public String path() {
-    return this.path == null ? "" : this.path.startsWith("/") ? this.path.substring(1) : this.path;
+    return this.path;
   }
 }
