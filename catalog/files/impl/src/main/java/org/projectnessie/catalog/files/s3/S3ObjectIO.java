@@ -45,32 +45,24 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public void ping(StorageUri uri) throws IOException {
+  public void ping(StorageUri uri) {
     S3Client s3client = s3clientSupplier.getClient(uri);
-    try {
-      s3client.headBucket(b -> b.bucket(uri.requiredAuthority()));
-    } catch (RuntimeException e) {
-      throw new IOException(e);
-    }
+    s3client.headBucket(b -> b.bucket(uri.requiredAuthority()));
   }
 
   @Override
-  public InputStream readObject(StorageUri uri) throws IOException {
+  public InputStream readObject(StorageUri uri) {
     checkArgument(uri != null, "Invalid location: null");
     String scheme = uri.scheme();
     checkArgument(isS3scheme(scheme), "Invalid S3 scheme: %s", uri);
 
     S3Client s3client = s3clientSupplier.getClient(uri);
 
-    try {
-      return s3client.getObject(
-          GetObjectRequest.builder()
-              .bucket(uri.requiredAuthority())
-              .key(withoutLeadingSlash(uri))
-              .build());
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
+    return s3client.getObject(
+        GetObjectRequest.builder()
+            .bucket(uri.requiredAuthority())
+            .key(withoutLeadingSlash(uri))
+            .build());
   }
 
   @Override

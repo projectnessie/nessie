@@ -32,12 +32,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AdlsObjectIO implements ObjectIO {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AdlsObjectIO.class);
-
   private final AdlsClientSupplier clientSupplier;
 
   public AdlsObjectIO(AdlsClientSupplier clientSupplier) {
@@ -45,15 +41,11 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void ping(StorageUri uri) throws IOException {
+  public void ping(StorageUri uri) {
     AdlsLocation location = adlsLocation(uri);
 
     DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
-    try {
-      fileSystem.getAccessPolicy();
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
+    fileSystem.getAccessPolicy();
   }
 
   @Override
@@ -61,14 +53,7 @@ public class AdlsObjectIO implements ObjectIO {
     DataLakeFileClient file = clientSupplier.fileClientForLocation(uri);
     DataLakeFileInputStreamOptions options = new DataLakeFileInputStreamOptions();
     clientSupplier.adlsOptions().readBlockSize().ifPresent(options::setBlockSize);
-    try {
-      return file.openInputStream(options).getInputStream();
-    } catch (BlobStorageException e) {
-      if (e.getStatusCode() == 404) {
-        throw new IOException(e.getServiceMessage(), e);
-      }
-      throw e;
-    }
+    return file.openInputStream(options).getInputStream();
   }
 
   @Override

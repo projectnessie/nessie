@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.catalog.files.AbstractClients;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -95,6 +96,12 @@ public class TestS3Clients extends AbstractClients {
   @Override
   protected StorageUri buildURI(String bucket, String key) {
     return StorageUri.of(String.format("s3://%s/%s", bucket, key));
+  }
+
+  @Override
+  protected BackendExceptionMapper.Builder addExceptionHandlers(
+      BackendExceptionMapper.Builder builder) {
+    return builder.addAnalyzer(S3ExceptionMapper.INSTANCE);
   }
 
   @Test
