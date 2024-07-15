@@ -22,7 +22,6 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import org.projectnessie.client.http.impl.HttpHeaders.HttpHeader;
 
 /**
@@ -63,7 +62,6 @@ public final class HttpUtils {
    * @return trimmed str
    */
   public static String checkNonNullTrim(String str) {
-    Objects.requireNonNull(str);
     return str.trim();
   }
 

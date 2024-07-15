@@ -89,7 +89,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
       if (forWrite) {
         accessCheck
-            .canReadEntityValue(r, requireNonNull(obj).identifiedKey())
+            .canReadEntityValue(r, requireNonNull(obj, "obj is null").identifiedKey())
             .canCreateEntity(r, obj.identifiedKey());
       }
       accessCheck.checkAndThrow();

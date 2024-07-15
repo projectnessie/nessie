@@ -15,6 +15,8 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -34,10 +36,10 @@ final class ClientKey {
       String builderClass,
       Class<? extends NessieApi> type,
       Map<String, String> configs) {
-    this.version = Objects.requireNonNull(version);
-    this.builderClass = Objects.requireNonNull(builderClass);
-    this.type = Objects.requireNonNull(type);
-    this.configs = Objects.requireNonNull(configs);
+    this.version = requireNonNull(version, "version");
+    this.builderClass = requireNonNull(builderClass, "builderClass");
+    this.type = requireNonNull(type, "type");
+    this.configs = requireNonNull(configs, "configs");
   }
 
   Version getVersion() {

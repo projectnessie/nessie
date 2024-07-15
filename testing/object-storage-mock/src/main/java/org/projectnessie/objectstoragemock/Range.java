@@ -42,7 +42,7 @@ public interface Range {
   /** Can parse AWS style and "standard" {@code Range} header values. */
   @SuppressWarnings("unused") // JAX-RS factory function
   static Range fromString(String rangeString) {
-    requireNonNull(rangeString);
+    requireNonNull(rangeString, "range string argument is null");
 
     // parsing a range specification of format: "bytes=start-end" - multiple ranges not supported
     rangeString = rangeString.trim();

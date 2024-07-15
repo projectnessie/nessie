@@ -808,7 +808,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
 
   private boolean refRefsOutOfDate(SuppliedCommitIndex index) {
     Reference refRefs = persist.fetchReferenceForUpdate(REF_REFS.name());
-    return !index.pointer().equals(requireNonNull(refRefs).pointer());
+    return !index.pointer().equals(requireNonNull(refRefs, "internal refs missing").pointer());
   }
 
   @VisibleForTesting

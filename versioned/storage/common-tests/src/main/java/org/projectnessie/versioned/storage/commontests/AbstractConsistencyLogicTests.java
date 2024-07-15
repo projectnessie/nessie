@@ -1024,7 +1024,9 @@ public class AbstractConsistencyLogicTests {
       refRefs = persist.fetchReference(InternalRef.REF_REFS.name());
       refRefsHead =
           persist.fetchTypedObj(
-              requireNonNull(refRefs).pointer(), StandardObjType.COMMIT, CommitObj.class);
+              requireNonNull(refRefs, "internal refs missing").pointer(),
+              StandardObjType.COMMIT,
+              CommitObj.class);
       if (refRefsHead.referenceIndex() != null) {
         refsUntilRefIndex = refRefsHead.referenceIndex();
         break;
@@ -1046,7 +1048,9 @@ public class AbstractConsistencyLogicTests {
       refRefs = persist.fetchReference(InternalRef.REF_REFS.name());
       refRefsHead =
           persist.fetchTypedObj(
-              requireNonNull(refRefs).pointer(), StandardObjType.COMMIT, CommitObj.class);
+              requireNonNull(refRefs, "internal refs missing").pointer(),
+              StandardObjType.COMMIT,
+              CommitObj.class);
       if (!Objects.equals(refsUntilRefIndex, refRefsHead.referenceIndex())) {
         lostReferences.add(ref);
         break;

@@ -32,7 +32,7 @@ public final class S3Utils {
   private S3Utils() {}
 
   public static Optional<String> extractBucketName(URI uri) {
-    String scheme = requireNonNull(uri).getScheme();
+    String scheme = requireNonNull(uri, "URI argument missing").getScheme();
     switch (scheme) {
       case "s3":
       case "s3a":

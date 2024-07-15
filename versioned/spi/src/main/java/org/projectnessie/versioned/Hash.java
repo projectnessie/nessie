@@ -64,7 +64,7 @@ public abstract class Hash implements Ref {
    * @throws NullPointerException if {@code hash} is {@code null}
    */
   public static Hash of(@Nonnull String hash) {
-    requireNonNull(hash);
+    requireNonNull(hash, "hash string argument is null");
     int len = hash.length();
     checkArgument(
         len % 2 == 0 && len > 0, "hash length needs to be a multiple of two, was %s", len);
