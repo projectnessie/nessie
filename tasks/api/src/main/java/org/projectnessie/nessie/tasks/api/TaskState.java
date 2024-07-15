@@ -70,12 +70,15 @@ public interface TaskState {
   String message();
 
   /**
-   * An error code associated with this task state. Error code are meant to be interpreted by the
-   * {@link TaskBehavior} implementation that manages the related task.
+   * An error code associated with this task state. Error codes are machine-readable representations
+   * of failures and are meant to be interpreted by the {@link TaskBehavior} implementation that
+   * manages the related task.
    *
-   * <p>In general, error codes are intended to allow reporting task errors / exceptions to the
-   * caller the same way whether the task fails for the first time in the server that executed it,
-   * or it is reloaded from storage in another server.
+   * <p>On the other hand, the value of {@link #message()} is meant to be interpreted by humans.
+   *
+   * <p>Storing error codes in {@link TaskState} is intended to allow reporting task errors /
+   * exceptions to the caller the same way whether the task fails for the first time in the server
+   * that executed it, or it is reloaded from storage in another server.
    *
    * @see TaskBehavior#stateAsException(TaskObj)
    */
