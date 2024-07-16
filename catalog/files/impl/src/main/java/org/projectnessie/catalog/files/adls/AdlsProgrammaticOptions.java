@@ -99,6 +99,9 @@ public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptio
       Builder from(AdlsFileSystemOptions instance);
 
       @CanIgnoreReturnValue
+      Builder authType(AzureAuthType authType);
+
+      @CanIgnoreReturnValue
       Builder account(BasicCredentials account);
 
       @CanIgnoreReturnValue

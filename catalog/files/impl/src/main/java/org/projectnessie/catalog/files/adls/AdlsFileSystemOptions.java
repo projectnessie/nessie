@@ -22,6 +22,9 @@ import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface AdlsFileSystemOptions {
 
+  /** The authentication type to use. */
+  Optional<AzureAuthType> authType();
+
   /**
    * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"} and account key,
    * configured using the {@code name} and {@code secret} fields. If not specified, it will be
@@ -63,5 +66,12 @@ public interface AdlsFileSystemOptions {
     NONE,
     EXPONENTIAL_BACKOFF,
     FIXED_DELAY,
+  }
+
+  enum AzureAuthType {
+    NONE,
+    STORAGE_SHARED_KEY,
+    SAS_TOKEN,
+    APPLICATION_DEFAULT
   }
 }

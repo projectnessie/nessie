@@ -24,6 +24,9 @@ import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
   @Override
+  Optional<AzureAuthType> authType();
+
+  @Override
   Optional<BasicCredentials> account();
 
   @Override

@@ -84,13 +84,30 @@ public final class AdlsClientSupplier {
     clientBuilder.endpoint(
         fileSystemOptions.endpoint().orElse(location.getUri().resolve("/").toString()));
 
-    if (fileSystemOptions.sasToken().isPresent()) {
-      clientBuilder.sasToken(fileSystemOptions.sasToken().get().key());
-    } else if (fileSystemOptions.account().isPresent()) {
-      String accountKey = fileSystemOptions.account().get().secret();
-      clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
-    } else {
-      clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
+    AdlsFileSystemOptions.AzureAuthType authType =
+        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.NONE);
+    switch (authType) {
+      case STORAGE_SHARED_KEY:
+        String accountKey =
+            fileSystemOptions
+                .account()
+                .orElseThrow(() -> new IllegalStateException("account key missing"))
+                .secret();
+        clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
+        break;
+      case SAS_TOKEN:
+        clientBuilder.sasToken(
+            fileSystemOptions
+                .sasToken()
+                .orElseThrow(() -> new IllegalStateException("SAS token missing"))
+                .key());
+        break;
+      case APPLICATION_DEFAULT:
+        clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
+        break;
+      case NONE:
+      default:
+        throw new IllegalArgumentException("Unsupported auth type " + authType);
     }
 
     buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
