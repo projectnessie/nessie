@@ -16,20 +16,36 @@
 package org.projectnessie.catalog.formats.iceberg.nessie;
 
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.icebergSchemaAllTypes;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataBare;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataBareWithSchema;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataSimple;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataWithStatistics;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField.nestedField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.MIN_PARTITION_ID;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema.INITIAL_SCHEMA_ID;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.binaryType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.integerType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.listType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.longType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.mapType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.stringType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.structType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestamptzType;
 import static org.projectnessie.catalog.model.id.NessieIdHasher.nessieIdHasher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,6 +89,7 @@ import org.projectnessie.catalog.model.schema.types.NessieTypeSpec;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.catalog.model.snapshot.TableFormat;
+import org.projectnessie.model.ContentKey;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestNessieModelIceberg {
@@ -314,6 +331,197 @@ public class TestNessieModelIceberg {
     soft.assertThat(nessieIdHasher("NessieTypeSpec").hash(nessieType).generate())
         .isEqualTo(nessieIdHasher("NessieTypeSpec").hash(nessieType).generate())
         .isEqualTo(nessieIdHasher("NessieTypeSpec").hash(nessieAgain).generate());
+  }
+
+  static Stream<Arguments> icebergNested() {
+    return Stream.of(
+        //
+        // Simple case, just some columns
+        arguments(
+            IcebergSchema.builder()
+                .schemaId(11)
+                .addFields(
+                    nestedField(100, "key", false, binaryType(), null),
+                    nestedField(101, "value", false, binaryType(), null),
+                    nestedField(102, "topic", false, stringType(), null),
+                    nestedField(103, "partition", false, integerType(), null))
+                .build(),
+            IcebergSchema.builder()
+                .schemaId(INITIAL_SCHEMA_ID)
+                .addFields(
+                    nestedField(1, "key", false, binaryType(), null),
+                    nestedField(2, "value", false, binaryType(), null),
+                    nestedField(3, "topic", false, stringType(), null),
+                    nestedField(4, "partition", false, integerType(), null))
+                .build(),
+            4),
+        //
+        // Complex case, multiple columns, nested structures, last field has a complex type with the
+        // highest ID via a field-ID in a non-nested-field type
+        arguments(
+            IcebergSchema.builder()
+                .schemaId(42)
+                .addFields(
+                    nestedField(100, "key", false, binaryType(), null),
+                    nestedField(101, "value", false, binaryType(), null),
+                    nestedField(102, "topic", false, stringType(), null),
+                    nestedField(103, "partition", false, integerType(), null),
+                    nestedField(104, "offset", false, longType(), null),
+                    nestedField(105, "timestamp", false, timestamptzType(), null),
+                    nestedField(106, "timestampType", false, integerType(), null),
+                    nestedField(
+                        107,
+                        "headers",
+                        false,
+                        listType(
+                            108,
+                            structType(
+                                List.of(
+                                    nestedField(109, "key", false, stringType(), null),
+                                    nestedField(110, "value", false, stringType(), null)),
+                                null),
+                            false),
+                        null),
+                    nestedField(
+                        111,
+                        "fancy_properties",
+                        false,
+                        mapType(
+                            112,
+                            structType(
+                                List.of(
+                                    nestedField(
+                                        113,
+                                        "f1",
+                                        false,
+                                        listType(114, integerType(), false),
+                                        null)),
+                                null),
+                            115,
+                            structType(
+                                List.of(
+                                    nestedField(
+                                        116,
+                                        "struct",
+                                        false,
+                                        listType(
+                                            117,
+                                            structType(
+                                                List.of(
+                                                    nestedField(
+                                                        118, "key", false, stringType(), null),
+                                                    nestedField(
+                                                        119, "value", false, stringType(), null)),
+                                                null),
+                                            false),
+                                        null)),
+                                null),
+                            false),
+                        null),
+                    nestedField(
+                        120,
+                        "properties",
+                        false,
+                        mapType(121, stringType(), 122, stringType(), false),
+                        null))
+                .build(),
+            IcebergSchema.builder()
+                .schemaId(INITIAL_SCHEMA_ID)
+                .addFields(
+                    nestedField(1, "key", false, binaryType(), null),
+                    nestedField(2, "value", false, binaryType(), null),
+                    nestedField(3, "topic", false, stringType(), null),
+                    nestedField(4, "partition", false, integerType(), null),
+                    nestedField(5, "offset", false, longType(), null),
+                    nestedField(6, "timestamp", false, timestamptzType(), null),
+                    nestedField(7, "timestampType", false, integerType(), null),
+                    nestedField(
+                        8,
+                        "headers",
+                        false,
+                        listType(
+                            9,
+                            structType(
+                                List.of(
+                                    nestedField(10, "key", false, stringType(), null),
+                                    nestedField(11, "value", false, stringType(), null)),
+                                null),
+                            false),
+                        null),
+                    nestedField(
+                        12,
+                        "fancy_properties",
+                        false,
+                        mapType(
+                            13,
+                            structType(
+                                List.of(
+                                    nestedField(
+                                        14, "f1", false, listType(15, integerType(), false), null)),
+                                null),
+                            16,
+                            structType(
+                                List.of(
+                                    nestedField(
+                                        17,
+                                        "struct",
+                                        false,
+                                        listType(
+                                            18,
+                                            structType(
+                                                List.of(
+                                                    nestedField(
+                                                        19, "key", false, stringType(), null),
+                                                    nestedField(
+                                                        20, "value", false, stringType(), null)),
+                                                null),
+                                            false),
+                                        null)),
+                                null),
+                            false),
+                        null),
+                    nestedField(
+                        21,
+                        "properties",
+                        false,
+                        mapType(22, stringType(), 23, stringType(), false),
+                        null))
+                .build(),
+            // last field has a complex type with the highest ID 23 via a field-ID in a
+            // non-nested-field type
+            23));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void icebergNested(IcebergSchema schema, IcebergSchema expected, int expectedLastColumnId)
+      throws Exception {
+    Map<Integer, Integer> remappedFields = new HashMap<>();
+    IcebergSchema remapped = NessieModelIceberg.icebergInitialSchema(schema, remappedFields);
+
+    soft.assertThat(remapped).isEqualTo(expected);
+
+    String uuid = randomUUID().toString();
+
+    NessieTableSnapshot snapshot =
+        new IcebergTableMetadataUpdateState(
+                newIcebergTableSnapshot(uuid), ContentKey.of("foo"), false)
+            .applyUpdates(List.of(addSchema(schema, 0), setTrustedLocation("foo://bar/")))
+            .snapshot();
+    soft.assertThat(snapshot)
+        .extracting(NessieTableSnapshot::icebergLastColumnId)
+        .isEqualTo(expectedLastColumnId);
+
+    IcebergTableMetadata icebergMetadata =
+        NessieModelIceberg.nessieTableSnapshotToIceberg(snapshot, Optional.empty(), m -> {});
+    soft.assertThat(icebergMetadata)
+        .extracting(IcebergTableMetadata::lastColumnId)
+        .isEqualTo(expectedLastColumnId);
+    soft.assertThat(
+            icebergMetadata.schemas().stream()
+                .filter(s -> s.schemaId() == requireNonNull(icebergMetadata.currentSchemaId()))
+                .findFirst())
+        .contains(expected);
   }
 
   static Stream<IcebergType> icebergTypes() {

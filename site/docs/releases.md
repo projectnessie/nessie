@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.92.1 Release (July 13, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.92.1).
+
+### Fixes
+
+- Catalog: fix field-ID reassignment and last-column-id calculation
+
+### Commits
+* Catalog: Fix assignment of nested fields in a table's initial schema (#9085)
+* Update docs for CEL Authorization rules (#9078)
+* HTTP client: consistently close streams and responses (#9082)
+* HTTP client: remove hard-coded behavior for status >= 400 (#9071)
+* Gradle 8.9 post updates (#9075)
+* Use released Nessie image in docker-compose examples (#9070)
+
 ## 0.92.0 Release (July 11, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.92.0).
