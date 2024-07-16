@@ -69,7 +69,6 @@ public interface AdlsFileSystemOptions {
   }
 
   enum AzureAuthType {
-    NONE,
     STORAGE_SHARED_KEY,
     SAS_TOKEN,
     APPLICATION_DEFAULT

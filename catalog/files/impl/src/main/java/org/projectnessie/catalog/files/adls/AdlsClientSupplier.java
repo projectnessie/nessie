@@ -85,7 +85,7 @@ public final class AdlsClientSupplier {
         fileSystemOptions.endpoint().orElse(location.getUri().resolve("/").toString()));
 
     AdlsFileSystemOptions.AzureAuthType authType =
-        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.NONE);
+        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.APPLICATION_DEFAULT);
     switch (authType) {
       case STORAGE_SHARED_KEY:
         String accountKey =
@@ -105,7 +105,6 @@ public final class AdlsClientSupplier {
       case APPLICATION_DEFAULT:
         clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
         break;
-      case NONE:
       default:
         throw new IllegalArgumentException("Unsupported auth type " + authType);
     }

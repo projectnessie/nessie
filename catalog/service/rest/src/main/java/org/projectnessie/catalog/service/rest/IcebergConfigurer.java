@@ -38,6 +38,8 @@ import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
@@ -305,17 +307,28 @@ public class IcebergConfigurer {
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
     // FIXME send account key and token?
-    fileSystemOptions
-        .account()
-        .ifPresent(
-            key -> {
-              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, key.name());
-              configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_KEY, key.secret());
-            });
-    fileSystemOptions
-        .sasToken()
-        .ifPresent(
-            s -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + location.storageAccount(), s.key()));
+    AdlsFileSystemOptions.AzureAuthType authType =
+      fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.APPLICATION_DEFAULT);
+
+    switch (authType) {
+      case STORAGE_SHARED_KEY:
+        BasicCredentials basicCredentials =
+            fileSystemOptions
+                .account()
+                .orElseThrow(() -> new IllegalStateException("account key missing"));
+        configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, basicCredentials.name());
+        configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_KEY, basicCredentials.secret());
+        break;
+      case SAS_TOKEN:
+        KeySecret sasToken =
+          fileSystemOptions
+            .sasToken()
+            .orElseThrow(() -> new IllegalStateException("SAS token missing"));
+        configOverrides.put(ADLS_SAS_TOKEN_PREFIX + location.storageAccount(), sasToken.key());
+        break;
+      default:
+        break;
+    }
     fileSystemOptions
         .endpoint()
         .ifPresent(
