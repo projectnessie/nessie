@@ -270,24 +270,24 @@ Define environkent variables for catalog storage options.
 {{- include "nessie.secretToEnv" (list .s3.defaultOptions.accessKeySecret "awsAccessKeyId" "nessie.catalog.service.s3.default-options.access-key.name") }}
 {{- include "nessie.secretToEnv" (list .s3.defaultOptions.accessKeySecret "awsSecretAccessKey" "nessie.catalog.service.s3.default-options.access-key.secret") }}
 {{- range $bucket := .s3.buckets -}}
-{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsAccessKeyId" (printf "nessie.catalog.service.s3.buckets.\"%s\".access-key.name" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsSecretAccessKey" (printf "nessie.catalog.service.s3.buckets.\"%s\".access-key.secret" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsAccessKeyId" (printf "nessie.catalog.service.s3.buckets.%s.access-key.name" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsSecretAccessKey" (printf "nessie.catalog.service.s3.buckets.%s.access-key.secret" $bucket.name)) }}
 {{- end -}}
-{{- include "nessie.secretToEnv" (list .gcs.defaultOptions.authCredentialsJsonSecret "key" "nessie.catalog.service.gcs.default-options.auth-credentials-json.key") }}
+{{- include "nessie.secretToEnv" (list .gcs.defaultOptions.authCredentialsJsonSecret "key" "nessie.catalog.service.gcs.default-options.auth-credentials-json") }}
 {{- include "nessie.secretToEnv" (list .gcs.defaultOptions.oauth2TokenSecret "token" "nessie.catalog.service.gcs.default-options.oauth-token.token") }}
 {{- include "nessie.secretToEnv" (list .gcs.defaultOptions.oauth2TokenSecret "expiresAt" "nessie.catalog.service.gcs.default-options.oauth-token.expiresAt") }}
 {{- range $bucket := .gcs.buckets -}}
-{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "nessie.catalog.service.gcs.buckets.\"%s\".auth-credentials-json.key" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.token" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.expires-at" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "nessie.catalog.service.gcs.buckets.%s.auth-credentials-json" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "nessie.catalog.service.gcs.buckets.%s.oauth-token.token" $bucket.name)) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.%s.oauth-token.expires-at" $bucket.name)) }}
 {{- end -}}
 {{- include "nessie.secretToEnv" (list .adls.defaultOptions.accountSecret "accountName" "nessie.catalog.service.adls.default-options.account.name") }}
 {{- include "nessie.secretToEnv" (list .adls.defaultOptions.accountSecret "accountKey" "nessie.catalog.service.adls.default-options.account.secret") }}
-{{- include "nessie.secretToEnv" (list .adls.defaultOptions.sasTokenSecret "sasToken" "nessie.catalog.service.adls.default-options.sas-token.key") }}
+{{- include "nessie.secretToEnv" (list .adls.defaultOptions.sasTokenSecret "sasToken" "nessie.catalog.service.adls.default-options.sas-token") }}
 {{- range $filesystem := .adls.filesystems -}}
-{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountName" (printf "nessie.catalog.service.adls.file-systems.\"%s\".account.name" $filesystem.name)) }}
-{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountKey" (printf "nessie.catalog.service.adls.file-systems.\"%s\".account.secret" $filesystem.name)) }}
-{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "nessie.catalog.service.adls.file-systems.\"%s\".sas-token.key" $filesystem.name)) }}
+{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountName" (printf "nessie.catalog.service.adls.file-systems.%s.account.name" $filesystem.name)) }}
+{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountKey" (printf "nessie.catalog.service.adls.file-systems.%s.account.secret" $filesystem.name)) }}
+{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "nessie.catalog.service.adls.file-systems.%s.sas-token" $filesystem.name)) }}
 {{- end -}}
 {{- end -}}
 
@@ -302,11 +302,11 @@ Define an env var from secret key.
 {{- $secretName := get $secret "name" -}}
 {{- $secretKey := get $secret $key -}}
 {{- if (and $secretName $secretKey) -}}
-- name: {{ $envVarName }}
+- name: {{ $envVarName | quote }}
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
-      key: {{ $secretKey }}
+      name: {{ $secretName | quote }}
+      key: {{ $secretKey | quote }}
 {{ end -}}
 {{- end -}}
 {{- end -}}
