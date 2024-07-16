@@ -15,10 +15,10 @@
  */
 package org.projectnessie.server.catalog;
 
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -74,7 +74,11 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   protected Map<String, String> catalogOptions() {
-    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, WAREHOUSE_NAME);
+    return ImmutableMap.of(
+        CatalogProperties.WAREHOUSE_LOCATION,
+        WAREHOUSE_NAME,
+        "adls.sas-token.account.dfs.core.windows.net",
+        "token");
   }
 
   @AfterAll
