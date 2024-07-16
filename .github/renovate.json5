@@ -19,8 +19,15 @@
     // do not add any labels, because that conflicts with CI job restarts, causing the wrong CI run
     // to be cancelled in GitHub actions when the `labeled` type is used in e.g. `on.pull_request.types`.
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose", "github-actions"],
       labels: [],
+    },
+
+    {
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["major", "minor", "patch", "digest"],
+      automerge: true,
+      platformAutomerge: true,
     },
 
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
