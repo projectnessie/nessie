@@ -272,8 +272,7 @@ public class IcebergConfigurer {
     gcsBucketOptions
         .deleteBatchSize()
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
-    if (gcsBucketOptions.authType().isPresent()
-        && gcsBucketOptions.authType().get() == GcsBucketOptions.GcsAuthType.NONE) {
+    if (gcsBucketOptions.effectiveAuthType() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
     }
     return configOverrides;

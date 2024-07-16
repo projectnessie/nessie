@@ -174,7 +174,10 @@ public interface S3BucketOptions {
    */
   Optional<String> externalId();
 
-  /** Controls the authentication mode for Catalog clients accessing this bucket. */
+  /**
+   * Controls the authentication mode for Catalog clients accessing this bucket. If not set, the
+   * default is {@code REQUEST_SIGNING}.
+   */
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
 
   default S3ClientAuthenticationMode effectiveClientAuthenticationMode() {
