@@ -105,7 +105,7 @@ junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
-mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.4.0" }
+mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.4.1" }
 maven-resolver-supplier = { module = "org.apache.maven.resolver:maven-resolver-supplier", version.ref = "mavenResolver" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.13.2" }
 microprofile-contextpropagation-api = { module = "org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api", version = "1.3" }
