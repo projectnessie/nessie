@@ -19,6 +19,8 @@ import static org.jline.utils.AttributedStyle.CYAN;
 import static org.jline.utils.AttributedStyle.GREEN;
 import static org.jline.utils.AttributedStyle.YELLOW;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintWriter;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
@@ -31,16 +33,31 @@ public class JsonPretty {
   private final Terminal terminal;
   private final PrintWriter writer;
 
-  private final AttributedStyle styleBool = AttributedStyle.DEFAULT.bold().foreground(YELLOW);
-  private final AttributedStyle styleNull = AttributedStyle.DEFAULT.bold().foreground(YELLOW);
-  private final AttributedStyle styleString = AttributedStyle.DEFAULT.bold().foreground(GREEN);
-  private final AttributedStyle styleNumber = AttributedStyle.DEFAULT.foreground(CYAN);
-  private final AttributedStyle styleSeparator = AttributedStyle.DEFAULT;
-  private final AttributedStyle styleBracketBrace = AttributedStyle.DEFAULT;
+  private static final AttributedStyle STYLE_BOOL =
+      AttributedStyle.DEFAULT.bold().foreground(YELLOW);
+  private static final AttributedStyle STYLE_NULL =
+      AttributedStyle.DEFAULT.bold().foreground(YELLOW);
+  private static final AttributedStyle STYLE_STRING =
+      AttributedStyle.DEFAULT.bold().foreground(GREEN);
+  private static final AttributedStyle STYLE_NUMBER = AttributedStyle.DEFAULT.foreground(CYAN);
+  private static final AttributedStyle STYLE_SEPARATOR = AttributedStyle.DEFAULT;
+  private static final AttributedStyle STYLE_BRACKET_BRACE = AttributedStyle.DEFAULT;
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   public JsonPretty(Terminal terminal, PrintWriter writer) {
     this.terminal = terminal;
     this.writer = writer;
+  }
+
+  public void prettyPrintObject(Object object) {
+    String str = null;
+    try {
+      str = MAPPER.writeValueAsString(object);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    prettyPrint(str);
   }
 
   public void prettyPrint(String jsonString) {
@@ -60,7 +77,7 @@ public class JsonPretty {
           //
         case OPEN_BRACKET:
         case OPEN_BRACE:
-          print(t, styleBracketBrace);
+          print(t, STYLE_BRACKET_BRACE);
           indent++;
           newLine(indent);
           break;
@@ -68,28 +85,28 @@ public class JsonPretty {
         case CLOSE_BRACE:
           indent--;
           newLine(indent);
-          print(t, styleBracketBrace);
+          print(t, STYLE_BRACKET_BRACE);
           break;
         case COMMA:
-          print(t, styleSeparator);
+          print(t, STYLE_SEPARATOR);
           newLine(indent);
           break;
         case COLON:
-          print(t, styleSeparator);
+          print(t, STYLE_SEPARATOR);
           printSpace();
           break;
         case NULL:
-          print(t, styleNull);
+          print(t, STYLE_NULL);
           break;
         case TRUE:
         case FALSE:
-          print(t, styleBool);
+          print(t, STYLE_BOOL);
           break;
         case NUMBER:
-          print(t, styleNumber);
+          print(t, STYLE_NUMBER);
           break;
         case STRING_LITERAL:
-          print(t, styleString);
+          print(t, STYLE_STRING);
           break;
           //
         case SINGLE_LINE_COMMENT:

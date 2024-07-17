@@ -163,6 +163,73 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   }
 }
 
+INJECT RevertContentStatement : implements RevertContentCommandSpec;
+INJECT RevertContentStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+
+  @Override
+  public boolean isDryRun() {
+    return getNamedChild("dryRun")!=null;
+  }
+
+  @Override
+  public boolean isAllowDeletes() {
+    return getNamedChild("allowDeletes")!=null;
+  }
+
+  @Override
+  public String getRef() {
+    return stringValueOf("ref");
+  }
+
+  @Override
+  public String getRefType() {
+    Node type = getNamedChild("type");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getSourceRef() {
+    return stringValueOf("sourceRef");
+  }
+
+  @Override
+  public String getSourceRefType() {
+    Node type = getNamedChild("sourceType");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getSourceRefTimestampOrHash() {
+    return stringValueOf("sourceAt");
+  }
+
+  @Override
+  public List<String> getContentKeys() {
+    List<String> contentKeys = new ArrayList<>();
+    List<Node> children = children();
+    for (int i = 0; i < children.size(); i++) {
+      Node child = children.get(i);
+      if (child.getType() == OF) {
+        for (i++; i < children.size(); ) {
+          Node key = children.get(i++);
+
+          contentKeys.add(
+            ((IdentifierOrLiteral)key).getStringValue()
+          );
+
+          if (children.size() == i || children.get(i++).getType() != AND) {
+              break;
+          }
+        }
+        break;
+      }
+    }
+    return contentKeys;
+  }
+}
+
 INJECT CreateReferenceStatement : implements CreateReferenceCommandSpec;
 INJECT CreateReferenceStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;

@@ -90,7 +90,7 @@ public class TestSyntax {
                 + "        {PRE:[}\n"
                 + "                {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG}\n"
                 + "            {POST:]}\n"
-                + "        {SEP:|} {TERMINAL:MERGE} {SEP:|} {TERMINAL:HELP} {SEP:|} {TERMINAL:EXIT} {SEP:|} {TERMINAL:LICENSE}\n"
+                + "        {SEP:|} {TERMINAL:MERGE} {SEP:|} {TERMINAL:REVERT} {SEP:|} {TERMINAL:HELP} {SEP:|} {TERMINAL:EXIT} {SEP:|} {TERMINAL:LICENSE}\n"
                 + "    {POST:]}\n"
                 + "{POST:\n"
                 + "}"),
@@ -110,6 +110,32 @@ public class TestSyntax {
                 + "{PRE:[} {TERMINAL:BEHAVIORS} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind}\n"
                 + "    {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {POST:}}\n"
                 + "    {POST:]}\n"
+                + "{POST:\n"
+                + "}"),
+        arguments(
+            "RevertContentStatement",
+            "{TERMINAL:REVERT} {TERMINAL:CONTENT}\n"
+                + "{PRE:[} {TERMINAL:DRY} {POST:]}\n"
+                + "{TERMINAL:OF} {NON_TERMINAL:ContentKey}\n"
+                + "{PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {POST:}}\n"
+                + "{PRE:[} {TERMINAL:ON}\n"
+                + "    {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]}\n"
+                + "    {NON_TERMINAL:ExistingReference} {POST:]}\n"
+                + "{TERMINAL:TO} {TERMINAL:STATE}\n"
+                + "    {TERMINAL:ON}\n"
+                + "    {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]}\n"
+                + "    {NON_TERMINAL:ExistingReference}\n"
+                + "    {PRE:[} {TERMINAL:AT}\n"
+                + "        {PRE:[}\n"
+                + "                {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT}\n"
+                + "            {POST:]}\n"
+                + "        {NON_TERMINAL:TimestampOrCommit} {POST:]}\n"
+                + "    {SEP:|} {TERMINAL:AT}\n"
+                + "    {PRE:[}\n"
+                + "            {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT}\n"
+                + "        {POST:]}\n"
+                + "    {NON_TERMINAL:TimestampOrCommit}\n"
+                + "{PRE:[} {TERMINAL:ALLOW} {TERMINAL:DELETES} {POST:]}\n"
                 + "{POST:\n"
                 + "}"));
   }

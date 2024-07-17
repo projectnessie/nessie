@@ -16,21 +16,21 @@
 package org.projectnessie.nessie.cli.cmdspec;
 
 import jakarta.annotation.Nullable;
-import java.util.Map;
+import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface MergeBranchCommandSpec extends RefWithTypeCommandSpec, RefWithHashCommandSpec {
+public interface RevertContentCommandSpec extends RefWithTypeCommandSpec {
   default CommandType commandType() {
-    return CommandType.MERGE_BRANCH;
+    return CommandType.REVERT_CONTENT;
   }
 
   @Nullable
   @Override
   @Value.Default
   default Node sourceNode() {
-    return RefWithHashCommandSpec.super.sourceNode();
+    return RefWithTypeCommandSpec.super.sourceNode();
   }
 
   @Value.Default
@@ -38,22 +38,26 @@ public interface MergeBranchCommandSpec extends RefWithTypeCommandSpec, RefWithH
     return false;
   }
 
-  @Override
-  @Nullable
-  String getRefType();
+  @Value.Default
+  default boolean isAllowDeletes() {
+    return false;
+  }
 
+  @Nullable
   @Override
   String getRef();
 
   @Nullable
-  @Override
-  String getRefTimestampOrHash();
+  String getRefType();
 
   @Nullable
-  String getInto();
+  String getSourceRef();
 
   @Nullable
-  String getDefaultMergeBehavior();
+  String getSourceRefType();
 
-  Map<String, String> getKeyMergeBehaviors();
+  @Nullable
+  String getSourceRefTimestampOrHash();
+
+  List<String> getContentKeys();
 }

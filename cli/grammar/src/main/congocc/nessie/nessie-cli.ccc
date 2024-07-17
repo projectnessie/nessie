@@ -57,6 +57,7 @@ Statement
   | AlterStatement
   | DropStatement
   | AssignReferenceStatement
+  | RevertContentStatement
   | UseReferenceStatement
   | ListStatement
   | ShowStatement
@@ -77,6 +78,7 @@ HelpStatement
           TokenType.SHOW,
           TokenType.ASSIGN,
           TokenType.MERGE,
+          TokenType.REVERT,
           TokenType.HELP,
           TokenType.EXIT,
           TokenType.LICENSE
@@ -113,6 +115,7 @@ HelpStatement
              { setOptionalNextTokenTypes(); }
            ]
          | <MERGE>
+         | <REVERT>
          | <HELP>
          | <EXIT>
          | <LICENSE>
@@ -188,6 +191,69 @@ CreateNamespaceStatement
           Value
           { setOptionalNextTokenTypes(TokenType.AND); }
         )*
+      ]
+    ;
+
+RevertContentStatement
+    : <REVERT>
+      <CONTENT>
+      { setOptionalNextTokenTypes(TokenType.DRY); }
+      [ /dryRun/=<DRY>
+        { setOptionalNextTokenTypes(); }
+      ]
+      <OF>
+      { setOptionalNextTokenTypes();
+        completionType = CompletionType.CONTENT_KEY; }
+      ContentKey
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.ON, TokenType.AND); }
+      ( <AND>
+        { completionType = CompletionType.CONTENT_KEY;
+          setOptionalNextTokenTypes(); }
+        ContentKey
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.ON, TokenType.AND); }
+      )*
+      [ <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH); }
+        [ /type/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /ref/=ExistingReference
+        { completionType = CompletionType.NONE; }
+      ]
+      <TO> <STATE>
+      (
+        <ON>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
+        [ /sourceType/=ReferenceType
+          { setOptionalNextTokenTypes(); }
+          ]
+        { completionType = CompletionType.REFERENCE_NAME; }
+        /sourceRef/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.ALLOW, TokenType.AT); }
+        [ <AT>
+          { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+          [ <TIMESTAMP> | <COMMIT>
+            { setOptionalNextTokenTypes(); }
+          ]
+          /sourceAt/=TimestampOrCommit
+          { setOptionalNextTokenTypes(TokenType.ALLOW); }
+        ]
+      |
+        <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /sourceAt/=TimestampOrCommit
+        { setOptionalNextTokenTypes(TokenType.ALLOW); }
+      )
+      [ <ALLOW>
+        { setOptionalNextTokenTypes(); }
+        /allowDeletes/=<DELETES>
       ]
     ;
 

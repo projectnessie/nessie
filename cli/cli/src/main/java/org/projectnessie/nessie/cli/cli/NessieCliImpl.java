@@ -466,7 +466,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       errMsg
           .append(e.toString(), STYLE_ERROR_HIGHLIGHT)
           .append('\n')
-          .append(stackTrace, AttributedStyle.DEFAULT.italic().bold());
+          .append(stackTrace, STYLE_ITALIC_BOLD);
     } else {
       errMsg
           .append(e.getClass().getSimpleName() + ": ", STYLE_ERROR_DELIGHT)
