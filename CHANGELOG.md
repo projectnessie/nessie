@@ -27,6 +27,7 @@ as necessary. Empty sections will not end in the release notes.
 
 - GC: Fix behavior of cutoff policy "num commits", it was 'off by one' and considered the n-th commit as non-live
   vs the n-th commit as the last live one.
+- GC: Record failed "sweep"/"expire" runs in the repository. Before this fix, failures were reported on the console.
 - Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
 
 ### Commits
