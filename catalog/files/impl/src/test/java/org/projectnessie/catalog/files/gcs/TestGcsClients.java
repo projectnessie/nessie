@@ -46,18 +46,18 @@ public class TestGcsClients extends AbstractClients {
 
     HttpTransportFactory httpTransportFactory = buildSharedHttpTransportFactory();
 
-    GcsProgrammaticOptions.Builder gcsOptions =
-        GcsProgrammaticOptions.builder()
+    ImmutableGcsProgrammaticOptions.Builder gcsOptions =
+        ImmutableGcsProgrammaticOptions.builder()
             .putBuckets(
                 BUCKET_1,
-                GcsProgrammaticOptions.GcsPerBucketOptions.builder()
+                ImmutableGcsNamedBucketOptions.builder()
                     .host(server1.getGcsBaseUri())
                     .authType(GcsBucketOptions.GcsAuthType.NONE)
                     .build());
     if (server2 != null) {
       gcsOptions.putBuckets(
           BUCKET_2,
-          GcsProgrammaticOptions.GcsPerBucketOptions.builder()
+          ImmutableGcsNamedBucketOptions.builder()
               .host(server2.getGcsBaseUri())
               .authType(GcsBucketOptions.GcsAuthType.NONE)
               .build());

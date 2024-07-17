@@ -16,6 +16,10 @@ as necessary. Empty sections will not end in the release notes.
   `nessie.catalog.service.s3.throttled-retry-after` to
   `nessie.catalog.error-handling.throttled-retry-after`. The old property name is ignored.
 
+- Helm chart: a few ADLS-specific options under `catalog.storage.adls` were incorrectly placed and
+  therefore effectively ignored by Nessie; if you are using ADLS, please re-check your configuration
+  and adjust it accordingly.
+
 ### New Features
 
 - CLI: New `REVERT CONTENT` command to update one or more tables or views to a previous state.

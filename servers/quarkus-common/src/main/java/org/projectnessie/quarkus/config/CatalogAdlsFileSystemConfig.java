@@ -16,38 +16,12 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
-import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 
-public interface CatalogAdlsFileSystemOptions extends AdlsFileSystemOptions {
-  @Override
-  Optional<BasicCredentials> account();
-
+public interface CatalogAdlsFileSystemConfig extends AdlsFileSystemOptions {
   @Override
   @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> sasToken();
-
-  @Override
-  Optional<String> endpoint();
-
-  @Override
-  Optional<String> externalEndpoint();
-
-  @Override
-  Optional<AdlsRetryStrategy> retryPolicy();
-
-  @Override
-  Optional<Integer> maxRetries();
-
-  @Override
-  Optional<Duration> tryTimeout();
-
-  @Override
-  Optional<Duration> retryDelay();
-
-  @Override
-  Optional<Duration> maxRetryDelay();
 }

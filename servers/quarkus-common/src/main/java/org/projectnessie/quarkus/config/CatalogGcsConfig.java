@@ -16,11 +16,8 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsConfig;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
@@ -35,45 +32,12 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  * client.
  */
 @ConfigMapping(prefix = "nessie.catalog.service.gcs")
-public interface CatalogGcsConfig extends GcsConfig, GcsOptions<CatalogGcsBucketConfig> {
-
-  @Override
-  @ConfigPropertyName("bucket-name")
-  Map<String, CatalogGcsBucketConfig> buckets();
+public interface CatalogGcsConfig extends GcsConfig, GcsOptions {
 
   @Override
   Optional<CatalogGcsBucketConfig> defaultOptions();
 
   @Override
-  Optional<Duration> readTimeout();
-
-  @Override
-  Optional<Duration> connectTimeout();
-
-  @Override
-  OptionalInt maxAttempts();
-
-  @Override
-  Optional<Duration> logicalTimeout();
-
-  @Override
-  Optional<Duration> totalTimeout();
-
-  @Override
-  Optional<Duration> initialRetryDelay();
-
-  @Override
-  Optional<Duration> maxRetryDelay();
-
-  @Override
-  OptionalDouble retryDelayMultiplier();
-
-  @Override
-  Optional<Duration> initialRpcTimeout();
-
-  @Override
-  Optional<Duration> maxRpcTimeout();
-
-  @Override
-  OptionalDouble rpcTimeoutMultiplier();
+  @ConfigPropertyName("bucket-name")
+  Map<String, CatalogGcsNamedBucketConfig> buckets();
 }

@@ -39,7 +39,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -65,10 +64,10 @@ public class AdlsClientResourceBench {
       AdlsConfig adlsConfig = AdlsConfig.builder().build();
       HttpClient httpClient = AdlsClients.buildSharedHttpClient(adlsConfig);
 
-      AdlsOptions<AdlsFileSystemOptions> adlsOptions =
-          AdlsProgrammaticOptions.builder()
+      AdlsProgrammaticOptions adlsOptions =
+          ImmutableAdlsProgrammaticOptions.builder()
               .defaultOptions(
-                  AdlsPerFileSystemOptions.builder()
+                  ImmutableAdlsNamedFileSystemOptions.builder()
                       .account(basicCredentials("foo", "foo"))
                       .sasToken(keySecret("foo"))
                       .endpoint(server.getAdlsGen2BaseUri().toString())

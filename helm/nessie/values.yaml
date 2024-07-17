@@ -372,41 +372,10 @@ catalog:
 
       # Global ADLS settings. Can be overridden on a per-filesystem basis below.
       defaultOptions:
-        # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
-        # must be set. If both are set, sasTokenSecret takes precedence.
-        accountSecret:
-          # -- Name of the secret containing the account name and key.
-          name: ~
-          # -- Secret key containing the fully-qualified account name, e.g. "myaccount.dfs.core.windows.net".
-          accountName: ~
-          # -- Secret key containing the account key.
-          accountKey: ~
-
-        # -- A secret containing the SAS token to use. Either this option or accountSecret must
-        # be set. If both are set, sasTokenSecret takes precedence.
-        sasTokenSecret:
-          # -- Name of the secret containing the SAS token.
-          name: ~
-          # -- Secret key containing the SAS token.
-          sasToken: ~
-
         # -- Custom HTTP endpoint. In case clients need to use a different URI, use externalEndpoint.
         endpoint: ~
-
         # -- Custom HTTP endpoint to be used by clients. If not set, the endpoint value is used.
         externalEndpoint: ~
-
-      # -- Per-filesystem ADLS settings. Override the general settings above.
-      filesystems: []
-      # - name: filesystem1
-      #   endpoint: http://localhost/adlsgen2/bucket
-      #   accountSecret:
-      #     name: adls-account-secret
-      #     accountName: accountName
-      #     accountKey: accountKeyRef
-
-      # -- ADLS transport settings. Not overridable on a per-bucket basis.
-      transport:
         # -- The retry strategy to use. Valid values are: NONE, EXPONENTIAL_BACKOFF, FIXED_DELAY.
         # The default is EXPONENTIAL_BACKOFF.
         retryPolicy: ~
@@ -425,6 +394,34 @@ catalog:
         # PT120s (120 seconds). Must be a valid ISO duration. Valid if retryPolicy is
         # EXPONENTIAL_BACKOFF.
         maxRetryDelay: ~
+        # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
+        # must be set. If both are set, sasTokenSecret takes precedence.
+        accountSecret:
+          # -- Name of the secret containing the account name and key.
+          name: ~
+          # -- Secret key containing the fully-qualified account name, e.g. "myaccount.dfs.core.windows.net".
+          accountName: ~
+          # -- Secret key containing the account key.
+          accountKey: ~
+        # -- A secret containing the SAS token to use. Either this option or accountSecret must
+        # be set. If both are set, sasTokenSecret takes precedence.
+        sasTokenSecret:
+          # -- Name of the secret containing the SAS token.
+          name: ~
+          # -- Secret key containing the SAS token.
+          sasToken: ~
+
+      # -- Per-filesystem ADLS settings. Override the general settings above.
+      filesystems: []
+      # - name: filesystem1
+      #   endpoint: http://localhost/adlsgen2/bucket
+      #   accountSecret:
+      #     name: adls-account-secret
+      #     accountName: accountName
+      #     accountKey: accountKeyRef
+
+      # -- ADLS transport settings. Not overridable on a per-bucket basis.
+      transport:
         # -- The default maximum connection pool size is determined by the underlying HTTP client.
         # Not overridable on a per-filesystem basis.
         maxHttpConnections: ~

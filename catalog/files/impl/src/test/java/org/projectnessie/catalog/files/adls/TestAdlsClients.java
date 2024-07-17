@@ -45,18 +45,18 @@ public class TestAdlsClients extends AbstractClients {
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
     HttpClient httpClient = AdlsClients.buildSharedHttpClient(AdlsConfig.builder().build());
 
-    AdlsProgrammaticOptions.Builder adlsOptions =
-        AdlsProgrammaticOptions.builder()
+    ImmutableAdlsProgrammaticOptions.Builder adlsOptions =
+        ImmutableAdlsProgrammaticOptions.builder()
             .putFileSystems(
                 BUCKET_1,
-                AdlsProgrammaticOptions.AdlsPerFileSystemOptions.builder()
+                ImmutableAdlsNamedFileSystemOptions.builder()
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
                     .account(basicCredentials("accountName", "accountKey"))
                     .build());
     if (server2 != null) {
       adlsOptions.putFileSystems(
           BUCKET_2,
-          AdlsProgrammaticOptions.AdlsPerFileSystemOptions.builder()
+          ImmutableAdlsNamedFileSystemOptions.builder()
               .endpoint(server2.getAdlsGen2BaseUri().toString())
               .account(basicCredentials("accountName", "accountKey"))
               .build());

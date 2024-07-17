@@ -151,6 +151,7 @@ Apply S3 catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
+{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
 {{- if .region -}}{{- $_ := set $map ( print $prefix "region" ) .region -}}{{- end -}}
 {{- if .endpoint -}}{{- $_ := set $map ( print $prefix "endpoint" ) .endpoint -}}{{- end -}}
 {{- if .externalEndpoint -}}{{- $_ := set $map ( print $prefix "external-endpoint" ) .externalEndpoint -}}{{- end -}}
@@ -199,6 +200,7 @@ Apply GCS catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
+{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
 {{- if .host -}}{{- $_ := set $map ( print $prefix "host" ) .host -}}{{- end -}}
 {{- if .externalHost -}}{{- $_ := set $map ( print $prefix "external-host" ) .externalHost -}}{{- end -}}
 {{- if .userProject -}}{{- $_ := set $map ( print $prefix "user-project" ) .userProject -}}{{- end -}}
@@ -223,11 +225,6 @@ Apply ADLS catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- if .transport -}}
-{{- if .transport.retryPolicy -}}{{- $_ := set $map ( print $prefix "retry-policy" ) .transport.retryPolicy -}}{{- end -}}
-{{- if .transport.maxRetries -}}{{- $_ := set $map ( print $prefix "max-retries" ) .transport.maxRetries -}}{{- end -}}
-{{- if .transport.tryTimeout -}}{{- $_ := set $map ( print $prefix "try-timeout" ) .transport.tryTimeout -}}{{- end -}}
-{{- if .transport.retryDelay -}}{{- $_ := set $map ( print $prefix "retry-delay" ) .transport.retryDelay -}}{{- end -}}
-{{- if .transport.maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .transport.maxRetryDelay -}}{{- end -}}
 {{- if .transport.maxHttpConnections -}}{{- $_ := set $map ( print $prefix "max-http-connections" ) .transport.maxHttpConnections -}}{{- end -}}
 {{- if .transport.connectTimeout -}}{{- $_ := set $map ( print $prefix "connect-timeout" ) .transport.connectTimeout -}}{{- end -}}
 {{- if .transport.readTimeout -}}{{- $_ := set $map ( print $prefix "read-timeout" ) .transport.readTimeout -}}{{- end -}}
@@ -245,20 +242,14 @@ Apply ADLS catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
-{{- if .transport -}}
-{{- if .transport.retryPolicy -}}{{- $_ := set $map ( print $prefix "retry-policy" ) .transport.retryPolicy -}}{{- end -}}
-{{- if .transport.maxRetries -}}{{- $_ := set $map ( print $prefix "max-retries" ) .transport.maxRetries -}}{{- end -}}
-{{- if .transport.tryTimeout -}}{{- $_ := set $map ( print $prefix "try-timeout" ) .transport.tryTimeout -}}{{- end -}}
-{{- if .transport.retryDelay -}}{{- $_ := set $map ( print $prefix "retry-delay" ) .transport.retryDelay -}}{{- end -}}
-{{- if .transport.maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .transport.maxRetryDelay -}}{{- end -}}
-{{- if .transport.maxHttpConnections -}}{{- $_ := set $map ( print $prefix "max-http-connections" ) .transport.maxHttpConnections -}}{{- end -}}
-{{- if .transport.connectTimeout -}}{{- $_ := set $map ( print $prefix "connect-timeout" ) .transport.connectTimeout -}}{{- end -}}
-{{- if .transport.readTimeout -}}{{- $_ := set $map ( print $prefix "read-timeout" ) .transport.readTimeout -}}{{- end -}}
-{{- if .transport.writeTimeout -}}{{- $_ := set $map ( print $prefix "write-timeout" ) .transport.writeTimeout -}}{{- end -}}
-{{- if .transport.connectionIdleTimeout -}}{{- $_ := set $map ( print $prefix "connection-idle-timeout" ) .transport.connectionIdleTimeout -}}{{- end -}}
-{{- if .transport.readBlockSize -}}{{- $_ := set $map ( print $prefix "read-block-size" ) .transport.readBlockSize -}}{{- end -}}
-{{- if .transport.writeBlockSize -}}{{- $_ := set $map ( print $prefix "write-block-size" ) .transport.writeBlockSize -}}{{- end -}}
-{{- end -}}
+{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
+{{- if .endpoint -}}{{- $_ := set $map ( print $prefix "endpoint" ) .endpoint -}}{{- end -}}
+{{- if .externalEndpoint -}}{{- $_ := set $map ( print $prefix "external-endpoint" ) .externalEndpoint -}}{{- end -}}
+{{- if .retryPolicy -}}{{- $_ := set $map ( print $prefix "retry-policy" ) .retryPolicy -}}{{- end -}}
+{{- if .maxRetries -}}{{- $_ := set $map ( print $prefix "max-retries" ) .maxRetries -}}{{- end -}}
+{{- if .tryTimeout -}}{{- $_ := set $map ( print $prefix "try-timeout" ) .tryTimeout -}}{{- end -}}
+{{- if .retryDelay -}}{{- $_ := set $map ( print $prefix "retry-delay" ) .retryDelay -}}{{- end -}}
+{{- if .maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .maxRetryDelay -}}{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -268,25 +259,25 @@ Define environkent variables for catalog storage options.
 {{- define "nessie.catalogStorageEnv" -}}
 {{- include "nessie.secretToEnv" (list .s3.defaultOptions.accessKeySecret "awsAccessKeyId" "nessie.catalog.service.s3.default-options.access-key.name") }}
 {{- include "nessie.secretToEnv" (list .s3.defaultOptions.accessKeySecret "awsSecretAccessKey" "nessie.catalog.service.s3.default-options.access-key.secret") }}
-{{- range $bucket := .s3.buckets -}}
-{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsAccessKeyId" (printf "nessie.catalog.service.s3.buckets.\"%s\".access-key.name" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsSecretAccessKey" (printf "nessie.catalog.service.s3.buckets.\"%s\".access-key.secret" $bucket.name)) }}
+{{- range $i, $bucket := .s3.buckets -}}
+{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsAccessKeyId" (printf "nessie.catalog.service.s3.buckets.bucket%d.access-key.name" (add $i 1))) }}
+{{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsSecretAccessKey" (printf "nessie.catalog.service.s3.buckets.bucket%d.access-key.secret" (add $i 1))) }}
 {{- end -}}
-{{- include "nessie.secretToEnv" (list .gcs.defaultOptions.authCredentialsJsonSecret "key" "nessie.catalog.service.gcs.default-options.auth-credentials-json.key") }}
+{{- include "nessie.secretToEnv" (list .gcs.defaultOptions.authCredentialsJsonSecret "key" "nessie.catalog.service.gcs.default-options.auth-credentials-json") }}
 {{- include "nessie.secretToEnv" (list .gcs.defaultOptions.oauth2TokenSecret "token" "nessie.catalog.service.gcs.default-options.oauth-token.token") }}
 {{- include "nessie.secretToEnv" (list .gcs.defaultOptions.oauth2TokenSecret "expiresAt" "nessie.catalog.service.gcs.default-options.oauth-token.expiresAt") }}
-{{- range $bucket := .gcs.buckets -}}
-{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "nessie.catalog.service.gcs.buckets.\"%s\".auth-credentials-json.key" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.token" $bucket.name)) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.\"%s\".oauth-token.expires-at" $bucket.name)) }}
+{{- range $i, $bucket := .gcs.buckets -}}
+{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "nessie.catalog.service.gcs.buckets.bucket%d.auth-credentials-json" (add $i 1))) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "nessie.catalog.service.gcs.buckets.bucket%d.oauth-token.token" (add $i 1))) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "nessie.catalog.service.gcs.buckets.bucket%d.oauth-token.expires-at" (add $i 1))) }}
 {{- end -}}
 {{- include "nessie.secretToEnv" (list .adls.defaultOptions.accountSecret "accountName" "nessie.catalog.service.adls.default-options.account.name") }}
 {{- include "nessie.secretToEnv" (list .adls.defaultOptions.accountSecret "accountKey" "nessie.catalog.service.adls.default-options.account.secret") }}
-{{- include "nessie.secretToEnv" (list .adls.defaultOptions.sasTokenSecret "sasToken" "nessie.catalog.service.adls.default-options.sas-token.key") }}
-{{- range $filesystem := .adls.filesystems -}}
-{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountName" (printf "nessie.catalog.service.adls.file-systems.\"%s\".account.name" $filesystem.name)) }}
-{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountKey" (printf "nessie.catalog.service.adls.file-systems.\"%s\".account.secret" $filesystem.name)) }}
-{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "nessie.catalog.service.adls.file-systems.\"%s\".sas-token.key" $filesystem.name)) }}
+{{- include "nessie.secretToEnv" (list .adls.defaultOptions.sasTokenSecret "sasToken" "nessie.catalog.service.adls.default-options.sas-token") }}
+{{- range $i, $filesystem := .adls.filesystems -}}
+{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountName" (printf "nessie.catalog.service.adls.file-systems.filesystem%d.account.name" (add $i 1))) }}
+{{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountKey" (printf "nessie.catalog.service.adls.file-systems.filesystem%d.account.secret" (add $i 1))) }}
+{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "nessie.catalog.service.adls.file-systems.filesystem%d.sas-token" (add $i 1))) }}
 {{- end -}}
 {{- end -}}
 
@@ -301,11 +292,11 @@ Define an env var from secret key.
 {{- $secretName := get $secret "name" -}}
 {{- $secretKey := get $secret $key -}}
 {{- if (and $secretName $secretKey) -}}
-- name: {{ $envVarName }}
+- name: {{ $envVarName | quote }}
   valueFrom:
     secretKeyRef:
-      name: {{ $secretName }}
-      key: {{ $secretKey }}
+      name: {{ $secretName | quote }}
+      key: {{ $secretKey | quote }}
 {{ end -}}
 {{- end -}}
 {{- end -}}

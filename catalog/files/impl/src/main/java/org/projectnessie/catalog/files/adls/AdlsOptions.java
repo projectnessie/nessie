@@ -24,14 +24,13 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
-import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions> {
+public interface AdlsOptions {
 
   /**
    * For custom ADLS configuration options, consult javadocs for {@code
@@ -50,50 +49,36 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions> {
    * this one.
    */
   @ConfigItem(section = "default-options", firstIsSectionDoc = true)
-  Optional<PER_FILE_SYSTEM> defaultOptions();
+  Optional<? extends AdlsFileSystemOptions> defaultOptions();
 
   /** ADLS file-system specific options, per file system name. */
   @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("filesystem-name")
-  Map<String, PER_FILE_SYSTEM> fileSystems();
+  Map<String, ? extends AdlsNamedFileSystemOptions> fileSystems();
 
-  default AdlsFileSystemOptions effectiveOptionsForFileSystem(
-      Optional<String> filesystemName, SecretsProvider secretsProvider) {
-    if (filesystemName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
-    }
-    String name = filesystemName.get();
-    AdlsFileSystemOptions perBucket = fileSystems().get(name);
-    if (perBucket == null) {
-      return resolveSecrets(name, null, secretsProvider);
-    }
-
-    return resolveSecrets(name, perBucket, secretsProvider);
-  }
-
-  List<SecretAttribute<AdlsFileSystemOptions, AdlsPerFileSystemOptions.Builder, ?>>
+  List<SecretAttribute<AdlsFileSystemOptions, ImmutableAdlsNamedFileSystemOptions.Builder, ?>>
       SECRET_ATTRIBUTES =
           ImmutableList.of(
               secretAttribute(
                   "account",
                   SecretType.BASIC,
                   AdlsFileSystemOptions::account,
-                  AdlsPerFileSystemOptions.Builder::account),
+                  ImmutableAdlsNamedFileSystemOptions.Builder::account),
               secretAttribute(
                   "sasToken",
                   SecretType.KEY,
                   AdlsFileSystemOptions::sasToken,
-                  AdlsPerFileSystemOptions.Builder::sasToken));
+                  ImmutableAdlsNamedFileSystemOptions.Builder::sasToken));
 
   default AdlsFileSystemOptions resolveSecrets(
       String filesystemName, AdlsFileSystemOptions specific, SecretsProvider secretsProvider) {
     AdlsFileSystemOptions defaultOptions =
         defaultOptions()
             .map(AdlsFileSystemOptions.class::cast)
-            .orElse(AdlsPerFileSystemOptions.FALLBACK);
+            .orElse(AdlsNamedFileSystemOptions.FALLBACK);
 
-    AdlsPerFileSystemOptions.Builder builder =
-        AdlsPerFileSystemOptions.builder().from(defaultOptions);
+    ImmutableAdlsNamedFileSystemOptions.Builder builder =
+        ImmutableAdlsNamedFileSystemOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
@@ -129,5 +114,15 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions> {
         throw new IllegalStateException(msg);
       }
     }
+  }
+
+  default AdlsFileSystemOptions effectiveOptionsForFileSystem(
+      Optional<String> filesystemName, SecretsProvider secretsProvider) {
+    if (filesystemName.isEmpty()) {
+      return resolveSecrets(null, null, secretsProvider);
+    }
+    String name = filesystemName.get();
+    AdlsFileSystemOptions fileSystem = fileSystems().get(name);
+    return resolveSecrets(name, fileSystem, secretsProvider);
   }
 }

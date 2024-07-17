@@ -35,7 +35,6 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager.SessionCredentialsFetcher;
 import org.projectnessie.catalog.files.s3.S3SessionsManager.StsClientKey;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -46,8 +45,8 @@ class TestS3SessionsManager {
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  private static final S3Options<?> s3options =
-      S3ProgrammaticOptions.builder()
+  private static final S3Options s3options =
+      ImmutableS3ProgrammaticOptions.builder()
           .sessionCredentialCacheMaxEntries(10)
           .stsClientsCacheMaxEntries(2)
           .sessionCredentialRefreshGracePeriod(Duration.ofMillis(10))
@@ -78,7 +77,8 @@ class TestS3SessionsManager {
 
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
-    S3BucketOptions options = S3PerBucketOptions.builder().region("R1").assumeRole("role").build();
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
 
     credentials.set(credentials(time.get() + 100));
     soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
@@ -134,7 +134,8 @@ class TestS3SessionsManager {
 
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
-    S3BucketOptions options = S3PerBucketOptions.builder().region("R1").assumeRole("role").build();
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
 
     credentials.set(credentials(time.get() + 100));
 
@@ -158,7 +159,8 @@ class TestS3SessionsManager {
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, (p) -> null, Optional.empty(), loader);
 
-    S3BucketOptions options = S3PerBucketOptions.builder().region("R1").assumeRole("role").build();
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
     Credentials c1 = credentials(time.get() + 100);
     Credentials c2 = credentials(time.get() + 200);
 

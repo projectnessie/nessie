@@ -38,7 +38,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions.GcsPerBucketOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -64,10 +63,10 @@ public class GcsClientResourceBench {
 
       HttpTransportFactory httpTransportFactory = GcsClients.buildSharedHttpTransportFactory();
 
-      GcsOptions<GcsBucketOptions> gcsOptions =
-          GcsProgrammaticOptions.builder()
+      GcsProgrammaticOptions gcsOptions =
+          ImmutableGcsProgrammaticOptions.builder()
               .defaultOptions(
-                  GcsPerBucketOptions.builder()
+                  ImmutableGcsNamedBucketOptions.builder()
                       .oauth2Token(TokenSecret.tokenSecret("foo", null))
                       .host(server.getGcsBaseUri())
                       .build())

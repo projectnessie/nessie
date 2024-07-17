@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.Map;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
@@ -57,7 +58,7 @@ import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKi
 public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
 
   @Inject RequestSigner signer;
-  @Inject S3Options<?> s3options;
+  @Inject @NormalizedObjectStoreOptions S3Options s3options;
   @Inject IcebergConfigurer icebergConfigurer;
   @Inject IcebergErrorMapper errorMapper;
 

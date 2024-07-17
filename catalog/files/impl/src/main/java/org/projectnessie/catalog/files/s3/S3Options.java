@@ -23,14 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface S3Options<PER_BUCKET extends S3BucketOptions> {
+public interface S3Options {
 
   /** Default value for {@link #sessionCredentialCacheMaxEntries()}. */
   int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
@@ -74,7 +73,7 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> {
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
   @ConfigItem(section = "default-options", firstIsSectionDoc = true)
-  Optional<PER_BUCKET> defaultOptions();
+  Optional<? extends S3BucketOptions> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
@@ -82,36 +81,24 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> {
    */
   @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("bucket-name")
-  Map<String, PER_BUCKET> buckets();
+  Map<String, ? extends S3NamedBucketOptions> buckets();
 
-  default S3BucketOptions effectiveOptionsForBucket(
-      Optional<String> bucketName, SecretsProvider secretsProvider) {
-    if (bucketName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
-    }
-    String name = bucketName.get();
-    S3BucketOptions perBucket = buckets().get(name);
-    if (perBucket == null) {
-      return resolveSecrets(name, null, secretsProvider);
-    }
-
-    return resolveSecrets(name, perBucket, secretsProvider);
-  }
-
-  List<SecretAttribute<S3BucketOptions, S3PerBucketOptions.Builder, ?>> SECRET_ATTRIBUTES =
-      ImmutableList.of(
-          secretAttribute(
-              "accessKey",
-              SecretType.BASIC,
-              S3BucketOptions::accessKey,
-              S3PerBucketOptions.Builder::accessKey));
+  List<SecretAttribute<S3BucketOptions, ImmutableS3NamedBucketOptions.Builder, ?>>
+      SECRET_ATTRIBUTES =
+          ImmutableList.of(
+              secretAttribute(
+                  "accessKey",
+                  SecretType.BASIC,
+                  S3BucketOptions::accessKey,
+                  ImmutableS3NamedBucketOptions.Builder::accessKey));
 
   default S3BucketOptions resolveSecrets(
       String filesystemName, S3BucketOptions specific, SecretsProvider secretsProvider) {
     S3BucketOptions defaultOptions =
-        defaultOptions().map(S3BucketOptions.class::cast).orElse(S3PerBucketOptions.FALLBACK);
+        defaultOptions().map(S3BucketOptions.class::cast).orElse(S3NamedBucketOptions.FALLBACK);
 
-    S3PerBucketOptions.Builder builder = S3PerBucketOptions.builder().from(defaultOptions);
+    ImmutableS3NamedBucketOptions.Builder builder =
+        ImmutableS3NamedBucketOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
@@ -125,5 +112,15 @@ public interface S3Options<PER_BUCKET extends S3BucketOptions> {
             specific,
             SECRET_ATTRIBUTES)
         .build();
+  }
+
+  default S3BucketOptions effectiveOptionsForBucket(
+      Optional<String> bucketName, SecretsProvider secretsProvider) {
+    if (bucketName.isEmpty()) {
+      return resolveSecrets(null, null, secretsProvider);
+    }
+    String name = bucketName.get();
+    S3BucketOptions perBucket = buckets().get(name);
+    return resolveSecrets(name, perBucket, secretsProvider);
   }
 }
