@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.projectnessie.catalog.files.gcs.GcsBucketOptions.GcsAuthType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 
 public final class GcsClients {
@@ -118,8 +119,7 @@ public final class GcsClients {
 
   static Credentials buildCredentials(
       GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
-    GcsBucketOptions.GcsAuthType authType =
-        bucketOptions.authType().orElse(GcsBucketOptions.GcsAuthType.NONE);
+    GcsAuthType authType = bucketOptions.effectiveAuthType();
     switch (authType) {
       case NONE:
         return NoCredentials.getInstance();

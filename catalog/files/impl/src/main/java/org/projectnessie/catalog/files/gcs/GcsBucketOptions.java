@@ -23,6 +23,9 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface GcsBucketOptions {
 
+  /** Default value for {@link #authType()}, being {@link GcsAuthType#NONE}. */
+  GcsAuthType DEFAULT_AUTH_TYPE = GcsAuthType.NONE;
+
   /**
    * The default endpoint override to use. The endpoint is almost always used for testing purposes.
    *
@@ -50,8 +53,12 @@ public interface GcsBucketOptions {
   /** The Google client lib token. */
   Optional<String> clientLibToken();
 
-  /** The authentication type to use. */
+  /** The authentication type to use. If not set, the default is {@code NONE}. */
   Optional<GcsAuthType> authType();
+
+  default GcsAuthType effectiveAuthType() {
+    return authType().orElse(DEFAULT_AUTH_TYPE);
+  }
 
   /**
    * Auth-credentials-JSON, this value is the name of the credential to use, the actual credential

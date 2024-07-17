@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithDefault;
 import java.net.URI;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -44,6 +45,7 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   Optional<String> clientLibToken();
 
   @Override
+  @WithDefault("NONE")
   Optional<GcsAuthType> authType();
 
   @Override

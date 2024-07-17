@@ -302,7 +302,7 @@ catalog:
         # -- The Google client lib token.
         clientLibToken: ~
         # -- The authentication type to use. Valid values are: NONE, USER, SERVICE_ACCOUNT,
-        # ACCESS_TOKEN. The default is NONE.
+        # ACCESS_TOKEN, APPLICATION_DEFAULT. The default is NONE.
         authType: ~
 
         # -- The Google Cloud service account key secret. This is required when authType is USER or
