@@ -463,7 +463,7 @@ ShowReferenceStatement
     : <REFERENCE>
       { setOptionalNextTokenTypes(TokenType.AT); }
       [ { completionType = CompletionType.REFERENCE_NAME; }
-        [/ref/=ExistingReference] ]
+        /ref/=ExistingReference ]
       [ <AT>
         { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
         [ <TIMESTAMP> | <COMMIT>
