@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.contents.inmem;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
 import static java.util.Collections.emptySet;
 
 import com.google.common.base.Preconditions;
@@ -143,7 +144,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
                       .unbuild()
                       .expiryCompleted(finished);
               if (failure != null) {
-                b.status(Status.EXPIRY_FAILED).errorMessage(failure.toString());
+                b.status(Status.EXPIRY_FAILED).errorMessage(getStackTraceAsString(failure));
               } else {
                 b.status(Status.EXPIRY_SUCCESS);
               }
