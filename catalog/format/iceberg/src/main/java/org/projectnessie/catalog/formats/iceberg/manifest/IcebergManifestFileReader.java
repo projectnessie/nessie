@@ -66,9 +66,14 @@ public abstract class IcebergManifestFileReader
         IcebergSchema schema = spec.jsonReader().readValue(schemaJson, IcebergSchema.class);
         IcebergPartitionSpec partitionSpec;
         try (JsonParser parser = spec.jsonReader().createParser(specJson)) {
-          List<IcebergPartitionField> partitionFields =
-              parser.readValueAs(new TypeReference<List<IcebergPartitionField>>() {});
-          partitionSpec = IcebergPartitionSpec.partitionSpec(specId, partitionFields);
+          try {
+            List<IcebergPartitionField> partitionFields =
+                parser.readValueAs(new TypeReference<List<IcebergPartitionField>>() {});
+            partitionSpec = IcebergPartitionSpec.partitionSpec(specId, partitionFields);
+          } catch (IOException e) {
+            // workaround for https://github.com/apache/iceberg-python/pull/846
+            partitionSpec = spec.jsonReader().readValue(specJson, IcebergPartitionSpec.class);
+          }
         }
 
         try {
