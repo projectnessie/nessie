@@ -48,6 +48,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
@@ -198,6 +199,8 @@ public abstract class AbstractCatalogService {
     catalogService.persist = persist;
     catalogService.executor = executor;
     catalogService.nessieApi = api;
+
+    catalogService.backendExceptionMapper = BackendExceptionMapper.builder().build();
   }
 
   private void setupObjectIO() {
@@ -224,7 +227,7 @@ public abstract class AbstractCatalogService {
                     names.stream()
                         .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
-    objectIO = new S3ObjectIO(clientSupplier, Clock.systemUTC());
+    objectIO = new S3ObjectIO(clientSupplier);
   }
 
   private void setupObjectStorage() {

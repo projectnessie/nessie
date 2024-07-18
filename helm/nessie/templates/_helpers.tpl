@@ -137,7 +137,6 @@ Apply S3 catalog options.
 {{- if .transport.connectionMaxIdleTime -}}{{- $_ := set $map ( print $prefix "http.connection-max-idle-time" ) .transport.connectionMaxIdleTime -}}{{- end -}}
 {{- if .transport.connectionTimeToLive -}}{{- $_ := set $map ( print $prefix "http.connection-time-to-live" ) .transport.connectionTimeToLive -}}{{- end -}}
 {{- if .transport.expectContinueEnabled -}}{{- $_ := set $map ( print $prefix "http.expect-continue-enabled" ) .transport.expectContinueEnabled -}}{{- end -}}
-{{- if .transport.retryAfter -}}{{- $_ := set $map ( print $prefix "throttled-retry-after" ) .transport.retryAfter -}}{{- end -}}
 {{- end -}}
 {{- if .sessionCredentials }}
 {{- if .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- $_ := set $map ( print $prefix "sts.session-grace-period" ) .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- end -}}

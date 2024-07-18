@@ -150,6 +150,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     soft.assertThatThrownBy(() -> commitMultiple(main, key1, key2, key3, key4))
         .isInstanceOf(ExecutionException.class)
         .cause()
+        .cause()
         .isInstanceOf(S3Exception.class);
     soft.assertThat(storedLocations.get()).hasSize(after);
     soft.assertThat(failedLocations.get()).hasSize(4 - after);

@@ -43,13 +43,19 @@ public class IcebergStuff {
   private final ObjectIO objectIO;
   private final Persist persist;
   private final TasksService tasksService;
+  private final EntitySnapshotTaskBehavior snapshotTaskBehavior;
   private final Executor executor;
 
   public IcebergStuff(
-      ObjectIO objectIO, Persist persist, TasksService tasksService, Executor executor) {
+      ObjectIO objectIO,
+      Persist persist,
+      TasksService tasksService,
+      EntitySnapshotTaskBehavior snapshotTaskBehavior,
+      Executor executor) {
     this.objectIO = objectIO;
     this.persist = persist;
     this.tasksService = tasksService;
+    this.snapshotTaskBehavior = snapshotTaskBehavior;
     this.executor = executor;
   }
 
@@ -61,7 +67,8 @@ public class IcebergStuff {
   public <S extends NessieEntitySnapshot<?>> CompletionStage<S> retrieveIcebergSnapshot(
       ObjId snapshotId, Content content) {
     EntitySnapshotTaskRequest snapshotTaskRequest =
-        entitySnapshotTaskRequest(snapshotId, content, null, persist, objectIO, executor);
+        entitySnapshotTaskRequest(
+            snapshotId, content, null, snapshotTaskBehavior, persist, objectIO, executor);
     return triggerIcebergSnapshot(snapshotTaskRequest);
   }
 
@@ -92,7 +99,13 @@ public class IcebergStuff {
       S snapshot, Content content) {
     EntitySnapshotTaskRequest snapshotTaskRequest =
         entitySnapshotTaskRequest(
-            nessieIdToObjId(snapshot.id()), content, snapshot, persist, objectIO, executor);
+            nessieIdToObjId(snapshot.id()),
+            content,
+            snapshot,
+            snapshotTaskBehavior,
+            persist,
+            objectIO,
+            executor);
     return triggerIcebergSnapshot(snapshotTaskRequest);
   }
 

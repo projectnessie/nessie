@@ -12,6 +12,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The `throttled-retry-after` advanced configuration property was renamed from
+  `nessie.catalog.service.s3.throttled-retry-after` to
+  `nessie.catalog.error-handling.throttled-retry-after`. The old property name is ignored.
+
 ### New Features
 
 - CLI: New `REVERT CONTENT` command to update one or more tables or views to a previous state.

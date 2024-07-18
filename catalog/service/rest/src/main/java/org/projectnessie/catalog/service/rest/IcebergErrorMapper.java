@@ -28,8 +28,10 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CompletionException;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.projectnessie.catalog.files.api.BackendErrorStatus;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergErrorResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
@@ -55,29 +57,20 @@ public class IcebergErrorMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(IcebergErrorMapper.class);
 
   private final ExceptionConfig exceptionConfig;
+  private final BackendExceptionMapper backendExceptionMapper;
 
   @Inject
-  public IcebergErrorMapper(ExceptionConfig exceptionConfig) {
+  public IcebergErrorMapper(
+      ExceptionConfig exceptionConfig, BackendExceptionMapper backendExceptionMapper) {
     this.exceptionConfig = exceptionConfig;
+    this.backendExceptionMapper = backendExceptionMapper;
   }
 
   public Response toResponse(Throwable ex, IcebergEntityKind kind) {
-    if (ex instanceof CompletionException) {
-      ex = ex.getCause();
-    }
-
-    if (ex.getClass() == RuntimeException.class && ex.getCause() != null) {
-      ex = ex.getCause();
-    }
-
     IcebergErrorResponse body = null;
-    if (ex instanceof BaseNessieClientServerException) {
-      BaseNessieClientServerException e = (BaseNessieClientServerException) ex;
-      body = mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
-    } else if (ex instanceof IllegalArgumentException) {
-      body = errorResponse(400, "IllegalArgumentException", ex.getMessage(), ex);
-    } else if (ex instanceof IcebergException) {
-      body = ((IcebergException) ex).toErrorResponse();
+    Optional<BackendErrorStatus> status = backendExceptionMapper.analyze(ex);
+    if (status.isPresent()) {
+      body = mapStorageFailure(status.get(), ex, kind);
     }
 
     if (body == null) {
@@ -87,6 +80,54 @@ public class IcebergErrorMapper {
 
     Integer code = body.error().code();
     return Response.status(code == null ? 500 : code).entity(body).build();
+  }
+
+  private static String message(BackendErrorStatus status, Throwable ex) {
+    return String.format("%s (due to: %s)", ex.getMessage(), status.cause().toString());
+  }
+
+  private IcebergErrorResponse mapStorageFailure(
+      BackendErrorStatus status, Throwable ex, IcebergEntityKind kind) {
+    // Log full stack trace on the server side for troubleshooting
+    LOGGER.info("Propagating storage failure to client: {}", status, ex);
+
+    switch (status.statusCode()) {
+      case NESSIE_ERROR:
+        if (status.cause() instanceof BaseNessieClientServerException) {
+          BaseNessieClientServerException e = (BaseNessieClientServerException) status.cause();
+          return mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
+        }
+        return null;
+      case ICEBERG_ERROR:
+        if (status.cause() instanceof IcebergException) {
+          return ((IcebergException) status.cause()).toErrorResponse();
+        }
+        return null;
+      case BAD_REQUEST:
+        return errorResponse(400, "IllegalArgumentException", status.cause().getMessage(), ex);
+      case THROTTLED:
+        return errorResponse(429, "TooManyRequestsException", message(status, ex), ex);
+      case UNAUTHORIZED:
+        return errorResponse(401, "NotAuthorizedException", message(status, ex), ex);
+      case FORBIDDEN:
+        return errorResponse(403, "ForbiddenException", message(status, ex), ex);
+      case NOT_FOUND:
+        // Convert storage-side "not found" into `IllegalArgumentException`.
+        // In most cases this results from bad locations in Iceberg metadata.
+        return errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
+      case UNKNOWN:
+        return null; // generic HTTP/500 error
+      default:
+        return errorResponse(
+            500,
+            "IllegalStateException",
+            message(
+                status,
+                new IllegalStateException(
+                    String.format(
+                        "Unhandled backend error status: %s: %s", status.statusCode(), ex))),
+            ex);
+    }
   }
 
   private IcebergErrorResponse mapNessieError(

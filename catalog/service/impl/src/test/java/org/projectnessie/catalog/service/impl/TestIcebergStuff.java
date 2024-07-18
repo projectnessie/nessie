@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.local.LocalObjectIO;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
@@ -106,8 +108,16 @@ public class TestIcebergStuff {
   @MethodSource("icebergTableImports")
   public void icebergTableImports(
       @SuppressWarnings("unused") String testName, String icebergTableMetadata) throws Exception {
+    BackendExceptionMapper exceptionMapper = BackendExceptionMapper.builder().build();
+
     ObjectIO objectIO = new LocalObjectIO();
-    IcebergStuff icebergStuff = new IcebergStuff(objectIO, persist, tasksService, executor);
+    IcebergStuff icebergStuff =
+        new IcebergStuff(
+            objectIO,
+            persist,
+            tasksService,
+            new EntitySnapshotTaskBehavior(exceptionMapper, Duration.ofMillis(1)),
+            executor);
 
     ObjId snapshotId = randomObjId();
     IcebergTable icebergTable =

@@ -18,6 +18,7 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.service.config.CatalogConfig;
@@ -47,4 +48,9 @@ public interface QuarkusCatalogConfig extends CatalogConfig {
   @Override
   @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
+
+  @Override
+  @WithName("error-handling.throttled-retry-after")
+  @WithDefault("PT10S")
+  Duration retryAfterThrottled();
 }

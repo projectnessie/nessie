@@ -18,17 +18,11 @@ package org.projectnessie.catalog.service.impl;
 import static org.projectnessie.catalog.model.id.NessieId.emptyNessieId;
 import static org.projectnessie.catalog.model.id.NessieId.nessieIdFromByteAccessor;
 import static org.projectnessie.catalog.model.id.NessieId.nessieIdFromLongs;
-import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
-import static org.projectnessie.nessie.tasks.api.TaskState.retryableErrorState;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteAccessor;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromLongs;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.zeroLengthObjId;
 
-import java.util.Optional;
-import java.util.function.Function;
-import org.projectnessie.catalog.files.api.ObjectIOException;
 import org.projectnessie.catalog.model.id.NessieId;
-import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 final class Util {
@@ -54,40 +48,5 @@ final class Util {
       default:
         return nessieIdFromByteAccessor(id.size(), id::byteAt);
     }
-  }
-
-  static TaskState throwableAsErrorTaskState(Throwable throwable) {
-    return anyCauseMatches(
-            throwable,
-            e -> {
-              if (e instanceof ObjectIOException) {
-                return ((ObjectIOException) e)
-                    .retryNotBefore()
-                    .map(notBefore -> retryableErrorState(notBefore, e.toString()))
-                    .orElse(null);
-              }
-              return null;
-            })
-        .orElseGet(() -> failureState(throwable.toString()));
-  }
-
-  static <R> Optional<R> anyCauseMatches(
-      Throwable throwable, Function<Throwable, R> mappingPredicate) {
-    if (throwable == null) {
-      return Optional.empty();
-    }
-    for (Throwable e = throwable; e != null; e = e.getCause()) {
-      R r = mappingPredicate.apply(e);
-      if (r != null) {
-        return Optional.of(r);
-      }
-      for (Throwable sup : e.getSuppressed()) {
-        r = mappingPredicate.apply(sup);
-        if (r != null) {
-          return Optional.of(r);
-        }
-      }
-    }
-    return Optional.empty();
   }
 }

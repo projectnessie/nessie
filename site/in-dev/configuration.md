@@ -165,6 +165,12 @@ Related Quarkus settings:
 
 #### Advanced catalog settings
 
+##### Error Handling
+
+{% include './generated-docs/smallrye-nessie_catalog_error_handling.md' %}
+
+##### Performance Tuning
+
 {% include './generated-docs/smallrye-nessie_catalog_service.md' %}
 
 ### Version Store Settings

@@ -13,26 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.api;
+package org.projectnessie.objectstoragemock;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Optional;
-
-public abstract class ObjectIOException extends IOException {
-  public ObjectIOException(Throwable cause) {
-    super(cause);
-  }
-
-  public ObjectIOException(String message) {
-    super(message);
-  }
-
-  public ObjectIOException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public abstract boolean isRetryable();
-
-  public abstract Optional<Instant> retryNotBefore();
+public interface AccessCheckHandler {
+  boolean accessAllowed(String objectKey);
 }

@@ -18,15 +18,19 @@ package org.projectnessie.catalog.files;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.catalog.files.api.BackendErrorCode;
+import org.projectnessie.catalog.files.api.BackendErrorStatus;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.objectstoragemock.Bucket;
 import org.projectnessie.objectstoragemock.MockObject;
@@ -36,9 +40,15 @@ import org.projectnessie.storage.uri.StorageUri;
 @ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractClients {
   @InjectSoftAssertions protected SoftAssertions soft;
+  protected BackendExceptionMapper exceptionMapper;
 
   public static final String BUCKET_1 = "bucket1";
   public static final String BUCKET_2 = "bucket2";
+
+  @BeforeEach
+  protected void buildExceptionMapper() {
+    exceptionMapper = addExceptionHandlers(BackendExceptionMapper.builder()).build();
+  }
 
   @SuppressWarnings("resource")
   @Test
@@ -71,7 +81,10 @@ public abstract class AbstractClients {
       objectIO.deleteObjects(List.of(uri));
 
       soft.assertThatThrownBy(() -> objectIO.readObject(uri).readAllBytes())
-          .isInstanceOf(IOException.class);
+          .extracting(e -> exceptionMapper.analyze(e))
+          .extracting(Optional::get)
+          .extracting(BackendErrorStatus::statusCode)
+          .isEqualTo(BackendErrorCode.NOT_FOUND);
     }
   }
 
@@ -130,6 +143,9 @@ public abstract class AbstractClients {
       soft.assertThat(response2).isEqualTo(answer2 + key2);
     }
   }
+
+  protected abstract BackendExceptionMapper.Builder addExceptionHandlers(
+      BackendExceptionMapper.Builder builder);
 
   protected abstract StorageUri buildURI(String bucket, String key);
 

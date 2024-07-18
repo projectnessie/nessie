@@ -17,6 +17,7 @@ package org.projectnessie.server.catalog;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -35,17 +36,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.ForbiddenException;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
+import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AccessCheckHandlerHolder;
 
 public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCatalogTests {
 
   HeapStorageBucket heapStorageBucket;
+  AccessCheckHandlerHolder accessCheckHandler;
 
   @BeforeEach
   public void clearBucket() {
@@ -204,5 +214,64 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
             IntStream.range(0, items)
                 .mapToObj(i -> TableIdentifier.of("namespace_0", "view_" + i))
                 .toList());
+  }
+
+  @Test
+  void testStorageReadFailure() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    TableIdentifier id1 = TableIdentifier.of("ns", "table1");
+    catalog.createNamespace(id1.namespace());
+    Table table = catalog.buildTable(id1, SCHEMA).create();
+
+    try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
+      api.createNamespace().reference(api.getDefaultBranch()).namespace("test-ns").create();
+      api.commitMultipleOperations()
+          .commitMeta(CommitMeta.fromMessage("test"))
+          .branch(api.getDefaultBranch())
+          .operation(
+              Operation.Put.of(
+                  ContentKey.of("ns", "table2"),
+                  IcebergTable.of(table.location() + "_test_access_denied_file", 1, 2, 3, 4)))
+          .operation(
+              Operation.Put.of(
+                  ContentKey.of("ns", "table3"),
+                  IcebergTable.of(table.location() + "_test_non_existent_file", 1, 2, 3, 4)))
+          .commit();
+    }
+
+    accessCheckHandler.set(key -> !key.contains("_test_access_denied_"));
+
+    assertThatThrownBy(() -> catalog.loadTable(TableIdentifier.of("ns", "table2")))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("_test_access_denied_file");
+
+    assertThatThrownBy(() -> catalog.loadTable(TableIdentifier.of("ns", "table3")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("_test_non_existent_file");
+
+    // Repeat these reads to make sure (stored task) errors are reported the same way
+    assertThatThrownBy(() -> catalog.loadTable(TableIdentifier.of("ns", "table2")))
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("_test_access_denied_file");
+
+    assertThatThrownBy(() -> catalog.loadTable(TableIdentifier.of("ns", "table3")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("_test_non_existent_file");
+  }
+
+  @Test
+  void testStorageWriteFailure() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    TableIdentifier id1 = TableIdentifier.of("ns", "table_access_denied");
+    catalog.createNamespace(id1.namespace());
+
+    accessCheckHandler.set(key -> !key.contains("table_access_denied"));
+    assertThatThrownBy(() -> catalog.buildTable(id1, SCHEMA).create())
+        .isInstanceOf(ForbiddenException.class)
+        .hasMessageContaining("table_access_denied");
   }
 }

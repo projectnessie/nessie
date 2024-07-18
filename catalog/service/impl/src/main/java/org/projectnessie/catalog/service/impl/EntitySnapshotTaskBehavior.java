@@ -17,11 +17,14 @@ package org.projectnessie.catalog.service.impl;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.projectnessie.catalog.service.impl.Util.throwableAsErrorTaskState;
+import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
+import static org.projectnessie.nessie.tasks.api.TaskState.retryableErrorState;
 import static org.projectnessie.nessie.tasks.api.TaskState.runningState;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskState;
@@ -29,13 +32,17 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 
 final class EntitySnapshotTaskBehavior
     implements TaskBehavior<EntitySnapshotObj, EntitySnapshotObj.Builder> {
-  static final EntitySnapshotTaskBehavior INSTANCE = new EntitySnapshotTaskBehavior();
+  private final BackendExceptionMapper exceptionMapper;
+  private final Duration retryAfterThrottled;
 
-  private EntitySnapshotTaskBehavior() {}
+  EntitySnapshotTaskBehavior(BackendExceptionMapper exceptionMapper, Duration retryAfterThrottled) {
+    this.exceptionMapper = exceptionMapper;
+    this.retryAfterThrottled = retryAfterThrottled;
+  }
 
   @Override
   public Throwable stateAsException(EntitySnapshotObj obj) {
-    throw new RuntimeException(obj.taskState().message());
+    throw PreviousTaskException.fromTaskState(obj.taskState());
   }
 
   @Override
@@ -61,8 +68,23 @@ final class EntitySnapshotTaskBehavior
     return EntitySnapshotObj.OBJ_TYPE;
   }
 
+  private Instant retryAfter(Clock clock) {
+    return clock.instant().plus(retryAfterThrottled);
+  }
+
   @Override
   public TaskState asErrorTaskState(Clock clock, EntitySnapshotObj base, Throwable t) {
-    return throwableAsErrorTaskState(t);
+    return exceptionMapper
+        .analyze(t)
+        .map(
+            status -> {
+              if (status.statusCode().isRetryable()) {
+                return retryableErrorState(
+                    retryAfter(clock), t.toString(), status.statusCode().name());
+              } else {
+                return failureState(t.toString(), status.statusCode().name());
+              }
+            })
+        .orElseGet(() -> failureState(t.toString(), null));
   }
 }

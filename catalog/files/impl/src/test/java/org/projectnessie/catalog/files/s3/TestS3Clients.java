@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.KeyStore;
-import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.catalog.files.AbstractClients;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -90,12 +90,18 @@ public class TestS3Clients extends AbstractClients {
                     names.stream()
                         .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret")))),
             null);
-    return new S3ObjectIO(supplier, Clock.systemUTC());
+    return new S3ObjectIO(supplier);
   }
 
   @Override
   protected StorageUri buildURI(String bucket, String key) {
     return StorageUri.of(String.format("s3://%s/%s", bucket, key));
+  }
+
+  @Override
+  protected BackendExceptionMapper.Builder addExceptionHandlers(
+      BackendExceptionMapper.Builder builder) {
+    return builder.addAnalyzer(S3ExceptionMapper.INSTANCE);
   }
 
   @Test

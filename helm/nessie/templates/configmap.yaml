@@ -126,6 +126,9 @@ data:
 
     {{- if .Values.catalog.enabled -}}
     {{- list .Values.catalog.iceberg $map | include "nessie.applyCatalogIcebergOptions" -}}
+    {{- if .Values.catalog.storage.retryAfter -}}
+    {{- $_ = set $map "nessie.catalog.error-handling.throttled-retry-after" .Values.catalog.storage.retryAfter -}}
+    {{- end -}}
     {{- list .Values.catalog.storage.s3 "nessie.catalog.service.s3." $map | include "nessie.applyCatalogStorageS3RootOptions" }}
     {{- list .Values.catalog.storage.s3.defaultOptions "nessie.catalog.service.s3.default-options." $map | include "nessie.applyCatalogStorageS3BucketOptions" }}
     {{- range $i, $bucket := .Values.catalog.storage.s3.buckets -}}
