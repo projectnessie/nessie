@@ -258,17 +258,17 @@ public interface StoreConfig {
   }
 
   /**
-   * Defines the duration how long references shall be kept in the cache. Enables reference-caching,
-   * if configured with a positive duration value, defaults to not cache references. If reference
-   * caching is enabled, it is highly recommended to also enable negative reference caching.
+   * Defines the duration how long references shall be kept in the cache. Defaults to not cache
+   * references. If reference caching is enabled, it is highly recommended to also enable negative
+   * reference caching.
    *
    * <p>It is safe to enable this for single node Nessie deployments.
    *
    * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
    * PT1H} for single node Nessie deployments.
    *
-   * <p><em>This feature is experimental except for single Nessie node deployments! If in
-   * doubt, leave this un-configured!</em>
+   * <p><em>This feature is experimental except for single Nessie node deployments! If in doubt,
+   * leave this un-configured!</em>
    */
   Optional<Duration> referenceCacheTtl();
 
@@ -277,17 +277,16 @@ public interface StoreConfig {
    * (negative reference caching).
    *
    * <p>Defaults to {@code reference-cache-ttl}. Has no effect, if {@code reference-cache-ttl} is
-   * not configured. Enabled, if configured with a positive duration value, default is not enabled.
-   * If reference caching is enabled, it is highly recommended to also enable negative reference
-   * caching.
+   * not configured. Default is not enabled. If reference caching is enabled, it is highly
+   * recommended to also enable negative reference caching.
    *
    * <p>It is safe to enable this for single node Nessie deployments.
    *
    * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
    * PT1H} for single node Nessie deployments.
    *
-   * <p><em>This feature is experimental except for single Nessie node deployments! If in
-   * doubt, leave this un-configured!</em>
+   * <p><em>This feature is experimental except for single Nessie node deployments! If in doubt,
+   * leave this un-configured!</em>
    */
   Optional<Duration> referenceCacheNegativeTtl();
 
