@@ -7,7 +7,7 @@ metadata object was not written.
 It is recommended to use the `DRY` keyword to investigate the changes before actually committing those to Nessie.
 
 Contents that exist on the `TO STATE` are updated in the new Nessie commit to that state.
-contents that do not exist on the `TO STATE` are deleted only if the `ALLOW DELETES` clause is specified, otherwise
+Contents that do not exist on the `TO STATE` are deleted only if the `ALLOW DELETES` clause is specified, otherwise
 the command will fail.
 
 Note that this command will always create a new commit, even if the actual contents at the "tip" of the target branch
