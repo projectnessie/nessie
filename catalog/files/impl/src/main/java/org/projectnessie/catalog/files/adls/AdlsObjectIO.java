@@ -45,7 +45,7 @@ public class AdlsObjectIO implements ObjectIO {
     AdlsLocation location = adlsLocation(uri);
 
     DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
-    fileSystem.getAccessPolicy();
+    fileSystem.getProperties();
   }
 
   @Override

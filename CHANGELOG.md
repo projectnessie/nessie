@@ -37,6 +37,7 @@ as necessary. Empty sections will not end in the release notes.
 - GC: Fix handling of broken manifest files written by pyiceberg up to 0.6.1
 - Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
 - Catalog/ADLS: More informative error message if mandatory `endpoint` is missing.
+- Catalog/ADLS: Use a less restrictive endpoint in the 'ObjectIO.ping' function used for health checks.
 
 ### Commits
 
