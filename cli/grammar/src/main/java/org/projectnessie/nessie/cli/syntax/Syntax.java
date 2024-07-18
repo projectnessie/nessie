@@ -41,7 +41,7 @@ public class Syntax {
   private final Map<String, String> stringLiterals;
   private final String level;
 
-  /** Intentionally hard coded and short so that lines on the website does not break. */
+  /** Intentionally hard coded and short so that lines on the website do not break. */
   private static final int SPLIT_LINE_LENGTH = 60;
 
   public Syntax(Path grammarFile) throws IOException {
