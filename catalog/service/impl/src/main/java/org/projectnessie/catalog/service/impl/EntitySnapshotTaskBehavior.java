@@ -17,7 +17,6 @@ package org.projectnessie.catalog.service.impl;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.projectnessie.catalog.files.api.BackendErrorCode.THROTTLED;
 import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
 import static org.projectnessie.nessie.tasks.api.TaskState.retryableErrorState;
 import static org.projectnessie.nessie.tasks.api.TaskState.runningState;
@@ -25,7 +24,6 @@ import static org.projectnessie.nessie.tasks.api.TaskState.runningState;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import org.projectnessie.catalog.files.api.BackendErrorStatus;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.service.objtypes.EntitySnapshotObj;
 import org.projectnessie.nessie.tasks.api.TaskBehavior;
@@ -70,10 +68,6 @@ final class EntitySnapshotTaskBehavior
     return EntitySnapshotObj.OBJ_TYPE;
   }
 
-  private boolean isRetryable(BackendErrorStatus status) {
-    return THROTTLED == status.statusCode();
-  }
-
   private Instant retryAfter(Clock clock) {
     return clock.instant().plus(retryAfterThrottled);
   }
@@ -84,7 +78,7 @@ final class EntitySnapshotTaskBehavior
         .analyze(t)
         .map(
             status -> {
-              if (isRetryable(status)) {
+              if (status.statusCode().isRetryable()) {
                 return retryableErrorState(
                     retryAfter(clock), t.toString(), status.statusCode().name());
               } else {

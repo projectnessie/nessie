@@ -16,12 +16,28 @@
 package org.projectnessie.catalog.files.api;
 
 public enum BackendErrorCode {
-  UNKNOWN,
-  THROTTLED,
-  NOT_FOUND,
-  UNAUTHORIZED,
-  FORBIDDEN,
-  BAD_REQUEST,
-  NESSIE_ERROR,
-  ICEBERG_ERROR,
+  /**
+   * Treat unknown errors as non-retryable to prevent indefinite retry cycles when the server is not
+   * able to determine a specific failure reason. This may be changed in the future when task
+   * deadlines are supported.
+   */
+  UNKNOWN(false),
+  THROTTLED(true),
+  NOT_FOUND(false),
+  UNAUTHORIZED(false),
+  FORBIDDEN(false),
+  BAD_REQUEST(false),
+  NESSIE_ERROR(false),
+  ICEBERG_ERROR(false),
+  ;
+
+  private final boolean retryable;
+
+  BackendErrorCode(boolean retryable) {
+    this.retryable = retryable;
+  }
+
+  public boolean isRetryable() {
+    return retryable;
+  }
 }
