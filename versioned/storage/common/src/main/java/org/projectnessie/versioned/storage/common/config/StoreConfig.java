@@ -262,19 +262,32 @@ public interface StoreConfig {
    * if configured with a positive duration value, defaults to not cache references. If reference
    * caching is enabled, it is highly recommended to also enable negative reference caching.
    *
-   * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
-   * in doubt, leave this un-configured!</em>
+   * <p>It is safe to enable this for single node Nessie deployments.
+   *
+   * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
+   * PT1H} for single node Nessie deployments.
+   *
+   * <p><em>This feature is experimental except for single Nessie node deployments! If in
+   * doubt, leave this un-configured!</em>
    */
   Optional<Duration> referenceCacheTtl();
 
   /**
    * Defines the duration how long sentinels for non-existing references shall be kept in the cache
-   * (negative reference caching). Enabled, if configured with a positive duration value, default is
-   * not enabled. If reference caching is enabled, it is highly recommended to also enable negative
-   * reference caching.
+   * (negative reference caching).
    *
-   * <p><em>This is an experimental feature, currently only for single Nessie node deployments! If
-   * in doubt, leave this un-configured!</em>
+   * <p>Defaults to {@code reference-cache-ttl}. Has no effect, if {@code reference-cache-ttl} is
+   * not configured. Enabled, if configured with a positive duration value, default is not enabled.
+   * If reference caching is enabled, it is highly recommended to also enable negative reference
+   * caching.
+   *
+   * <p>It is safe to enable this for single node Nessie deployments.
+   *
+   * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
+   * PT1H} for single node Nessie deployments.
+   *
+   * <p><em>This feature is experimental except for single Nessie node deployments! If in
+   * doubt, leave this un-configured!</em>
    */
   Optional<Duration> referenceCacheNegativeTtl();
 

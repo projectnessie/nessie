@@ -28,6 +28,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
@@ -141,16 +142,16 @@ public class PersistProvider {
         cacheConfig.meterRegistry(meterRegistry.get());
       }
 
-      storeConfig
-          .referenceCacheTtl()
-          .ifPresent(
-              refTtl -> {
-                LOGGER.warn(
-                    "Reference caching is an experimental feature but enabled with a TTL of {}",
-                    refTtl);
-                cacheConfig.referenceTtl(refTtl);
-              });
-      storeConfig.referenceCacheNegativeTtl().ifPresent(cacheConfig::referenceNegativeTtl);
+      Optional<Duration> referenceCacheTtl = storeConfig.referenceCacheTtl();
+      Optional<Duration> referenceCacheNegativeTtl = storeConfig.referenceCacheNegativeTtl();
+
+      if (referenceCacheTtl.isPresent()) {
+        Duration refTtl = referenceCacheTtl.get();
+        LOGGER.warn(
+            "Reference caching is an experimental feature but enabled with a TTL of {}", refTtl);
+        cacheConfig.referenceTtl(refTtl);
+        cacheConfig.referenceNegativeTtl(referenceCacheNegativeTtl.orElse(refTtl));
+      }
 
       LOGGER.info("Using objects cache with {} MB.", effectiveCacheSizeMB);
 
