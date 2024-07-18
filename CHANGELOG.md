@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- CLI: New `REVERT CONTENT` command to update one or more tables or views to a previous state.
+
 ### Changes
 
 - Catalog: ADLS + GCS credentials are no longer sent to the client. It is considered insecure to expose the
