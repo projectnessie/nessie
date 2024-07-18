@@ -15,11 +15,12 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+
 import jakarta.annotation.Nonnull;
 import java.util.List;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
@@ -45,15 +46,13 @@ public class ShowReferenceCommand extends NessieCommand<ShowReferenceCommandSpec
 
     Reference ref = api.getReference().refName(refName).get();
 
-    AttributedStyle faint = AttributedStyle.DEFAULT.faint();
-
     Terminal terminal = cli.terminal();
     terminal
         .writer()
         .println(
             new AttributedStringBuilder()
                 .append("Reference type: ")
-                .append(ref.getType().name(), faint)
+                .append(ref.getType().name(), STYLE_FAINT)
                 .toAnsi(terminal));
     terminal
         .writer()
@@ -67,7 +66,7 @@ public class ShowReferenceCommand extends NessieCommand<ShowReferenceCommandSpec
         .println(
             new AttributedStringBuilder()
                 .append("      Tip/HEAD: ")
-                .append(ref.getHash(), faint)
+                .append(ref.getHash(), STYLE_FAINT)
                 .toAnsi(terminal));
   }
 

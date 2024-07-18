@@ -16,11 +16,11 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 
 import java.util.List;
 import java.util.stream.Stream;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
 import org.projectnessie.nessie.cli.cmdspec.ListContentsCommandSpec;
@@ -54,12 +54,11 @@ public class ListContentsCommand extends NessieListingCommand<ListContentsComman
       entries.filter(filter);
     }
 
-    AttributedStyle faint = AttributedStyle.DEFAULT.faint();
     return entries.stream()
         .map(
             e ->
                 new AttributedStringBuilder()
-                    .append(format("%15s ", e.getType()), faint)
+                    .append(format("%15s ", e.getType()), STYLE_FAINT)
                     .append(e.getName().toString())
                     .toAnsi(cli.terminal()));
   }

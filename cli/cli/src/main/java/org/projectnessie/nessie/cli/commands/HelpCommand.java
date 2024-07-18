@@ -17,6 +17,8 @@ package org.projectnessie.nessie.cli.commands;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_COMMAND_NAME;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_HEADING;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
 import org.projectnessie.nessie.cli.cmdspec.CommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.CommandType;
@@ -82,7 +83,6 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
 
   private static Stream<String> listAll(BaseNessieCli cli, List<CommandType> matches) {
     Stream<String> output;
-    AttributedStyle styleCommandName = AttributedStyle.DEFAULT.bold();
 
     output =
         matches.stream()
@@ -90,7 +90,7 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
             .flatMap(
                 c ->
                     Stream.of(
-                        new AttributedString(c.name(), styleCommandName).toAnsi(cli.terminal()),
+                        new AttributedString(c.name(), STYLE_COMMAND_NAME).toAnsi(cli.terminal()),
                         c.description(),
                         ""));
 
@@ -103,13 +103,12 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
 
     NessieCommand<CommandSpec> c = CommandsFactory.buildCommandInstance(commandType);
 
-    AttributedStyle styleCommandName = AttributedStyle.DEFAULT.bold();
     Stream<String> heading =
         Stream.of(
             "",
             new AttributedStringBuilder()
                 .append("Nessie CLI - ")
-                .append(c.name(), styleCommandName)
+                .append(c.name(), STYLE_COMMAND_NAME)
                 .append(" - ")
                 .append(c.description())
                 .toAnsi(cli.terminal()));
@@ -117,10 +116,8 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     String extensionPlain = ".plain.txt";
     String extension = cli.dumbTerminal() ? extensionPlain : ".ansi.txt";
 
-    AttributedStyle styleHeading = AttributedStyle.DEFAULT.underline().bold();
-
     Stream<String> syntax =
-        Stream.of(new AttributedString("Syntax:", styleHeading).toAnsi(cli.terminal()), "");
+        Stream.of(new AttributedString("Syntax:", STYLE_HEADING).toAnsi(cli.terminal()), "");
 
     for (String nonTerminalRef : nonTerminalRefs(commandType.statementName())) {
       // .trim() would remove trailing ESC chars as well, but we need those for proper ANSI output.
@@ -144,7 +141,7 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
                 syntax,
                 Stream.of(
                     "\n"
-                        + new AttributedString(nonTerminalRef + ":", styleHeading)
+                        + new AttributedString(nonTerminalRef + ":", STYLE_HEADING)
                             .toAnsi(cli.terminal())
                         + "\n"));
       }
@@ -160,7 +157,7 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
                 isCommand
                     ? Stream.of(
                         "",
-                        new AttributedString("Description:", styleHeading).toAnsi(cli.terminal()),
+                        new AttributedString("Description:", STYLE_HEADING).toAnsi(cli.terminal()),
                         "",
                         help)
                     : Stream.of(help));

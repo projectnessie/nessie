@@ -35,15 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.nessie.cli.cmdspec.AlterNamespaceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.AssignReferenceCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.CommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ConnectCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.CreateNamespaceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.CreateReferenceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.DropContentCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.DropReferenceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.HelpCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableAlterNamespaceCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableAssignReferenceCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableConnectCommandSpec;
@@ -56,17 +48,11 @@ import org.projectnessie.nessie.cli.cmdspec.ImmutableHelpCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableListContentsCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableListReferencesCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableMergeBranchCommandSpec;
+import org.projectnessie.nessie.cli.cmdspec.ImmutableRevertContentCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableShowContentCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableShowLogCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableShowReferenceCommandSpec;
 import org.projectnessie.nessie.cli.cmdspec.ImmutableUseReferenceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ListContentsCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ListReferencesCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.MergeBranchCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ShowContentCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ShowLogCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.ShowReferenceCommandSpec;
-import org.projectnessie.nessie.cli.cmdspec.UseReferenceCommandSpec;
 import org.projectnessie.nessie.cli.grammar.CompletionType;
 import org.projectnessie.nessie.cli.grammar.NessieCliLexer;
 import org.projectnessie.nessie.cli.grammar.NessieCliParser;
@@ -199,6 +185,129 @@ public class TestCliCompleter {
   static Stream<Arguments> completer() {
     return Stream.of(
         arguments(
+            "REVERT",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "REVERT CONTENT",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT OF", "REVERT CONTENT DRY"),
+            CompletionType.NONE,
+            List.of(TokenType.DRY)),
+        arguments(
+            "REVERT CONTENT DRY",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT DRY OF"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "REVERT CONTENT OF foo ",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo AND",
+                "REVERT CONTENT OF foo ON",
+                "REVERT CONTENT OF foo TO"),
+            CompletionType.NONE,
+            List.of(
+                TokenType.ON, TokenType.AND)), // Note: TokenType.TO is _mandatory_ (not optional)
+        arguments(
+            "REVERT CONTENT OF foo AND bar ",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo AND bar AND",
+                "REVERT CONTENT OF foo AND bar ON",
+                "REVERT CONTENT OF foo AND bar TO"),
+            CompletionType.NONE,
+            List.of(
+                TokenType.ON, TokenType.AND)), // Note: TokenType.TO is _mandatory_ (not optional)
+        arguments(
+            "REVERT CONTENT OF foo ON ",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT OF foo ON BRANCH"),
+            CompletionType.REFERENCE_NAME,
+            List.of(TokenType.BRANCH)),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT OF foo ON BRANCH main TO"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO",
+            true,
+            List.of(),
+            List.of(),
+            List.of("REVERT CONTENT OF foo ON BRANCH main TO STATE"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO STATE",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON",
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE AT"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO STATE ON",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON BRANCH",
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG"),
+            CompletionType.REFERENCE_NAME,
+            List.of(TokenType.BRANCH, TokenType.TAG)),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy ",
+            false,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy AT",
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy ALLOW"),
+            CompletionType.NONE,
+            List.of(TokenType.ALLOW, TokenType.AT)),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy AT",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy AT TIMESTAMP",
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE ON TAG taggy AT COMMIT"),
+            CompletionType.NONE,
+            List.of(TokenType.TIMESTAMP, TokenType.COMMIT)),
+        arguments(
+            "REVERT CONTENT OF foo ON BRANCH main TO STATE AT",
+            true,
+            List.of(),
+            List.of(),
+            List.of(
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE AT TIMESTAMP",
+                "REVERT CONTENT OF foo ON BRANCH main TO STATE AT COMMIT"),
+            CompletionType.NONE,
+            List.of(TokenType.TIMESTAMP, TokenType.COMMIT)),
+        //
+        arguments(
             "CONNECT",
             true,
             List.of(),
@@ -299,7 +408,9 @@ public class TestCliCompleter {
             true,
             List.of("HELP"),
             List.of("SHOW"),
-            List.of("CONNECT", "USE", "DROP", "LIST", "EXIT", "MERGE", "ALTER", "ASSIGN", "CREATE"),
+            List.of(
+                "CONNECT", "USE", "DROP", "LIST", "EXIT", "MERGE", "ALTER", "ASSIGN", "CREATE",
+                "REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -317,6 +428,7 @@ public class TestCliCompleter {
                 "help ASSIGN",
                 "help ALTER",
                 "help MERGE",
+                "help REVERT",
                 "help HELP",
                 "help EXIT",
                 "help LICENSE"),
@@ -331,6 +443,7 @@ public class TestCliCompleter {
                 TokenType.SHOW,
                 TokenType.ASSIGN,
                 TokenType.MERGE,
+                TokenType.REVERT,
                 TokenType.HELP,
                 TokenType.EXIT,
                 TokenType.LICENSE)),
@@ -348,6 +461,7 @@ public class TestCliCompleter {
                 "help SHOW",
                 "help ASSIGN",
                 "help MERGE",
+                "help REVERT",
                 "help HELP",
                 "help EXIT",
                 "help LICENSE"),
@@ -362,6 +476,7 @@ public class TestCliCompleter {
                 TokenType.SHOW,
                 TokenType.ASSIGN,
                 TokenType.MERGE,
+                TokenType.REVERT,
                 TokenType.HELP,
                 TokenType.EXIT,
                 TokenType.LICENSE)),
@@ -574,8 +689,8 @@ public class TestCliCompleter {
             List.of(),
             List.of(),
             List.of(
-                "CONNECT", "USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT", "MERGE",
-                "ASSIGN", "CREATE"),
+                "CONNECT", "REVERT", "USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT",
+                "MERGE", "ASSIGN", "CREATE"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -585,6 +700,7 @@ public class TestCliCompleter {
             List.of(),
             List.of(
                 " CONNECT",
+                " REVERT",
                 " USE",
                 " DROP",
                 " LIST",
@@ -602,7 +718,9 @@ public class TestCliCompleter {
             true,
             List.of("CONNECT", "CREATE"),
             List.of(),
-            List.of("USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT", "MERGE", "ASSIGN"),
+            List.of(
+                "USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT", "MERGE", "ASSIGN",
+                "REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -610,7 +728,9 @@ public class TestCliCompleter {
             true,
             List.of("CONNECT", "CREATE"),
             List.of(),
-            List.of("USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT", "MERGE", "ASSIGN"),
+            List.of(
+                "USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "EXIT", "MERGE", "ASSIGN",
+                "REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -619,7 +739,8 @@ public class TestCliCompleter {
             List.of(" CONNECT", " CREATE"),
             List.of(),
             List.of(
-                " USE", " DROP", " LIST", " SHOW", " HELP", " ALTER", " EXIT", " MERGE", " ASSIGN"),
+                " USE", " DROP", " LIST", " SHOW", " HELP", " ALTER", " EXIT", " MERGE", " ASSIGN",
+                " REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -628,7 +749,8 @@ public class TestCliCompleter {
             List.of(" CONNECT", " CREATE"),
             List.of(),
             List.of(
-                " USE", " DROP", " LIST", " SHOW", " HELP", " ALTER", " EXIT", " MERGE", " ASSIGN"),
+                " USE", " DROP", " LIST", " SHOW", " HELP", " ALTER", " EXIT", " MERGE", " ASSIGN",
+                " REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -638,7 +760,7 @@ public class TestCliCompleter {
             List.of("EXIT"),
             List.of(
                 "CONNECT", "USE", "DROP", "LIST", "SHOW", "HELP", "ALTER", "MERGE", "ASSIGN",
-                "CREATE"),
+                "CREATE", "REVERT"),
             CompletionType.NONE,
             List.of()),
         arguments(
@@ -1018,6 +1140,34 @@ public class TestCliCompleter {
   static Stream<Arguments> parse() {
     return Stream.of(
         arguments(
+            "REVERT CONTENT OF foo AND bar AND \"baz.blah\" TO STATE AT COMMIT deadbeef",
+            List.of(
+                ImmutableRevertContentCommandSpec.builder()
+                    .addContentKeys("foo", "bar", "baz.blah")
+                    .sourceRefTimestampOrHash("deadbeef")
+                    .build())),
+        arguments(
+            "REVERT CONTENT DRY OF foo AND bar AND \"baz.blah\" TO STATE AT COMMIT deadbeef ALLOW DELETES",
+            List.of(
+                ImmutableRevertContentCommandSpec.builder()
+                    .isDryRun(true)
+                    .isAllowDeletes(true)
+                    .addContentKeys("foo", "bar", "baz.blah")
+                    .sourceRefTimestampOrHash("deadbeef")
+                    .build())),
+        arguments(
+            "REVERT CONTENT DRY OF foo AND bar AND \"baz.blah\" ON BRANCH mybranch TO STATE ON TAG taggy AT COMMIT deadbeef",
+            List.of(
+                ImmutableRevertContentCommandSpec.builder()
+                    .isDryRun(true)
+                    .refType("BRANCH")
+                    .ref("mybranch")
+                    .addContentKeys("foo", "bar", "baz.blah")
+                    .sourceRefType("TAG")
+                    .sourceRef("taggy")
+                    .sourceRefTimestampOrHash("deadbeef")
+                    .build())),
+        arguments(
             "CONNECT TO \"http://foo.bar:1234/api/v2\"",
             List.of(
                 ImmutableConnectCommandSpec.builder().uri("http://foo.bar:1234/api/v2").build())),
@@ -1256,97 +1406,52 @@ public class TestCliCompleter {
 
     switch (parsedSpec.commandType()) {
       case HELP:
-        return (T)
-            ImmutableHelpCommandSpec.builder()
-                .from((HelpCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+        return (T) ImmutableHelpCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case EXIT:
         return (T) ImmutableExitCommandSpec.builder().build();
       case CONNECT:
-        return (T)
-            ImmutableConnectCommandSpec.builder()
-                .from((ConnectCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+        return (T) ImmutableConnectCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case ASSIGN_REFERENCE:
         return (T)
-            ImmutableAssignReferenceCommandSpec.builder()
-                .from((AssignReferenceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableAssignReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case USE_REFERENCE:
         return (T)
-            ImmutableUseReferenceCommandSpec.builder()
-                .from((UseReferenceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableUseReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case LIST_CONTENTS:
         return (T)
-            ImmutableListContentsCommandSpec.builder()
-                .from((ListContentsCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableListContentsCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case LIST_REFERENCES:
         return (T)
-            ImmutableListReferencesCommandSpec.builder()
-                .from((ListReferencesCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableListReferencesCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case SHOW_REFERENCE:
         return (T)
-            ImmutableShowReferenceCommandSpec.builder()
-                .from((ShowReferenceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableShowReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case SHOW_CONTENT:
         return (T)
-            ImmutableShowContentCommandSpec.builder()
-                .from((ShowContentCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableShowContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case SHOW_LOG:
+        return (T) ImmutableShowLogCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case REVERT_CONTENT:
         return (T)
-            ImmutableShowLogCommandSpec.builder()
-                .from((ShowLogCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableRevertContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case DROP_REFERENCE:
         return (T)
-            ImmutableDropReferenceCommandSpec.builder()
-                .from((DropReferenceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableDropReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case CREATE_REFERENCE:
         return (T)
-            ImmutableCreateReferenceCommandSpec.builder()
-                .from((CreateReferenceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableCreateReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case CREATE_NAMESPACE:
         return (T)
-            ImmutableCreateNamespaceCommandSpec.builder()
-                .from((CreateNamespaceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableCreateNamespaceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case ALTER_NAMESPACE:
         return (T)
-            ImmutableAlterNamespaceCommandSpec.builder()
-                .from((AlterNamespaceCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableAlterNamespaceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case DROP_CONTENT:
         return (T)
-            ImmutableDropContentCommandSpec.builder()
-                .from((DropContentCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableDropContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       case MERGE_BRANCH:
         return (T)
-            ImmutableMergeBranchCommandSpec.builder()
-                .from((MergeBranchCommandSpec) parsedSpec)
-                .sourceNode(null)
-                .build();
+            ImmutableMergeBranchCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
       default:
         throw new IllegalArgumentException("Unknown type " + parsedSpec.commandType());
     }

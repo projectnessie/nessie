@@ -15,11 +15,13 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
@@ -72,11 +74,11 @@ public class AssignReferenceCommand extends NessieCommand<AssignReferenceCommand
             .append("Assigned ")
             .append(assigned.getType().name())
             .append(' ')
-            .append(assigned.getName(), AttributedStyle.BOLD)
+            .append(assigned.getName(), STYLE_BOLD)
             .append(" from ")
-            .append(ref.getHash(), AttributedStyle.DEFAULT.faint())
+            .append(ref.getHash(), STYLE_FAINT)
             .append(" to ")
-            .append(assigned.getHash(), AttributedStyle.DEFAULT.faint()));
+            .append(assigned.getHash(), STYLE_FAINT));
   }
 
   public String name() {

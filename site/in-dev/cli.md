@@ -109,6 +109,12 @@ clauses.
 
 {% include './generated-docs/cli-help-MergeBranchStatement.md' %}
 
+### **`REVERT CONTENT`**
+
+{% include './generated-docs/cli-syntax-RevertContentStatement.md' %}
+
+{% include './generated-docs/cli-help-RevertContentStatement.md' %}
+
 ### **`SHOW LOG`**
 
 {% include './generated-docs/cli-syntax-ShowLogStatement.md' %}

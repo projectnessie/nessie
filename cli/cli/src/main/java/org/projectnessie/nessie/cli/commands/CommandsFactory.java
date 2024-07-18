@@ -41,6 +41,7 @@ public class CommandsFactory {
     COMMAND_FACTORIES.put(CommandType.SHOW_CONTENT, ShowContentCommand::new);
     COMMAND_FACTORIES.put(CommandType.SHOW_REFERENCE, ShowReferenceCommand::new);
     COMMAND_FACTORIES.put(CommandType.USE_REFERENCE, UseReferenceCommand::new);
+    COMMAND_FACTORIES.put(CommandType.REVERT_CONTENT, RevertContentCommand::new);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked", "UnnecessaryLocalVariable"})
