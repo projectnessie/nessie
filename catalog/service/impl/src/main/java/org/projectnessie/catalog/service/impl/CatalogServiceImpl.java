@@ -60,6 +60,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
@@ -117,7 +118,7 @@ public class CatalogServiceImpl implements CatalogService {
   @Inject NessieApiV2 nessieApi;
   @Inject Persist persist;
   @Inject TasksService tasksService;
-  @Inject EntitySnapshotTaskBehavior snapshotTaskBehavior;
+  @Inject BackendExceptionMapper backendExceptionMapper;
   @Inject CatalogConfig catalogConfig;
 
   @Inject
@@ -125,7 +126,12 @@ public class CatalogServiceImpl implements CatalogService {
   Executor executor;
 
   private IcebergStuff icebergStuff() {
-    return new IcebergStuff(objectIO, persist, tasksService, snapshotTaskBehavior, executor);
+    return new IcebergStuff(
+        objectIO,
+        persist,
+        tasksService,
+        new EntitySnapshotTaskBehavior(backendExceptionMapper, catalogConfig.retryAfterThrottled()),
+        executor);
   }
 
   @Override

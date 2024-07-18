@@ -17,6 +17,7 @@ package org.projectnessie.catalog.service.config;
 
 import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
@@ -56,6 +57,16 @@ public interface CatalogConfig {
   @ConfigPropertyName("iceberg-property")
   @ConfigItem(section = "warehouseDefaults")
   Map<String, String> icebergConfigOverrides();
+
+  /**
+   * Advanced property. The time interval after which a request is retried when storage I/O responds
+   * with some "retry later" response.
+   */
+  @ConfigPropertyName("throttled-retry-after")
+  @ConfigItem(section = "error-handling")
+  default Duration retryAfterThrottled() {
+    return Duration.ofSeconds(10);
+  }
 
   /**
    * Returns the given {@code warehouse} if not-empty or the {@link #defaultWarehouse() default

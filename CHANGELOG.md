@@ -14,7 +14,7 @@ as necessary. Empty sections will not end in the release notes.
 
 - The `throttled-retry-after` advanced configuration property was renamed from
   `nessie.catalog.service.s3.throttled-retry-after` to
-  `nessie.catalog.service.error-handling.throttled-retry-after`. The old property name is ignored.
+  `nessie.catalog.error-handling.throttled-retry-after`. The old property name is ignored.
 
 ### New Features
 

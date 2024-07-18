@@ -22,14 +22,6 @@ import java.time.Duration;
 
 @ConfigMapping(prefix = "nessie.catalog.service")
 public interface CatalogServiceConfig {
-  /**
-   * Advanced property. The time interval after which a request is retried when storage I/O responds
-   * with some "retry later" response.
-   */
-  @WithName("error-handling.throttled-retry-after")
-  @WithDefault("PT10S")
-  Duration retryAfterThrottled();
-
   /** Advanced property, defines the maximum number of concurrent imports from object stores. */
   @WithName("imports.max-concurrent")
   @WithDefault("32")

@@ -32,7 +32,6 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -201,9 +200,7 @@ public abstract class AbstractCatalogService {
     catalogService.executor = executor;
     catalogService.nessieApi = api;
 
-    BackendExceptionMapper exceptionMapper = BackendExceptionMapper.builder().build();
-    catalogService.snapshotTaskBehavior =
-        new EntitySnapshotTaskBehavior(exceptionMapper, Duration.ofMillis(1));
+    catalogService.backendExceptionMapper = BackendExceptionMapper.builder().build();
   }
 
   private void setupObjectIO() {

@@ -65,7 +65,6 @@ import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
-import org.projectnessie.catalog.service.impl.EntitySnapshotTaskBehavior;
 import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
 import org.projectnessie.catalog.service.impl.IllegalArgumentExceptionMapper;
 import org.projectnessie.catalog.service.impl.NessieExceptionMapper;
@@ -214,13 +213,6 @@ public class CatalogProducers {
   public RequestSigner signer(
       CatalogS3Config s3config, SecretsProvider secretsProvider, S3Sessions s3sessions) {
     return new S3Signer(s3config, secretsProvider, s3sessions);
-  }
-
-  @Produces
-  @Singleton
-  public EntitySnapshotTaskBehavior entitySnapshotTaskBehavior(
-      CatalogServiceConfig config, BackendExceptionMapper mapper) {
-    return new EntitySnapshotTaskBehavior(mapper, config.retryAfterThrottled());
   }
 
   @Produces

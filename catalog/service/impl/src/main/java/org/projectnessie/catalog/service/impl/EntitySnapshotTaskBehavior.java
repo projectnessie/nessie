@@ -32,13 +32,12 @@ import org.projectnessie.nessie.tasks.api.TaskBehavior;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 
-public final class EntitySnapshotTaskBehavior
+final class EntitySnapshotTaskBehavior
     implements TaskBehavior<EntitySnapshotObj, EntitySnapshotObj.Builder> {
   private final BackendExceptionMapper exceptionMapper;
   private final Duration retryAfterThrottled;
 
-  public EntitySnapshotTaskBehavior(
-      BackendExceptionMapper exceptionMapper, Duration retryAfterThrottled) {
+  EntitySnapshotTaskBehavior(BackendExceptionMapper exceptionMapper, Duration retryAfterThrottled) {
     this.exceptionMapper = exceptionMapper;
     this.retryAfterThrottled = retryAfterThrottled;
   }
