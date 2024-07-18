@@ -29,6 +29,7 @@ as necessary. Empty sections will not end in the release notes.
   vs the n-th commit as the last live one.
 - GC: Record failed "sweep"/"expire" runs in the repository. Before this fix, failures were reported on the console.
 - Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
+- Catalog/ADLS: More informative error message if mandatory `endpoint` is missing.
 
 ### Commits
 
