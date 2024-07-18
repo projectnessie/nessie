@@ -88,8 +88,14 @@ public class CatalogProducers {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogProducers.class);
 
-  void eagerCatalogConfigValidation(@Observes StartupEvent ev, CatalogConfig catalogConfig) {
+  void eagerCatalogConfigValidation(
+      @Observes StartupEvent ev,
+      CatalogConfig catalogConfig,
+      CatalogS3Config s3Config,
+      CatalogGcsConfig gcsConfig,
+      CatalogAdlsConfig adlsConfig) {
     catalogConfig.check();
+    adlsConfig.checkEndpoint();
   }
 
   @Produces
