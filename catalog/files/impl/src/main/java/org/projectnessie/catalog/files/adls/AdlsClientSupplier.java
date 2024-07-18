@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static java.lang.String.format;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
 
 import com.azure.core.http.HttpClient;
@@ -80,7 +81,16 @@ public final class AdlsClientSupplier {
 
     String accountName = account.map(BasicCredentials::name).orElse(location.storageAccount());
 
-    fileSystemOptions.endpoint().ifPresent(clientBuilder::endpoint);
+    clientBuilder.endpoint(
+        fileSystemOptions
+            .endpoint()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        format(
+                            "Mandatory ADLS endpoint is not configured for storage account %s%s.",
+                            location.storageAccount(),
+                            location.container().map(c -> ", container " + c).orElse("")))));
 
     if (fileSystemOptions.sasToken().isPresent()) {
       clientBuilder.sasToken(fileSystemOptions.sasToken().get().key());

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
@@ -106,5 +107,27 @@ public interface AdlsOptions<PER_FILE_SYSTEM extends AdlsFileSystemOptions> {
             specific,
             SECRET_ATTRIBUTES)
         .build();
+  }
+
+  default void checkEndpoint() {
+    boolean hasDefaultEndpoint = defaultOptions().map(o -> o.endpoint().isPresent()).orElse(false);
+    if (!hasDefaultEndpoint && !fileSystems().isEmpty()) {
+      List<String> missing =
+          fileSystems().entrySet().stream()
+              .filter(e -> e.getValue().endpoint().isEmpty())
+              .map(Map.Entry::getKey)
+              .sorted()
+              .collect(Collectors.toList());
+      if (!missing.isEmpty()) {
+        String msg =
+            missing.stream()
+                .collect(
+                    Collectors.joining(
+                        "', '",
+                        "Mandatory ADLS endpoint is not configured for file system '",
+                        "'."));
+        throw new IllegalStateException(msg);
+      }
+    }
   }
 }

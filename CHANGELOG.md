@@ -30,6 +30,7 @@ as necessary. Empty sections will not end in the release notes.
 - GC: Record failed "sweep"/"expire" runs in the repository. Before this fix, failures were reported on the console.
 - GC: Fix handling of broken manifest files written by pyiceberg up to 0.6.1
 - Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
+- Catalog/ADLS: More informative error message if mandatory `endpoint` is missing.
 
 ### Commits
 
