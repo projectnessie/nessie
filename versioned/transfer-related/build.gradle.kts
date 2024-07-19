@@ -30,4 +30,7 @@ dependencies {
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
+
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }
