@@ -15,6 +15,7 @@
  */
 package org.projectnessie.gc.contents.jdbc;
 
+import static com.google.common.base.Throwables.getStackTraceAsString;
 import static org.projectnessie.gc.contents.jdbc.JdbcHelper.isIntegrityConstraintViolation;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.ADD_CONTENT;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.DELETE_FILE_DELETIONS;
@@ -164,7 +165,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           stmt.setTimestamp(1, Timestamp.from(finished));
           if (failure != null) {
             stmt.setString(2, LiveContentSet.Status.EXPIRY_FAILED.name());
-            stmt.setString(3, trimError(failure.toString()));
+            stmt.setString(3, trimError(getStackTraceAsString(failure)));
           } else {
             stmt.setString(2, LiveContentSet.Status.EXPIRY_SUCCESS.name());
             stmt.setNull(3, Types.VARCHAR);

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.compatibility.internal;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
 
 import java.util.HashMap;
@@ -33,9 +34,9 @@ final class ServerKey {
   private final Map<String, String> config;
 
   ServerKey(Version version, String storageName, Map<String, String> config) {
-    this.version = Objects.requireNonNull(version);
-    this.storageName = Objects.requireNonNull(storageName);
-    this.config = Objects.requireNonNull(config);
+    this.version = requireNonNull(version, "version");
+    this.storageName = requireNonNull(storageName, "storageName");
+    this.config = requireNonNull(config, "config");
   }
 
   public static ServerKey forContext(

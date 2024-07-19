@@ -274,27 +274,7 @@ public class IcebergConfigurer {
     gcsBucketOptions
         .deleteBatchSize()
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
-    // FIXME it is not safe to send de/encryption keys and oauth2 tokens
-    gcsBucketOptions
-        .decryptionKey()
-        .ifPresent(key -> configOverrides.put(GCS_DECRYPTION_KEY, key.key()));
-    gcsBucketOptions
-        .encryptionKey()
-        .ifPresent(key -> configOverrides.put(GCS_ENCRYPTION_KEY, key.key()));
-    gcsBucketOptions
-        .oauth2Token()
-        .ifPresent(
-            token -> {
-              configOverrides.put(GCS_OAUTH2_TOKEN, token.token());
-              token
-                  .expiresAt()
-                  .ifPresent(
-                      e ->
-                          configOverrides.put(
-                              GCS_OAUTH2_TOKEN_EXPIRES_AT, String.valueOf(e.toEpochMilli())));
-            });
-    if (gcsBucketOptions.authType().isPresent()
-        && gcsBucketOptions.authType().get() == GcsBucketOptions.GcsAuthType.NONE) {
+    if (gcsBucketOptions.effectiveAuthType() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
     }
     return configOverrides;
@@ -306,29 +286,6 @@ public class IcebergConfigurer {
     Optional<String> fileSystem = location.container();
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
-    // FIXME send account key and token?
-    AdlsFileSystemOptions.AzureAuthType authType =
-      fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.APPLICATION_DEFAULT);
-
-    switch (authType) {
-      case STORAGE_SHARED_KEY:
-        BasicCredentials basicCredentials =
-            fileSystemOptions
-                .account()
-                .orElseThrow(() -> new IllegalStateException("account key missing"));
-        configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_NAME, basicCredentials.name());
-        configOverrides.put(ADLS_SHARED_KEY_ACCOUNT_KEY, basicCredentials.secret());
-        break;
-      case SAS_TOKEN:
-        KeySecret sasToken =
-          fileSystemOptions
-            .sasToken()
-            .orElseThrow(() -> new IllegalStateException("SAS token missing"));
-        configOverrides.put(ADLS_SAS_TOKEN_PREFIX + location.storageAccount(), sasToken.key());
-        break;
-      default:
-        break;
-    }
     fileSystemOptions
         .endpoint()
         .ifPresent(

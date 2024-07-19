@@ -16,6 +16,7 @@
 package org.apache.iceberg;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Map;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
 
@@ -23,10 +24,13 @@ public final class ManifestReaderUtil {
 
   private ManifestReaderUtil() {}
 
-  public static CloseableIterable<String> readPathsFromManifest(ManifestFile manifest, FileIO io) {
+  public static CloseableIterable<String> readPathsFromManifest(
+      ManifestFile manifest, Map<Integer, PartitionSpec> specsById, FileIO io) {
     // entry.file() is package private. Hence, this Util class under iceberg package.
     return CloseableIterable.transform(
-        ManifestFiles.open(manifest, io, null).select(ImmutableList.of("file_path")).liveEntries(),
+        ManifestFiles.open(manifest, io, specsById)
+            .select(ImmutableList.of("file_path"))
+            .liveEntries(),
         entry -> entry.file().path().toString());
   }
 }

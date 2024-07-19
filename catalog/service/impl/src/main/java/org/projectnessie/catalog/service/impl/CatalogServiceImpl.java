@@ -44,7 +44,6 @@ import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +60,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
@@ -118,11 +118,21 @@ public class CatalogServiceImpl implements CatalogService {
   @Inject NessieApiV2 nessieApi;
   @Inject Persist persist;
   @Inject TasksService tasksService;
+  @Inject BackendExceptionMapper backendExceptionMapper;
   @Inject CatalogConfig catalogConfig;
 
   @Inject
   @Named("import-jobs")
   Executor executor;
+
+  private IcebergStuff icebergStuff() {
+    return new IcebergStuff(
+        objectIO,
+        persist,
+        tasksService,
+        new EntitySnapshotTaskBehavior(backendExceptionMapper, catalogConfig.retryAfterThrottled()),
+        executor);
+  }
 
   @Override
   public Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(
@@ -146,7 +156,7 @@ public class CatalogServiceImpl implements CatalogService {
             .keys(keys)
             .getWithResponse();
 
-    IcebergStuff icebergStuff = new IcebergStuff(objectIO, persist, tasksService, executor);
+    IcebergStuff icebergStuff = icebergStuff();
 
     Reference effectiveReference = contentResponse.getEffectiveReference();
     effectiveReferenceConsumer.accept(effectiveReference);
@@ -214,8 +224,7 @@ public class CatalogServiceImpl implements CatalogService {
     ObjId snapshotId = snapshotObjIdForContent(content);
 
     CompletionStage<NessieEntitySnapshot<?>> snapshotStage =
-        new IcebergStuff(objectIO, persist, tasksService, executor)
-            .retrieveIcebergSnapshot(snapshotId, content);
+        icebergStuff().retrieveIcebergSnapshot(snapshotId, content);
 
     return snapshotStage.thenApply(
         snapshot -> snapshotResponse(key, content, reqParams, snapshot, effectiveReference));
@@ -357,7 +366,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     Map<ContentKey, Content> contents = contentsResponse.toContentsMap();
 
-    IcebergStuff icebergStuff = new IcebergStuff(objectIO, persist, tasksService, executor);
+    IcebergStuff icebergStuff = icebergStuff();
 
     CommitMultipleOperationsBuilder nessieCommit =
         nessieApi.commitMultipleOperations().branch(target);
@@ -676,14 +685,12 @@ public class CatalogServiceImpl implements CatalogService {
 
   private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content) {
     ObjId snapshotId = snapshotObjIdForContent(content);
-    return new IcebergStuff(objectIO, persist, tasksService, executor)
-        .retrieveIcebergSnapshot(snapshotId, content);
+    return icebergStuff().retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private CompletionStage<NessieViewSnapshot> loadExistingViewSnapshot(Content content) {
     ObjId snapshotId = snapshotObjIdForContent(content);
-    return new IcebergStuff(objectIO, persist, tasksService, executor)
-        .retrieveIcebergSnapshot(snapshotId, content);
+    return icebergStuff().retrieveIcebergSnapshot(snapshotId, content);
   }
 
   private IcebergTableMetadata storeTableSnapshot(
@@ -707,8 +714,8 @@ public class CatalogServiceImpl implements CatalogService {
     multiTableUpdate.addStoredLocation(metadataJsonLocation);
     try (OutputStream out = objectIO.writeObject(StorageUri.of(metadataJsonLocation))) {
       IcebergJson.objectMapper().writeValue(out, metadata);
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);
+    } catch (Exception ex) {
+      throw new RuntimeException("Failed to write snapshot to: " + metadataJsonLocation, ex);
     }
     return metadata;
   }

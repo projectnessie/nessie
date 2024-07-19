@@ -28,6 +28,7 @@ public enum CommandType {
   LIST_CONTENTS("ListContentsStatement"),
   LIST_REFERENCES("ListReferencesStatement"),
   MERGE_BRANCH("MergeBranchStatement"),
+  REVERT_CONTENT("RevertContentStatement"),
   SHOW_LOG("ShowLogStatement"),
   SHOW_CONTENT("ShowContentStatement"),
   SHOW_REFERENCE("ShowReferenceStatement"),

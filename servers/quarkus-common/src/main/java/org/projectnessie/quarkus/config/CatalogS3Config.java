@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -39,10 +38,6 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  */
 @ConfigMapping(prefix = "nessie.catalog.service.s3")
 public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConfig> {
-  @WithName("throttled-retry-after")
-  @WithDefault("PT10S")
-  @Override
-  Optional<Duration> retryAfter();
 
   @WithName("http.expect-continue-enabled")
   @Override

@@ -48,7 +48,7 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   }
 
   private ObjId storeNewEntry() {
-    return storeNewEntry(TaskState.failureState("test"));
+    return storeNewEntry(TaskState.failureState("test", null));
   }
 
   private ObjId storeNewEntry(TaskState state) {
@@ -58,7 +58,7 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   }
 
   private ObjId storeNewEntry(ContentKey key, Content content) {
-    return storeNewEntry(TaskState.failureState("test"), key, content);
+    return storeNewEntry(TaskState.failureState("test", null), key, content);
   }
 
   private ObjId storeNewEntry(TaskState state, ContentKey key, Content content) {
@@ -126,8 +126,9 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
   public void testExpireByStatus(QuarkusMainLauncher launcher, Persist persist)
       throws ObjNotFoundException {
     ObjId id1 = storeNewEntry(TaskState.SUCCESS);
-    ObjId id2 = storeNewEntry(TaskState.failureState("test2"));
-    ObjId id3 = storeNewEntry(TaskState.retryableErrorState(Instant.ofEpochMilli(0), "test3"));
+    ObjId id2 = storeNewEntry(TaskState.failureState("test2", null));
+    ObjId id3 =
+        storeNewEntry(TaskState.retryableErrorState(Instant.ofEpochMilli(0), "test3", "test"));
 
     launchNoFile(
         launcher, "delete-catalog-tasks", "--task-status=SUCCESS", "--task-status=FAILURE");

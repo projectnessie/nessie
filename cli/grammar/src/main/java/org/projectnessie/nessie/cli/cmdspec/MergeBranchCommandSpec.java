@@ -33,7 +33,10 @@ public interface MergeBranchCommandSpec extends RefWithTypeCommandSpec, RefWithH
     return RefWithHashCommandSpec.super.sourceNode();
   }
 
-  boolean isDryRun();
+  @Value.Default
+  default boolean isDryRun() {
+    return false;
+  }
 
   @Override
   @Nullable

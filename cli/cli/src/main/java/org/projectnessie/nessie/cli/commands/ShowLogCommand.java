@@ -15,7 +15,8 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
-import static org.jline.utils.AttributedStyle.YELLOW;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_YELLOW;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -58,9 +59,6 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
       logStream = logStream.limit(spec.getLimit());
     }
 
-    AttributedStyle yellow = AttributedStyle.DEFAULT.foreground(YELLOW);
-    AttributedStyle faint = AttributedStyle.DEFAULT.faint();
-
     DateTimeFormatter dateTimeFormatter =
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.LONG)
             .withZone(ZoneId.systemDefault());
@@ -74,26 +72,27 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
 
           Stream<String> header =
               Stream.of(
-                  new AttributedString("commit " + meta.getHash(), yellow).toAnsi(cli.terminal()),
+                  new AttributedString("commit " + meta.getHash(), STYLE_YELLOW)
+                      .toAnsi(cli.terminal()),
                   new AttributedStringBuilder()
-                      .append("Author:  ", faint)
+                      .append("Author:  ", STYLE_FAINT)
                       .append(
                           meta.getAuthor() == null || meta.getAuthor().isEmpty()
                               ? "<no author>"
                               : meta.getAuthor(),
                           meta.getAuthor() == null || meta.getAuthor().isEmpty()
-                              ? faint
+                              ? STYLE_FAINT
                               : AttributedStyle.DEFAULT)
                       .toAnsi(cli.terminal()),
                   new AttributedStringBuilder()
-                      .append("Date:    ", faint)
+                      .append("Date:    ", STYLE_FAINT)
                       .append(dateTimeFormatter.format(authorTimestamp))
-                      .append(" (committed: ", faint)
-                      .append(DateTimeFormatter.ISO_DATE_TIME.format(commitTimestamp), faint)
-                      .append(")", faint)
+                      .append(" (committed: ", STYLE_FAINT)
+                      .append(DateTimeFormatter.ISO_DATE_TIME.format(commitTimestamp), STYLE_FAINT)
+                      .append(")", STYLE_FAINT)
                       .toAnsi(cli.terminal()),
                   new AttributedStringBuilder()
-                      .append("Parents: ", faint)
+                      .append("Parents: ", STYLE_FAINT)
                       .append(String.join(", ", meta.getParentCommitHashes()))
                       .toAnsi(cli.terminal()),
                   "");

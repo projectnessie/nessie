@@ -15,6 +15,9 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
@@ -68,8 +71,6 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
               + response.getEffectiveReference().getHash());
     }
 
-    AttributedStyle faint = AttributedStyle.DEFAULT.faint();
-
     Terminal terminal = cli.terminal();
 
     StringWriter sw = new StringWriter();
@@ -78,17 +79,17 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
       writer.println(
           new AttributedStringBuilder()
               .append("Content type: ")
-              .append(content.getType().name(), faint)
+              .append(content.getType().name(), STYLE_FAINT)
               .toAnsi(terminal));
       writer.println(
           new AttributedStringBuilder()
               .append(" Content Key: ")
-              .append(key.toPathString(), AttributedStyle.BOLD)
+              .append(key.toPathString(), STYLE_BOLD)
               .toAnsi(terminal));
       writer.println(
           new AttributedStringBuilder()
               .append("          ID: ")
-              .append(content.getId(), faint)
+              .append(content.getId(), STYLE_FAINT)
               .toAnsi(terminal));
       terminal.writer().println("        JSON: ");
 

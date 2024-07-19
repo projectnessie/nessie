@@ -137,7 +137,7 @@ final class ExportContents extends ExportCommon {
         for (Map.Entry<ContentKey, ContentResult> entry : values.entrySet()) {
           ContentKey key = entry.getKey();
           Content content = entry.getValue().content();
-          Operation op = putOperationFromCommit(key, requireNonNull(content)).build();
+          Operation op = putOperationFromCommit(key, requireNonNull(content, "content")).build();
           hasher.putBytes(op.toByteArray());
           commitBuilder.addOperations(op);
 

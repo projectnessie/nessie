@@ -16,9 +16,6 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
-import static org.jline.utils.AttributedStyle.CYAN;
-import static org.jline.utils.AttributedStyle.GREEN;
-import static org.jline.utils.AttributedStyle.RED;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
@@ -27,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.MergeReferenceBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
@@ -45,6 +41,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 import org.projectnessie.nessie.cli.grammar.Token;
 
 public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
+
   public MergeBranchCommand() {}
 
   @Override
@@ -117,13 +114,6 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
       cli.setCurrentReference(newTarget);
     }
 
-    AttributedStyle styleSuccess = AttributedStyle.DEFAULT.foreground(GREEN);
-    AttributedStyle styleFail = AttributedStyle.DEFAULT.bold().foreground(RED);
-    AttributedStyle styleFailFaint = AttributedStyle.DEFAULT.foreground(RED);
-    AttributedStyle styleFaint = AttributedStyle.DEFAULT.faint();
-    AttributedStyle styleKey = AttributedStyle.DEFAULT.bold();
-    AttributedStyle styleInfo = AttributedStyle.DEFAULT.foreground(CYAN);
-
     Terminal terminal = cli.terminal();
     @SuppressWarnings("resource")
     PrintWriter writer = cli.writer();
@@ -141,8 +131,8 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
     } else {
       writer.println(
           new AttributedStringBuilder()
-              .append(briefMessage, styleFail)
-              .append(" FAILED.", styleFail)
+              .append(briefMessage, BaseNessieCli.STYLE_FAIL)
+              .append(" FAILED.", BaseNessieCli.STYLE_FAIL)
               .toAnsi(terminal));
 
       detailsHeading = "\nConflicts:\n";
@@ -162,18 +152,21 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
               detail -> {
                 AttributedStringBuilder keyInfo =
                     new AttributedStringBuilder()
-                        .append(format("%-70s ", detail.getKey().toString()), styleKey)
-                        .append(format("%-7s", detail.getMergeBehavior().name()), styleFaint);
+                        .append(
+                            format("%-70s ", detail.getKey().toString()), BaseNessieCli.STYLE_KEY)
+                        .append(
+                            format("%-7s", detail.getMergeBehavior().name()),
+                            BaseNessieCli.STYLE_FAINT);
                 Conflict conflict = detail.getConflict();
                 if (conflict != null) {
                   keyInfo
                       .append(" ")
-                      .append(conflict.message(), styleFail)
-                      .append(" (", styleFaint)
-                      .append(conflict.conflictType().name(), styleFailFaint)
-                      .append(")", styleFaint);
+                      .append(conflict.message(), BaseNessieCli.STYLE_FAIL)
+                      .append(" (", BaseNessieCli.STYLE_FAINT)
+                      .append(conflict.conflictType().name(), BaseNessieCli.STYLE_ERROR)
+                      .append(")", BaseNessieCli.STYLE_FAINT);
                 } else {
-                  keyInfo.append(" ").append("OK", styleSuccess);
+                  keyInfo.append(" ").append("OK", BaseNessieCli.STYLE_SUCCESS);
                 }
                 writer.println(keyInfo.toAnsi(terminal));
               });
@@ -183,9 +176,9 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
       writer.println(
           new AttributedStringBuilder()
               .append("Target branch ")
-              .append(newTarget.getName(), styleSuccess)
+              .append(newTarget.getName(), BaseNessieCli.STYLE_SUCCESS)
               .append(" is now at commit ")
-              .append(newTarget.getHash(), styleInfo)
+              .append(newTarget.getHash(), BaseNessieCli.STYLE_INFO)
               .toAnsi(cli.terminal()));
     }
 

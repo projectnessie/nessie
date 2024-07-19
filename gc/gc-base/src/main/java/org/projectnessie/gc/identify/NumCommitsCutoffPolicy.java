@@ -29,7 +29,7 @@ final class NumCommitsCutoffPolicy implements CutoffPolicy {
 
   @Override
   public boolean isCutoff(@Nonnull Instant commitTime, int numCommits) {
-    return numCommits >= commits;
+    return numCommits > commits;
   }
 
   @Override

@@ -20,6 +20,7 @@ import static org.jline.utils.AttributedStyle.GREEN;
 import static org.jline.utils.AttributedStyle.RED;
 import static org.jline.utils.AttributedStyle.YELLOW;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,7 +68,8 @@ public class SyntaxTool {
   }
 
   @SuppressWarnings("unchecked")
-  private static List<Token.TokenType> leadingTokens(String name)
+  @VisibleForTesting
+  static List<Token.TokenType> leadingTokens(String name)
       throws ClassNotFoundException, IllegalAccessException {
     List<Token.TokenType> leadingTokens = List.of();
     Class<?> statementClass = Class.forName("org.projectnessie.nessie.cli.grammar.ast." + name);
@@ -94,7 +96,7 @@ public class SyntaxTool {
     return styleMap;
   }
 
-  static final String MARKDOWN_ESCAPES = "\\`*_{}[]<>()#+-.!";
+  static final String MARKDOWN_ESCAPES = "\\`*_{}[]<>#+-.!";
 
   static String syntaxAsMarkdown(
       List<Token.TokenType> leadingTokens, Syntax syntax, BNFProduction production) {
@@ -106,7 +108,7 @@ public class SyntaxTool {
         new SyntaxPrinter() {
           @Override
           public void newline(String indent) {
-            sb.append("\n  ").append(indent);
+            sb.append("<br>\n  ").append(indent);
           }
 
           @Override

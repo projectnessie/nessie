@@ -12,13 +12,32 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The `throttled-retry-after` advanced configuration property was renamed from
+  `nessie.catalog.service.s3.throttled-retry-after` to
+  `nessie.catalog.error-handling.throttled-retry-after`. The old property name is ignored.
+
 ### New Features
 
+- CLI: New `REVERT CONTENT` command to update one or more tables or views to a previous state.
+
 ### Changes
+
+- Catalog: ADLS + GCS credentials are no longer sent to the client. It is considered insecure to expose the
+  server's credentials to clients, even if this is likely very convenient. Unless we have a secure mechanism
+  to provide per-client/table credentials, users have to configure object store credentials when using GCS or
+  ADLS via the local Iceberg configuration(s).
 
 ### Deprecations
 
 ### Fixes
+
+- GC: Fix behavior of cutoff policy "num commits", it was 'off by one' and considered the n-th commit as non-live
+  vs the n-th commit as the last live one.
+- GC: Record failed "sweep"/"expire" runs in the repository. Before this fix, failures were reported on the console.
+- GC: Fix handling of broken manifest files written by pyiceberg up to 0.6.1
+- Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
+- Catalog/ADLS: More informative error message if mandatory `endpoint` is missing.
+- Catalog/ADLS: Use a less restrictive endpoint in the 'ObjectIO.ping' function used for health checks.
 
 ### Commits
 

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.config;
 
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
@@ -48,6 +49,7 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<Boolean> allowCrossRegionAccessPoint();
 
   @WithName("server-auth-mode")
+  @WithDefault("STATIC")
   @Override
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
 
@@ -67,6 +69,7 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   Optional<String> externalId();
 
   @WithName("client-auth-mode")
+  @WithDefault("REQUEST_SIGNING")
   @Override
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
 

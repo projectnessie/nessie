@@ -36,7 +36,7 @@ final class CombinedGetRepositoryConfig implements GetRepositoryConfigBuilder {
 
   @Override
   public GetRepositoryConfigBuilder type(RepositoryConfig.Type type) {
-    this.types.add(requireNonNull(type));
+    this.types.add(requireNonNull(type, "repository config type is null"));
     return this;
   }
 

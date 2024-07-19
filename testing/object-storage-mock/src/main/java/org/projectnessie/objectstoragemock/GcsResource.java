@@ -174,6 +174,7 @@ public class GcsResource {
       @PathParam("bucketName") String bucketName, @PathParam("object") String objectName) {
     return withBucket(
         bucketName,
+        objectName,
         b -> {
           if (!b.deleter().delete(objectName)) {
             return keyNotFound();
@@ -277,6 +278,7 @@ public class GcsResource {
       InputStream stream) {
     return withBucket(
         bucketName,
+        objectName,
         bucket -> {
           try {
             Bucket.Updater updater = bucket.updater();
@@ -380,6 +382,10 @@ public class GcsResource {
     return errorResponse(Status.NOT_FOUND, "The specified key does not exist.");
   }
 
+  private static Response accessDenied() {
+    return errorResponse(Status.FORBIDDEN, "Access Denied.");
+  }
+
   private static Response errorResponse(Status status, String message) {
     return Response.status(status)
         .type(MediaType.APPLICATION_JSON)
@@ -400,10 +406,25 @@ public class GcsResource {
     return worker.apply(bucket);
   }
 
+  private Response withBucket(
+      String bucketName, String objectName, Function<Bucket, Response> worker) {
+    Bucket bucket = mockServer.buckets().get(bucketName);
+    if (bucket == null) {
+      return bucketNotFound();
+    }
+
+    if (!mockServer.accessCheckHandler().accessAllowed(objectName)) {
+      return accessDenied();
+    }
+
+    return worker.apply(bucket);
+  }
+
   private Response withBucketObject(
       String bucketName, String objectName, Function<MockObject, Response> worker) {
     return withBucket(
         bucketName,
+        objectName,
         bucket -> {
           MockObject o = bucket.object().retrieve(objectName);
           if (o == null) {

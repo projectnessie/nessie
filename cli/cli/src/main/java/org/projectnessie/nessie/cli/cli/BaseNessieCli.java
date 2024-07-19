@@ -18,6 +18,7 @@ package org.projectnessie.nessie.cli.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.jline.utils.AttributedStyle.BLUE;
+import static org.jline.utils.AttributedStyle.CYAN;
 import static org.jline.utils.AttributedStyle.GREEN;
 import static org.jline.utils.AttributedStyle.RED;
 import static org.jline.utils.AttributedStyle.YELLOW;
@@ -42,10 +43,20 @@ import org.projectnessie.model.Reference;
 public abstract class BaseNessieCli {
 
   public static final AttributedStyle STYLE_ERROR = AttributedStyle.DEFAULT.foreground(RED);
+  public static final AttributedStyle STYLE_FAIL = AttributedStyle.DEFAULT.bold().foreground(RED);
   public static final AttributedStyle STYLE_FAINT = AttributedStyle.DEFAULT.faint();
   public static final AttributedStyle STYLE_YELLOW = AttributedStyle.DEFAULT.foreground(YELLOW);
   public static final AttributedStyle STYLE_GREEN = AttributedStyle.DEFAULT.foreground(GREEN);
   public static final AttributedStyle STYLE_BLUE = AttributedStyle.DEFAULT.foreground(BLUE);
+  public static final AttributedStyle STYLE_SUCCESS = AttributedStyle.DEFAULT.foreground(GREEN);
+  public static final AttributedStyle STYLE_BOLD = AttributedStyle.DEFAULT.italic().bold();
+  public static final AttributedStyle STYLE_KEY = AttributedStyle.BOLD;
+  public static final AttributedStyle STYLE_COMMAND_NAME = AttributedStyle.BOLD;
+  public static final AttributedStyle STYLE_INFO = AttributedStyle.DEFAULT.foreground(CYAN);
+  public static final AttributedStyle STYLE_ITALIC_BOLD = AttributedStyle.DEFAULT.italic().bold();
+  public static final AttributedStyle STYLE_UNDERLINE_BOLD =
+      AttributedStyle.DEFAULT.underline().bold();
+  public static final AttributedStyle STYLE_HEADING = STYLE_UNDERLINE_BOLD;
 
   private Integer exitWithCode;
   private NessieApiV2 nessieApi;

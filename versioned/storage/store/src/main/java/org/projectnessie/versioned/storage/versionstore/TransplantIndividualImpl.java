@@ -164,7 +164,8 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
                 el.key(), op.payload(), requireNonNull(op.value()), expectedId, op.contentId()));
       } else {
         createCommitBuilder.addRemoves(
-            commitRemove(el.key(), op.payload(), requireNonNull(expectedId), op.contentId()));
+            commitRemove(
+                el.key(), op.payload(), requireNonNull(expectedId, "expectedId"), op.contentId()));
       }
     }
 

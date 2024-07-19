@@ -108,7 +108,7 @@ public abstract class ObjId {
    * @throws NullPointerException if {@code hash} is {@code null}
    */
   public static ObjId objIdFromString(@Nonnull String hash) {
-    requireNonNull(hash);
+    requireNonNull(hash, "hash string argument is null");
     int len = hash.length();
     checkArgument(len % 2 == 0, "hash length needs to be a multiple of two, was %s", len);
 

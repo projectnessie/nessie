@@ -15,13 +15,12 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
-import static org.jline.utils.AttributedStyle.CYAN;
-import static org.jline.utils.AttributedStyle.GREEN;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_INFO;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_SUCCESS;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
@@ -58,6 +57,9 @@ public abstract class NessieCommittingCommand<SPEC extends CommandSpec>
     commit.branch((Branch) ref);
 
     CommitResponse committed = executeCommitting(cli, spec, branch, commit);
+    if (committed == null) {
+      return;
+    }
 
     if (cli.getCurrentReference().getName().equals(committed.getTargetBranch().getName())) {
       cli.setCurrentReference(committed.getTargetBranch());
@@ -68,10 +70,9 @@ public abstract class NessieCommittingCommand<SPEC extends CommandSpec>
     writer.println(
         new AttributedStringBuilder()
             .append("Target branch ")
-            .append(
-                committed.getTargetBranch().getName(), AttributedStyle.DEFAULT.foreground(GREEN))
+            .append(committed.getTargetBranch().getName(), STYLE_SUCCESS)
             .append(" is now at commit ")
-            .append(committed.getTargetBranch().getHash(), AttributedStyle.DEFAULT.foreground(CYAN))
+            .append(committed.getTargetBranch().getHash(), STYLE_INFO)
             .toAnsi(cli.terminal()));
   }
 

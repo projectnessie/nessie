@@ -16,11 +16,11 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 
 import java.util.List;
 import java.util.stream.Stream;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.GetAllReferencesBuilder;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
@@ -61,10 +61,9 @@ public class ListReferencesCommand extends NessieListingCommand<ListReferencesCo
             ref ->
                 Stream.of(
                     new AttributedStringBuilder()
-                        .append(
-                            format(" %-6s ", ref.getType().name()), AttributedStyle.DEFAULT.faint())
+                        .append(format(" %-6s ", ref.getType().name()), STYLE_FAINT)
                         .append(ref.getName())
-                        .append(format(" @ %s", ref.getHash()), AttributedStyle.DEFAULT.faint())
+                        .append(format(" @ %s", ref.getHash()), STYLE_FAINT)
                         .toAnsi(cli.terminal())));
   }
 

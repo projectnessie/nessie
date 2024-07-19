@@ -164,7 +164,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-07-13T01-46-15Z
+    image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
     ports:
       # API port
       - "9002:9000"
@@ -184,7 +184,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2024-07-13T01-46-15Z
+    image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
     depends_on:
       minio:
         condition: service_healthy
@@ -207,7 +207,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0.1
+    image: quay.io/keycloak/keycloak:25.0.2
     ports:
       - "8080:8080"
       - "9001:9000"

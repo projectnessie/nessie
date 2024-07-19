@@ -38,6 +38,32 @@ See [here](https://smallrye.io/smallrye-config/Main/config/environment-variables
 
 For more information on docker images, see [Docker image options](#docker-image-options) below.
 
+## Server sizing
+
+The minimum resources for Nessie are 4 CPUs and 4 GB RAM.
+
+The recommended resources for Nessie depend on the actual use case and usage pattern(s). We recommend to start various
+configuration starting with 8 CPUs and 8 GB RAM.
+
+The efficiency of Nessie's cache can be monitored using the metrics provided with the `cache=nessie-objects` tag,
+especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by `cache.evictions`.
+
+!!! note
+    Nessie is a stateless service that heavily depends on the performance of the backend database (request duration and
+    throughput) and works best with distributed key-value databases. Nessie has a built-in cache. Caches require
+    memory, the more memory, the more efficient is the cache and the fewer operations need to be performed against the
+    backend database.
+
+!!! tip
+    You can set the the `nessie.version.store.persist.reference-cache-ttl` configuration option to further
+    reduce the load against the backing database. See [Version Store Advanced Settings](#version-store-advanced-settings)
+    below.
+
+!!! note
+    Many things happen in parallel and some libraries that we have to depend on are written in a "reactive way",
+    especially with Iceberg REST. While the Iceberg REST parts in Nessie are built in a "reactive way",
+    most Nessie core APIs are not.
+
 ## Providing secrets
 
 Instead of providing secrets like passwords in clear text, you can also use a keystore. This
@@ -139,6 +165,12 @@ Related Quarkus settings:
 
 #### Advanced catalog settings
 
+##### Error Handling
+
+{% include './generated-docs/smallrye-nessie_catalog_error_handling.md' %}
+
+##### Performance Tuning
+
 {% include './generated-docs/smallrye-nessie_catalog_service.md' %}
 
 ### Version Store Settings
@@ -153,7 +185,7 @@ Related Quarkus settings:
 | RocksDB          | production, single node only                     | `ROCKSDB`                                               |                                                                                                                                                                                                                                 |
 | Google BigTable  | production                                       | `BIGTABLE`                                              |                                                                                                                                                                                                                                 |
 | MongoDB          | production                                       | `MONGODB`                                               |                                                                                                                                                                                                                                 |
-| Amazon DynamoDB  | beta, only tested against the simulator          | `DYNAMODB`                                              |                                                                                                                                                                                                                                 |
+| Amazon DynamoDB  | beta, only tested against the simulator          | `DYNAMODB`                                              | Not recommended for use with Nessie Catalog (Iceberg REST) due to its restrictive row-size limit.                                                                                                                               |
 | PostgreSQL       | production                                       | `JDBC`                                                  |                                                                                                                                                                                                                                 |
 | H2               | only for development and local testing           | `JDBC`                                                  | Do not use for any serious use case.                                                                                                                                                                                            |
 | MariaDB          | experimental, feedback welcome                   | `JDBC`                                                  |                                                                                                                                                                                                                                 |
@@ -161,6 +193,11 @@ Related Quarkus settings:
 | CockroachDB      | experimental, known issues                       | `JDBC`                                                  | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                             |
 | Apache Cassandra | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                     |
 | ScyllaDB         | experimental, known issues                       | `CASSANDRA`                                             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. |
+
+!!! note
+    Relational databases are generally slower and tend to become a bottleneck when concurrent Nessie commits against
+    the same branch happen. This is a general limitation of relational databases and the actual unpleasant performance
+    penalty depends on the relational database itself, its configuration and whether and how replication is enabled.
 
 #### BigTable Version Store Settings
 

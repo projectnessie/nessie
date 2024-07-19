@@ -24,7 +24,6 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobSourceOption;
 import com.google.cloud.storage.Storage.BlobWriteOption;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
@@ -35,11 +34,8 @@ import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.storage.uri.StorageUri;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GcsObjectIO implements ObjectIO {
-  private static final Logger LOGGER = LoggerFactory.getLogger(GcsObjectIO.class);
 
   private final GcsStorageSupplier storageSupplier;
 
@@ -48,16 +44,12 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void ping(StorageUri uri) throws IOException {
+  public void ping(StorageUri uri) {
     GcsLocation location = gcsLocation(uri);
     GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
     @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
-    try {
-      client.get(BlobId.of(uri.requiredAuthority(), uri.requiredPath()));
-    } catch (RuntimeException e) {
-      throw new IOException(e);
-    }
+    client.get(BlobId.of(uri.requiredAuthority(), uri.requiredPath()));
   }
 
   @Override

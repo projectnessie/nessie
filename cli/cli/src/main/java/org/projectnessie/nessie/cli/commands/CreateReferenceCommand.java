@@ -15,11 +15,13 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.model.Branch;
@@ -86,9 +88,9 @@ public class CreateReferenceCommand extends NessieCommand<CreateReferenceCommand
             .append("Created ")
             .append(created.getType().name())
             .append(' ')
-            .append(created.getName(), AttributedStyle.BOLD)
+            .append(created.getName(), STYLE_BOLD)
             .append(" at ")
-            .append(created.getHash(), AttributedStyle.DEFAULT.faint()));
+            .append(created.getHash(), STYLE_FAINT));
   }
 
   public String name() {

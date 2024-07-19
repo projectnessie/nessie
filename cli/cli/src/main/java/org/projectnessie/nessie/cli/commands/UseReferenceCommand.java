@@ -15,11 +15,13 @@
  */
 package org.projectnessie.nessie.cli.commands;
 
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
+
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.cli.cli.BaseNessieCli;
@@ -46,9 +48,9 @@ public class UseReferenceCommand extends NessieCommand<UseReferenceCommandSpec> 
     writer.println(
         new AttributedStringBuilder()
             .append("Using ")
-            .append(ref.getName(), AttributedStyle.BOLD)
+            .append(ref.getName(), STYLE_BOLD)
             .append(" at ")
-            .append(ref.getHash(), AttributedStyle.DEFAULT.faint()));
+            .append(ref.getHash(), STYLE_FAINT));
   }
 
   public String name() {

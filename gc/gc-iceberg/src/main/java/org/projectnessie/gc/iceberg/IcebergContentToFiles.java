@@ -23,11 +23,13 @@ import com.google.errorprone.annotations.MustBeClosed;
 import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestReaderUtil;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
@@ -153,6 +155,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     Snapshot snapshot =
         snapshotId < 0L ? tableMetadata.currentSnapshot() : tableMetadata.snapshot(snapshotId);
 
+    Map<Integer, PartitionSpec> specsById = tableMetadata.specsById();
+
     Stream<StorageUri> allFiles = elementaryUrisFromSnapshot(snapshot, contentReference);
 
     if (snapshot != null) {
@@ -166,7 +170,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
                         try {
                           @SuppressWarnings("MustBeClosedChecker")
                           Stream<StorageUri> r =
-                              allManifestsAndDataFiles(io, snapshot, contentReference);
+                              allManifestsAndDataFiles(io, snapshot, specsById, contentReference);
                           return r;
                         } catch (Exception e) {
                           String msg =
@@ -193,25 +197,29 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
   /**
    * For the given {@link Snapshot}, provide a {@link Stream} of all manifest files with {@link
-   * #allDataAndDeleteFiles(FileIO, ManifestFile, ContentReference) all included data and delete
-   * files}.
+   * #allDataAndDeleteFiles(FileIO, Map, ManifestFile, ContentReference) all included data and
+   * delete files}.
    */
   @MustBeClosed
   static Stream<StorageUri> allManifestsAndDataFiles(
-      FileIO io, Snapshot snapshot, ContentReference contentReference) {
-    return allManifests(io, snapshot)
+      FileIO io,
+      Snapshot snapshot,
+      Map<Integer, PartitionSpec> specsById,
+      ContentReference contentReference) {
+    return allManifests(io, specsById, snapshot)
         .flatMap(
             mf -> {
               StorageUri manifestFileLoc = manifestFileUri(mf, contentReference);
               @SuppressWarnings("MustBeClosedChecker")
               Stream<StorageUri> allDataAndDeleteFiles =
-                  allDataAndDeleteFiles(io, mf, contentReference);
+                  allDataAndDeleteFiles(io, specsById, mf, contentReference);
               return Stream.concat(Stream.of(manifestFileLoc), allDataAndDeleteFiles);
             });
   }
 
   /** Provide all {@link ManifestFile}s for the given {@link Snapshot}. */
-  static Stream<ManifestFile> allManifests(FileIO io, Snapshot snapshot) {
+  static Stream<ManifestFile> allManifests(
+      FileIO io, Map<Integer, PartitionSpec> specsById, Snapshot snapshot) {
     return snapshot.allManifests(io).stream();
   }
 
@@ -222,10 +230,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
    */
   @MustBeClosed
   static Stream<StorageUri> allDataAndDeleteFiles(
-      FileIO io, ManifestFile manifestFile, ContentReference contentReference) {
+      FileIO io,
+      Map<Integer, PartitionSpec> specsById,
+      ManifestFile manifestFile,
+      ContentReference contentReference) {
     CloseableIterable<String> iter;
     try {
-      iter = ManifestReaderUtil.readPathsFromManifest(manifestFile, io);
+      iter = ManifestReaderUtil.readPathsFromManifest(manifestFile, specsById, io);
     } catch (Exception e) {
       throw new RuntimeException(
           "Failed to get paths from manifest file " + manifestFile.path(), e);

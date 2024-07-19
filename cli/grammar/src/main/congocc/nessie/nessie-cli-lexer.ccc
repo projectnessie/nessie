@@ -29,6 +29,7 @@ TOKEN #Command
   | <MERGE: "MERGE">
   | <ASSIGN: "ASSIGN">
   | <CREATE: "CREATE">
+  | <REVERT: "REVERT">
   | <CONNECT: "CONNECT">
   ;
 
@@ -40,6 +41,7 @@ TOKEN
 TOKEN #Keyword
   : <AT: "AT">
   | <IF: "IF">
+  | <OF: "OF">
   | <ON: "ON">
   | <TO: "TO">
   | <AND: "AND">
@@ -51,8 +53,10 @@ TOKEN #Keyword
   | <INTO: "INTO">
   | <VIEW: "VIEW">
   | <WITH: "WITH">
+  | <ALLOW: "ALLOW">
   | <FORCE: "FORCE">
   | <LIMIT: "LIMIT">
+  | <STATE: "STATE">
   | <TABLE: "TABLE">
   | <USING: "USING">
   | <COMMIT: "COMMIT">
@@ -61,6 +65,7 @@ TOKEN #Keyword
   | <NORMAL: "NORMAL">
   | <REMOVE: "REMOVE">
   | <CONTENT: "CONTENT">
+  | <DELETES: "DELETES">
   | <LICENSE: "LICENSE">
   | <BEHAVIOR: "BEHAVIOR">
   | <CONTENTS: "CONTENTS">

@@ -22,7 +22,6 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -105,7 +104,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/key"))) {
       bh.consume(in.readAllBytes());
     }
@@ -113,7 +112,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get250k(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-256000"))) {
       bh.consume(in.readAllBytes());
     }
@@ -121,7 +120,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get4M(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, Clock.systemUTC());
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-4194304"))) {
       bh.consume(in.readAllBytes());
     }

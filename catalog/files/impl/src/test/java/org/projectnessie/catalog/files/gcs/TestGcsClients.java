@@ -21,6 +21,7 @@ import com.google.auth.http.HttpTransportFactory;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.AbstractClients;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -31,6 +32,12 @@ public class TestGcsClients extends AbstractClients {
   @Override
   protected StorageUri buildURI(String bucket, String key) {
     return StorageUri.of(String.format("gs://%s/%s", bucket, key));
+  }
+
+  @Override
+  protected BackendExceptionMapper.Builder addExceptionHandlers(
+      BackendExceptionMapper.Builder builder) {
+    return builder.addAnalyzer(GcsExceptionMapper.INSTANCE);
   }
 
   @Override

@@ -23,7 +23,6 @@ import static org.projectnessie.catalog.service.objtypes.EntityObj.entityObjIdFo
 import static org.projectnessie.nessie.tasks.api.TaskState.successState;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.UUID;
@@ -65,31 +64,18 @@ final class ImportSnapshotWorker {
   EntitySnapshotObj.Builder importSnapshot() {
     Content content = taskRequest.content();
     if (content instanceof IcebergTable) {
-      try {
-        return importIcebergTable(
-            (IcebergTable) content, (NessieTableSnapshot) taskRequest.snapshot());
-      } catch (RuntimeException e) {
-        throw e;
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+      return importIcebergTable(
+          (IcebergTable) content, (NessieTableSnapshot) taskRequest.snapshot());
     }
     if (content instanceof IcebergView) {
-      try {
-        return importIcebergView(
-            (IcebergView) content, (NessieViewSnapshot) taskRequest.snapshot());
-      } catch (RuntimeException e) {
-        throw e;
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+      return importIcebergView((IcebergView) content, (NessieViewSnapshot) taskRequest.snapshot());
     }
 
     throw new UnsupportedOperationException("Unsupported Nessie content type " + content.getType());
   }
 
   private EntitySnapshotObj.Builder importIcebergTable(
-      IcebergTable content, NessieTableSnapshot snapshot) throws Exception {
+      IcebergTable content, NessieTableSnapshot snapshot) {
     NessieId snapshotId = objIdToNessieId(taskRequest.objId());
 
     LOGGER.debug(
@@ -103,8 +89,9 @@ final class ImportSnapshotWorker {
     // snapshot!=null means that we already have the snapshot (via a committing operation - like a
     // table update) and do not need to import it but can just store it.
     if (snapshot == null) {
-      IcebergTableMetadata tableMetadata;
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
+      NessieTable table;
+      IcebergTableMetadata tableMetadata;
       try {
         InputStream input = taskRequest.objectIO().readObject(metadataLocation);
         if (metadataLocation.requiredPath().endsWith(".gz")
@@ -112,12 +99,11 @@ final class ImportSnapshotWorker {
           input = new GZIPInputStream(input);
         }
         tableMetadata = IcebergJson.objectMapper().readValue(input, IcebergTableMetadata.class);
-      } catch (IOException e) {
-        throw new IOException(
+        table = entityObjForContent(content, tableMetadata, entityObjId);
+      } catch (Exception e) {
+        throw new RuntimeException(
             "Failed to read table metadata from " + content.getMetadataLocation(), e);
       }
-
-      NessieTable table = entityObjForContent(content, tableMetadata, entityObjId);
 
       snapshot =
           icebergTableSnapshotToNessie(
@@ -172,7 +158,7 @@ final class ImportSnapshotWorker {
   }
 
   private EntitySnapshotObj.Builder importIcebergView(
-      IcebergView content, NessieViewSnapshot snapshot) throws Exception {
+      IcebergView content, NessieViewSnapshot snapshot) {
     NessieId snapshotId = objIdToNessieId(taskRequest.objId());
 
     LOGGER.debug(
@@ -186,6 +172,7 @@ final class ImportSnapshotWorker {
     // snapshot!=null means that we already have the snapshot (via a committing operation - like a
     // table update) and do not need to import it but can just store it.
     if (snapshot == null) {
+      NessieView view;
       IcebergViewMetadata viewMetadata;
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
       try {
@@ -195,25 +182,24 @@ final class ImportSnapshotWorker {
           input = new GZIPInputStream(input);
         }
         viewMetadata = IcebergJson.objectMapper().readValue(input, IcebergViewMetadata.class);
-      } catch (IOException e) {
-        throw new IOException(
+        view =
+            entityObjForContent(
+                content,
+                viewMetadata,
+                entityObjId,
+                () ->
+                    viewMetadata.versions().stream()
+                        .filter(v -> v.versionId() == viewMetadata.currentVersionId())
+                        .findFirst()
+                        .orElseThrow(
+                            () ->
+                                new IllegalStateException(
+                                    "Iceberg view has no version element with the id for the current-version-ID"))
+                        .timestampMs());
+      } catch (Exception e) {
+        throw new RuntimeException(
             "Failed to read view metadata from " + content.getMetadataLocation(), e);
       }
-
-      NessieView view =
-          entityObjForContent(
-              content,
-              viewMetadata,
-              entityObjId,
-              () ->
-                  viewMetadata.versions().stream()
-                      .filter(v -> v.versionId() == viewMetadata.currentVersionId())
-                      .findFirst()
-                      .orElseThrow(
-                          () ->
-                              new IllegalStateException(
-                                  "Iceberg view has no version element with the id for the current-version-ID"))
-                      .timestampMs());
 
       snapshot = icebergViewSnapshotToNessie(snapshotId, null, view, viewMetadata);
     }

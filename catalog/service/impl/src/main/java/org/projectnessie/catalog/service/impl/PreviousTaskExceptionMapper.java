@@ -13,31 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.api;
+package org.projectnessie.catalog.service.impl;
 
-import java.time.Instant;
-import java.util.Optional;
+import org.projectnessie.catalog.files.api.BackendErrorStatus;
+import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 
-public class NonRetryableException extends ObjectIOException {
-  public NonRetryableException(Throwable cause) {
-    super(cause);
-  }
+public class PreviousTaskExceptionMapper implements BackendExceptionMapper.Analyzer {
+  public static final PreviousTaskExceptionMapper INSTANCE = new PreviousTaskExceptionMapper();
 
-  public NonRetryableException(String message) {
-    super(message);
-  }
-
-  public NonRetryableException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  private PreviousTaskExceptionMapper() {}
 
   @Override
-  public boolean isRetryable() {
-    return false;
-  }
-
-  @Override
-  public Optional<Instant> retryNotBefore() {
-    return Optional.empty();
+  public BackendErrorStatus analyze(Throwable th) {
+    if (th instanceof PreviousTaskException) {
+      return BackendErrorStatus.of(((PreviousTaskException) th).getErrorCode(), th);
+    }
+    return null;
   }
 }

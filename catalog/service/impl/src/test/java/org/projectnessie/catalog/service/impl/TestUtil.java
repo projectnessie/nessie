@@ -15,18 +15,13 @@
  */
 package org.projectnessie.catalog.service.impl;
 
-import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.model.id.NessieId.emptyNessieId;
 import static org.projectnessie.catalog.model.id.NessieId.nessieIdFromBytes;
-import static org.projectnessie.nessie.tasks.api.TaskState.failureState;
-import static org.projectnessie.nessie.tasks.api.TaskState.retryableErrorState;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.zeroLengthObjId;
 
-import java.time.Instant;
-import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -36,10 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.files.api.BackendThrottledException;
-import org.projectnessie.catalog.files.api.ObjectIOException;
 import org.projectnessie.catalog.model.id.NessieId;
-import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -143,53 +135,5 @@ public class TestUtil {
         IntStream.range(0, 20)
             .mapToObj(x -> randomObjId())
             .map(objId -> arguments(nessieIdFromBytes(objId.asByteArray()), objId)));
-  }
-
-  @ParameterizedTest
-  @MethodSource
-  public void anyCauseMatches(Throwable throwable, Instant expected) {
-    soft.assertThat(
-            Util.anyCauseMatches(
-                throwable,
-                t ->
-                    t instanceof ObjectIOException
-                        ? ((ObjectIOException) t).retryNotBefore().orElse(null)
-                        : null))
-        .isEqualTo(Optional.ofNullable(expected));
-  }
-
-  @ParameterizedTest
-  @MethodSource("anyCauseMatches")
-  public void throwableAsErrorTaskState(Throwable throwable, Instant expected) {
-    TaskState taskState = Util.throwableAsErrorTaskState(throwable);
-
-    soft.assertThat(taskState)
-        .isEqualTo(
-            expected != null
-                ? retryableErrorState(expected, BackendThrottledException.class.getName() + ": foo")
-                : failureState(throwable.toString()));
-  }
-
-  static Stream<Arguments> anyCauseMatches() {
-    Instant retryNotBefore = Instant.now().plus(42, MINUTES);
-    BackendThrottledException throttled = new BackendThrottledException(retryNotBefore, "foo");
-
-    Exception sup1 = new Exception();
-    sup1.addSuppressed(throttled);
-
-    Exception sup2 = new Exception();
-    sup2.addSuppressed(new RuntimeException());
-    sup2.addSuppressed(throttled);
-
-    return Stream.of(
-        arguments(throttled, retryNotBefore),
-        arguments(new Exception(throttled), retryNotBefore),
-        arguments(new Exception(new Exception(throttled)), retryNotBefore),
-        arguments(new Exception(), null),
-        arguments(new Exception(new Exception()), null),
-        arguments(sup1, retryNotBefore),
-        arguments(sup2, retryNotBefore),
-        arguments(new Exception(sup1), retryNotBefore),
-        arguments(new Exception(sup2), retryNotBefore));
   }
 }

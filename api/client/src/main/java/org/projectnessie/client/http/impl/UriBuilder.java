@@ -15,12 +15,13 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import org.projectnessie.client.http.HttpClientException;
 
@@ -37,7 +38,7 @@ public class UriBuilder {
   private final Map<String, String> templateValues = new HashMap<>();
 
   public UriBuilder(URI baseUri) {
-    this.baseUri = Objects.requireNonNull(baseUri);
+    this.baseUri = requireNonNull(baseUri, "baseUri is null");
   }
 
   public UriBuilder path(String path) {

@@ -16,12 +16,13 @@
 package org.projectnessie.nessie.cli.commands;
 
 import static java.lang.String.format;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
+import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.util.List;
 import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Reference;
@@ -73,9 +74,9 @@ public class DropReferenceCommand extends NessieCommand<DropReferenceCommandSpec
             .append("Deleted ")
             .append(deleted.getType().name())
             .append(' ')
-            .append(deleted.getName(), AttributedStyle.BOLD)
+            .append(deleted.getName(), STYLE_BOLD)
             .append(" at ")
-            .append(deleted.getHash(), AttributedStyle.DEFAULT.faint()));
+            .append(deleted.getHash(), STYLE_FAINT));
   }
 
   public String name() {

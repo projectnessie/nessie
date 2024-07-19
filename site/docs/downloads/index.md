@@ -185,7 +185,7 @@ contains additional tools and integrations:
 
 Useful links:
 
-* [Nessie {{ versions.nessie }} BOM (Bill of Materials)](https://search.maven.org/artifact/org.projectnessie.nessie/nessie/{{ versions.nessie }}/pom)
+* [Nessie {{ versions.nessie }} BOM (Bill of Materials)](https://search.maven.org/artifact/org.projectnessie.nessie/nessie-bom/{{ versions.nessie }}/pom)
 * [Nessie {{ versions.nessie }} `org.projectnessie.nessie` artifacts](https://search.maven.org/search?q=g:org.projectnessie.nessie%20v:{{ versions.nessie }})
 * [Nessie {{ versions.nessie }} `org.projectnessie.nessie-integrations` artifacts](https://search.maven.org/search?q=g:org.projectnessie.nessie-integrations%20v:{{ versions.nessie }})
 

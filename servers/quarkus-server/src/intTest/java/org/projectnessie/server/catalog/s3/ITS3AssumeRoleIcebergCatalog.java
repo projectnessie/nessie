@@ -27,6 +27,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.ForbiddenException;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.AfterAll;
@@ -97,6 +98,7 @@ public class ITS3AssumeRoleIcebergCatalog {
     Schema schema = new Schema(Types.NestedField.required(1, "id", Types.LongType.get()));
     // Attempts to create files blocked by the session IAM policy break the createTable() call
     assertThatThrownBy(() -> catalog.createTable(TableIdentifier.of(ns, "table1"), schema))
+        .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("S3Exception: Access Denied")
         // make sure the error comes from the Catalog Server
         .hasStackTraceContaining("org.apache.iceberg.rest.RESTClient");
