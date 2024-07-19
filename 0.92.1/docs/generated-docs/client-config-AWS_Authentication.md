@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.aws.region` | AWS region used for `AWS` authentication, must be configured to the same region as the  Nessie setver.   |

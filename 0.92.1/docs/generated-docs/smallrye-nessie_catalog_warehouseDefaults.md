@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.catalog.warehouseDefaults.default-warehouse` |  | `string` | Name of the default warehouse. This one is used when a warehouse is not specified in a query.  If no default warehouse is configured and a request does not specify a warehouse, the request  will fail.  |

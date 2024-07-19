@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar gc [-hV] [--[no-]defer-deletes]
                         [--allowed-fpp=<allowedFalsePositiveProbability>]

@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Nessie server configuration to be injected into the JAX-RS application.
 
 | Property | Default Value | Type | Description |
