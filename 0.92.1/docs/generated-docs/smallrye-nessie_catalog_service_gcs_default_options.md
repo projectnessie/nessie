@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Default bucket configuration, default/fallback values for all buckets are taken from this one.
 
 | Property | Default Value | Type | Description |

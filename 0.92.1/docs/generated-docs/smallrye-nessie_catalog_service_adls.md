@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Configuration for ADLS Gen2 object stores. 
 
 Default settings to be applied to all "file systems" (think: buckets) can be set in the `default-options` group. Specific settings for each file system can be specified via the `file-systems` map.   

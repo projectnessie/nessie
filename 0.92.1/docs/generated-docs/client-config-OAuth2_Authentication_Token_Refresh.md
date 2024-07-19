@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.default-access-token-lifespan` | Default access token lifespan; if the OAuth2 server returns an access token without specifying  its expiration time, this value will be used.  <br><br>Optional, defaults to "PT1M". Must be a valid [ISO-8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations). |

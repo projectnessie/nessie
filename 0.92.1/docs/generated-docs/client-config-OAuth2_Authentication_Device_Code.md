@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.device-auth-endpoint` | URL of the OAuth2 device authorization endpoint. For Keycloak, this is typically `http://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth/device` .   <br><br>If using the "Device Code" grant type, either this property or (`nessie.authentication.oauth2.issuer-url`) must be set.  |

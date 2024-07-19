@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 > `CREATE` **ReferenceType**
   \[ `IF` `NOT` `EXISTS` \]
   **ReferenceName**
