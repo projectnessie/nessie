@@ -94,7 +94,9 @@ public final class AdlsClientSupplier {
                             location.container().map(c -> ", container " + c).orElse("")))));
 
     AdlsFileSystemOptions.AzureAuthType authType =
-        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.APPLICATION_DEFAULT);
+        fileSystemOptions
+            .authType()
+            .orElse(AdlsFileSystemOptions.AzureAuthType.APPLICATION_DEFAULT);
     switch (authType) {
       case STORAGE_SHARED_KEY:
         String accountKey =
