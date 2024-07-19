@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.providers.storage;
 
+import static java.lang.String.format;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -43,6 +44,7 @@ import org.projectnessie.versioned.storage.cache.CacheBackend;
 import org.projectnessie.versioned.storage.cache.CacheConfig;
 import org.projectnessie.versioned.storage.cache.CacheSizing;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
+import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidationConsumer;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidations;
 import org.projectnessie.versioned.storage.cache.PersistCaches;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -125,8 +127,8 @@ public class PersistProvider {
   @Singleton
   public CacheBackend produceCacheBackend(
       @Any Instance<MeterRegistry> meterRegistry,
-      DistributedCacheInvalidation invalidationSender,
-      CacheInvalidationReceiver cacheInvalidationReceiver) {
+      @Any Instance<DistributedCacheInvalidation> invalidationSender,
+      @Any Instance<DistributedCacheInvalidationConsumer> cacheInvalidationReceiver) {
     CacheSizing cacheSizing =
         CacheSizing.builder()
             .fixedSizeInMB(storeConfig.cacheCapacityMB())
@@ -153,18 +155,26 @@ public class PersistProvider {
         cacheConfig.referenceNegativeTtl(referenceCacheNegativeTtl.orElse(refTtl));
       }
 
-      LOGGER.info("Using objects cache with {} MB.", effectiveCacheSizeMB);
+      String info = format("Using objects cache with %d MB", effectiveCacheSizeMB);
 
       CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig.build());
 
-      DistributedCacheInvalidations distributedCacheInvalidations =
-          DistributedCacheInvalidations.builder()
-              .localBackend(cacheBackend)
-              .invalidationSender(invalidationSender)
-              .invalidationListenerReceiver(cacheInvalidationReceiver)
-              .build();
+      if (invalidationSender.isResolvable() && cacheInvalidationReceiver.isResolvable()) {
+        info += ", enabling distributed cache invalidations";
 
-      cacheBackend = PersistCaches.wrapBackendForDistributedUsage(distributedCacheInvalidations);
+        DistributedCacheInvalidations distributedCacheInvalidations =
+            DistributedCacheInvalidations.builder()
+                .localBackend(cacheBackend)
+                .invalidationSender(invalidationSender.get())
+                .invalidationListenerReceiver(cacheInvalidationReceiver.get())
+                .build();
+
+        cacheBackend = PersistCaches.wrapBackendForDistributedUsage(distributedCacheInvalidations);
+      } else {
+        info += ", distributed cache invalidations not available";
+      }
+
+      LOGGER.info("{}.", info);
 
       return cacheBackend;
     } else {

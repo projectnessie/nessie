@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.server.distcache;
 
 import static io.vertx.core.Future.failedFuture;
 import static io.vertx.core.Future.succeededFuture;
@@ -26,9 +26,9 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
+import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,8 +63,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidation;
 import org.projectnessie.quarkus.util.HttpTestServer;
+import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 
 @ExtendWith(SoftAssertionsExtension.class)
