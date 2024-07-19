@@ -64,6 +64,16 @@ especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by
     especially with Iceberg REST. While the Iceberg REST parts in Nessie are built in a "reactive way",
     most Nessie core APIs are not.
 
+## Supported operating systems
+
+| Operating System | Production         | Development & prototyping | Comments                                                                                 |
+|------------------|--------------------|---------------------------|------------------------------------------------------------------------------------------|
+| Linux            | :heavy_check_mark: | :heavy_check_mark:        | Primarily supported operating systems, assuming recent kernel and distribution versions. |
+| macOS            | :x:                | :heavy_check_mark:        | Supported for development and testing purposes.                                          |
+| AIX              | :x:                | :x:                       | Not tested, might work or not.                                                           |
+| Solaris          | :x:                | :x:                       | Not tested, might work or not.                                                           |
+| Windows          | :x:                | :x:                       | Not supported in any way. Nessie server and admin tool refuse to start.                  |
+
 ## Providing secrets
 
 Instead of providing secrets like passwords in clear text, you can also use a keystore. This
