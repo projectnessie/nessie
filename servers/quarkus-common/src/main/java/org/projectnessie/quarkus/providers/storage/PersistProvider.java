@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
+import io.smallrye.common.os.OS;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
@@ -128,7 +129,11 @@ public class PersistProvider {
   public CacheBackend produceCacheBackend(
       @Any Instance<MeterRegistry> meterRegistry,
       @Any Instance<DistributedCacheInvalidation> invalidationSender,
-      @Any Instance<DistributedCacheInvalidationConsumer> cacheInvalidationReceiver) {
+      @Any Instance<DistributedCacheInvalidationConsumer> cacheInvalidationReceiver,
+      // Depending on `EnvironmentCheck` lets the environment check happen at startup time.
+      // Need to do it this way, otherwise we cannot guarantee that the OS check is performed
+      // before AddressResolver "runs into trouble" (not finding `/etc/resolv.conf`).
+      @SuppressWarnings("unused") EnvironmentCheck environmentCheck) {
     CacheSizing cacheSizing =
         CacheSizing.builder()
             .fixedSizeInMB(storeConfig.cacheCapacityMB())
@@ -181,6 +186,28 @@ public class PersistProvider {
       LOGGER.info("Using no objects cache.");
       return CacheBackend.noopCacheBackend();
     }
+  }
+
+  public static class EnvironmentCheck {
+    public EnvironmentCheck() {}
+  }
+
+  @Produces
+  @Singleton
+  public EnvironmentCheck environmentCheck() {
+    switch (OS.current()) {
+      case LINUX -> {}
+      case MAC ->
+          LOGGER.warn(
+              "Nessie runs best on Linux, macOS is only supported for development and prototyping but not for production use.");
+      case SOLARIS, AIX ->
+          LOGGER.warn("Nessie has not been tested on your operating system {}.", OS.current());
+      case WINDOWS ->
+          throw new IllegalStateException("Nessie is not supported on Windows operating systems.");
+      default ->
+          throw new IllegalStateException("Nessie is not supported on your operating systems.");
+    }
+    return new EnvironmentCheck();
   }
 
   @Produces

@@ -17,11 +17,11 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 === "Docker Image"
 
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
-    
+
     **The image tags are updated twice per day during weekdays.**
 
     Images are available from the following repositories: 
-    
+
     * [GitHub Container Registry](https://ghcr.io/projectnessie/nessie-unstable):
 
     ```bash
@@ -30,7 +30,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     ```
 
     * [Quay.io](https://quay.io/repository/projectnessie/nessie-unstable?tab=tags):
-    
+
     ```bash
     docker pull quay.io/projectnessie/nessie-unstable
     docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie-unstable
@@ -41,11 +41,11 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 === "Docker Image"
 
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
-    
+
     **The image tags are updated twice per day during weekdays.**
 
     Images are available from the following repositories: 
-    
+
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli-unstable):
 
     ```bash
@@ -68,9 +68,9 @@ expiration policies.
 === "Docker Image"
 
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
-    
+
     **The image tags are updated twice per day during weekdays.**
-    
+
     Images are available from the following repositories:
 
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-gc-unstable):
@@ -99,7 +99,7 @@ Nessie repository.
     **The image tags are updated twice per day during weekdays.**
 
     They are available from the following repositories:
-    
+
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin-unstable):
 
     ```bash
