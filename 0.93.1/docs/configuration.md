@@ -42,7 +42,7 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 The minimum resources for Nessie are 4 CPUs and 4 GB RAM.
 
-The recommended resources for Nessie depend on the actual use case and usage pattern(s). We recommend to start various
+The recommended resources for Nessie depend on the actual use case and usage pattern(s). We recommend to try various
 configuration starting with 8 CPUs and 8 GB RAM.
 
 The efficiency of Nessie's cache can be monitored using the metrics provided with the `cache=nessie-objects` tag,
