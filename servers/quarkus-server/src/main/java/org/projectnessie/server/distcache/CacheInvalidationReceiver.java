@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.server.distcache;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static java.util.Collections.emptyList;
@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference;
+import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidationConsumer;
 import org.slf4j.Logger;

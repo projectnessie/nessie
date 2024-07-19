@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.server.distcache;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static java.util.Collections.emptyList;
-import static org.projectnessie.nessie.networktools.AddressResolver.LOCAL_ADDRESSES;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_SERVICE_NAMES;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.CONFIG_CACHE_INVALIDATIONS_VALID_TOKENS;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
+import static org.projectnessie.server.distcache.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
+import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +56,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.nessie.networktools.AddressResolver;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
-import org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidation;
+import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.slf4j.Logger;
@@ -137,7 +136,9 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private Future<List<String>> updateServiceNames() {
     Set<String> previous = new HashSet<>(resolvedAddresses);
     return resolveServiceNames(serviceNames)
-        .map(all -> all.stream().filter(adr -> !LOCAL_ADDRESSES.contains(adr)).toList())
+        .map(
+            all ->
+                all.stream().filter(adr -> !AddressResolver.LOCAL_ADDRESSES.contains(adr)).toList())
         .onSuccess(
             all -> {
               // refresh addresses regularly
