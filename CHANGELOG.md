@@ -12,10 +12,23 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.93.0] Release (2024-07-19)
+
+### Breaking changes
+
 - The `throttled-retry-after` advanced configuration property was renamed from
   `nessie.catalog.service.s3.throttled-retry-after` to
   `nessie.catalog.error-handling.throttled-retry-after`. The old property name is ignored.
-
 - Helm chart: a few ADLS-specific options under `catalog.storage.adls` were incorrectly placed and
   therefore effectively ignored by Nessie; if you are using ADLS, please re-check your configuration
   and adjust it accordingly.
@@ -31,8 +44,6 @@ as necessary. Empty sections will not end in the release notes.
   to provide per-client/table credentials, users have to configure object store credentials when using GCS or
   ADLS via the local Iceberg configuration(s).
 
-### Deprecations
-
 ### Fixes
 
 - GC: Fix behavior of cutoff policy "num commits", it was 'off by one' and considered the n-th commit as non-live
@@ -42,8 +53,6 @@ as necessary. Empty sections will not end in the release notes.
 - Catalog/ADLS: Don't let endpoint default to warehouse/object-store URI
 - Catalog/ADLS: More informative error message if mandatory `endpoint` is missing.
 - Catalog/ADLS: Use a less restrictive endpoint in the 'ObjectIO.ping' function used for health checks.
-
-### Commits
 
 ## [0.92.1] Release (2024-07-13)
 
@@ -627,7 +636,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.92.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.93.0...HEAD
+[0.93.0]: https://github.com/projectnessie/nessie/compare/nessie-0.92.1...nessie-0.93.0
 [0.92.1]: https://github.com/projectnessie/nessie/compare/nessie-0.92.0...nessie-0.92.1
 [0.92.0]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...nessie-0.92.0
 [0.91.3]: https://github.com/projectnessie/nessie/compare/nessie-0.91.2...nessie-0.91.3
