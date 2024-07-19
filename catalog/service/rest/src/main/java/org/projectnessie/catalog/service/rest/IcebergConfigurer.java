@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
@@ -93,9 +94,9 @@ public class IcebergConfigurer {
   @Inject ServerConfig serverConfig;
   @Inject CatalogConfig catalogConfig;
   @Inject S3CredentialsResolver s3CredentialsResolver;
-  @Inject S3Options<?> s3Options;
-  @Inject GcsOptions<?> gcsOptions;
-  @Inject AdlsOptions<?> adlsOptions;
+  @Inject @NormalizedObjectStoreOptions S3Options s3Options;
+  @Inject @NormalizedObjectStoreOptions GcsOptions gcsOptions;
+  @Inject @NormalizedObjectStoreOptions AdlsOptions adlsOptions;
   @Inject SecretsProvider secretsProvider;
 
   @Context ExternalBaseUri uriInfo;

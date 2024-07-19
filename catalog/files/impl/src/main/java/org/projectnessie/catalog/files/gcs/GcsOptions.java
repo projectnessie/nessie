@@ -24,20 +24,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions.GcsPerBucketOptions;
+import org.projectnessie.catalog.files.gcs.ImmutableGcsNamedBucketOptions.Builder;
 import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
-public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
+public interface GcsOptions {
 
   /**
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
   @ConfigItem(section = "default-options", firstIsSectionDoc = true)
-  Optional<PER_BUCKET> defaultOptions();
+  Optional<? extends GcsBucketOptions> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
@@ -46,7 +46,7 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
    */
   @ConfigItem(section = "buckets", firstIsSectionDoc = true)
   @ConfigPropertyName("bucket-name")
-  Map<String, PER_BUCKET> buckets();
+  Map<String, ? extends GcsNamedBucketOptions> buckets();
 
   /** Override the default read timeout. */
   @ConfigItem(section = "transport")
@@ -92,61 +92,36 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
   @ConfigItem(section = "transport")
   OptionalDouble rpcTimeoutMultiplier();
 
-  /** The read chunk size in bytes. */
-  @ConfigItem(section = "transport")
-  OptionalInt readChunkSize();
-
-  /** The write chunk size in bytes. */
-  @ConfigItem(section = "transport")
-  OptionalInt writeChunkSize();
-
-  /** The delete batch size. */
-  @ConfigItem(section = "transport")
-  OptionalInt deleteBatchSize();
-
-  default GcsBucketOptions effectiveOptionsForBucket(
-      Optional<String> bucketName, SecretsProvider secretsProvider) {
-    if (bucketName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
-    }
-    String name = bucketName.get();
-    GcsBucketOptions perBucket = buckets().get(name);
-    if (perBucket == null) {
-      return resolveSecrets(name, null, secretsProvider);
-    }
-
-    return resolveSecrets(name, perBucket, secretsProvider);
-  }
-
-  List<SecretAttribute<GcsBucketOptions, GcsPerBucketOptions.Builder, ?>> SECRET_ATTRIBUTES =
+  List<SecretAttribute<GcsBucketOptions, Builder, ?>> SECRET_ATTRIBUTES =
       ImmutableList.of(
           secretAttribute(
               "authCredentialsJson",
               SecretType.KEY,
               GcsBucketOptions::authCredentialsJson,
-              GcsPerBucketOptions.Builder::authCredentialsJson),
+              ImmutableGcsNamedBucketOptions.Builder::authCredentialsJson),
           secretAttribute(
               "oauth2Token",
               SecretType.EXPIRING_TOKEN,
               GcsBucketOptions::oauth2Token,
-              GcsPerBucketOptions.Builder::oauth2Token),
+              ImmutableGcsNamedBucketOptions.Builder::oauth2Token),
           secretAttribute(
               "encryptionKey",
               SecretType.KEY,
               GcsBucketOptions::encryptionKey,
-              GcsPerBucketOptions.Builder::encryptionKey),
+              ImmutableGcsNamedBucketOptions.Builder::encryptionKey),
           secretAttribute(
               "decryptionKey",
               SecretType.KEY,
               GcsBucketOptions::decryptionKey,
-              GcsPerBucketOptions.Builder::decryptionKey));
+              ImmutableGcsNamedBucketOptions.Builder::decryptionKey));
 
   default GcsBucketOptions resolveSecrets(
       String filesystemName, GcsBucketOptions specific, SecretsProvider secretsProvider) {
     GcsBucketOptions defaultOptions =
-        defaultOptions().map(GcsBucketOptions.class::cast).orElse(GcsPerBucketOptions.FALLBACK);
+        defaultOptions().map(GcsBucketOptions.class::cast).orElse(GcsNamedBucketOptions.FALLBACK);
 
-    GcsPerBucketOptions.Builder builder = GcsPerBucketOptions.builder().from(defaultOptions);
+    ImmutableGcsNamedBucketOptions.Builder builder =
+        ImmutableGcsNamedBucketOptions.builder().from(defaultOptions);
     if (specific != null) {
       builder.from(specific);
     }
@@ -160,5 +135,15 @@ public interface GcsOptions<PER_BUCKET extends GcsBucketOptions> {
             specific,
             SECRET_ATTRIBUTES)
         .build();
+  }
+
+  default GcsBucketOptions effectiveOptionsForBucket(
+      Optional<String> bucketName, SecretsProvider secretsProvider) {
+    if (bucketName.isEmpty()) {
+      return resolveSecrets(null, null, secretsProvider);
+    }
+    String name = bucketName.get();
+    GcsBucketOptions perBucket = buckets().get(name);
+    return resolveSecrets(name, perBucket, secretsProvider);
   }
 }

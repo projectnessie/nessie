@@ -60,11 +60,11 @@ public class TestS3Clients extends AbstractClients {
   protected ObjectIO buildObjectIO(
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
 
-    S3ProgrammaticOptions.Builder s3options =
-        S3ProgrammaticOptions.builder()
+    ImmutableS3ProgrammaticOptions.Builder s3options =
+        ImmutableS3ProgrammaticOptions.builder()
             .putBuckets(
                 BUCKET_1,
-                S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                ImmutableS3NamedBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
                     .region("us-west-1")
                     .accessKey(basicCredentials("ak1", "sak1"))
@@ -73,7 +73,7 @@ public class TestS3Clients extends AbstractClients {
     if (server2 != null) {
       s3options.putBuckets(
           BUCKET_2,
-          S3ProgrammaticOptions.S3PerBucketOptions.builder()
+          ImmutableS3NamedBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
               .region("eu-central-2")
               .accessKey(basicCredentials("ak2", "sak2"))
@@ -83,7 +83,6 @@ public class TestS3Clients extends AbstractClients {
     S3ClientSupplier supplier =
         new S3ClientSupplier(
             sdkHttpClient,
-            S3Config.builder().build(),
             s3options.build(),
             new SecretsProvider(
                 names ->

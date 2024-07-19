@@ -37,7 +37,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -65,10 +64,10 @@ public class S3ClientResourceBench {
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
 
-      S3Options<S3BucketOptions> s3options =
-          S3ProgrammaticOptions.builder()
+      S3ProgrammaticOptions s3options =
+          ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
-                  S3PerBucketOptions.builder()
+                  ImmutableS3NamedBucketOptions.builder()
                       .accessKey(basicCredentials("foo", "bar"))
                       .region("eu-central-1")
                       .endpoint(server.getS3BaseUri())
@@ -81,7 +80,6 @@ public class S3ClientResourceBench {
       clientSupplier =
           new S3ClientSupplier(
               httpClient,
-              s3config,
               s3options,
               new SecretsProvider(
                   (names) ->

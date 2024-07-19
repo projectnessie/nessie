@@ -17,32 +17,11 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
-import java.net.URI;
 import java.util.Optional;
-import java.util.OptionalInt;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
-
-  @Override
-  Optional<URI> host();
-
-  @Override
-  Optional<URI> externalHost();
-
-  @Override
-  Optional<String> userProject();
-
-  @Override
-  Optional<String> projectId();
-
-  @Override
-  Optional<String> quotaProjectId();
-
-  @Override
-  Optional<String> clientLibToken();
 
   @Override
   @WithDefault("NONE")
@@ -51,18 +30,6 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   @Override
   @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> authCredentialsJson();
-
-  @Override
-  Optional<TokenSecret> oauth2Token();
-
-  @Override
-  OptionalInt readChunkSize();
-
-  @Override
-  OptionalInt writeChunkSize();
-
-  @Override
-  OptionalInt deleteBatchSize();
 
   @Override
   @WithConverter(KeySecretConverter.class)

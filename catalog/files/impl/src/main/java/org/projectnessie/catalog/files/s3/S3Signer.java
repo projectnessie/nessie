@@ -39,14 +39,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class S3Signer implements RequestSigner {
 
   private final AwsV4HttpSigner signer = AwsV4HttpSigner.create();
-  private final S3Options<? extends S3BucketOptions> s3Options;
+  private final S3Options s3Options;
   private final SecretsProvider secretsProvider;
   private final S3Sessions s3sessions;
 
-  public S3Signer(
-      S3Options<? extends S3BucketOptions> s3Options,
-      SecretsProvider secretsProvider,
-      S3Sessions s3sessions) {
+  public S3Signer(S3Options s3Options, SecretsProvider secretsProvider, S3Sessions s3sessions) {
     this.s3Options = s3Options;
     this.secretsProvider = secretsProvider;
     this.s3sessions = s3sessions;

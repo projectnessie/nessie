@@ -17,62 +17,20 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
-import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
-
-  @Override
-  Optional<URI> endpoint();
-
-  @Override
-  Optional<URI> externalEndpoint();
-
-  @Override
-  Optional<Boolean> pathStyleAccess();
-
-  @Override
-  Optional<String> region();
-
-  @Override
-  Optional<BasicCredentials> accessKey();
-
-  @Override
-  Optional<String> accessPoint();
-
-  @Override
-  Optional<Boolean> allowCrossRegionAccessPoint();
 
   @WithName("server-auth-mode")
   @WithDefault("STATIC")
   @Override
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
 
-  @Override
-  Optional<URI> stsEndpoint();
-
-  @Override
-  Optional<String> assumeRole();
-
-  @Override
-  Optional<String> sessionIamPolicy();
-
-  @Override
-  Optional<String> roleSessionName();
-
-  @Override
-  Optional<String> externalId();
-
   @WithName("client-auth-mode")
   @WithDefault("REQUEST_SIGNING")
   @Override
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
-
-  @Override
-  Optional<Duration> clientSessionDuration();
 }

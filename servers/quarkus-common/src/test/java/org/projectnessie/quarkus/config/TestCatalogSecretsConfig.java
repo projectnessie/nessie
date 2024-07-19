@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.TokenSecret;
@@ -61,22 +62,22 @@ public class TestCatalogSecretsConfig {
             .build();
 
     CatalogAdlsConfig catalogConfig = config.getConfigMapping(CatalogAdlsConfig.class);
-    Optional<CatalogAdlsFileSystemOptions> b1 =
+    Optional<CatalogAdlsFileSystemConfig> b1 =
         Optional.ofNullable(catalogConfig.fileSystems().get("bucket1"));
-    Optional<CatalogAdlsFileSystemOptions> b2 =
+    Optional<CatalogAdlsFileSystemConfig> b2 =
         Optional.ofNullable(catalogConfig.fileSystems().get("bucket2"));
 
     soft.assertThat(basicMap(catalogConfig.defaultOptions().orElseThrow().account()))
         .containsExactlyInAnyOrderEntriesOf(basicMap(top));
     soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().sasToken()))
         .isEqualTo(keyMap(sas));
-    soft.assertThat(basicMap(b1.flatMap(CatalogAdlsFileSystemOptions::account)))
+    soft.assertThat(basicMap(b1.flatMap(CatalogAdlsFileSystemConfig::account)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket1));
-    soft.assertThat(keyMap(b1.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
+    soft.assertThat(keyMap(b1.flatMap(CatalogAdlsFileSystemConfig::sasToken)))
         .isEqualTo(keyMap(sas1));
-    soft.assertThat(basicMap(b2.flatMap(CatalogAdlsFileSystemOptions::account)))
+    soft.assertThat(basicMap(b2.flatMap(CatalogAdlsFileSystemConfig::account)))
         .containsExactlyInAnyOrderEntriesOf(basicMap(bucket2));
-    soft.assertThat(keyMap(b2.flatMap(CatalogAdlsFileSystemOptions::sasToken)))
+    soft.assertThat(keyMap(b2.flatMap(CatalogAdlsFileSystemConfig::sasToken)))
         .isEqualTo(keyMap(sas2));
   }
 
@@ -139,10 +140,8 @@ public class TestCatalogSecretsConfig {
             .build();
 
     CatalogGcsConfig catalogConfig = config.getConfigMapping(CatalogGcsConfig.class);
-    Optional<CatalogGcsBucketConfig> b1 =
-        Optional.ofNullable(catalogConfig.buckets().get("bucket1"));
-    Optional<CatalogGcsBucketConfig> b2 =
-        Optional.ofNullable(catalogConfig.buckets().get("bucket2"));
+    Optional<GcsBucketOptions> b1 = Optional.ofNullable(catalogConfig.buckets().get("bucket1"));
+    Optional<GcsBucketOptions> b2 = Optional.ofNullable(catalogConfig.buckets().get("bucket2"));
 
     soft.assertThat(keyMap(catalogConfig.defaultOptions().orElseThrow().authCredentialsJson()))
         .isEqualTo(keyMap(ac));
@@ -153,22 +152,18 @@ public class TestCatalogSecretsConfig {
     soft.assertThat(expiringTokenMap(catalogConfig.defaultOptions().orElseThrow().oauth2Token()))
         .containsExactlyInAnyOrderEntriesOf(expiringTokenMap(o2));
 
-    soft.assertThat(keyMap(b1.flatMap(CatalogGcsBucketConfig::authCredentialsJson)))
+    soft.assertThat(keyMap(b1.flatMap(GcsBucketOptions::authCredentialsJson)))
         .isEqualTo(keyMap(b1ac));
-    soft.assertThat(keyMap(b1.flatMap(CatalogGcsBucketConfig::decryptionKey)))
-        .isEqualTo(keyMap(b1dk));
-    soft.assertThat(keyMap(b1.flatMap(CatalogGcsBucketConfig::encryptionKey)))
-        .isEqualTo(keyMap(b1ek));
-    soft.assertThat(expiringTokenMap(b1.flatMap(CatalogGcsBucketConfig::oauth2Token)))
+    soft.assertThat(keyMap(b1.flatMap(GcsBucketOptions::decryptionKey))).isEqualTo(keyMap(b1dk));
+    soft.assertThat(keyMap(b1.flatMap(GcsBucketOptions::encryptionKey))).isEqualTo(keyMap(b1ek));
+    soft.assertThat(expiringTokenMap(b1.flatMap(GcsBucketOptions::oauth2Token)))
         .containsExactlyInAnyOrderEntriesOf(expiringTokenMap(b1o2));
 
-    soft.assertThat(keyMap(b2.flatMap(CatalogGcsBucketConfig::authCredentialsJson)))
+    soft.assertThat(keyMap(b2.flatMap(GcsBucketOptions::authCredentialsJson)))
         .isEqualTo(keyMap(b2ac));
-    soft.assertThat(keyMap(b2.flatMap(CatalogGcsBucketConfig::decryptionKey)))
-        .isEqualTo(keyMap(b2dk));
-    soft.assertThat(keyMap(b2.flatMap(CatalogGcsBucketConfig::encryptionKey)))
-        .isEqualTo(keyMap(b2ek));
-    soft.assertThat(expiringTokenMap(b2.flatMap(CatalogGcsBucketConfig::oauth2Token)))
+    soft.assertThat(keyMap(b2.flatMap(GcsBucketOptions::decryptionKey))).isEqualTo(keyMap(b2dk));
+    soft.assertThat(keyMap(b2.flatMap(GcsBucketOptions::encryptionKey))).isEqualTo(keyMap(b2ek));
+    soft.assertThat(expiringTokenMap(b2.flatMap(GcsBucketOptions::oauth2Token)))
         .containsExactlyInAnyOrderEntriesOf(expiringTokenMap(b2o2));
   }
 

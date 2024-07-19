@@ -15,127 +15,54 @@
  */
 package org.projectnessie.catalog.files.gcs;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.net.URI;
-import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@Value.Immutable
-public interface GcsProgrammaticOptions extends GcsOptions<GcsBucketOptions> {
+@NessieImmutable
+@Value.Style(allParameters = false)
+@SuppressWarnings("immutables:from") // defaultOptions + buckets are not copied
+public abstract class GcsProgrammaticOptions implements GcsOptions {
+
   @Override
-  Optional<GcsBucketOptions> defaultOptions();
+  public abstract Optional<GcsBucketOptions> defaultOptions();
 
   @Override
-  Map<String, GcsBucketOptions> buckets();
+  public abstract Map<String, GcsNamedBucketOptions> buckets();
 
-  static Builder builder() {
-    return ImmutableGcsProgrammaticOptions.builder();
+  public static GcsOptions normalize(GcsOptions gcsOptions) {
+    ImmutableGcsProgrammaticOptions.Builder builder =
+        ImmutableGcsProgrammaticOptions.builder().from(gcsOptions);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(gcsOptions.defaultOptions());
+    builder.buckets(gcsOptions.buckets());
+    return builder.build();
   }
 
-  @SuppressWarnings("unused")
-  interface Builder {
-    @CanIgnoreReturnValue
-    Builder putBuckets(String bucket, GcsBucketOptions bucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder putAllBuckets(Map<String, ? extends GcsBucketOptions> perBucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder buckets(Map<String, ? extends GcsBucketOptions> bucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder defaultOptions(GcsBucketOptions defaultOptions);
-
-    @CanIgnoreReturnValue
-    Builder maxAttempts(int maxAttempts);
-
-    @CanIgnoreReturnValue
-    Builder logicalTimeout(Duration logicalTimeout);
-
-    @CanIgnoreReturnValue
-    Builder totalTimeout(Duration totalTimeout);
-
-    @CanIgnoreReturnValue
-    Builder initialRetryDelay(Duration initialRetryDelay);
-
-    @CanIgnoreReturnValue
-    Builder maxRetryDelay(Duration maxRetryDelay);
-
-    @CanIgnoreReturnValue
-    Builder retryDelayMultiplier(double retryDelayMultiplier);
-
-    @CanIgnoreReturnValue
-    Builder initialRpcTimeout(Duration initialRpcTimeout);
-
-    @CanIgnoreReturnValue
-    Builder maxRpcTimeout(Duration maxRpcTimeout);
-
-    @CanIgnoreReturnValue
-    Builder rpcTimeoutMultiplier(double rpcTimeoutMultiplier);
-
-    GcsProgrammaticOptions build();
-  }
-
-  @Value.Immutable
-  interface GcsPerBucketOptions extends GcsBucketOptions {
-
-    static Builder builder() {
-      return ImmutableGcsPerBucketOptions.builder();
+  @Value.Check
+  protected GcsProgrammaticOptions normalizeBuckets() {
+    Map<String, GcsNamedBucketOptions> buckets = new HashMap<>();
+    for (String bucketName : buckets().keySet()) {
+      GcsNamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        bucketName = options.name().get();
+      } else {
+        options = ImmutableGcsNamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate GCS bucket name '" + bucketName + "', check your GCS bucket configurations");
+      }
     }
-
-    GcsPerBucketOptions FALLBACK = GcsPerBucketOptions.builder().build();
-
-    interface Builder {
-      @CanIgnoreReturnValue
-      Builder from(GcsBucketOptions instance);
-
-      @CanIgnoreReturnValue
-      Builder host(URI host);
-
-      @CanIgnoreReturnValue
-      Builder externalHost(URI externalHost);
-
-      @CanIgnoreReturnValue
-      Builder projectId(String projectId);
-
-      @CanIgnoreReturnValue
-      Builder quotaProjectId(String quotaProjectId);
-
-      @CanIgnoreReturnValue
-      Builder clientLibToken(String clientLibToken);
-
-      @CanIgnoreReturnValue
-      Builder authType(GcsAuthType authType);
-
-      @CanIgnoreReturnValue
-      Builder authCredentialsJson(KeySecret authCredentialsJson);
-
-      @CanIgnoreReturnValue
-      Builder oauth2Token(TokenSecret oauth2token);
-
-      @CanIgnoreReturnValue
-      Builder encryptionKey(KeySecret encryptionKey);
-
-      @CanIgnoreReturnValue
-      Builder decryptionKey(KeySecret decryptionKey);
-
-      @CanIgnoreReturnValue
-      Builder userProject(String userProject);
-
-      @CanIgnoreReturnValue
-      Builder readChunkSize(int readChunkSize);
-
-      @CanIgnoreReturnValue
-      Builder writeChunkSize(int writeChunkSize);
-
-      @CanIgnoreReturnValue
-      Builder deleteBatchSize(int deleteBatchSize);
-
-      GcsPerBucketOptions build();
+    if (buckets.equals(buckets())) {
+      return this;
     }
+    return ImmutableGcsProgrammaticOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .buckets(buckets)
+        .build();
   }
 }

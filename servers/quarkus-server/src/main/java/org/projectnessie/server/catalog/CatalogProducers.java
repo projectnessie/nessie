@@ -40,26 +40,27 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.microprofile.context.ThreadContext;
+import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.ResolvingObjectIO;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsClients;
 import org.projectnessie.catalog.files.adls.AdlsExceptionMapper;
-import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
+import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.RequestSigner;
-import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.files.gcs.GcsClients;
 import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
+import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3ExceptionMapper;
 import org.projectnessie.catalog.files.s3.S3Options;
+import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
@@ -117,37 +118,31 @@ public class CatalogProducers {
     client.close();
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
   @Produces
   @Singleton
-  public S3Options<S3BucketOptions> s3Options(CatalogS3Config s3Config) {
-    S3Options opts = s3Config;
-    S3Options<S3BucketOptions> r = opts;
-    return r;
+  @NormalizedObjectStoreOptions
+  public S3Options normalizedS3Options(CatalogS3Config s3Config) {
+    return S3ProgrammaticOptions.normalize(s3Config);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
   @Produces
   @Singleton
-  public GcsOptions<GcsBucketOptions> gcsOptions(CatalogGcsConfig gcsConfig) {
-    GcsOptions opts = gcsConfig;
-    GcsOptions<GcsBucketOptions> r = opts;
-    return r;
+  @NormalizedObjectStoreOptions
+  public GcsOptions normalizedGcsOptions(CatalogGcsConfig gcsConfig) {
+    return GcsProgrammaticOptions.normalize(gcsConfig);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
   @Produces
   @Singleton
-  public AdlsOptions<AdlsFileSystemOptions> adlsOptions(CatalogAdlsConfig adlsConfig) {
-    AdlsOptions opts = adlsConfig;
-    AdlsOptions<AdlsFileSystemOptions> r = opts;
-    return r;
+  @NormalizedObjectStoreOptions
+  public AdlsOptions normalizedAdlsOptions(CatalogAdlsConfig adlsConfig) {
+    return AdlsProgrammaticOptions.normalize(adlsConfig);
   }
 
   @Produces
   @Singleton
   public S3SessionsManager s3SessionsManager(
-      S3Options<?> s3options,
+      @NormalizedObjectStoreOptions S3Options s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
       @Any Instance<MeterRegistry> meterRegistry) {
     return new S3SessionsManager(
@@ -188,22 +183,22 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public ObjectIO objectIO(
-      CatalogS3Config s3config,
+      @NormalizedObjectStoreOptions S3Options s3Options,
       @CatalogS3Client SdkHttpClient sdkClient,
-      CatalogAdlsConfig adlsConfig,
+      @NormalizedObjectStoreOptions AdlsOptions adlsOptions,
       HttpClient adlsHttpClient,
-      CatalogGcsConfig gcsConfig,
+      @NormalizedObjectStoreOptions GcsOptions gcsOptions,
       HttpTransportFactory gcsHttpTransportFactory,
       SecretsProvider secretsProvider,
       S3Sessions sessions) {
     S3ClientSupplier s3ClientSupplier =
-        new S3ClientSupplier(sdkClient, s3config, s3config, secretsProvider, sessions);
+        new S3ClientSupplier(sdkClient, s3Options, secretsProvider, sessions);
 
     AdlsClientSupplier adlsClientSupplier =
-        new AdlsClientSupplier(adlsHttpClient, adlsConfig, secretsProvider);
+        new AdlsClientSupplier(adlsHttpClient, adlsOptions, secretsProvider);
 
     GcsStorageSupplier gcsStorageSupplier =
-        new GcsStorageSupplier(gcsHttpTransportFactory, gcsConfig, secretsProvider);
+        new GcsStorageSupplier(gcsHttpTransportFactory, gcsOptions, secretsProvider);
 
     return new ResolvingObjectIO(s3ClientSupplier, adlsClientSupplier, gcsStorageSupplier);
   }
@@ -211,8 +206,10 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public RequestSigner signer(
-      CatalogS3Config s3config, SecretsProvider secretsProvider, S3Sessions s3sessions) {
-    return new S3Signer(s3config, secretsProvider, s3sessions);
+      @NormalizedObjectStoreOptions S3Options s3Options,
+      SecretsProvider secretsProvider,
+      S3Sessions s3sessions) {
+    return new S3Signer(s3Options, secretsProvider, s3sessions);
   }
 
   @Produces

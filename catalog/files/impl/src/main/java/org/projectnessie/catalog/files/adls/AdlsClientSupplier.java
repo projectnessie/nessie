@@ -36,17 +36,17 @@ import org.projectnessie.storage.uri.StorageUri;
 
 public final class AdlsClientSupplier {
   private final HttpClient httpClient;
-  private final AdlsOptions<?> adlsOptions;
+  private final AdlsOptions adlsOptions;
   private final SecretsProvider secretsProvider;
 
   public AdlsClientSupplier(
-      HttpClient httpClient, AdlsOptions<?> adlsOptions, SecretsProvider secretsProvider) {
+      HttpClient httpClient, AdlsOptions adlsOptions, SecretsProvider secretsProvider) {
     this.httpClient = httpClient;
     this.adlsOptions = adlsOptions;
     this.secretsProvider = secretsProvider;
   }
 
-  public AdlsOptions<?> adlsOptions() {
+  public AdlsOptions adlsOptions() {
     return adlsOptions;
   }
 
