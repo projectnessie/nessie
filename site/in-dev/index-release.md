@@ -25,16 +25,16 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
     Docker images are multiplatform images for amd64, arm64, ppc64le and s390x.
     They are available from the following repositories:
-    
+
     * [GitHub Container Registry](https://ghcr.io/projectnessie/nessie):
 
     ```bash
     docker pull ghcr.io/projectnessie/nessie:::NESSIE_VERSION::
     docker run -p 19120:19120 -p 9000:9000 ghcr.io/projectnessie/nessie:::NESSIE_VERSION::
     ```
-    
+
     * [Quay.io](https://quay.io/repository/projectnessie/nessie?tab=tags):
-    
+
     ```bash
     docker pull quay.io/projectnessie/nessie:::NESSIE_VERSION::
     docker run -p 19120:19120 -p 9000:9000 quay.io/projectnessie/nessie:::NESSIE_VERSION::
@@ -45,7 +45,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     Nessie ::NESSIE_VERSION:: Helm chart is available from the following locations:
 
     * [Nessie Helm Repo](https://charts.projectnessie.org/):
-    
+
     ```bash
     helm repo add nessie https://charts.projectnessie.org/
     helm repo update
@@ -57,8 +57,8 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 === "Standalone Jar"
 
-    Requires Java 17 or newer.
-    
+    Java version: minimum 17, 21 recommended, [supported operating systems](configuration.md#supported-operating-systems)
+
     ```bash
     curl -L -o nessie-quarkus-::NESSIE_VERSION::-runner.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-quarkus-::NESSIE_VERSION::-runner.jar
@@ -74,7 +74,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
 
     They are available from the following repositories:
-    
+
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-cli):
 
     ```bash
@@ -91,7 +91,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 === "Standalone Jar"
 
-    Requires Java 11 or newer.
+    Requires Java 11, Java 21 recommended.
 
     ```bash
     curl -L -o nessie-cli-::NESSIE_VERSION::.jar \
@@ -124,8 +124,8 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 === "Standalone Jar"
 
-    Requires Java 11, Java 17 recommended.
-    
+    Requires Java 17, Java 21 recommended, [supported operating systems](configuration.md#supported-operating-systems)
+
     ```bash
     curl -L -o nessie-gc-::NESSIE_VERSION::.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-gc-::NESSIE_VERSION::.jar
@@ -141,7 +141,7 @@ Nessie repository.
 
     Docker images are multiplatform images for amd64, arm64, ppc64le, s390x.
     They are available from the following repositories:
-    
+
     * [GitHub Container Registry](https://github.com/projectnessie/nessie/pkgs/container/nessie-server-admin):
 
     ```bash
@@ -158,8 +158,8 @@ Nessie repository.
 
 === "Standalone Jar"
 
-    Requires Java 17 or newer.
-    
+    Java version: minimum 17, 21 recommended, [supported operating systems](configuration.md#supported-operating-systems)
+
     ```bash
     curl -L -o nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-server-admin-tool-::NESSIE_VERSION::-runner.jar

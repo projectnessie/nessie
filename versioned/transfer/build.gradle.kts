@@ -89,6 +89,7 @@ dependencies {
   add("relatedObjectsCompileOnly", project(":nessie-versioned-transfer-related"))
   add("relatedObjectsCompileOnly", project(":nessie-versioned-storage-common"))
   add("relatedObjectsCompileOnly", project(":nessie-model"))
+  add("relatedObjectsCompileOnly", libs.microprofile.openapi)
   add("relatedObjectsCompileOnly", platform(libs.jackson.bom))
   add("relatedObjectsCompileOnly", "com.fasterxml.jackson.core:jackson-annotations")
 }

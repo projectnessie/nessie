@@ -237,6 +237,7 @@ jobs:
     timeout-minutes: 60
     needs:
       - prepare
+      - publish-images
     env:
       RELEASE_VERSION: ${{needs.prepare.outputs.release-version}}
     steps:
