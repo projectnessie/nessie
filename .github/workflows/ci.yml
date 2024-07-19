@@ -58,18 +58,12 @@ jobs:
     name: CI Code Checks et al
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
       - name: Bump Gradle daemon heap
@@ -77,8 +71,6 @@ jobs:
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / Compile
         run: |
@@ -116,29 +108,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'code-checks'
-          java-version: ${{ matrix.java-version }}
 
   test:
     name: CI Test
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / test
         run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test --scan
@@ -158,29 +141,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'test'
-          java-version: ${{ matrix.java-version }}
 
   test-quarkus:
     name: CI Test Quarkus
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / Test Quarkus Server
         run: |
@@ -221,16 +195,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'test-quarkus'
-          java-version: ${{ matrix.java-version }}
 
   int-test:
     name: CI intTest
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -239,8 +208,6 @@ jobs:
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -283,29 +250,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test'
-          java-version: ${{ matrix.java-version }}
 
   int-test-stores:
     name: CI intTest versioned/stores
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest versioned/stores
         run: |
@@ -334,7 +292,6 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-stores'
-          java-version: ${{ matrix.java-version }}
 
   int-test-integrations:
     name: CI intTest integrations
@@ -348,6 +305,9 @@ jobs:
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
+        with:
+          # Need Java 17 in addition to the default Java 21
+          additional-java-version: 17
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
@@ -380,23 +340,15 @@ jobs:
     name: CI intTest Quarkus Server
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest Quarkus Server
         run:
@@ -430,29 +382,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-quarkus-server'
-          java-version: ${{ matrix.java-version }}
 
   int-test-quarkus-tool:
     name: CI intTest Admin Tool
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest Admin Tool
         run:
@@ -486,29 +429,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-quarkus-tool'
-          java-version: ${{ matrix.java-version }}
 
   int-test-quarkus-events:
     name: CI intTest Quarkus Events
     runs-on: ubuntu-22.04
     timeout-minutes: 60
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Gradle / intTest Quarkus Events
         run:
@@ -542,7 +476,6 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           job-name: 'int-test-quarkus-events'
-          java-version: ${{ matrix.java-version }}
 
   determine-jobs:
     name: CI Determine jobs
@@ -966,11 +899,11 @@ jobs:
           patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
           work-branch: iceberg-integration-patched
 
-      - name: Setup JDK ${{ matrix.java-version }}
+      - name: Setup JDK
         uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4
         with:
           distribution: 'temurin'
-          # Java 17 required for Nessie build, Java 11 required for Flink & Presto
+          # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto
           java-version: | 
             11
             17
@@ -1021,12 +954,8 @@ jobs:
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: 17
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
-        with:
-          java-version: 17
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -1067,23 +996,16 @@ jobs:
       - int-test-quarkus-server
       - int-test-quarkus-tool
       - int-test-quarkus-events
-    strategy:
-      max-parallel: 2
-      matrix:
-        java-version: ['17']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
-        with:
-          java-version: ${{ matrix.java-version }}
 
       - name: Collect partial Gradle build caches
         uses: ./.github/actions/ci-incr-build-cache-prepare
         with:
-          java-version: ${{ matrix.java-version }}
           cache-read-only: false
 
       - name: Trigger Gradle home cleanup
