@@ -115,6 +115,8 @@ create_nightly () {
   echo "     ... replace version placeholders in versioned docs"
   find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${version}/g" {} \;
   find build/versions/nightly/docs -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/-unstable:latest/g" {} \;
+  # remove backups created by sed
+  find build/versions/nightly/docs -name "*.md=" -exec rm {} +
 
   cd build/versions/
 
@@ -325,6 +327,8 @@ release() {
   echo "     ... replace version placeholders in versioned docs"
   find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_VERSION::/${RELEASE_VERSION}/g" {} \;
   find "${target}" -name "*.md" -exec sed -i='' "s/::NESSIE_DOCKER_SUFFIX::/:${RELEASE_VERSION}/g" {} \;
+  # remove backups created by sed
+  find "${target}" -name "*.md=" -exec rm {} +
 
   echo "     ... adding release to nav.yml"
   sed -i "s/ RELEASE_PLACEHOLDER_MARKER$/ RELEASE_PLACEHOLDER_MARKER\\n    - Nessie ${RELEASE_VERSION}: '\!include build\\/versions\\/${RELEASE_VERSION}\\/mkdocs.yml'/" ./nav.yml
