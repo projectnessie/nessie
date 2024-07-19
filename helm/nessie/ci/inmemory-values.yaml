@@ -45,6 +45,9 @@ catalog:
         - name: bucket1.prod-us
           endpoint: prod-us.s3.amazonaws.com
           region: us-east-1
+        - name: bucket2.prod-us
+          endpoint: prod-us2.s3.amazonaws.com
+          region: us-east-2
 #          accessKeySecret:
 #            name: s3-access-key
 #            awsAccessKeyId: access-key-id
@@ -60,13 +63,16 @@ catalog:
       buckets:
       - name: bucket1.prod-us
         projectId: project-id
+      - name: bucket2.prod-us
+        projectId: project-id
 #        authCredentialsJsonSecret:
 #          name: gcs-credentials
 #          key: credentials.json
 
     adls:
       transport:
-        readTimeout: PT1M
+        readBlockSize: 4096
+        writeBlockSize: 4096
       advancedConfig:
         flat1.flat2.key1: value1
         nested1:
@@ -74,14 +80,28 @@ catalog:
             key2: value2
             key3: value3
       defaultOptions:
-        endpoint: adl://account.azuredatalakestore.net
+        endpoint: https://account-default.azuredatalakestore.net
+        maxRetries: 3
+        retryInterval: PT5S
+        retryPolicy: EXPONENTIAL_BACKOFF
+        retryDelay: PT1S
 #        accountSecret:
 #          name: adls-account-secret
 #          accountName: account-name
 #          accountKey: account-key
       filesystems:
       - name: filesystem1
-        endpoint: adl://account.azuredatalakestore.net
+        endpoint: https://account1.azuredatalakestore.net
+        maxRetries: 3
+        retryInterval: PT5S
+        retryPolicy: EXPONENTIAL_BACKOFF
+        retryDelay: PT1S
+      - name: filesystem2
+        endpoint: https://account2.azuredatalakestore.net
+        maxRetries: 3
+        retryInterval: PT5S
+        retryPolicy: EXPONENTIAL_BACKOFF
+        retryDelay: PT1S
 #        accountSecret:
 #          name: adls-account-secret
 #          accountName: account-name

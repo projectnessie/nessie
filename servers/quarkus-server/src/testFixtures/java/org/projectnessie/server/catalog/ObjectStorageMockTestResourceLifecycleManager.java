@@ -73,19 +73,22 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put(
             "nessie.catalog.service.s3.default-options.sts-endpoint",
             server.getStsEndpointURI().toString())
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".endpoint", s3Endpoint)
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".region", "us-east-1")
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".path-style-access", "true")
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key.name", "accessKey")
-        .put("nessie.catalog.service.s3.buckets." + BUCKET + ".access-key.secret", "secretKey")
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.name", BUCKET)
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.endpoint", s3Endpoint)
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.region", "us-east-1")
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.path-style-access", "true")
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.access-key.name", "accessKey")
+        .put("nessie.catalog.service.s3.buckets.mock-bucket.access-key.secret", "secretKey")
         // GCS
-        .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".host", gcsEndpoint)
-        .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".project-id", "my-project")
-        .put("nessie.catalog.service.gcs.buckets." + BUCKET + ".auth-type", "none")
+        .put("nessie.catalog.service.gcs.buckets.mock-bucket.name", BUCKET)
+        .put("nessie.catalog.service.gcs.buckets.mock-bucket.host", gcsEndpoint)
+        .put("nessie.catalog.service.gcs.buckets.mock-bucket.project-id", "my-project")
+        .put("nessie.catalog.service.gcs.buckets.mock-bucket.auth-type", "none")
         // ADLS
-        .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".endpoint", adlsEndpoint)
-        .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".sas-token", "token")
-        .put("nessie.catalog.service.adls.file-systems." + BUCKET + ".auth-type", "SAS_TOKEN")
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.name", BUCKET)
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.endpoint", adlsEndpoint)
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.sas-token", "token")
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.auth-type", "SAS_TOKEN")
         .build();
   }
 

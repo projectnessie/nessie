@@ -19,8 +19,6 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import org.projectnessie.catalog.files.adls.AdlsConfig;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
 
@@ -37,7 +35,7 @@ import org.projectnessie.catalog.files.adls.AdlsOptions;
  * documentation</a>
  */
 @ConfigMapping(prefix = "nessie.catalog.service.adls")
-public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFileSystemOptions> {
+public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions {
 
   /** Custom settings for the ADLS Java client. */
   @WithName("configuration")
@@ -45,16 +43,8 @@ public interface CatalogAdlsConfig extends AdlsConfig, AdlsOptions<CatalogAdlsFi
   Map<String, String> configurationOptions();
 
   @Override
-  OptionalLong writeBlockSize();
+  Optional<CatalogAdlsFileSystemConfig> defaultOptions();
 
   @Override
-  OptionalInt readBlockSize();
-
-  // file-system options
-
-  @Override
-  Optional<CatalogAdlsFileSystemOptions> defaultOptions();
-
-  @Override
-  Map<String, CatalogAdlsFileSystemOptions> fileSystems();
+  Map<String, CatalogAdlsNamedFileSystemConfig> fileSystems();
 }

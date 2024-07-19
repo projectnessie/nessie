@@ -60,7 +60,7 @@ public class S3SessionsManager {
   private final SessionCredentialsFetcher sessionCredentialsFetcher;
 
   public S3SessionsManager(
-      S3Options<?> options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
+      S3Options options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
     this(
         options,
         System::currentTimeMillis,
@@ -72,7 +72,7 @@ public class S3SessionsManager {
 
   @VisibleForTesting
   S3SessionsManager(
-      S3Options<?> options,
+      S3Options options,
       LongSupplier systemTimeMillis,
       SdkHttpClient sdkHttpClient,
       Function<StsClientKey, StsClient> clientBuilder,

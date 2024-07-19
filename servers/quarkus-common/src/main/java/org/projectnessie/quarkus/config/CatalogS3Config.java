@@ -37,7 +37,7 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  * client.
  */
 @ConfigMapping(prefix = "nessie.catalog.service.s3")
-public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConfig> {
+public interface CatalogS3Config extends S3Config, S3Options {
 
   @WithName("http.expect-continue-enabled")
   @Override
@@ -107,11 +107,10 @@ public interface CatalogS3Config extends S3Config, S3Options<CatalogS3BucketConf
   @Override
   Optional<KeySecret> keyStorePassword();
 
-  @WithName("buckets")
   @ConfigPropertyName("bucket-name")
   @Override
-  Map<String, CatalogS3BucketConfig> buckets();
+  Map<String, CatalogS3NamedBucketConfig> buckets();
 
   @Override
-  Optional<CatalogS3BucketConfig> defaultOptions();
+  Optional<CatalogS3NamedBucketConfig> defaultOptions();
 }

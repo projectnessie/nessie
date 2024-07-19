@@ -23,12 +23,11 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.files.adls.AdlsProgrammaticOptions.AdlsPerFileSystemOptions;
 
 public class TestAdlsOptions {
   @ParameterizedTest
   @MethodSource
-  public void missingEndpoint(AdlsOptions<?> options, String keys) {
+  public void missingEndpoint(AdlsOptions options, String keys) {
     assertThatThrownBy(options::checkEndpoint)
         .isInstanceOf(IllegalStateException.class)
         .hasMessageStartingWith("Mandatory ADLS endpoint is not configured for file system '")
@@ -38,59 +37,67 @@ public class TestAdlsOptions {
 
   @ParameterizedTest
   @MethodSource
-  public void goodEndpoint(AdlsOptions<?> options) {
+  public void goodEndpoint(AdlsOptions options) {
     assertThatCode(options::checkEndpoint).doesNotThrowAnyException();
   }
 
   static Stream<Arguments> missingEndpoint() {
     return Stream.of(
         arguments(
-            AdlsProgrammaticOptions.builder()
-                .defaultOptions(AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().endpoint("ep").build())
+            ImmutableAdlsProgrammaticOptions.builder()
+                .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems(
+                    "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
                 .build(),
             "'fs1'"),
         arguments(
-            AdlsProgrammaticOptions.builder()
-                .defaultOptions(AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().build())
+            ImmutableAdlsProgrammaticOptions.builder()
+                .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
                 .build(),
             "'fs1', 'fs2'"),
         arguments(
-            AdlsProgrammaticOptions.builder()
-                .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().endpoint("ep").build())
+            ImmutableAdlsProgrammaticOptions.builder()
+                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems(
+                    "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
                 .build(),
             "'fs1'"),
         arguments(
-            AdlsProgrammaticOptions.builder()
-                .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().build())
-                .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().build())
+            ImmutableAdlsProgrammaticOptions.builder()
+                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystems("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
                 .build(),
             "'fs1', 'fs2'"));
   }
 
-  static Stream<AdlsOptions<?>> goodEndpoint() {
+  static Stream<AdlsOptions> goodEndpoint() {
     return Stream.of(
-        AdlsProgrammaticOptions.builder().build(),
-        AdlsProgrammaticOptions.builder()
-            .defaultOptions(AdlsPerFileSystemOptions.builder().build())
+        ImmutableAdlsProgrammaticOptions.builder().build(),
+        ImmutableAdlsProgrammaticOptions.builder()
+            .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
             .build(),
-        AdlsProgrammaticOptions.builder()
-            .defaultOptions(AdlsPerFileSystemOptions.builder().endpoint("endpoint").build())
-            .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().build())
-            .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().endpoint("ep").build())
+        ImmutableAdlsProgrammaticOptions.builder()
+            .defaultOptions(
+                ImmutableAdlsNamedFileSystemOptions.builder().endpoint("endpoint").build())
+            .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+            .putFileSystems(
+                "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
             .build(),
-        AdlsProgrammaticOptions.builder()
-            .defaultOptions(AdlsPerFileSystemOptions.builder().build())
-            .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().endpoint("ep1").build())
-            .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().endpoint("ep2").build())
+        ImmutableAdlsProgrammaticOptions.builder()
+            .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
+            .putFileSystems(
+                "fs1", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep1").build())
+            .putFileSystems(
+                "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep2").build())
             .build(),
-        AdlsProgrammaticOptions.builder()
-            .putFileSystems("fs1", AdlsPerFileSystemOptions.builder().endpoint("ep1").build())
-            .putFileSystems("fs2", AdlsPerFileSystemOptions.builder().endpoint("ep2").build())
+        ImmutableAdlsProgrammaticOptions.builder()
+            .putFileSystems(
+                "fs1", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep1").build())
+            .putFileSystems(
+                "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep2").build())
             .build());
   }
 }

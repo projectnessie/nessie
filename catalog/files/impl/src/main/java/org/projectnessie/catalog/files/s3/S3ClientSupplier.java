@@ -44,25 +44,22 @@ public class S3ClientSupplier {
       ProfileFile.builder().content(InputStream.nullInputStream()).type(Type.CONFIGURATION).build();
 
   private final SdkHttpClient sdkClient;
-  private final S3Config s3config;
-  private final S3Options<?> s3options;
+  private final S3Options s3options;
   private final SecretsProvider secretsProvider;
   private final S3Sessions sessions;
 
   public S3ClientSupplier(
       SdkHttpClient sdkClient,
-      S3Config s3config,
-      S3Options<?> s3options,
+      S3Options s3options,
       SecretsProvider secretsProvider,
       S3Sessions sessions) {
     this.sdkClient = sdkClient;
-    this.s3config = s3config;
     this.s3options = s3options;
     this.secretsProvider = secretsProvider;
     this.sessions = sessions;
   }
 
-  public S3Options<?> s3options() {
+  public S3Options s3options() {
     return s3options;
   }
 

@@ -74,10 +74,10 @@ public class S3SessionCacheResourceBench {
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
 
-      S3Options<S3BucketOptions> s3options =
-          S3ProgrammaticOptions.builder()
+      S3Options s3options =
+          ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
-                  S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                  ImmutableS3NamedBucketOptions.builder()
                       .accessKey(basicCredentials("foo", "bar"))
                       .region("eu-central-1")
                       .pathStyleAccess(true)
@@ -99,7 +99,7 @@ public class S3SessionCacheResourceBench {
           IntStream.range(0, numBucketOptions)
               .mapToObj(
                   i ->
-                      S3ProgrammaticOptions.S3PerBucketOptions.builder()
+                      ImmutableS3NamedBucketOptions.builder()
                           .accessKey(basicCredentials("foo" + i, "bar" + 1))
                           .externalId("externalId" + i)
                           .region(regions.get(i % regions.size()))
@@ -107,7 +107,7 @@ public class S3SessionCacheResourceBench {
                           .stsEndpoint(stsEndpoint)
                           .assumeRole("roleArn" + i)
                           .build())
-              .toArray(S3ProgrammaticOptions.S3PerBucketOptions[]::new);
+              .toArray(ImmutableS3NamedBucketOptions[]::new);
     }
 
     @TearDown

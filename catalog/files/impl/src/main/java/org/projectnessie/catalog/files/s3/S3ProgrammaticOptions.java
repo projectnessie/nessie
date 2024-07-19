@@ -15,111 +15,54 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.net.URI;
-import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@Value.Immutable
-public interface S3ProgrammaticOptions extends S3Options<S3BucketOptions> {
-  Map<String, S3BucketOptions> buckets();
-
-  @Override
-  Optional<S3BucketOptions> defaultOptions();
+@NessieImmutable
+@Value.Style(allParameters = false)
+@SuppressWarnings("immutables:from") // defaultOptions + buckets are not copied
+public abstract class S3ProgrammaticOptions implements S3Options {
 
   @Override
-  OptionalInt stsClientsCacheMaxEntries();
+  public abstract Optional<S3BucketOptions> defaultOptions();
 
   @Override
-  OptionalInt sessionCredentialCacheMaxEntries();
+  public abstract Map<String, S3NamedBucketOptions> buckets();
 
-  @Override
-  Optional<Duration> sessionCredentialRefreshGracePeriod();
-
-  static Builder builder() {
-    return ImmutableS3ProgrammaticOptions.builder();
+  public static S3Options normalize(S3Options s3Options) {
+    ImmutableS3ProgrammaticOptions.Builder builder =
+        ImmutableS3ProgrammaticOptions.builder().from(s3Options);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(s3Options.defaultOptions());
+    builder.buckets(s3Options.buckets());
+    return builder.build();
   }
 
-  interface Builder {
-
-    @CanIgnoreReturnValue
-    Builder sessionCredentialCacheMaxEntries(int sessionCredentialCacheMaxEntries);
-
-    @CanIgnoreReturnValue
-    Builder sessionCredentialRefreshGracePeriod(Duration sessionCredentialRefreshGracePeriod);
-
-    @CanIgnoreReturnValue
-    Builder stsClientsCacheMaxEntries(int stsClientsCacheMaxEntries);
-
-    @CanIgnoreReturnValue
-    Builder putBuckets(String bucket, S3BucketOptions bucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder putAllBuckets(Map<String, ? extends S3BucketOptions> perBucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder buckets(Map<String, ? extends S3BucketOptions> bucketOptions);
-
-    @CanIgnoreReturnValue
-    Builder defaultOptions(S3BucketOptions defaultOptions);
-
-    S3ProgrammaticOptions build();
-  }
-
-  @Value.Immutable
-  interface S3PerBucketOptions extends S3BucketOptions {
-
-    static Builder builder() {
-      return ImmutableS3PerBucketOptions.builder();
+  @Value.Check
+  protected S3ProgrammaticOptions normalizeBuckets() {
+    Map<String, S3NamedBucketOptions> buckets = new HashMap<>();
+    for (String bucketName : buckets().keySet()) {
+      S3NamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        bucketName = options.name().get();
+      } else {
+        options = ImmutableS3NamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
+      }
     }
-
-    S3BucketOptions FALLBACK = S3PerBucketOptions.builder().build();
-
-    interface Builder {
-      @CanIgnoreReturnValue
-      Builder from(S3BucketOptions instance);
-
-      @CanIgnoreReturnValue
-      Builder endpoint(URI endpoint);
-
-      @CanIgnoreReturnValue
-      Builder externalEndpoint(URI externalEndpoint);
-
-      @CanIgnoreReturnValue
-      Builder region(String region);
-
-      @CanIgnoreReturnValue
-      Builder pathStyleAccess(boolean pathStyleAccess);
-
-      @CanIgnoreReturnValue
-      Builder accessKey(BasicCredentials accessKey);
-
-      @CanIgnoreReturnValue
-      Builder accessPoint(String accessPoint);
-
-      @CanIgnoreReturnValue
-      Builder allowCrossRegionAccessPoint(boolean allowCrossRegionAccessPoint);
-
-      @CanIgnoreReturnValue
-      Builder stsEndpoint(URI stsEndpoint);
-
-      @CanIgnoreReturnValue
-      Builder assumeRole(String assumeRole);
-
-      @CanIgnoreReturnValue
-      Builder sessionIamPolicy(String sessionIamPolicy);
-
-      @CanIgnoreReturnValue
-      Builder roleSessionName(String roleSessionName);
-
-      @CanIgnoreReturnValue
-      Builder externalId(String externalId);
-
-      S3PerBucketOptions build();
+    if (buckets.equals(buckets())) {
+      return this;
     }
+    return ImmutableS3ProgrammaticOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .buckets(buckets)
+        .build();
   }
 }

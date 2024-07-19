@@ -15,120 +15,60 @@
  */
 package org.projectnessie.catalog.files.adls;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@Value.Immutable
-public interface AdlsProgrammaticOptions extends AdlsOptions<AdlsFileSystemOptions> {
-  @Override
-  Optional<AdlsFileSystemOptions> defaultOptions();
-
-  @Override
-  OptionalLong writeBlockSize();
+@NessieImmutable
+@Value.Style(allParameters = false)
+@SuppressWarnings("immutables:from") // defaultOptions + fileSystems are not copied
+public abstract class AdlsProgrammaticOptions implements AdlsOptions {
 
   @Override
-  OptionalInt readBlockSize();
+  public abstract Optional<AdlsFileSystemOptions> defaultOptions();
 
   @Override
-  Map<String, String> configurationOptions();
+  public abstract Map<String, AdlsNamedFileSystemOptions> fileSystems();
 
-  @Override
-  Map<String, AdlsFileSystemOptions> fileSystems();
-
-  static Builder builder() {
-    return ImmutableAdlsProgrammaticOptions.builder();
+  public static AdlsOptions normalize(AdlsOptions adlsOptions) {
+    ImmutableAdlsProgrammaticOptions.Builder builder =
+        ImmutableAdlsProgrammaticOptions.builder().from(adlsOptions);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(adlsOptions.defaultOptions());
+    builder.fileSystems(adlsOptions.fileSystems());
+    return builder.build();
   }
 
-  @SuppressWarnings("unused")
-  interface Builder {
-    @CanIgnoreReturnValue
-    Builder readBlockSize(int readBlockSize);
-
-    @CanIgnoreReturnValue
-    Builder writeBlockSize(long writeBlockSize);
-
-    @CanIgnoreReturnValue
-    Builder putConfigurationOptions(String key, String value);
-
-    @CanIgnoreReturnValue
-    Builder putConfigurationOptions(Map.Entry<String, ? extends String> entry);
-
-    @CanIgnoreReturnValue
-    Builder configurationOptions(Map<String, ? extends String> entries);
-
-    @CanIgnoreReturnValue
-    Builder putAllConfigurationOptions(Map<String, ? extends String> entries);
-
-    @CanIgnoreReturnValue
-    Builder putFileSystems(String key, AdlsFileSystemOptions value);
-
-    @CanIgnoreReturnValue
-    Builder putFileSystems(Map.Entry<String, ? extends AdlsFileSystemOptions> entry);
-
-    @CanIgnoreReturnValue
-    Builder fileSystems(Map<String, ? extends AdlsFileSystemOptions> entries);
-
-    @CanIgnoreReturnValue
-    Builder putAllFileSystems(Map<String, ? extends AdlsFileSystemOptions> entries);
-
-    @CanIgnoreReturnValue
-    Builder defaultOptions(AdlsFileSystemOptions defaultOptions);
-
-    AdlsProgrammaticOptions build();
-  }
-
-  @Value.Immutable
-  interface AdlsPerFileSystemOptions extends AdlsFileSystemOptions {
-
-    static Builder builder() {
-      return ImmutableAdlsPerFileSystemOptions.builder();
+  @Value.Check
+  protected AdlsProgrammaticOptions normalizeBuckets() {
+    Map<String, AdlsNamedFileSystemOptions> fileSystems = new HashMap<>();
+    for (String fileSystemName : fileSystems().keySet()) {
+      AdlsNamedFileSystemOptions options = fileSystems().get(fileSystemName);
+      if (options.name().isPresent()) {
+        fileSystemName = options.name().get();
+      } else {
+        options =
+            ImmutableAdlsNamedFileSystemOptions.builder()
+                .from(options)
+                .name(fileSystemName)
+                .build();
+      }
+      if (fileSystems.put(fileSystemName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate ADLS filesystem name '"
+                + fileSystemName
+                + "', check your ADLS file system configurations");
+      }
     }
-
-    AdlsFileSystemOptions FALLBACK = AdlsPerFileSystemOptions.builder().build();
-
-    @SuppressWarnings("unused")
-    interface Builder {
-      @CanIgnoreReturnValue
-      Builder from(AdlsFileSystemOptions instance);
-
-      @CanIgnoreReturnValue
-      Builder authType(AzureAuthType authType);
-
-      @CanIgnoreReturnValue
-      Builder account(BasicCredentials account);
-
-      @CanIgnoreReturnValue
-      Builder sasToken(KeySecret sasToken);
-
-      @CanIgnoreReturnValue
-      Builder endpoint(String endpoint);
-
-      @CanIgnoreReturnValue
-      Builder externalEndpoint(String externalEndpoint);
-
-      @CanIgnoreReturnValue
-      Builder retryPolicy(AdlsRetryStrategy retryPolicy);
-
-      @CanIgnoreReturnValue
-      Builder maxRetries(int maxRetries);
-
-      @CanIgnoreReturnValue
-      Builder tryTimeout(Duration tryTimeout);
-
-      @CanIgnoreReturnValue
-      Builder retryDelay(Duration retryDelay);
-
-      @CanIgnoreReturnValue
-      Builder maxRetryDelay(Duration maxRetryDelay);
-
-      AdlsPerFileSystemOptions build();
+    if (fileSystems.equals(fileSystems())) {
+      return this;
     }
+    return ImmutableAdlsProgrammaticOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .fileSystems(fileSystems)
+        .build();
   }
 }

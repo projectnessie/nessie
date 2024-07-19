@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.providers.storage;
+package org.projectnessie.server.distcache;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -23,10 +23,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
-import static org.projectnessie.quarkus.providers.storage.CacheInvalidations.cacheInvalidations;
+import static org.projectnessie.server.distcache.CacheInvalidationReceiver.NESSIE_CACHE_INVALIDATION_TOKEN_HEADER;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictObj.cacheInvalidationEvictObj;
+import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
+import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

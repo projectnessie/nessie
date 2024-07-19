@@ -29,14 +29,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.projectnessie.catalog.files.api.ObjectIO;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
+import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.s3.ImmutableS3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
-import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
-import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions.S3PerBucketOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
@@ -109,10 +108,10 @@ public abstract class WithNessie {
     SdkHttpClient httpClient =
         S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
 
-    S3Options<S3BucketOptions> s3options =
-        S3ProgrammaticOptions.builder()
+    S3ProgrammaticOptions s3options =
+        ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
-                S3PerBucketOptions.builder()
+                ImmutableS3NamedBucketOptions.builder()
                     .accessKey(basicCredentials("foo", "bar"))
                     .region("eu-central-1")
                     .endpoint(objectStorage.getS3BaseUri())
@@ -125,7 +124,6 @@ public abstract class WithNessie {
     S3ClientSupplier clientSupplier =
         new S3ClientSupplier(
             httpClient,
-            s3config,
             s3options,
             new SecretsProvider(
                 (names) ->

@@ -22,12 +22,12 @@ import org.projectnessie.catalog.secrets.SecretsProvider;
 
 public final class GcsStorageSupplier {
   private final HttpTransportFactory httpTransportFactory;
-  private final GcsOptions<?> gcsOptions;
+  private final GcsOptions gcsOptions;
   private final SecretsProvider secretsProvider;
 
   public GcsStorageSupplier(
       HttpTransportFactory httpTransportFactory,
-      GcsOptions<?> gcsOptions,
+      GcsOptions gcsOptions,
       SecretsProvider secretsProvider) {
     this.httpTransportFactory = httpTransportFactory;
     this.gcsOptions = gcsOptions;

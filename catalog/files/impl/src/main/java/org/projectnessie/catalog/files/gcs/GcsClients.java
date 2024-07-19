@@ -45,7 +45,7 @@ public final class GcsClients {
   private GcsClients() {}
 
   public static Storage buildStorage(
-      GcsOptions<?> gcsOptions,
+      GcsOptions gcsOptions,
       GcsBucketOptions bucketOptions,
       HttpTransportFactory transportFactory) {
     HttpTransportOptions.Builder transportOptions =
@@ -70,7 +70,7 @@ public final class GcsClients {
     return builder.build().getService();
   }
 
-  static RetrySettings buildRetrySettings(GcsOptions<?> gcsOptions) {
+  static RetrySettings buildRetrySettings(GcsOptions gcsOptions) {
     Function<Duration, org.threeten.bp.Duration> duration =
         d -> org.threeten.bp.Duration.ofMillis(d.toMillis());
 
@@ -98,7 +98,7 @@ public final class GcsClients {
 
   static final class SharedHttpTransportFactory implements HttpTransportFactory {
     private final Supplier<HttpTransport> delegate;
-    private HttpTransport httpTransport;
+    private volatile HttpTransport httpTransport;
 
     SharedHttpTransportFactory(Supplier<HttpTransport> delegate) {
       this.delegate = delegate;

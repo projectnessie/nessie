@@ -58,7 +58,9 @@ dependencies {
   implementation(project(":nessie-tasks-service-async"))
   implementation(project(":nessie-tasks-service-impl"))
   implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-network-tools"))
   implementation(project(":nessie-notice"))
+  implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-catalog-files-api"))
@@ -109,6 +111,9 @@ dependencies {
   implementation(libs.guava)
 
   compileOnly(libs.microprofile.openapi)
+
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   openapiSource(project(":nessie-model-quarkus", "openapiSource"))
 
