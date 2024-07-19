@@ -60,7 +60,7 @@ especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by
     below.
 
 !!! note
-    Many things happen in parallel and some libraries that we have to depend on are written in a "reactive way",
+    Many things happen in parallel and some libraries that we have to depend on are not written in a "reactive way",
     especially with Iceberg REST. While the Iceberg REST parts in Nessie are built in a "reactive way",
     most Nessie core APIs are not.
 
