@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Shows the Nessie commit log.
 
 By default, the commit log fetched for the current reference of the Nessie CLI, or

@@ -1,1 +1,0 @@
-Nessie reference name.

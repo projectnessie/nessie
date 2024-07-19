@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ADLS file-system specific options, per file system name.
 
 | Property | Default Value | Type | Description |

@@ -1,1 +1,0 @@
-> `DROP` ( **DropReferenceStatement** | **DropContentStatement** )

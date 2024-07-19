@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Either a Nessie commit ID (hash) or a timestamp in ISO format. Examples:
 
 * `2024-04-26T10:31:05.277650575Z` is a valid ISO timestamp

@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.catalog.service.imports.max-concurrent` | `32` | `int` | Advanced property, defines the maximum number of concurrent imports from object stores.  |

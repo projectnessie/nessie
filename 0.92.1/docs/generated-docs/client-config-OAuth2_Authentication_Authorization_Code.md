@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.auth-endpoint` | URL of the OAuth2 authorization endpoint. For Keycloak, this is typically `https://<keycloak-server>/realms/<realm-name>/protocol/openid-connect/auth` .   <br><br>If using the "authorization_code" grant type, either this property or (`nessie.authentication.oauth2.issuer-url`) must be set. In case it is not set, the authorization endpoint  will be discovered from the issuer URL (`nessie.authentication.oauth2.issuer-url`), using the OpenID  Connect Discovery metadata published by the issuer.  |

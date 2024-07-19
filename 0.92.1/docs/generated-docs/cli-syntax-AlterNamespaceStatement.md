@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 > `ALTER` `NAMESPACE` **ContentKey**
   \[ `ON`
       \[ **ReferenceType** \]

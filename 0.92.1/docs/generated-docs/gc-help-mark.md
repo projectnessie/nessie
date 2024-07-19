@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 ```
 Usage: nessie-gc.jar mark-live [-hV] [-c=<defaultCutoffPolicy>]
                                [--identify-parallelism=<parallelism>] [--nessie-api=<nessieApi>]

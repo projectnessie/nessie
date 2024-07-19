@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 > `ASSIGN` **ReferenceType**
   \[ **ExistingReference** \]
   \[ `TO` **ExistingReference**

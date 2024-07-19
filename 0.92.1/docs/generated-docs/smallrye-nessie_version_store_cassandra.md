@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 When setting `nessie.version.store.type=CASSANDRA` which enables Apache Cassandra or  ScyllaDB as the version store used by the Nessie server, the following configurations are  applicable.
 
 | Property | Default Value | Type | Description |

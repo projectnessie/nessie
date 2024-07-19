@@ -1,9 +1,3 @@
----
-search:
-  exclude: true
----
-<!--start-->
-
 Lists all named references.
 
 An optional CEL-filter can be specified, which is evaluated on the server side.
