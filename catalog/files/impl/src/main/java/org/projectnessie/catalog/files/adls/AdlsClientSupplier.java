@@ -97,6 +97,7 @@ public final class AdlsClientSupplier {
         fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.NONE);
     switch (authType) {
       case NONE:
+        clientBuilder.setAnonymousAccess();
         break;
       case STORAGE_SHARED_KEY:
         String accountKey =

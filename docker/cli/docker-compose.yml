@@ -20,7 +20,7 @@
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.93.0
+    image: ghcr.io/projectnessie/nessie:0.93.1
     ports:
       # API port
       - "19120:19120"
@@ -35,7 +35,7 @@ services:
       retries: 15
 
   nessie-cli:
-    image: ghcr.io/projectnessie/nessie-cli:0.93.0
+    image: ghcr.io/projectnessie/nessie-cli:0.93.1
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     depends_on:
