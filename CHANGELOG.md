@@ -22,6 +22,7 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Catalog/ADLS: Add mandatory `auth-type` configuration option for ADLS file systems, see above.
+- GC: Iceberg view metadata is now expired as well.
 
 ### Changes
 
