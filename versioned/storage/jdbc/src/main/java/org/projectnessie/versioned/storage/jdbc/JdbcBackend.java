@@ -65,6 +65,8 @@ public final class JdbcBackend implements Backend {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBackend.class);
 
+  private static final int MAX_CREATE_TABLE_RECURSION_DEPTH = 3;
+
   private final DatabaseSpecific databaseSpecific;
   private final DataSource dataSource;
   private final boolean closeDataSource;
@@ -192,6 +194,7 @@ public final class JdbcBackend implements Backend {
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
       createTableIfNotExists(
+          0,
           conn,
           TABLE_REFS,
           createTableRefsSql,
@@ -206,6 +209,7 @@ public final class JdbcBackend implements Backend {
               .collect(Collectors.toSet()),
           ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_REFS_NAME, nameTypeId));
       createTableIfNotExists(
+          0,
           conn,
           TABLE_OBJS,
           createTableObjsSql,
@@ -231,6 +235,7 @@ public final class JdbcBackend implements Backend {
   }
 
   private void createTableIfNotExists(
+      int depth,
       Connection conn,
       String tableName,
       String createTable,
@@ -300,8 +305,14 @@ public final class JdbcBackend implements Backend {
         if (!databaseSpecific.isAlreadyExists(e)) {
           throw e;
         }
+
+        if (depth >= MAX_CREATE_TABLE_RECURSION_DEPTH) {
+          throw e;
+        }
+
         // table was created by another process, try again to check the schema
-        createTableIfNotExists(conn, tableName, createTable, expectedColumns, expectedPrimaryKey);
+        createTableIfNotExists(
+            depth + 1, conn, tableName, createTable, expectedColumns, expectedPrimaryKey);
       }
     }
   }
