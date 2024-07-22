@@ -394,8 +394,11 @@ catalog:
         # PT120s (120 seconds). Must be a valid ISO duration. Valid if retryPolicy is
         # EXPONENTIAL_BACKOFF.
         maxRetryDelay: ~
-        # -- A secret containing the account name and key to use. Either this option or sasTokenSecret
-        # must be set. If both are set, sasTokenSecret takes precedence.
+        # -- The authentication type to use. Valid values are:  NONE, STORAGE_SHARED_KEY, SAS_TOKEN,
+        # APPLICATION_DEFAULT. The default is NONE.
+        authType: ~
+        # -- A secret containing the account name and key to use. Required when authType is
+        # STORAGE_SHARED_KEY.
         accountSecret:
           # -- Name of the secret containing the account name and key.
           name: ~
@@ -403,8 +406,7 @@ catalog:
           accountName: ~
           # -- Secret key containing the account key.
           accountKey: ~
-        # -- A secret containing the SAS token to use. Either this option or accountSecret must
-        # be set. If both are set, sasTokenSecret takes precedence.
+        # -- A secret containing the SAS token to use. Required when authType is SAS_TOKEN.
         sasTokenSecret:
           # -- Name of the secret containing the SAS token.
           name: ~

@@ -250,6 +250,7 @@ Apply ADLS catalog options.
 {{- if .tryTimeout -}}{{- $_ := set $map ( print $prefix "try-timeout" ) .tryTimeout -}}{{- end -}}
 {{- if .retryDelay -}}{{- $_ := set $map ( print $prefix "retry-delay" ) .retryDelay -}}{{- end -}}
 {{- if .maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .maxRetryDelay -}}{{- end -}}
+{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
 {{- end -}}
 {{- end -}}
 
