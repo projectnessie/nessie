@@ -42,8 +42,8 @@ For more information on docker images, see [Docker image options](#docker-image-
 
 The minimum resources for Nessie are 4 CPUs and 4 GB RAM.
 
-The recommended resources for Nessie depend on the actual use case and usage pattern(s). We recommend to start various
-configuration starting with 8 CPUs and 8 GB RAM.
+The recommended resources for Nessie depend on the actual use case and usage pattern(s). We recommend to try various
+configurations, starting with 8 CPUs and 8 GB RAM.
 
 The efficiency of Nessie's cache can be monitored using the metrics provided with the `cache=nessie-objects` tag,
 especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by `cache.evictions`.
@@ -60,7 +60,7 @@ especially the `cache.gets` values for `hit`/`miss` and the `cause`s provided by
     below.
 
 !!! note
-    Many things happen in parallel and some libraries that we have to depend on are written in a "reactive way",
+    Many things happen in parallel and some libraries that we have to depend on are not written in a "reactive way",
     especially with Iceberg REST. While the Iceberg REST parts in Nessie are built in a "reactive way",
     most Nessie core APIs are not.
 
