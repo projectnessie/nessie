@@ -16,14 +16,18 @@
 package org.projectnessie.catalog.files.s3;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +43,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.projectnessie.catalog.files.s3.S3SessionsManager.SessionCredentialsFetcher;
@@ -65,10 +70,13 @@ class TestS3SessionsManager {
 
   @Test
   void multipleStorageLocations() throws Exception {
-    Optional<List<String>> clientStatements =
-        Optional.of(
-            List.of(
-                "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}"));
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder()
+            .clientIam(ImmutableS3Iam.builder().enabled(true).build())
+            .clientIamStatements(
+                List.of(
+                    "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}"))
+            .build();
 
     StorageLocations locations =
         StorageLocations.storageLocations(
@@ -80,7 +88,7 @@ class TestS3SessionsManager {
                 StorageUri.of("s3://bucket3/read/path/bar"),
                 StorageUri.of("s3://bucket4/read/other/bar")));
 
-    String policy = S3SessionsManager.locationDependentPolicy(locations, clientStatements);
+    String policy = S3SessionsManager.locationDependentPolicy(locations, options);
 
     String pretty = new ObjectMapper().readValue(policy, JsonNode.class).toPrettyString();
 
@@ -142,13 +150,98 @@ class TestS3SessionsManager {
 
   @ParameterizedTest
   @MethodSource
+  void locationDependentPolicy(S3BucketOptions options, List<String> expectedResources) {
+    StorageUri location = StorageUri.of("s3://foo/b\"ar");
+    StorageLocations locations =
+        StorageLocations.storageLocations(StorageUri.of("s3://foo/"), List.of(location), List.of());
+    soft.assertThatCode(
+            () -> {
+              String policy = S3SessionsManager.locationDependentPolicy(locations, options);
+              ObjectNode json = new ObjectMapper().readValue(policy, ObjectNode.class);
+              ArrayNode statements = json.withArray("Statement");
+              List<String> resources = new ArrayList<>();
+              for (JsonNode statement : statements) {
+                JsonNode res = statement.get("Resource");
+                if (res.isArray()) {
+                  for (JsonNode re : res) {
+                    resources.add(re.asText());
+                  }
+                }
+                if (res.isTextual()) {
+                  resources.add(res.asText());
+                }
+              }
+              assertThat(resources).containsExactlyElementsOf(expectedResources);
+            })
+        .doesNotThrowAnyException();
+  }
+
+  static Stream<Arguments> locationDependentPolicy() {
+    return Stream.of(
+        arguments(
+            ImmutableS3NamedBucketOptions.builder()
+                .clientIam(
+                    ImmutableS3Iam.builder()
+                        .enabled(true)
+                        .policy(
+                            "{ \"Version\":\"2012-10-17\",\n"
+                                + "  \"Statement\": [\n"
+                                + "    {\"Effect\":\"Allow\", \"Action\": [ \"s3:GetObject\", \"s3:GetObjectVersion\", \"s3:s3:PutObject\", \"s3:DeleteObject\" ], \"Resource\": [ \"arn:aws:s3:::*\" ] },\n"
+                                + "    {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blockedNamespace/*\"}\n"
+                                + "   ]\n"
+                                + "}\n")
+                        .build())
+                .build(),
+            List.of("arn:aws:s3:::*", "arn:aws:s3:::*/blockedNamespace/*")),
+        arguments(
+            ImmutableS3NamedBucketOptions.builder()
+                .clientIam(ImmutableS3Iam.builder().enabled(true).build())
+                .clientIamStatements(
+                    List.of(
+                        "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}\n"))
+                .build(),
+            List.of(
+                "arn:aws:s3:::foo",
+                "arn:aws:s3:::foo/b\"ar/*",
+                "arn:aws:s3:::foo/*/b\"ar/*",
+                "arn:aws:s3:::*/blocked\"Namespace/*")));
+  }
+
+  @Test
+  void invalidFixedSessionPolicy() {
+    StorageUri location = StorageUri.of("s3://foo/bar");
+    StorageLocations locations =
+        StorageLocations.storageLocations(StorageUri.of("s3://foo/"), List.of(location), List.of());
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder()
+            .clientIam(
+                ImmutableS3Iam.builder()
+                    .enabled(true)
+                    .policy(
+                        "{ \"Version\":\"2012-10-17\",\n"
+                            + "  \"Statement\": [\n"
+                            + "    {\"Effect\":\"Allow\", \"Action\": [ \"s3:GetObject\", \"s3:GetObjectVersion\", \"s3:s3:PutObject\", \"s3:DeleteObject\" ], \"Resource\": [ \"arn:aws:s3:::*},\n"
+                            + "   \n"
+                            + "}\n")
+                    .build())
+            .build();
+    String policy = S3SessionsManager.locationDependentPolicy(locations, options);
+    soft.assertThatThrownBy(() -> new ObjectMapper().readValue(policy, ObjectNode.class))
+        .isInstanceOf(IOException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource
   void invalidSessionPolicyStatement(String invalid) {
     StorageUri location = StorageUri.of("s3://foo/bar");
     StorageLocations locations =
         StorageLocations.storageLocations(StorageUri.of("s3://foo/"), List.of(location), List.of());
-    soft.assertThatThrownBy(
-            () ->
-                S3SessionsManager.locationDependentPolicy(locations, Optional.of(List.of(invalid))))
+    S3BucketOptions options =
+        ImmutableS3NamedBucketOptions.builder()
+            .clientIam(ImmutableS3Iam.builder().enabled(true).build())
+            .clientIamStatements(List.of(invalid))
+            .build();
+    soft.assertThatThrownBy(() -> S3SessionsManager.locationDependentPolicy(locations, options))
         .isInstanceOf(RuntimeException.class)
         .cause()
         .isInstanceOf(IOException.class);
@@ -175,7 +268,7 @@ class TestS3SessionsManager {
     AtomicInteger counter = new AtomicInteger();
     AtomicReference<Credentials> credentials = new AtomicReference<>();
     SessionCredentialsFetcher loader =
-        (client, key, duration) -> {
+        (client, key, duration, location) -> {
           counter.incrementAndGet();
           return credentials.get();
         };
@@ -183,7 +276,10 @@ class TestS3SessionsManager {
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
     S3BucketOptions options =
-        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
+        ImmutableS3NamedBucketOptions.builder()
+            .region("R1")
+            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .build();
 
     credentials.set(credentials(time.get() + 100));
     soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
@@ -232,7 +328,7 @@ class TestS3SessionsManager {
     AtomicInteger counter = new AtomicInteger();
     AtomicReference<Credentials> credentials = new AtomicReference<>();
     SessionCredentialsFetcher loader =
-        (client, key, duration) -> {
+        (client, key, duration, location) -> {
           counter.incrementAndGet();
           return credentials.get();
         };
@@ -240,15 +336,24 @@ class TestS3SessionsManager {
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, clientBuilder, Optional.empty(), loader);
     S3BucketOptions options =
-        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
+        ImmutableS3NamedBucketOptions.builder()
+            .region("R1")
+            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .build();
 
     credentials.set(credentials(time.get() + 100));
 
-    soft.assertThat(manager.sessionCredentialsForClient("r1", options)).isSameAs(credentials.get());
+    StorageUri location = StorageUri.of("s3://bucket/path");
+    StorageLocations locations =
+        StorageLocations.storageLocations(
+            StorageUri.of("s3://bucket/"), List.of(location), List.of());
+    soft.assertThat(manager.sessionCredentialsForClient("r1", options, locations))
+        .isSameAs(credentials.get());
     soft.assertThat(clientCounter.get()).isEqualTo(1);
     soft.assertThat(counter.get()).isEqualTo(1);
 
-    soft.assertThat(manager.sessionCredentialsForClient("r1", options)).isSameAs(credentials.get());
+    soft.assertThat(manager.sessionCredentialsForClient("r1", options, locations))
+        .isSameAs(credentials.get());
     // STS clients are cached
     soft.assertThat(clientCounter.get()).isEqualTo(1);
     // Client session credentials are not cached
@@ -260,12 +365,15 @@ class TestS3SessionsManager {
     AtomicLong time = new AtomicLong();
 
     AtomicReference<Credentials> credentials = new AtomicReference<>();
-    SessionCredentialsFetcher loader = (client, key, duration) -> credentials.get();
+    SessionCredentialsFetcher loader = (client, key, duration, location) -> credentials.get();
     S3SessionsManager manager =
         new S3SessionsManager(s3options, time::get, null, (p) -> null, Optional.empty(), loader);
 
     S3BucketOptions options =
-        ImmutableS3NamedBucketOptions.builder().region("R1").assumeRole("role").build();
+        ImmutableS3NamedBucketOptions.builder()
+            .region("R1")
+            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .build();
     Credentials c1 = credentials(time.get() + 100);
     Credentials c2 = credentials(time.get() + 200);
 
@@ -290,7 +398,7 @@ class TestS3SessionsManager {
         null,
         (p) -> null,
         Optional.of(meterRegistry),
-        (client, key, duration) -> null);
+        (client, key, duration, location) -> null);
 
     Function<Meter, AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>>> extractor =
         meter ->

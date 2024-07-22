@@ -17,56 +17,173 @@ package org.projectnessie.catalog.service.rest;
 
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
 
 import java.net.URI;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.files.s3.ImmutableS3ProgrammaticOptions;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.model.NessieTable;
+import org.projectnessie.catalog.model.id.NessieId;
+import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
+import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.service.api.SignerKeysService;
+import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestIcebergConfigurer {
   @InjectSoftAssertions protected SoftAssertions soft;
 
+  protected IcebergConfigurer icebergConfigurer;
+  protected SignerKey signerKey;
+
+  @BeforeEach
+  protected void setupIcebergConfigurer() {
+    icebergConfigurer = new IcebergConfigurer();
+    icebergConfigurer.uriInfo = () -> URI.create("http://foo:12434");
+    icebergConfigurer.s3Options = ImmutableS3ProgrammaticOptions.builder().build();
+    icebergConfigurer.secretsProvider = mock(SecretsProvider.class);
+    when(icebergConfigurer.secretsProvider.applySecrets(any(), any(), any(), any(), any(), any()))
+        .thenAnswer(inv -> inv.getArgument(0));
+    Instant now = Instant.now();
+    signerKey =
+        SignerKey.builder()
+            .name("foo")
+            .secretKey("01234567890123456789012345678912".getBytes(UTF_8))
+            .creationTime(now)
+            .rotationTime(now.plus(1, DAYS))
+            .expirationTime(now.plus(2, DAYS))
+            .build();
+    icebergConfigurer.signerKeysService =
+        new SignerKeysService() {
+          @Override
+          public SignerKey currentSignerKey() {
+            return signerKey;
+          }
+
+          @Override
+          public SignerKey getSignerKey(String keyName) {
+            return signerKey;
+          }
+        };
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void writeObjectStorageEnabled(
+      ContentKey key, Map<String, String> propertiesIn, Map<String, String> expectedProperties) {
+
+    String loc = "s3://bucket/" + String.join("/", key.getElements());
+
+    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
+    when(tm.location()).thenReturn(loc);
+    when(tm.properties()).thenReturn(propertiesIn);
+
+    NessieTableSnapshot nessieSnapshot =
+        NessieTableSnapshot.builder()
+            .lastUpdatedTimestamp(Instant.now())
+            .id(NessieId.randomNessieId())
+            .entity(
+                NessieTable.builder()
+                    .nessieContentId(UUID.randomUUID().toString())
+                    .createdTimestamp(Instant.now())
+                    .build())
+            .build();
+
+    Map<String, String> props = new HashMap<>(propertiesIn);
+
+    Map<String, String> config =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, "s3://bucket/", tm.location(), props, "main", key, null, true);
+
+    soft.assertThat(props).containsExactlyInAnyOrderEntriesOf(expectedProperties);
+  }
+
+  static Stream<Arguments> writeObjectStorageEnabled() {
+    return Stream.of(
+        arguments(
+            ContentKey.of("n1", "n2", "my_table"),
+            Map.of(
+                "write.object-storage.enabled",
+                "true",
+                "write.data.path",
+                "s3://other/",
+                "write.object-storage.path",
+                "s3://other2/",
+                "write.folder-storage.path",
+                "s3://other3/"),
+            Map.of("write.object-storage.enabled", "true", "write.data.path", "s3://bucket/"))
+        //
+        );
+  }
+
   /** Verify compatibility with Iceberg < 1.5.0 S3 signer properties. */
   @ParameterizedTest
   @MethodSource
   public void icebergConfigPerTable(
       URI baseUri, String loc, String prefix, ContentKey key, String signUri, String signPath) {
-    IcebergConfigurer c = new IcebergConfigurer();
 
-    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
-    when(tm.location()).thenReturn(loc);
+    icebergConfigurer.uriInfo = () -> baseUri;
 
-    c.uriInfo = () -> baseUri;
-
-    MapAssert<String, String> props =
-        soft.assertThat(c.icebergConfigPerTable(tm, prefix, key, null));
+    NessieTableSnapshot nessieSnapshot =
+        NessieTableSnapshot.builder()
+            .lastUpdatedTimestamp(Instant.now())
+            .id(NessieId.randomNessieId())
+            .entity(
+                NessieTable.builder()
+                    .nessieContentId(UUID.randomUUID().toString())
+                    .createdTimestamp(Instant.now())
+                    .build())
+            .build();
+    String warehouseLocation = "s3://bucket/";
+    Map<String, String> config =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, warehouseLocation, loc, new HashMap<>(), prefix, key, null, true);
     if (signUri != null) {
-      props.containsEntry(S3_SIGNER_URI, signUri);
+      soft.assertThat(config).containsEntry(S3_SIGNER_URI, signUri);
       soft.assertThat(signUri).endsWith("/");
       soft.assertThat(signPath).isNotNull();
     } else {
-      props.doesNotContainKey(S3_SIGNER_URI);
+      soft.assertThat(config).doesNotContainKey(S3_SIGNER_URI);
     }
     if (signPath != null) {
-      props.containsEntry(S3_SIGNER_ENDPOINT, signPath);
+      URI endpoint = URI.create(config.get(S3_SIGNER_ENDPOINT));
+      soft.assertThat(endpoint.getRawPath()).isEqualTo(signPath);
+      Map<String, String> query =
+          Arrays.stream(endpoint.getRawQuery().split("&"))
+              .collect(
+                  Collectors.toMap(
+                      p -> p.substring(0, p.indexOf('=')), p -> p.substring(p.indexOf('=') + 1)));
+      soft.assertThat(query)
+          .containsKeys("e", "s")
+          .containsEntry("b", encode(warehouseLocation, UTF_8))
+          .containsEntry("k", signerKey.name())
+          .containsEntry("w", encode(loc, UTF_8));
       soft.assertThat(signPath).doesNotStartWith("/");
       soft.assertThat(signUri).isNotNull();
     } else {
-      props.doesNotContainKey(S3_SIGNER_ENDPOINT);
+      soft.assertThat(config).doesNotContainKey(S3_SIGNER_ENDPOINT);
     }
   }
 
@@ -83,31 +200,21 @@ public class TestIcebergConfigurer {
             "main",
             key,
             "http://foo:12434/iceberg/",
-            "v1/main/s3-sign/" + key.toPathString() + "?loc=" + encode(s3, UTF_8)),
+            "v1/main/s3-sign/" + key.toPathString()),
         arguments(
             URI.create("http://foo:12434/some/long/prefix/"),
             s3,
             complexPrefix,
             key,
             "http://foo:12434/some/long/prefix/iceberg/",
-            "v1/"
-                + encode(complexPrefix, UTF_8)
-                + "/s3-sign/"
-                + key.toPathString()
-                + "?loc="
-                + encode(s3, UTF_8)),
+            "v1/" + encode(complexPrefix, UTF_8) + "/s3-sign/" + key.toPathString()),
         arguments(
             URI.create("https://foo/some/long/prefix/"),
             s3,
             complexPrefix,
             key,
             "https://foo/some/long/prefix/iceberg/",
-            "v1/"
-                + encode(complexPrefix, UTF_8)
-                + "/s3-sign/"
-                + key.toPathString()
-                + "?loc="
-                + encode(s3, UTF_8)),
+            "v1/" + encode(complexPrefix, UTF_8) + "/s3-sign/" + key.toPathString()),
         arguments(
             URI.create("http://foo:12434/some/long/prefix/"), gcs, complexPrefix, key, null, null));
   }

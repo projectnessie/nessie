@@ -34,15 +34,21 @@ public class S3CredentialsResolver {
     this.sessions = sessions;
   }
 
-  public S3Credentials resolveSessionCredentials(S3BucketOptions bucketOptions) {
-    AwsCredentials credentials = sessions.assumeRoleForClient(bucketOptions).resolveCredentials();
+  public S3Credentials resolveSessionCredentials(
+      S3BucketOptions bucketOptions, StorageLocations locations) {
+    AwsCredentials credentials =
+        sessions.assumeRoleForClient(bucketOptions, locations).resolveCredentials();
 
     // Make sure the received credentials are actually valid until the expected session end.
     Optional<Instant> expirationInstant = credentials.expirationTime();
     if (expirationInstant.isPresent()) {
       Instant now = clock.instant();
       // Note: expiry instance accuracy in STS is seconds.
-      Duration requiredDuration = bucketOptions.minSessionCredentialValidityPeriod();
+      S3Iam iam =
+          bucketOptions
+              .getEnabledClientIam()
+              .orElseThrow(() -> new IllegalStateException("client IAM not enabled"));
+      Duration requiredDuration = iam.minSessionCredentialValidityPeriod();
       // Remove one second from the session end to account for the truncation to seconds.
       Instant sessionEnd =
           now.plus(requiredDuration).truncatedTo(ChronoUnit.SECONDS).minus(1, ChronoUnit.SECONDS);

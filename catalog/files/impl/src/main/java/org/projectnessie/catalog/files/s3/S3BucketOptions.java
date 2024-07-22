@@ -16,34 +16,18 @@
 package org.projectnessie.catalog.files.s3;
 
 import java.net.URI;
-import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.BasicCredentials;
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 public interface S3BucketOptions {
-  /**
-   * Default value for {@link #roleSessionName()} that identifies the session simply as a "Nessie"
-   * session.
-   */
-  String DEFAULT_SESSION_NAME = "nessie";
-
-  /** Default value for {@link #minSessionCredentialValidityPeriod()}. */
-  Duration DEFAULT_SESSION_DURATION =
-      Duration.ofHours(1); // 1 hour lifetime is common for session credentials in S3
 
   /**
    * Default value for {@link #serverAuthenticationMode()}, being {@link
    * S3ServerAuthenticationMode#STATIC}.
    */
   S3ServerAuthenticationMode DEFAULT_SERVER_AUTHENTICATION_MODE = S3ServerAuthenticationMode.STATIC;
-
-  /**
-   * Default value for {@link #clientAuthenticationMode()}, being {@link
-   * S3ClientAuthenticationMode#REQUEST_SIGNING}.
-   */
-  S3ClientAuthenticationMode DEFAULT_CLIENT_AUTHENTICATION_MODE =
-      S3ClientAuthenticationMode.REQUEST_SIGNING;
 
   /**
    * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
@@ -124,6 +108,9 @@ public interface S3BucketOptions {
    */
   Optional<BasicCredentials> accessKey();
 
+  /** Optional parameter to disable S3 request signing. Default is to enable S3 request signing. */
+  Optional<Boolean> requestSigningEnabled();
+
   /**
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token
    * Service</a> endpoint.
@@ -133,74 +120,53 @@ public interface S3BucketOptions {
    */
   Optional<URI> stsEndpoint();
 
-  /**
-   * The <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html">ARN</a> of
-   * the role to assume for accessing S3 data. This parameter is required for Amazon S3, but may not
-   * be required for other storage providers (e.g. Minio does not use it at all).
-   *
-   * <p>If this option is defined, the server will attempt to assume the role at startup and cache
-   * the returned session credentials.
-   */
-  Optional<String> assumeRole();
+  /** Configure assume-role functionality for Nessie server. */
+  Optional<S3Iam> serverIam();
 
-  /**
-   * IAM policy in JSON format to be used as an inline <a
-   * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html#policies_session">session
-   * policy</a> (optional).
-   *
-   * @see AssumeRoleRequest#policy()
-   */
-  Optional<String> sessionIamPolicy();
+  /** Configure assume-role/scoped-down credentials for clients. */
+  Optional<S3Iam> clientIam();
 
-  /**
-   * An identifier for the assumed role session. This parameter is most important in cases when the
-   * same role is assumed by different principals in different use cases.
-   *
-   * @see AssumeRoleRequest#roleSessionName()
-   */
-  Optional<String> roleSessionName();
+  @Value.NonAttribute
+  default Optional<S3Iam> getEnabledServerIam() {
+    return serverIam().filter(iam -> iam.enabled().orElse(false));
+  }
 
-  /**
-   * An identifier for the party assuming the role. This parameter must match the external ID
-   * configured in IAM rules that <a
-   * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html">govern</a>
-   * the assume role process for the specified {@code role-arn}.
-   *
-   * <p>This parameter is essential in preventing the <a
-   * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html">Confused
-   * Deputy</a> problem.
-   *
-   * @see AssumeRoleRequest#externalId()
-   */
-  Optional<String> externalId();
+  @Value.NonAttribute
+  default Optional<S3Iam> getEnabledClientIam() {
+    return clientIam().filter(iam -> iam.enabled().orElse(false));
+  }
 
-  /**
-   * Controls the authentication mode for Catalog clients accessing this bucket. If not set, the
-   * default is {@code REQUEST_SIGNING}.
-   */
-  Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
+  @Value.NonAttribute
+  default boolean effectiveRequestSigningEnabled() {
+    return requestSigningEnabled().orElse(true);
+  }
 
-  default S3ClientAuthenticationMode effectiveClientAuthenticationMode() {
-    return clientAuthenticationMode().orElse(DEFAULT_CLIENT_AUTHENTICATION_MODE);
+  @Value.NonAttribute
+  default boolean effectiveClientAssumeRoleEnabled() {
+    if (clientIam().isEmpty() || region().isEmpty()) {
+      return false;
+    }
+    return clientIam().get().enabled().orElse(false);
   }
 
   /**
-   * A higher bound estimate of the expected duration of client "sessions" working with data in this
-   * bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on the client
-   * side. This value is used for validating expiration times of credentials associated with the
-   * warehouse.
+   * Additional IAM policy statements to be inserted <em>after</em> the automatically generated S3
+   * location dependent {@code Allow} policy statement.
    *
-   * <p>This parameter is relevant only when {@code client-authentication-mode} is {@code
-   * ASSUME_ROLE}.
+   * <p>Example:
+   *
+   * <p><code>
+   * ...client-iam.statements[0]={"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;alwaysAllowed&#47;*"}
+   * ...client-iam.statements[1]={"Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;blocked&#47;*"}
+   * </code>
+   *
+   * <p>Related docs: <a
+   * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/security_iam_service-with-iam.html">S3
+   * with IAM</a> and <a
+   * href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html">about
+   * actions, resources, conditions</a> and <a
+   * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html">policy
+   * reference</a>.
    */
-  Optional<Duration> clientSessionDuration();
-
-  /**
-   * The minimum required validity period for session credentials. The value of {@code
-   * client-session-duration} is used if set, otherwise the default ({@code
-   * DEFAULT_SESSION_DURATION}) session duration is assumed.
-   */
-  default Duration minSessionCredentialValidityPeriod() {
-    return clientSessionDuration().orElse(DEFAULT_SESSION_DURATION);
-  }
+  Optional<List<String>> clientIamStatements();
 }

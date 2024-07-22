@@ -63,6 +63,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,6 +87,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergRegisterTableReques
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateTableRequest;
+import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
@@ -131,12 +133,15 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, prefix, dataAccess);
+    return this.loadTable(tableRef, prefix, dataAccess, false);
   }
 
   private Uni<IcebergLoadTableResponse> loadTable(
-      TableRef tableRef, String prefix, String dataAccess) throws NessieNotFoundException {
+      TableRef tableRef, String prefix, String dataAccess, boolean writeAccessValidated)
+      throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
+
+    WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
 
     return snapshotResponse(
             key,
@@ -145,16 +150,24 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .map(
             snap ->
                 loadTableResultFromSnapshotResponse(
-                    snap, IcebergLoadTableResponse.builder(), prefix, key, dataAccess));
+                    snap,
+                    IcebergLoadTableResponse.builder(),
+                    warehouse.location(),
+                    prefix,
+                    key,
+                    dataAccess,
+                    writeAccessValidated));
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap,
           B builder,
+          String warehouseLocation,
           String prefix,
           ContentKey contentKey,
-          String dataAccess) {
+          String dataAccess,
+          boolean writeAccessValidated) {
     IcebergTableMetadata tableMetadata =
         (IcebergTableMetadata)
             snap.entityObject()
@@ -167,23 +180,66 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
               .build();
     }
     IcebergTable content = (IcebergTable) snap.content();
+
+    if (!writeAccessValidated) {
+      // Check whether the current user has write access to the table, if that hasn't been already
+      // checked by the caller.
+      try {
+        nessieApi
+            .getContent()
+            .reference(snap.effectiveReference())
+            .key(contentKey)
+            .forWrite(true)
+            .getWithResponse();
+        writeAccessValidated = true;
+      } catch (Exception ignore) {
+      }
+    }
+
     return loadTableResult(
-        content.getMetadataLocation(), tableMetadata, builder, prefix, contentKey, dataAccess);
+        content.getMetadataLocation(),
+        snap.nessieSnapshot(),
+        warehouseLocation,
+        tableMetadata,
+        builder,
+        prefix,
+        contentKey,
+        dataAccess,
+        writeAccessValidated);
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResult(
           String metadataLocation,
+          NessieEntitySnapshot<?> nessieSnapshot,
+          String warehouseLocation,
           IcebergTableMetadata tableMetadata,
           B builder,
           String prefix,
           ContentKey contentKey,
-          String dataAccess) {
+          String dataAccess,
+          boolean writeAccessGranted) {
+
+    Map<String, String> properties = new HashMap<>(tableMetadata.properties());
+
+    Map<String, String> config =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot,
+            warehouseLocation,
+            tableMetadata.location(),
+            properties,
+            prefix,
+            contentKey,
+            dataAccess,
+            writeAccessGranted);
+
+    IcebergTableMetadata metadataTweak =
+        IcebergTableMetadata.builder().from(tableMetadata).properties(properties).build();
+
     return builder
-        .metadata(tableMetadata)
+        .metadata(metadataTweak)
         .metadataLocation(metadataLocation)
-        .putAllConfig(
-            icebergConfigurer.icebergConfigPerTable(tableMetadata, prefix, contentKey, dataAccess))
+        .putAllConfig(config)
         .build();
   }
 
@@ -231,9 +287,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     createEntityVerifyNotExists(tableRef, ICEBERG_TABLE);
 
+    WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+
     if (createTableRequest.stageCreate()) {
 
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
       String location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
       updates.add(setTrustedLocation(location));
 
@@ -253,11 +310,14 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           .item(
               this.loadTableResult(
                   null,
+                  snapshot,
+                  warehouse.location(),
                   stagedTableMetadata,
                   IcebergCreateTableResponse.builder(),
                   prefix,
                   tableRef.contentKey(),
-                  dataAccess));
+                  dataAccess,
+                  true));
     }
 
     IcebergUpdateTableRequest updateTableReq =
@@ -273,9 +333,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 this.loadTableResultFromSnapshotResponse(
                     snap,
                     IcebergCreateTableResponse.builder(),
+                    warehouse.location(),
                     prefix,
                     tableRef.contentKey(),
-                    dataAccess));
+                    dataAccess,
+                    true));
   }
 
   @POST
@@ -335,9 +397,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getName(),
                   committed.getTargetBranch().getHash(),
                   BRANCH),
-              null),
+              tableRef.warehouse()),
           prefix,
-          dataAccess);
+          dataAccess,
+          true);
     } else if (nessieCatalogUri) {
       throw new IllegalArgumentException(
           "Cannot register an Iceberg table using the URI "
@@ -381,9 +444,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getName(),
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
-            null),
+            tableRef.warehouse()),
         prefix,
-        dataAccess);
+        dataAccess,
+        true);
   }
 
   @DELETE

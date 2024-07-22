@@ -102,16 +102,12 @@ public interface ExternalBaseUri {
    * deal with this.
    *
    * @param prefix the prefix of the request (warehouse and reference)
-   * @param contentKey the content key to sign the request for
-   * @param currentBaseLocation the current base location, used to authorize signing for staged
-   *     tables mostly
+   * @param contentKeyPathString the content key to sign the request for
+   * @param uriQuery the query string for the URL
    */
-  default String icebergS3SignerPath(
-      String prefix, ContentKey contentKey, String currentBaseLocation) {
+  default String icebergS3SignerPath(String prefix, String contentKeyPathString, String uriQuery) {
     return format(
-        "v1/%s/s3-sign/%s?loc=%s",
-        encode(prefix, UTF_8),
-        encode(contentKey.toPathString(), UTF_8),
-        encode(currentBaseLocation, UTF_8));
+        "v1/%s/s3-sign/%s?%s",
+        encode(prefix, UTF_8), encode(contentKeyPathString, UTF_8), uriQuery);
   }
 }

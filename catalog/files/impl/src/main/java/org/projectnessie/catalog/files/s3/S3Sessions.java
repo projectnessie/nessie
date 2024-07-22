@@ -42,8 +42,9 @@ public class S3Sessions {
    * Returns session credentials for the specified role and the expected session duration. Note:
    * credentials returned from this method are generally not shared across sessions.
    */
-  AwsCredentialsProvider assumeRoleForClient(S3BucketOptions options) {
-    return credentials(() -> sessionsManager.sessionCredentialsForClient(repositoryId, options));
+  AwsCredentialsProvider assumeRoleForClient(S3BucketOptions options, StorageLocations locations) {
+    return credentials(
+        () -> sessionsManager.sessionCredentialsForClient(repositoryId, options, locations));
   }
 
   private AwsCredentialsProvider credentials(Supplier<Credentials> supplier) {

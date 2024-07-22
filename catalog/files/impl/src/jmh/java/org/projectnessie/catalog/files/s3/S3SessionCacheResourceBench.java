@@ -44,6 +44,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
 
@@ -101,11 +102,22 @@ public class S3SessionCacheResourceBench {
                   i ->
                       ImmutableS3NamedBucketOptions.builder()
                           .accessKey(basicCredentials("foo" + i, "bar" + 1))
-                          .externalId("externalId" + i)
                           .region(regions.get(i % regions.size()))
-                          .roleSessionName("roleSessionName" + i)
                           .stsEndpoint(stsEndpoint)
-                          .assumeRole("roleArn" + i)
+                          .clientIam(
+                              ImmutableS3Iam.builder()
+                                  .externalId("externalId" + i)
+                                  .roleSessionName("roleSessionName" + i)
+                                  .assumeRole("roleArn" + i)
+                                  .enabled(true)
+                                  .build())
+                          .serverIam(
+                              ImmutableS3Iam.builder()
+                                  .externalId("externalId" + i)
+                                  .roleSessionName("roleSessionName" + i)
+                                  .assumeRole("roleArn" + i)
+                                  .enabled(true)
+                                  .build())
                           .build())
               .toArray(ImmutableS3NamedBucketOptions[]::new);
     }
@@ -128,6 +140,13 @@ public class S3SessionCacheResourceBench {
 
   @Benchmark
   public void getCredentialsForClient(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.s3SessionsManager.sessionCredentialsForClient("repo", param.bucketOptions()));
+    bh.consume(
+        param.s3SessionsManager.sessionCredentialsForClient(
+            "repo",
+            param.bucketOptions(),
+            StorageLocations.storageLocations(
+                StorageUri.of("s3://bucket/"),
+                List.of(StorageUri.of("s3://bucket/path")),
+                List.of())));
   }
 }

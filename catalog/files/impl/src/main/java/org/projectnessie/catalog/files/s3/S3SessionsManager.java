@@ -149,7 +149,7 @@ public class S3SessionsManager {
                     return currentDuration;
                   }
                 })
-            .build(this::loadSession);
+            .build(this::loadServerSession);
   }
 
   private StatsCounter statsCounter(
@@ -180,12 +180,15 @@ public class S3SessionsManager {
     return TimeUnit.MILLISECONDS.toNanos(lifetimeMillis);
   }
 
-  private Credentials loadSession(SessionKey sessionKey) {
+  private Credentials loadServerSession(SessionKey sessionKey) {
     // Cached sessions use the default duration.
-    return fetchCredentials(sessionKey, Optional.empty());
+    return fetchCredentials(sessionKey, Optional.empty(), Optional.empty());
   }
 
-  private Credentials fetchCredentials(SessionKey sessionKey, Optional<Duration> sessionDuration) {
+  private Credentials fetchCredentials(
+      SessionKey sessionKey,
+      Optional<Duration> sessionDuration,
+      Optional<StorageLocations> locations) {
     // Note: StsClients may be shared across repositories.
     String region =
         sessionKey
@@ -196,18 +199,36 @@ public class S3SessionsManager {
         ImmutableStsClientKey.of(sessionKey.bucketOptions().stsEndpoint(), region);
     StsClient client = clients.get(clientKey, clientBuilder);
 
-    return sessionCredentialsFetcher.fetchCredentials(client, sessionKey, sessionDuration);
+    return sessionCredentialsFetcher.fetchCredentials(
+        client, sessionKey, sessionDuration, locations);
   }
 
   private Credentials executeAssumeRoleRequest(
-      StsClient client, SessionKey sessionKey, Optional<Duration> sessionDuration) {
+      StsClient client,
+      SessionKey sessionKey,
+      Optional<Duration> sessionDuration,
+      Optional<StorageLocations> locations) {
+
     AssumeRoleRequest.Builder request = AssumeRoleRequest.builder();
     S3BucketOptions bucketOptions = sessionKey.bucketOptions();
-    request.roleSessionName(
-        bucketOptions.roleSessionName().orElse(S3BucketOptions.DEFAULT_SESSION_NAME));
-    bucketOptions.assumeRole().ifPresent(request::roleArn);
-    bucketOptions.externalId().ifPresent(request::externalId);
-    bucketOptions.sessionIamPolicy().ifPresent(request::policy);
+    S3Iam iam =
+        (sessionKey.server()
+                ? bucketOptions.getEnabledServerIam()
+                : bucketOptions.getEnabledClientIam())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        (sessionKey.server() ? "server" : "client") + " IAM not enabled"));
+
+    request.roleSessionName(iam.roleSessionName().orElse(S3Iam.DEFAULT_SESSION_NAME));
+    iam.assumeRole().ifPresent(request::roleArn);
+    iam.externalId().ifPresent(request::externalId);
+
+    if (locations.isPresent()) {
+      request.policy(locationDependentPolicy(locations.get(), bucketOptions));
+    } else {
+      iam.policy().ifPresent(request::policy);
+    }
     sessionDuration.ifPresent(
         duration -> {
           long seconds = duration.toSeconds();
@@ -222,12 +243,23 @@ public class S3SessionsManager {
           builder.credentialsProvider(authMode.newCredentialsProvider(bucketOptions));
         });
 
-    AssumeRoleResponse response = client.assumeRole(request.build());
+    AssumeRoleRequest req = request.build();
+
+    AssumeRoleResponse response = client.assumeRole(req);
     return response.credentials();
   }
 
   public static String locationDependentPolicy(
-      StorageLocations locations, Optional<List<String>> clientIamStatements) {
+      StorageLocations locations, S3BucketOptions bucketOptions) {
+    S3Iam iam =
+        bucketOptions
+            .getEnabledClientIam()
+            .orElseThrow(() -> new IllegalStateException("client IAM not enabled"));
+    if (iam.policy().isPresent()) {
+      return iam.policy().get();
+    }
+
+    Optional<List<String>> clientIamStatements = bucketOptions.clientIamStatements();
 
     // See https://docs.aws.amazon.com/AmazonS3/latest/userguide/security_iam_service-with-iam.html
     // See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html
@@ -339,23 +371,30 @@ public class S3SessionsManager {
   }
 
   Credentials sessionCredentialsForServer(String repositoryId, S3BucketOptions options) {
-    SessionKey sessionKey = buildSessionKey(repositoryId, options);
+    SessionKey sessionKey = buildSessionKey(repositoryId, options, true);
     return sessions.get(sessionKey);
   }
 
-  Credentials sessionCredentialsForClient(String repositoryId, S3BucketOptions options) {
-    SessionKey sessionKey = buildSessionKey(repositoryId, options);
+  Credentials sessionCredentialsForClient(
+      String repositoryId, S3BucketOptions options, StorageLocations locations) {
+    SessionKey sessionKey = buildSessionKey(repositoryId, options, false);
     // In this case cache only the client, but not the credentials. Session cache hits are
     // unlikely in the latter case as we'd have to include the exact expiry instant (not session
     // duration) in the SessionKey, otherwise we risk reusing credentials that are about to expire
     // for a fresh (long-running) session.
-    return fetchCredentials(sessionKey, options.clientSessionDuration());
+    return fetchCredentials(
+        sessionKey, options.clientIam().flatMap(S3Iam::sessionDuration), Optional.of(locations));
   }
 
-  private static SessionKey buildSessionKey(String repositoryId, S3BucketOptions options) {
+  private static SessionKey buildSessionKey(
+      String repositoryId, S3BucketOptions options, boolean server) {
     // Client parameters are part of the credential's key because clients in different regions may
     // issue different credentials.
-    return ImmutableSessionKey.builder().repositoryId(repositoryId).bucketOptions(options).build();
+    return ImmutableSessionKey.builder()
+        .repositoryId(repositoryId)
+        .bucketOptions(options)
+        .server(server)
+        .build();
   }
 
   private static StsClient client(StsClientKey parameters, SdkHttpClient sdkClient) {
@@ -378,6 +417,8 @@ public class S3SessionsManager {
     String repositoryId();
 
     S3BucketOptions bucketOptions();
+
+    boolean server();
   }
 
   @NessieImmutable
@@ -390,6 +431,9 @@ public class S3SessionsManager {
   @FunctionalInterface
   interface SessionCredentialsFetcher {
     Credentials fetchCredentials(
-        StsClient client, SessionKey sessionKey, Optional<Duration> sessionDuration);
+        StsClient client,
+        SessionKey sessionKey,
+        Optional<Duration> sessionDuration,
+        Optional<StorageLocations> locations);
   }
 }

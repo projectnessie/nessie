@@ -15,19 +15,32 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.Clock.systemUTC;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
-import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
+import static org.projectnessie.catalog.files.s3.StorageLocations.storageLocations;
+import static org.projectnessie.catalog.service.rest.AccessDelegation.REMOTE_SIGNING;
+import static org.projectnessie.catalog.service.rest.AccessDelegation.VENDED_CREDENTIALS;
+import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDelegationPredicate;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
-import java.net.URI;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
@@ -38,10 +51,13 @@ import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3Options;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.files.s3.StorageLocations;
+import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.service.api.SignerKeysService;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
+import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
@@ -98,6 +114,7 @@ public class IcebergConfigurer {
   @Inject @NormalizedObjectStoreOptions GcsOptions gcsOptions;
   @Inject @NormalizedObjectStoreOptions AdlsOptions adlsOptions;
   @Inject SecretsProvider secretsProvider;
+  @Inject SignerKeysService signerKeysService;
 
   @Context ExternalBaseUri uriInfo;
 
@@ -109,10 +126,9 @@ public class IcebergConfigurer {
     Map<String, String> config = new HashMap<>();
     // Not fully implemented yet
     config.put(METRICS_REPORTING_ENABLED, "false");
-    config.put(FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
     config.put(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     config.putAll(uriInfo.icebergConfigDefaults());
-    config.putAll(storeConfigDefaults(URI.create(warehouseConfig.location())));
+    storeConfigDefaults(StorageUri.of(warehouseConfig.location()), config);
     // allow users to override the 'rest-page-size' in the Nessie configuration
     config.put("rest-page-size", "200");
     config.putAll(catalogConfig.icebergConfigDefaults());
@@ -131,9 +147,7 @@ public class IcebergConfigurer {
   public Map<String, String> icebergConfigOverrides(String reference, String warehouse) {
     WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
     String branch = defaultBranchName(reference);
-    Map<String, String> config = new HashMap<>();
-    config.putAll(uriInfo.icebergConfigOverrides());
-    config.putAll(storeConfigOverrides(StorageUri.of(warehouseConfig.location())));
+    Map<String, String> config = new HashMap<>(uriInfo.icebergConfigOverrides());
     config.putAll(catalogConfig.icebergConfigOverrides());
     config.putAll(warehouseConfig.icebergConfigOverrides());
     // Marker property telling clients that the backend is a Nessie Catalog.
@@ -147,25 +161,72 @@ public class IcebergConfigurer {
   }
 
   public Map<String, String> icebergConfigPerTable(
-      IcebergTableMetadata tableMetadata, String prefix, ContentKey contentKey, String dataAccess) {
+      NessieEntitySnapshot<?> nessieSnapshot,
+      String warehouseLocation,
+      String location,
+      Map<String, String> metadataProperties,
+      String prefix,
+      ContentKey contentKey,
+      String dataAccess,
+      boolean writeAccessGranted) {
     Map<String, String> config = new HashMap<>();
-    URI location = URI.create(tableMetadata.location());
-    // TODO this is the place to add vended authorization tokens for file/object access
-    // TODO add (correct) S3_CLIENT_REGION for the table here (based on the table's location?)
-    if (isS3scheme(location.getScheme())) {
-      // Must use both 's3.signer.uri' and 's3.signer.endpoint', because Iceberg before 1.5.0 does
-      // not handle full URIs passed via 's3.signer.endpoint'. This was changed via
-      // https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216,
-      // first released in Iceberg 1.5.0. It's unclear how other language implementations deal with
-      // this.
-      config.put(S3_SIGNER_URI, uriInfo.icebergBaseURI().toString());
-      config.put(
-          S3_SIGNER_ENDPOINT,
-          uriInfo.icebergS3SignerPath(
-              prefix, contentKey, normalizeS3Scheme(tableMetadata.location())));
+
+    Set<StorageUri> writeable = new HashSet<>();
+    Set<StorageUri> readOnly = new HashSet<>();
+    Set<StorageUri> maybeWriteable = writeAccessGranted ? writeable : readOnly;
+    StorageUri locationUri = StorageUri.of(location);
+    (location.startsWith(warehouseLocation) ? maybeWriteable : readOnly).add(locationUri);
+
+    if (!icebergWriteObjectStorage(metadataProperties, warehouseLocation)) {
+      String writeLocation = icebergWriteLocation(metadataProperties);
+      if (writeLocation != null && !writeLocation.startsWith(location)) {
+        (writeLocation.startsWith(warehouseLocation) ? maybeWriteable : readOnly)
+            .add(StorageUri.of(writeLocation));
+      }
     }
-    // TODO GCS and ADLS per-table config overrides
+
+    for (String additionalKnownLocation : nessieSnapshot.additionalKnownLocations()) {
+      StorageUri old = StorageUri.of(additionalKnownLocation);
+      if (!writeable.contains(old)) {
+        readOnly.add(old);
+      }
+    }
+
+    StorageLocations storageLocations =
+        storageLocations(StorageUri.of(warehouseLocation), writeable, readOnly);
+
+    Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
+
+    storeConfigDefaults(locationUri, config);
+
+    storeConfigOverrides(storageLocations, config, prefix, contentKey, accessDelegationPredicate);
+
     return config;
+  }
+
+  public static boolean icebergWriteObjectStorage(
+      Map<String, String> metadataProperties, String bucketLocation) {
+    if (!Boolean.parseBoolean(
+        metadataProperties.getOrDefault("write.object-storage.enabled", "false"))) {
+      return false;
+    }
+
+    metadataProperties.put("write.data.path", bucketLocation);
+    metadataProperties.remove("write.object-storage.path");
+    metadataProperties.remove("write.folder-storage.path");
+
+    return true;
+  }
+
+  public static String icebergWriteLocation(Map<String, String> properties) {
+    String dataLocation = properties.get("write.data.path");
+    if (dataLocation == null) {
+      dataLocation = properties.get("write.object-storage.path");
+      if (dataLocation == null) {
+        dataLocation = properties.get("write.folder-storage.path");
+      }
+    }
+    return dataLocation;
   }
 
   private String defaultBranchName(String reference) {
@@ -179,40 +240,90 @@ public class IcebergConfigurer {
     return branch;
   }
 
-  public Map<String, String> storeConfigDefaults(URI warehouseLocation) {
-    Map<String, String> configDefaults = new HashMap<>();
-    if (isS3scheme(warehouseLocation.getScheme())) {
-      S3BucketOptions bucketOptions =
-          s3Options.effectiveOptionsForBucket(
-              Optional.of(warehouseLocation.getAuthority()), secretsProvider);
-      bucketOptions.region().ifPresent(x -> configDefaults.put(S3_CLIENT_REGION, x));
-    }
-    return configDefaults;
-  }
-
-  public Map<String, String> storeConfigOverrides(StorageUri warehouseLocation) {
-    String scheme = warehouseLocation.scheme();
+  public void storeConfigDefaults(StorageUri location, Map<String, String> config) {
+    String scheme = location.scheme();
     if (scheme != null) {
       switch (scheme) {
         case "s3":
         case "s3a":
         case "s3n":
-          return s3ConfigOverrides(warehouseLocation);
+          S3BucketOptions bucketOptions =
+              s3Options.effectiveOptionsForBucket(
+                  Optional.ofNullable(location.authority()), secretsProvider);
+          bucketOptions.region().ifPresent(x -> config.put(S3_CLIENT_REGION, x));
+          config.put(FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+          return;
         case "gs":
-          return gcsConfigOverrides(warehouseLocation);
+          config.put(FILE_IO_IMPL, "org.apache.iceberg.gcp.gcs.GCSFileIO");
+          return;
         case "abfs":
         case "abfss":
-          return adlsConfigOverrides(warehouseLocation);
+          config.put(FILE_IO_IMPL, "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
+          return;
+        default:
+          config.put(FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
+          break;
+      }
+    }
+  }
+
+  public void storeConfigOverrides(
+      StorageLocations storageLocations,
+      Map<String, String> config,
+      String prefix,
+      ContentKey contentKey,
+      Predicate<AccessDelegation> accessDelegationPredicate) {
+    Set<String> schemes =
+        Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream())
+            .map(StorageUri::scheme)
+            .collect(Collectors.toSet());
+
+    checkArgument(
+        schemes.size() == 1,
+        "Only one scheme allowed, but access to '%s' includes schemes %s",
+        schemes);
+
+    String scheme = schemes.iterator().next();
+    if (scheme != null) {
+      switch (scheme) {
+        case "s3":
+        case "s3a":
+        case "s3n":
+          s3ConfigOverrides(
+              storageLocations, config, prefix, contentKey, accessDelegationPredicate);
+          return;
+        case "gs":
+          gcsConfigOverrides(storageLocations, config);
+          return;
+        case "abfs":
+        case "abfss":
+          adlsConfigOverrides(storageLocations, config);
+          return;
         default:
           break;
       }
     }
-    return Map.of();
   }
 
-  private Map<String, String> s3ConfigOverrides(StorageUri warehouseLocation) {
-    Map<String, String> configOverrides = new HashMap<>();
-    String bucket = warehouseLocation.requiredAuthority();
+  private void s3ConfigOverrides(
+      StorageLocations storageLocations,
+      Map<String, String> configOverrides,
+      String prefix,
+      ContentKey contentKey,
+      Predicate<AccessDelegation> accessDelegationPredicate) {
+
+    Set<String> buckets =
+        Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream())
+            .map(StorageUri::requiredAuthority)
+            .collect(Collectors.toSet());
+
+    checkState(buckets.size() == 1, "Only one S3 bucket supported");
+    String bucket = buckets.iterator().next();
+
     S3BucketOptions s3BucketOptions =
         s3Options.effectiveOptionsForBucket(Optional.of(bucket), secretsProvider);
     s3BucketOptions.region().ifPresent(r -> configOverrides.put(S3_CLIENT_REGION, r));
@@ -232,32 +343,85 @@ public class IcebergConfigurer {
         .pathStyleAccess()
         .ifPresent(psa -> configOverrides.put(S3_PATH_STYLE_ACCESS, psa ? "true" : "false"));
 
-    switch (s3BucketOptions.effectiveClientAuthenticationMode()) {
-      case REQUEST_SIGNING:
-        configOverrides.put(S3_REMOTE_SIGNING_ENABLED, "true");
-        break;
+    // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
+    // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
+    if (s3BucketOptions.effectiveRequestSigningEnabled()
+        && accessDelegationPredicate.test(REMOTE_SIGNING)) {
+      configOverrides.put(S3_REMOTE_SIGNING_ENABLED, "true");
+      if (prefix != null && contentKey != null) {
+        // Must use both 's3.signer.uri' and 's3.signer.endpoint', because Iceberg before 1.5.0 does
+        // not handle full URIs passed via 's3.signer.endpoint'. This was changed via
+        // https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216,
+        // first released in Iceberg 1.5.0. It's unclear how other language implementations deal
+        // with this.
+        configOverrides.put(S3_SIGNER_URI, uriInfo.icebergBaseURI().toString());
 
-      case ASSUME_ROLE:
-        // TODO: expectedSessionDuration() should probably be declared by the client.
-        S3Credentials s3credentials =
-            s3CredentialsResolver.resolveSessionCredentials(s3BucketOptions);
-        configOverrides.put(S3_ACCESS_KEY_ID, s3credentials.accessKeyId());
-        configOverrides.put(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
-        s3credentials.sessionToken().ifPresent(t -> configOverrides.put(S3_SESSION_TOKEN, t));
-        configOverrides.put(S3_REMOTE_SIGNING_ENABLED, "false");
-        break;
+        String warehouseLocation =
+            normalizeS3Scheme(storageLocations.warehouseLocation().toString());
 
-      default:
-        throw new IllegalArgumentException(
-            "Unsupported client authentication mode: "
-                + s3BucketOptions.clientAuthenticationMode());
+        List<String> normalizedWriteLocations = new ArrayList<>();
+        List<String> normalizedReadLocations = new ArrayList<>();
+        for (StorageUri loc : storageLocations.writeableLocations()) {
+          String locStr = normalizeS3Scheme(loc.toString());
+          if (locStr.startsWith(warehouseLocation)) {
+            normalizedWriteLocations.add(locStr);
+          }
+        }
+        for (StorageUri loc : storageLocations.readonlyLocations()) {
+          String locStr = normalizeS3Scheme(loc.toString());
+          normalizedReadLocations.add(locStr);
+        }
+
+        SignerKey signerKey = signerKeysService.currentSignerKey();
+
+        long expirationTimestamp = systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
+
+        String contentKeyPathString = contentKey.toPathString();
+        String uriQuery =
+            SignerSignature.builder()
+                .expirationTimestamp(expirationTimestamp)
+                .prefix(prefix)
+                .identifier(contentKeyPathString)
+                .warehouseLocation(warehouseLocation)
+                .writeLocations(normalizedWriteLocations)
+                .readLocations(normalizedReadLocations)
+                .build()
+                .uriQuery(signerKey);
+
+        configOverrides.put(
+            S3_SIGNER_ENDPOINT,
+            uriInfo.icebergS3SignerPath(prefix, contentKeyPathString, uriQuery));
+      }
+    } else {
+      configOverrides.put(S3_REMOTE_SIGNING_ENABLED, "false");
     }
-    return configOverrides;
+
+    // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
+    // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
+    if (s3BucketOptions.effectiveClientAssumeRoleEnabled()
+        && accessDelegationPredicate.test(VENDED_CREDENTIALS)) {
+      // TODO: expectedSessionDuration() should probably be declared by the client.
+      S3Credentials s3credentials =
+          s3CredentialsResolver.resolveSessionCredentials(s3BucketOptions, storageLocations);
+      configOverrides.put(S3_ACCESS_KEY_ID, s3credentials.accessKeyId());
+      configOverrides.put(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
+      s3credentials.sessionToken().ifPresent(t -> configOverrides.put(S3_SESSION_TOKEN, t));
+    }
   }
 
-  private Map<String, String> gcsConfigOverrides(StorageUri warehouseLocation) {
-    Map<String, String> configOverrides = new HashMap<>();
-    String bucket = warehouseLocation.requiredAuthority();
+  private void gcsConfigOverrides(
+      StorageLocations storageLocations, Map<String, String> configOverrides) {
+
+    Set<String> buckets =
+        Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream())
+            .map(StorageUri::requiredAuthority)
+            .collect(Collectors.toSet());
+
+    checkState(buckets.size() == 1, "Only one GCS bucket supported");
+    String bucket = buckets.iterator().next();
+
     GcsBucketOptions gcsBucketOptions =
         gcsOptions.effectiveOptionsForBucket(Optional.of(bucket), secretsProvider);
     gcsBucketOptions.projectId().ifPresent(p -> configOverrides.put(GCS_PROJECT_ID, p));
@@ -276,12 +440,20 @@ public class IcebergConfigurer {
     if (gcsBucketOptions.effectiveAuthType() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
     }
-    return configOverrides;
   }
 
-  private Map<String, String> adlsConfigOverrides(StorageUri warehouseLocation) {
-    Map<String, String> configOverrides = new HashMap<>();
-    AdlsLocation location = adlsLocation(warehouseLocation);
+  private void adlsConfigOverrides(
+      StorageLocations storageLocations, Map<String, String> configOverrides) {
+    Set<StorageUri> storageUris =
+        Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream())
+            .collect(Collectors.toSet());
+
+    checkState(storageUris.size() == 1, "Only one ADLS location supported");
+    StorageUri storageUri = storageUris.iterator().next();
+
+    AdlsLocation location = adlsLocation(storageUri);
     Optional<String> fileSystem = location.container();
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(fileSystem, secretsProvider);
@@ -295,6 +467,5 @@ public class IcebergConfigurer {
     adlsOptions
         .writeBlockSize()
         .ifPresent(s -> configOverrides.put(ADLS_WRITE_BLOCK_SIZE_BYTES, Long.toString(s)));
-    return configOverrides;
   }
 }

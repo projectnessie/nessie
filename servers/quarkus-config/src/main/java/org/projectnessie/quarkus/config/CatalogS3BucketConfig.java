@@ -16,9 +16,9 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithName;
+import java.util.List;
 import java.util.Optional;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
-import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
@@ -27,7 +27,7 @@ public interface CatalogS3BucketConfig extends S3BucketOptions {
   @Override
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
 
-  @WithName("client-auth-mode")
+  @WithName("client-iam.statements")
   @Override
-  Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
+  Optional<List<String>> clientIamStatements();
 }

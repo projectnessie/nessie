@@ -15,10 +15,12 @@
  */
 package org.projectnessie.server.catalog.s3;
 
+import static org.apache.iceberg.types.Types.NestedField.required;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
+
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.time.Duration;
@@ -26,16 +28,20 @@ import java.time.Instant;
 import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.RESTCatalog;
+import org.apache.iceberg.types.Types;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.catalog.files.s3.S3ClientAuthenticationMode;
 import org.projectnessie.objectstoragemock.sts.ImmutableAssumeRoleResult;
 import org.projectnessie.objectstoragemock.sts.ImmutableCredentials;
 import org.projectnessie.objectstoragemock.sts.ImmutableRoleUser;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AssumeRoleHandlerHolder;
+import org.projectnessie.server.catalog.S3UnitTestProfiles;
 
 @QuarkusTestResource(
     restrictToAnnotatedClass = true,
@@ -90,35 +96,46 @@ public class TestVendedS3CredentialsExpiry {
 
     try (RESTCatalog catalog = new RESTCatalog()) {
       catalog.setConf(new Configuration());
-      soft.assertThatThrownBy(
+      soft.assertThatCode(
               () ->
                   catalog.initialize(
                       "nessie-s3-iceberg-api",
                       Map.of(
                           CatalogProperties.URI,
                           String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort))))
+          .doesNotThrowAnyException();
+      soft.assertThatCode(() -> catalog.createNamespace(Namespace.of("foo")))
+          .doesNotThrowAnyException();
+      soft.assertThatThrownBy(
+              () ->
+                  catalog.createTable(
+                      TableIdentifier.of("foo", "bar"),
+                      new Schema(required(1, "id", Types.IntegerType.get()))))
           .hasMessageMatching(
               "Provided credentials expire \\(1970-01-01T00:00:10Z\\) before the expected session end "
                   + "\\(now: .+, duration: PT5H\\)");
     }
   }
 
-  public static class Profile implements QuarkusTestProfile {
+  public static class Profile extends S3UnitTestProfiles.S3UnitTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .put("nessie.catalog.default-warehouse", "warehouse")
-          .put("nessie.catalog.warehouses.warehouse.location", "s3://test-bucket")
+          .putAll(super.getConfigOverrides())
+          .put("nessie.catalog.default-warehouse", WAREHOUSE_NAME)
           .put("nessie.catalog.service.s3.default-options.region", "us-west-2")
-          .put(
-              "nessie.catalog.service.s3.default-options.client-auth-mode",
-              S3ClientAuthenticationMode.ASSUME_ROLE.name())
-          .put("nessie.catalog.service.s3.default-options.client-session-duration", "PT5H")
-          .put("nessie.catalog.service.s3.default-options.role-session-name", "test-session-name")
-          .put("nessie.catalog.service.s3.default-options.assume-role", "test-role")
-          .put("nessie.catalog.service.s3.default-options.external-id", "test-external-id")
           .put("nessie.catalog.service.s3.default-options.access-key.name", "test-access-key")
           .put("nessie.catalog.service.s3.default-options.access-key.secret", "test-secret-key")
+          .put("nessie.catalog.service.s3.default-options.request-signing-enabled", "false")
+          .put("nessie.catalog.service.s3.default-options.client-iam.enabled", "true")
+          .put("nessie.catalog.service.s3.default-options.client-iam.session-duration", "PT5H")
+          .put(
+              "nessie.catalog.service.s3.default-options.client-iam.role-session-name",
+              "test-session-name")
+          .put("nessie.catalog.service.s3.default-options.client-iam.assume-role", "test-role")
+          .put(
+              "nessie.catalog.service.s3.default-options.client-iam.external-id",
+              "test-external-id")
           .build();
     }
   }

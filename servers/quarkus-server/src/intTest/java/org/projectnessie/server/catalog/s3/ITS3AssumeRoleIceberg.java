@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.server.catalog.s3;
 
-public enum S3ClientAuthenticationMode {
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 
-  /** Each client I/O request is individually authorized (signed) by the Catalog server. */
-  REQUEST_SIGNING,
-
-  /**
-   * Clients receive session credentials (according to the role and IAM policy from bucket
-   * configuration) for the whole duration of client sessions.
-   */
-  ASSUME_ROLE,
+@QuarkusTestResource(
+    restrictToAnnotatedClass = true,
+    value = MinioTestResourceLifecycleManager.class)
+@QuarkusIntegrationTest
+@TestProfile(ITS3AssumeRoleIceberg.Profile.class)
+public class ITS3AssumeRoleIceberg extends AbstractAssumeRoleIceberg {
+  @Override
+  protected String scheme() {
+    return "s3";
+  }
 }

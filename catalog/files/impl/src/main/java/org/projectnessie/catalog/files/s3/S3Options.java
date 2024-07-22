@@ -99,9 +99,17 @@ public interface S3Options {
 
     ImmutableS3NamedBucketOptions.Builder builder =
         ImmutableS3NamedBucketOptions.builder().from(defaultOptions);
+    ImmutableS3Iam.Builder serverIam = ImmutableS3Iam.builder();
+    ImmutableS3Iam.Builder clientIam = ImmutableS3Iam.builder();
+    defaultOptions.serverIam().ifPresent(serverIam::from);
+    defaultOptions.clientIam().ifPresent(clientIam::from);
     if (specific != null) {
       builder.from(specific);
+      specific.serverIam().ifPresent(serverIam::from);
+      specific.clientIam().ifPresent(clientIam::from);
     }
+    builder.serverIam(serverIam.build());
+    builder.clientIam(clientIam.build());
 
     return secretsProvider
         .applySecrets(
