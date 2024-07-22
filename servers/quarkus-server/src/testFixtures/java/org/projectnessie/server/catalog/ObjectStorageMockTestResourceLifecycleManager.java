@@ -88,6 +88,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put("nessie.catalog.service.adls.file-systems.mock-fs.name", BUCKET)
         .put("nessie.catalog.service.adls.file-systems.mock-fs.endpoint", adlsEndpoint)
         .put("nessie.catalog.service.adls.file-systems.mock-fs.sas-token", "token")
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.auth-type", "SAS_TOKEN")
         .build();
   }
 

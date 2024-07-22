@@ -23,6 +23,7 @@ import com.azure.core.http.policy.ExponentialBackoffOptions;
 import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.util.ConfigurationBuilder;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.common.policy.RequestRetryOptions;
 import com.azure.storage.common.policy.RetryPolicyType;
@@ -92,16 +93,32 @@ public final class AdlsClientSupplier {
                             location.storageAccount(),
                             location.container().map(c -> ", container " + c).orElse("")))));
 
-    if (fileSystemOptions.sasToken().isPresent()) {
-      clientBuilder.sasToken(fileSystemOptions.sasToken().get().key());
-    } else if (fileSystemOptions.account().isPresent()) {
-      String accountKey = fileSystemOptions.account().get().secret();
-      clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
-    } else {
-      throw new IllegalStateException(
-          "Neither an SAS token nor account name and key are available for ADLS file system '"
-              + location.path()
-              + "'");
+    AdlsFileSystemOptions.AzureAuthType authType =
+        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.NONE);
+    switch (authType) {
+      case NONE:
+        clientBuilder.setAnonymousAccess();
+        break;
+      case STORAGE_SHARED_KEY:
+        String accountKey =
+            fileSystemOptions
+                .account()
+                .orElseThrow(() -> new IllegalStateException("account key missing"))
+                .secret();
+        clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
+        break;
+      case SAS_TOKEN:
+        clientBuilder.sasToken(
+            fileSystemOptions
+                .sasToken()
+                .orElseThrow(() -> new IllegalStateException("SAS token missing"))
+                .key());
+        break;
+      case APPLICATION_DEFAULT:
+        clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported auth type " + authType);
     }
 
     buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
