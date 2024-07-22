@@ -67,6 +67,7 @@ dependencies {
     api(project(":nessie-tasks-api"))
     api(project(":nessie-tasks-service-async"))
     api(project(":nessie-tasks-service-impl"))
+    api(project(":nessie-trino-testcontainer"))
     api(project(":nessie-versioned-spi"))
     api(project(":nessie-versioned-storage-batching"))
     api(project(":nessie-versioned-storage-bigtable"))

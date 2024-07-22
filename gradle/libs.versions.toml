@@ -117,6 +117,7 @@ mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5
 nessie-runner-common = { module = "org.projectnessie.nessie-runner:nessie-runner-common", version = "0.32.2" }
 nessie-ui = { module = "org.projectnessie.nessie.ui:nessie-ui", version = "0.64.1" }
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
+okhttp3 = { module = "com.squareup.okhttp3:okhttp", version = "4.12.0" }
 opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
 opentelemetry-bom-alpha = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "opentelemetryAlpha" }
 opentelemetry-instrumentation-bom-alpha = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "opentelemetryAlpha" }
@@ -152,6 +153,7 @@ spark-sql-v35-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { s
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.20.0" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.4.0" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.8.0" }
+trino-client = { module = "io.trino:trino-client", version = "452" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 vertx-core = { module = "io.vertx:vertx-core", version = "4.5.9" }
