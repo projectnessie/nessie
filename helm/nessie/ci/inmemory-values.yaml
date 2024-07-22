@@ -85,6 +85,7 @@ catalog:
         retryInterval: PT5S
         retryPolicy: EXPONENTIAL_BACKOFF
         retryDelay: PT1S
+        authType: NONE
 #        accountSecret:
 #          name: adls-account-secret
 #          accountName: account-name

@@ -15,6 +15,9 @@ as necessary. Empty sections will not end in the release notes.
 - Catalog/ADLS: The authorization type for ADLS file systems must be explicitly specified using the new
   `auth-type` configuration option. Valid values are: `STORAGE_SHARED_KEY`, `SAS_TOKEN` or `APPLICATION_DEFAULT`
   (new, container/pod credentials) or `NONE` (new, default, anonymous access).
+- Helm chart/ADLS: The authorization type for ADLS file systems must be explicitly specified using the new
+  `catalog.storage.adls.defaultOptions.authType` configuration option (overridable on a per-filesystem basis).
+  Valid values are the same as above, the default is `NONE`.
 
 ### New Features
 
