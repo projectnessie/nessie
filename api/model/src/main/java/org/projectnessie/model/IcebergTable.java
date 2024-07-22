@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -66,10 +67,18 @@ public abstract class IcebergTable extends IcebergContent {
   @jakarta.validation.constraints.NotNull
   @NotBlank
   @jakarta.validation.constraints.NotBlank
+  @Override
   public abstract String getMetadataLocation();
 
   /** Corresponds to Iceberg's {@code currentSnapshotId}. */
   public abstract long getSnapshotId();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  @Override
+  public long getVersionId() {
+    return getSnapshotId();
+  }
 
   /** Corresponds to Iceberg's {@code currentSchemaId}. */
   public abstract int getSchemaId();

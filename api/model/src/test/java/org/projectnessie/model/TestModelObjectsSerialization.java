@@ -74,6 +74,41 @@ public class TestModelObjectsSerialization {
     final String branchName = "testBranch";
 
     return Arrays.asList(
+        new Case(IcebergTable.class)
+            .obj(IcebergTable.of("meta-mine", 1, 2, 3, 4, "cid"))
+            .jsonNode(
+                o ->
+                    o.put("type", "ICEBERG_TABLE")
+                        .put("id", "cid")
+                        .put("metadataLocation", "meta-mine")
+                        .put("snapshotId", 1)
+                        .put("schemaId", 2)
+                        .put("specId", 3)
+                        .put("sortOrderId", 4)),
+        new Case(IcebergView.class)
+            .obj(IcebergView.of("cid", "meta-mine", 1, 2))
+            .jsonNode(
+                o ->
+                    o.put("type", "ICEBERG_VIEW")
+                        .put("id", "cid")
+                        .put("metadataLocation", "meta-mine")
+                        .put("versionId", 1)
+                        .put("schemaId", 2)),
+        new Case(UDF.class)
+            .obj(
+                UDF.builder()
+                    .id("cid")
+                    .metadataLocation("meta-mine")
+                    .versionId("ver")
+                    .signatureId("sig")
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("type", "UDF")
+                        .put("id", "cid")
+                        .put("metadataLocation", "meta-mine")
+                        .put("versionId", "ver")
+                        .put("signatureId", "sig")),
         new Case(ReferenceConflicts.class)
             .obj(
                 ReferenceConflicts.referenceConflicts(

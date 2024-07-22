@@ -15,12 +15,17 @@
  */
 package org.projectnessie.gc.contents;
 
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergContent;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 
 /**
  * Content references provide the relevant information for live-content identification plus expiry
@@ -51,23 +56,46 @@ public interface ContentReference {
   @Value.Parameter(order = 4)
   Content.Type contentType();
 
-  /** Value from {@link IcebergTable#getMetadataLocation()}. */
+  /**
+   * Value from {@link IcebergTable#getMetadataLocation()} or {@link
+   * IcebergView#getMetadataLocation()}.
+   */
   @Value.Parameter(order = 5)
   @Nullable
   String metadataLocation();
 
-  /** Value from {@link IcebergTable#getSnapshotId()}. */
+  /** Value from {@link IcebergTable#getSnapshotId()} or {@link IcebergView#getVersionId()}. */
   @Value.Parameter(order = 6)
   @Nullable
   Long snapshotId();
 
-  static ContentReference icebergTable(
+  static ContentReference icebergContent(
+      @NotNull Content.Type contentType,
       @NotNull String contentId,
       @NotNull String commitId,
       @NotNull ContentKey contentKey,
       @NotNull String metadataLocation,
-      long snapshotId) {
-    return ImmutableContentReference.of(
-        contentId, commitId, contentKey, Content.Type.ICEBERG_TABLE, metadataLocation, snapshotId);
+      long versionId) {
+    if (contentType.equals(ICEBERG_VIEW) || contentType.equals(ICEBERG_TABLE)) {
+      return ImmutableContentReference.of(
+          contentId, commitId, contentKey, contentType, metadataLocation, versionId);
+    }
+    throw new IllegalArgumentException("Unexpected content type " + contentType);
+  }
+
+  static ContentReference icebergContent(
+      @NotNull String commitId, @NotNull ContentKey contentKey, @NotNull Content content) {
+    Content.Type contentType = content.getType();
+    if (contentType.equals(ICEBERG_VIEW) || contentType.equals(ICEBERG_TABLE)) {
+      IcebergContent icebergContent = (IcebergContent) content;
+      return icebergContent(
+          contentType,
+          content.getId(),
+          commitId,
+          contentKey,
+          icebergContent.getMetadataLocation(),
+          icebergContent.getVersionId());
+    }
+    throw new IllegalArgumentException("Unexpected content type " + contentType);
   }
 }

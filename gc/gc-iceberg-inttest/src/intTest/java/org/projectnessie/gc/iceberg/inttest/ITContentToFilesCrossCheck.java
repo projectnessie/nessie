@@ -16,6 +16,8 @@
 package org.projectnessie.gc.iceberg.inttest;
 
 import static java.util.Collections.emptySet;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import jakarta.annotation.Nonnull;
 import java.nio.file.Files;
@@ -179,7 +181,8 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
         .map(IcebergTable.class::cast)
         .map(
             table ->
-                ContentReference.icebergTable(
+                icebergContent(
+                    ICEBERG_TABLE,
                     table.getId(),
                     "12345678",
                     ContentKey.of("foo"),

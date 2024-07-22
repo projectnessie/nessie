@@ -46,8 +46,7 @@ import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.IcebergContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,10 +123,8 @@ abstract class IcebergS3SignParams {
       Content content = snapshotResponse.content();
       // TODO disallow all table and view metadata objects, not only the metadata json location
       String metadataLocation = null;
-      if (content instanceof IcebergTable) {
-        metadataLocation = ((IcebergTable) content).getMetadataLocation();
-      } else if (content instanceof IcebergView) {
-        metadataLocation = ((IcebergView) content).getMetadataLocation();
+      if (content instanceof IcebergContent) {
+        metadataLocation = ((IcebergContent) content).getMetadataLocation();
       }
       if (metadataLocation != null
           && requestedS3Uri().equals(S3Utils.normalizeS3Scheme(metadataLocation))) {

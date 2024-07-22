@@ -16,6 +16,7 @@
 package org.projectnessie.gc.identify;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.gc.contents.ContentReference.icebergContent;
 import static org.projectnessie.jaxrs.ext.NessieJaxRsExtension.jaxRsExtension;
 
 import java.time.Instant;
@@ -27,14 +28,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.ext.NessieClientFactory;
-import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.contents.LiveContentSetsRepository;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.repository.NessieRepositoryConnector;
 import org.projectnessie.gc.repository.RepositoryConnector;
 import org.projectnessie.jaxrs.ext.NessieJaxRsExtension;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.IcebergTable;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
@@ -82,13 +81,7 @@ public class TestIdentifyLiveContents {
                           })
                       .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
                       .contentToContentReference(
-                          (content, commitId, key) ->
-                              ContentReference.icebergTable(
-                                  content.getId(),
-                                  commitId,
-                                  key,
-                                  ((IcebergTable) content).getMetadataLocation(),
-                                  ((IcebergTable) content).getSnapshotId()))
+                          (content, commitId, key) -> icebergContent(commitId, key, content))
                       .liveContentSetsRepository(
                           LiveContentSetsRepository.builder()
                               .persistenceSpi(new InMemoryPersistenceSpi())
@@ -119,13 +112,7 @@ public class TestIdentifyLiveContents {
                   })
               .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
               .contentToContentReference(
-                  (content, commitId, key) ->
-                      ContentReference.icebergTable(
-                          content.getId(),
-                          commitId,
-                          key,
-                          ((IcebergTable) content).getMetadataLocation(),
-                          ((IcebergTable) content).getSnapshotId()))
+                  (content, commitId, key) -> icebergContent(commitId, key, content))
               .liveContentSetsRepository(
                   LiveContentSetsRepository.builder()
                       .persistenceSpi(new InMemoryPersistenceSpi())

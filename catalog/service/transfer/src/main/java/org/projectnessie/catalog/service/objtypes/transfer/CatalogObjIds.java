@@ -16,36 +16,30 @@
 package org.projectnessie.catalog.service.objtypes.transfer;
 
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import org.projectnessie.model.Content;
-import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.IcebergContent;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 public final class CatalogObjIds {
   private CatalogObjIds() {}
 
   public static ObjId snapshotIdForContent(Content content) {
-    if (content instanceof IcebergTable) {
-      IcebergTable icebergTable = (IcebergTable) content;
+    if (content.getType().equals(ICEBERG_TABLE) || content.getType().equals(ICEBERG_VIEW)) {
+      IcebergContent icebergContent = (IcebergContent) content;
       return objIdHasher("ContentSnapshot")
-          .hash(icebergTable.getMetadataLocation())
-          .hash(icebergTable.getSnapshotId())
-          .generate();
-    }
-    if (content instanceof IcebergView) {
-      IcebergView icebergView = (IcebergView) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergView.getMetadataLocation())
-          .hash(icebergView.getVersionId())
+          .hash(icebergContent.getMetadataLocation())
+          .hash(icebergContent.getVersionId())
           .generate();
     }
     return null;
   }
 
   public static ObjId entityIdForContent(Content content) {
-    if (content instanceof IcebergTable || content instanceof IcebergView) {
+    if (content.getType().equals(ICEBERG_TABLE) || content.getType().equals(ICEBERG_VIEW)) {
       return objIdHasher("NessieEntity")
           .hash(requireNonNull(content.getId(), "Nessie Content has no content ID"))
           .generate();

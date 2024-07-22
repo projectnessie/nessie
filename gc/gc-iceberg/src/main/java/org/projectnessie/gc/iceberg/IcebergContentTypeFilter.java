@@ -15,7 +15,10 @@
  */
 package org.projectnessie.gc.iceberg;
 
-import java.util.Collections;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+
+import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.projectnessie.gc.identify.ContentTypeFilter;
 import org.projectnessie.model.Content;
@@ -26,12 +29,11 @@ public final class IcebergContentTypeFilter implements ContentTypeFilter {
 
   private IcebergContentTypeFilter() {}
 
-  private static final Set<Content.Type> ICEBERG =
-      Collections.singleton(Content.Type.ICEBERG_TABLE);
+  private static final Set<Content.Type> ICEBERG = ImmutableSet.of(ICEBERG_TABLE, ICEBERG_VIEW);
 
   @Override
   public boolean test(Content.Type type) {
-    return type == Content.Type.ICEBERG_TABLE;
+    return type == ICEBERG_TABLE || type == ICEBERG_VIEW;
   }
 
   @Override

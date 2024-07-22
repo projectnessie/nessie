@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.gc.contentes.inmem;
+package org.projectnessie.gc.contents.inmem;
 
 import java.util.UUID;
-import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.contents.tests.AbstractPersistenceSpi;
 

@@ -36,7 +36,6 @@ public class TestIcebergContentToContentReference {
   static Stream<Content> nonIcebergTable() {
     return Stream.of(
         ImmutableDeltaLakeTable.builder().id("123").lastCheckpoint("lc").build(),
-        IcebergView.of("cid", "meta", 42, 43),
         UDF.udf("udf-meta", "42", "666"),
         Namespace.of("foo", "bar"));
   }
@@ -49,12 +48,27 @@ public class TestIcebergContentToContentReference {
             () ->
                 IcebergContentToContentReference.INSTANCE.contentToReference(
                     content, "12345678", ContentKey.of("foo", "bar")))
-        .withMessageStartingWith("Expect ICEBERG_TABLE, but got " + content.getType());
+        .withMessageStartingWith("Expect ICEBERG_TABLE/ICEBERG_VIEW, but got " + content.getType());
   }
 
   @Test
   public void icebergTable() {
     IcebergTable table = IcebergTable.of("meta-1", 42L, 43, 44, 45, "cid");
+    assertThat(
+            IcebergContentToContentReference.INSTANCE.contentToReference(
+                table, "12345678", ContentKey.of("foo", "bar")))
+        .extracting(
+            ContentReference::contentId,
+            ContentReference::commitId,
+            ContentReference::contentKey,
+            ContentReference::metadataLocation,
+            ContentReference::snapshotId)
+        .containsExactly("cid", "12345678", ContentKey.of("foo", "bar"), "meta-1", 42L);
+  }
+
+  @Test
+  public void icebergView() {
+    IcebergView table = IcebergView.of("cid", "meta-1", 42L, 43);
     assertThat(
             IcebergContentToContentReference.INSTANCE.contentToReference(
                 table, "12345678", ContentKey.of("foo", "bar")))

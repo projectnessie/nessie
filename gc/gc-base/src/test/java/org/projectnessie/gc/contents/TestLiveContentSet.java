@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.gc.contentes;
+package org.projectnessie.gc.contents;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -25,7 +25,6 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.contents.inmem.InMemoryPersistenceSpi;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.FileDeleter;
