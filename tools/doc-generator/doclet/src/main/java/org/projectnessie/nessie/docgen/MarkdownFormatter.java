@@ -22,6 +22,7 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.HiddenTree;
 import com.sun.source.doctree.IndexTree;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.VariableElement;
+import org.apache.commons.text.StringEscapeUtils;
 
 public abstract class MarkdownFormatter {
   private final Element element;
@@ -365,8 +367,9 @@ public abstract class MarkdownFormatter {
         case ENTITY:
           {
             // HTML entity
-            // EntityTree entityTree = (EntityTree) doc;
-            // Name name = entityTree.getName();
+            EntityTree entityTree = (EntityTree) doc;
+            String unescaped = StringEscapeUtils.unescapeHtml4(entityTree.toString());
+            target.addText(unescaped);
           }
           break;
         case IDENTIFIER:

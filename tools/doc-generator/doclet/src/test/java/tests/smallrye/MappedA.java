@@ -19,6 +19,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * The docs for {@code my.prefix}.
@@ -47,4 +48,18 @@ public interface MappedA extends IntOne {
   Duration someDuration();
 
   OtherMapped nested();
+
+  /**
+   * Example &amp; &lt; &gt; &quot; &nbsp; &euro; &reg; &copy;.
+   *
+   * <ul>
+   *   <li><code>
+   *       session-iam-statements[0]=&#123;"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;alwaysAllowed&#47;*"}
+   *       </code>
+   *   <li><code>
+   *       session-iam-statements[1]=&#123;"Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;blocked&#47;*"}
+   *       </code>
+   * </ul>
+   */
+  List<String> listOfStrings();
 }
