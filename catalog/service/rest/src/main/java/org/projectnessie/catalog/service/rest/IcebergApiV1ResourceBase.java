@@ -84,6 +84,11 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       Consumer<String> responsePagingToken)
       throws NessieNotFoundException {
 
+    // Just in case...
+    if ("null".equals(pageToken)) {
+      pageToken = null;
+    }
+
     if (pageSize == null) {
       pageToken = null;
     } else {

@@ -23,17 +23,14 @@ import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.ArrayType;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.iceberg.Table;
@@ -42,6 +39,8 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.ForbiddenException;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.RESTSerializers;
+import org.apache.iceberg.rest.responses.ListNamespacesResponse;
+import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV2;
@@ -160,12 +159,10 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     // contain the 'nextPageToken' field.
 
     for (String token = ""; true; ) {
-      ObjectNode resp = httpGet.apply(listNamespaces.apply(token));
-      Arrays.stream((Object[]) mapper.readValue(resp.get("namespaces").toString(), namespacesType))
-          .map(Namespace.class::cast)
-          .forEach(namespaces::add);
-      String nextToken =
-          Optional.ofNullable(resp.get("next-page-token")).map(JsonNode::asText).orElse(null);
+      ListNamespacesResponse resp =
+          mapper.readValue(listNamespaces.apply(token).toURL(), ListNamespacesResponse.class);
+      namespaces.addAll(resp.namespaces());
+      String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
         break;
       }
@@ -173,12 +170,10 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     }
 
     for (String token = ""; true; ) {
-      ObjectNode resp = httpGet.apply(listTables.apply(token));
-      Arrays.stream((Object[]) mapper.readValue(resp.get("identifiers").toString(), tablesType))
-          .map(TableIdentifier.class::cast)
-          .forEach(tables::add);
-      String nextToken =
-          Optional.ofNullable(resp.get("next-page-token")).map(JsonNode::asText).orElse(null);
+      ListTablesResponse resp =
+          mapper.readValue(listTables.apply(token).toURL(), ListTablesResponse.class);
+      tables.addAll(resp.identifiers());
+      String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
         break;
       }
@@ -186,12 +181,10 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     }
 
     for (String token = ""; true; ) {
-      ObjectNode resp = httpGet.apply(listViews.apply(token));
-      Arrays.stream((Object[]) mapper.readValue(resp.get("identifiers").toString(), tablesType))
-          .map(TableIdentifier.class::cast)
-          .forEach(views::add);
-      String nextToken =
-          Optional.ofNullable(resp.get("next-page-token")).map(JsonNode::asText).orElse(null);
+      ListTablesResponse resp =
+          mapper.readValue(listViews.apply(token).toURL(), ListTablesResponse.class);
+      views.addAll(resp.identifiers());
+      String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
         break;
       }
