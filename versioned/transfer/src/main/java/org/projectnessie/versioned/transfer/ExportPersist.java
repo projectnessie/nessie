@@ -22,6 +22,7 @@ import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.r
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
@@ -37,7 +38,6 @@ import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.HeadsAndForkPoints;
 import org.projectnessie.versioned.storage.common.logic.IdentifyHeadsAndForkPoints;
-import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -54,9 +54,18 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
 
 final class ExportPersist extends ExportCommon {
 
+  private final List<Reference> references = new ArrayList<>();
+
   ExportPersist(
       ExportFileSupplier exportFiles, NessieExporter exporter, ExportVersion exportVersion) {
     super(exportFiles, exporter, exportVersion);
+  }
+
+  @Override
+  void prepare(ExportContext exportContext) {
+    // Load reference info before processing commits to make sure exported ref HEADs are included
+    // in the commit data even if HEADs advances during export (new commits during export).
+    exporter.referenceLogic().queryReferences(referencesQuery()).forEachRemaining(references::add);
   }
 
   @Override
@@ -85,33 +94,29 @@ final class ExportPersist extends ExportCommon {
         new IdentifyHeadsAndForkPoints(
             exporter.expectedCommitCount(), exporter.persist().config().currentTimeMicros());
 
-    exporter
-        .referenceLogic()
-        .queryReferences(referencesQuery())
-        .forEachRemaining(
-            ref -> {
-              Deque<ObjId> commitsToProcess = new ArrayDeque<>();
-              commitsToProcess.offerFirst(ref.pointer());
-              while (!commitsToProcess.isEmpty()) {
-                ObjId id = commitsToProcess.removeFirst();
-                if (identify.isCommitNew(id)) {
-                  Iterator<CommitObj> commitIter =
-                      exporter.commitLogic().commitLog(commitLogQuery(id));
-                  while (commitIter.hasNext()) {
-                    CommitObj commit = commitIter.next();
-                    if (!identify.handleCommit(commit)) {
-                      break;
-                    }
-                    commitHandler.accept(commit);
-                    for (ObjId parentId : commit.secondaryParents()) {
-                      if (identify.isCommitNew(parentId)) {
-                        commitsToProcess.addLast(parentId);
-                      }
-                    }
+    references.forEach(
+        ref -> {
+          Deque<ObjId> commitsToProcess = new ArrayDeque<>();
+          commitsToProcess.offerFirst(ref.pointer());
+          while (!commitsToProcess.isEmpty()) {
+            ObjId id = commitsToProcess.removeFirst();
+            if (identify.isCommitNew(id)) {
+              Iterator<CommitObj> commitIter = exporter.commitLogic().commitLog(commitLogQuery(id));
+              while (commitIter.hasNext()) {
+                CommitObj commit = commitIter.next();
+                if (!identify.handleCommit(commit)) {
+                  break;
+                }
+                commitHandler.accept(commit);
+                for (ObjId parentId : commit.secondaryParents()) {
+                  if (identify.isCommitNew(parentId)) {
+                    commitsToProcess.addLast(parentId);
                   }
                 }
               }
-            });
+            }
+          }
+        });
 
     return identify.finish();
   }
@@ -124,11 +129,7 @@ final class ExportPersist extends ExportCommon {
 
   @Override
   void exportReferences(ExportContext exportContext) {
-    for (PagedResult<Reference, String> refs =
-            exporter.referenceLogic().queryReferences(referencesQuery());
-        refs.hasNext(); ) {
-      Reference reference = refs.next();
-
+    for (Reference reference : references) {
       handleGenericObjs(transferRelatedObjects.referenceRelatedObjects(reference));
 
       ObjId extendedInfoObj = reference.extendedInfoObj();

@@ -71,6 +71,11 @@ final class ExportContents extends ExportCommon {
     store = exporter.versionStore();
   }
 
+  @Override
+  void prepare(ExportContext exportContext) {
+    // nop
+  }
+
   private <T> List<T> take(int n, Iterator<T> it) {
     List<T> result = new ArrayList<>(n);
     while (n-- > 0 && it.hasNext()) {
