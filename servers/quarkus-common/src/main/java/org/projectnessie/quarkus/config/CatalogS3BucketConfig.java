@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Optional;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
@@ -25,12 +24,10 @@ import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 public interface CatalogS3BucketConfig extends S3BucketOptions {
 
   @WithName("server-auth-mode")
-  @WithDefault("STATIC")
   @Override
   Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
 
   @WithName("client-auth-mode")
-  @WithDefault("REQUEST_SIGNING")
   @Override
   Optional<S3ClientAuthenticationMode> clientAuthenticationMode();
 }

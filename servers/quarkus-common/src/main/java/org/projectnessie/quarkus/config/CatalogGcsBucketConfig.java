@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
-import io.smallrye.config.WithDefault;
 import java.util.Optional;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -24,7 +23,6 @@ import org.projectnessie.catalog.secrets.KeySecret;
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
   @Override
-  @WithDefault("NONE")
   Optional<GcsAuthType> authType();
 
   @Override
