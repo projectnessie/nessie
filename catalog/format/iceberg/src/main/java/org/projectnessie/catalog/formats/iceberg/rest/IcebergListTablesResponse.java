@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.formats.iceberg.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -34,7 +33,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergListTablesResponse {
-  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
   String nextPageToken();
 
