@@ -89,7 +89,15 @@ public class IcebergErrorMapper {
   private IcebergErrorResponse mapStorageFailure(
       BackendErrorStatus status, Throwable ex, IcebergEntityKind kind) {
     // Log full stack trace on the server side for troubleshooting
-    LOGGER.debug("Propagating storage failure to client: {}", status, ex);
+    switch (status.statusCode()) {
+      case NESSIE_ERROR:
+      case ICEBERG_ERROR:
+        LOGGER.debug("Propagating storage failure to client: {}", status, ex);
+        break;
+      default:
+        LOGGER.info("Propagating storage failure to client: {}", status, ex);
+        break;
+    }
 
     switch (status.statusCode()) {
       case NESSIE_ERROR:
