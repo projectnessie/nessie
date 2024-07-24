@@ -44,11 +44,15 @@ public abstract class S3ProgrammaticOptions implements S3Options {
   @Value.Check
   protected S3ProgrammaticOptions normalizeBuckets() {
     Map<String, S3NamedBucketOptions> buckets = new HashMap<>();
+    boolean changed = false;
     for (String bucketName : buckets().keySet()) {
       S3NamedBucketOptions options = buckets().get(bucketName);
       if (options.name().isPresent()) {
+        String explicitName = options.name().get();
+        changed |= !explicitName.equals(bucketName);
         bucketName = options.name().get();
       } else {
+        changed = true;
         options = ImmutableS3NamedBucketOptions.builder().from(options).name(bucketName).build();
       }
       if (buckets.put(bucketName, options) != null) {
@@ -56,13 +60,12 @@ public abstract class S3ProgrammaticOptions implements S3Options {
             "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
       }
     }
-    if (buckets.equals(buckets())) {
-      return this;
-    }
-    return ImmutableS3ProgrammaticOptions.builder()
-        .from(this)
-        .defaultOptions(defaultOptions())
-        .buckets(buckets)
-        .build();
+    return changed
+        ? ImmutableS3ProgrammaticOptions.builder()
+            .from(this)
+            .defaultOptions(defaultOptions())
+            .buckets(buckets)
+            .build()
+        : this;
   }
 }
