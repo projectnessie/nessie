@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.GcsToken;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
 @QuarkusTestResource(
@@ -33,10 +34,15 @@ import org.projectnessie.server.catalog.WarehouseLocation;
 public class ITGcsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @WarehouseLocation URI warehouseLocation;
+  @GcsToken String gcsToken;
 
   @Override
   protected Map<String, String> catalogOptions() {
-    return Map.of(CatalogProperties.WAREHOUSE_LOCATION, warehouseLocation.toString());
+    return Map.of(
+        CatalogProperties.WAREHOUSE_LOCATION,
+        warehouseLocation.toString(),
+        "gcs.oauth2.token",
+        gcsToken);
   }
 
   @Override

@@ -52,5 +52,7 @@ public class GcsEmulatorTestResourceLifecycleManager
     testInjector.injectIntoFields(
         warehouseLocation,
         new TestInjector.AnnotatedAndMatchesType(WarehouseLocation.class, URI.class));
+    testInjector.injectIntoFields(
+        gcs.oauth2token(), new TestInjector.AnnotatedAndMatchesType(GcsToken.class, String.class));
   }
 }
