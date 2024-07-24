@@ -44,6 +44,12 @@ dependencies {
   implementation(platform("org.apache.iceberg:iceberg-bom:$versionIceberg"))
   implementation("org.apache.iceberg:iceberg-core")
   runtimeOnly(libs.hadoop.common) { isTransitive = false }
+  // Include these FileIO implementations, as those are necessary to initialize
+  // RESTCatalog *sigh*. Those FileIO's aren't functional, because the necessary
+  // cloud specific clients (e.g. awssdk) are missing.
+  implementation("org.apache.iceberg:iceberg-aws")
+  implementation("org.apache.iceberg:iceberg-azure")
+  implementation("org.apache.iceberg:iceberg-gcp")
 
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
