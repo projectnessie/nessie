@@ -28,11 +28,17 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
   private final MinioContainer minio =
       new MinioContainer().withRegion(TEST_REGION).withStartupAttempts(5);
   private URI warehouseLocation;
+  private String scheme;
+
+  @Override
+  public void init(Map<String, String> initArgs) {
+    scheme = initArgs.getOrDefault("scheme", "s3");
+  }
 
   @Override
   public Map<String, String> start() {
     minio.start();
-    warehouseLocation = minio.s3BucketUri("");
+    warehouseLocation = minio.s3BucketUri(scheme, "");
     return ImmutableMap.<String, String>builder()
         .put("nessie.catalog.service.s3.default-options.endpoint", minio.s3endpoint())
         .put("nessie.catalog.service.s3.default-options.path-style-access", "true")
@@ -53,6 +59,9 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
   @Override
   public void inject(TestInjector testInjector) {
     testInjector.injectIntoFields(minio, new TestInjector.MatchesType(MinioContainer.class));
+    testInjector.injectIntoFields(
+        URI.create(minio.s3endpoint()),
+        new TestInjector.AnnotatedAndMatchesType(S3Endpoint.class, URI.class));
     testInjector.injectIntoFields(
         warehouseLocation,
         new TestInjector.AnnotatedAndMatchesType(WarehouseLocation.class, URI.class));
