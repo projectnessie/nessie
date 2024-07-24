@@ -41,6 +41,7 @@ val genProjectPaths =
 dependencies {
   implementation(project(":nessie-doc-generator-annotations"))
   implementation(libs.smallrye.config.core)
+  implementation(libs.commons.text)
 
   implementation(libs.picocli)
   annotationProcessor(libs.picocli.codegen)

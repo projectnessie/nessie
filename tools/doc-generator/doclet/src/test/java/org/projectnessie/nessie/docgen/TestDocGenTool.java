@@ -97,6 +97,7 @@ public class TestDocGenTool {
                 + "| `my.prefix.nested` |  | `` |  |\n"
                 + "| `my.prefix.nested.other-int` |  | `int` |  |\n"
                 + "| `my.prefix.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
+                + "| `my.prefix.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.prefix.some-int-thing` |  | `int` | Something int-ish.  |\n");
     soft.assertThat(fileMyTypes)
         .isRegularFile()
@@ -144,6 +145,7 @@ public class TestDocGenTool {
                 + "| `my.types.mapped-a.nested` |  | `` |  |\n"
                 + "| `my.types.mapped-a.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.mapped-a.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
+                + "| `my.types.mapped-a.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.mapped-a.some-int-thing` |  | `int` | Something int-ish.  |\n"
                 + "| `my.types.optional-mapped-a` |  | `` | Optional `MappedA`.  |\n"
                 + "| `my.types.optional-mapped-a.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
@@ -151,6 +153,7 @@ public class TestDocGenTool {
                 + "| `my.types.optional-mapped-a.nested` |  | `` |  |\n"
                 + "| `my.types.optional-mapped-a.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.optional-mapped-a.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
+                + "| `my.types.optional-mapped-a.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.optional-mapped-a.some-int-thing` |  | `int` | Something int-ish.  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_ |  | `` | Map of string to `MappedA`.  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
@@ -158,6 +161,7 @@ public class TestDocGenTool {
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested` |  | `` |  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
+                + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.some-int-thing` |  | `int` | Something int-ish.  |\n"
                 + "| `my.types.some-duration` |  | `duration` | A duration of something.  |\n"
                 + "| `my.types.config-option-foo` |  | `string` | Something that configures something.  |\n"
