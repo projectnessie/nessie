@@ -52,7 +52,8 @@ public class TestIcebergConfigurer {
 
     c.uriInfo = () -> baseUri;
 
-    MapAssert<String, String> props = soft.assertThat(c.icebergConfigPerTable(tm, prefix, key));
+    MapAssert<String, String> props =
+        soft.assertThat(c.icebergConfigPerTable(tm, prefix, key, null));
     if (signUri != null) {
       props.containsEntry(S3_SIGNER_URI, signUri);
       soft.assertThat(signUri).endsWith("/");
