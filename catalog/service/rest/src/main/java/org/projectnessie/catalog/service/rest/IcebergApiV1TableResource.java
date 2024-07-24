@@ -131,11 +131,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, prefix);
+    return this.loadTable(tableRef, prefix, dataAccess);
   }
 
-  private Uni<IcebergLoadTableResponse> loadTable(TableRef tableRef, String prefix)
-      throws NessieNotFoundException {
+  private Uni<IcebergLoadTableResponse> loadTable(
+      TableRef tableRef, String prefix, String dataAccess) throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
     return snapshotResponse(
@@ -145,12 +145,16 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .map(
             snap ->
                 loadTableResultFromSnapshotResponse(
-                    snap, IcebergLoadTableResponse.builder(), prefix, key));
+                    snap, IcebergLoadTableResponse.builder(), prefix, key, dataAccess));
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResultFromSnapshotResponse(
-          SnapshotResponse snap, B builder, String prefix, ContentKey contentKey) {
+          SnapshotResponse snap,
+          B builder,
+          String prefix,
+          ContentKey contentKey,
+          String dataAccess) {
     IcebergTableMetadata tableMetadata =
         (IcebergTableMetadata)
             snap.entityObject()
@@ -164,7 +168,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     }
     IcebergTable content = (IcebergTable) snap.content();
     return loadTableResult(
-        content.getMetadataLocation(), tableMetadata, builder, prefix, contentKey);
+        content.getMetadataLocation(), tableMetadata, builder, prefix, contentKey, dataAccess);
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
@@ -173,11 +177,13 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           IcebergTableMetadata tableMetadata,
           B builder,
           String prefix,
-          ContentKey contentKey) {
+          ContentKey contentKey,
+          String dataAccess) {
     return builder
         .metadata(tableMetadata)
         .metadataLocation(metadataLocation)
-        .putAllConfig(icebergConfigurer.icebergConfigPerTable(tableMetadata, prefix, contentKey))
+        .putAllConfig(
+            icebergConfigurer.icebergConfigPerTable(tableMetadata, prefix, contentKey, dataAccess))
         .build();
   }
 
@@ -250,7 +256,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   stagedTableMetadata,
                   IcebergCreateTableResponse.builder(),
                   prefix,
-                  tableRef.contentKey()));
+                  tableRef.contentKey(),
+                  dataAccess));
     }
 
     IcebergUpdateTableRequest updateTableReq =
@@ -264,7 +271,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .map(
             snap ->
                 this.loadTableResultFromSnapshotResponse(
-                    snap, IcebergCreateTableResponse.builder(), prefix, tableRef.contentKey()));
+                    snap,
+                    IcebergCreateTableResponse.builder(),
+                    prefix,
+                    tableRef.contentKey(),
+                    dataAccess));
   }
 
   @POST
@@ -273,7 +284,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   public Uni<IcebergLoadTableResponse> registerTable(
       @PathParam("prefix") String prefix,
       @PathParam("namespace") String namespace,
-      @Valid IcebergRegisterTableRequest registerTableRequest)
+      @Valid IcebergRegisterTableRequest registerTableRequest,
+      @HeaderParam("X-Iceberg-Access-Delegation") String dataAccess)
       throws IOException {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, registerTableRequest.name());
@@ -324,7 +336,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getHash(),
                   BRANCH),
               null),
-          prefix);
+          prefix,
+          dataAccess);
     } else if (nessieCatalogUri) {
       throw new IllegalArgumentException(
           "Cannot register an Iceberg table using the URI "
@@ -369,7 +382,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
             null),
-        prefix);
+        prefix,
+        dataAccess);
   }
 
   @DELETE

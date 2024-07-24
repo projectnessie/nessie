@@ -147,7 +147,7 @@ public class IcebergConfigurer {
   }
 
   public Map<String, String> icebergConfigPerTable(
-      IcebergTableMetadata tableMetadata, String prefix, ContentKey contentKey) {
+      IcebergTableMetadata tableMetadata, String prefix, ContentKey contentKey, String dataAccess) {
     Map<String, String> config = new HashMap<>();
     URI location = URI.create(tableMetadata.location());
     // TODO this is the place to add vended authorization tokens for file/object access
