@@ -93,6 +93,7 @@ abstract class ExportCommon {
         this.genericObjBatcher = genericObjBatcher;
 
         exporter.progressListener().progress(ProgressEvent.STARTED);
+        prepare(exportContext);
 
         exporter.progressListener().progress(ProgressEvent.START_COMMITS);
         HeadsAndForks headsAndForks = exportCommits(exportContext);
@@ -145,6 +146,8 @@ abstract class ExportCommon {
   ExportVersion getExportVersion() {
     return exportVersion;
   }
+
+  abstract void prepare(ExportContext exportContext);
 
   abstract void exportReferences(ExportContext exportContext);
 
