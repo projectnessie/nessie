@@ -30,6 +30,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- All application-level errors like "content not found" were logged at `INFO` level with a stack trace.
+- Catalog: Fixed a potential fallback to the default auth-mode for S3 and GCS buckets.
+- JDBC backend: fix a potential infinite recursion when creating/checking the required tables.
+
 ### Commits
 
 ## [0.93.1] Release (2024-07-19)
