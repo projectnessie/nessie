@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.version.store.persist.bigtable.app-profile-id=nessie
+    nessie.version.store.persist.bigtable.emulator-host=placeholder.com
+    nessie.version.store.persist.bigtable.emulator-port=8086
+    nessie.version.store.persist.bigtable.instance-id=test-instance
+    nessie.version.store.persist.cache-capacity-mb=0
+    nessie.version.store.type=BIGTABLE
+    quarkus.google.cloud.project-id=test-project
+    quarkus.oidc.tenant-enabled=false
+    quarkus.otel.sdk.disabled=true

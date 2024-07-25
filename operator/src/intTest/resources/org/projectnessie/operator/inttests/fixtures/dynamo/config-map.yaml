@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.version.store.persist.cache-capacity-mb=32
+    nessie.version.store.type=DYNAMODB
+    quarkus.dynamodb.aws.region=us-west-2
+    quarkus.dynamodb.endpoint-override=https://placeholder.com
+    quarkus.oidc.tenant-enabled=false
+    quarkus.otel.sdk.disabled=true
