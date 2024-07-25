@@ -18,7 +18,7 @@ plugins { id("nessie-conventions-quarkus") }
 
 publishingHelper { mavenName = "Nessie - Quarkus Config Types" }
 
-// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
 // for clients, we have to live with :nessie-model producing an MR-jar. See
 // https://github.com/quarkusio/quarkus/issues/40236 and
