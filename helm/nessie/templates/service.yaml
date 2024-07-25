@@ -10,11 +10,17 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: 19120
-      protocol: TCP
-      name: nessie-server
-  sessionAffinity: {{ .Values.service.sessionAffinity }}
   selector:
     {{- include "nessie.selectorLabels" . | nindent 4 }}
+  ports:
+    {{- $oldPortNumber := .Values.service.port -}}
+    {{- range $portName, $portNumber := .Values.service.ports }}
+    {{- if ne $portName "nessie-mgmt" }}
+    {{- if eq $portName "nessie-server"}}{{- $portNumber := coalesce $oldPortNumber $portNumber -}}{{- end }}
+    - port: {{ $portNumber }}
+      targetPort: {{ $portNumber }}
+      protocol: TCP
+      name: {{ $portName }}
+    {{- end }}
+    {{- end }}
+  sessionAffinity: {{ .Values.service.sessionAffinity }}

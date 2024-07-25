@@ -90,17 +90,16 @@ spec:
             {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
           ports:
-            - name: nessie-server
-              containerPort: 19120
+            {{- range $portName, $portNumber := .Values.service.ports }}
+            - name: {{ $portName }}
+              containerPort: {{ $portNumber }}
               protocol: TCP
-            - name: nessie-mgmt
-              containerPort: 9000
-              protocol: TCP
+            {{- end }}
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /q/health/live
-              port: 9000
+              port: "nessie-mgmt"
               scheme: HTTP
             initialDelaySeconds: 2
             periodSeconds: 30
@@ -110,7 +109,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /q/health/ready
-              port: 9000
+              port: "nessie-mgmt"
               scheme: HTTP
             initialDelaySeconds: 3
             periodSeconds: 45

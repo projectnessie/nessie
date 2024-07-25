@@ -12,8 +12,8 @@ spec:
   selector:
     {{- include "nessie.selectorLabels" . | nindent 4 }}
   ports:
-    - port: 9000
-      targetPort: 9000
+    - port: {{ index .Values.service.ports "nessie-mgmt" }}
+      targetPort: {{ index .Values.service.ports "nessie-mgmt" }}
       protocol: TCP
       name: nessie-mgmt
   publishNotReadyAddresses: true
