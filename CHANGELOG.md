@@ -10,14 +10,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-- Helm chart: the `logLevel` configuration option now only sets the log level for the console and
-  file appenders, _but does not change the `io.quarkus` logger level anymore_. To actually modify a
-  logger level, use the `advancedConfig` section and set the
-  `quarkus.log.category."<category>".level` configuration option, e.g.
-  `quarkus.log.category."io.quarkus".level=DEBUG` would set the log level for the `io.quarkus`
-  logger to `DEBUG`, effectively achieving the same as setting `logLevel` to `DEBUG` in previous
-  versions.
-
 ### Breaking changes
 
 ### New Features
@@ -29,6 +21,18 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.94.1] Release (2024-07-25)
+
+### Upgrade notes
+
+- Helm chart: the `logLevel` configuration option now only sets the log level for the console and
+  file appenders, _but does not change the `io.quarkus` logger level anymore_. To actually modify a
+  logger level, use the `advancedConfig` section and set the
+  `quarkus.log.category."<category>".level` configuration option, e.g.
+  `quarkus.log.category."io.quarkus".level=DEBUG` would set the log level for the `io.quarkus`
+  logger to `DEBUG`, effectively achieving the same as setting `logLevel` to `DEBUG` in previous
+  versions.
 
 ## [0.94.0] Release (2024-07-25)
 
@@ -672,7 +676,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.94.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.94.1...HEAD
+[0.94.1]: https://github.com/projectnessie/nessie/compare/nessie-0.94.0...nessie-0.94.1
 [0.94.0]: https://github.com/projectnessie/nessie/compare/nessie-0.93.1...nessie-0.94.0
 [0.93.1]: https://github.com/projectnessie/nessie/compare/nessie-0.92.1...nessie-0.93.1
 [0.92.1]: https://github.com/projectnessie/nessie/compare/nessie-0.92.0...nessie-0.92.1

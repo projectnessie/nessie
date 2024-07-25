@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.94.1 Release (July 25, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.1).
+
+### Upgrade notes
+
+- Helm chart: the `logLevel` configuration option now only sets the log level for the console and
+  file appenders, _but does not change the `io.quarkus` logger level anymore_. To actually modify a
+  logger level, use the `advancedConfig` section and set the
+  `quarkus.log.category."<category>".level` configuration option, e.g.
+  `quarkus.log.category."io.quarkus".level=DEBUG` would set the log level for the `io.quarkus`
+  logger to `DEBUG`, effectively achieving the same as setting `logLevel` to `DEBUG` in previous
+  versions.
+
+### Commits
+* Quarkus: split out code from `:nessie-quarkus` into separate modules (#9189)
+* Include LoggingConfigSourceInterceptor to help diagnose configuration issues (#9190)
+* Helm chart: don't set quarkus.log.level (#9191)
+
 ## 0.94.0 Release (July 25, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.0).
