@@ -159,6 +159,7 @@ dependencies {
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
   testFixturesApi(project(":nessie-minio-testcontainer"))
+  testFixturesApi(project(":nessie-trino-testcontainer"))
   testFixturesApi(project(":nessie-object-storage-mock"))
   testFixturesApi(project(":nessie-catalog-format-iceberg"))
   testFixturesApi(project(":nessie-catalog-format-iceberg-fixturegen"))
