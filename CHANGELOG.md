@@ -10,6 +10,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Helm chart: the `service.port` configuration option has been deprecated by `service.ports`, which
+  is a map of port names to port numbers to expose on the service. The old `service.port` is still
+  supported, but will be removed in a future release.
+
 ### Breaking changes
 
 - Catalog/ADLS: The authorization type for ADLS file systems must be explicitly specified using the new

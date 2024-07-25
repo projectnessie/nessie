@@ -8,6 +8,9 @@ metrics:
     service: nessie
     environment: dev
 service:
+  ports:
+    nessie-mgmt: 9001
+    nessie-alt: 19121
   sessionAffinity: ClientIP
 catalog:
   enabled: true

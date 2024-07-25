@@ -17,6 +17,9 @@ data:
     {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.service-names" $serviceNamesMgmt -}}
     {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.valid-tokens" $cacheInvalToken -}}
 
+    {{- $_ = set $map "quarkus.http.port" (coalesce .Values.service.port (index .Values.service.ports "nessie-server")) -}}
+    {{- $_ = set $map "quarkus.management.port" (index .Values.service.ports "nessie-mgmt") -}}
+
     {{- if .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
