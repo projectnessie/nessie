@@ -26,7 +26,7 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Server Admin Tool" }
 
-// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
 // for clients, we have to live with :nessie-model producing an MR-jar. See
 // https://github.com/quarkusio/quarkus/issues/40236 and
@@ -35,6 +35,7 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-server-store"))

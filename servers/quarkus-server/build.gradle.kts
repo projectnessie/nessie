@@ -20,7 +20,6 @@ import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
   id("nessie-license-report")
 }
 
@@ -36,7 +35,7 @@ val openapiSource by
 
 val versionIceberg = libs.versions.iceberg.get()
 
-// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
 // for clients, we have to live with :nessie-model producing an MR-jar. See
 // https://github.com/quarkusio/quarkus/issues/40236 and
@@ -45,31 +44,21 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-client"))
-  implementation(project(":nessie-combined-cs"))
   implementation(project(":nessie-model-quarkus"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-quarkus-auth"))
+  implementation(project(":nessie-quarkus-catalog"))
   implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-quarkus-config"))
+  implementation(project(":nessie-quarkus-distcache"))
+  implementation(project(":nessie-quarkus-rest"))
   implementation(project(":nessie-events-quarkus"))
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-rest-services"))
-  implementation(project(":nessie-tasks-api"))
-  implementation(project(":nessie-tasks-service-async"))
-  implementation(project(":nessie-tasks-service-impl"))
   implementation(project(":nessie-versioned-spi"))
-  implementation(project(":nessie-network-tools"))
   implementation(project(":nessie-notice"))
-  implementation(project(":nessie-versioned-storage-cache"))
-  implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-jdbc"))
-  implementation(project(":nessie-catalog-files-api"))
-  implementation(project(":nessie-catalog-files-impl"))
-  implementation(project(":nessie-catalog-model"))
-  implementation(project(":nessie-catalog-service-common"))
-  implementation(project(":nessie-catalog-service-impl"))
-  implementation(project(":nessie-catalog-service-rest"))
-  implementation(project(":nessie-catalog-secrets-api"))
   implementation(libs.nessie.ui)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
@@ -94,20 +83,6 @@ dependencies {
   implementation(platform(libs.cel.bom))
   implementation("org.projectnessie.cel:cel-standalone")
 
-  implementation(platform(libs.awssdk.bom))
-  implementation("software.amazon.awssdk:s3")
-  implementation("software.amazon.awssdk:sts")
-  implementation("software.amazon.awssdk:apache-client") {
-    exclude("commons-logging", "commons-logging")
-  }
-
-  implementation(platform(libs.google.cloud.storage.bom))
-  implementation("com.google.cloud:google-cloud-storage")
-
-  implementation(platform(libs.azuresdk.bom))
-  implementation("com.azure:azure-storage-file-datalake")
-  implementation("com.azure:azure-identity")
-
   implementation(libs.guava)
 
   compileOnly(libs.microprofile.openapi)
@@ -128,6 +103,8 @@ dependencies {
   testFixturesApi(project(":nessie-quarkus-auth"))
   testFixturesApi(project(":nessie-quarkus-common"))
   testFixturesApi(project(":nessie-quarkus-tests"))
+  testFixturesApi(project(":nessie-catalog-files-api"))
+  testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-events-api"))
   testFixturesApi(project(":nessie-events-spi"))
   testFixturesApi(project(":nessie-events-service"))
@@ -220,7 +197,10 @@ quarkus {
 }
 
 val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
+val quarkusDependenciesBuild = tasks.named("quarkusDependenciesBuild")
 val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
+
+quarkusDependenciesBuild.configure { dependsOn("processJandexIndex") }
 
 quarkusAppPartsBuild.configure {
   dependsOn(pullOpenApiSpec)

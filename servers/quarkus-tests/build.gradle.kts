@@ -18,8 +18,16 @@ plugins { id("nessie-conventions-quarkus") }
 
 publishingHelper { mavenName = "Nessie - Quarkus Tests" }
 
+// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
+// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
+// for clients, we have to live with :nessie-model producing an MR-jar. See
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390.
+configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
+
 dependencies {
   implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-versioned-tests"))
   implementation(project(":nessie-versioned-storage-bigtable-tests"))
   implementation(project(":nessie-versioned-storage-cassandra-tests"))
