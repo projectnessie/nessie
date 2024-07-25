@@ -21,7 +21,6 @@ data:
     {{- $_ = set $map "quarkus.management.port" (index .Values.service.ports "nessie-mgmt") -}}
 
     {{- if .Values.logLevel -}}
-    {{- $_ = set $map "quarkus.log.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.file.level" .Values.logLevel -}}
     {{- end -}}
