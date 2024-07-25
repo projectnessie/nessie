@@ -471,3 +471,7 @@ set the console appender level to `DEBUG`:
 quarkus.log.console.level=DEBUG
 quarkus.log.category."io.smallrye.config".level=DEBUG
 ```
+
+!!! warn
+    This will print out all configuration values, including sensitive ones like passwords. Don't
+    do this in production, and don't share this output with anyone you don't trust!
