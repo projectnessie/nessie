@@ -32,6 +32,7 @@ val genProjectPaths = listOf(
   ":nessie-model",
   ":nessie-client",
   ":nessie-quarkus-common",
+  ":nessie-quarkus-config",
   ":nessie-quarkus-auth",
   ":nessie-services-config",
   ":nessie-versioned-storage-bigtable",
