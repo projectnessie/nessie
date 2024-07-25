@@ -116,6 +116,7 @@ import org.projectnessie.model.ReferenceHistoryState;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.Tag;
+import org.projectnessie.model.UDF;
 import org.projectnessie.model.Validation;
 import org.projectnessie.model.types.GenericRepositoryConfig;
 import org.projectnessie.model.types.ImmutableGenericRepositoryConfig;
@@ -1216,6 +1217,20 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(api().getEntries().reference(main).stream())
         .isNotEmpty()
         .allSatisfy(e -> assertThat(e.getContentId()).isNotNull());
+  }
+
+  @Test
+  public void udf() throws Exception {
+    ContentKey key = ContentKey.of("test-udf");
+    Branch main =
+        prepCommit(api().getDefaultBranch(), "commit", Put.of(key, UDF.udf("loc1", "v1", "s1")))
+            .commit();
+
+    soft.assertThat(api().getContent().reference(main).key(key).get().get(key))
+        .asInstanceOf(type(UDF.class))
+        .satisfies(u -> assertThat(u.getId()).isNotNull())
+        .extracting(UDF::getMetadataLocation, UDF::getVersionId, UDF::getSignatureId)
+        .containsExactly("loc1", "v1", "s1");
   }
 
   @Test
