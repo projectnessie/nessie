@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.catalog.service.s3.sts.sts.session-grace-period` |  | `duration` | The time period to subtract from the S3 session credentials (assumed role credentials) expiry  time to define the time when those credentials become eligible for refreshing.   |
