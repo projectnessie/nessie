@@ -10,6 +10,14 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Helm chart: the `logLevel` configuration option now only sets the log level for the console and
+  file appenders, _but does not change the `io.quarkus` logger level anymore_. To actually modify a
+  logger level, use the `advancedConfig` section and set the
+  `quarkus.log.category."<category>".level` configuration option, e.g.
+  `quarkus.log.category."io.quarkus".level=DEBUG` would set the log level for the `io.quarkus`
+  logger to `DEBUG`, effectively achieving the same as setting `logLevel` to `DEBUG` in previous
+  versions.
+
 ### Breaking changes
 
 ### New Features
