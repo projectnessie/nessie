@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-quarkus") }
 
-publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
+publishingHelper { mavenName = "Nessie - Quarkus Config Types" }
 
 // Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
@@ -29,26 +26,26 @@ publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
 configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
 
 dependencies {
-  implementation(project(":nessie-model-quarkus"))
-  implementation(project(":nessie-quarkus-common"))
-  implementation(project(":nessie-quarkus-config"))
-  implementation(project(":nessie-services"))
-  implementation(project(":nessie-versioned-spi"))
+  implementation(project(":nessie-services-config"))
+  implementation(project(":nessie-versioned-storage-common"))
+  implementation(project(":nessie-catalog-files-api"))
+  implementation(project(":nessie-catalog-files-impl"))
+  implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-catalog-secrets-api"))
+
+  compileOnly(project(":nessie-doc-generator-annotations"))
+
+  compileOnly(enforcedPlatform(libs.quarkus.bom))
+  compileOnly("io.quarkus:quarkus-core")
+  compileOnly("io.smallrye.config:smallrye-config-core")
 
   implementation(libs.guava)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkus:quarkus-security")
-  implementation("io.quarkus:quarkus-vertx-http")
-
-  implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-standalone")
-
-  compileOnly(libs.microprofile.openapi)
-
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi("io.quarkus:quarkus-core")
+
+  testRuntimeOnly(libs.logback.classic)
 }

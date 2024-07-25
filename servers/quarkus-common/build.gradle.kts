@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-quarkus") }
 
 publishingHelper { mavenName = "Nessie - Quarkus Common" }
+
+// Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
+// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
+// for clients, we have to live with :nessie-model producing an MR-jar. See
+// https://github.com/quarkusio/quarkus/issues/40236 and
+// https://github.com/projectnessie/nessie/issues/8390.
+configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
 
 dependencies {
   implementation(project(":nessie-model"))
@@ -32,6 +36,7 @@ dependencies {
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-service-common"))
   implementation(project(":nessie-catalog-secrets-api"))
+  implementation(project(":nessie-quarkus-config"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 

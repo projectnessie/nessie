@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-quarkus") }
 
-publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
+publishingHelper { mavenName = "Nessie - Quarkus REST" }
 
 // Need to use :nessie-model-jakarta instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
@@ -30,25 +27,13 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-model-quarkus"))
-  implementation(project(":nessie-quarkus-common"))
-  implementation(project(":nessie-quarkus-config"))
-  implementation(project(":nessie-services"))
-  implementation(project(":nessie-versioned-spi"))
-
-  implementation(libs.guava)
+  implementation(project(":nessie-rest-common"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkus:quarkus-security")
-  implementation("io.quarkus:quarkus-vertx-http")
+  implementation("io.quarkus:quarkus-core")
+  implementation("io.quarkus:quarkus-resteasy-reactive")
+  implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
 
-  implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-standalone")
-
-  compileOnly(libs.microprofile.openapi)
-
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-
-  testFixturesApi(platform(libs.junit.bom))
-  testFixturesApi(libs.bundles.junit.testing)
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }

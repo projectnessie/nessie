@@ -35,6 +35,7 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-quarkus-common"))
+  implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-server-store"))
