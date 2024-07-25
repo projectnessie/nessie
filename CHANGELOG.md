@@ -10,6 +10,22 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.94.0] Release (2024-07-25)
+
+### Upgrade notes
+
 - Helm chart: the `service.port` configuration option has been deprecated by `service.ports`, which
   is a map of port names to port numbers to expose on the service. The old `service.port` is still
   supported, but will be removed in a future release.
@@ -28,17 +44,11 @@ as necessary. Empty sections will not end in the release notes.
 - Catalog/ADLS: Add mandatory `auth-type` configuration option for ADLS file systems, see above.
 - GC: Iceberg view metadata is now expired as well.
 
-### Changes
-
-### Deprecations
-
 ### Fixes
 
 - All application-level errors like "content not found" were logged at `INFO` level with a stack trace.
 - Catalog: Fixed a potential fallback to the default auth-mode for S3 and GCS buckets.
 - JDBC backend: fix a potential infinite recursion when creating/checking the required tables.
-
-### Commits
 
 ## [0.93.1] Release (2024-07-19)
 
@@ -654,7 +664,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.93.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.94.0...HEAD
+[0.94.0]: https://github.com/projectnessie/nessie/compare/nessie-0.93.1...nessie-0.94.0
 [0.93.1]: https://github.com/projectnessie/nessie/compare/nessie-0.92.1...nessie-0.93.1
 [0.92.1]: https://github.com/projectnessie/nessie/compare/nessie-0.92.0...nessie-0.92.1
 [0.92.0]: https://github.com/projectnessie/nessie/compare/nessie-0.91.3...nessie-0.92.0
