@@ -459,3 +459,15 @@ The extensive list of supported environment variables can be found
 | `HTTPS_PROXY`                    | The location of the https proxy. (example: "myuser@127.0.0.1:8080")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `HTTP_PROXY`                     | The location of the http proxy. (example: "myuser@127.0.0.1:8080")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `NO_PROXY`                       | A comma separated lists of hosts, IP addresses or domains that can be accessed directly. (example: "foo.example.com,bar.example.com")                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+
+## Troubleshooting configuration issues
+
+If you encounter issues with the configuration, you can ask Nessie to print out the configuration it
+is using. To do this, set the log level for the `io.smallrye.config` category to `DEBUG`, and also
+set the console appender level to `DEBUG`:
+
+```properties
+quarkus.log.console.level=DEBUG
+quarkus.log.category."io.smallrye.config".level=DEBUG
+```
