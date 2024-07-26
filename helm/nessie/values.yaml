@@ -716,3 +716,31 @@ affinity: {}
 #                operator: In
 #                values:
 #                  - nessie
+
+# -- Configures the liveness probe for nessie pods.
+livenessProbe:
+  # -- Number of seconds after the container has started before liveness probes are initiated. Minimum value is 0.
+  initialDelaySeconds: 5
+  # -- How often (in seconds) to perform the probe. Minimum value is 1.
+  periodSeconds: 30
+  # -- Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+  successThreshold: 1
+  # -- Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+  failureThreshold: 3
+  # -- Number of seconds after which the probe times out. Minimum value is 1.
+  timeoutSeconds: 10
+  # -- Optional duration in seconds the pod needs to terminate gracefully upon probe failure. Minimum value is 1.
+  terminationGracePeriodSeconds: 30
+
+# -- Configures the readiness probe for nessie pods.
+readinessProbe:
+  # -- Number of seconds after the container has started before readiness probes are initiated. Minimum value is 0.
+  initialDelaySeconds: 10
+  # -- How often (in seconds) to perform the probe. Minimum value is 1.
+  periodSeconds: 45
+  # -- Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+  successThreshold: 1
+  # -- Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+  failureThreshold: 3
+  # -- Number of seconds after which the probe times out. Minimum value is 1.
+  timeoutSeconds: 10

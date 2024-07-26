@@ -96,25 +96,27 @@ spec:
               protocol: TCP
             {{- end }}
           livenessProbe:
-            failureThreshold: 3
             httpGet:
               path: /q/health/live
               port: "nessie-mgmt"
               scheme: HTTP
-            initialDelaySeconds: 2
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 10
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            terminationGracePeriodSeconds: {{ .Values.livenessProbe.terminationGracePeriodSeconds }}
           readinessProbe:
-            failureThreshold: 3
             httpGet:
               path: /q/health/ready
               port: "nessie-mgmt"
               scheme: HTTP
-            initialDelaySeconds: 3
-            periodSeconds: 45
-            successThreshold: 1
-            timeoutSeconds: 10
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
