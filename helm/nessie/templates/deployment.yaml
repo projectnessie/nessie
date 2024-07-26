@@ -42,7 +42,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: nessie-config
-              mountPath: /deployments/config/application.properties
+              mountPath: {{ trimSuffix "/" .Values.image.configDir }}/application.properties
               subPath: application.properties
           {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
             - name: rocks-storage
