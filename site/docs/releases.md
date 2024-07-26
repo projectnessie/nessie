@@ -8,7 +8,7 @@ See [Release information on GitHub](https://github.com/projectnessie/nessie/rele
 
 ### Highlights
 
-- Helm chart: it is now possible to use Helm templating in all values; any [built-in
+* Helm chart: it is now possible to use Helm templating in all values; any [built-in
   object](https://helm.sh/docs/chart_template_guide/builtin_objects/) can be specified. This is
   particularly useful for dynamically passing the namespace to the Helm chart, but cross-referencing
   values from different sections is also possible, e.g.:
@@ -16,7 +16,7 @@ See [Release information on GitHub](https://github.com/projectnessie/nessie/rele
   ```yaml
   mongodb:
     name: nessie
-    connectionString: mongodb+srv://mongodb.{{ .Release.Namespace }}.svc.cluster.local:27017/{{ .Values.mongodb.name }}
+    connectionString: mongodb+srv://mongodb.{{ double_curly }} .Release.Namespace }}.svc.cluster.local:27017/{{ double_curly }} .Values.mongodb.name }}
   ```
 
   The above would result in the following properties when deploying to namespace `nessie-ns`:

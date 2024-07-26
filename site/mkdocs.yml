@@ -35,6 +35,7 @@ extra:
   versions:
     nessie: 0.94.2
     iceberg: 1.5.2
+  double_curly: "{{"
   analytics:
     provider: google
     property: UA-177850801-1
