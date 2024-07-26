@@ -27,7 +27,6 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-quarkus-config"))
-  implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-network-tools"))

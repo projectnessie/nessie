@@ -53,7 +53,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
-import org.projectnessie.quarkus.util.HttpTestServer;
 import org.projectnessie.server.distcache.CacheInvalidations;
 import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidation;
 import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference;
