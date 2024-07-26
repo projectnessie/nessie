@@ -722,7 +722,7 @@ livenessProbe:
   # -- Number of seconds after the container has started before liveness probes are initiated. Minimum value is 0.
   initialDelaySeconds: 5
   # -- How often (in seconds) to perform the probe. Minimum value is 1.
-  periodSeconds: 30
+  periodSeconds: 10
   # -- Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
   successThreshold: 1
   # -- Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
@@ -735,9 +735,9 @@ livenessProbe:
 # -- Configures the readiness probe for nessie pods.
 readinessProbe:
   # -- Number of seconds after the container has started before readiness probes are initiated. Minimum value is 0.
-  initialDelaySeconds: 10
+  initialDelaySeconds: 5
   # -- How often (in seconds) to perform the probe. Minimum value is 1.
-  periodSeconds: 45
+  periodSeconds: 10
   # -- Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
   successThreshold: 1
   # -- Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
