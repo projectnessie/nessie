@@ -195,12 +195,12 @@ public final class TrinoContainer extends GenericContainer<TrinoContainer> imple
         }
       }
     }
-
     ClientSession session =
         ClientSession.builder()
             .server(URI.create(format("http://%s:%d/", getHost(), getMappedPort(TRINO_PORT))))
             .timeZone(ZoneId.of("UTC"))
             .user(Optional.of("user"))
+            .source("foo")
             .build();
 
     return StatementClientFactory.newStatementClient(httpClient, session, query, Optional.empty());
