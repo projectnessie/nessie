@@ -7,6 +7,10 @@ metrics:
   tags:
     service: nessie
     environment: dev
+podLabels:
+  app: nessie-{{ .Release.Namespace }}-{{ .Values.versionStoreType }}
+podAnnotations:
+  app: nessie-{{ .Release.Namespace }}-{{ .Values.versionStoreType }}
 service:
   ports:
     nessie-mgmt: 9001
@@ -26,7 +30,7 @@ catalog:
       override2: value2
     warehouses:
     - name: warehouse1
-      location: s3://bucket1.prod-us/warehouse
+      location: "s3://bucket1.prod-us/warehouse-{{ .Release.Namespace }}"
       configDefaults:
         default1: value11
         default2: value22
@@ -45,10 +49,10 @@ catalog:
 #          awsAccessKeyId: access-key-id
 #          awsSecretAccessKey: secret-access-key
       buckets:
-        - name: bucket1.prod-us
+        - name: bucket1.{{ .Release.Namespace }}
           endpoint: prod-us.s3.amazonaws.com
           region: us-east-1
-        - name: bucket2.prod-us
+        - name: bucket2.{{ .Release.Namespace }}
           endpoint: prod-us2.s3.amazonaws.com
           region: us-east-2
 #          accessKeySecret:
@@ -64,9 +68,9 @@ catalog:
 #          name: gcs-credentials
 #          key: credentials.json
       buckets:
-      - name: bucket1.prod-us
+      - name: bucket1.{{ .Release.Namespace }}
         projectId: project-id
-      - name: bucket2.prod-us
+      - name: bucket2.{{ .Release.Namespace }}
         projectId: project-id
 #        authCredentialsJsonSecret:
 #          name: gcs-credentials
@@ -94,13 +98,13 @@ catalog:
 #          accountName: account-name
 #          accountKey: account-key
       filesystems:
-      - name: filesystem1
+      - name: filesystem1-{{ .Release.Namespace }}
         endpoint: https://account1.azuredatalakestore.net
         maxRetries: 3
         retryInterval: PT5S
         retryPolicy: EXPONENTIAL_BACKOFF
         retryDelay: PT1S
-      - name: filesystem2
+      - name: filesystem2-{{ .Release.Namespace }}
         endpoint: https://account2.azuredatalakestore.net
         maxRetries: 3
         retryInterval: PT5S
