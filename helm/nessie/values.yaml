@@ -9,6 +9,8 @@ image:
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart version.
   tag: ""
+  # -- The path to the directory where the application.properties file should be mounted.
+  configDir: /deployments/config
 
 # -- The default logging level for the nessie server.
 logLevel: INFO
