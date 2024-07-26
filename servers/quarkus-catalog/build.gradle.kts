@@ -29,7 +29,6 @@ dependencies {
   implementation(project(":nessie-combined-cs"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-quarkus-config"))
-  implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-secrets-api"))
