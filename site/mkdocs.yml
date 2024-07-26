@@ -33,7 +33,7 @@ extra_css:
 
 extra:
   versions:
-    nessie: 0.94.1
+    nessie: 0.94.2
     iceberg: 1.5.2
   analytics:
     provider: google

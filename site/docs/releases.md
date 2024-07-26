@@ -2,6 +2,36 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.94.2 Release (July 26, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.2).
+
+### Highlights
+
+- Helm chart: it is now possible to use Helm templating in all values; any [built-in
+  object](https://helm.sh/docs/chart_template_guide/builtin_objects/) can be specified. This is
+  particularly useful for dynamically passing the namespace to the Helm chart, but cross-referencing
+  values from different sections is also possible, e.g.:
+
+  ```yaml
+  mongodb:
+    name: nessie
+    connectionString: mongodb+srv://mongodb.{{ .Release.Namespace }}.svc.cluster.local:27017/{{ .Values.mongodb.name }}
+  ```
+
+  The above would result in the following properties when deploying to namespace `nessie-ns`:
+
+  ```properties
+  quarkus.mongodb.database=nessie
+  quarkus.mongodb.connection-string=mongodb://mongodb.nessie-ns.svc.cluster.local:27017/nessie
+  ```
+
+### Commits
+* Renovate: let Trino pass (#9199)
+* Helm chart: allow templating in chart values (#9202)
+* Helm chart: configurable mount point for configmap (#9201)
+* Docs: add warning about printing configuration (#9193)
+
 ## 0.94.1 Release (July 25, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.1).
