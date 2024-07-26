@@ -8,6 +8,24 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Helm chart: it is now possible to use Helm templating in all values; any [built-in
+  object](https://helm.sh/docs/chart_template_guide/builtin_objects/) can be specified. This is
+  particularly useful for dynamically passing the namespace to the Helm chart, but cross-referencing
+  values from different sections is also possible, e.g.:
+
+  ```yaml
+  mongodb:
+    name: nessie
+    connectionString: mongodb+srv://mongodb.{{ .Release.Namespace }}.svc.cluster.local:27017/{{ .Values.mongodb.name }}
+  ```
+
+  The above would result in the following properties when deploying to namespace `nessie-ns`:
+
+  ```properties
+  quarkus.mongodb.database=nessie
+  quarkus.mongodb.connection-string=mongodb://mongodb.nessie-ns.svc.cluster.local:27017/nessie
+  ```
+
 ### Upgrade notes
 
 ### Breaking changes
