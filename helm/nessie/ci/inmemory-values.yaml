@@ -114,3 +114,15 @@ catalog:
 #          name: adls-account-secret
 #          accountName: account-name
 #          accountKey: account-key
+
+livenessProbe:
+  initialDelaySeconds: 2
+  periodSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3

@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Helm chart: liveness and readiness probes are now configurable via the `livenessProbe` and 
+  `readinessProbe` Helm values.
+
 ### Changes
 
 ### Deprecations
