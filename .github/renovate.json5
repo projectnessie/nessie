@@ -41,6 +41,18 @@
       platformAutomerge: true
     },
 
+    // Trino specials
+    {
+      matchManagers: ["maven", "gradle", "dockerfile", "devcontainer", "docker-compose"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      matchPackageNames: [
+        "io.trino:trino-client",
+        "docker.io/trinodb/trino"
+      ],
+      automerge: true,
+      platformAutomerge: true
+    },
+
     // Check for updates, merge automatically
     {
       matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
