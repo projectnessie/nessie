@@ -102,10 +102,8 @@ public class IcebergConfigurer {
   @Context ExternalBaseUri uriInfo;
 
   public Map<String, String> icebergConfigDefaults(String reference, String warehouse) {
-    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
     WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
 
-    String branch = defaultBranchName(reference);
     Map<String, String> config = new HashMap<>();
     // Not fully implemented yet
     config.put(METRICS_REPORTING_ENABLED, "false");
@@ -117,14 +115,6 @@ public class IcebergConfigurer {
     config.put("rest-page-size", "200");
     config.putAll(catalogConfig.icebergConfigDefaults());
     config.putAll(warehouseConfig.icebergConfigDefaults());
-    // Set the "default" prefix
-    if (!hasWarehouse && catalogConfig.defaultWarehouse().isPresent()) {
-      config.put(ICEBERG_PREFIX, encode(branch, UTF_8));
-    } else {
-      config.put(
-          ICEBERG_PREFIX,
-          encode(branch + "|" + catalogConfig.resolveWarehouseName(warehouse), UTF_8));
-    }
     return config;
   }
 
@@ -143,6 +133,18 @@ public class IcebergConfigurer {
     // The following properties are passed back to clients to automatically configure their Nessie
     // client. These properties are _not_ user configurable properties.
     config.put("nessie.default-branch.name", branch);
+
+    // Set the "default" prefix in the config _overrides_.
+    // Iceberg/Java respects the "prefix" in the config defaults, but Iceberg/Python does not, if
+    // the user specified "prefix" in the `load_catalog()` call.
+    boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
+    if (!hasWarehouse && catalogConfig.defaultWarehouse().isPresent()) {
+      config.put(ICEBERG_PREFIX, encode(branch, UTF_8));
+    } else {
+      config.put(
+          ICEBERG_PREFIX,
+          encode(branch + "|" + catalogConfig.resolveWarehouseName(warehouse), UTF_8));
+    }
     return config;
   }
 
