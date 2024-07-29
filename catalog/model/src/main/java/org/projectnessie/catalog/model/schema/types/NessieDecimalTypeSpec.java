@@ -52,7 +52,7 @@ public interface NessieDecimalTypeSpec extends NessieTypeSpec {
 
   @Value.Check
   default void check() {
-    checkState(scale() > 0, "Invalid scale %s for %s", scale(), type().lowerCaseName());
+    checkState(scale() >= 0, "Invalid scale %s for %s", scale(), type().lowerCaseName());
     checkState(
         precision() >= 0, "Invalid precision %s for %s", precision(), type().lowerCaseName());
   }
