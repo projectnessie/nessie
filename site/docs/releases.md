@@ -2,6 +2,20 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.94.3 Release (July 29, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.3).
+
+### New Features
+
+- Helm chart: liveness and readiness probes are now configurable via the `livenessProbe` and 
+  `readinessProbe` Helm values.
+
+### Commits
+* Helm chart: configurable liveness and readiness probes (#9203)
+* Dependency cleanup, remove dependency on `nessie-quarkus-common` (#9206)
+* Ninja: fix release notes
+
 ## 0.94.2 Release (July 26, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.2).
