@@ -91,7 +91,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       @PathParam("namespace") String namespace,
       @Valid IcebergCreateViewRequest createViewRequest)
       throws IOException {
-    TableRef tableRef = decodeTableRefWithHash(prefix, namespace, createViewRequest.name());
+    TableRef tableRef = decodeTableRef(prefix, namespace, createViewRequest.name());
 
     createViewRequest.viewVersion();
 
@@ -245,7 +245,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       @PathParam("view") String view,
       @Valid IcebergCommitViewRequest commitViewRequest)
       throws IOException {
-    TableRef tableRef = decodeTableRefWithHash(prefix, namespace, view);
+    TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
     return createOrUpdateEntity(tableRef, commitViewRequest, ICEBERG_VIEW)
         .map(
