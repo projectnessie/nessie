@@ -113,9 +113,8 @@ Iceberg REST base URI instead of the Nessie REST base URI.
 
 Nessie provides catalog level versioning providing a consistent and reproducible state across the
 whole catalog. In other words: atomic transactions across many tables and views and namespaces are
-natively built into Nessie. This "Git for data" approach allows for example merging the result of all
-changes to all tables and views modified in a branch to be merged atomically into for example the
-"main" branch.
+natively built into Nessie. This "Git for data" approach allows, for example, merging all changes
+to tables and views in a branch into another branch, for example the "main" branch.
 
 To retain Nessie's consistency and cross-branch/tag isolation guarantees, we have deliberately chosen
 to only return the state of a table or view as a _single_ snapshot in Iceberg.
