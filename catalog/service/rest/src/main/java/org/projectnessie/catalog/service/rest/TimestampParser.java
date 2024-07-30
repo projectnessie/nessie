@@ -133,6 +133,10 @@ public final class TimestampParser {
         ISO_OFFSET_DATE_TIME, LENIENT_GIT_DATE_TIME, LENIENT_RFC_1123_DATE_TIME, ISO_ZONED_DATE_TIME
       };
 
+  /**
+   * Returns a "relative commit spec" according to {@code
+   * org.projectnessie.versioned.RelativeCommitSpec.Type}.
+   */
   public static String timestampToNessie(String timestamp) {
     try {
       Long.parseLong(timestamp);
