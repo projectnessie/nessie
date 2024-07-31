@@ -28,7 +28,7 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  compileOnly("io.quarkus:quarkus-arc:${libs.versions.quarkusPlatform.get()}")
+  compileOnly("io.quarkus:quarkus-arc:${libs.versions.quarkusMainPlatform.get()}")
 
   implementation(platform(libs.jersey.bom))
   implementation("org.glassfish.jersey.core:jersey-server")

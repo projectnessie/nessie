@@ -27,6 +27,7 @@ opentracing = "0.33.0"
 picocli = "4.7.6"
 protobuf = "3.25.4"
 quarkusPlatform = "3.13.0"
+quarkusMainPlatform = "999-SNAPSHOT"
 quarkusPlugin = "3.13.0"
 slf4j = "2.0.13"
 smallryeConfig = "3.9.0"
@@ -130,7 +131,7 @@ picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "pico
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.3" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkusPlatform" }
-quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkusPlatform" }
+quarkus-bom = { module = "io.quarkus:quarkus-bom", version.ref = "quarkusMainPlatform" }
 quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkusPlatform" }
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.7" }
