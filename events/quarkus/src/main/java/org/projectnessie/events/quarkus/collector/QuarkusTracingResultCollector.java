@@ -29,6 +29,7 @@ public class QuarkusTracingResultCollector implements Consumer<Result> {
       AttributeKey.stringKey("nessie.results.type");
   public static final AttributeKey<String> ENDUSER_ID = AttributeKey.stringKey("enduser.id");
   public static final AttributeKey<String> PEER_SERVICE = AttributeKey.stringKey("peer.service");
+  public static final AttributeKey<String> SERVICE_NAME = AttributeKey.stringKey("service.name");
 
   private final Consumer<Result> delegate;
   private final String userName;
@@ -47,6 +48,7 @@ public class QuarkusTracingResultCollector implements Consumer<Result> {
             .spanBuilder(NESSIE_RESULTS_SPAN_NAME)
             .setAttribute(NESSIE_RESULT_TYPE_ATTRIBUTE_KEY, result.getResultType().name())
             .setAttribute(ENDUSER_ID, userName)
+            .setAttribute(SERVICE_NAME, "Nessie")
             .setAttribute(PEER_SERVICE, "Nessie")
             .startSpan();
     try (Scope ignored = span.makeCurrent()) {

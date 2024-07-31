@@ -15,9 +15,7 @@
  */
 package org.projectnessie.events.quarkus.collector;
 
-import static io.opentelemetry.semconv.SemanticAttributes.ENDUSER_ID;
-import static io.opentelemetry.semconv.SemanticAttributes.PEER_SERVICE;
-import static org.assertj.core.api.Assertions.assertThat;
+import static io.opentelemetry.semconv.ServiceAttributes.SERVICE_NAME;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -26,12 +24,16 @@ import static org.projectnessie.events.quarkus.collector.QuarkusTracingResultCol
 import static org.projectnessie.events.quarkus.collector.QuarkusTracingResultCollector.NESSIE_RESULT_TYPE_ATTRIBUTE_KEY;
 import static org.projectnessie.versioned.ResultType.MERGE;
 
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import java.util.function.Consumer;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -39,15 +41,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.versioned.Result;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({SoftAssertionsExtension.class, MockitoExtension.class})
 class TestQuarkusTracingResultCollector {
+  @InjectSoftAssertions SoftAssertions soft;
   @Mock Consumer<Result> delegate;
   @Mock Result result;
   @Mock SpanProcessor processor;
 
+  public static final AttributeKey<String> ENDUSER_ID = AttributeKey.stringKey("enduser.id");
+
   @Test
   void accept() {
     when(result.getResultType()).thenReturn(MERGE);
+    when(processor.isStartRequired()).thenReturn(true);
+    when(processor.isEndRequired()).thenReturn(true);
     @SuppressWarnings("resource")
     TracerProvider tracerProvider = SdkTracerProvider.builder().addSpanProcessor(processor).build();
     Tracer tracer = tracerProvider.get("test");
@@ -59,11 +66,11 @@ class TestQuarkusTracingResultCollector {
     ArgumentCaptor<ReadableSpan> spanEndCaptor = ArgumentCaptor.forClass(ReadableSpan.class);
     verify(processor).onEnd(spanEndCaptor.capture());
     ReadableSpan end = spanEndCaptor.getValue();
-    assertThat(end.getName()).isEqualTo(NESSIE_RESULTS_SPAN_NAME);
-    assertThat(end.getAttribute(NESSIE_RESULT_TYPE_ATTRIBUTE_KEY)).isEqualTo(MERGE.name());
-    assertThat(end.getAttribute(ENDUSER_ID)).isEqualTo("alice");
-    assertThat(end.getAttribute(PEER_SERVICE)).isEqualTo("Nessie");
-    assertThat(end.getSpanContext().isValid()).isTrue();
+    soft.assertThat(end.getName()).isEqualTo(NESSIE_RESULTS_SPAN_NAME);
+    soft.assertThat(end.getAttribute(NESSIE_RESULT_TYPE_ATTRIBUTE_KEY)).isEqualTo(MERGE.name());
+    soft.assertThat(end.getAttribute(ENDUSER_ID)).isEqualTo("alice");
+    soft.assertThat(end.getAttribute(SERVICE_NAME)).isEqualTo("Nessie");
+    soft.assertThat(end.getSpanContext().isValid()).isTrue();
     verifyNoMoreInteractions(delegate, processor);
   }
 }
