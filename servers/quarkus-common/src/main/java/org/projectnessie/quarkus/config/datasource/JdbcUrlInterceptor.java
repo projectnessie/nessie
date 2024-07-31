@@ -36,10 +36,12 @@ public class JdbcUrlInterceptor implements ConfigSourceInterceptor {
     ConfigValue value = context.proceed(name);
     if (name.equals("quarkus.datasource.mysql.jdbc.url")) {
       if (isDataSourceActive(context, name)) {
-        String url = value.getValue();
-        if (url.startsWith("jdbc:mysql:")) {
-          url = url.replace("jdbc:mysql:", "jdbc:mariadb:");
-          value = newConfigValue(value, url);
+        if (value != null) {
+          String url = value.getValue();
+          if (url.startsWith("jdbc:mysql:")) {
+            url = url.replace("jdbc:mysql:", "jdbc:mariadb:");
+            value = newConfigValue(value, url);
+          }
         }
       }
     }
