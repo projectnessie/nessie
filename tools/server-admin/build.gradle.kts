@@ -121,7 +121,7 @@ quarkus {
         .get()
         .manifest
         .attributes
-        .map { e -> "quarkus.package.manifest.attributes.\"${e.key}\"" to e.value.toString() }
+        .map { e -> "quarkus.package.jar.manifest.attributes.\"${e.key}\"" to e.value.toString() }
         .toMap()
     }
   )
