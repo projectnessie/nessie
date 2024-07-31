@@ -63,8 +63,8 @@ dependencies {
 
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
-  implementation("io.quarkus:quarkus-resteasy-reactive")
-  implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
+  implementation("io.quarkus:quarkus-rest")
+  implementation("io.quarkus:quarkus-rest-jackson")
   implementation("io.quarkus:quarkus-reactive-routes")
   implementation("io.quarkus:quarkus-core-deployment")
   implementation("io.quarkus:quarkus-hibernate-validator")
