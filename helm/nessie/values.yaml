@@ -12,7 +12,12 @@ image:
   # -- The path to the directory where the application.properties file should be mounted.
   configDir: /deployments/config
 
-# -- The default logging level for the nessie server.
+# -- The minimum log level for the Nessie server. If you need to debug Nessie, set this to DEBUG,
+# then add the following to the advancedConfig section:
+# `quarkus.log.category."<logger>".level: DEBUG`
+# where `<logger>` is the logger you want to debug. E.g. to debug issues with the Nessie
+# configuration, add:
+# `quarkus.log.category."io.smallrye.config".level: DEBUG`
 logLevel: INFO
 
 # -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE.

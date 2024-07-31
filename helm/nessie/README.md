@@ -204,7 +204,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | livenessProbe.successThreshold | int | `1` | Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1. |
 | livenessProbe.terminationGracePeriodSeconds | int | `30` | Optional duration in seconds the pod needs to terminate gracefully upon probe failure. Minimum value is 1. |
 | livenessProbe.timeoutSeconds | int | `10` | Number of seconds after which the probe times out. Minimum value is 1. |
-| logLevel | string | `"INFO"` | The default logging level for the nessie server. |
+| logLevel | string | `"INFO"` | The minimum log level for the Nessie server. If you need to debug Nessie, set this to DEBUG, then add the following to the advancedConfig section: `quarkus.log.category."<logger>".level: DEBUG` where `<logger>` is the logger you want to debug. E.g. to debug issues with the Nessie configuration, add: `quarkus.log.category."io.smallrye.config".level: DEBUG` |
 | metrics.enabled | bool | `true` | Specifies whether metrics for the nessie server should be enabled. |
 | metrics.tags | object | `{}` | Additional tags (dimensional labels) to add to the metrics. |
 | mongodb.connectionString | string | `"mongodb://localhost:27017"` | The MongoDB connection string. |
