@@ -74,7 +74,7 @@ public class JsonPretty {
         case DUMMY:
         case INVALID:
           break;
-          //
+        //
         case OPEN_BRACKET:
         case OPEN_BRACE:
           print(t, STYLE_BRACKET_BRACE);
@@ -108,7 +108,7 @@ public class JsonPretty {
         case STRING_LITERAL:
           print(t, STYLE_STRING);
           break;
-          //
+        //
         case SINGLE_LINE_COMMENT:
         case MULTI_LINE_COMMENT:
         case WHITESPACE:

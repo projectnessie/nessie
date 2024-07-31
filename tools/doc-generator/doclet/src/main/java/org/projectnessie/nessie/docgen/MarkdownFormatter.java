@@ -539,7 +539,7 @@ public abstract class MarkdownFormatter {
           // Attribute of an HTML tag
           break;
 
-          // "block" tags
+        // "block" tags
         case AUTHOR:
         case DEPRECATED:
         case EXCEPTION:
