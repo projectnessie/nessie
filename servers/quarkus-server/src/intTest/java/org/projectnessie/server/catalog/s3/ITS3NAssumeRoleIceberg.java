@@ -15,14 +15,13 @@
  */
 package org.projectnessie.server.catalog.s3;
 
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.common.ResourceArg;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
+@WithTestResource(
     initArgs = {@ResourceArg(name = "scheme", value = "s3n")},
     value = MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest

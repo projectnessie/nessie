@@ -17,7 +17,7 @@ package org.projectnessie.server.catalog.s3;
 
 import static java.util.Collections.singletonMap;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -32,9 +32,7 @@ import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = MinioTestResourceLifecycleManager.class)
+@WithTestResource(MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3AssumeRoleIcebergCatalog.Profile.class)
 public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests {

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.server.catalog.auth;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import java.net.URI;
@@ -31,12 +31,8 @@ import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.projectnessie.testing.keycloak.OAuthUtils;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = MinioTestResourceLifecycleManager.class)
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = KeycloakTestResourceLifecycleManager.class)
+@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(KeycloakTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITOAuthTrinoS3.Profile.class)
 public class ITOAuthTrinoS3 extends AbstractTrino {

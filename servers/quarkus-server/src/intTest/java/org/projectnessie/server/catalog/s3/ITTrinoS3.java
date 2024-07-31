@@ -15,15 +15,13 @@
  */
 package org.projectnessie.server.catalog.s3;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.server.catalog.AbstractTrino;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = MinioTestResourceLifecycleManager.class)
+@WithTestResource(MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITTrinoS3.Profile.class)
 public class ITTrinoS3 extends AbstractTrino {

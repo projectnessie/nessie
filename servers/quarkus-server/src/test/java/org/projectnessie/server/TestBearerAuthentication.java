@@ -17,7 +17,7 @@ package org.projectnessie.server;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -27,7 +27,7 @@ import java.util.Map;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusTest
-@QuarkusTestResource(OidcWiremockTestResource.class)
+@WithTestResource(OidcWiremockTestResource.class)
 @TestProfile(value = TestBearerAuthentication.Profile.class)
 public class TestBearerAuthentication extends AbstractBearerAuthentication {
 

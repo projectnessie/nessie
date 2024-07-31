@@ -19,7 +19,7 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
@@ -43,9 +43,7 @@ import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleMa
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AssumeRoleHandlerHolder;
 import org.projectnessie.server.catalog.S3UnitTestProfiles;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = ObjectStorageMockTestResourceLifecycleManager.class)
+@WithTestResource(ObjectStorageMockTestResourceLifecycleManager.class)
 @QuarkusTest
 @TestProfile(TestVendedS3CredentialsExpiry.Profile.class)
 public class TestVendedS3CredentialsExpiry {
