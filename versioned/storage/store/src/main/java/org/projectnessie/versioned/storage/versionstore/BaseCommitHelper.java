@@ -499,7 +499,7 @@ class BaseCommitHelper {
                         ? ConflictResolution.ADD
                         : ConflictResolution.DROP;
                   }
-                  // fall through
+                // fall through
                 case NORMAL:
                   keyDetailsMap.put(
                       key, keyDetails(mergeBehavior, commitConflictToConflict(conflict)));

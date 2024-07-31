@@ -299,7 +299,7 @@ public class ExportRepository extends BaseCommand {
           dot = false;
           break;
         case COMMIT_WRITTEN:
-          // GENERIC_WRITTEN isn't actually "produced", but adding the value here for posterity.
+        // GENERIC_WRITTEN isn't actually "produced", but adding the value here for posterity.
         case GENERIC_WRITTEN:
         case NAMED_REFERENCE_WRITTEN:
           count++;
