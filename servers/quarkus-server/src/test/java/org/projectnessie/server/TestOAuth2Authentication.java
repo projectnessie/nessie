@@ -27,7 +27,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -53,7 +53,7 @@ import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @SuppressWarnings("resource")
 @QuarkusTest
-@QuarkusTestResource(OidcWiremockTestResource.class)
+@WithTestResource(OidcWiremockTestResource.class)
 @TestProfile(value = TestOAuth2Authentication.Profile.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestOAuth2Authentication extends AbstractOAuth2Authentication {

@@ -17,7 +17,7 @@ package org.projectnessie.server.catalog.gcs;
 
 import static java.util.UUID.randomUUID;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
 import java.util.Map;
@@ -27,9 +27,7 @@ import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.GcsToken;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = GcsEmulatorTestResourceLifecycleManager.class)
+@WithTestResource(GcsEmulatorTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 public class ITGcsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 

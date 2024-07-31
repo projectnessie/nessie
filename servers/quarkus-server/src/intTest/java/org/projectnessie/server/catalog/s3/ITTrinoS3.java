@@ -18,7 +18,7 @@ package org.projectnessie.server.catalog.s3;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.net.URI;
 import java.util.Map;
@@ -31,9 +31,7 @@ import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.WarehouseLocation;
 import org.testcontainers.Testcontainers;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = MinioTestResourceLifecycleManager.class)
+@WithTestResource(MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 public class ITTrinoS3 {
   static TrinoContainer trinoContainer;

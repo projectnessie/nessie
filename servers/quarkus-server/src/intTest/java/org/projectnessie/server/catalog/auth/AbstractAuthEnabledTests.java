@@ -19,7 +19,7 @@ import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLife
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.bucketWarehouseLocation;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -44,10 +44,7 @@ import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleMan
 import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    parallel = true,
-    value = KeycloakTestResourceLifecycleManager.class)
+@WithTestResource(parallel = true, value = KeycloakTestResourceLifecycleManager.class)
 public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTests {
 
   @KeycloakTokenEndpointUri protected URI tokenEndpoint;

@@ -18,7 +18,7 @@ package org.projectnessie.server.catalog.s3;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -42,9 +42,7 @@ import org.projectnessie.server.catalog.Catalogs;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = MinioTestResourceLifecycleManager.class)
+@WithTestResource(MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3VendedAssumeRoleIcebergCatalog.Profile.class)
 public class ITS3VendedAssumeRoleIcebergCatalog {

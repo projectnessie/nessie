@@ -16,7 +16,7 @@
 package org.projectnessie.server.catalog.s3;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -37,9 +37,7 @@ import org.projectnessie.objectstoragemock.sts.ImmutableRoleUser;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AssumeRoleHandlerHolder;
 
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = ObjectStorageMockTestResourceLifecycleManager.class)
+@WithTestResource(ObjectStorageMockTestResourceLifecycleManager.class)
 @QuarkusTest
 @TestProfile(TestVendedS3CredentialsExpiry.Profile.class)
 public class TestVendedS3CredentialsExpiry {
