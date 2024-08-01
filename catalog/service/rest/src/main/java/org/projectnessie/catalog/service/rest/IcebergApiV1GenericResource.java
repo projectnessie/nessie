@@ -70,7 +70,6 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   /** Exposes the Iceberg REST configuration for the Nessie default branch. */
   @GET
   @Path("/v1/config")
-  @PermitAll
   public IcebergConfigResponse getConfig(@QueryParam("warehouse") String warehouse) {
     return getConfig(null, warehouse);
   }
@@ -81,7 +80,6 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
    */
   @GET
   @Path("{reference}/v1/config")
-  @PermitAll
   public IcebergConfigResponse getConfig(
       @PathParam("reference") String reference, @QueryParam("warehouse") String warehouse) {
     return IcebergConfigResponse.builder()
