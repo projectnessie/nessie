@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Declare the `contentType` variable for CEL Authorization rules.
+
 ### Commits
 
 ## [0.94.3] Release (2024-07-29)

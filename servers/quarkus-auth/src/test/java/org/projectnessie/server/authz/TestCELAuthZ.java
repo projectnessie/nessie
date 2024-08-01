@@ -51,12 +51,8 @@ public class TestCELAuthZ {
   @Test
   public void addsViewAllRefsRule() throws ScriptException {
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(buildConfig(true));
-    soft.assertThat(rules.getRules())
-        .hasSize(4)
-        .containsKey("foo")
-        .containsKey("bar")
-        .containsKey("baz")
-        .containsKey("__ALLOW_VIEWING_REF_ID");
+    soft.assertThat(rules.getRules().keySet())
+        .containsExactlyInAnyOrder("foo", "bar", "baz", "contentType", "__ALLOW_VIEWING_REF_ID");
 
     soft.assertThat(
             rules
@@ -184,7 +180,16 @@ public class TestCELAuthZ {
 
       @Override
       public Map<String, String> rules() {
-        return Map.of("foo", "false", "bar", "'bar' in roles", "baz", "role=='baz'");
+        return Map.of(
+            "foo",
+            "false",
+            "bar",
+            "'bar' in roles",
+            "baz",
+            "role=='baz'",
+            "contentType",
+            "op in ['READ_CONTENT_KEY', 'READ_ENTITY_VALUE', 'CREATE_ENTITY', 'UPDATE_ENTITY', 'DELETE_ENTITY'] "
+                + "&& contentType=='foo'");
       }
     };
   }

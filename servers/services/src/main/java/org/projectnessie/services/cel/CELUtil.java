@@ -51,6 +51,7 @@ public final class CELUtil {
   public static final String VAR_ROLES = "roles";
   public static final String VAR_OP = "op";
   public static final String VAR_OPERATIONS = "operations";
+  public static final String VAR_CONTENT_TYPE = "contentType";
 
   public static final List<Decl> REFERENCES_DECLARATIONS =
       ImmutableList.of(
@@ -78,6 +79,7 @@ public final class CELUtil {
       ImmutableList.of(
           Decls.newVar(VAR_REF, Decls.String),
           Decls.newVar(VAR_PATH, Decls.String),
+          Decls.newVar(VAR_CONTENT_TYPE, Decls.String),
           Decls.newVar(VAR_ROLE, Decls.String),
           Decls.newVar(VAR_ROLES, Decls.newListType(Decls.String)),
           Decls.newVar(VAR_OP, Decls.String));
