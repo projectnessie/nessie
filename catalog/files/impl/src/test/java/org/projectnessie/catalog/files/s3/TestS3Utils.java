@@ -17,6 +17,7 @@ package org.projectnessie.catalog.files.s3;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.net.URI;
 import java.util.Optional;
@@ -28,6 +29,17 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class TestS3Utils {
+
+  @ParameterizedTest
+  @MethodSource
+  void iamEscapeString(String input, String expected) {
+    assertThat(S3Utils.iamEscapeString(input)).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> iamEscapeString() {
+    return Stream.of(
+        arguments("Hello*world$anybody?there{here}", "Hello${*}world${$}anybody${?}there{here}"));
+  }
 
   @ParameterizedTest
   @MethodSource
