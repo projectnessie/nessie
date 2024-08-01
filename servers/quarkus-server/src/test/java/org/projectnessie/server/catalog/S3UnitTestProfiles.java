@@ -27,21 +27,21 @@ import java.util.Map;
 
 public abstract class S3UnitTestProfiles implements QuarkusTestProfile {
 
-  public static final class S3UnitTestProfile extends S3UnitTestProfiles {
+  public static class S3UnitTestProfile extends S3UnitTestProfiles {
     @Override
     protected String scheme() {
       return "s3";
     }
   }
 
-  public static final class S3AUnitTestProfile extends S3UnitTestProfiles {
+  public static class S3AUnitTestProfile extends S3UnitTestProfiles {
     @Override
     protected String scheme() {
       return "s3a";
     }
   }
 
-  public static final class S3NUnitTestProfile extends S3UnitTestProfiles {
+  public static class S3NUnitTestProfile extends S3UnitTestProfiles {
     @Override
     protected String scheme() {
       return "s3n";
