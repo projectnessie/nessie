@@ -19,7 +19,6 @@ import org.gradle.kotlin.dsl.support.unzipTo
 plugins { id("nessie-common-base") }
 
 val licenseReports by configurations.creating { description = "Used to reference license reports" }
-val notice by configurations.creating { description = "Used to reference the NOTICE file" }
 
 dependencies {
   licenseReports(nessieProject("nessie-quarkus", "licenseReports"))
@@ -27,7 +26,6 @@ dependencies {
   licenseReports(nessieProject("nessie-gc-tool", "licenseReports"))
   licenseReports(nessieProject("nessie-content-generator", "licenseReports"))
   licenseReports(nessieProject("nessie-cli", "licenseReports"))
-  notice(nessieProject("nessie-notice"))
   rootProject.subprojects
     .filter { p -> p.name.startsWith("nessie-spark-extensions-3") }
     .forEach { p -> licenseReports(nessieProject(p.path.substring(1), "licenseReports")) }
@@ -56,9 +54,9 @@ val aggregateLicenseReports by
 val aggregatedLicenseReportsZip by
   tasks.registering(Zip::class) {
     from(aggregateLicenseReports)
-    from(provider { zipTree(notice.singleFile) }) {
-      include("META-INF/resources/NOTICE.txt")
-      eachFile { path = "NOTICE.txt" }
+    from(rootProject.layout.projectDirectory) {
+      include("NOTICE", "LICENSE")
+      eachFile { path = file.name + ".txt" }
     }
     archiveExtension.set("zip")
   }

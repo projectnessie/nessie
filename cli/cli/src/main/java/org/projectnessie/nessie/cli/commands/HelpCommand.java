@@ -76,9 +76,18 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
   }
 
   private static Stream<String> licenseInfo() {
-    Stream<String> heading = Stream.of("", "Nessie 3rd party licenses NOTICE", "");
-    return Stream.concat(
-        heading, Arrays.stream(fetchResource("META-INF/resources/NOTICE.txt").split("\n")));
+    Stream<String> lines = Stream.of("", "Nessie LICENSE", "==============", "");
+
+    lines =
+        Stream.concat(
+            lines, Arrays.stream(fetchResource("META-INF/resources/LICENSE.txt").split("\n")));
+
+    lines = Stream.concat(lines, Stream.of("", "", "Nessie NOTICE", "=============", ""));
+    lines =
+        Stream.concat(
+            lines, Arrays.stream(fetchResource("META-INF/resources/NOTICE.txt").split("\n")));
+
+    return lines;
   }
 
   private static Stream<String> listAll(BaseNessieCli cli, List<CommandType> matches) {

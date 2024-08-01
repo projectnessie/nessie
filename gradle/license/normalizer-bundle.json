@@ -1,6 +1,6 @@
 {
   "bundles" : [
-    { "bundleName" : "apache2", "licenseName" : "Apache Software License, Version 2.0", "licenseUrl" : "http://www.apache.org/licenses/LICENSE-2.0" },
+    { "bundleName" : "apache2", "licenseName" : "Apache License, Version 2.0", "licenseUrl" : "http://www.apache.org/licenses/LICENSE-2.0" },
     { "bundleName" : "bsd2", "licenseName" : "BSD-2-Clause", "licenseUrl" : "http://opensource.org/licenses/BSD-2-Clause" },
     { "bundleName" : "bsd3", "licenseName" : "BSD-3-Clause", "licenseUrl" : "http://opensource.org/licenses/BSD-3-Clause" },
     { "bundleName" : "cc0", "licenseName" : "Creative Commons 1.0 Universal", "licenseUrl" : "http://creativecommons.org/publicdomain/zero/1.0/" },
@@ -22,6 +22,7 @@
     { "bundleName" : "apache2", "licenseUrlPattern" : "https?://opensource.org/licenses/Apache-2.0" },
     { "bundleName" : "apache2", "licenseUrlPattern" : "https?://repository.jboss.org/licenses/apache-2.0.*" },
     { "bundleName" : "apache2", "licenseUrlPattern" : "https?://aws.amazon.com/apache2.0" },
+    { "bundleName" : "apache2", "licenseNamePattern" : "Apache License 2.0" },
 
     { "bundleName" : "bsd2", "licenseUrlPattern" : "https?://www.opensource.org/licenses/bsd-license.php" },
     { "bundleName" : "bsd2", "licenseUrlPattern" : "https?://opensource.org/licenses/BSD-2-Clause" },
