@@ -16,9 +16,16 @@
 package org.projectnessie.catalog.files.s3;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.projectnessie.catalog.files.s3.S3Utils.iamEscapeString;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
@@ -28,17 +35,22 @@ import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.nessie.immutables.NessieImmutable;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -52,6 +64,8 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 public class S3SessionsManager {
   public static final String CLIENTS_CACHE_NAME = "sts-clients";
   public static final String SESSIONS_CACHE_NAME = "sts-sessions";
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private final Cache<StsClientKey, StsClient> clients;
   private final LoadingCache<SessionKey, Credentials> sessions;
@@ -210,6 +224,118 @@ public class S3SessionsManager {
 
     AssumeRoleResponse response = client.assumeRole(request.build());
     return response.credentials();
+  }
+
+  public static String locationDependentPolicy(
+      StorageLocations locations, Optional<List<String>> clientIamStatements) {
+
+    // See https://docs.aws.amazon.com/AmazonS3/latest/userguide/security_iam_service-with-iam.html
+    // See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html
+    // See https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html
+
+    // Add necessary "Allow" statements for the given location. Use Jackson's mechanics here to
+    // benefit from its proper JSON value escaping.
+
+    ObjectNode policy = JsonNodeFactory.instance.objectNode();
+    policy.put("Version", "2012-10-17");
+
+    ArrayNode statements = policy.withArray("Statement");
+
+    // "Allow" for the special 's3:listBucket' case, must be applied on the bucket, not the path.
+    for (Iterator<StorageUri> locationIter =
+            Stream.concat(
+                    locations.writeableLocations().stream(), locations.readonlyLocations().stream())
+                .iterator();
+        locationIter.hasNext(); ) {
+      StorageUri location = locationIter.next();
+      String bucket = iamEscapeString(location.requiredAuthority());
+      String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
+
+      ObjectNode statement = statements.addObject();
+      statement.put("Effect", "Allow");
+      statement.put("Action", "s3:ListBucket");
+      statement.put("Resource", format("arn:aws:s3:::%s", bucket));
+      ObjectNode condition = statement.withObject("Condition");
+      ObjectNode stringLike = condition.withObject("StringLike");
+      ArrayNode s3Prefix = stringLike.withArray("s3:prefix");
+      s3Prefix.add(path);
+      s3Prefix.add(path + "/*");
+      // For write.object-storage.enabled=true
+      s3Prefix.add("*/" + path);
+      s3Prefix.add("*/" + path + "/*");
+    }
+
+    // "Allow Write" for all remaining S3 actions on the bucket+path.
+    List<StorageUri> writeable = locations.writeableLocations();
+    if (!writeable.isEmpty()) {
+      ObjectNode statement = statements.addObject();
+      statement.put("Effect", "Allow");
+      ArrayNode actions = statement.putArray("Action");
+      actions.add("s3:GetObject");
+      actions.add("s3:GetObjectVersion");
+      actions.add("s3:PutObject");
+      actions.add("s3:DeleteObject");
+      ArrayNode resources = statement.withArray("Resource");
+      for (StorageUri location : writeable) {
+        String bucket = iamEscapeString(location.requiredAuthority());
+        String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
+        resources.add(format("arn:aws:s3:::%s/%s/*", bucket, path));
+        // For write.object-storage.enabled=true
+        resources.add(format("arn:aws:s3:::%s/*/%s/*", bucket, path));
+      }
+    }
+
+    // "Allow read" for all remaining S3 actions on the bucket+path.
+    List<StorageUri> readonly = locations.readonlyLocations();
+    if (!readonly.isEmpty()) {
+      ObjectNode statement = statements.addObject();
+      statement.put("Effect", "Allow");
+      ArrayNode actions = statement.putArray("Action");
+      actions.add("s3:GetObject");
+      actions.add("s3:GetObjectVersion");
+      ArrayNode resources = statement.withArray("Resource");
+      for (StorageUri location : readonly) {
+        String bucket = iamEscapeString(location.requiredAuthority());
+        String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
+        resources.add(format("arn:aws:s3:::%s%s/*", bucket, path));
+        // For write.object-storage.enabled=true
+        resources.add(format("arn:aws:s3:::%s/*/%s/*", bucket, path));
+      }
+    }
+
+    // Add custom statements
+    clientIamStatements.ifPresent(
+        stmts -> stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
+
+    return policy.toString();
+  }
+
+  static class ParsedIamStatements {
+    static final LoadingCache<String, ObjectNode> STATEMENTS =
+        Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterAccess(Duration.of(1, ChronoUnit.HOURS))
+            .build(ParsedIamStatements::parseStatement);
+
+    private static ObjectNode parseStatement(String stmt) {
+      try (MappingIterator<Object> values = MAPPER.readerFor(ObjectNode.class).readValues(stmt)) {
+        ObjectNode node = null;
+        if (values.hasNext()) {
+          Object value = values.nextValue();
+          if (value instanceof ObjectNode) {
+            node = (ObjectNode) value;
+          } else {
+            throw new IOException("Invalid statement");
+          }
+        }
+        if (values.hasNext()) {
+          throw new IOException("Invalid statement");
+        }
+        return node;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   Credentials sessionCredentialsForServer(String repositoryId, S3BucketOptions options) {
