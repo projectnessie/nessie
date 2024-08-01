@@ -137,6 +137,20 @@ public class StorageUri implements Comparable<StorageUri> {
     return Preconditions.checkNotNull(path, "Missing required path in storage location: %s", this);
   }
 
+  public String pathWithoutLeadingTrailingSlash() {
+    String p = path;
+    if (p == null) {
+      return "";
+    }
+    if (p.startsWith("/")) {
+      p = p.length() == 1 ? "" : p.substring(1);
+    }
+    if (p.endsWith("/")) {
+      p = p.substring(0, p.length() - 1);
+    }
+    return p;
+  }
+
   public boolean isAbsolute() {
     return scheme != null;
   }
