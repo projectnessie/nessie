@@ -115,7 +115,7 @@ public class S3Clients {
     return httpClient.buildWithDefaults(options.build());
   }
 
-  public static AwsCredentialsProvider awsCredentialsProvider(
+  public static AwsCredentialsProvider serverCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
     return bucketOptions.assumeRole().isPresent()
         ? sessions.assumeRoleForServer(bucketOptions)

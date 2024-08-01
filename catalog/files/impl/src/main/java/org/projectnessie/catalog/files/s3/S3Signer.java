@@ -71,7 +71,7 @@ public class S3Signer implements RequestSigner {
     S3BucketOptions bucketOptions =
         s3Options.effectiveOptionsForBucket(clientRequest.bucket(), secretsProvider);
     AwsCredentialsProvider credentialsProvider =
-        S3Clients.awsCredentialsProvider(bucketOptions, s3sessions);
+        S3Clients.serverCredentialsProvider(bucketOptions, s3sessions);
     AwsCredentialsIdentity credentials = credentialsProvider.resolveCredentials();
 
     SignRequest.Builder<AwsCredentialsIdentity> signRequest =

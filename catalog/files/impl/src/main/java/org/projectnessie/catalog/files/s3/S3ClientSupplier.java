@@ -16,7 +16,7 @@
 package org.projectnessie.catalog.files.s3;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.projectnessie.catalog.files.s3.S3Clients.awsCredentialsProvider;
+import static org.projectnessie.catalog.files.s3.S3Clients.serverCredentialsProvider;
 import static org.projectnessie.catalog.files.s3.S3Utils.isS3scheme;
 
 import java.io.InputStream;
@@ -84,7 +84,7 @@ public class S3ClientSupplier {
     S3ClientBuilder builder =
         S3Client.builder()
             .httpClient(sdkClient)
-            .credentialsProvider(awsCredentialsProvider(bucketOptions, sessions))
+            .credentialsProvider(serverCredentialsProvider(bucketOptions, sessions))
             .overrideConfiguration(
                 override -> override.defaultProfileFileSupplier(() -> EMPTY_PROFILE_FILE))
             .serviceConfiguration(
