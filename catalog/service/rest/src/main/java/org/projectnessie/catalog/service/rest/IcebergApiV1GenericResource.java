@@ -88,6 +88,24 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
+  @GET
+  @Path("/v1-clients/trino")
+  @Produces(MediaType.TEXT_PLAIN)
+  public Response getTrinoConfig(
+      @QueryParam("warehouse") String warehouse, @QueryParam("format") String format) {
+    return getTrinoConfig(null, warehouse, format);
+  }
+
+  @GET
+  @Path("{reference}/v1-clients/trino")
+  @Produces(MediaType.WILDCARD)
+  public Response getTrinoConfig(
+      @PathParam("reference") String reference,
+      @QueryParam("warehouse") String warehouse,
+      @QueryParam("format") String format) {
+    return icebergConfigurer.trinoConfig(reference, warehouse, format);
+  }
+
   @POST
   @Path("/v1/oauth/tokens")
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)

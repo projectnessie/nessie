@@ -36,6 +36,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-client"))
   implementation(project(":nessie-services-config"))
+  compileOnly(libs.smallrye.config.core)
 
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))
