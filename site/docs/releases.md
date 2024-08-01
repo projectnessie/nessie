@@ -2,6 +2,23 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.94.4 Release (August 01, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.4).
+
+### New Features
+
+- Helm chart: liveness and readiness probes are now configurable via the `livenessProbe` and 
+  `readinessProbe` Helm values.
+
+### Commits
+* Replace deprecated quarkus properies (#9235)
+* Fix NPE, will NPE w/ Quarkus 3.13.0 (#9233)
+* Replace `quarkus-resteasy-reactive` with `quarkus-rest` (#9234)
+* Helm chart: better document the purpose of the logLevel option (#9223)
+* Gradle wrapper - download and verify (#9221)
+* Fix legit scale=0 (#9214)
+
 ## 0.94.3 Release (July 29, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.3).
