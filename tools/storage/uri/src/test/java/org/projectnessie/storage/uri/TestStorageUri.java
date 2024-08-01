@@ -54,6 +54,19 @@ class TestStorageUri {
   }
 
   @Test
+  public void testPathWithoutLeadingTrailingSlash() {
+    soft.assertThat(StorageUri.of("s3://foo/bar/baz"))
+        .extracting(StorageUri::path, StorageUri::pathWithoutLeadingTrailingSlash)
+        .containsExactly("/bar/baz", "bar/baz");
+    soft.assertThat(StorageUri.of("s3://foo/bar/baz/"))
+        .extracting(StorageUri::path, StorageUri::pathWithoutLeadingTrailingSlash)
+        .containsExactly("/bar/baz/", "bar/baz");
+    soft.assertThat(StorageUri.of("s3://foo/"))
+        .extracting(StorageUri::path, StorageUri::pathWithoutLeadingTrailingSlash)
+        .containsExactly("/", "");
+  }
+
+  @Test
   void testScheme() {
     soft.assertThat(StorageUri.of("/path/to/file").scheme()).isNull();
     soft.assertThat(StorageUri.of("relative/to/file").scheme()).isNull();
