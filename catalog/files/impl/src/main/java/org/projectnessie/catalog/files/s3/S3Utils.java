@@ -117,4 +117,24 @@ public final class S3Utils {
     }
     return "s3://" + bucket + key;
   }
+
+  public static String iamEscapeString(String s) {
+    // See
+    // https://steampipe.io/blog/aws-iam-policy-wildcards-reference#bonus-how-to-escape-special-characters
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      switch (c) {
+        case '*':
+        case '?':
+        case '$':
+          sb.append("${").append(c).append('}');
+          break;
+        default:
+          sb.append(c);
+          break;
+      }
+    }
+    return sb.toString();
+  }
 }
