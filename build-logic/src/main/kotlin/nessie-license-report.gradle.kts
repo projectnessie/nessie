@@ -32,7 +32,7 @@ afterEvaluate {
           "${rootProject.projectDir}/gradle/license/normalizer-bundle.json",
           false
         ),
-        NoticeReportValidation()
+        LicenseFileValidation()
       )
     allowedLicensesFile = rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
     renderers =
@@ -86,3 +86,5 @@ plugins.withType<MavenPublishPlugin>().configureEach {
     publications { named<MavenPublication>("maven") { artifact(licenseReportZip) } }
   }
 }
+
+tasks.named("check") { dependsOn(generateLicenseReport) }

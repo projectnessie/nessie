@@ -39,11 +39,24 @@ public class ThirdPartyLicenses implements Callable<Integer> {
     PrintWriter out = commandSpec.commandLine().getOut();
 
     out.println();
-    out.println("Nessie 3rd party licenses NOTICE");
+    out.println("Nessie LICENSE");
+    out.println("==============");
     out.println();
 
     URL url =
-        ThirdPartyLicenses.class.getClassLoader().getResource("META-INF/resources/NOTICE.txt");
+        ThirdPartyLicenses.class.getClassLoader().getResource("META-INF/resources/LICENSE.txt");
+    try (InputStream in = requireNonNull(url).openConnection().getInputStream()) {
+      out.print(new String(in.readAllBytes(), UTF_8));
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to load resource " + url, e);
+    }
+
+    out.println();
+    out.println("Nessie NOTICE");
+    out.println("=============");
+    out.println();
+
+    url = ThirdPartyLicenses.class.getClassLoader().getResource("META-INF/resources/NOTICE.txt");
     try (InputStream in = requireNonNull(url).openConnection().getInputStream()) {
       out.print(new String(in.readAllBytes(), UTF_8));
     } catch (IOException e) {

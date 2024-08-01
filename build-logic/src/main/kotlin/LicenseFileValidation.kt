@@ -22,12 +22,12 @@ import org.gradle.api.GradleException
 
 /**
  * Validates that all dependencies with MIT/BSD/Go/UPL/ISC licenses, which do not have an Apache
- * license, are mentioned in the `NOTICE` file.
+ * license, are mentioned in the `LICENSE` file.
  */
-class NoticeReportValidation : DependencyFilter {
-  fun needsNoNotice(license: String?): Boolean = license != null && (license.contains("Apache"))
+class LicenseFileValidation : DependencyFilter {
+  fun needsNoMention(license: String?): Boolean = license != null && (license.contains("Apache"))
 
-  fun needsNotice(license: String?): Boolean =
+  fun needsMention(license: String?): Boolean =
     license != null &&
       (license.contains("MIT") ||
         license.contains("BSD") ||
@@ -38,7 +38,7 @@ class NoticeReportValidation : DependencyFilter {
   override fun filter(data: ProjectData?): ProjectData {
     data!!
 
-    val rootNoticeFile = data.project.rootProject.file("NOTICE").readText()
+    val rootNoticeFile = data.project.rootProject.file("LICENSE").readText()
 
     val licenseReport = data.project.extensions.getByType(LicenseReportExtension::class.java)
 
@@ -51,7 +51,7 @@ class NoticeReportValidation : DependencyFilter {
             mod.poms.flatMap { it.licenses }.map { it.name })
           .distinct()
 
-      if (!licenses.any { needsNoNotice(it) } && licenses.any { needsNotice(it) }) {
+      if (!licenses.any { needsNoMention(it) } && licenses.any { needsMention(it) }) {
         val groupModule = "${mod.group}:${mod.name}"
         if (!rootNoticeFile.contains(groupModule)) {
           missing.put(
@@ -75,7 +75,7 @@ class NoticeReportValidation : DependencyFilter {
 
     if (!missing.isEmpty()) {
       throw GradleException(
-        "License information for the following artifacts is missing in the root NOTICE file: ${missing.map { it.value }.joinToString("\n")}"
+        "License information for the following artifacts is missing in the root LICENSE file: ${missing.map { it.value }.joinToString("\n")}"
       )
     }
 

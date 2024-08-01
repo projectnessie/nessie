@@ -21,22 +21,21 @@ plugins {
   id("nessie-common-base")
 }
 
-publishingHelper { mavenName = "Nessie - NOTICE file" }
+publishingHelper { mavenName = "Nessie - NOTICE + LICENSE files" }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 val noticeDir = project.layout.buildDirectory.dir("notice")
 
-val includeNoticeFile by
+val includeNoticeLicenseFiles by
   tasks.registering(Sync::class) {
     destinationDir = noticeDir.get().asFile
     from(rootProject.projectDir) {
-      into("META-INF/resources")
-      include("NOTICE")
-      rename { "NOTICE.txt" }
+      include("NOTICE", "LICENSE")
+      eachFile { path = "META-INF/resources/" + file.name + ".txt" }
     }
   }
 
 sourceSets.named("main") { resources.srcDir(noticeDir) }
 
-tasks.named("processResources") { dependsOn(includeNoticeFile) }
+tasks.named("processResources") { dependsOn(includeNoticeLicenseFiles) }
