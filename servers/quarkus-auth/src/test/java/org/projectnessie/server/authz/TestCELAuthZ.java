@@ -51,13 +51,8 @@ public class TestCELAuthZ {
   @Test
   public void addsViewAllRefsRule() throws ScriptException {
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(buildConfig(true));
-    soft.assertThat(rules.getRules())
-        .hasSize(5)
-        .containsKey("foo")
-        .containsKey("bar")
-        .containsKey("baz")
-        .containsKey("contentType")
-        .containsKey("__ALLOW_VIEWING_REF_ID");
+    soft.assertThat(rules.getRules().keySet())
+        .containsExactlyInAnyOrder("foo", "bar", "baz", "contentType", "__ALLOW_VIEWING_REF_ID");
 
     soft.assertThat(
             rules
