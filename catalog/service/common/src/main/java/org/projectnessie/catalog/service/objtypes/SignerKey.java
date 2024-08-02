@@ -16,13 +16,11 @@
 package org.projectnessie.catalog.service.objtypes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
-import java.util.Arrays;
 import javax.crypto.spec.SecretKeySpec;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
