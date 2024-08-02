@@ -10,6 +10,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Support for Java 8 has been removed, even for Nessie clients
+
 ### Breaking changes
 
 ### New Features

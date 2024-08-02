@@ -15,9 +15,8 @@
  */
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-java11")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 publishingHelper { mavenName = "Nessie - Catalog - REST Service" }
@@ -66,11 +65,4 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   testCompileOnly(libs.microprofile.openapi)
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

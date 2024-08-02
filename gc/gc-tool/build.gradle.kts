@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   id("com.github.johnrengelman.shadow")
-  id("nessie-conventions-iceberg")
+  id("nessie-conventions-java11")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
   id("nessie-license-report")

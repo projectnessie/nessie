@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// Java project using Apache Iceberg, Java 11
-
 plugins {
   `java-library`
   `maven-publish`

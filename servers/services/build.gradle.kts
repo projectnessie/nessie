@@ -17,7 +17,7 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  id("nessie-conventions-server8")
+  id("nessie-conventions-java11")
   id("nessie-jacoco")
 }
 
