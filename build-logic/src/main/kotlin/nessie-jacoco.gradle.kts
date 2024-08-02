@@ -25,8 +25,8 @@
  * and the dependent project's sources. (Note: this behavior is coded in Gradle's
  * `JacocoReportAggregationPlugin`.
  */
+import java.util.Locale
 import org.gradle.api.internal.lambdas.SerializableLambdas
-import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
@@ -67,11 +67,12 @@ testing {
       val extension = project.extensions.getByType(JacocoPluginExtension::class.java)
       targets.configureEach {
         val testTaskName = testTask.name
+        val testTaskNameCap =
+          testTaskName.replaceFirstChar {
+            if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+          }
         val reportTask =
-          project.tasks.register(
-            "jacoco${testTaskName.capitalized()}Report",
-            JacocoReport::class.java
-          )
+          project.tasks.register("jacoco${testTaskNameCap}Report", JacocoReport::class.java)
         reportTask.configure {
           group = LifecycleBasePlugin.VERIFICATION_GROUP
           description =
@@ -104,7 +105,7 @@ testing {
 
         val verification =
           project.tasks.register(
-            "jacoco${testTask.name.capitalized()}CoverageVerification",
+            "jacoco${testTaskNameCap}CoverageVerification",
             JacocoCoverageVerification::class.java
           )
         verification.configure {
