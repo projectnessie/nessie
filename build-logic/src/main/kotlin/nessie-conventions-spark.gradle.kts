@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Scala project, Java 8
+// Scala project, Java 11
 
 plugins {
   scala
@@ -27,12 +27,9 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach {
-  options.release = if (this.name == "compileJava") 8 else 11
-}
+tasks.withType<JavaCompile>().configureEach { options.release = 11 }
 
 tasks.withType<ScalaCompile>().configureEach {
-  val version = if (this.name == "compileScala") 8 else 11
-  options.release = version
-  scalaCompileOptions.additionalParameters.add("-release:$version")
+  options.release = 11
+  scalaCompileOptions.additionalParameters.add("-release:11")
 }
