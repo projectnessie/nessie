@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,7 +101,7 @@ public class TestSignerKeysServiceImpl {
   public void lifecycle() throws Exception {
     soft.assertThatThrownBy(() -> persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class))
         .isInstanceOf(ObjNotFoundException.class);
-    soft.assertThat(service.getSigningKey("foo")).isNull();
+    soft.assertThat(service.getSignerKey("foo")).isNull();
     soft.assertThatCode(() -> persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class))
         .doesNotThrowAnyException();
 
@@ -121,7 +122,7 @@ public class TestSignerKeysServiceImpl {
 
     // @ day 0
 
-    SignerKey key1 = service.currentSigningKey();
+    SignerKey key1 = service.currentSignerKey();
     soft.assertThat(key1)
         .isNotNull()
         .extracting(SignerKey::creationTime, SignerKey::rotationTime, SignerKey::expirationTime)
@@ -133,7 +134,7 @@ public class TestSignerKeysServiceImpl {
     // @ right before day 3
 
     clock.setInstant(day3.minus(1, MILLIS));
-    SignerKey key2 = service.currentSigningKey();
+    SignerKey key2 = service.currentSignerKey();
     soft.assertThat(key2).isEqualTo(key1);
     SignerKeysObj keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys().size()).isEqualTo(1);
@@ -142,7 +143,7 @@ public class TestSignerKeysServiceImpl {
     // @ day 3
 
     clock.setInstant(day3);
-    key2 = service.currentSigningKey();
+    key2 = service.currentSignerKey();
     soft.assertThat(key2).isNotEqualTo(key1);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key1, key2);
@@ -152,7 +153,7 @@ public class TestSignerKeysServiceImpl {
     // @ right before day 5
 
     clock.setInstant(day5.minus(1, MILLIS));
-    soft.assertThat(service.currentSigningKey()).isEqualTo(key2);
+    soft.assertThat(service.currentSignerKey()).isEqualTo(key2);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key1, key2);
     soft.assertThat(keys.getSignerKey(key1.name())).isEqualTo(key1);
@@ -161,7 +162,7 @@ public class TestSignerKeysServiceImpl {
     // @ day 5 (key1 is still there, because no write due to rotation happened)
 
     clock.setInstant(day5);
-    soft.assertThat(service.currentSigningKey()).isEqualTo(key2);
+    soft.assertThat(service.currentSignerKey()).isEqualTo(key2);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key1, key2);
     soft.assertThat(keys.getSignerKey(key1.name())).isEqualTo(key1);
@@ -170,7 +171,7 @@ public class TestSignerKeysServiceImpl {
     // @ day 6
 
     clock.setInstant(day6);
-    SignerKey key3 = service.currentSigningKey();
+    SignerKey key3 = service.currentSignerKey();
     soft.assertThat(key3).isNotEqualTo(key2).isNotEqualTo(key1);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key2, key3);
@@ -181,7 +182,7 @@ public class TestSignerKeysServiceImpl {
     // @ day 8
 
     clock.setInstant(day8);
-    soft.assertThat(service.currentSigningKey()).isEqualTo(key3);
+    soft.assertThat(service.currentSignerKey()).isEqualTo(key3);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key2, key3);
     soft.assertThat(keys.getSignerKey(key1.name())).isNull();
@@ -191,7 +192,7 @@ public class TestSignerKeysServiceImpl {
     // @ day 9
 
     clock.setInstant(day9);
-    SignerKey key4 = service.currentSigningKey();
+    SignerKey key4 = service.currentSignerKey();
     soft.assertThat(key4).isNotEqualTo(key3).isNotEqualTo(key2).isNotEqualTo(key1);
     keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
     soft.assertThat(keys.signerKeys()).containsExactly(key3, key4);
@@ -217,7 +218,7 @@ public class TestSignerKeysServiceImpl {
     soft.assertThatThrownBy(() -> persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class))
         .isInstanceOf(ObjNotFoundException.class);
 
-    SignerKey key = service.currentSigningKey();
+    SignerKey key = service.currentSignerKey();
     soft.assertThat(key).isNotNull();
 
     verify(service, times(2)).storeInitial(any());
@@ -230,7 +231,7 @@ public class TestSignerKeysServiceImpl {
     SignerKey raceKey =
         ImmutableSignerKey.of(
             "key-x",
-            "secret-key-data",
+            "01234567890123456789012345678901".getBytes(UTF_8),
             initialInstant,
             initialInstant.plus(NEW_KEY_ROTATE_AFTER),
             initialInstant.plus(NEW_KEY_EXPIRE_AFTER));
@@ -253,7 +254,7 @@ public class TestSignerKeysServiceImpl {
     soft.assertThatThrownBy(() -> persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class))
         .isInstanceOf(ObjNotFoundException.class);
 
-    SignerKey key = service.currentSigningKey();
+    SignerKey key = service.currentSignerKey();
     soft.assertThat(key).isEqualTo(raceKey);
 
     verify(service, times(1)).storeInitial(any());
@@ -261,7 +262,7 @@ public class TestSignerKeysServiceImpl {
 
   @Test
   public void rotateFailed() throws Exception {
-    SignerKey key1 = service.currentSigningKey();
+    SignerKey key1 = service.currentSignerKey();
     soft.assertThat(key1).isNotNull();
 
     // force a key rotation / call to updateKeys()
@@ -278,7 +279,7 @@ public class TestSignerKeysServiceImpl {
           return null;
         };
 
-    SignerKey key2 = service.currentSigningKey();
+    SignerKey key2 = service.currentSignerKey();
     soft.assertThat(key2).isNotEqualTo(key1);
 
     SignerKeysObj keys = persist.fetchTypedObj(OBJ_ID, OBJ_TYPE, SignerKeysObj.class);
@@ -289,7 +290,7 @@ public class TestSignerKeysServiceImpl {
 
   @Test
   public void rotateRace() throws Exception {
-    SignerKey key1 = service.currentSigningKey();
+    SignerKey key1 = service.currentSignerKey();
     soft.assertThat(key1).isNotNull();
 
     // force a key rotation / call to updateKeys()
@@ -303,7 +304,7 @@ public class TestSignerKeysServiceImpl {
     SignerKey raceKey =
         ImmutableSignerKey.of(
             "key-x",
-            "secret-key-data",
+            "01234567890123456789012345678901".getBytes(UTF_8),
             raceCreate,
             raceCreate.plus(NEW_KEY_ROTATE_AFTER),
             raceCreate.plus(NEW_KEY_EXPIRE_AFTER));
@@ -327,7 +328,7 @@ public class TestSignerKeysServiceImpl {
           return null;
         };
 
-    SignerKey key2 = service.currentSigningKey();
+    SignerKey key2 = service.currentSignerKey();
     soft.assertThat(key2).isNotEqualTo(key1).isEqualTo(raceKey);
 
     verify(service, times(1)).updateKeys(any(), any());

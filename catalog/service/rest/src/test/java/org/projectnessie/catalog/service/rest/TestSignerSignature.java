@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Clock.systemUTC;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
@@ -40,7 +41,7 @@ public class TestSignerSignature {
     SignerKey key =
         SignerKey.builder()
             .name("key")
-            .secretKey("secret-thing")
+            .secretKey("01234567890123456789012345678901".getBytes(UTF_8))
             .creationTime(now)
             .rotationTime(now.plus(3, DAYS))
             .expirationTime(now.plus(5, DAYS))

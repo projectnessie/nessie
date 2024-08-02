@@ -26,7 +26,6 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.projectnessie.catalog.service.api.SignerKeysService;
@@ -99,13 +98,12 @@ public class SignerKeysServiceImpl implements SignerKeysService {
     Instant rotation = now.plus(NEW_KEY_ROTATE_AFTER);
     Instant expires = now.plus(NEW_KEY_EXPIRE_AFTER);
 
-    byte[] secretBytes = new byte[32];
+    byte[] secretBytes = new byte[32]; // 256 bits for SHA256
     try {
       SecureRandom.getInstanceStrong().nextBytes(secretBytes);
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
-    String secretKey = Base64.getEncoder().encodeToString(secretBytes);
 
     ImmutableSignerKeysObj.Builder keys = ImmutableSignerKeysObj.builder();
     if (current != null) {
@@ -125,7 +123,7 @@ public class SignerKeysServiceImpl implements SignerKeysService {
     return keys.addSignerKey(
             SignerKey.builder()
                 .name(randomUUID().toString())
-                .secretKey(secretKey)
+                .secretKey(secretBytes)
                 .creationTime(now)
                 .rotationTime(rotation)
                 .expirationTime(expires)
@@ -134,20 +132,17 @@ public class SignerKeysServiceImpl implements SignerKeysService {
   }
 
   @Override
-  public SignerKey getSigningKey(String signingKey) {
+  public SignerKey getSignerKey(String signerKey) {
     SignerKeysObj keys = loadOrCreate();
-    return keys.getSignerKey(signingKey);
+    return keys.getSignerKey(signerKey);
   }
 
   @Override
-  public SignerKey currentSigningKey() {
+  public SignerKey currentSignerKey() {
     Instant now = clock.instant();
 
     while (true) {
       SignerKeysObj keys = loadOrCreate();
-      if (keys == null) {
-        keys = loadOrCreate();
-      }
 
       SignerKey current = keys.signerKeys().get(keys.signerKeys().size() - 1);
       if (current.rotationTime().compareTo(now) <= 0) {

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.objtypes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
@@ -45,7 +46,7 @@ public class TestSignerKey {
     SignerKey key =
         SignerKey.builder()
             .name("key")
-            .secretKey("secret-key")
+            .secretKey("01234567890123456789012345678901".getBytes(UTF_8))
             .creationTime(creation)
             .rotationTime(rotation)
             .expirationTime(expiration)
@@ -63,11 +64,13 @@ public class TestSignerKey {
     Instant rotation = creation.plus(1, DAYS);
     Instant expiration = rotation.plus(1, DAYS);
 
+    byte[] secretKey = "01234567890123456789012345678901".getBytes(UTF_8);
+
     return Stream.of(
         arguments(
             SignerKey.builder()
                 .name("key")
-                .secretKey("secret-key")
+                .secretKey(secretKey)
                 .creationTime(creation)
                 .rotationTime(creation)
                 .expirationTime(expiration),
@@ -75,7 +78,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("key")
-                .secretKey("secret-key")
+                .secretKey(secretKey)
                 .creationTime(rotation)
                 .rotationTime(creation)
                 .expirationTime(expiration),
@@ -83,7 +86,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("key")
-                .secretKey("secret-key")
+                .secretKey(secretKey)
                 .creationTime(creation)
                 .rotationTime(rotation)
                 .expirationTime(rotation),
@@ -91,7 +94,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("key")
-                .secretKey("secret-key")
+                .secretKey(secretKey)
                 .creationTime(creation)
                 .rotationTime(expiration)
                 .expirationTime(rotation),
@@ -99,7 +102,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("")
-                .secretKey("secret-key")
+                .secretKey(secretKey)
                 .creationTime(creation)
                 .rotationTime(rotation)
                 .expirationTime(expiration),
@@ -107,7 +110,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("name")
-                .secretKey("")
+                .secretKey("".getBytes(UTF_8))
                 .creationTime(creation)
                 .rotationTime(rotation)
                 .expirationTime(expiration),
@@ -115,7 +118,7 @@ public class TestSignerKey {
         arguments(
             SignerKey.builder()
                 .name("name")
-                .secretKey("1234567")
+                .secretKey("1234567".getBytes(UTF_8))
                 .creationTime(creation)
                 .rotationTime(rotation)
                 .expirationTime(expiration),

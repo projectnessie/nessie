@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.objtypes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -40,9 +41,27 @@ public class TestSignerKeysObj {
     Instant rotation = creation.plus(1, DAYS);
     Instant expiration = rotation.plus(1, DAYS);
 
-    SignerKey key1 = ImmutableSignerKey.of("key1", "secret-key-1", creation, rotation, expiration);
-    SignerKey key2 = ImmutableSignerKey.of("key2", "secret-key-2", creation, rotation, expiration);
-    SignerKey key3 = ImmutableSignerKey.of("key3", "secret-key-3", creation, rotation, expiration);
+    SignerKey key1 =
+        ImmutableSignerKey.of(
+            "key1",
+            "01234567890123456789012345678901".getBytes(UTF_8),
+            creation,
+            rotation,
+            expiration);
+    SignerKey key2 =
+        ImmutableSignerKey.of(
+            "key2",
+            "01234567890123456789012345678902".getBytes(UTF_8),
+            creation,
+            rotation,
+            expiration);
+    SignerKey key3 =
+        ImmutableSignerKey.of(
+            "key3",
+            "01234567890123456789012345678903".getBytes(UTF_8),
+            creation,
+            rotation,
+            expiration);
     SignerKeysObj signerKeys =
         SignerKeysObj.builder().versionToken("foo").addSignerKeys(key1, key2, key3).build();
 
@@ -63,8 +82,20 @@ public class TestSignerKeysObj {
     Instant rotation = creation.plus(1, DAYS);
     Instant expiration = rotation.plus(1, DAYS);
 
-    SignerKey key1 = ImmutableSignerKey.of("key1", "secret-key-1", creation, rotation, expiration);
-    SignerKey key1b = ImmutableSignerKey.of("key1", "secret-key-2", creation, rotation, expiration);
+    SignerKey key1 =
+        ImmutableSignerKey.of(
+            "key1",
+            "01234567890123456789012345678901".getBytes(UTF_8),
+            creation,
+            rotation,
+            expiration);
+    SignerKey key1b =
+        ImmutableSignerKey.of(
+            "key1",
+            "01234567890123456789012345678902".getBytes(UTF_8),
+            creation,
+            rotation,
+            expiration);
 
     return Stream.of(
         arguments(

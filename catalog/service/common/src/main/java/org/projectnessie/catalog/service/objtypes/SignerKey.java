@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
+import java.util.Arrays;
 import javax.crypto.spec.SecretKeySpec;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -32,7 +33,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 public interface SignerKey {
   String name();
 
-  String secretKey();
+  byte[] secretKey();
 
   Instant creationTime();
 
@@ -43,14 +44,17 @@ public interface SignerKey {
   @JsonIgnore
   @Value.Lazy
   default SecretKeySpec secretKeySpec() {
-    byte[] secretKeyBytes = ("NessieSign:" + secretKey()).getBytes(UTF_8);
+    int pre = "NessieSign:".length();
+    int keyLen = secretKey().length;
+    byte[] secretKeyBytes = Arrays.copyOf("NessieSign:".getBytes(UTF_8), pre + keyLen);
+    System.arraycopy(secretKey(), 0, secretKeyBytes, pre, keyLen);
     return new SecretKeySpec(secretKeyBytes, "hmacSha256");
   }
 
   @Value.Check
   default void check() {
     checkState(!name().isEmpty(), "Key name must not be empty");
-    checkState(secretKey().length() >= 8, "Secret key too short");
+    checkState(secretKey().length >= 32, "Secret key too short");
     checkState(
         creationTime().compareTo(rotationTime()) < 0, "creationTime must be before rotationTime");
     checkState(

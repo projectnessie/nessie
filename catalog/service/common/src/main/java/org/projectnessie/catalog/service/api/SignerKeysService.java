@@ -29,12 +29,12 @@ public interface SignerKeysService {
    * the implementation ensures that the returned key will not expire within "too soon" (usually a
    * few days or many hours).
    */
-  SignerKey currentSigningKey();
+  SignerKey currentSignerKey();
 
   /**
    * Retrieve a {@linkplain SignerKey signer key} by name, returns {@code null} if no such signer
    * key exists.
    */
   @Nullable
-  SignerKey getSigningKey(String signingKey);
+  SignerKey getSignerKey(String signerKey);
 }
