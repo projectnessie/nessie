@@ -32,4 +32,6 @@ tasks.withType<JavaCompile>().configureEach { options.release = 11 }
 tasks.withType<ScalaCompile>().configureEach {
   options.release = 11
   scalaCompileOptions.additionalParameters.add("-release:11")
+  sourceCompatibility = "11"
+  targetCompatibility = "11"
 }
