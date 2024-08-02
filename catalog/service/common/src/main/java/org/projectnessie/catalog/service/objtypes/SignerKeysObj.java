@@ -55,6 +55,12 @@ public interface SignerKeysObj extends UpdateableObj {
     return OBJ_TYPE;
   }
 
+  /**
+   * Signer keys in chronological order, most recent one at the end.
+   *
+   * <p>Implementation note: the whole {@link SignerKeysObj} object is deserialized from the persist
+   * cache for every access, so keeping a map does not help performance.
+   */
   List<SignerKey> signerKeys();
 
   @Value.NonAttribute

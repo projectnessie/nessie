@@ -72,7 +72,6 @@ public class SignerKeysServiceImpl implements SignerKeysService {
           if (storeInitial(signerKeys)) {
             break;
           }
-          persistSpinLoop();
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
@@ -80,12 +79,6 @@ public class SignerKeysServiceImpl implements SignerKeysService {
     }
 
     return signerKeys;
-  }
-
-  private static void persistSpinLoop() throws InterruptedException {
-    Thread.sleep(
-        ThreadLocalRandom.current()
-            .nextLong(SPIN_LOOP_MIN_SLEEP_MILLIS, SPIN_LOOP_MAX_SLEEP_MILLIS));
   }
 
   /**
@@ -169,5 +162,11 @@ public class SignerKeysServiceImpl implements SignerKeysService {
   @VisibleForTesting
   boolean updateKeys(SignerKeysObj keys, SignerKeysObj updated) throws ObjTooLargeException {
     return persist.updateConditional(keys, updated);
+  }
+
+  private static void persistSpinLoop() throws InterruptedException {
+    Thread.sleep(
+        ThreadLocalRandom.current()
+            .nextLong(SPIN_LOOP_MIN_SLEEP_MILLIS, SPIN_LOOP_MAX_SLEEP_MILLIS));
   }
 }

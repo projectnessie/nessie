@@ -44,11 +44,7 @@ public interface SignerKey {
   @JsonIgnore
   @Value.Lazy
   default SecretKeySpec secretKeySpec() {
-    int pre = "NessieSign:".length();
-    int keyLen = secretKey().length;
-    byte[] secretKeyBytes = Arrays.copyOf("NessieSign:".getBytes(UTF_8), pre + keyLen);
-    System.arraycopy(secretKey(), 0, secretKeyBytes, pre, keyLen);
-    return new SecretKeySpec(secretKeyBytes, "hmacSha256");
+    return new SecretKeySpec(secretKey(), "hmacSha256");
   }
 
   @Value.Check
