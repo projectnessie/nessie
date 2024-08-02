@@ -91,11 +91,10 @@ tasks.named<Test>("intTest").configure {
   // Spark keeps a lot of stuff around in the JVM, breaking tests against different Iceberg catalogs, so give every test class its own JVM
   forkEvery = 1
   inputs.files(nessieQuarkusServer)
-  val execJarProvider = configurations.named("nessieQuarkusServer").map { c ->
-    val file = c.fileCollection(*c.dependencies.toTypedArray()).files.first()
-    listOf("-Dnessie.exec-jar=${file.absolutePath}")
-  }
-  jvmArgumentProviders.add(CommandLineArgumentProvider {
-    execJarProvider.get()
-  })
+  val execJarProvider =
+    configurations.named("nessieQuarkusServer").map { c ->
+      val file = c.incoming.artifactView {}.files.first()
+      listOf("-Dnessie.exec-jar=${file.absolutePath}")
+    }
+  jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() })
 }

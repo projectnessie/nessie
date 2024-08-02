@@ -125,7 +125,7 @@ tasks.named<Test>("intTest").configure {
   inputs.files(nessieQuarkusServer)
   val execJarProvider =
     configurations.named("nessieQuarkusServer").map { c ->
-      val file = c.fileCollection(*c.dependencies.toTypedArray()).files.first()
+      val file = c.incoming.artifactView {}.files.first()
       listOf("-Dnessie.exec-jar=${file.absolutePath}")
     }
   jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() })
