@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-// Scala project, Java 11
+// Conventions for Nessie Spark extensions.
 
 plugins {
+  id("nessie-common-java")
   scala
-  `maven-publish`
-  signing
-  id("nessie-common-base")
-  id("nessie-common-src")
-  id("nessie-java")
   id("nessie-scala")
-  id("nessie-testing")
 }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 11 }

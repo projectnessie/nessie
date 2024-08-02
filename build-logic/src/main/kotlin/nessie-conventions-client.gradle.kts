@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,8 @@
  * limitations under the License.
  */
 
-// Java project, production code built for Java 8
+// Conventions for projects being consumed by downstream clients.
 
-plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  id("nessie-common-base")
-  id("nessie-common-src")
-  id("nessie-java")
-  id("nessie-testing")
-}
+plugins { id("nessie-common-java") }
 
-tasks.withType<JavaCompile>().configureEach {
-  if (path.startsWith(":nessie-client:")) {
-    // :nessie-client is a little special, because it contains a Java 11 version for
-    // Nessie's dependency-free http client, so setting "release=8", would not work.
-    sourceCompatibility = "1.8"
-    targetCompatibility = "1.8"
-  } else if (name == "compileJava") {
-    // Client production code must be compatible with Java 8
-    options.release = 8
-  } else {
-    // Test code may depend on server code for in-JVM tests, so need Java 11 for test code
-    options.release = 11
-  }
-}
+tasks.withType<JavaCompile>().configureEach { options.release = 11 }

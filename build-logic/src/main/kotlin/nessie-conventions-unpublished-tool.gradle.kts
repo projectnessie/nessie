@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Java project, non-client facing, server component, Java 11
+// Conventions for Nessie tools that are not published to Maven.
 
 plugins {
   `java-library`
@@ -24,4 +24,4 @@ plugins {
   id("nessie-testing")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 11 }
+tasks.withType<JavaCompile>().configureEach { options.release = 21 }

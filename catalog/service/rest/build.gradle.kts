@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-server")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 publishingHelper { mavenName = "Nessie - Catalog - REST Service" }
@@ -70,11 +69,4 @@ dependencies {
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation("software.amazon.awssdk:s3")
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-client")
   alias(libs.plugins.jmh)
 }
 

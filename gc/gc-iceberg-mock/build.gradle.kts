@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-iceberg") }
+plugins { id("nessie-conventions-client") }
 
 publishingHelper { mavenName = "Nessie - GC - Mocked Iceberg data for tests" }
 

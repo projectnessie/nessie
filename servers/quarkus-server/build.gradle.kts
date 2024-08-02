@@ -35,16 +35,9 @@ val openapiSource by
 
 val versionIceberg = libs.versions.iceberg.get()
 
-// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
-// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
-// for clients, we have to live with :nessie-model producing an MR-jar. See
-// https://github.com/quarkusio/quarkus/issues/40236 and
-// https://github.com/projectnessie/nessie/issues/8390.
-configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
-
 dependencies {
   implementation(project(":nessie-client"))
-  implementation(project(":nessie-model-quarkus"))
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-quarkus-auth"))
@@ -94,13 +87,13 @@ dependencies {
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
-  openapiSource(project(":nessie-model-quarkus")) { isTransitive = false }
+  openapiSource(project(":nessie-model")) { isTransitive = false }
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
   testFixturesApi(project(":nessie-client"))
-  testFixturesApi(project(":nessie-model-quarkus"))
+  testFixturesApi(project(":nessie-model"))
   testFixturesApi(testFixtures(project(":nessie-client")))
   testFixturesApi(project(":nessie-client-testextension"))
   testFixturesApi(project(":nessie-jaxrs-tests"))

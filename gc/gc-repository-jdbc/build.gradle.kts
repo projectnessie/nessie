@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-iceberg")
+  id("nessie-conventions-client")
   id("nessie-jacoco")
 }
 

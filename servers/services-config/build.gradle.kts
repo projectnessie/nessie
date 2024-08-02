@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server8") }
+plugins { id("nessie-conventions-server") }
 
 publishingHelper { mavenName = "Nessie - Services Config" }

@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-client")
   id("nessie-jacoco")
   id("nessie-shadow-jar")
   id("nessie-license-report")
@@ -26,14 +26,12 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - CLI" }
 
-configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
-
 val versionIceberg = libs.versions.iceberg.get()
 
 val nessieQuarkusServer by configurations.creating
 
 dependencies {
-  implementation(project(":nessie-model-quarkus"))
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-client"))
   implementation(project(":nessie-cli-grammar"))
   implementation(project(":nessie-notice"))

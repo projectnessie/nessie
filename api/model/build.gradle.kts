@@ -22,7 +22,6 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
   id("nessie-conventions-client")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
   alias(libs.plugins.smallrye.openapi)
 }
 
@@ -101,13 +100,6 @@ generateOpenApiSpec.configure {
 }
 
 artifacts { add(openapiSource.name, file("src/main/resources/META-INF")) }
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion = 11
-  }
-}
 
 tasks.named<Test>("intTest").configure {
   dependsOn(generateOpenApiSpec)

@@ -10,6 +10,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Support for Java 8 has been removed, even for Nessie clients. Minimum runtime requirement for clients
+  is Java 11.
+
 ### Breaking changes
 
 ### New Features
