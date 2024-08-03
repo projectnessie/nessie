@@ -82,6 +82,11 @@ jobs:
             -x :nessie-events-quarkus:compileAll \
             --scan
 
+      - name: Validate OpenAPI
+        uses: smartbear/swaggerhub-cli@20e5eaf4866bbbc44d72e9eb8a48a942c0d9e43b # v0.9.0
+        with:
+          args: api:validate:local --organization projectnessie --file ./api/model/build/generated/openapi/META-INF/openapi/openapi.yaml
+
       - name: Gradle / Compile Quarkus
         run: |
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
