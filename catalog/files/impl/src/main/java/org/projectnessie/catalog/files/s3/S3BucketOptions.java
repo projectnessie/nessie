@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.s3;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.secrets.BasicCredentials;
@@ -121,18 +120,18 @@ public interface S3BucketOptions {
   Optional<URI> stsEndpoint();
 
   /** Configure assume-role functionality for Nessie server. */
-  Optional<S3Iam> serverIam();
+  Optional<S3ServerIam> serverIam();
 
   /** Configure assume-role/scoped-down credentials for clients. */
-  Optional<S3Iam> clientIam();
+  Optional<S3ClientIam> clientIam();
 
   @Value.NonAttribute
-  default Optional<S3Iam> getEnabledServerIam() {
+  default Optional<S3ServerIam> getEnabledServerIam() {
     return serverIam().filter(iam -> iam.enabled().orElse(false));
   }
 
   @Value.NonAttribute
-  default Optional<S3Iam> getEnabledClientIam() {
+  default Optional<S3ClientIam> getEnabledClientIam() {
     return clientIam().filter(iam -> iam.enabled().orElse(false));
   }
 
@@ -148,25 +147,4 @@ public interface S3BucketOptions {
     }
     return clientIam().get().enabled().orElse(false);
   }
-
-  /**
-   * Additional IAM policy statements to be inserted <em>after</em> the automatically generated S3
-   * location dependent {@code Allow} policy statement.
-   *
-   * <p>Example:
-   *
-   * <p><code>
-   * ...client-iam.statements[0]={"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;alwaysAllowed&#47;*"}
-   * ...client-iam.statements[1]={"Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*&#47;blocked&#47;*"}
-   * </code>
-   *
-   * <p>Related docs: <a
-   * href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/security_iam_service-with-iam.html">S3
-   * with IAM</a> and <a
-   * href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html">about
-   * actions, resources, conditions</a> and <a
-   * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html">policy
-   * reference</a>.
-   */
-  Optional<List<String>> clientIamStatements();
 }

@@ -99,8 +99,8 @@ public interface S3Options {
 
     ImmutableS3NamedBucketOptions.Builder builder =
         ImmutableS3NamedBucketOptions.builder().from(defaultOptions);
-    ImmutableS3Iam.Builder serverIam = ImmutableS3Iam.builder();
-    ImmutableS3Iam.Builder clientIam = ImmutableS3Iam.builder();
+    ImmutableS3ServerIam.Builder serverIam = ImmutableS3ServerIam.builder();
+    ImmutableS3ClientIam.Builder clientIam = ImmutableS3ClientIam.builder();
     defaultOptions.serverIam().ifPresent(serverIam::from);
     defaultOptions.clientIam().ifPresent(clientIam::from);
     if (specific != null) {

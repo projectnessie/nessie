@@ -72,10 +72,13 @@ class TestS3SessionsManager {
   void multipleStorageLocations() throws Exception {
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
-            .clientIam(ImmutableS3Iam.builder().enabled(true).build())
-            .clientIamStatements(
-                List.of(
-                    "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}"))
+            .clientIam(
+                ImmutableS3ClientIam.builder()
+                    .enabled(true)
+                    .statements(
+                        List.of(
+                            "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}"))
+                    .build())
             .build();
 
     StorageLocations locations =
@@ -181,7 +184,7 @@ class TestS3SessionsManager {
         arguments(
             ImmutableS3NamedBucketOptions.builder()
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .enabled(true)
                         .policy(
                             "{ \"Version\":\"2012-10-17\",\n"
@@ -195,10 +198,13 @@ class TestS3SessionsManager {
             List.of("arn:aws:s3:::*", "arn:aws:s3:::*/blockedNamespace/*")),
         arguments(
             ImmutableS3NamedBucketOptions.builder()
-                .clientIam(ImmutableS3Iam.builder().enabled(true).build())
-                .clientIamStatements(
-                    List.of(
-                        "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}\n"))
+                .clientIam(
+                    ImmutableS3ClientIam.builder()
+                        .enabled(true)
+                        .statements(
+                            List.of(
+                                "{\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked\\\"Namespace/*\"}\n"))
+                        .build())
                 .build(),
             List.of(
                 "arn:aws:s3:::foo",
@@ -215,7 +221,7 @@ class TestS3SessionsManager {
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .clientIam(
-                ImmutableS3Iam.builder()
+                ImmutableS3ClientIam.builder()
                     .enabled(true)
                     .policy(
                         "{ \"Version\":\"2012-10-17\",\n"
@@ -238,8 +244,8 @@ class TestS3SessionsManager {
         StorageLocations.storageLocations(StorageUri.of("s3://foo/"), List.of(location), List.of());
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
-            .clientIam(ImmutableS3Iam.builder().enabled(true).build())
-            .clientIamStatements(List.of(invalid))
+            .clientIam(
+                ImmutableS3ClientIam.builder().enabled(true).statements(List.of(invalid)).build())
             .build();
     soft.assertThatThrownBy(() -> S3SessionsManager.locationDependentPolicy(locations, options))
         .isInstanceOf(RuntimeException.class)
@@ -278,7 +284,7 @@ class TestS3SessionsManager {
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .region("R1")
-            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .clientIam(ImmutableS3ClientIam.builder().enabled(true).assumeRole("role").build())
             .build();
 
     credentials.set(credentials(time.get() + 100));
@@ -338,7 +344,7 @@ class TestS3SessionsManager {
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .region("R1")
-            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .clientIam(ImmutableS3ClientIam.builder().enabled(true).assumeRole("role").build())
             .build();
 
     credentials.set(credentials(time.get() + 100));
@@ -372,7 +378,7 @@ class TestS3SessionsManager {
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .region("R1")
-            .clientIam(ImmutableS3Iam.builder().enabled(true).assumeRole("role").build())
+            .clientIam(ImmutableS3ClientIam.builder().enabled(true).assumeRole("role").build())
             .build();
     Credentials c1 = credentials(time.get() + 100);
     Credentials c2 = credentials(time.get() + 200);

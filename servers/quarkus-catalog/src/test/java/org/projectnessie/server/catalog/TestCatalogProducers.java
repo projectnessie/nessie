@@ -26,8 +26,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.files.s3.ImmutableS3Iam;
+import org.projectnessie.catalog.files.s3.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.s3.ImmutableS3ServerIam;
 import org.projectnessie.catalog.files.s3.S3NamedBucketOptions;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -48,7 +49,7 @@ public class TestCatalogProducers {
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucketName")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .enabled(true)
                         .policy(
                             """
@@ -65,12 +66,15 @@ public class TestCatalogProducers {
         arguments(
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucketName")
-                .clientIam(ImmutableS3Iam.builder().enabled(true).build())
-                .clientIamStatements(
-                    List.of(
-                        """
+                .clientIam(
+                    ImmutableS3ClientIam.builder()
+                        .enabled(true)
+                        .statements(
+                            List.of(
+                                """
                         {"Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*/blocked\\"Namespace/*"}
                         """))
+                        .build())
                 .build(),
             List.of(
                 "arn:aws:s3:::foo/b\"ar/*",
@@ -93,7 +97,7 @@ public class TestCatalogProducers {
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucketName")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .enabled(true)
                         .policy(
                             """
@@ -108,7 +112,7 @@ public class TestCatalogProducers {
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucketName")
                 .serverIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ServerIam.builder()
                         .enabled(true)
                         .policy(
                             """
@@ -122,12 +126,15 @@ public class TestCatalogProducers {
         arguments(
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucketName")
-                .clientIam(ImmutableS3Iam.builder().enabled(true).build())
-                .clientIamStatements(
-                    List.of(
-                        """
+                .clientIam(
+                    ImmutableS3ClientIam.builder()
+                        .enabled(true)
+                        .statements(
+                            List.of(
+                                """
                         "Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*/blockedNamespace/*"}
                         """))
+                        .build())
                 .build(),
             "The dynamically constructed iam-policy for the bucketName bucket results in an invalid policy, check the client-iam-statements"));
   }

@@ -17,12 +17,8 @@ package org.projectnessie.catalog.files.s3;
 
 import java.time.Duration;
 import java.util.Optional;
-import org.immutables.value.Value;
-import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
-@NessieImmutable
-@Value.Style(allParameters = false)
 public interface S3Iam {
   /**
    * Default value for {@link #roleSessionName()} that identifies the session simply as a "Nessie"

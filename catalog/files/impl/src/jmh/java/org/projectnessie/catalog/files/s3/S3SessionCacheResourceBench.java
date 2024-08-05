@@ -105,14 +105,14 @@ public class S3SessionCacheResourceBench {
                           .region(regions.get(i % regions.size()))
                           .stsEndpoint(stsEndpoint)
                           .clientIam(
-                              ImmutableS3Iam.builder()
+                              ImmutableS3ClientIam.builder()
                                   .externalId("externalId" + i)
                                   .roleSessionName("roleSessionName" + i)
                                   .assumeRole("roleArn" + i)
                                   .enabled(true)
                                   .build())
                           .serverIam(
-                              ImmutableS3Iam.builder()
+                              ImmutableS3ServerIam.builder()
                                   .externalId("externalId" + i)
                                   .roleSessionName("roleSessionName" + i)
                                   .assumeRole("roleArn" + i)

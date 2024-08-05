@@ -253,15 +253,13 @@ public class S3SessionsManager {
 
   public static String locationDependentPolicy(
       StorageLocations locations, S3BucketOptions bucketOptions) {
-    S3Iam iam =
+    S3ClientIam iam =
         bucketOptions
             .getEnabledClientIam()
             .orElseThrow(() -> new IllegalStateException("client IAM not enabled"));
     if (iam.policy().isPresent()) {
       return iam.policy().get();
     }
-
-    Optional<List<String>> clientIamStatements = bucketOptions.clientIamStatements();
 
     // See https://docs.aws.amazon.com/AmazonS3/latest/userguide/security_iam_service-with-iam.html
     // See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html
@@ -338,8 +336,10 @@ public class S3SessionsManager {
     }
 
     // Add custom statements
-    clientIamStatements.ifPresent(
-        stmts -> stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
+    iam.statements()
+        .ifPresent(
+            stmts ->
+                stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
 
     return policy.toString();
   }

@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.catalog.files.s3;
 
-import io.smallrye.config.WithName;
-import java.util.Optional;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
-import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
+import org.immutables.value.Value;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-public interface CatalogS3BucketConfig extends S3BucketOptions {
-
-  @WithName("server-auth-mode")
-  @Override
-  Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
-}
+@NessieImmutable
+@Value.Style(allParameters = false)
+public interface S3ServerIam extends S3Iam {}

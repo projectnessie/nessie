@@ -49,7 +49,8 @@ public class TestS3Options {
   }
 
   static Stream<Arguments> effectiveOptionsForBucketIamOptions() {
-    ImmutableS3Iam noIam = ImmutableS3Iam.builder().build();
+    S3ClientIam noClientIam = ImmutableS3ClientIam.builder().build();
+    S3ServerIam noServerIam = ImmutableS3ServerIam.builder().build();
     return Stream.of(
         //
         // #1 - enabled on default AND bucket
@@ -58,7 +59,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ClientIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -66,22 +67,23 @@ public class TestS3Options {
                                 .build())
                         .build())
                 .putBuckets(
-                    "bucket", ImmutableS3NamedBucketOptions.builder().clientIam(noIam).build())
+                    "bucket",
+                    ImmutableS3NamedBucketOptions.builder().clientIam(noClientIam).build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
                         .enabled(true)
                         .build())
-                .serverIam(noIam)
+                .serverIam(noServerIam)
                 .build(),
             // client IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ClientIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -96,7 +98,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ClientIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -104,22 +106,23 @@ public class TestS3Options {
                                 .build())
                         .build())
                 .putBuckets(
-                    "bucket", ImmutableS3NamedBucketOptions.builder().clientIam(noIam).build())
+                    "bucket",
+                    ImmutableS3NamedBucketOptions.builder().clientIam(noClientIam).build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
                         .enabled(true)
                         .build())
-                .serverIam(noIam)
+                .serverIam(noServerIam)
                 .build(),
             // client IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ClientIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -134,7 +137,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ClientIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -143,23 +146,23 @@ public class TestS3Options {
                 .putBuckets(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
-                        .clientIam(ImmutableS3Iam.builder().enabled(true).build())
+                        .clientIam(ImmutableS3ClientIam.builder().enabled(true).build())
                         .build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
                         .enabled(true)
                         .build())
-                .serverIam(noIam)
+                .serverIam(noServerIam)
                 .build(),
             // client IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ClientIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -175,7 +178,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -183,14 +186,15 @@ public class TestS3Options {
                                 .build())
                         .build())
                 .putBuckets(
-                    "bucket", ImmutableS3NamedBucketOptions.builder().serverIam(noIam).build())
+                    "bucket",
+                    ImmutableS3NamedBucketOptions.builder().serverIam(noServerIam).build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
-                .clientIam(noIam)
+                .clientIam(noClientIam)
                 .serverIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ServerIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
@@ -200,7 +204,7 @@ public class TestS3Options {
             // client IAM
             null,
             // server IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ServerIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -213,7 +217,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -221,14 +225,15 @@ public class TestS3Options {
                                 .build())
                         .build())
                 .putBuckets(
-                    "bucket", ImmutableS3NamedBucketOptions.builder().serverIam(noIam).build())
+                    "bucket",
+                    ImmutableS3NamedBucketOptions.builder().serverIam(noServerIam).build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
-                .clientIam(noIam)
+                .clientIam(noClientIam)
                 .serverIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ServerIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
@@ -238,7 +243,7 @@ public class TestS3Options {
             // client IAM
             null,
             // server IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ServerIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -251,7 +256,7 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .policy("default-policy")
                                 .externalId("default-id")
                                 .roleSessionName("default-rsn")
@@ -260,15 +265,15 @@ public class TestS3Options {
                 .putBuckets(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
-                        .serverIam(ImmutableS3Iam.builder().enabled(true).build())
+                        .serverIam(ImmutableS3ServerIam.builder().enabled(true).build())
                         .build())
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
-                .clientIam(noIam)
+                .clientIam(noClientIam)
                 .serverIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ServerIam.builder()
                         .policy("default-policy")
                         .externalId("default-id")
                         .roleSessionName("default-rsn")
@@ -278,7 +283,7 @@ public class TestS3Options {
             // client IAM
             null,
             // server IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ServerIam.builder()
                 .policy("default-policy")
                 .externalId("default-id")
                 .roleSessionName("default-rsn")
@@ -292,13 +297,13 @@ public class TestS3Options {
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ClientIam.builder()
                                 .policy("default-client-policy")
                                 .externalId("default-client-id")
                                 .roleSessionName("default-client-rsn")
                                 .build())
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .policy("default-server-policy")
                                 .externalId("default-server-id")
                                 .roleSessionName("default-server-rsn")
@@ -308,12 +313,12 @@ public class TestS3Options {
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ClientIam.builder()
                                 .externalId("bucket-client-id")
                                 .enabled(true)
                                 .build())
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .externalId("bucket-server-id")
                                 .enabled(true)
                                 .build())
@@ -323,7 +328,7 @@ public class TestS3Options {
             ImmutableS3NamedBucketOptions.builder()
                 .name("bucket")
                 .clientIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ClientIam.builder()
                         .policy("default-client-policy")
                         .externalId("default-client-id")
                         .roleSessionName("default-client-rsn")
@@ -331,7 +336,7 @@ public class TestS3Options {
                         .enabled(true)
                         .build())
                 .serverIam(
-                    ImmutableS3Iam.builder()
+                    ImmutableS3ServerIam.builder()
                         .policy("default-server-policy")
                         .externalId("default-server-id")
                         .roleSessionName("default-server-rsn")
@@ -340,7 +345,7 @@ public class TestS3Options {
                         .build())
                 .build(),
             // client IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ClientIam.builder()
                 .policy("default-client-policy")
                 .externalId("default-client-id")
                 .roleSessionName("default-client-rsn")
@@ -348,7 +353,7 @@ public class TestS3Options {
                 .enabled(true)
                 .build(),
             // server IAM
-            ImmutableS3Iam.builder()
+            ImmutableS3ServerIam.builder()
                 .policy("default-server-policy")
                 .externalId("default-server-id")
                 .roleSessionName("default-server-rsn")
@@ -361,7 +366,10 @@ public class TestS3Options {
         arguments(
             ImmutableS3ProgrammaticOptions.builder().build(),
             // expected options
-            ImmutableS3NamedBucketOptions.builder().clientIam(noIam).serverIam(noIam).build(),
+            ImmutableS3NamedBucketOptions.builder()
+                .clientIam(noClientIam)
+                .serverIam(noServerIam)
+                .build(),
             // client IAM
             null,
             // server IAM

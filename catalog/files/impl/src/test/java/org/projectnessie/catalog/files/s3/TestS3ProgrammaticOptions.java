@@ -55,7 +55,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole")
                                 .sessionDuration(Duration.ofSeconds(4))
@@ -76,7 +76,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole1")
                                 .sessionDuration(Duration.ofSeconds(5))
@@ -98,7 +98,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole2")
                                 .sessionDuration(Duration.ofSeconds(6))
@@ -123,7 +123,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole")
                                 .sessionDuration(Duration.ofSeconds(4))
@@ -145,7 +145,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole1")
                                 .sessionDuration(Duration.ofSeconds(5))
@@ -167,7 +167,7 @@ class TestS3ProgrammaticOptions {
                         .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .serverIam(
-                            ImmutableS3Iam.builder()
+                            ImmutableS3ServerIam.builder()
                                 .enabled(true)
                                 .assumeRole("assumeRole2")
                                 .sessionDuration(Duration.ofSeconds(6))

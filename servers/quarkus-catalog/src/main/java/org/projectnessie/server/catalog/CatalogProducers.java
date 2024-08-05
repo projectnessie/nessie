@@ -61,7 +61,7 @@ import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
 import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
-import org.projectnessie.catalog.files.s3.ImmutableS3Iam;
+import org.projectnessie.catalog.files.s3.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
@@ -159,7 +159,10 @@ public class CatalogProducers {
                   ImmutableS3NamedBucketOptions.builder()
                       .from(bucketOptions)
                       .clientIam(
-                          ImmutableS3Iam.builder().from(clientIam).policy(Optional.empty()).build())
+                          ImmutableS3ClientIam.builder()
+                              .from(clientIam)
+                              .policy(Optional.empty())
+                              .build())
                       .build();
 
               try {
