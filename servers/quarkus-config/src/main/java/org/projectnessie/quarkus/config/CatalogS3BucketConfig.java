@@ -17,12 +17,12 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithName;
 import java.util.Optional;
+import org.projectnessie.catalog.files.s3.S3AuthType;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
-import org.projectnessie.catalog.files.s3.S3ServerAuthenticationMode;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
 
   @WithName("server-auth-mode")
   @Override
-  Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
+  Optional<S3AuthType> authType();
 }

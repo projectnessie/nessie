@@ -29,6 +29,7 @@ credentials, but hand out scoped-down credentials from STS to clients.
   options.
 - Inheritance of default / bucket-specific options is supported for both `.server-iam.*` and `.client-iam.*`
   configuration options.
+- The `.server-authentication-mode` configuration has been renamed to `.auth-type`.
 - See [S3 settings](https://projectnessie.org/nessie-latest/configuration/#s3-settings).
 
 The client IAM policy can be provided using either a static policy via `.client-iam.policy`, or, if
@@ -38,6 +39,8 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 ### Upgrade notes
 
 ### Breaking changes
+
+- See above for breaking changes to S3 bucket configurations. 
 
 ### New Features
 

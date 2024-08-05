@@ -241,7 +241,7 @@ public class S3SessionsManager {
 
     request.overrideConfiguration(
         builder -> {
-          S3ServerAuthenticationMode authMode = bucketOptions.effectiveServerAuthenticationMode();
+          S3AuthType authMode = bucketOptions.effectiveAuthMode();
           builder.credentialsProvider(authMode.newCredentialsProvider(bucketOptions));
         });
 

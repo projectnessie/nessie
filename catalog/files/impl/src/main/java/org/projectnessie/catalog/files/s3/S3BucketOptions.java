@@ -22,11 +22,8 @@ import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface S3BucketOptions {
 
-  /**
-   * Default value for {@link #serverAuthenticationMode()}, being {@link
-   * S3ServerAuthenticationMode#STATIC}.
-   */
-  S3ServerAuthenticationMode DEFAULT_SERVER_AUTHENTICATION_MODE = S3ServerAuthenticationMode.STATIC;
+  /** Default value for {@link #authType()}, being {@link S3AuthType#STATIC}. */
+  S3AuthType DEFAULT_SERVER_AUTH_MODE = S3AuthType.STATIC;
 
   /**
    * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
@@ -90,10 +87,10 @@ public interface S3BucketOptions {
    *   <li>{@code STATIC}: Static credentials provided through the {@code access-key} option.
    * </ul>
    */
-  Optional<S3ServerAuthenticationMode> serverAuthenticationMode();
+  Optional<S3AuthType> authType();
 
-  default S3ServerAuthenticationMode effectiveServerAuthenticationMode() {
-    return serverAuthenticationMode().orElse(DEFAULT_SERVER_AUTHENTICATION_MODE);
+  default S3AuthType effectiveAuthMode() {
+    return authType().orElse(DEFAULT_SERVER_AUTH_MODE);
   }
 
   /**

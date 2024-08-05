@@ -159,6 +159,7 @@ Apply S3 catalog options.
 {{- if .accessPoint -}}{{- $_ := set $map ( print $prefix "access-point" ) .accessPoint -}}{{- end -}}
 {{- if .allowCrossRegionAccessPoint -}}{{- $_ := set $map ( print $prefix "allow-cross-region-access-point" ) .allowCrossRegionAccessPoint -}}{{- end -}}
 {{- if .requestSigningEnabled -}}{{- $_ := set $map ( print $prefix "request-signing-enabled" ) .requestSigningEnabled -}}{{- end -}}
+{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
 {{- if .stsEndpoint -}}{{- $_ := set $map ( print $prefix "sts-endpoint" ) .assumeRole.stsEndpoint -}}{{- end -}}
 {{- if .clientIam -}}
 {{- if .clientIam.enabled -}}{{- $_ := set $map ( print $prefix "client-iam.enabled" ) .clientIam.enabled -}}{{- end -}}

@@ -119,7 +119,7 @@ public class S3Clients {
       S3BucketOptions bucketOptions, S3Sessions sessions) {
     return bucketOptions.getEnabledServerIam().isPresent()
         ? sessions.assumeRoleForServer(bucketOptions)
-        : bucketOptions.effectiveServerAuthenticationMode().newCredentialsProvider(bucketOptions);
+        : bucketOptions.effectiveAuthMode().newCredentialsProvider(bucketOptions);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {

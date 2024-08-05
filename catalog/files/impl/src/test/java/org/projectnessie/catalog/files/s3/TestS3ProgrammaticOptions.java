@@ -52,7 +52,7 @@ class TestS3ProgrammaticOptions {
                         .region("region")
                         .accessPoint("accessPoint")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -73,7 +73,7 @@ class TestS3ProgrammaticOptions {
                         .region("region1")
                         .accessPoint("accessPoint1")
                         .allowCrossRegionAccessPoint(false)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -95,7 +95,7 @@ class TestS3ProgrammaticOptions {
                         .region("region2")
                         .accessPoint("accessPoint2")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -120,7 +120,7 @@ class TestS3ProgrammaticOptions {
                         .region("region")
                         .accessPoint("accessPoint")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -142,7 +142,7 @@ class TestS3ProgrammaticOptions {
                         .region("region1")
                         .accessPoint("accessPoint1")
                         .allowCrossRegionAccessPoint(false)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -164,7 +164,7 @@ class TestS3ProgrammaticOptions {
                         .region("region2")
                         .accessPoint("accessPoint2")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .serverIam(
                             ImmutableS3ServerIam.builder()
@@ -191,7 +191,7 @@ class TestS3ProgrammaticOptions {
                         .region("region")
                         .accessPoint("accessPoint")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .build())
                 .putBuckets(
@@ -203,7 +203,7 @@ class TestS3ProgrammaticOptions {
                         .region("region1")
                         .accessPoint("accessPoint1")
                         .allowCrossRegionAccessPoint(false)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .build())
                 .putBuckets(
@@ -216,7 +216,7 @@ class TestS3ProgrammaticOptions {
                         .region("region2")
                         .accessPoint("accessPoint2")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .build())
                 .build(),
@@ -232,7 +232,7 @@ class TestS3ProgrammaticOptions {
                         .region("region")
                         .accessPoint("accessPoint")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint"))
                         .build())
                 .putBuckets(
@@ -245,7 +245,7 @@ class TestS3ProgrammaticOptions {
                         .region("region1")
                         .accessPoint("accessPoint1")
                         .allowCrossRegionAccessPoint(false)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.APPLICATION_GLOBAL)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .build())
                 .putBuckets(
@@ -258,7 +258,7 @@ class TestS3ProgrammaticOptions {
                         .region("region2")
                         .accessPoint("accessPoint2")
                         .allowCrossRegionAccessPoint(true)
-                        .serverAuthenticationMode(S3ServerAuthenticationMode.STATIC)
+                        .authType(S3AuthType.STATIC)
                         .stsEndpoint(URI.create("https://stsEndpoint2"))
                         .build())
                 .build())

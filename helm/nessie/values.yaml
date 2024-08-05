@@ -206,7 +206,7 @@ catalog:
         # - APPLICATION_GLOBAL: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
         # The default is STATIC.
-        serverAuthenticationMode: ~  # STATIC
+        authType: ~  # STATIC
         # --Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
         requestSigningEnabled: ~  # true
         # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
