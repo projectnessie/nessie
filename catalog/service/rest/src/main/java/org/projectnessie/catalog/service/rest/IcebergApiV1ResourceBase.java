@@ -186,10 +186,10 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
   protected NamespaceRef decodeNamespaceRef(String prefix, String encodedNs) {
     DecodedPrefix decoded = decodePrefix(prefix);
-    return decodeNamespaceRef(encodedNs, decoded);
+    return decodeNamespaceRef(decoded, encodedNs);
   }
 
-  protected NamespaceRef decodeNamespaceRef(String encodedNs, DecodedPrefix decoded) {
+  protected NamespaceRef decodeNamespaceRef(DecodedPrefix decoded, String encodedNs) {
     ParsedReference ref = decoded.parsedReference();
     Namespace ns = decodeNamespace(encodedNs);
     return namespaceRef(ns, ref.name(), ref.hashWithRelativeSpec(), decoded.warehouse());

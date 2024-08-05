@@ -225,8 +225,10 @@ public class S3SessionsManager {
     iam.externalId().ifPresent(request::externalId);
 
     if (locations.isPresent()) {
+      // Credentials for client
       request.policy(locationDependentPolicy(locations.get(), bucketOptions));
     } else {
+      // Credentials for Nessie (server)
       iam.policy().ifPresent(request::policy);
     }
     sessionDuration.ifPresent(

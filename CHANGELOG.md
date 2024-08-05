@@ -10,7 +10,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Catalog S3 bucket configuration changes / breaking
 
-**If you have configured S3 IAM/STS options, read this section carefully and adopt your configuration!**
+**If you have configured S3 IAM/STS options, read this section carefully and adapt your configuration!**
 
 S3 buckets can now support both request-signing and assume-role/credentials-vending. To allow this, the
 following configuration options have _changed_:

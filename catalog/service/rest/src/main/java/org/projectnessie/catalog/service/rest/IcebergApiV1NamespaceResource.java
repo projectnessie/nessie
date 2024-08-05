@@ -171,7 +171,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
       @PathParam("prefix") String prefix, @PathParam("namespace") String namespace)
       throws IOException {
     DecodedPrefix decoded = decodePrefix(prefix);
-    NamespaceRef namespaceRef = decodeNamespaceRef(namespace, decoded);
+    NamespaceRef namespaceRef = decodeNamespaceRef(decoded, namespace);
     Namespace nessieNamespace = namespaceRef.namespace();
 
     List<ContentKey> keysInOrder = new ArrayList<>(nessieNamespace.getElementCount());

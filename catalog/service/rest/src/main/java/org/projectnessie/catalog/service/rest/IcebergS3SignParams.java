@@ -179,7 +179,7 @@ abstract class IcebergS3SignParams {
 
   private Multi<String> collectAllowedLocations(SnapshotResponse snapshotResponse) {
     if (snapshotResponse == null) {
-      // table does not exist: only allow writes to its future location
+      // table does not exist - nothing to write to, nothing to read from
       return Multi.createFrom()
           .items(Stream.concat(writeLocations().stream(), readLocations().stream()));
     } else {
