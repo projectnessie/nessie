@@ -97,7 +97,7 @@ public interface S3BucketOptions {
    * An access-key-id and secret-access-key must be configured using the {@code name} and {@code
    * secret} fields, either per bucket or in the top-level S3 settings.
    *
-   * <p>Required when {@code server-authentication-mode} is {@code STATIC}.
+   * <p>Required when {@code auth-type} is {@code STATIC}.
    *
    * <p>For STS, this defines the Access Key ID and Secret Key ID to be used as a basic credential
    * for obtaining temporary session credentials.
