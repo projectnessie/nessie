@@ -63,7 +63,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -220,26 +219,29 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           String dataAccess,
           boolean writeAccessGranted) {
 
-    Map<String, String> properties = new HashMap<>(tableMetadata.properties());
-
-    Map<String, String> config =
+    IcebergTableConfig config =
         icebergConfigurer.icebergConfigPerTable(
             nessieSnapshot,
             warehouseLocation,
-            tableMetadata.location(),
-            properties,
+            tableMetadata,
             prefix,
             contentKey,
             dataAccess,
             writeAccessGranted);
 
-    IcebergTableMetadata metadataTweak =
-        IcebergTableMetadata.builder().from(tableMetadata).properties(properties).build();
+    // Create a new `IcebergTableMetadata`, if needed.
+    IcebergTableMetadata resultMetadata =
+        config
+            .updatedMetadataProperties()
+            .map(
+                newProps ->
+                    IcebergTableMetadata.builder().from(tableMetadata).properties(newProps).build())
+            .orElse(tableMetadata);
 
     return builder
-        .metadata(metadataTweak)
+        .metadata(resultMetadata)
         .metadataLocation(metadataLocation)
-        .putAllConfig(config)
+        .putAllConfig(config.config())
         .build();
   }
 

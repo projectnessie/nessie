@@ -52,6 +52,7 @@ import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.StorageLocations;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.SignerKeysService;
@@ -160,26 +161,26 @@ public class IcebergConfigurer {
     return config;
   }
 
-  public Map<String, String> icebergConfigPerTable(
+  IcebergTableConfig icebergConfigPerTable(
       NessieEntitySnapshot<?> nessieSnapshot,
       String warehouseLocation,
-      String location,
-      Map<String, String> metadataProperties,
+      IcebergTableMetadata tableMetadata,
       String prefix,
       ContentKey contentKey,
       String dataAccess,
       boolean writeAccessGranted) {
-    Map<String, String> config = new HashMap<>();
+    ImmutableIcebergTableConfig.Builder tableConfig = ImmutableIcebergTableConfig.builder();
 
     Set<StorageUri> writeable = new HashSet<>();
     Set<StorageUri> readOnly = new HashSet<>();
     Set<StorageUri> maybeWriteable = writeAccessGranted ? writeable : readOnly;
-    StorageUri locationUri = StorageUri.of(location);
-    (location.startsWith(warehouseLocation) ? maybeWriteable : readOnly).add(locationUri);
+    StorageUri locationUri = StorageUri.of(tableMetadata.location());
+    (tableMetadata.location().startsWith(warehouseLocation) ? maybeWriteable : readOnly)
+        .add(locationUri);
 
-    if (!icebergWriteObjectStorage(metadataProperties, warehouseLocation)) {
-      String writeLocation = icebergWriteLocation(metadataProperties);
-      if (writeLocation != null && !writeLocation.startsWith(location)) {
+    if (!icebergWriteObjectStorage(tableConfig, tableMetadata.properties(), warehouseLocation)) {
+      String writeLocation = icebergWriteLocation(tableMetadata.properties());
+      if (writeLocation != null && !writeLocation.startsWith(tableMetadata.location())) {
         (writeLocation.startsWith(warehouseLocation) ? maybeWriteable : readOnly)
             .add(StorageUri.of(writeLocation));
       }
@@ -197,28 +198,36 @@ public class IcebergConfigurer {
 
     Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
 
+    Map<String, String> config = new HashMap<>();
+
     storeConfigDefaults(locationUri, config);
 
     storeConfigOverrides(storageLocations, config, prefix, contentKey, accessDelegationPredicate);
 
-    return config;
+    return tableConfig.config(config).build();
   }
 
-  public static boolean icebergWriteObjectStorage(
-      Map<String, String> metadataProperties, String bucketLocation) {
+  static boolean icebergWriteObjectStorage(
+      ImmutableIcebergTableConfig.Builder config,
+      Map<String, String> metadataProperties,
+      String bucketLocation) {
     if (!Boolean.parseBoolean(
         metadataProperties.getOrDefault("write.object-storage.enabled", "false"))) {
       return false;
     }
 
-    metadataProperties.put("write.data.path", bucketLocation);
-    metadataProperties.remove("write.object-storage.path");
-    metadataProperties.remove("write.folder-storage.path");
+    Map<String, String> updated = new HashMap<>(metadataProperties);
+
+    updated.put("write.data.path", bucketLocation);
+    updated.remove("write.object-storage.path");
+    updated.remove("write.folder-storage.path");
+
+    config.updatedMetadataProperties(updated);
 
     return true;
   }
 
-  public static String icebergWriteLocation(Map<String, String> properties) {
+  static String icebergWriteLocation(Map<String, String> properties) {
     String dataLocation = properties.get("write.data.path");
     if (dataLocation == null) {
       dataLocation = properties.get("write.object-storage.path");

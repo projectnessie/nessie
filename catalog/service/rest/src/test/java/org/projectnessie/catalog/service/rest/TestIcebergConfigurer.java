@@ -28,11 +28,11 @@ import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -111,13 +111,14 @@ public class TestIcebergConfigurer {
                     .build())
             .build();
 
-    Map<String, String> props = new HashMap<>(propertiesIn);
-
-    Map<String, String> config =
+    IcebergTableConfig config =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, "s3://bucket/", tm.location(), props, "main", key, null, true);
+            nessieSnapshot, "s3://bucket/", tm, "main", key, null, true);
 
-    soft.assertThat(props).containsExactlyInAnyOrderEntriesOf(expectedProperties);
+    soft.assertThat(config.updatedMetadataProperties())
+        .isPresent()
+        .get(InstanceOfAssertFactories.map(String.class, String.class))
+        .containsExactlyInAnyOrderEntriesOf(expectedProperties);
   }
 
   static Stream<Arguments> writeObjectStorageEnabled() {
@@ -157,18 +158,23 @@ public class TestIcebergConfigurer {
                     .build())
             .build();
     String warehouseLocation = "s3://bucket/";
-    Map<String, String> config =
+
+    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
+    when(tm.location()).thenReturn(loc);
+    when(tm.properties()).thenReturn(Map.of());
+
+    IcebergTableConfig tableConfig =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, warehouseLocation, loc, new HashMap<>(), prefix, key, null, true);
+            nessieSnapshot, warehouseLocation, tm, prefix, key, null, true);
     if (signUri != null) {
-      soft.assertThat(config).containsEntry(S3_SIGNER_URI, signUri);
+      soft.assertThat(tableConfig.config()).containsEntry(S3_SIGNER_URI, signUri);
       soft.assertThat(signUri).endsWith("/");
       soft.assertThat(signPath).isNotNull();
     } else {
-      soft.assertThat(config).doesNotContainKey(S3_SIGNER_URI);
+      soft.assertThat(tableConfig.config()).doesNotContainKey(S3_SIGNER_URI);
     }
     if (signPath != null) {
-      URI endpoint = URI.create(config.get(S3_SIGNER_ENDPOINT));
+      URI endpoint = URI.create(tableConfig.config().get(S3_SIGNER_ENDPOINT));
       soft.assertThat(endpoint.getRawPath()).isEqualTo(signPath);
       Map<String, String> query =
           Arrays.stream(endpoint.getRawQuery().split("&"))
@@ -183,7 +189,7 @@ public class TestIcebergConfigurer {
       soft.assertThat(signPath).doesNotStartWith("/");
       soft.assertThat(signUri).isNotNull();
     } else {
-      soft.assertThat(config).doesNotContainKey(S3_SIGNER_ENDPOINT);
+      soft.assertThat(tableConfig.config()).doesNotContainKey(S3_SIGNER_ENDPOINT);
     }
   }
 
