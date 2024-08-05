@@ -78,6 +78,7 @@ jobs:
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4
       with:
         cache-disabled: true
+        validate-wrappers: false
 
     - name: Bump to release version
       run: ./gradlew :bumpVersion --bumpType ${{ env.BUMP_TYPE }} --bumpToRelease

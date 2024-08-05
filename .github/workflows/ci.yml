@@ -912,6 +912,7 @@ jobs:
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4
         with:
           cache-read-only: true
+          validate-wrappers: false
 
       - name: Iceberg Nessie test
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
