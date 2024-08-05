@@ -399,7 +399,7 @@ public final class Avro {
         URLConnection urlConnection = url.openConnection();
         try (InputStream input = new BufferedInputStream(urlConnection.getInputStream())) {
           // Cannot reuse the parser instance, because it keeps state
-          Schema.Parser schemaParser = new Schema.Parser().setValidate(true);
+          Schema.Parser schemaParser = new Schema.Parser().setValidateDefaults(true);
           return schemaParser.parse(input);
         }
       } catch (IOException e) {

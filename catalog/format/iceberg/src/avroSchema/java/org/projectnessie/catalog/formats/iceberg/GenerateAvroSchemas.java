@@ -89,7 +89,7 @@ public class GenerateAvroSchemas {
         targetDir.resolve(name + ".avro.json"), schemaJson.getBytes(StandardCharsets.UTF_8));
 
     org.apache.avro.Schema.Parser schemaParser =
-        new org.apache.avro.Schema.Parser().setValidate(true);
+        new org.apache.avro.Schema.Parser().setValidateDefaults(true);
     return schemaParser.parse(schemaJson);
   }
 }
