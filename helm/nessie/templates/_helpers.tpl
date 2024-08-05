@@ -177,7 +177,7 @@ Apply S3 catalog options.
 {{- if .serverIam -}}
 {{- if .serverIam.enabled -}}{{- $_ := set $map ( print $prefix "server-iam.enabled" ) .serverIam.enabled -}}{{- end -}}
 {{- if .serverIam.policy -}}{{- $_ := set $map ( print $prefix "server-iam.policy" ) .serverIam.policy -}}{{- end -}}
-{{- if .serverIam.roleArn -}}{{- $_ := set $map ( print $prefix "aserver-iam.ssume-role" ) .serverIam.roleArn -}}{{- end -}}
+{{- if .serverIam.roleArn -}}{{- $_ := set $map ( print $prefix "server-iam.ssume-role" ) .serverIam.roleArn -}}{{- end -}}
 {{- if .serverIam.roleSessionName -}}{{- $_ := set $map ( print $prefix "server-iam.role-session-name" ) .serverIam.roleSessionName -}}{{- end -}}
 {{- if .serverIam.externalId -}}{{- $_ := set $map ( print $prefix "server-iam.external-id" ) .serverIam.externalId -}}{{- end -}}
 {{- if .serverIam.sessionDuration -}}{{- $_ := set $map ( print $prefix "server-iam.session-duration" ) .serverIam.sessionDuration -}}{{- end -}}
