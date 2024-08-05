@@ -98,7 +98,7 @@
         "org.projectnessie.cel:cel-bom",
         "org.rocksdb:rocksdbjni",
       ],
-      labels: ["pr-native", "pr-docker"],
+      labels: ["pr-docker"],
     },
 
     // Reduce awssdk update frequency (which has daily releases)
