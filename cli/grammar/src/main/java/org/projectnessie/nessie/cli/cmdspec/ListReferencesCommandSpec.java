@@ -20,10 +20,14 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface ListReferencesCommandSpec extends CommandSpec {
+public interface ListReferencesCommandSpec extends CommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.LIST_REFERENCES;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

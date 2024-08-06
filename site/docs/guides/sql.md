@@ -1,4 +1,5 @@
 # Nessie Spark SQL Extensions
+
 Spark SQL extensions provide an easy way to execute common Nessie commands via SQL.
 
 ## How to use them
@@ -26,9 +27,16 @@ bin/spark-sql
 
 Additional configuration details can be found in the [Spark via Iceberg](../iceberg/spark.md) docs.
 
-## Grammar
-The current grammar is shown below:
-```
+## Grammar *since* Nessie 0.95.0
+
+See [reference docs](/nessie-latest/spark-sql/) for the Spark SQL syntax for Nessie Spark Extensions v0.95.0
+or newer.
+
+## Grammar *before* Nessie 0.95.0
+
+The grammar is shown below:
+
+```sql
 : CREATE (BRANCH|TAG) (IF NOT EXISTS)? reference=identifier (IN catalog=identifier)? (FROM fromRef=identifier)?
 | DROP (BRANCH|TAG) (IF EXISTS)? identifier (IN catalog=identifier)?
 | USE REFERENCE reference=identifier (AT tsOrHash=identifier)?  (IN catalog=identifier)?

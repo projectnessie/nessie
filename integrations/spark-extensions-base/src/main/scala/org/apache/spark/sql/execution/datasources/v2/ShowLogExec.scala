@@ -31,6 +31,7 @@ case class ShowLogExec(
     output: Seq[Attribute],
     branch: Option[String],
     timestampOrHash: Option[String],
+    limit: Option[Int],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
@@ -48,7 +49,11 @@ case class ShowLogExec(
 
     val ref = NessieUtils.calculateRef(refName, timestampOrHash, bridge.api)
 
-    val stream = bridge.api.getCommitLog.reference(ref).stream()
+    var stream = bridge.api.getCommitLog.reference(ref).stream()
+
+    if (limit.isDefined) {
+      stream = stream.limit(limit.get)
+    }
 
     stream.iterator.asScala
       .map(entry =>

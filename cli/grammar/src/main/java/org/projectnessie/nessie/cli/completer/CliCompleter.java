@@ -20,8 +20,8 @@ import static java.util.Locale.ROOT;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.projectnessie.nessie.cli.grammar.CompletionType;
-import org.projectnessie.nessie.cli.grammar.NessieCliLexer;
 import org.projectnessie.nessie.cli.grammar.NessieCliParser;
 import org.projectnessie.nessie.cli.grammar.ParseException;
 import org.projectnessie.nessie.cli.grammar.Token;
@@ -33,11 +33,14 @@ public abstract class CliCompleter {
 
   private final Consumer<NessieCliParser> producer;
 
-  public CliCompleter(String input, int cursor, Consumer<NessieCliParser> producer) {
+  public CliCompleter(
+      String input,
+      int cursor,
+      Function<String, NessieCliParser> parserForSource,
+      Consumer<NessieCliParser> producer) {
     this.source = input.substring(0, cursor);
 
-    NessieCliLexer lexer = new NessieCliLexer(source);
-    this.parser = new NessieCliParser(lexer);
+    this.parser = parserForSource.apply(source);
 
     this.producer = producer;
   }
@@ -85,7 +88,9 @@ public abstract class CliCompleter {
           preceding += " ";
         }
         for (TokenType optionalToken : optionalTokens) {
-          tokenCandidateOther(preceding, optionalToken);
+          if (parser.isTokenActive(optionalToken)) {
+            tokenCandidateOther(preceding, optionalToken);
+          }
         }
       }
 
@@ -152,7 +157,9 @@ public abstract class CliCompleter {
           case WHITESPACE:
             break;
           default:
-            expectedTokenTypes.add(expected);
+            if (parser.isTokenActive(expected)) {
+              expectedTokenTypes.add(expected);
+            }
         }
       }
 
@@ -191,11 +198,12 @@ public abstract class CliCompleter {
 
   private void completeWithIdentifier(String preceding, String toComplete) {
     boolean quoted = false;
-    if (toComplete.startsWith("\"")) {
+    char c = !toComplete.isEmpty() ? toComplete.charAt(0) : 0;
+    if (c == '\"' || c == '\'' || c == '`') {
       // in STRING_LITERAL
       quoted = true;
       toComplete = toComplete.substring(1);
-      if (toComplete.endsWith("\"")) {
+      if (toComplete.endsWith("" + c)) {
         toComplete = toComplete.substring(0, toComplete.length() - 1);
       }
     }

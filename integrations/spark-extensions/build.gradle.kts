@@ -31,7 +31,7 @@ dependencies {
   // picks the right dependencies for scala compilation
   forScala(sparkScala.scalaVersion)
 
-  implementation(project(":nessie-spark-extensions-grammar"))
+  implementation(nessieProject(":nessie-cli-grammar"))
   implementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}"))
   compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   compileOnly("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }

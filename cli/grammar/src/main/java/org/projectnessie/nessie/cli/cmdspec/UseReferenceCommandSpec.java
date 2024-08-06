@@ -20,16 +20,20 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface UseReferenceCommandSpec extends RefCommandSpec {
+public interface UseReferenceCommandSpec extends RefWithHashCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.USE_REFERENCE;
   }
 
   @Nullable
   @Override
+  String getInCatalog();
+
+  @Nullable
+  @Override
   @Value.Default
   default Node sourceNode() {
-    return RefCommandSpec.super.sourceNode();
+    return RefWithHashCommandSpec.super.sourceNode();
   }
 
   @Nullable
@@ -37,4 +41,8 @@ public interface UseReferenceCommandSpec extends RefCommandSpec {
 
   @Override
   String getRef();
+
+  @Nullable
+  @Override
+  String getRefTimestampOrHash();
 }

@@ -113,8 +113,6 @@ dependencies {
     api(project(":nessie-catalog-secrets-api"))
 
     if (!isIncludedInNesQuEIT()) {
-      api(project(":nessie-spark-antlr-runtime"))
-      api(project(":nessie-spark-extensions-grammar"))
       api(project(":nessie-gc-iceberg"))
       api(project(":nessie-gc-iceberg-files"))
       api(project(":nessie-gc-iceberg-mock"))

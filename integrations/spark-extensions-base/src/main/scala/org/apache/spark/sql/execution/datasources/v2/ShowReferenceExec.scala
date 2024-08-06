@@ -21,6 +21,8 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin
 
 case class ShowReferenceExec(
     output: Seq[Attribute],
+    refName: Option[String],
+    timestampOrHash: Option[String],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
@@ -30,8 +32,10 @@ case class ShowReferenceExec(
       bridge: CatalogBridge
   ): Seq[InternalRow] = {
 
-    val ref = bridge.getCurrentRef
-    // todo have to figure out if this is delta or iceberg and extract the ref accordingly
+    val ref = refName
+      .map(n => bridge.api().getReference.refName(n).get())
+      .getOrElse(bridge.getCurrentRef)
+
     singleRowForRef(ref)
   }
 

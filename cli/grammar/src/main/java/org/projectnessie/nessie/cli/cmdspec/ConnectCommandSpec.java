@@ -21,7 +21,6 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-@SuppressWarnings("immutables:subtype")
 public interface ConnectCommandSpec extends CommandSpec {
   default CommandType commandType() {
     return CommandType.CONNECT;

@@ -17,7 +17,11 @@ package org.apache.spark.sql.catalyst.plans.logical
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
 
-case class ShowReferenceCommand(catalog: Option[String]) extends LeafCommand {
+case class ShowReferenceCommand(
+    refName: Option[String],
+    timestampOrHash: Option[String],
+    catalog: Option[String]
+) extends LeafCommand {
   override lazy val output: Seq[Attribute] =
     NessieCommandOutputs.referenceOutput()
 

@@ -36,22 +36,24 @@ public class TestNamespaces extends BaseTestCommand {
     try (NessieCliTester cli = nessieCliTester()) {
 
       ImmutableListContentsCommandSpec listContents =
-          ImmutableListContentsCommandSpec.of(null, null, null, null, null, null);
+          ImmutableListContentsCommandSpec.of(null, null, null, null, null, null, null);
 
       soft.assertThat(cli.execute(listContents)).containsExactly("");
 
       // Create two namespaces:
       //  foo, w/o properties
       //  foo.bar, w/ 1 property
-      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, "foo", null, Map.of()));
+      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, null, "foo", null, Map.of()));
       soft.assertThat(cli.execute(listContents)).containsExactly("      NAMESPACE foo");
       cli.execute(
-          ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar", null, Map.of("abc", "def")));
+          ImmutableCreateNamespaceCommandSpec.of(
+              null, null, "foo.bar", null, Map.of("abc", "def")));
       soft.assertThat(cli.execute(listContents))
           .containsExactly("      NAMESPACE foo", "      NAMESPACE foo.bar");
 
       soft.assertThat(
-              cli.execute(ImmutableShowContentCommandSpec.of(null, "NAMESPACE", null, null, "foo")))
+              cli.execute(
+                  ImmutableShowContentCommandSpec.of(null, null, "NAMESPACE", null, null, "foo")))
           .contains(
               "Content type: NAMESPACE",
               " Content Key: foo",
@@ -66,7 +68,8 @@ public class TestNamespaces extends BaseTestCommand {
               "}");
       soft.assertThat(
               cli.execute(
-                  ImmutableShowContentCommandSpec.of(null, "NAMESPACE", null, null, "foo.bar")))
+                  ImmutableShowContentCommandSpec.of(
+                      null, null, "NAMESPACE", null, null, "foo.bar")))
           .contains(
               "Content type: NAMESPACE",
               " Content Key: foo.bar",
@@ -87,10 +90,11 @@ public class TestNamespaces extends BaseTestCommand {
       // update properties again
       cli.execute(
           ImmutableAlterNamespaceCommandSpec.of(
-              null, "foo.bar", null, Map.of("abc", "foo", "bar", "baz"), List.of("abc")));
+              null, null, "foo.bar", null, Map.of("abc", "foo", "bar", "baz"), List.of("abc")));
       soft.assertThat(
               cli.execute(
-                  ImmutableShowContentCommandSpec.of(null, "NAMESPACE", null, null, "foo.bar")))
+                  ImmutableShowContentCommandSpec.of(
+                      null, null, "NAMESPACE", null, null, "foo.bar")))
           .contains(
               "Content type: NAMESPACE",
               " Content Key: foo.bar",
@@ -122,9 +126,10 @@ public class TestNamespaces extends BaseTestCommand {
       // update properties again
       cli.execute(
           ImmutableAlterNamespaceCommandSpec.of(
-              null, "foo.bar", null, Map.of("cde", "foo", "bar", "baz"), List.of("abc")));
+              null, null, "foo.bar", null, Map.of("cde", "foo", "bar", "baz"), List.of("abc")));
       List<String> fooBar =
-          cli.execute(ImmutableShowContentCommandSpec.of(null, "NAMESPACE", null, null, "foo.bar"));
+          cli.execute(
+              ImmutableShowContentCommandSpec.of(null, null, "NAMESPACE", null, null, "foo.bar"));
       soft.assertThat(fooBar)
           .contains(
               "Content type: NAMESPACE",
@@ -158,11 +163,17 @@ public class TestNamespaces extends BaseTestCommand {
       soft.assertThat(
               cli.execute(
                   ImmutableShowContentCommandSpec.of(
-                      null, "NAMESPACE", cli.getCurrentReference().getName(), null, "foo.bar")))
+                      null,
+                      null,
+                      "NAMESPACE",
+                      cli.getCurrentReference().getName(),
+                      null,
+                      "foo.bar")))
           .containsExactlyElementsOf(fooBar);
       soft.assertThat(
               cli.execute(
                   ImmutableShowContentCommandSpec.of(
+                      null,
                       null,
                       "NAMESPACE",
                       cli.getCurrentReference().getName(),
@@ -172,22 +183,24 @@ public class TestNamespaces extends BaseTestCommand {
 
       // Drop namespace
       cli.execute(
-          ImmutableCreateReferenceCommandSpec.of(null, "TAG", "safething", null, null, false));
+          ImmutableCreateReferenceCommandSpec.of(
+              null, null, "TAG", "safething", null, null, false));
 
-      cli.execute(ImmutableDropContentCommandSpec.of(null, "NAMESPACE", "foo.bar", null));
+      cli.execute(ImmutableDropContentCommandSpec.of(null, null, "NAMESPACE", "foo.bar", null));
       cli.execute(
           ImmutableDropContentCommandSpec.of(
-              null, "NAMESPACE", "foo", cli.getCurrentReference().getName()));
+              null, null, "NAMESPACE", "foo", cli.getCurrentReference().getName()));
 
       soft.assertThat(cli.execute(listContents)).containsExactly("");
 
       soft.assertThat(
               cli.execute(
-                  ImmutableListContentsCommandSpec.of(null, "safething", null, null, null, null)))
+                  ImmutableListContentsCommandSpec.of(
+                      null, null, "safething", null, null, null, null)))
           .containsExactly("      NAMESPACE foo", "      NAMESPACE foo.bar");
 
       // Verify commit log
-      soft.assertThat(cli.execute(ImmutableShowLogCommandSpec.of(null, null, null, null)))
+      soft.assertThat(cli.execute(ImmutableShowLogCommandSpec.of(null, null, null, null, null)))
           .contains(
               "    Drop namespace foo",
               "    Drop namespace foo.bar",

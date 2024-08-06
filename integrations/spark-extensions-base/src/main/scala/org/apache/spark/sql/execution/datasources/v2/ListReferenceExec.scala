@@ -18,12 +18,17 @@ package org.apache.spark.sql.execution.datasources.v2
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.projectnessie.client.api.GetAllReferencesBuilder
+import org.projectnessie.model.FetchOption
 
 import scala.jdk.CollectionConverters._
 
 case class ListReferenceExec(
     output: Seq[Attribute],
     currentCatalog: CatalogPlugin,
+    filter: Option[String],
+    startsWith: Option[String],
+    contains: Option[String],
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
     with LeafV2CommandExec {
@@ -31,7 +36,25 @@ case class ListReferenceExec(
   override protected def runInternal(
       bridge: CatalogBridge
   ): Seq[InternalRow] = {
-    bridge.api.getAllReferences
+    val fetchOption = FetchOption.MINIMAL;
+
+    var filterStr: Option[String] = None
+    if (filter.isDefined) {
+      filterStr = filter
+    } else {
+      if (startsWith.isDefined) {
+        filterStr = Some(s"ref.name.startsWith('${startsWith.get}')")
+      }
+      if (contains.isDefined) {
+        val f = s"ref.name.contains('${contains.get}')"
+        filterStr =
+          filterStr.map(f => s"${filterStr.get} && $f").orElse(Some(f))
+      }
+    }
+
+    val refs = bridge.api.getAllReferences.fetch(fetchOption)
+    filterStr.foreach(f => refs.filter(f))
+    refs
       .stream()
       .iterator()
       .asScala

@@ -21,10 +21,15 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface MergeBranchCommandSpec extends RefWithTypeCommandSpec, RefWithHashCommandSpec {
+public interface MergeBranchCommandSpec
+    extends RefWithTypeCommandSpec, RefWithHashCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.MERGE_BRANCH;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override
@@ -42,6 +47,7 @@ public interface MergeBranchCommandSpec extends RefWithTypeCommandSpec, RefWithH
   @Nullable
   String getRefType();
 
+  @Nullable
   @Override
   String getRef();
 

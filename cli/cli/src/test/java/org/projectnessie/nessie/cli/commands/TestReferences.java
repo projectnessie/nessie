@@ -37,17 +37,17 @@ public class TestReferences extends BaseTestCommand {
 
       Reference beginning = cli.getCurrentReference();
 
-      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, "foo", null, Map.of()));
+      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, null, "foo", null, Map.of()));
       Reference createFoo = cli.getCurrentReference();
       soft.assertThat(createFoo).isNotEqualTo(beginning);
 
-      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, "foo.bar", null, Map.of()));
+      cli.execute(ImmutableCreateNamespaceCommandSpec.of(null, null, "foo.bar", null, Map.of()));
       Reference createFooBar = cli.getCurrentReference();
       soft.assertThat(createFooBar).isNotEqualTo(createFoo);
 
       cli.execute(
           ImmutableAlterNamespaceCommandSpec.of(
-              null, "foo", null, Map.of("prop", "value"), Set.of()));
+              null, null, "foo", null, Map.of("prop", "value"), Set.of()));
       Reference alterFoo = cli.getCurrentReference();
       soft.assertThat(alterFoo).isNotEqualTo(createFooBar);
 
@@ -55,30 +55,32 @@ public class TestReferences extends BaseTestCommand {
 
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "TAG", "tag1", null, alterFoo.getHash(), false));
+              null, null, "TAG", "tag1", null, alterFoo.getHash(), false));
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "TAG", "tag2", "main", createFooBar.getHash(), false));
-      cli.execute(
-          ImmutableCreateReferenceCommandSpec.of(null, "TAG", "tag3from1", "tag1", null, false));
+              null, null, "TAG", "tag2", "main", createFooBar.getHash(), false));
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "TAG", "tag4from1", "tag1", beginning.getHash(), false));
+              null, null, "TAG", "tag3from1", "tag1", null, false));
+      cli.execute(
+          ImmutableCreateReferenceCommandSpec.of(
+              null, null, "TAG", "tag4from1", "tag1", beginning.getHash(), false));
 
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "BRANCH", "branch1", null, alterFoo.getHash(), false));
+              null, null, "BRANCH", "branch1", null, alterFoo.getHash(), false));
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "BRANCH", "branch2", "main", createFooBar.getHash(), false));
+              null, null, "BRANCH", "branch2", "main", createFooBar.getHash(), false));
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "BRANCH", "branch3from1", "branch1", null, false));
+              null, null, "BRANCH", "branch3from1", "branch1", null, false));
       cli.execute(
           ImmutableCreateReferenceCommandSpec.of(
-              null, "BRANCH", "branch4from1", "branch1", beginning.getHash(), false));
+              null, null, "BRANCH", "branch4from1", "branch1", beginning.getHash(), false));
 
-      soft.assertThat(cli.execute(ImmutableListReferencesCommandSpec.of(null, null, null, null)))
+      soft.assertThat(
+              cli.execute(ImmutableListReferencesCommandSpec.of(null, null, null, null, null)))
           .containsExactly(
               " BRANCH branch1 @ " + alterFoo.getHash(),
               " BRANCH branch2 @ " + createFooBar.getHash(),
@@ -92,21 +94,22 @@ public class TestReferences extends BaseTestCommand {
 
       // re-assign
 
-      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, "tag2", null)))
+      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, null, "tag2", null)))
           .containsExactly(
               "Reference type: TAG",
               "          Name: tag2",
               "      Tip/HEAD: " + createFooBar.getHash());
       cli.execute(
           ImmutableAssignReferenceCommandSpec.of(
-              null, "TAG", "tag2", cli.getCurrentReference().getName(), null));
-      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, "tag2", null)))
+              null, null, "TAG", "tag2", cli.getCurrentReference().getName(), null));
+      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, null, "tag2", null)))
           .containsExactly(
               "Reference type: TAG",
               "          Name: tag2",
               "      Tip/HEAD: " + cli.getCurrentReference().getHash());
 
-      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, "branch1", null)))
+      soft.assertThat(
+              cli.execute(ImmutableShowReferenceCommandSpec.of(null, null, "branch1", null)))
           .containsExactly(
               "Reference type: BRANCH",
               "          Name: branch1",
@@ -114,11 +117,13 @@ public class TestReferences extends BaseTestCommand {
       cli.execute(
           ImmutableAssignReferenceCommandSpec.of(
               null,
+              null,
               "BRANCH",
               "branch1",
               cli.getCurrentReference().getName(),
               createFooBar.getHash()));
-      soft.assertThat(cli.execute(ImmutableShowReferenceCommandSpec.of(null, "branch1", null)))
+      soft.assertThat(
+              cli.execute(ImmutableShowReferenceCommandSpec.of(null, null, "branch1", null)))
           .containsExactly(
               "Reference type: BRANCH",
               "          Name: branch1",
@@ -127,13 +132,14 @@ public class TestReferences extends BaseTestCommand {
       soft.assertThat(
               cli.execute(
                   ImmutableShowReferenceCommandSpec.of(
-                      null, cli.getCurrentReference().getName(), null)))
+                      null, null, cli.getCurrentReference().getName(), null)))
           .containsExactly(
               "Reference type: BRANCH",
               "          Name: main",
               "      Tip/HEAD: " + cli.getCurrentReference().getHash());
       cli.execute(
           ImmutableAssignReferenceCommandSpec.of(
+              null,
               null,
               "BRANCH",
               cli.getCurrentReference().getName(),
@@ -142,7 +148,7 @@ public class TestReferences extends BaseTestCommand {
       soft.assertThat(
               cli.execute(
                   ImmutableShowReferenceCommandSpec.of(
-                      null, cli.getCurrentReference().getName(), null)))
+                      null, null, cli.getCurrentReference().getName(), null)))
           .containsExactly(
               "Reference type: BRANCH",
               "          Name: main",
@@ -150,10 +156,10 @@ public class TestReferences extends BaseTestCommand {
       // Current reference has been re-assigned, verify that it's been changed
       soft.assertThat(cli.getCurrentReference()).isEqualTo(createFoo);
 
-      cli.execute(ImmutableUseReferenceCommandSpec.of(null, "TAG", "tag1"));
+      cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, "TAG", "tag1", null));
       soft.assertThat(cli.getCurrentReference()).isEqualTo(Tag.of("tag1", alterFoo.getHash()));
 
-      cli.execute(ImmutableUseReferenceCommandSpec.of(null, "BRANCH", "branch2"));
+      cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, "BRANCH", "branch2", null));
       soft.assertThat(cli.getCurrentReference())
           .isEqualTo(Branch.of("branch2", createFooBar.getHash()));
 
@@ -162,10 +168,10 @@ public class TestReferences extends BaseTestCommand {
           .isThrownBy(
               () ->
                   cli.execute(
-                      ImmutableDropReferenceCommandSpec.of(null, "BRANCH", "branch2", false)))
+                      ImmutableDropReferenceCommandSpec.of(null, null, "BRANCH", "branch2", false)))
           .withMessage("Must not delete the current reference.");
-      cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, "main"));
-      cli.execute(ImmutableDropReferenceCommandSpec.of(null, "BRANCH", "branch2", false));
+      cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, null, "main", null));
+      cli.execute(ImmutableDropReferenceCommandSpec.of(null, null, "BRANCH", "branch2", false));
     }
   }
 }

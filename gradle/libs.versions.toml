@@ -1,7 +1,6 @@
 # Nessie dependencies, without the dependencies needed by build-logic/
 
 [versions]
-antlr4 = "4.13.2"
 bouncycastle = "1.70"
 checkstyle = "10.17.0"
 errorprone = "2.29.2"
@@ -42,8 +41,6 @@ junit-testing = ["assertj-core", "mockito-core", "mockito-junit-jupiter", "junit
 [libraries]
 agroal-pool = { module = "io.agroal:agroal-pool", version = "2.5" }
 agrona = { module = "org.agrona:agrona", version = "1.22.0" }
-antlr-antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr4" }
-antlr-antlr4-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr4" }
 assertj-core = { module = "org.assertj:assertj-core", version = "3.26.3" }
 avro = { module = "org.apache.avro:avro", version = "1.11.3" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.1" }

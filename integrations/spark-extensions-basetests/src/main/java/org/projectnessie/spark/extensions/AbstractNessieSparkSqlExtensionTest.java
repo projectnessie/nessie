@@ -563,7 +563,7 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   void mergeReferences() throws NessieConflictException, NessieNotFoundException {
     List<SparkCommitLogEntry> resultList = createBranchCommitAndReturnLog();
     sql("USE REFERENCE %s IN nessie", refName);
-    sql("MERGE BRANCH IN nessie");
+    sql("MERGE BRANCH %s INTO main IN nessie", refName);
     // here we are skipping commit time as its variable
     assertThat(
             sql("SHOW LOG %s IN nessie", refName).stream()

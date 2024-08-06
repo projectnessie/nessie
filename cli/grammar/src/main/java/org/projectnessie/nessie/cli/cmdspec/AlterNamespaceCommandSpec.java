@@ -22,11 +22,14 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-@SuppressWarnings("immutables:subtype")
-public interface AlterNamespaceCommandSpec extends RefCommandSpec {
+public interface AlterNamespaceCommandSpec extends RefCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.ALTER_NAMESPACE;
   }
+
+  @Nullable
+  @Override
+  String getInCatalog();
 
   @Nullable
   @Override

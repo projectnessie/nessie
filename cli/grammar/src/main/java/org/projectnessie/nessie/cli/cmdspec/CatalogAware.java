@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.projectnessie.nessie.cli.cmdspec;
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import jakarta.annotation.Nullable;
+import org.immutables.value.Value;
 
-plugins {
-  id("nessie-conventions-client")
-  id("nessie-shadow-jar")
-}
-
-publishingHelper { mavenName = "Nessie - Antlr Runtime" }
-
-dependencies { implementation(libs.antlr.antlr4.runtime) }
-
-tasks.named<ShadowJar>("shadowJar").configure {
-  dependencies { include(dependency("org.antlr:antlr4-runtime")) }
-  relocate("org.antlr.v4.runtime", "org.projectnessie.shaded.org.antlr.v4.runtime")
+public interface CatalogAware {
+  @Nullable
+  @Value.Default
+  String getInCatalog();
 }

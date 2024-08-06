@@ -19,6 +19,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.nessie.cli.syntax.SyntaxTool.leadingTokens;
 
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -37,7 +38,9 @@ public class TestSyntax {
   @ParameterizedTest
   @MethodSource
   public void syntaxTest(String production, String expected, String plain) throws Exception {
-    Syntax syntax = new Syntax(Paths.get("src/main/congocc/nessie/nessie-cli.ccc"));
+    Syntax syntax =
+        new Syntax(
+            Paths.get("src/main/congocc/nessie/nessie-cli.ccc"), Map.of("omitSparkSql", "true"));
     Grammar grammar = syntax.getGrammar();
     BNFProduction prod = grammar.getProductionByName(production);
 

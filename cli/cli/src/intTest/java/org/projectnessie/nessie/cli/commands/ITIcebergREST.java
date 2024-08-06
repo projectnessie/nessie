@@ -79,14 +79,15 @@ public class ITIcebergREST extends WithNessie {
 
       // "USE main" & check contents to verify that "USE" works for Nessie + Iceberg REST
 
-      cli.execute(ImmutableUseReferenceCommandSpec.of(null, "BRANCH", "main"));
+      cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, "BRANCH", "main", null));
       soft.assertThat(cli.getCurrentReference()).isEqualTo(defaultBranch);
 
-      cli.execute(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null));
+      cli.execute(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null, null));
       soft.assertThat(cli.capturedOutput())
           .containsExactly("      NAMESPACE tables", "  ICEBERG_TABLE " + tableOneKey);
       cli.execute(
-          ImmutableShowContentCommandSpec.of(null, "TABLE", null, null, tableOneKey.toString()));
+          ImmutableShowContentCommandSpec.of(
+              null, null, "TABLE", null, null, tableOneKey.toString()));
       soft.assertThat(cli.capturedOutput())
           .map(s -> s.endsWith(",") ? s.substring(0, s.length() - 1) : s)
           .contains(
@@ -106,14 +107,16 @@ public class ITIcebergREST extends WithNessie {
 
       // "USE testBranch" & check contents to verify that "USE" works for Nessie + Iceberg REST
 
-      cli.execute(ImmutableUseReferenceCommandSpec.of(null, "BRANCH", testBranch.getName()));
+      cli.execute(
+          ImmutableUseReferenceCommandSpec.of(null, null, "BRANCH", testBranch.getName(), null));
       soft.assertThat(cli.getCurrentReference()).isEqualTo(testBranch);
 
-      cli.execute(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null));
+      cli.execute(ImmutableListContentsCommandSpec.of(null, null, null, null, null, null, null));
       soft.assertThat(cli.capturedOutput())
           .containsExactly("      NAMESPACE tables", "  ICEBERG_TABLE " + tableTwoKey);
       cli.execute(
-          ImmutableShowContentCommandSpec.of(null, "TABLE", null, null, tableTwoKey.toString()));
+          ImmutableShowContentCommandSpec.of(
+              null, null, "TABLE", null, null, tableTwoKey.toString()));
       soft.assertThat(cli.capturedOutput())
           .map(s -> s.endsWith(",") ? s.substring(0, s.length() - 1) : s)
           .contains(

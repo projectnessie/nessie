@@ -18,4 +18,5 @@ nav:
   - export_import.md
   - gc.md
   - cli.md
+  - spark-sql.md
   - pynessie.md

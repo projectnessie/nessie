@@ -57,7 +57,11 @@ class NessieCliCompleter extends SystemCompleter {
 
   @Override
   public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
-    new CliCompleter(line.line(), line.cursor(), NessieCliParser::SingleStatement) {
+    new CliCompleter(
+        line.line(),
+        line.cursor(),
+        nessieCli::newParserForSource,
+        NessieCliParser::SingleStatement) {
       @Override
       protected void completeWithLiteral(
           CompletionType completionType, String preceding, String toComplete, boolean quoted) {

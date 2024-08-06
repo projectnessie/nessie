@@ -41,6 +41,7 @@ TOKEN
 TOKEN #Keyword
   : <AT: "AT">
   | <IF: "IF">
+  | <IN: "IN">
   | <OF: "OF">
   | <ON: "ON">
   | <TO: "TO">
@@ -83,9 +84,11 @@ TOKEN #Literal
   | <FALSE: "false"> #BooleanLiteral
   | <#REGULAR_CHAR : ~["\u0000"-"\u001F",'"',"\\"]>
   | <STRING_LITERAL:
-      '"'
-      (~["\"","\\","\n","\r"])*
-      '"'
+      (
+        '"' (~["\"","\\","\n","\r"])* '"' |
+        '`' (~["`","\n","\r"])* '`' |
+        '\'' (~["`","\n","\r"])* '\''
+      )
     > #StringLiteral
   | <IDENTIFIER: ["A"-"Z", "a"-"z", "0"-"9"] ( (["A"-"Z", "a"-"z", "0"-"9", "_", "-", ".", ":", "/"])* ["A"-"Z", "a"-"z", "0"-"9", "_", "-"])?> #Ident
   | <URI: "http" ("s")? "://" (["a"-"z", "A"-"Z", "0"-"9", ":", "/", "-", "_", ".", "?", "&", "=", "+"])+> #UriLiteral
@@ -97,5 +100,6 @@ TOKEN #ReferenceTypes
   | <TAG: "TAG"> #Tag
   ;
 
-UNPARSED : <SINGLE_LINE_COMMENT : "//" (~["\n"])* "\n" > #SingleLineComment ;
+UNPARSED : <SINGLE_LINE_DASH_COMMENT : "--" (~["\n"])* > #SingleLineDashComment ;
+UNPARSED : <SINGLE_LINE_COMMENT : "//" (~["\n"])* > #SingleLineComment ;
 UNPARSED : < ?MULTI_LINE_COMMENT : "/*" (~[])* "*/" > #MultiLineComment ;

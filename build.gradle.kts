@@ -140,12 +140,4 @@ changelog {
   version = provider { project.version.toString() }
 }
 
-idea.project.settings {
-  taskTriggers {
-    afterSync(
-      ":nessie-protobuf-relocated:jar",
-      ":nessie-spark-antlr-runtime:jar",
-      ":nessie-spark-extensions-grammar:jar"
-    )
-  }
-}
+idea.project.settings { taskTriggers { afterSync(":nessie-protobuf-relocated:jar") } }

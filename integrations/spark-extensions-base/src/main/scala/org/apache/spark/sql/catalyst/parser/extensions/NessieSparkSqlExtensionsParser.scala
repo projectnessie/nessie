@@ -15,33 +15,41 @@
  */
 package org.apache.spark.sql.catalyst.parser.extensions
 
-import org.projectnessie.shaded.org.antlr.v4.runtime.{
-  BaseErrorListener,
-  CharStream,
-  CharStreams,
-  CodePointCharStream,
-  CommonToken,
-  CommonTokenStream,
-  IntStream,
-  ParserRuleContext,
-  RecognitionException,
-  Recognizer
+import org.projectnessie.nessie.cli.grammar.{
+  NessieCliLexer,
+  NessieCliParser,
+  ParseException
 }
-import org.projectnessie.shaded.org.antlr.v4.runtime.atn.PredictionMode
-import org.projectnessie.shaded.org.antlr.v4.runtime.misc.{
-  Interval,
-  ParseCancellationException
-}
-import org.apache.spark.sql.AnalysisException
+import org.projectnessie.nessie.cli.grammar.Token.TokenType
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.trees.Origin
+import org.apache.spark.sql.catalyst.plans.logical.{
+  AssignReferenceCommand,
+  CreateReferenceCommand,
+  DropReferenceCommand,
+  ListReferenceCommand,
+  LogicalPlan,
+  MergeBranchCommand,
+  ShowLogCommand,
+  ShowReferenceCommand,
+  UseReferenceCommand
+}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.{DataType, StructType}
+import org.projectnessie.nessie.cli.cmdspec.{
+  AssignReferenceCommandSpec,
+  CommandType,
+  CreateReferenceCommandSpec,
+  DropReferenceCommandSpec,
+  ListReferencesCommandSpec,
+  MergeBranchCommandSpec,
+  ShowLogCommandSpec,
+  ShowReferenceCommandSpec,
+  UseReferenceCommandSpec
+}
+import org.projectnessie.nessie.cli.grammar.ast.SingleStatement
 
-import java.util.Locale
 import scala.util.Try
 
 class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
@@ -53,8 +61,6 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
     Try(substitutorCtor.newInstance(SQLConf.get))
       .getOrElse(substitutorCtor.newInstance())
   }
-
-  private lazy val astBuilder = new NessieSqlExtensionsAstBuilder(delegate)
 
   /** Parse a string to a DataType.
     */
@@ -106,86 +112,130 @@ class NessieSparkSqlExtensionsParser(delegate: ParserInterface)
     */
   override def parsePlan(sqlText: String): LogicalPlan = {
     val sqlTextAfterSubstitution = substitutor.substitute(sqlText)
-    if (isNessieCommand(sqlTextAfterSubstitution)) {
-      parse(sqlTextAfterSubstitution) { parser =>
-        astBuilder.visit(parser.singleStatement())
-      }.asInstanceOf[LogicalPlan]
-    } else {
-      delegate.parsePlan(sqlText)
-    }
-  }
-
-  private def isNessieCommand(sqlText: String): Boolean = {
-    val normalized = sqlText
-      .toLowerCase(Locale.ROOT)
-      .trim()
-      // Strip simple SQL comments that terminate a line, e.g. comments starting with `--` .
-      .replaceAll("--.*?\\n", " ")
-      // Strip newlines.
-      .replaceAll("\\s+", " ")
-      // Strip comments of the form  /* ... */. This must come after stripping newlines so that
-      // comments that span multiple lines are caught.
-      .replaceAll("/\\*.*?\\*/", " ")
-      .trim()
-    normalized.startsWith("create branch") || normalized.startsWith(
-      "create tag"
-    ) ||
-    normalized.startsWith("drop branch") || normalized.startsWith("drop tag") ||
-    normalized.startsWith("use reference") || normalized.startsWith(
-      "list reference"
-    ) ||
-    normalized.startsWith("show reference") || normalized.startsWith(
-      "show log"
-    ) ||
-    normalized.startsWith("merge branch") || normalized.startsWith(
-      "assign branch"
-    ) ||
-    normalized.startsWith("assign tag")
-  }
-
-  protected def parse[T](
-      command: String
-  )(toResult: NessieSqlExtensionsParser => T): T = {
-    val lexer = new NessieSqlExtensionsLexer(
-      new NessieUpperCaseCharStream(CharStreams.fromString(command))
-    )
-    lexer.removeErrorListeners()
-    lexer.addErrorListener(NessieParseErrorListener)
-
-    val tokenStream = new CommonTokenStream(lexer)
-    val parser = new NessieSqlExtensionsParser(tokenStream)
-    parser.removeErrorListeners()
-    parser.addErrorListener(NessieParseErrorListener)
-
+    val lexer = new NessieCliLexer(sqlTextAfterSubstitution)
+    val parser = new NessieCliParser(lexer)
+    parser.deactivateTokenType(TokenType.CONNECT)
+    parser.deactivateTokenType(TokenType.EXIT)
+    parser.deactivateTokenType(TokenType.HELP)
+    parser.activateTokenType(TokenType.IN)
     try {
-      try {
-        // first, try parsing with potentially faster SLL mode
-        parser.getInterpreter.setPredictionMode(PredictionMode.SLL)
-        toResult(parser)
-      } catch {
-        case _: ParseCancellationException =>
-          // if we fail, parse with LL mode
-          tokenStream.seek(0) // rewind input stream
-          parser.reset()
+      parser.SingleStatement()
 
-          // Try Again.
-          parser.getInterpreter.setPredictionMode(PredictionMode.LL)
-          toResult(parser)
+      val root = parser.rootNode
+      val singleStatement = root.asInstanceOf[SingleStatement]
+      val commandSpec = singleStatement.getCommandSpec
+
+      commandSpec.commandType() match {
+        // case CommandType.CONNECT => // disabled above
+        // case CommandType.EXIT => // disabled above
+        // case CommandType.HELP => // disabled above
+        case CommandType.USE_REFERENCE =>
+          val spec = commandSpec.asInstanceOf[UseReferenceCommandSpec]
+          return UseReferenceCommand(
+            spec.getRef,
+            Option(spec.getRefTimestampOrHash),
+            Option(spec.getInCatalog)
+          )
+        case CommandType.CREATE_REFERENCE =>
+          val spec = commandSpec.asInstanceOf[CreateReferenceCommandSpec]
+          return CreateReferenceCommand(
+            spec.getRef,
+            Option(spec.getRefTimestampOrHash),
+            spec.getRefType.equals("BRANCH"),
+            Option(spec.getInCatalog),
+            Option(spec.getFromRef),
+            !spec.isConditional
+          )
+        case CommandType.DROP_REFERENCE =>
+          val spec = commandSpec.asInstanceOf[DropReferenceCommandSpec]
+          return DropReferenceCommand(
+            spec.getRef,
+            spec.getRefType.equals("BRANCH"),
+            Option(spec.getInCatalog),
+            !spec.isConditional
+          )
+        case CommandType.ASSIGN_REFERENCE =>
+          val spec = commandSpec.asInstanceOf[AssignReferenceCommandSpec]
+          return AssignReferenceCommand(
+            spec.getRef,
+            spec.getRefType.equals("BRANCH"),
+            Option(spec.getTo),
+            Option(spec.getRefTimestampOrHash),
+            Option(spec.getInCatalog)
+          )
+        case CommandType.LIST_REFERENCES =>
+          val spec = commandSpec.asInstanceOf[ListReferencesCommandSpec]
+          return ListReferenceCommand(
+            Option(spec.getFilter),
+            Option(spec.getStartsWith),
+            Option(spec.getContains),
+            Option(spec.getInCatalog)
+          )
+        case CommandType.MERGE_BRANCH =>
+          val spec = commandSpec.asInstanceOf[MergeBranchCommandSpec]
+          return MergeBranchCommand(
+            Option(spec.getRef),
+            Option(spec.getRefTimestampOrHash),
+            Option(spec.getInto),
+            spec.isDryRun,
+            Option(spec.getDefaultMergeBehavior),
+            spec.getKeyMergeBehaviors,
+            Option(spec.getInCatalog)
+          )
+        case CommandType.SHOW_LOG =>
+          val spec = commandSpec.asInstanceOf[ShowLogCommandSpec]
+          return ShowLogCommand(
+            Option(spec.getRef),
+            Option(spec.getRefTimestampOrHash),
+            Option(spec.getLimit).flatMap(l => if (l == 0) None else Option(l)),
+            Option(spec.getInCatalog)
+          )
+        case CommandType.SHOW_REFERENCE =>
+          val spec = commandSpec.asInstanceOf[ShowReferenceCommandSpec]
+          return ShowReferenceCommand(
+            Option(spec.getRef),
+            Option(spec.getRefTimestampOrHash),
+            Option(spec.getInCatalog)
+          )
+        // case CommandType.SHOW_CONTENT   => ???
+        // case CommandType.REVERT_CONTENT => ???
+        // case CommandType.CREATE_NAMESPACE => ???
+        // case CommandType.DROP_CONTENT => ???
+        // case CommandType.ALTER_NAMESPACE => ???
+        // case CommandType.LIST_CONTENTS   => ???
+        case _ => delegate.parsePlan(sqlText)
       }
+
     } catch {
-      case e: NessieParseException if e.command.isDefined =>
-        throw e
-      case e: NessieParseException =>
-        throw e.withCommand(command)
-      case e: AnalysisException =>
-        val position = Origin(e.line, e.startPosition)
-        throw new NessieParseException(
-          Option(command),
-          e.message,
-          position,
-          position
-        )
+      case _: ParseException =>
+      // TODO check whether it's a Nessie statement
+      //        delegate.parsePlan(sqlText)
+      //        val token = e.getToken
+      //        val start =
+      //          if (token != null)
+      //            Origin(
+      //              Option(token.getBeginLine),
+      //              Option(token.getBeginColumn),
+      //              Option(token.getBeginOffset)
+      //            )
+      //          else Origin()
+      //        val stop =
+      //          if (token != null)
+      //            Origin(
+      //              Option(token.getEndLine),
+      //              Option(token.getEndColumn),
+      //              Option(token.getEndOffset)
+      //            )
+      //          else Origin()
+      //        throw new NessieParseException(
+      //          Option(sqlTextAfterSubstitution),
+      //          e.getMessage,
+      //          start,
+      //          stop
+      //        )
     }
+
+    delegate.parsePlan(sqlText)
   }
 }
 
@@ -193,110 +243,5 @@ object NessieSparkSqlExtensionsParser {
   private val substitutorCtor = {
     Try(classOf[VariableSubstitution].getConstructor(classOf[SQLConf]))
       .getOrElse(classOf[VariableSubstitution].getConstructor())
-  }
-}
-
-/* Copied from Apache Spark's to avoid dependency on Spark Internals */
-class NessieUpperCaseCharStream(wrapped: CodePointCharStream)
-    extends CharStream {
-  override def consume(): Unit = wrapped.consume
-  override def getSourceName(): String = wrapped.getSourceName
-  override def index(): Int = wrapped.index
-  override def mark(): Int = wrapped.mark
-  override def release(marker: Int): Unit = wrapped.release(marker)
-  override def seek(where: Int): Unit = wrapped.seek(where)
-  override def size(): Int = wrapped.size
-
-  override def getText(interval: Interval): String = {
-    // ANTLR 4.7's CodePointCharStream implementations have bugs when
-    // getText() is called with an empty stream, or intervals where
-    // the start > end. See
-    // https://github.com/antlr/antlr4/commit/ac9f7530 for one fix
-    // that is not yet in a released ANTLR artifact.
-    if (size() > 0 && (interval.b - interval.a >= 0)) {
-      wrapped.getText(interval)
-    } else {
-      ""
-    }
-  }
-
-  // scalastyle:off
-  override def LA(i: Int): Int = {
-    val la = wrapped.LA(i)
-    if (la == 0 || la == IntStream.EOF) la
-    else Character.toUpperCase(la)
-  }
-  // scalastyle:on
-}
-
-/* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
-case object NessieParseErrorListener extends BaseErrorListener {
-  override def syntaxError(
-      recognizer: Recognizer[_, _],
-      offendingSymbol: scala.Any,
-      line: Int,
-      charPositionInLine: Int,
-      msg: String,
-      e: RecognitionException
-  ): Unit = {
-    val (start, stop) = offendingSymbol match {
-      case token: CommonToken =>
-        val start = Origin(Some(line), Some(token.getCharPositionInLine))
-        val length = token.getStopIndex - token.getStartIndex + 1
-        val stop =
-          Origin(Some(line), Some(token.getCharPositionInLine + length))
-        (start, stop)
-      case _ =>
-        val start = Origin(Some(line), Some(charPositionInLine))
-        (start, start)
-    }
-    throw new NessieParseException(None, msg, start, stop)
-  }
-}
-
-/** Copied from Apache Spark A [[NessieParseException]] is an
-  * `AnalysisException` that is thrown during the parse process. It contains
-  * fields and an extended error message that make reporting and diagnosing
-  * errors easier.
-  */
-class NessieParseException(
-    val command: Option[String],
-    message: String,
-    val start: Origin,
-    val stop: Origin
-) extends AnalysisException(message, start.line, start.startPosition) {
-
-  def this(message: String, ctx: ParserRuleContext) = {
-    this(
-      Option(NessieParserUtils.command(ctx)),
-      message,
-      NessieParserUtils.position(ctx.getStart),
-      NessieParserUtils.position(ctx.getStop)
-    )
-  }
-
-  override def getMessage: String = {
-    val builder = new StringBuilder
-    builder ++= "\n" ++= message
-    start match {
-      case Origin(Some(l), Some(p), _, _, _, _, _) =>
-        builder ++= s"(line $l, pos $p)\n"
-        command.foreach { cmd =>
-          val (above, below) = cmd.split("\n").splitAt(l)
-          builder ++= "\n== SQL ==\n"
-          above.foreach(builder ++= _ += '\n')
-          builder ++= (0 until p).map(_ => "-").mkString("") ++= "^^^\n"
-          below.foreach(builder ++= _ += '\n')
-        }
-      case _ =>
-        command.foreach { cmd =>
-          builder ++= "\n== SQL ==\n" ++= cmd
-        }
-    }
-    builder.toString
-  }
-
-  def withCommand(cmd: String): NessieParseException = {
-    new NessieParseException(Option(cmd), message, start, stop)
   }
 }

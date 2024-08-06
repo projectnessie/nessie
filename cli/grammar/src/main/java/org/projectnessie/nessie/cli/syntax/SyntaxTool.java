@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,16 @@ public class SyntaxTool {
 
     Files.createDirectories(outputDir);
 
-    Syntax syntax = new Syntax(Paths.get(args[1]));
+    Map<String, String> preprocessorSymbols = new HashMap<>();
+    for (int i = 2; i < args.length; i++) {
+      String arg = args[i];
+      int eq = arg.indexOf('=');
+      String k = arg.substring(0, eq);
+      String v = arg.substring(eq + 1);
+      preprocessorSymbols.put(k, v);
+    }
+
+    Syntax syntax = new Syntax(Paths.get(args[1]), preprocessorSymbols);
 
     Map<SyntaxPrinter.Type, AttributedStyle> styleMap = ansiStyleMap();
 
