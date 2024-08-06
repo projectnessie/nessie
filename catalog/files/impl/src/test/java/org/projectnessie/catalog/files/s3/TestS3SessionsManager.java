@@ -50,9 +50,7 @@ class TestS3SessionsManager {
   void testExpiration() {
     AtomicLong time = new AtomicLong();
 
-    AtomicInteger counter = new AtomicInteger();
-    AtomicReference<Credentials> credentials = new AtomicReference<>();
-    StsCredentialsFetcher loader = new MockStsCredentialsFetcher(credentials::get, counter);
+    MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
     S3SessionsManager manager =
         new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
@@ -62,40 +60,46 @@ class TestS3SessionsManager {
             .serverIam(ImmutableS3ServerIam.builder().enabled(true).assumeRole("role").build())
             .build();
 
-    credentials.set(credentials(time.get() + 100));
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(1);
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(1);
+    loader.credentials.set(credentials(time.get() + 100));
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(1);
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(1);
 
     time.set(89); // just before the expiry time minus grace time
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(1);
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(1);
 
     time.set(90); // at the grace period - the entry is expired
-    credentials.set(credentials(time.get() + 200));
+    loader.credentials.set(credentials(time.get() + 200));
 
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(2);
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(2);
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(2);
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(2);
 
     // test expiry in the past
     time.set(1000);
-    credentials.set(Credentials.builder().expiration(Instant.ofEpochMilli(time.get() - 1)).build());
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(3);
-    soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(4);
+    loader.credentials.set(
+        Credentials.builder().expiration(Instant.ofEpochMilli(time.get() - 1)).build());
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(3);
+    soft.assertThat(manager.sessionCredentialsForServer("r1", options))
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(4);
   }
 
   @Test
   void testClientSessionCredentials() {
     AtomicLong time = new AtomicLong();
 
-    AtomicInteger counter = new AtomicInteger();
-    AtomicReference<Credentials> credentials = new AtomicReference<>();
-    StsCredentialsFetcher loader = new MockStsCredentialsFetcher(credentials::get, counter);
+    MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
     S3SessionsManager manager =
         new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
@@ -105,28 +109,27 @@ class TestS3SessionsManager {
             .clientIam(ImmutableS3ClientIam.builder().enabled(true).assumeRole("role").build())
             .build();
 
-    credentials.set(credentials(time.get() + 100));
+    loader.credentials.set(credentials(time.get() + 100));
 
     StorageUri location = StorageUri.of("s3://bucket/path");
     StorageLocations locations =
         StorageLocations.storageLocations(
             StorageUri.of("s3://bucket/"), List.of(location), List.of());
     soft.assertThat(manager.sessionCredentialsForClient(options, locations))
-        .isSameAs(credentials.get());
-    soft.assertThat(counter.get()).isEqualTo(1);
+        .isSameAs(loader.credentials.get());
+    soft.assertThat(loader.counter.get()).isEqualTo(1);
 
     soft.assertThat(manager.sessionCredentialsForClient(options, locations))
-        .isSameAs(credentials.get());
+        .isSameAs(loader.credentials.get());
     // Client session credentials are not cached
-    soft.assertThat(counter.get()).isEqualTo(2);
+    soft.assertThat(loader.counter.get()).isEqualTo(2);
   }
 
   @Test
   void testRepositoryIsolation() {
     AtomicLong time = new AtomicLong();
 
-    AtomicReference<Credentials> credentials = new AtomicReference<>();
-    StsCredentialsFetcher loader = new MockStsCredentialsFetcher(credentials::get);
+    MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
     S3SessionsManager manager =
         new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
@@ -139,13 +142,13 @@ class TestS3SessionsManager {
     Credentials c1 = credentials(time.get() + 100);
     Credentials c2 = credentials(time.get() + 200);
 
-    credentials.set(c1);
+    loader.credentials.set(c1);
     soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(c1);
-    credentials.set(c2);
+    loader.credentials.set(c2);
     soft.assertThat(manager.sessionCredentialsForServer("r2", options)).isSameAs(c2);
 
     // cached responses
-    credentials.set(null);
+    loader.credentials.set(null);
     soft.assertThat(manager.sessionCredentialsForServer("r1", options)).isSameAs(c1);
     soft.assertThat(manager.sessionCredentialsForServer("r2", options)).isSameAs(c2);
   }
@@ -173,5 +176,29 @@ class TestS3SessionsManager {
         .describedAs(meterRegistry.getMetersAsString())
         .anySatisfy(m -> extractor.apply(m).containsExactly("sts-sessions", "cache.loads", 0.0d))
         .anySatisfy(m -> extractor.apply(m).containsExactly("sts-sessions", "max_entries", 10.0d));
+  }
+
+  static class MockStsCredentialsFetcher implements StsCredentialsFetcher {
+
+    final AtomicReference<Credentials> credentials;
+    final AtomicInteger counter;
+
+    MockStsCredentialsFetcher() {
+      this.credentials = new AtomicReference<>();
+      this.counter = new AtomicInteger();
+    }
+
+    @Override
+    public Credentials fetchCredentialsForClient(
+        S3BucketOptions bucketOptions, S3ClientIam iam, Optional<StorageLocations> locations) {
+      counter.incrementAndGet();
+      return credentials.get();
+    }
+
+    @Override
+    public Credentials fetchCredentialsForServer(S3BucketOptions bucketOptions, S3ServerIam iam) {
+      counter.incrementAndGet();
+      return credentials.get();
+    }
   }
 }
