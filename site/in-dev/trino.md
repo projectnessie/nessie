@@ -33,15 +33,15 @@ configuration.
     To get the Trino 'static' catalog configuration, use `curl` or `wget`:
 
     ```bash
-    NESSIE_CATALOG_URL="http://127.0.0.1:19120/iceberg"
-    curl "${NESSIE_CATALOG_URL}/v1-clients/trino?format=static"
+    NESSIE_BASE_URL="http://127.0.0.1:19120/"
+    curl "${NESSIE_BASE_URL}/iceberg-ext/v1/client-template/trino?format=static"
     ```
 
     `wget` can be used to download the configuration SQL to a `nessie.properties` file:
 
     ```bash
-    NESSIE_CATALOG_URL="http://127.0.0.1:19120/iceberg"
-    wget --content-disposition "${NESSIE_CATALOG_URL}/v1-clients/trino?format=static" 
+    NESSIE_BASE_URL="http://127.0.0.1:19120/"
+    wget --content-disposition "${NESSIE_CATALOG_URL}/iceberg-ext/v1/client-template/trino?format=static" 
     ```
 
     The above will return the contents for a Trino catalog configuration properties file for 'static'

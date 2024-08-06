@@ -45,8 +45,8 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 ### New Features
 
 - Catalog/Trino: Add convenience REST endpoint to provide a _starter_ Trino catalog configuration.
-  Use `/iceberg/v1-clients/trino?format=static` for Trino 'static' catalog configurations,
-  `/iceberg/v1-clients/trino?format=dynamic` for Trino 'dynamic' catalog configurations.
+  Use `/iceberg-ext/v1/client-template/trino?format=static` for Trino 'static' catalog configurations,
+  `/iceberg-ext/v1/client-template/trino?format=dynamic` for Trino 'dynamic' catalog configurations.
   Please take a look at the [Trino page](https://projectnessie.org/nessie-latest/trino/) for known
   limitations in Trino.
 - Catalog: The Iceberg REST header `X-Iceberg-Access-Delegation` is now respected. The functionality

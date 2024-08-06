@@ -55,7 +55,10 @@ public abstract class AbstractTrino {
     Properties props = new Properties();
     try (InputStream in =
         tweakSetupConfigCall(
-                new URL(format("http://localhost:%d/iceberg/v1-clients/trino", quarkusPort))
+                new URL(
+                        format(
+                            "http://localhost:%d/iceberg-ext/v1/client-template/trino",
+                            quarkusPort))
                     .openConnection())
             .getInputStream()) {
       props.load(in);
