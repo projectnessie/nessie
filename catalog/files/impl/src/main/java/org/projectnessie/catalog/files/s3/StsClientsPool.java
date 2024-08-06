@@ -70,9 +70,6 @@ public class StsClientsPool {
   private static StsClient defaultStsClient(StsClientKey parameters, SdkHttpClient sdkClient) {
     StsClientBuilder builder = StsClient.builder();
     builder.httpClient(sdkClient);
-    // TODO the URI path of the endpoint will get LOST if configured via
-    //  StsClientBuilder.endpointOverride(), but not when provided via an endpoint.provider.
-    // parameters.endpoint().ifPresent(builder::endpointOverride);
     if (parameters.endpoint().isPresent()) {
       CompletableFuture<Endpoint> endpointFuture =
           completedFuture(Endpoint.builder().url(parameters.endpoint().get()).build());

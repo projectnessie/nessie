@@ -64,10 +64,10 @@ public class S3SessionsManager {
             .maximumSize(maxSize)
             .recordStats(() -> statsCounter(meterRegistry, CACHE_NAME, maxSize))
             .expireAfter(new StsSessionsExpiry())
-            .build(key -> loadSessionCredentials(key.bucketOptions()));
+            .build(key -> loadServerSessionCredentials(key.bucketOptions()));
   }
 
-  private Credentials loadSessionCredentials(S3BucketOptions options) {
+  private Credentials loadServerSessionCredentials(S3BucketOptions options) {
     S3ServerIam iam =
         options
             .getEnabledServerIam()

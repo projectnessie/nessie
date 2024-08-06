@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.catalog.files.s3.S3IamPolicies.locationDependentPolicy;
 
 import java.util.Optional;
@@ -53,14 +52,7 @@ class StsCredentialsFetcherImpl implements StsCredentialsFetcher {
     iam.assumeRole().ifPresent(request::roleArn);
     iam.externalId().ifPresent(request::externalId);
     iam.sessionDuration()
-        .ifPresent(
-            duration -> {
-              long seconds = duration.toSeconds();
-              checkArgument(
-                  seconds < Integer.MAX_VALUE,
-                  "Requested session duration is too long: " + duration);
-              request.durationSeconds((int) seconds);
-            });
+        .ifPresent(duration -> request.durationSeconds((int) duration.toSeconds()));
     request.overrideConfiguration(
         builder -> {
           S3AuthType authType = bucketOptions.effectiveAuthType();

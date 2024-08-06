@@ -15,6 +15,8 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.time.Duration;
 import java.util.Optional;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
@@ -89,7 +91,7 @@ public interface S3Iam {
    * A higher bound estimate of the expected duration of client "sessions" working with data in this
    * bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on the client
    * side. This value is used for validating expiration times of credentials associated with the
-   * warehouse.
+   * warehouse. Must be >= 1 second.
    */
   Optional<Duration> sessionDuration();
 
@@ -104,5 +106,16 @@ public interface S3Iam {
 
   default void validate(String bucketName) {
     S3IamPolicies.validateIam(this, bucketName);
+    sessionDuration()
+        .ifPresent(
+            duration -> {
+              checkArgument(
+                  !duration.isNegative(), "Requested session duration is negative: " + duration);
+              long seconds = duration.toSeconds();
+              checkArgument(seconds > 0, "Requested session duration is too short: " + duration);
+              checkArgument(
+                  seconds < Integer.MAX_VALUE,
+                  "Requested session duration is too long: " + duration);
+            });
   }
 }
