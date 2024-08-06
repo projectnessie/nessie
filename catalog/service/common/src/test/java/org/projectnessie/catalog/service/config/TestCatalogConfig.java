@@ -44,7 +44,7 @@ public class TestCatalogConfig {
                         "w1",
                         ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
                     .build()
-                    .check())
+                    .validate())
         .doesNotThrowAnyException();
 
     soft.assertThatCode(
@@ -55,12 +55,12 @@ public class TestCatalogConfig {
                         ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
                     .defaultWarehouse("w1")
                     .build()
-                    .check())
+                    .validate())
         .doesNotThrowAnyException();
 
     soft.assertThatIllegalStateException()
         .isThrownBy(
-            () -> ImmutableCatalogConfigForTest.builder().defaultWarehouse("w1").build().check())
+            () -> ImmutableCatalogConfigForTest.builder().defaultWarehouse("w1").build().validate())
         .withMessage("Default warehouse 'w1' is not defined.");
 
     soft.assertThatIllegalStateException()
@@ -72,7 +72,7 @@ public class TestCatalogConfig {
                         ImmutableWarehouseConfigForTest.builder().location("s3://foo").build())
                     .defaultWarehouse("w2")
                     .build()
-                    .check())
+                    .validate())
         .withMessage("Default warehouse 'w2' is not defined.");
   }
 
@@ -186,8 +186,8 @@ public class TestCatalogConfig {
 
     @Override
     @Value.Check
-    default void check() {
-      CatalogConfig.super.check();
+    default void validate() {
+      CatalogConfig.super.validate();
     }
   }
 

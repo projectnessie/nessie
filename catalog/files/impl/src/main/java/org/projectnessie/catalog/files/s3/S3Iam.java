@@ -101,4 +101,8 @@ public interface S3Iam {
   default Duration minSessionCredentialValidityPeriod() {
     return sessionDuration().orElse(DEFAULT_SESSION_DURATION);
   }
+
+  default void validate(String bucketName) {
+    S3IamPolicies.validateIam(this, bucketName);
+  }
 }

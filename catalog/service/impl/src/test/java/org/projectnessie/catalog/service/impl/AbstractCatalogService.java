@@ -306,8 +306,8 @@ public abstract class AbstractCatalogService {
 
     @Override
     @Value.Check
-    default void check() {
-      CatalogConfig.super.check();
+    default void validate() {
+      CatalogConfig.super.validate();
     }
   }
 

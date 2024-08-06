@@ -146,4 +146,8 @@ public interface GcsOptions {
     GcsBucketOptions perBucket = buckets().get(name);
     return resolveSecrets(name, perBucket, secretsProvider);
   }
+
+  default void validate() {
+    // nothing to validate
+  }
 }

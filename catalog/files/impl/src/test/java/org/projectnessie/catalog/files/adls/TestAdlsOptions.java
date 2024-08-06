@@ -28,7 +28,7 @@ public class TestAdlsOptions {
   @ParameterizedTest
   @MethodSource
   public void missingEndpoint(AdlsOptions options, String keys) {
-    assertThatThrownBy(options::checkEndpoint)
+    assertThatThrownBy(options::validate)
         .isInstanceOf(IllegalStateException.class)
         .hasMessageStartingWith("Mandatory ADLS endpoint is not configured for file system '")
         .hasMessageEndingWith("'.")
@@ -38,7 +38,7 @@ public class TestAdlsOptions {
   @ParameterizedTest
   @MethodSource
   public void goodEndpoint(AdlsOptions options) {
-    assertThatCode(options::checkEndpoint).doesNotThrowAnyException();
+    assertThatCode(options::validate).doesNotThrowAnyException();
   }
 
   static Stream<Arguments> missingEndpoint() {

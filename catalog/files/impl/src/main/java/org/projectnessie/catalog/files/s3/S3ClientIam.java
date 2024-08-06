@@ -44,4 +44,9 @@ public interface S3ClientIam extends S3Iam {
    * reference</a>.
    */
   Optional<List<String>> statements();
+
+  @Override
+  default void validate(String bucketName) {
+    S3IamPolicies.validateClientIam(this, bucketName);
+  }
 }

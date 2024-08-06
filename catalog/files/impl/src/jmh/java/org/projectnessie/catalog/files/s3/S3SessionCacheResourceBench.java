@@ -24,7 +24,6 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -85,9 +84,8 @@ public class S3SessionCacheResourceBench {
                       .build())
               .build();
 
-      s3SessionsManager =
-          new S3SessionsManager(
-              s3options, System::currentTimeMillis, httpClient, null, Optional.empty(), null);
+      StsClientsPool stsClientsPool = new StsClientsPool(s3options, httpClient, null);
+      s3SessionsManager = new S3SessionsManager(s3options, stsClientsPool, null);
 
       List<String> regions =
           Region.regions().stream()
@@ -142,7 +140,6 @@ public class S3SessionCacheResourceBench {
   public void getCredentialsForClient(BenchmarkParam param, Blackhole bh) {
     bh.consume(
         param.s3SessionsManager.sessionCredentialsForClient(
-            "repo",
             param.bucketOptions(),
             StorageLocations.storageLocations(
                 StorageUri.of("s3://bucket/"),

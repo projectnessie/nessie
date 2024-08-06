@@ -112,7 +112,7 @@ public interface CatalogConfig {
     throw new IllegalStateException("Warehouse '" + warehouse + "' is not known");
   }
 
-  default void check() {
+  default void validate() {
     defaultWarehouse()
         .ifPresent(
             name -> {

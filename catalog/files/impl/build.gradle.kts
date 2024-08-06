@@ -40,6 +40,7 @@ dependencies {
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:sts")
   implementation("software.amazon.awssdk:regions")
+  implementation("software.amazon.awssdk:iam-policy-builder")
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }

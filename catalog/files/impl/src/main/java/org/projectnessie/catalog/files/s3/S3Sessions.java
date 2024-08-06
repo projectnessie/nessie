@@ -31,20 +31,19 @@ public class S3Sessions {
   }
 
   /**
-   * Returns potentially shared session credentials for the specified role using the default session
-   * duration.
+   * Returns session credentials suitable for the catalog server itself when accessing the given
+   * bucket.
    */
   AwsCredentialsProvider assumeRoleForServer(S3BucketOptions options) {
     return credentials(() -> sessionsManager.sessionCredentialsForServer(repositoryId, options));
   }
 
   /**
-   * Returns session credentials for the specified role and the expected session duration. Note:
-   * credentials returned from this method are generally not shared across sessions.
+   * Returns session credentials suitable for catalog clients, when accessing the given bucket, and
+   * with policies enforcing only access to the given locations.
    */
   AwsCredentialsProvider assumeRoleForClient(S3BucketOptions options, StorageLocations locations) {
-    return credentials(
-        () -> sessionsManager.sessionCredentialsForClient(repositoryId, options, locations));
+    return credentials(() -> sessionsManager.sessionCredentialsForClient(options, locations));
   }
 
   private AwsCredentialsProvider credentials(Supplier<Credentials> supplier) {
