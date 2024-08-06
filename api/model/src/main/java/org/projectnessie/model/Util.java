@@ -25,9 +25,8 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.model.types.RepositoryConfigTypes;
 
@@ -44,15 +43,70 @@ final class Util {
   public static final char REF_HASH_SEPARATOR = '@';
 
   /**
-   * Convert from path encoded string to normal string.
+   * Convert from path encoded string to normal string, supports all Nessie Spec versions.
+   *
+   * <p>The {@code encoded} parameter is split at dot ({@code .}) characters.
+   *
+   * <p>Legacy compatibility: a dot ({@code .}) character can be represented using ASCII 31 (0x1F)
+   * or ASCII 0 (0x00).
+   *
+   * <p>Escaping, for compatibility w/ <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0.html#uri-path-canonicalization">Jakarta
+   * Servlet Specification 6, URI Path Canonicalization</a>. This is available with Nessie Spec
+   * version 2.2.0, as advertised via {@link NessieConfiguration#getSpecVersion()}.
+   *
+   * <ul>
+   *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
+   *       elements, which is illegal. It is correct to assume that this character sequence does not
+   *       occur in encoded content keys.
+   *   <li>The sequence {@code ..~} is the encoded representation for a single dot character {@code
+   *       .}.
+   *   <li>The sequence {@code ..} followed by character {@code != '~'} means that the first dot
+   *       represents an element boundary, decoding should continue after the first {@code .}
+   *       character.
+   * </ul>
    *
    * @param encoded Path encoded string
    * @return Actual key.
    */
   public static List<String> fromPathString(String encoded) {
-    return Arrays.stream(encoded.split("\\."))
-        .map(x -> x.replace(GROUP_SEPARATOR, DOT).replace(ZERO_BYTE, DOT))
-        .collect(Collectors.toList());
+    List<String> elements = new ArrayList<>();
+    int l = encoded.length();
+    StringBuilder e = new StringBuilder();
+    for (int i = 0; i < l; i++) {
+      char c = encoded.charAt(i);
+      switch (c) {
+        case DOT:
+          if (encoded.charAt(i + 1) == DOT) {
+            // '..' sequence - empty elements are not allowed in content-keys
+            char ctl = encoded.charAt(i + 2);
+            if (ctl == '~') {
+              i += 2;
+              // '..~' sequence -> single dot
+              e.append(DOT);
+              break;
+            } else {
+              elements.add(e.toString());
+              e.setLength(0);
+            }
+          } else {
+            elements.add(e.toString());
+            e.setLength(0);
+          }
+          break;
+        case GROUP_SEPARATOR:
+        case ZERO_BYTE:
+          e.append(DOT);
+          break;
+        default:
+          e.append(c);
+          break;
+      }
+    }
+    if (e.length() > 0) {
+      elements.add(e.toString());
+    }
+    return elements;
   }
 
   /**
@@ -61,9 +115,37 @@ final class Util {
    * @return String encoded for path use.
    */
   public static String toPathString(List<String> elements) {
-    return elements.stream()
-        .map(x -> x.replace(DOT, GROUP_SEPARATOR).replace(ZERO_BYTE, GROUP_SEPARATOR))
-        .collect(Collectors.joining("."));
+    StringBuilder sb = new StringBuilder();
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append('.');
+      }
+      int l = element.length();
+      for (int i = 0; i < l; i++) {
+        char c = element.charAt(i);
+        sb.append(c == DOT || c == ZERO_BYTE ? GROUP_SEPARATOR : c);
+      }
+    }
+    return sb.toString();
+  }
+
+  public static String toPathStringEscaped(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append('.');
+      }
+      int l = element.length();
+      for (int i = 0; i < l; i++) {
+        char c = element.charAt(i);
+        if (c == DOT) {
+          sb.append("..~");
+        } else {
+          sb.append(c);
+        }
+      }
+    }
+    return sb.toString();
   }
 
   public static String toPathStringRef(String name, String hash) {

@@ -77,7 +77,7 @@ public abstract class Namespace extends Content {
   @Derived
   @JsonIgnore
   public String name() {
-    return toPathString();
+    return toPathStringControlChars();
   }
 
   @JsonIgnore
@@ -222,9 +222,10 @@ public abstract class Namespace extends Content {
 
   /**
    * Builds a {@link Namespace} instance for the given elements split by the <b>.</b> (dot)
-   * character.
+   * character, see {@linkplain Util#fromPathString(String) encoding specification}.
    *
-   * @param identifier The identifier to build the namespace from.
+   * @param identifier The identifier to build the namespace from, see {@linkplain
+   *     Util#fromPathString(String) encoding specification}.
    * @return Splits the given <b>identifier</b> by <b>.</b> and returns a {@link Namespace}
    *     instance. If <b>identifier</b> is empty, then {@link Namespace#name()} will be an empty
    *     string.
@@ -282,9 +283,29 @@ public abstract class Namespace extends Content {
     return Util.toPathString(getElements());
   }
 
+  /**
+   * Convert this namespace to a URL encoded path string using control characters, see {@link
+   * Util#fromPathString(String)}.
+   *
+   * @return String encoded using control characters for path use.
+   */
+  public String toPathStringControlChars() {
+    return Util.toPathString(getElements());
+  }
+
+  /**
+   * Convert this namespace to a URL encoded path string using the escaped syntax, see {@link
+   * Util#fromPathString(String)}.
+   *
+   * @return String encoded using control characters for path use.
+   */
+  public String toPathStringEscaped() {
+    return Util.toPathStringEscaped(getElements());
+  }
+
   @Override
   public String toString() {
-    return name();
+    return toPathStringControlChars();
   }
 
   public ContentKey toContentKey() {

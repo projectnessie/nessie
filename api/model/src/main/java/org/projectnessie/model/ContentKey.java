@@ -198,9 +198,11 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   }
 
   /**
-   * Convert from path encoded string to normal string.
+   * Convert from path encoded string to normal string, see {@linkplain Util#fromPathString(String)
+   * encoding specification}.
    *
-   * @param encoded Path encoded string
+   * @param encoded Path encoded string, see {@linkplain Util#fromPathString(String) encoding
+   *     specification}
    * @return Actual key.
    */
   public static ContentKey fromPathString(String encoded) {
@@ -214,6 +216,26 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    */
   public String toPathString() {
     return Util.toPathString(getElements());
+  }
+
+  /**
+   * Convert this content key to a URL encoded path string using control characters, see {@link
+   * Util#fromPathString(String)}.
+   *
+   * @return String encoded using control characters for path use.
+   */
+  public String toPathStringControlChars() {
+    return Util.toPathString(getElements());
+  }
+
+  /**
+   * Convert this content key to a URL encoded path string using the escaped syntax, see {@link
+   * Util#fromPathString(String)}.
+   *
+   * @return String encoded using control characters for path use.
+   */
+  public String toPathStringEscaped() {
+    return Util.toPathStringEscaped(getElements());
   }
 
   @Override
