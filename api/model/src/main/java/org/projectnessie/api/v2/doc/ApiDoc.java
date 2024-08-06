@@ -132,8 +132,23 @@ public interface ApiDoc {
           + "expects.\n";
 
   String KEY_ELEMENTS_DESCRIPTION =
-      "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
-          + "Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n";
+      "Content key and namespace components are separated by the dot ('.') character.\n"
+          + "The components itself must be escaped using the following rules:\n"
+          + "\n"
+          + "_Legacy behavior_, not compatible with Jakarta Servlet Spec v6 (all Nessie spec versions): "
+          + "dot ('.') characters that are not Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n"
+          + "\n"
+          + "_Escaping behavior_, compatible with Jakarta Servlet Spec v6 (since Nessie spec 2.2.0, see `NessieConfiguration.spec-version`): "
+          + "Keys must be escaped using the following rules:\n"
+          + "* A dot `.` in an element serialized as `..~`\n"
+          + "* A slash `/` in an element serialized as `..^`\n"
+          + "\n"
+          + "Examples:\n"
+          + "* components `[\"foo\", \"bar\"] is escaped as `foo.bar`\n"
+          + "* components `[\"f.o.o\", \"bar\"] is escaped as `f..~o..~o.bar`\n"
+          + "* components `[\"f/o/o\", \"bar\"] is escaped as `f..^o..^o.bar`\n"
+          + "* components `[\".hello\", \".~hello\"] is escaped as `..~hello...~~hello`\n"
+          + "* components `[\".hello.\", \".~hello\"] is escaped as `..~hello..~...~~hello`\n";
 
   String KEY_PARAMETER_DESCRIPTION = "The key to a content object.\n\n" + KEY_ELEMENTS_DESCRIPTION;
 

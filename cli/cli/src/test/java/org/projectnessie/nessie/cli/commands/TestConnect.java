@@ -38,7 +38,7 @@ public class TestConnect extends BaseTestCommand {
               format("Connecting to %s ...", nessieBaseUri()),
               format("No Iceberg REST endpoint at %s ...", nessieBaseUri().resolve("../iceberg/")),
               format(
-                  "Successfully connected to Nessie REST at %s - Nessie API version 2, spec version 2.1.0",
+                  "Successfully connected to Nessie REST at %s - Nessie API version 2, spec version 2.2.0",
                   nessieBaseUri()));
 
       soft.assertThatCode(cli::mandatoryNessieApi).doesNotThrowAnyException();

@@ -45,7 +45,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
         .newRequest()
         .path("namespaces/namespace/{ref}/{name}")
         .resolveTemplate("ref", params.getRefName())
-        .resolveTemplate("name", params.getNamespace().toPathString())
+        .resolveTemplate("name", params.getNamespace().toPathStringControlChars())
         .queryParam("hashOnRef", params.getHashOnRef())
         .put(namespace)
         .readEntity(Namespace.class);
@@ -61,7 +61,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
         .newRequest()
         .path("namespaces/namespace/{ref}/{name}")
         .resolveTemplate("ref", params.getRefName())
-        .resolveTemplate("name", params.getNamespace().toPathString())
+        .resolveTemplate("name", params.getNamespace().toPathStringControlChars())
         .delete();
   }
 
@@ -73,7 +73,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
         .newRequest()
         .path("namespaces/namespace/{ref}/{name}")
         .resolveTemplate("ref", params.getRefName())
-        .resolveTemplate("name", params.getNamespace().toPathString())
+        .resolveTemplate("name", params.getNamespace().toPathStringControlChars())
         .queryParam("hashOnRef", params.getHashOnRef())
         .get()
         .readEntity(Namespace.class);
@@ -88,7 +88,8 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
         .path("namespaces/{ref}")
         .resolveTemplate("ref", params.getRefName())
         .queryParam(
-            "name", null != params.getNamespace() ? params.getNamespace().toPathString() : null)
+            "name",
+            null != params.getNamespace() ? params.getNamespace().toPathStringControlChars() : null)
         .queryParam("hashOnRef", params.getHashOnRef())
         .get()
         .readEntity(GetNamespacesResponse.class);
@@ -103,7 +104,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
         .newRequest()
         .path("namespaces/namespace/{ref}/{name}")
         .resolveTemplate("ref", params.getRefName())
-        .resolveTemplate("name", params.getNamespace().toPathString())
+        .resolveTemplate("name", params.getNamespace().toPathStringControlChars())
         .queryParam("hashOnRef", params.getHashOnRef())
         .post(namespaceUpdate);
   }
