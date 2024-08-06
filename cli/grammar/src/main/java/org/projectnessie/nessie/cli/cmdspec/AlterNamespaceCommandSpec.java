@@ -22,7 +22,7 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface AlterNamespaceCommandSpec extends RefCommandSpec, InCatalog {
+public interface AlterNamespaceCommandSpec extends RefCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.ALTER_NAMESPACE;
   }

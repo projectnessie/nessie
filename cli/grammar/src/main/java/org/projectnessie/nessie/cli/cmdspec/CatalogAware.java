@@ -18,7 +18,7 @@ package org.projectnessie.nessie.cli.cmdspec;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
-public interface InCatalog {
+public interface CatalogAware {
   @Nullable
   @Value.Default
   String getInCatalog();

@@ -20,7 +20,7 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
-public interface DropContentCommandSpec extends RefCommandSpec, InCatalog {
+public interface DropContentCommandSpec extends RefCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.DROP_CONTENT;
   }

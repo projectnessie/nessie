@@ -22,7 +22,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface MergeBranchCommandSpec
-    extends RefWithTypeCommandSpec, RefWithHashCommandSpec, InCatalog {
+    extends RefWithTypeCommandSpec, RefWithHashCommandSpec, CatalogAware {
   default CommandType commandType() {
     return CommandType.MERGE_BRANCH;
   }
