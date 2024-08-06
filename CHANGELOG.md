@@ -38,6 +38,8 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 
 ### Upgrade notes
 
+- Support for Java 8 has been removed, even for Nessie clients
+
 ### Breaking changes
 
 - See above for breaking changes to S3 bucket configurations. 

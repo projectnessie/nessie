@@ -16,7 +16,7 @@
 
 plugins {
   antlr
-  id("nessie-conventions-client")
+  id("nessie-conventions-java11")
 }
 
 dependencies {

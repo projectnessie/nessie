@@ -16,7 +16,7 @@
 
 plugins {
   alias(libs.plugins.quarkus)
-  id("nessie-conventions-quarkus")
+  id("nessie-conventions-java17")
   id("nessie-jacoco")
 }
 
