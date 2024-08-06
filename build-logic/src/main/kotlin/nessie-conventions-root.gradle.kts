@@ -36,7 +36,7 @@ loadNessieProjects(rootProject)
 
 val projectName = rootProject.file("ide-name.txt").readText().trim()
 val ideName =
-  "$projectName ${rootProject.version.toString().replace(Regex("^([0-9.]+).*"), "$1")} [${rootProject.rootDir}]"
+  "$projectName ${rootProject.version.toString().replace(Regex("^([0-9.]+).*"), "$1")} [in ../${rootProject.rootDir.name}]"
 
 if (System.getProperty("idea.sync.active").toBoolean()) {
 
