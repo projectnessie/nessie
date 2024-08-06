@@ -27,7 +27,7 @@ picocli = "4.7.6"
 protobuf = "4.27.3"
 quarkusPlatform = "3.12.3"
 quarkusPlugin = "3.13.0"
-slf4j = "2.0.13"
+slf4j = "2.0.14"
 smallryeConfig = "3.9.1"
 undertow = "2.2.33.Final"
 
