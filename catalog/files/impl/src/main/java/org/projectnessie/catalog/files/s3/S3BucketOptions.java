@@ -23,7 +23,7 @@ import org.projectnessie.catalog.secrets.BasicCredentials;
 public interface S3BucketOptions {
 
   /** Default value for {@link #authType()}, being {@link S3AuthType#STATIC}. */
-  S3AuthType DEFAULT_SERVER_AUTH_MODE = S3AuthType.STATIC;
+  S3AuthType DEFAULT_SERVER_AUTH_TYPE = S3AuthType.STATIC;
 
   /**
    * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
@@ -89,8 +89,8 @@ public interface S3BucketOptions {
    */
   Optional<S3AuthType> authType();
 
-  default S3AuthType effectiveAuthMode() {
-    return authType().orElse(DEFAULT_SERVER_AUTH_MODE);
+  default S3AuthType effectiveAuthType() {
+    return authType().orElse(DEFAULT_SERVER_AUTH_TYPE);
   }
 
   /**
@@ -143,5 +143,16 @@ public interface S3BucketOptions {
       return false;
     }
     return clientIam().get().enabled().orElse(false);
+  }
+
+  /**
+   * Validates the contents of an S3 bucket config, especially the IAM policies and individual IAM
+   * policy statements.
+   *
+   * <p>IAM validation uses the AWSSDK IAM policy reader to validate the policies.
+   */
+  default void validate(String bucketName) {
+    getEnabledClientIam().ifPresent(clientIam -> clientIam.validate(bucketName));
+    getEnabledServerIam().ifPresent(serverIam -> serverIam.validate(bucketName));
   }
 }

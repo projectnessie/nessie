@@ -94,7 +94,7 @@ public interface AdlsOptions {
         .build();
   }
 
-  default void checkEndpoint() {
+  default void validate() {
     boolean hasDefaultEndpoint = defaultOptions().map(o -> o.endpoint().isPresent()).orElse(false);
     if (!hasDefaultEndpoint && !fileSystems().isEmpty()) {
       List<String> missing =

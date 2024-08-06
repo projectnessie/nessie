@@ -131,4 +131,9 @@ public interface S3Options {
     S3BucketOptions perBucket = buckets().get(name);
     return resolveSecrets(name, perBucket, secretsProvider);
   }
+
+  default void validate() {
+    defaultOptions().ifPresent(options -> options.validate("<default>"));
+    buckets().forEach((key, opts) -> opts.validate(opts.name().orElse(key)));
+  }
 }

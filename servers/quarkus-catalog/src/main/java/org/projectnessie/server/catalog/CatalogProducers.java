@@ -16,13 +16,9 @@
 package org.projectnessie.server.catalog;
 
 import static java.time.Clock.systemUTC;
-import static org.projectnessie.catalog.files.s3.S3SessionsManager.locationDependentPolicy;
 
 import com.azure.core.http.HttpClient;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.http.HttpTransportFactory;
-import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.context.SmallRyeManagedExecutor;
@@ -36,9 +32,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -61,20 +55,16 @@ import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
 import org.projectnessie.catalog.files.gcs.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
-import org.projectnessie.catalog.files.s3.ImmutableS3ClientIam;
-import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3ExceptionMapper;
-import org.projectnessie.catalog.files.s3.S3Iam;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
-import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
-import org.projectnessie.catalog.files.s3.StorageLocations;
+import org.projectnessie.catalog.files.s3.StsClientsPool;
+import org.projectnessie.catalog.files.s3.StsCredentialsManager;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
@@ -95,12 +85,10 @@ import org.projectnessie.quarkus.config.CatalogServiceConfig;
 import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
-import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.SdkHttpClient;
-import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 
 /**
  * "Quick and dirty" producers providing connection to Nessie, a "storage" impl and object-store
@@ -116,82 +104,10 @@ public class CatalogProducers {
       CatalogS3Config s3Config,
       CatalogGcsConfig gcsConfig,
       CatalogAdlsConfig adlsConfig) {
-    catalogConfig.check();
-    adlsConfig.checkEndpoint();
-
-    s3Config.defaultOptions().ifPresent(o -> validateS3BucketConfig("<default>", o));
-    s3Config
-        .buckets()
-        .forEach((key, opts) -> validateS3BucketConfig(opts.name().orElse(key), opts));
-  }
-
-  /**
-   * Validates the contents of an S3 bucket config, especially the IAM policies and individual IAM
-   * policy statements.
-   *
-   * <p>IAM validation uses the AWSSDK IAM policy reader to validate the policies.
-   */
-  @VisibleForTesting
-  static void validateS3BucketConfig(String name, S3BucketOptions bucketOptions) {
-    StorageUri uri = StorageUri.of("s3://some-bucket/some/path/name/object");
-    StorageLocations locations =
-        StorageLocations.storageLocations(
-            StorageUri.of("s3://some-bucket/"), List.of(uri), List.of());
-
-    bucketOptions
-        .getEnabledClientIam()
-        .ifPresent(
-            clientIam -> {
-              if (clientIam.policy().isPresent()) {
-                try {
-                  String json = locationDependentPolicy(locations, bucketOptions);
-                  IamPolicyReader.create().read(json);
-                } catch (Exception e) {
-                  throw new IllegalStateException(
-                      "The client-iam-policy option for the "
-                          + name
-                          + " bucket contains an invalid policy",
-                      e);
-                }
-              }
-
-              S3BucketOptions forceDynamicClientPolicy =
-                  ImmutableS3NamedBucketOptions.builder()
-                      .from(bucketOptions)
-                      .clientIam(
-                          ImmutableS3ClientIam.builder()
-                              .from(clientIam)
-                              .policy(Optional.empty())
-                              .build())
-                      .build();
-
-              try {
-                String json = locationDependentPolicy(locations, forceDynamicClientPolicy);
-                new ObjectMapper().readValue(json, JsonNode.class);
-              } catch (Exception e) {
-                throw new IllegalStateException(
-                    "The dynamically constructed iam-policy for the "
-                        + name
-                        + " bucket results in an invalid policy, check the client-iam-statements",
-                    e);
-              }
-            });
-
-    bucketOptions
-        .getEnabledServerIam()
-        .flatMap(S3Iam::policy)
-        .ifPresent(
-            policy -> {
-              try {
-                IamPolicyReader.create().read(policy);
-              } catch (Exception e) {
-                throw new IllegalStateException(
-                    "The server-iam-policy option for the "
-                        + name
-                        + " bucket contains an invalid policy",
-                    e);
-              }
-            });
+    catalogConfig.validate();
+    adlsConfig.validate();
+    gcsConfig.validate();
+    s3Config.validate();
   }
 
   @Produces
@@ -228,17 +144,27 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public S3SessionsManager s3SessionsManager(
+  public StsClientsPool stsClientsPool(
       @NormalizedObjectStoreOptions S3Options s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
       @Any Instance<MeterRegistry> meterRegistry) {
-    return new S3SessionsManager(
+    return new StsClientsPool(
         s3options, sdkClient, meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces
   @Singleton
-  public S3Sessions s3sessions(StoreConfig storeConfig, S3SessionsManager sessionsManager) {
+  public StsCredentialsManager s3SessionsManager(
+      @NormalizedObjectStoreOptions S3Options s3options,
+      StsClientsPool clientsPool,
+      @Any Instance<MeterRegistry> meterRegistry) {
+    return new StsCredentialsManager(
+        s3options, clientsPool, meterRegistry.isResolvable() ? meterRegistry.get() : null);
+  }
+
+  @Produces
+  @Singleton
+  public S3Sessions s3sessions(StoreConfig storeConfig, StsCredentialsManager sessionsManager) {
     String repositoryId = storeConfig.repositoryId();
     return new S3Sessions(repositoryId, sessionsManager);
   }

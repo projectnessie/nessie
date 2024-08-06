@@ -24,7 +24,6 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,7 +47,7 @@ import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
 
-/** Microbenchmark to identify the resource footprint of {@link S3SessionsManager}. */
+/** Microbenchmark to identify the resource footprint of {@link StsCredentialsManager}. */
 @Warmup(iterations = 3, time = 2000, timeUnit = MILLISECONDS)
 @Measurement(iterations = 3, time = 1000, timeUnit = MILLISECONDS)
 @Fork(1)
@@ -60,7 +59,7 @@ public class S3SessionCacheResourceBench {
   public static class BenchmarkParam {
     ObjectStorageMock.MockServer server;
 
-    S3SessionsManager s3SessionsManager;
+    StsCredentialsManager stsCredentialsManager;
     SdkHttpClient httpClient;
 
     @Param({"1", "100", "1000", "10000", "100000"})
@@ -85,9 +84,8 @@ public class S3SessionCacheResourceBench {
                       .build())
               .build();
 
-      s3SessionsManager =
-          new S3SessionsManager(
-              s3options, System::currentTimeMillis, httpClient, null, Optional.empty(), null);
+      StsClientsPool stsClientsPool = new StsClientsPool(s3options, httpClient, null);
+      stsCredentialsManager = new StsCredentialsManager(s3options, stsClientsPool, null);
 
       List<String> regions =
           Region.regions().stream()
@@ -135,14 +133,14 @@ public class S3SessionCacheResourceBench {
 
   @Benchmark
   public void getCredentialsForServer(BenchmarkParam param, Blackhole bh) {
-    bh.consume(param.s3SessionsManager.sessionCredentialsForServer("repo", param.bucketOptions()));
+    bh.consume(
+        param.stsCredentialsManager.sessionCredentialsForServer("repo", param.bucketOptions()));
   }
 
   @Benchmark
   public void getCredentialsForClient(BenchmarkParam param, Blackhole bh) {
     bh.consume(
-        param.s3SessionsManager.sessionCredentialsForClient(
-            "repo",
+        param.stsCredentialsManager.sessionCredentialsForClient(
             param.bucketOptions(),
             StorageLocations.storageLocations(
                 StorageUri.of("s3://bucket/"),
