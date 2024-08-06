@@ -20,6 +20,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
+import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -43,8 +44,7 @@ public class TestSecretsProvider {
 
   @ParameterizedTest
   @MethodSource
-  public void secretsHelper(
-      Opts base, Opts spec, Opts expected, Map<String, Map<String, String>> secrets) {
+  public void secretsHelper(Opts base, Opts spec, Opts expected, Map<String, Secret> secrets) {
     List<SecretAttribute<Opts, Opts.Builder, ?>> attributes =
         List.of(
             secretAttribute("key", SecretType.KEY, Opts::key, Opts.Builder::key),
@@ -78,36 +78,6 @@ public class TestSecretsProvider {
         arguments(Opts.EMPTY, null, Opts.EMPTY, Map.of()),
         arguments(Opts.EMPTY, Opts.EMPTY, Opts.EMPTY, Map.of()),
         //
-        // invalid "name" + "token" fields
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Map.of(
-                "base.spec.basic",
-                Map.of("namex", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("tokenx", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // invalid "expiresAt" + "secret"
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secretx", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "ewpfoijkewoipfjewijfo"))),
-        // invalid "expiresAt"
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secretx", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "42"))),
         // all secrets via "spec" from secrets-supplier
         arguments(
             Opts.EMPTY,
@@ -115,30 +85,30 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         arguments(
             Opts.EMPTY,
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         // key present
         arguments(
             Opts.EMPTY,
@@ -146,26 +116,26 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         arguments(
             Opts.builder().key(keySecret("key")).build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         // basic present
         arguments(
             Opts.builder().basic(basicCredentials("basic-name", "basic-secret")).build(),
@@ -173,99 +143,99 @@ public class TestSecretsProvider {
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         arguments(
             Opts.EMPTY,
             Opts.builder().basic(basicCredentials("basic-name", "basic-secret")).build(),
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         // expiringToken present
         arguments(
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
+            Opts.builder().expiringToken(tokenSecret("exp-token", instant)).build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"))),
+                basicCredentials("basic-name", "basic-secret"))),
         arguments(
             Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
+            Opts.builder().expiringToken(tokenSecret("exp-token", instant)).build(),
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"))),
+                basicCredentials("basic-name", "basic-secret"))),
         // override in "base"
         arguments(
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
+                .expiringToken(tokenSecret("nope", instant))
                 .build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("key"))
                 .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
+                .expiringToken(tokenSecret("exp-token", instant))
                 .build(),
             Map.of(
                 "base.spec.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         // NO override in "base"
         arguments(
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
+                .expiringToken(tokenSecret("nope", instant))
                 .build(),
             Opts.EMPTY,
             Opts.builder()
                 .key(keySecret("nope"))
                 .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
+                .expiringToken(tokenSecret("nope", instant))
                 .build(),
             Map.of(
                 "base.key",
-                Map.of("value", "key"),
+                keySecret("key"),
                 "base.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
+                basicCredentials("basic-name", "basic-secret"),
                 "base.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
+                tokenSecret("exp-token", instant))),
         //
         arguments(
             Opts.EMPTY,
             Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of("base.spec.expiringToken", Map.of("token", "exp-token")))
+            Opts.builder().expiringToken(tokenSecret("exp-token", null)).build(),
+            Map.of("base.spec.expiringToken", tokenSecret("exp-token", null)))
         //
         );
   }
@@ -297,11 +267,11 @@ public class TestSecretsProvider {
     }
   }
 
-  static SecretsSupplier mapSecretsSupplier(Map<String, Map<String, String>> secretsMap) {
-    return names -> {
-      Map<String, Map<String, String>> resolved = new HashMap<>();
-      for (String name : names) {
-        Map<String, String> r = secretsMap.get(name);
+  static SecretsSupplier mapSecretsSupplier(Map<String, Secret> secretsMap) {
+    return toResolve -> {
+      Map<String, Secret> resolved = new HashMap<>();
+      for (String name : toResolve.keySet()) {
+        Secret r = secretsMap.get(name);
         if (r != null) {
           resolved.put(name, r);
         }

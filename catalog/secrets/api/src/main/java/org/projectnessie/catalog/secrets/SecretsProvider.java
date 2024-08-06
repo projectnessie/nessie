@@ -17,11 +17,10 @@ package org.projectnessie.catalog.secrets;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.projectnessie.catalog.secrets.spi.SecretsSupplier;
 
 /**
@@ -79,7 +78,7 @@ public class SecretsProvider {
       @Nullable R specific,
       @Nonnull List<SecretAttribute<R, B, ?>> attributes) {
 
-    Set<String> names = new HashSet<>();
+    Map<String, SecretType> toResolve = new HashMap<>();
 
     String basePrefix = baseName + '.';
     boolean hasSpecific = specificName != null;
@@ -93,49 +92,39 @@ public class SecretsProvider {
           specific != null ? attr.current().apply(specific) : Optional.empty();
       if (specificSecret.isEmpty()) {
         if (hasSpecific) {
-          names.add(specificPrefix + attr.name());
+          toResolve.put(specificPrefix + attr.name(), attr.type());
         }
 
         Optional<Secret> baseSecret = attr.current().apply(base);
         if (baseSecret.isEmpty()) {
-          names.add(basePrefix + attr.name());
+          toResolve.put(basePrefix + attr.name(), attr.type());
         }
       }
     }
 
-    if (names.isEmpty()) {
+    if (toResolve.isEmpty()) {
       // All secrets present, no need to ask for secrets.
       return builder;
     }
 
-    Map<String, Map<String, String>> secretsMap = secretsSupplier.resolveSecrets(names);
+    Map<String, Secret> secretsMap = secretsSupplier.resolveSecrets(toResolve);
 
     for (SecretAttribute<R, B, Secret> attr : casted) {
       Optional<? extends Secret> specificSecret =
           specific != null ? attr.current().apply(specific) : Optional.empty();
       if (specificSecret.isEmpty()) {
-        Map<String, String> value =
-            hasSpecific ? secretsMap.get(specificPrefix + attr.name()) : null;
+        Secret value = hasSpecific ? secretsMap.get(specificPrefix + attr.name()) : null;
         if (value != null) {
-          applySecretValue(builder, attr, value);
+          attr.applicator().accept(builder, value);
         } else {
           value = secretsMap.get(basePrefix + attr.name());
           if (value != null) {
-            applySecretValue(builder, attr, value);
+            attr.applicator().accept(builder, value);
           }
         }
       }
     }
 
     return builder;
-  }
-
-  private <B, R> void applySecretValue(
-      B builder, SecretAttribute<R, B, Secret> attr, Map<String, String> value) {
-    Secret v = attr.type().fromValueMap(value);
-    if (v == null) {
-      return;
-    }
-    attr.applicator().accept(builder, v);
   }
 }

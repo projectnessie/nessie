@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -63,6 +62,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
@@ -206,7 +206,8 @@ public abstract class AbstractCatalogService {
   private void setupObjectIO() {
     S3Sessions sessions = new S3Sessions("foo", null);
     S3Config s3config = S3Config.builder().build();
-    httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+    httpClient =
+        S3Clients.apacheHttpClient(s3config, new SecretsProvider(new DummySecretsSupplier()));
     S3ProgrammaticOptions s3options =
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
@@ -219,13 +220,7 @@ public abstract class AbstractCatalogService {
             .build();
     S3ClientSupplier clientSupplier =
         new S3ClientSupplier(
-            httpClient,
-            s3options,
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
-            sessions);
+            httpClient, s3options, new SecretsProvider(new DummySecretsSupplier()), sessions);
     objectIO = new S3ObjectIO(clientSupplier);
   }
 

@@ -23,7 +23,6 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -43,6 +42,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -73,7 +73,8 @@ public class S3SessionCacheResourceBench {
       server = mockServer(mock -> {});
 
       S3Config s3config = S3Config.builder().build();
-      httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+      httpClient =
+          S3Clients.apacheHttpClient(s3config, new SecretsProvider(new DummySecretsSupplier()));
 
       S3Options s3options =
           ImmutableS3ProgrammaticOptions.builder()

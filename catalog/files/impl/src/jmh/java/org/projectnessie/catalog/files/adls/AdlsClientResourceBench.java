@@ -24,8 +24,6 @@ import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,6 +38,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.spi.DummySecretsSupplier;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -76,12 +75,7 @@ public class AdlsClientResourceBench {
 
       clientSupplier =
           new AdlsClientSupplier(
-              httpClient,
-              adlsOptions,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+              httpClient, adlsOptions, new SecretsProvider(new DummySecretsSupplier()));
     }
 
     @TearDown
