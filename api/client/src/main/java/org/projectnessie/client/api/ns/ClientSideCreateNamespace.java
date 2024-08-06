@@ -77,12 +77,11 @@ public final class ClientSideCreateNamespace extends BaseCreateNamespaceBuilder 
       if (existing instanceof Namespace) {
         throw new NessieNamespaceAlreadyExistsException(
             contentKeyErrorDetails(key),
-            String.format("Namespace '%s' already exists", key.toPathString()));
+            String.format("Namespace '%s' already exists", key.toString()));
       } else {
         throw new NessieNamespaceAlreadyExistsException(
             contentKeyErrorDetails(key),
-            String.format(
-                "Another content object with name '%s' already exists", key.toPathString()));
+            String.format("Another content object with name '%s' already exists", key.toString()));
       }
     }
 

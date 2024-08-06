@@ -39,7 +39,7 @@ class RestV1ContentClient implements HttpContentApi {
     return client
         .newRequest()
         .path("contents")
-        .path(key.toPathString())
+        .path(key.toPathStringControlChars())
         .queryParam("ref", ref)
         .queryParam("hashOnRef", hashOnRef)
         .get()

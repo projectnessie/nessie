@@ -138,7 +138,7 @@ public class ITAuthAndIcebergREST extends WithNessie {
               format("Successfully connected to Iceberg REST at %s", icebergUri),
               format("Connecting to Nessie REST at %s/ ...", nessieApiUri),
               format(
-                  "Successfully connected to Nessie REST at %s/ - Nessie API version 2, spec version 2.1.0",
+                  "Successfully connected to Nessie REST at %s/ - Nessie API version 2, spec version 2.2.0",
                   nessieApiUri));
 
       soft.assertThatCode(
@@ -155,7 +155,7 @@ public class ITAuthAndIcebergREST extends WithNessie {
               format("Successfully connected to Iceberg REST at %s", icebergUri),
               format("Connecting to Nessie REST at %s/ ...", nessieApiUri),
               format(
-                  "Successfully connected to Nessie REST at %s/ - Nessie API version 2, spec version 2.1.0",
+                  "Successfully connected to Nessie REST at %s/ - Nessie API version 2, spec version 2.2.0",
                   nessieApiUri));
     }
   }
