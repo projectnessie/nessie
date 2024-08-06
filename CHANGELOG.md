@@ -60,6 +60,7 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 ### Fixes
 
 - Declare the `contentType` variable for CEL Authorization rules.
+- Catalog: Make Nessie time-travel functionality available to all use cases, including DDL.
 
 ### Commits
 

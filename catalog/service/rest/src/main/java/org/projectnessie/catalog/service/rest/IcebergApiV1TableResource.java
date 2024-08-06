@@ -259,7 +259,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       @Valid IcebergCreateTableRequest createTableRequest,
       @HeaderParam("X-Iceberg-Access-Delegation") String dataAccess)
       throws IOException {
-    TableRef tableRef = decodeTableRefWithHash(prefix, namespace, createTableRequest.name());
+    TableRef tableRef = decodeTableRef(prefix, namespace, createTableRequest.name());
 
     IcebergSortOrder sortOrder = createTableRequest.writeOrder();
     if (sortOrder == null) {
@@ -553,7 +553,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       @PathParam("table") String table,
       @Valid IcebergUpdateTableRequest commitTableRequest)
       throws IOException {
-    TableRef tableRef = decodeTableRefWithHash(prefix, namespace, table);
+    TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
     return createOrUpdateEntity(tableRef, commitTableRequest, ICEBERG_TABLE)
         .map(

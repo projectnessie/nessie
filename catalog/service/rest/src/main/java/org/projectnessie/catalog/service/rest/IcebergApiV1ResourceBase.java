@@ -25,6 +25,7 @@ import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceber
 import static org.projectnessie.catalog.service.rest.DecodedPrefix.decodedPrefix;
 import static org.projectnessie.catalog.service.rest.NamespaceRef.namespaceRef;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
+import static org.projectnessie.catalog.service.rest.TimestampParser.timestampToNessie;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
@@ -195,20 +196,6 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     return namespaceRef(ns, ref.name(), ref.hashWithRelativeSpec(), decoded.warehouse());
   }
 
-  public TableRef decodeTableRefWithHash(String prefix, String encodedNs, String table)
-      throws NessieNotFoundException {
-    TableRef tableRef = decodeTableRef(prefix, encodedNs, table);
-
-    ParsedReference reference = requireNonNull(tableRef.reference());
-    if (reference.hashWithRelativeSpec() == null) {
-      Reference ref = nessieApi.getReference().refName(reference.name()).get();
-      reference = ParsedReference.parsedReference(ref.getName(), ref.getHash(), ref.getType());
-      return tableRef(tableRef.contentKey(), reference, tableRef.warehouse());
-    }
-
-    return tableRef;
-  }
-
   public TableRef decodeTableRef(String prefix, String encodedNs, String table) {
     Namespace ns = decodeNamespace(encodedNs);
     TableReference tableReference = TableReference.parse(table);
@@ -227,10 +214,16 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     DecodedPrefix decoded = decodePrefix(prefix);
     ParsedReference ref = decoded.parsedReference();
     ContentKey contentKey = ContentKey.of(ns, tableReference.getName());
-    String refName =
-        tableReference.getReference() != null ? tableReference.getReference() : ref.name();
-    String refHash =
-        tableReference.getHash() != null ? tableReference.getHash() : ref.hashWithRelativeSpec();
+
+    String tableRef = tableReference.getReference();
+    String refName = tableRef != null ? tableRef : ref.name();
+    String refHash = ref.hashWithRelativeSpec();
+    if (tableReference.hasHash()) {
+      refHash = tableReference.getHash();
+    } else if (tableReference.hasTimestamp()) {
+      refHash = timestampToNessie(tableReference.getTimestamp());
+    }
+
     return tableRef(contentKey, parsedReference(refName, refHash, null), decoded.warehouse());
   }
 

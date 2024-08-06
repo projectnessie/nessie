@@ -65,16 +65,16 @@ concurrently with applications using Nessie via Iceberg REST (`type=rest` with a
 To migrate existing Iceberg clients that use the `NessieCatalog` to use Nessie via Iceberg REST refer
 to the following table.
 
-| Iceberg option             | Old value                     | New value                     | Description/notes                                                      |
-|----------------------------|-------------------------------|-------------------------------|------------------------------------------------------------------------|
-| `type`                     | `nessie`                      | `rest`                        | Change the catalog type from "nessie" to "rest".                       |
-| `catalog-impl`             | `...NessieCatalog`            |                               | Use `type` = `rest`                                                    |
-| `uri`                      | `http://.../api/v2` (or `v1`) | `http://.../iceberg`          | Replace `api/v1` or `api/v2` with `iceberg`                            |
-| `ref`                      | Nessie branch name            | n/a                           | Migrate to `prefix` option                                             |
-| `prefix`                   | n/a                           | Nessie branch name (optional) | Migrate from the `ref` option                                          |
-| `warehouse`                | *                             | n/a                           | Migrate object store configurations to the Nessie server configuration |
-| `io`                       | *                             | n/a                           | Migrate object store configurations to the Nessie server configuration |
-| (all S3/GCS/ADLS settings) |                               |                               | Remove all object store settings                                       |
+| Iceberg option             | Old value                     | New value                    | Description/notes                                                                                                                                                                                                                                   |
+|----------------------------|-------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`                     | `nessie`                      | `rest`                       | Change the catalog type from "nessie" to "rest".                                                                                                                                                                                                    |
+| `catalog-impl`             | `...NessieCatalog`            |                              | Use `type` = `rest`                                                                                                                                                                                                                                 |
+| `uri`                      | `http://.../api/v2` (or `v1`) | `http://.../iceberg`         | Replace `api/v1` or `api/v2` with `iceberg`. If you want to connect to Nessie using a different branch, append the branch or tag name to the `uri` parameter, for example: `http://.../iceberg/my_branch`.                                          |
+| `ref`                      | Nessie branch name            | n/a                          | Migrate to `prefix` option                                                                                                                                                                                                                          |
+| `prefix`                   | n/a                           | (don't set, see description) | Don't set this for Nessie. If you want to connect to Nessie using a different branch, append the branch or tag name to the `uri` parameter, for example: `http://.../iceberg/my_branch`. Setting the `prefix` parameter doesn't work for pyiceberg. |
+| `warehouse`                | *                             | n/a                          | Migrate object store configurations to the Nessie server configuration                                                                                                                                                                              |
+| `io`                       | *                             | n/a                          | Migrate object store configurations to the Nessie server configuration                                                                                                                                                                              |
+| (all S3/GCS/ADLS settings) |                               |                              | Remove all object store settings                                                                                                                                                                                                                    |
 
 !!! warn
     Current Iceberg REST clients do not support the OAuth2 authorization code and device code flows,
@@ -108,3 +108,70 @@ Iceberg REST base URI instead of the Nessie REST base URI.
     Nessie CLI will prompt you for the bearer token.
     If you use `CONNECT TO http://127.0.0.1:19120/api/v2 USING "token" = "<bearer token>""`,
     Nessie CLI will use bearer authorization for both Nessie and Iceberg REST APIs.
+
+## Time travel with Iceberg REST
+
+Nessie provides catalog level versioning providing a consistent and reproducible state across the
+whole catalog. In other words: atomic transactions across many tables and views and namespaces are
+natively built into Nessie. This "Git for data" approach allows, for example, merging all changes
+to tables and views in a branch into another branch, for example the "main" branch.
+
+To retain Nessie's consistency and cross-branch/tag isolation guarantees, we have deliberately chosen
+to only return the state of a table or view as a _single_ snapshot in Iceberg.
+
+You can still do time-travel queries by specifying the Nessie commit ID, or the branch/tag name, or
+a timestamp.
+
+Assuming you connect to Nessie using Iceberg REST with `prefix` set to `main` and you have a table
+called `my_table`.
+
+### Time travel
+
+The following example `SELECT`s the state/contents of the table `my_namespace.my_table` as of
+July 1st, 2024 at midnight UTC.
+
+Generally:
+* the table name must be quoted using backticks (`)
+* specify a branch or tag name after the at-char (`@`) (for example `table@branch`)
+* specify a timestamp after the hash-char (`#`) (for example `table#2024-07-01T00:00:00Z`) or
+* specify a Nessie commit ID after the hash-char (`#`) (for example `table#748586fa39e02bd1e359df105c6c08287ad5ed7a53235f71c455afb10fbff14c`) 
+
+```sql
+SELECT * FROM nessie.my_namespace.`my_table#2024-07-01T00:00:00Z`;
+```
+
+Similarly, but for the time zone at offset -09:00:
+
+```sql
+SELECT * FROM nessie.my_namespace.`my_table#2024-07-01T00:00:00-09:00`;
+```
+
+Read from a different Nessie branch or tag:
+
+```sql
+SELECT * FROM nessie.my_namespace.`my_table@my_other_branch`;
+```
+
+Read from a different Nessie branch or tag at a specific timestamp:
+
+```sql
+SELECT * FROM nessie.my_namespace.`my_table@my_other_branch#2024-07-01T00:00:00Z`;
+```
+
+You can also specify Nessie commit IDs:
+
+```sql
+SELECT * FROM nessie.my_namespace.`my_table#748586fa39e02bd1e359df105c6c08287ad5ed7a53235f71c455afb10fbff14c`;
+```
+
+`INSERT`ing or `UPDATE`ing data works similarly:
+
+```sql
+INSERT INTO nessie.my_namespace.`my_table@my_other_branch` ( id, val ) VALUES ( 123, 'some value' );
+```
+
+`CREATE`ing a table on a different branch:
+
+```sql
+CREATE TABLE nessie.my_namespace.`my_table@my_other_branch` ( id INT, val VARCHAR );
+```

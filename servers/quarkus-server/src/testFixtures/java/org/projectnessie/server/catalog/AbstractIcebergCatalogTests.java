@@ -16,6 +16,7 @@
 package org.projectnessie.server.catalog;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -24,10 +25,16 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUS
 import com.google.common.collect.ImmutableMap;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.BaseTransaction;
@@ -53,17 +60,26 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableCommit;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.PositionOutputStream;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
+import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatalog> {
@@ -71,6 +87,10 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
       "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
   private static final Catalogs CATALOGS = new Catalogs();
+
+  // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
+  // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
+  protected final SoftAssertions soft = new SoftAssertions();
 
   protected RESTCatalog catalog() {
     return CATALOGS.getCatalog(catalogOptions());
@@ -91,16 +111,22 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   @AfterEach
   void cleanup() throws Exception {
-    try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
-      Reference main = null;
-      for (Reference reference : api.getAllReferences().stream().toList()) {
-        if (reference.getName().equals("main")) {
-          main = reference;
-        } else {
-          api.deleteReference().reference(reference).delete();
+    try {
+      // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
+      // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
+      soft.assertAll();
+    } finally {
+      try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
+        Reference main = null;
+        for (Reference reference : api.getAllReferences().stream().toList()) {
+          if (reference.getName().equals("main")) {
+            main = reference;
+          } else {
+            api.deleteReference().reference(reference).delete();
+          }
         }
+        api.assignReference().reference(main).assignTo(Branch.of("main", EMPTY_OBJ_ID)).assign();
       }
-      api.assignReference().reference(main).assignTo(Branch.of("main", EMPTY_OBJ_ID)).assign();
     }
   }
 
@@ -144,6 +170,240 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   protected abstract String temporaryLocation();
 
   protected abstract String scheme();
+
+  @Test
+  public void testNessieCreateOnDifferentBranch() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
+      String tableName = TABLE.name();
+      String namespaceName = NS.levels()[0];
+      ContentKey keyNamespace = ContentKey.of(namespaceName);
+      ContentKey keyTable = ContentKey.of(namespaceName, tableName);
+
+      if (this.requiresNamespaceCreate()) {
+        catalog.createNamespace(NS);
+      }
+
+      Branch defaultBranch = api.getDefaultBranch();
+      Branch branch = Branch.of("testNessieCreateOnDifferentBranch", defaultBranch.getHash());
+
+      api.createReference().reference(branch).sourceRefName(defaultBranch.getName()).create();
+
+      TableIdentifier onDifferentBranch =
+          TableIdentifier.of(NS, String.format("`%s@%s`", tableName, branch.getName()));
+
+      // "Create ICEBERG_TABLE" commit
+      Table table =
+          catalog
+              .buildTable(onDifferentBranch, SCHEMA)
+              .withPartitionSpec(SPEC)
+              .withSortOrder(WRITE_ORDER)
+              .create();
+      table.newFastAppend().commit();
+
+      // Create another commit
+      catalog.loadTable(onDifferentBranch).newFastAppend().appendFile(FILE_C).commit();
+
+      soft.assertThatThrownBy(() -> catalog.loadTable(TABLE))
+          .isInstanceOf(NoSuchTableException.class);
+      soft.assertThatCode(() -> catalog.loadTable(onDifferentBranch)).doesNotThrowAnyException();
+
+      Set<ContentKey> onMain =
+          api.getEntries().refName(defaultBranch.getName()).stream()
+              .map(EntriesResponse.Entry::getName)
+              .collect(Collectors.toSet());
+      soft.assertThat(onMain).containsExactlyInAnyOrder(keyNamespace);
+      Set<ContentKey> onBranch =
+          api.getEntries().refName(branch.getName()).stream()
+              .map(EntriesResponse.Entry::getName)
+              .collect(Collectors.toSet());
+      soft.assertThat(onBranch).containsExactlyInAnyOrder(keyNamespace, keyTable);
+
+      soft.assertThatThrownBy(
+              () -> catalog.loadTable(TABLE).updateProperties().set("foo", "bar").commit())
+          .isInstanceOf(NoSuchTableException.class);
+      soft.assertThatCode(
+              () ->
+                  catalog
+                      .loadTable(onDifferentBranch)
+                      .updateProperties()
+                      .set("foo", "bar")
+                      .commit())
+          .doesNotThrowAnyException();
+
+      soft.assertThat(catalog.dropTable(TABLE)).isFalse();
+      soft.assertThat(catalog.dropTable(onDifferentBranch)).isTrue();
+    }
+  }
+
+  @Test
+  public void testNessieTimeTravel() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
+      String tableName = TABLE.name();
+      String namespaceName = NS.levels()[0];
+      ContentKey key = ContentKey.of(namespaceName, tableName);
+
+      if (this.requiresNamespaceCreate()) {
+        catalog.createNamespace(NS);
+      }
+
+      String head = api.getDefaultBranch().getHash();
+      String tip;
+
+      List<Long> icebergSnapshotIds = new ArrayList<>();
+      List<Long> nessieSnapshotIds = new ArrayList<>();
+
+      ToLongFunction<String> fetchSnapshotId =
+          commitId -> {
+            try {
+              Content content =
+                  api.getContent().refName("main").hashOnRef(commitId).getSingle(key).getContent();
+              return ((IcebergTable) content).getSnapshotId();
+            } catch (NessieNotFoundException e) {
+              throw new RuntimeException(e);
+            }
+          };
+
+      // "Create ICEBERG_TABLE" commit
+      Table table =
+          catalog
+              .buildTable(TABLE, SCHEMA)
+              .withPartitionSpec(SPEC)
+              .withSortOrder(WRITE_ORDER)
+              .create();
+      soft.assertThat(table.currentSnapshot()).isNull();
+      icebergSnapshotIds.add(-1L);
+      tip = api.getDefaultBranch().getHash();
+      soft.assertThat(tip).isNotEqualTo(head);
+      head = tip;
+      nessieSnapshotIds.add(fetchSnapshotId.applyAsLong(head));
+
+      // Create a snapshot
+      // 2nd "Update ICEBERG_TABLE" commit
+      table.newFastAppend().commit();
+      icebergSnapshotIds.add(table.currentSnapshot().snapshotId());
+      tip = api.getDefaultBranch().getHash();
+      soft.assertThat(tip).isNotEqualTo(head);
+      head = tip;
+      nessieSnapshotIds.add(fetchSnapshotId.applyAsLong(head));
+
+      // create an initial snapshot
+      // 3rd "Update ICEBERG_TABLE" commit
+      catalog.loadTable(TABLE).newFastAppend().appendFile(FILE_C).commit();
+      table = catalog.loadTable(TABLE);
+      icebergSnapshotIds.add(table.currentSnapshot().snapshotId());
+      tip = api.getDefaultBranch().getHash();
+      soft.assertThat(tip).isNotEqualTo(head);
+      head = tip;
+      nessieSnapshotIds.add(fetchSnapshotId.applyAsLong(head));
+
+      table.newFastAppend().appendFile(FILE_A).commit();
+      // 4th "Update ICEBERG_TABLE" commit
+      icebergSnapshotIds.add(table.currentSnapshot().snapshotId());
+      tip = api.getDefaultBranch().getHash();
+      soft.assertThat(tip).isNotEqualTo(head);
+      head = tip;
+      nessieSnapshotIds.add(fetchSnapshotId.applyAsLong(head));
+
+      // 5th "Update ICEBERG_TABLE" commit
+      catalog.loadTable(TABLE).newFastAppend().appendFile(FILE_B).commit();
+      table = catalog.loadTable(TABLE);
+      icebergSnapshotIds.add(table.currentSnapshot().snapshotId());
+      tip = api.getDefaultBranch().getHash();
+      soft.assertThat(tip).isNotEqualTo(head);
+      head = tip;
+      nessieSnapshotIds.add(fetchSnapshotId.applyAsLong(head));
+
+      List<CommitMeta> commitLog =
+          api.getCommitLog().refName("main").stream()
+              .limit(icebergSnapshotIds.size())
+              .map(LogResponse.LogEntry::getCommitMeta)
+              .collect(Collectors.toList());
+      Collections.reverse(commitLog);
+
+      List<IcebergTable> contents =
+          commitLog.stream()
+              .map(
+                  m -> {
+                    try {
+                      return api.getContent()
+                          .refName("main")
+                          .hashOnRef(m.getHash())
+                          .getSingle(key)
+                          .getContent();
+                    } catch (NessieNotFoundException e) {
+                      throw new RuntimeException(e);
+                    }
+                  })
+              .map(IcebergTable.class::cast)
+              .collect(Collectors.toList());
+
+      soft.assertThat(contents)
+          .extracting(IcebergTable::getSnapshotId)
+          .containsExactlyElementsOf(icebergSnapshotIds);
+      soft.assertThat(icebergSnapshotIds).containsExactlyElementsOf(nessieSnapshotIds);
+
+      for (int i = 0; i < commitLog.size(); i++) {
+        CommitMeta commit = commitLog.get(i);
+        IcebergTable c = contents.get(i);
+
+        String tableSpec = String.format("`%s@main#%s`", tableName, commit.getHash());
+        table = catalog.loadTable(TableIdentifier.of(NS, tableSpec));
+        soft.assertThat(table)
+            .describedAs("using branch + commit ID #%d, table '%s'", i, tableSpec)
+            .extracting(
+                t -> t.currentSnapshot() != null ? t.currentSnapshot().snapshotId() : -1L,
+                t -> t.properties().get("nessie.commit.id"))
+            .containsExactly(c.getSnapshotId(), commit.getHash());
+
+        tableSpec = String.format("`%s@main#%s`", tableName, commit.getCommitTime());
+        table = catalog.loadTable(TableIdentifier.of(NS, tableSpec));
+        soft.assertThat(table)
+            .describedAs("using branch + commit timestamp #%d, table '%s'", i, tableSpec)
+            .extracting(
+                t -> t.currentSnapshot() != null ? t.currentSnapshot().snapshotId() : -1L,
+                t -> t.properties().get("nessie.commit.id"))
+            .containsExactly(c.getSnapshotId(), commit.getHash());
+
+        tableSpec = String.format("`%s#%s`", tableName, commit.getHash());
+        table = catalog.loadTable(TableIdentifier.of(NS, tableSpec));
+        soft.assertThat(table)
+            .describedAs("using commit ID #%d, table '%s'", i, tableSpec)
+            .extracting(
+                t -> t.currentSnapshot() != null ? t.currentSnapshot().snapshotId() : -1L,
+                t -> t.properties().get("nessie.commit.id"))
+            .containsExactly(c.getSnapshotId(), commit.getHash());
+
+        tableSpec = String.format("`%s#%s`", tableName, commit.getCommitTime());
+        table = catalog.loadTable(TableIdentifier.of(NS, tableSpec));
+        soft.assertThat(table)
+            .describedAs("using commit timestamp #%d, table '%s'", i, tableSpec)
+            .extracting(
+                t -> t.currentSnapshot() != null ? t.currentSnapshot().snapshotId() : -1L,
+                t -> t.properties().get("nessie.commit.id"))
+            .containsExactly(c.getSnapshotId(), commit.getHash());
+
+        tableSpec =
+            String.format(
+                "`%s#%s`",
+                tableName,
+                ISO_OFFSET_DATE_TIME.format(
+                    commit.getCommitTime().atOffset(ZoneOffset.ofHours(-9))));
+        table = catalog.loadTable(TableIdentifier.of(NS, tableSpec));
+        soft.assertThat(table)
+            .describedAs("using commit timestamp #%d, table '%s'", i, tableSpec)
+            .extracting(
+                t -> t.currentSnapshot() != null ? t.currentSnapshot().snapshotId() : -1L,
+                t -> t.properties().get("nessie.commit.id"))
+            .containsExactly(c.getSnapshotId(), commit.getHash());
+      }
+    }
+  }
 
   @Test
   public void testTableWithObjectStorage() throws Exception {
