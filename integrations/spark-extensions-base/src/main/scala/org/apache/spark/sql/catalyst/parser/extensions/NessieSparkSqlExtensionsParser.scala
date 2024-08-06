@@ -21,7 +21,6 @@ import org.projectnessie.nessie.cli.grammar.{
   ParseException
 }
 import org.projectnessie.nessie.cli.grammar.Token.TokenType
-import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.ParserInterface
@@ -36,7 +35,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{
   ShowReferenceCommand,
   UseReferenceCommand
 }
-import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.{DataType, StructType}
 import org.projectnessie.nessie.cli.cmdspec.{
@@ -50,8 +48,7 @@ import org.projectnessie.nessie.cli.cmdspec.{
   ShowReferenceCommandSpec,
   UseReferenceCommandSpec
 }
-import org.projectnessie.nessie.cli.grammar.Node.NodeType
-import org.projectnessie.nessie.cli.grammar.ast.{ReferenceType, SingleStatement}
+import org.projectnessie.nessie.cli.grammar.ast.SingleStatement
 
 import scala.util.Try
 
@@ -246,39 +243,5 @@ object NessieSparkSqlExtensionsParser {
   private val substitutorCtor = {
     Try(classOf[VariableSubstitution].getConstructor(classOf[SQLConf]))
       .getOrElse(classOf[VariableSubstitution].getConstructor())
-  }
-}
-
-/** Copied from Apache Spark A [[NessieParseException]] is an
-  * `AnalysisException` that is thrown during the parse process. It contains
-  * fields and an extended error message that make reporting and diagnosing
-  * errors easier.
-  */
-class NessieParseException(
-    val command: Option[String],
-    message: String,
-    val start: Origin,
-    val stop: Origin
-) extends AnalysisException(message, start.line, start.startPosition) {
-
-  override def getMessage: String = {
-    val builder = new StringBuilder
-    builder ++= "\n" ++= message
-    start match {
-      case Origin(Some(l), Some(p), _, _, _, _, _) =>
-        builder ++= s"(line $l, pos $p)\n"
-        command.foreach { cmd =>
-          val (above, below) = cmd.split("\n").splitAt(l)
-          builder ++= "\n== SQL ==\n"
-          above.foreach(builder ++= _ += '\n')
-          builder ++= (0 until p).map(_ => "-").mkString("") ++= "^^^\n"
-          below.foreach(builder ++= _ += '\n')
-        }
-      case _ =>
-        command.foreach { cmd =>
-          builder ++= "\n== SQL ==\n" ++= cmd
-        }
-    }
-    builder.toString
   }
 }
