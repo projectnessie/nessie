@@ -50,10 +50,11 @@ public class UseReferenceCommand extends NessieCommand<UseReferenceCommandSpec> 
     EntriesResponse response = getAny.get();
     Reference ref = requireNonNull(response.getEffectiveReference());
 
-    if (spec.getRefType() != null) {
-      if (Reference.ReferenceType.valueOf(spec.getRefType()) != ref.getType()) {
+    String refType = spec.getRefType();
+    if (refType != null && !"REFERENCE".equals(refType)) {
+      if (Reference.ReferenceType.valueOf(refType) != ref.getType()) {
         throw new IllegalArgumentException(
-            format("'%s' is not a %s but a %s.", spec.getRef(), spec.getRefType(), ref.getType()));
+            format("'%s' is not a %s but a %s.", spec.getRef(), refType, ref.getType()));
       }
     }
 

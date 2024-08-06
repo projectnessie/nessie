@@ -404,7 +404,6 @@ DropContentStatement
 
 UseReferenceStatement
     : <USE>
-      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG); }
       ( /type/=ReferenceType | <REFERENCE> )
       { setOptionalNextTokenTypes();
         completionType = CompletionType.REFERENCE_NAME; }

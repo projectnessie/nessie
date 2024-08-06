@@ -216,6 +216,14 @@ public class TestCliCompleter {
   static Stream<Arguments> completer() {
     return Stream.of(
         arguments(
+            "USE",
+            true,
+            List.of(),
+            List.of(),
+            List.of("USE BRANCH", "USE TAG", "USE REFERENCE"),
+            CompletionType.NONE,
+            List.of()),
+        arguments(
             "REVERT",
             true,
             List.of(),
