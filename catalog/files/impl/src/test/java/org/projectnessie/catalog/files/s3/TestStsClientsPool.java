@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.files.s3;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -54,8 +55,8 @@ class TestStsClientsPool {
     S3BucketOptions options1 = ImmutableS3NamedBucketOptions.builder().region("R1").build();
     S3BucketOptions options2 = ImmutableS3NamedBucketOptions.builder().region("R2").build();
 
-    StsClient client1 = StsClient.builder().build();
-    StsClient client2 = StsClient.builder().build();
+    StsClient client1 = mock(StsClient.class);
+    StsClient client2 = mock(StsClient.class);
 
     client.set(client1);
 

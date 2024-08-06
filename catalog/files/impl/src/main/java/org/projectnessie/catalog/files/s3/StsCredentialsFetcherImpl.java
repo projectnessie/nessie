@@ -36,13 +36,8 @@ class StsCredentialsFetcherImpl implements StsCredentialsFetcher {
   public Credentials fetchCredentialsForClient(
       S3BucketOptions bucketOptions, S3ClientIam iam, Optional<StorageLocations> locations) {
     AssumeRoleRequest.Builder request = AssumeRoleRequest.builder();
-    if (locations.isPresent()) {
-      iam.policy()
-          .ifPresentOrElse(
-              request::policy, () -> request.policy(locationDependentPolicy(iam, locations.get())));
-    } else {
-      iam.policy().ifPresent(request::policy);
-    }
+    locations.ifPresent(
+        storageLocations -> request.policy(locationDependentPolicy(iam, storageLocations)));
     return doFetchCredentials(bucketOptions, request, iam);
   }
 
@@ -54,6 +49,7 @@ class StsCredentialsFetcherImpl implements StsCredentialsFetcher {
   private Credentials doFetchCredentials(
       S3BucketOptions bucketOptions, AssumeRoleRequest.Builder request, S3Iam iam) {
     request.roleSessionName(iam.roleSessionName().orElse(S3Iam.DEFAULT_SESSION_NAME));
+    iam.policy().ifPresent(request::policy);
     iam.assumeRole().ifPresent(request::roleArn);
     iam.externalId().ifPresent(request::externalId);
     iam.sessionDuration()
