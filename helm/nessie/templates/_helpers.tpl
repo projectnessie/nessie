@@ -158,15 +158,29 @@ Apply S3 catalog options.
 {{- if .pathStyleAccess -}}{{- $_ := set $map ( print $prefix "path-style-access" ) .pathStyleAccess -}}{{- end -}}
 {{- if .accessPoint -}}{{- $_ := set $map ( print $prefix "access-point" ) .accessPoint -}}{{- end -}}
 {{- if .allowCrossRegionAccessPoint -}}{{- $_ := set $map ( print $prefix "allow-cross-region-access-point" ) .allowCrossRegionAccessPoint -}}{{- end -}}
-{{- if .serverAuthenticationMode -}}{{- $_ := set $map ( print $prefix "server-auth-mode" ) .serverAuthenticationMode -}}{{- end -}}
-{{- if .clientAuthenticationMode -}}{{- $_ := set $map ( print $prefix "client-auth-mode" ) .clientAuthenticationMode -}}{{- end -}}
-{{- if .assumeRole -}}
-{{- if .assumeRole.stsEndpoint -}}{{- $_ := set $map ( print $prefix "sts-endpoint" ) .assumeRole.stsEndpoint -}}{{- end -}}
-{{- if .assumeRole.roleArn -}}{{- $_ := set $map ( print $prefix "assume-role" ) .assumeRole.roleArn -}}{{- end -}}
-{{- if .assumeRole.sessionIamPolicy -}}{{- $_ := set $map ( print $prefix "session-iam-policy" ) .assumeRole.sessionIamPolicy -}}{{- end -}}
-{{- if .assumeRole.roleSessionName -}}{{- $_ := set $map ( print $prefix "role-session-name" ) .assumeRole.roleSessionName -}}{{- end -}}
-{{- if .assumeRole.externalId -}}{{- $_ := set $map ( print $prefix "external-id" ) .assumeRole.externalId -}}{{- end -}}
-{{- if .assumeRole.clientSessionDuration -}}{{- $_ := set $map ( print $prefix "client-session-duration" ) .assumeRole.clientSessionDuration -}}{{- end -}}
+{{- if .requestSigningEnabled -}}{{- $_ := set $map ( print $prefix "request-signing-enabled" ) .requestSigningEnabled -}}{{- end -}}
+{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
+{{- if .stsEndpoint -}}{{- $_ := set $map ( print $prefix "sts-endpoint" ) .assumeRole.stsEndpoint -}}{{- end -}}
+{{- if .clientIam -}}
+{{- if .clientIam.enabled -}}{{- $_ := set $map ( print $prefix "client-iam.enabled" ) .clientIam.enabled -}}{{- end -}}
+{{- if .clientIam.policy -}}{{- $_ := set $map ( print $prefix "client-iam.policy" ) .clientIam.policy -}}{{- end -}}
+{{- if .clientIam.roleArn -}}{{- $_ := set $map ( print $prefix "client-iam.assume-role" ) .clientIam.roleArn -}}{{- end -}}
+{{- if .clientIam.roleSessionName -}}{{- $_ := set $map ( print $prefix "client-iam.role-session-name" ) .clientIam.roleSessionName -}}{{- end -}}
+{{- if .clientIam.externalId -}}{{- $_ := set $map ( print $prefix "client-iam.external-id" ) .clientIam.externalId -}}{{- end -}}
+{{- if .clientIam.sessionDuration -}}{{- $_ := set $map ( print $prefix "client-iam.session-duration" ) .clientIam.sessionDuration -}}{{- end -}}
+{{- if .clientIam.statements -}}
+{{- range $i, $statement := .clientIam.statements -}}
+{{- $_ := set $map ( print $prefix "client-iam.statements[%d]" $i ) $statement -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if .serverIam -}}
+{{- if .serverIam.enabled -}}{{- $_ := set $map ( print $prefix "server-iam.enabled" ) .serverIam.enabled -}}{{- end -}}
+{{- if .serverIam.policy -}}{{- $_ := set $map ( print $prefix "server-iam.policy" ) .serverIam.policy -}}{{- end -}}
+{{- if .serverIam.roleArn -}}{{- $_ := set $map ( print $prefix "server-iam.ssume-role" ) .serverIam.roleArn -}}{{- end -}}
+{{- if .serverIam.roleSessionName -}}{{- $_ := set $map ( print $prefix "server-iam.role-session-name" ) .serverIam.roleSessionName -}}{{- end -}}
+{{- if .serverIam.externalId -}}{{- $_ := set $map ( print $prefix "server-iam.external-id" ) .serverIam.externalId -}}{{- end -}}
+{{- if .serverIam.sessionDuration -}}{{- $_ := set $map ( print $prefix "server-iam.session-duration" ) .serverIam.sessionDuration -}}{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

@@ -15,6 +15,9 @@
  */
 package org.projectnessie.server.catalog;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
@@ -52,9 +55,9 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.PositionOutputStream;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -142,6 +145,51 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   protected abstract String scheme();
 
+  @Test
+  public void testTableWithObjectStorage() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(TABLE.namespace());
+    }
+
+    Map<String, String> properties = singletonMap("write.object-storage.enabled", "true");
+    Table originalTable =
+        catalog
+            .buildTable(TABLE, SCHEMA)
+            .withPartitionSpec(SPEC)
+            .withSortOrder(WRITE_ORDER)
+            .withProperties(properties)
+            .create();
+
+    originalTable.newFastAppend().appendFile(FILE_A).commit();
+
+    Table table = catalog.loadTable(TABLE);
+
+    assertThat(table.properties())
+        .containsKey("write.data.path")
+        .doesNotContainKeys("write.object-storage.path", "write.folder-storage.path");
+    String writeDataPath = table.properties().get("write.data.path");
+    assertThat(table.location()).startsWith(writeDataPath);
+
+    String filename = "my-data-file.txt";
+    String dataLocation = table.locationProvider().newDataLocation(filename);
+
+    assertThat(dataLocation).startsWith(writeDataPath + "/");
+    String path = dataLocation.substring(writeDataPath.length() + 1);
+    int idx = path.indexOf('/');
+    assertThat(idx).isGreaterThan(1);
+    String pathNoRandom = path.substring(idx + 1);
+    assertThat(pathNoRandom)
+        .startsWith(String.join("/", TABLE.namespace().levels()) + '/' + TABLE.name() + '_')
+        .endsWith('/' + filename);
+
+    try (PositionOutputStream out = table.io().newOutputFile(dataLocation).create()) {
+      out.write("Hello World".getBytes(UTF_8));
+    }
+  }
+
   /**
    * Similar to {@link #testRegisterTable()} but places a table-metadata file in the local file
    * system.
@@ -176,7 +224,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     TableOperations ops = ((BaseTable) originalTable).operations();
 
     String metadataLocation;
-    try (FileIO io = temporaryFileIO(catalog)) {
+    try (FileIO io = temporaryFileIO(catalog, ops.io())) {
       metadataLocation = temporaryLocation() + "/my-metadata-" + UUID.randomUUID() + ".json";
       try (OutputStream output = io.newOutputFile(metadataLocation).create()) {
         output.write(TableMetadataParser.toJson(ops.current()).getBytes(StandardCharsets.UTF_8));
@@ -187,38 +235,36 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     Table registeredTable = catalog.registerTable(TABLE, metadataLocation);
 
-    Assertions.assertThat(registeredTable).isNotNull();
-    Assertions.assertThat(catalog.tableExists(TABLE)).as("Table must exist").isTrue();
-    Assertions.assertThat(registeredTable.properties())
+    assertThat(registeredTable).isNotNull();
+    assertThat(catalog.tableExists(TABLE)).as("Table must exist").isTrue();
+    assertThat(registeredTable.properties())
         .as("Props must match")
         .containsAllEntriesOf(properties);
-    Assertions.assertThat(registeredTable.schema().asStruct())
+    assertThat(registeredTable.schema().asStruct())
         .as("Schema must match")
         .isEqualTo(originalTable.schema().asStruct());
-    Assertions.assertThat(registeredTable.specs())
-        .as("Specs must match")
-        .isEqualTo(originalTable.specs());
-    Assertions.assertThat(registeredTable.sortOrders())
+    assertThat(registeredTable.specs()).as("Specs must match").isEqualTo(originalTable.specs());
+    assertThat(registeredTable.sortOrders())
         .as("Sort orders must match")
         .isEqualTo(originalTable.sortOrders());
-    Assertions.assertThat(registeredTable.currentSnapshot())
+    assertThat(registeredTable.currentSnapshot())
         .as("Current snapshot must match")
         .isEqualTo(originalTable.currentSnapshot());
-    Assertions.assertThat(registeredTable.snapshots())
+    assertThat(registeredTable.snapshots())
         .as("Snapshots must match")
         .isEqualTo(originalTable.snapshots());
-    Assertions.assertThat(registeredTable.history())
+    assertThat(registeredTable.history())
         .as("History must match")
         .isEqualTo(originalTable.history());
 
-    Assertions.assertThat(catalog.loadTable(TABLE)).isNotNull();
-    Assertions.assertThat(catalog.dropTable(TABLE)).isTrue();
-    Assertions.assertThat(catalog.tableExists(TABLE)).isFalse();
+    assertThat(catalog.loadTable(TABLE)).isNotNull();
+    assertThat(catalog.dropTable(TABLE)).isTrue();
+    assertThat(catalog.tableExists(TABLE)).isFalse();
   }
 
-  protected FileIO temporaryFileIO(RESTCatalog catalog) {
+  protected FileIO temporaryFileIO(RESTCatalog catalog, FileIO io) {
     String ioImpl = catalog.properties().get(CatalogProperties.FILE_IO_IMPL);
-    Map<String, String> props = new HashMap<>(catalog.properties());
+    Map<String, String> props = new HashMap<>(io.properties());
     props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
     // dummy credentials - must be overridden if the test requires real credentials
     props.put(S3FileIOProperties.ACCESS_KEY_ID, "accessKey");
@@ -260,8 +306,8 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     catalog.commitTransaction(tableCommit);
 
     Table loaded = catalog.loadTable(identifier);
-    Assertions.assertThat(loaded.schema().asStruct()).isEqualTo(expectedSchema.asStruct());
-    Assertions.assertThat(loaded.spec().fields()).isEqualTo(expectedSpec.fields());
+    assertThat(loaded.schema().asStruct()).isEqualTo(expectedSchema.asStruct());
+    assertThat(loaded.spec().fields()).isEqualTo(expectedSpec.fields());
   }
 
   @Test
@@ -303,10 +349,10 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     catalog.commitTransaction(tableCommit1, tableCommit2);
 
-    Assertions.assertThat(catalog.loadTable(identifier1).schema().asStruct())
+    assertThat(catalog.loadTable(identifier1).schema().asStruct())
         .isEqualTo(expectedSchema.asStruct());
 
-    Assertions.assertThat(catalog.loadTable(identifier2).schema().asStruct())
+    assertThat(catalog.loadTable(identifier2).schema().asStruct())
         .isEqualTo(expectedSchema2.asStruct());
   }
 
@@ -359,15 +405,15 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
             "Requirement failed: last assigned field id changed: expected 4 != 2");
 
     Schema schema1 = catalog.loadTable(identifier1).schema();
-    Assertions.assertThat(schema1.asStruct()).isEqualTo(originalSchemaOne.asStruct());
+    assertThat(schema1.asStruct()).isEqualTo(originalSchemaOne.asStruct());
 
     Schema schema2 = catalog.loadTable(identifier2).schema();
-    Assertions.assertThat(schema2.asStruct()).isEqualTo(updatedSchemaTwo.asStruct());
-    Assertions.assertThat(schema2.findField("data")).isNotNull();
-    Assertions.assertThat(schema2.findField("another")).isNotNull();
-    Assertions.assertThat(schema2.findField("more")).isNotNull();
-    Assertions.assertThat(schema2.findField("new-column")).isNull();
-    Assertions.assertThat(schema2.columns()).hasSize(4);
+    assertThat(schema2.asStruct()).isEqualTo(updatedSchemaTwo.asStruct());
+    assertThat(schema2.findField("data")).isNotNull();
+    assertThat(schema2.findField("another")).isNotNull();
+    assertThat(schema2.findField("more")).isNotNull();
+    assertThat(schema2.findField("new-column")).isNull();
+    assertThat(schema2.columns()).hasSize(4);
   }
 
   @Test
@@ -420,17 +466,16 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     table = catalog.loadTable(TABLE);
     metadata = ((HasTableOperations) table).operations().current();
-    Assertions.assertThat(metadata.statisticsFiles()).containsAll(List.of(statisticsFile));
-    Assertions.assertThat(metadata.partitionStatisticsFiles())
-        .containsAll(List.of(partitionStatisticsFile));
+    assertThat(metadata.statisticsFiles()).containsAll(List.of(statisticsFile));
+    assertThat(metadata.partitionStatisticsFiles()).containsAll(List.of(partitionStatisticsFile));
 
     table.updateStatistics().removeStatistics(snapshotId).commit();
     table.updatePartitionStatistics().removePartitionStatistics(snapshotId).commit();
 
     table = catalog.loadTable(TABLE);
     metadata = ((HasTableOperations) table).operations().current();
-    Assertions.assertThat(metadata.statisticsFiles()).isEmpty();
-    Assertions.assertThat(metadata.partitionStatisticsFiles()).isEmpty();
+    assertThat(metadata.statisticsFiles()).isEmpty();
+    assertThat(metadata.partitionStatisticsFiles()).isEmpty();
   }
 
   @Test
@@ -490,9 +535,8 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     table = catalog.loadTable(TABLE);
     metadata = ((HasTableOperations) table).operations().current();
-    Assertions.assertThat(metadata.statisticsFiles()).containsAll(List.of(statisticsFile));
-    Assertions.assertThat(metadata.partitionStatisticsFiles())
-        .containsAll(List.of(partitionStatisticsFile));
+    assertThat(metadata.statisticsFiles()).containsAll(List.of(statisticsFile));
+    assertThat(metadata.partitionStatisticsFiles()).containsAll(List.of(partitionStatisticsFile));
 
     transaction = table.newTransaction();
     transaction.updateStatistics().removeStatistics(snapshotId).commit();
@@ -501,7 +545,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     table = catalog.loadTable(TABLE);
     metadata = ((HasTableOperations) table).operations().current();
-    Assertions.assertThat(metadata.statisticsFiles()).isEmpty();
-    Assertions.assertThat(metadata.partitionStatisticsFiles()).isEmpty();
+    assertThat(metadata.statisticsFiles()).isEmpty();
+    assertThat(metadata.partitionStatisticsFiles()).isEmpty();
   }
 }

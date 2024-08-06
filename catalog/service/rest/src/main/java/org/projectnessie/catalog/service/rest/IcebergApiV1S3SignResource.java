@@ -19,6 +19,7 @@ import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -27,12 +28,20 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import java.time.Clock;
+import java.util.List;
+import java.util.Optional;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
+import org.projectnessie.catalog.service.api.SignerKeysService;
+import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.model.ContentKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles Iceberg REST API v1 endpoints that are not strongly associated with a particular entity
@@ -44,8 +53,14 @@ import org.projectnessie.model.ContentKey;
 @Path("iceberg")
 public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(IcebergApiV1S3SignResource.class);
+
   @Inject RequestSigner signer;
   @Inject IcebergErrorMapper errorMapper;
+  @Inject SignerKeysService signerKeysService;
+  @Inject private UriInfo uriInfo;
+
+  Clock clock = Clock.systemUTC();
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {
@@ -59,12 +74,38 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
       IcebergS3SignRequest request,
       @PathParam("prefix") String prefix,
       @PathParam("identifier") String identifier,
-      @QueryParam("loc") String baseLocation) {
+      @NotNull @QueryParam("b") String warehouseLocation,
+      @QueryParam("w") List<String> writeLocations,
+      @QueryParam("r") List<String> readLocations,
+      @NotNull @QueryParam("e") Long expirationTimestamp,
+      @NotNull @QueryParam("k") String keyName,
+      @NotNull @QueryParam("s") String signature) {
+
+    SignerKey signerKey = signerKeysService.getSignerKey(keyName);
+
+    Optional<String> verifyError =
+        SignerSignature.builder()
+            .prefix(prefix)
+            .identifier(identifier)
+            .warehouseLocation(warehouseLocation)
+            .writeLocations(writeLocations)
+            .readLocations(readLocations)
+            .expirationTimestamp(expirationTimestamp)
+            .build()
+            .verify(signerKey, signature, clock.instant());
+
+    if (verifyError.isPresent()) {
+      LOGGER.warn("{} for request {}", verifyError.get(), uriInfo.getRequestUri());
+      throw new IllegalArgumentException("Invalid signature");
+    }
+
     return ImmutableIcebergS3SignParams.builder()
         .request(request)
         .ref(decodePrefix(prefix).parsedReference())
         .key(ContentKey.fromPathString(identifier))
-        .baseLocation(baseLocation)
+        .warehouseLocation(warehouseLocation)
+        .writeLocations(writeLocations)
+        .readLocations(readLocations)
         .catalogService(catalogService)
         .signer(signer)
         .build()

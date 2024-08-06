@@ -15,14 +15,9 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-public enum S3ClientAuthenticationMode {
+import org.immutables.value.Value;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-  /** Each client I/O request is individually authorized (signed) by the Catalog server. */
-  REQUEST_SIGNING,
-
-  /**
-   * Clients receive session credentials (according to the role and IAM policy from bucket
-   * configuration) for the whole duration of client sessions.
-   */
-  ASSUME_ROLE,
-}
+@NessieImmutable
+@Value.Style(allParameters = false)
+public interface S3ServerIam extends S3Iam {}

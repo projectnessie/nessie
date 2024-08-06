@@ -15,25 +15,20 @@
  */
 package org.projectnessie.server.catalog.s3;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static java.util.Collections.singletonMap;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.aws.AwsClientProperties;
-import org.apache.iceberg.catalog.Namespace;
-import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.exceptions.ForbiddenException;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.apache.iceberg.types.Types;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
+import org.intellij.lang.annotations.Language;
 import org.projectnessie.minio.MinioContainer;
-import org.projectnessie.server.catalog.Catalogs;
+import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -42,78 +37,51 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
     value = MinioTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3AssumeRoleIcebergCatalog.Profile.class)
-public class ITS3AssumeRoleIcebergCatalog {
+public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests {
 
-  private static final String IAM_POLICY =
+  @Language("JSON")
+  public static final String IAM_ALLOW_TEMP =
       """
-      { "Version":"2012-10-17",
-        "Statement": [
-          {"Sid":"A1", "Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*"},
-          {"Sid":"D1", "Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*/blockedNamespace/*"}
-         ]
-      }
+      {"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*/temp/*"}
       """;
 
   @SuppressWarnings("unused")
   // Injected by MinioTestResourceLifecycleManager
   private MinioContainer minio;
 
-  private static final Catalogs CATALOGS = new Catalogs();
-
-  RESTCatalog catalog() {
-    return CATALOGS.getCatalog(
-        Map.of(
-            AwsClientProperties.CLIENT_REGION,
-            MinioTestResourceLifecycleManager.TEST_REGION,
-            CatalogProperties.WAREHOUSE_LOCATION,
-            minio.s3BucketUri("").toString()));
+  @Override
+  protected Map<String, String> catalogOptions() {
+    return singletonMap(
+        CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri(scheme(), "").toString());
   }
 
-  @AfterAll
-  static void closeRestCatalog() throws Exception {
-    CATALOGS.close();
+  @Override
+  protected String temporaryLocation() {
+    return minio.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
   }
 
-  @Test
-  void testCreateTable() {
-    @SuppressWarnings("resource")
-    RESTCatalog catalog = catalog();
-
-    Namespace ns = Namespace.of("allowedNamespace");
-    catalog.createNamespace(ns);
-
-    Schema schema = new Schema(Types.NestedField.required(1, "id", Types.LongType.get()));
-    // Create a table exercises assume role flows.
-    catalog.createTable(TableIdentifier.of(ns, "table1"), schema);
+  @Override
+  protected FileIO temporaryFileIO(RESTCatalog catalog, FileIO io) {
+    return io;
   }
 
-  @Test
-  void testCreateTableForbidden() {
-    @SuppressWarnings("resource")
-    RESTCatalog catalog = catalog();
-
-    Namespace ns = Namespace.of("blockedNamespace");
-    catalog.createNamespace(ns);
-
-    Schema schema = new Schema(Types.NestedField.required(1, "id", Types.LongType.get()));
-    // Attempts to create files blocked by the session IAM policy break the createTable() call
-    assertThatThrownBy(() -> catalog.createTable(TableIdentifier.of(ns, "table1"), schema))
-        .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("S3Exception: Access Denied")
-        // make sure the error comes from the Catalog Server
-        .hasStackTraceContaining("org.apache.iceberg.rest.RESTClient");
+  @Override
+  protected String scheme() {
+    return "s3";
   }
 
   public static class Profile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
-          .put("nessie.catalog.service.s3.default-options.session-iam-policy", IAM_POLICY)
+          .put("nessie.catalog.service.s3.default-options.request-signing-enabled", "false")
+          .put("nessie.catalog.service.s3.default-options.client-iam.enabled", "true")
+          .put("nessie.catalog.service.s3.default-options.client-iam.statements[0]", IAM_ALLOW_TEMP)
           .put(
-              "nessie.catalog.service.s3.default-options.assume-role",
+              "nessie.catalog.service.s3.default-options.client-iam.assume-role",
               "test-role") // Note: unused by Minio
           .put(
-              "nessie.catalog.service.s3.default-options.external-id",
+              "nessie.catalog.service.s3.default-options.client-iam.external-id",
               "test-external-id") // Note: unused by Minio
           .build();
     }

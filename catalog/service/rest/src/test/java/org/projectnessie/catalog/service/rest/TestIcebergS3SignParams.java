@@ -24,6 +24,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -62,7 +63,8 @@ class TestIcebergS3SignParams {
   @Mock CatalogService catalogService;
   @Mock RequestSigner signer;
 
-  final String baseLocation = "s3://bucket/warehouse/ns/table1_cafebabe";
+  final String warehouseLocation = "s3://bucket/warehouse/";
+  final String baseLocation = warehouseLocation + "ns/table1_cafebabe";
   final String oldBaseLocation = "s3://old-bucket/ns/table1";
   final String metadataLocation = baseLocation + "/metadata/metadata.json";
   final String dataFileUri =
@@ -269,6 +271,7 @@ class TestIcebergS3SignParams {
                     .method(method)
                     .uri(oldDataFileUri)
                     .build())
+            .warehouseLocation(warehouseLocation)
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectFailure(response, "URI not allowed for signing: " + oldDataFileUri);
@@ -279,7 +282,9 @@ class TestIcebergS3SignParams {
     when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), eq(true)))
         .thenReturn(successStage);
     IcebergS3SignParams icebergSigner =
-        newBuilder().baseLocation("s3://wrong-bucket/warehouse/ns/table1_cafebabee").build();
+        newBuilder()
+            .writeLocations(List.of("s3://wrong-bucket/warehouse/ns/table1_cafebabee"))
+            .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectFailure(response, "URI not allowed for signing: " + dataFileUri);
   }
@@ -289,7 +294,8 @@ class TestIcebergS3SignParams {
         .request(writeRequest)
         .ref(ref)
         .key(key)
-        .baseLocation(baseLocation)
+        .warehouseLocation(warehouseLocation)
+        .addWriteLocations(baseLocation)
         .catalogService(catalogService)
         .signer(signer);
   }

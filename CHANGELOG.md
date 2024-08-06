@@ -8,13 +8,50 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+### Catalog S3 bucket configuration changes / breaking
+
+**If you have configured S3 IAM/STS options, read this section carefully and adapt your configuration!**
+
+S3 buckets can now support both request-signing and assume-role/credentials-vending. To allow this, the
+following configuration options have _changed_:
+
+- The S3 bucket configuration option `client-authentication-mode` has been removed (defaulted to `REQUEST_SIGNING`).
+- A new S3 bucket configuration option `request-signing-enabled` has been added (defaults to `true`).
+
+The assume-role/credentials-vending configuration has been split into 2 sets: one for Nessie server
+credentials and one for client credentials. This allows the Nessie server to directly use the configured S3
+credentials, but hand out scoped-down credentials from STS to clients.
+
+- Nessie server IAM options are configured via the `.server-iam.` prefix.
+- Nessie server IAM must be enabled using `.server-iam.enabled=true` on either the default S3 options or
+  bucket-specific options.
+- Client IAM must be enabled using `.client-iam.enabled=true` on either the default S3 options or bucket-specific
+  options.
+- Inheritance of default / bucket-specific options is supported for both `.server-iam.*` and `.client-iam.*`
+  configuration options.
+- The `.server-authentication-mode` configuration has been renamed to `.auth-type`.
+- See [S3 settings](https://projectnessie.org/nessie-latest/configuration/#s3-settings).
+
+The client IAM policy can be provided using either a static policy via `.client-iam.policy`, or, if
+`.client-iam.policy` is not present, Nessie will generate the policy scoped down to a table's location.
+Additional IAM policy statements can be supplied via the `.client-iam.client-iam-statements` _list_ property.
+
 ### Upgrade notes
 
 ### Breaking changes
 
+- See above for breaking changes to S3 bucket configurations. 
+
 ### New Features
 
+- Catalog: The Iceberg REST header `X-Iceberg-Access-Delegation` is now respected. The functionality
+  depends on the S3 bucket configuration options `request-signing-enabled` and `assume-role-enabled`.
+
 ### Changes
+
+- Catalog: Only general object store configurations are returned via the `/iceberg/v1/config` endpoint.
+- Catalog: Table specific options are returned for each individual table, including scoped-down S3
+  credentials, if applicable.
 
 ### Deprecations
 

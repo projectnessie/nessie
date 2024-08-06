@@ -206,29 +206,26 @@ catalog:
         # - APPLICATION_GLOBAL: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
         # The default is STATIC.
-        serverAuthenticationMode: ~  # STATIC
-        # -- Controls the authentication mode for Catalog clients accessing this bucket. Valid values
-        # are:
-        # - REQUEST_SIGNING: Each client I/O request is individually authorized (signed) by the
-        # Catalog server. This is the default.
-        # - ASSUME_ROLE: Clients receive session credentials (according to the role and IAM policy
-        # from bucket configuration) for the whole duration of client sessions.
-        clientAuthenticationMode: ~  # REQUEST_SIGNING
+        authType: ~  # STATIC
+        # --Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
+        requestSigningEnabled: ~  # true
+        # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
+        # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
+        # sessions (e.g. to use the "assume role" functionality).
+        stsEndpoint: ~  # "https://sts.amazonaws.com"
 
-        # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
-        assumeRole:
-          # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
-          # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
-          # sessions (e.g. to use the "assume role" functionality).
-          stsEndpoint: ~  # "https://sts.amazonaws.com"
+        clientIam:
+          # -- Whether to enable client assume-role/scoped-down credentials functionality.
+          enabled: ~  # false
           # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
           # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
           # at all).
-          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
-          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
-          sessionIamPolicy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+          policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
           # -- An identifier for the assumed role session. This parameter is most important in cases
           # when the same role is assumed by different principals in different use cases.
+          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
+          # If not supplied, Nessie will generate a policy scoped down to a table's location.
           roleSessionName: ~  # nessie
           # -- An identifier for the party assuming the role. This parameter must match the external
           # ID configured in IAM rules that govern the assume role process for the specified roleArn.
@@ -237,7 +234,31 @@ catalog:
           # this bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on
           # the client side. This value is used for validating expiration times of credentials
           # associated with the warehouse. If unset, a default of one hour is assumed.
-          clientSessionDuration: ~
+          sessionDuration: ~
+          # -- Additional IAM policy statements in JSON format to add to generated per-table IAM policies.
+          statements: ~
+
+        # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
+        serverIam:
+          # -- Whether to enable server assume-role functionality.
+          enabled: ~  # false
+          # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
+          # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
+          # at all).
+          policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+          # -- An identifier for the assumed role session. This parameter is most important in cases
+          # when the same role is assumed by different principals in different use cases.
+          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
+          roleSessionName: ~  # nessie
+          # -- An identifier for the party assuming the role. This parameter must match the external
+          # ID configured in IAM rules that govern the assume role process for the specified roleArn.
+          externalId: ~
+          # -- A higher bound estimate of the expected duration of client "sessions" working with data in
+          # this bucket. A session, for example, is the lifetime of an Iceberg REST catalog object on
+          # the client side. This value is used for validating expiration times of credentials
+          # associated with the warehouse. If unset, a default of one hour is assumed.
+          sessionDuration: ~
 
         # -- AWS credentials. Required when serverAuthenticationMode is STATIC.
         accessKeySecret:

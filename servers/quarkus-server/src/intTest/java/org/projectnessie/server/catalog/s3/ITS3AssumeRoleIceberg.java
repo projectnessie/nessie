@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.server.catalog.s3;
 
-import java.util.Optional;
-import org.projectnessie.catalog.files.s3.S3AuthType;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.quarkus.test.junit.TestProfile;
+import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
 
-public interface CatalogS3BucketConfig extends S3BucketOptions {
-
+@QuarkusTestResource(
+    restrictToAnnotatedClass = true,
+    value = MinioTestResourceLifecycleManager.class)
+@QuarkusIntegrationTest
+@TestProfile(ITS3AssumeRoleIceberg.Profile.class)
+public class ITS3AssumeRoleIceberg extends AbstractAssumeRoleIceberg {
   @Override
-  Optional<S3AuthType> authType();
+  protected String scheme() {
+    return "s3";
+  }
 }

@@ -117,9 +117,9 @@ public class S3Clients {
 
   public static AwsCredentialsProvider serverCredentialsProvider(
       S3BucketOptions bucketOptions, S3Sessions sessions) {
-    return bucketOptions.assumeRole().isPresent()
+    return bucketOptions.getEnabledServerIam().isPresent()
         ? sessions.assumeRoleForServer(bucketOptions)
-        : bucketOptions.effectiveServerAuthenticationMode().newCredentialsProvider(bucketOptions);
+        : bucketOptions.effectiveAuthMode().newCredentialsProvider(bucketOptions);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {

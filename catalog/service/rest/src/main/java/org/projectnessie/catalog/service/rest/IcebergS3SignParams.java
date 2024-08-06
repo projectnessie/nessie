@@ -16,18 +16,23 @@
 package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.catalog.files.s3.S3Utils.extractBucketName;
+import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.icebergWriteLocation;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.ws.rs.core.Response.Status;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Check;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -61,7 +66,11 @@ abstract class IcebergS3SignParams {
 
   abstract ContentKey key();
 
-  abstract String baseLocation();
+  abstract String warehouseLocation();
+
+  abstract List<String> writeLocations();
+
+  abstract List<String> readLocations();
 
   abstract CatalogService catalogService();
 
@@ -69,7 +78,10 @@ abstract class IcebergS3SignParams {
 
   @Check
   void check() {
-    checkArgument(baseLocation().startsWith("s3:"), "baseLocation must be an S3 URI");
+    checkArgument(
+        writeLocations().stream().allMatch(l -> l.startsWith("s3:"))
+            && readLocations().stream().allMatch(l -> l.startsWith("s3:")),
+        "locations must be S3 URIs");
   }
 
   @Value.Lazy
@@ -90,13 +102,44 @@ abstract class IcebergS3SignParams {
         .call(this::checkForbiddenLocations)
         .onItem()
         .transformToMulti(this::collectAllowedLocations)
-        .filter(requestedS3Uri()::startsWith)
+        .filter(this::checkLocation)
         .toUni()
         .onItem()
         .ifNull()
         .failWith(this::unauthorized)
         .replaceWith(request().uri())
         .map(this::sign);
+  }
+
+  private boolean checkLocation(String location) {
+    String requested = requestedS3Uri();
+    if (requested.startsWith(location)) {
+      return true;
+    }
+
+    // For files that were written with 'write.object-storage.enabled' enabled, repeat the check but
+    // ignore the first S3 path element after the warehouse location
+
+    String warehouseLocation = warehouseLocation();
+    if (warehouseLocation.isEmpty()) {
+      return false;
+    }
+
+    if (!requested.startsWith(warehouseLocation)) {
+      return false;
+    }
+    if (!location.startsWith(warehouseLocation)) {
+      return false;
+    }
+
+    int requestedSlash = requested.indexOf('/', warehouseLocation.length() + 1);
+    if (requestedSlash == -1) {
+      return false;
+    }
+    String requestedPath = requested.substring(requestedSlash);
+    String locationPath = location.substring(warehouseLocation.length());
+
+    return requestedPath.startsWith(locationPath);
   }
 
   private Uni<SnapshotResponse> fetchSnapshot() {
@@ -127,7 +170,7 @@ abstract class IcebergS3SignParams {
         metadataLocation = ((IcebergContent) content).getMetadataLocation();
       }
       if (metadataLocation != null
-          && requestedS3Uri().equals(S3Utils.normalizeS3Scheme(metadataLocation))) {
+          && requestedS3Uri().equals(normalizeS3Scheme(metadataLocation))) {
         return Uni.createFrom().failure(unauthorized());
       }
     }
@@ -136,8 +179,9 @@ abstract class IcebergS3SignParams {
 
   private Multi<String> collectAllowedLocations(SnapshotResponse snapshotResponse) {
     if (snapshotResponse == null) {
-      // table does not exist: only allow writes to its future location
-      return Multi.createFrom().item(baseLocation());
+      // table does not exist - nothing to write to, nothing to read from
+      return Multi.createFrom()
+          .items(Stream.concat(writeLocations().stream(), readLocations().stream()));
     } else {
       NessieEntitySnapshot<?> snapshot = snapshotResponse.nessieSnapshot();
       // table exists: collect all locations, current and historical
@@ -146,21 +190,45 @@ abstract class IcebergS3SignParams {
               e -> {
                 // check the base location sent with the request matches the current
                 // iceberg location (see IcebergConfigurer: they must match)
-                String expectedBaseLocation =
-                    S3Utils.normalizeS3Scheme(Objects.requireNonNull(snapshot.icebergLocation()));
-                if (baseLocation().equals(expectedBaseLocation)) {
-                  e.emit(expectedBaseLocation);
-                  // Allow reading from ancient locations, but only allow writes to the current
-                  // location
-                  if (!write()) {
-                    for (String s : snapshot.additionalKnownLocations()) {
-                      e.emit(S3Utils.normalizeS3Scheme(s));
+                List<String> expectedBaseLocations = new ArrayList<>();
+                String location = normalizeS3Scheme(requireNonNull(snapshot.icebergLocation()));
+                expectedBaseLocations.add(location);
+
+                String writeLocation = icebergWriteLocation(snapshot.properties());
+                if (writeLocation != null) {
+                  writeLocation = normalizeS3Scheme(writeLocation);
+                  if (!writeLocation.startsWith(location)) {
+                    expectedBaseLocations.add(writeLocation);
+                  }
+                }
+
+                if (write()) {
+                  for (String baseLocation : writeLocations()) {
+                    if (expectedBaseLocations.contains(baseLocation)) {
+                      e.emit(baseLocation);
+                      e.complete();
+                      return;
                     }
                   }
-                  e.complete();
                 } else {
-                  e.fail(unauthorized());
+                  Iterator<String> locations =
+                      Stream.concat(writeLocations().stream(), readLocations().stream()).iterator();
+                  while (locations.hasNext()) {
+                    String baseLocation = locations.next();
+                    if (expectedBaseLocations.contains(baseLocation)) {
+                      e.emit(baseLocation);
+                      // Allow reading from ancient locations, but only allow writes to the current
+                      // location
+                      for (String s : snapshot.additionalKnownLocations()) {
+                        e.emit(normalizeS3Scheme(s));
+                      }
+                      e.complete();
+                      return;
+                    }
+                  }
                 }
+
+                e.fail(unauthorized());
               });
     }
   }
@@ -187,13 +255,14 @@ abstract class IcebergS3SignParams {
                 "NotAuthorizedException",
                 "URI not allowed for signing: " + request().uri(),
                 List.of()));
+    String s3Uri = requestedS3Uri();
     LOGGER.warn(
-        "Unauthorized signing request: key: {}, ref: {}, request uri: {}, request method: {}",
+        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request method: {}",
         key(),
         ref(),
+        s3Uri,
         request().uri(),
-        request().method(),
-        exception);
+        request().method());
     return exception;
   }
 }
