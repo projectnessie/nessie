@@ -14,6 +14,7 @@ nav:
   - security.md
   - authentication.md
   - authorization.md
+  - trino.md
   - client_config.md
   - export_import.md
   - gc.md

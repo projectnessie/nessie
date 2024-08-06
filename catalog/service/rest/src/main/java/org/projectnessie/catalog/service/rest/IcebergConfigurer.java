@@ -17,6 +17,7 @@ package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Clock.systemUTC;
@@ -30,17 +31,25 @@ import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDele
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
@@ -117,7 +126,147 @@ public class IcebergConfigurer {
   @Inject SecretsProvider secretsProvider;
   @Inject SignerKeysService signerKeysService;
 
+  @Inject
+  @ConfigProperty(name = "nessie.server.authentication.enabled")
+  boolean authnEnabled;
+
   @Context ExternalBaseUri uriInfo;
+
+  public Response trinoConfig(String reference, String warehouse, String format) {
+
+    WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
+
+    StorageUri location = StorageUri.of(warehouseConfig.location());
+    StorageLocations storageLocations =
+        storageLocations(StorageUri.of(warehouseConfig.location()), List.of(location), List.of());
+
+    Map<String, String> config = icebergConfigOverrides(reference, warehouse);
+    // Exclude VENDED_CREDENTIALS to prevent an STS round trip here
+    storeConfigOverrides(
+        storageLocations, config, null, null, ad -> !ad.equals(VENDED_CREDENTIALS));
+
+    Properties properties = new Properties();
+
+    properties.put("connector.name", "iceberg");
+    properties.put("iceberg.catalog.type", "rest");
+    properties.put("iceberg.rest-catalog.uri", uriInfo.icebergBaseURI().toString());
+
+    properties.put("iceberg.rest-catalog.security", authnEnabled ? "OAUTH2" : "NONE");
+    if (authnEnabled) {
+      properties.put(
+          "iceberg.rest-catalog.oauth2.token", "fill-in-your-oauth-token or use .credential");
+      properties.put(
+          "iceberg.rest-catalog.oauth2.credential", "fill-in-your-oauth-credentials or use .token");
+    }
+
+    String scheme = location.scheme();
+    if (scheme != null) {
+      switch (scheme) {
+        case "s3":
+        case "s3a":
+        case "s3n":
+          String bucket = location.requiredAuthority();
+          S3BucketOptions s3BucketOptions =
+              s3Options.effectiveOptionsForBucket(Optional.of(bucket), secretsProvider);
+
+          properties.put(
+              "iceberg.rest-catalog.vended-credentials-enabled",
+              Boolean.toString(s3BucketOptions.effectiveClientAssumeRoleEnabled()));
+          properties.put("fs.native-s3.enabled", "true");
+          if (config.containsKey(S3_ENDPOINT)) {
+            properties.put("s3.endpoint", config.get(S3_ENDPOINT));
+          }
+          if (config.containsKey(S3_CLIENT_REGION)) {
+            properties.put("s3.region", config.get(S3_CLIENT_REGION));
+          }
+          properties.put(
+              "s3.path-style-access", config.getOrDefault(S3_PATH_STYLE_ACCESS, "false"));
+
+          break;
+        case "gs":
+          gcsConfigOverrides(storageLocations, config);
+          properties.put("fs.native-gcs.enabled", "true");
+          properties.put("gcs.project-id", config.get(GCS_PROJECT_ID));
+          if (config.containsKey(GCS_READ_CHUNK_SIZE)) {
+            properties.put("gcs.read-block-size", config.get(GCS_READ_CHUNK_SIZE));
+          }
+          if (config.containsKey(GCS_WRITE_CHUNK_SIZE)) {
+            properties.put("gcs.write-block-size", config.get(GCS_WRITE_CHUNK_SIZE));
+          }
+          break;
+        case "abfs":
+        case "abfss":
+          adlsConfigOverrides(storageLocations, config);
+          properties.put("fs.native-azure.enabled", "true");
+          if (config.containsKey(ADLS_READ_BLOCK_SIZE_BYTES)) {
+            properties.put("azure.read-block-size", config.get(ADLS_READ_BLOCK_SIZE_BYTES));
+          }
+          if (config.containsKey(ADLS_WRITE_BLOCK_SIZE_BYTES)) {
+            properties.put("azure.write-block-size", config.get(ADLS_WRITE_BLOCK_SIZE_BYTES));
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    List<String> header =
+        List.of(
+            "Example Trino starter configuration properties for warehouse " + location,
+            "generated by Nessie to be placed for example in",
+            "/etc/trino/catalogs/nessie.properties within a Trino container/pod when.",
+            "using Trino 'static' configurations.",
+            "",
+            "This starter configuration must be inspected and verified to validate that",
+            "all options and values match your specific needs and no mandatory options",
+            "are missing or superfluous options are present.",
+            "",
+            "When using OAuth2, you have to supply the 'iceberg.rest-catalog.oauth2.token'",
+            "configuration.",
+            "",
+            "WARNING! Trino lacks functionality to configure the oauth endpoint and is therefore",
+            "unable to work with any Iceberg REST catalog implementation and demands a standard",
+            "OAuth2 server like Keycloak or Authelia. If you feel you need client-ID/secret flow,",
+            "please report an issue against Trino.",
+            "",
+            "No guarantees that this configuration works for your specific needs.",
+            "Use at your own risk!",
+            "Do not distribute the contents as those may contain sensitive information!");
+    format = format == null ? "properties" : format.toLowerCase(Locale.ROOT).trim();
+    switch (format) {
+      case "sql":
+      case "ddl":
+      case "dynamic":
+        String sql =
+            properties.entrySet().stream()
+                .sorted(Comparator.comparing(e -> e.getKey().toString()))
+                .map(e -> format("    \"%s\" = '%s'", e.getKey(), e.getValue()))
+                .collect(
+                    Collectors.joining(
+                        ",\n", "CREATE CATALOG nessie\n  USING iceberg\n  WITH (\n", "\n  );\n"));
+
+        return Response.ok(
+                header.stream().collect(Collectors.joining("\n * ", "/*\n * ", "\n */\n")) + sql,
+                "application/sql")
+            .header("Content-Disposition", "attachment; filename=\"create-catalog-nessie.sql\"")
+            .build();
+      case "properties":
+      case "static":
+      default:
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+          try {
+            pw.println("#\n# " + String.join("\n# ", header) + "\n#\n");
+            properties.store(pw, "");
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+        return Response.ok(sw.toString(), "text/plain")
+            .header("Content-Disposition", "attachment; filename=\"nessie.properties\"")
+            .build();
+    }
+  }
 
   public Map<String, String> icebergConfigDefaults(String reference, String warehouse) {
     boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();

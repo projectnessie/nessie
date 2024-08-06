@@ -88,6 +88,14 @@ to the following table.
     We want to contribute the advanced OAuth2 functionality that already exists for Nessie client
     to Apache Iceberg. 
 
+## Using "object storage" file layout
+
+Nessie respects the `write.object-storage.enabled=true` setting. With Nessie, it is _not_ necessary
+to set the `write.data.path` (or `write.object-storage.path` or `write.folder-storage.path`), because
+Nessie automatically returns the table property `write.data.path` set to the warehouse location.
+
+Both S3 request signing and credentials vending ("assume role") work with `write.object-storage.enabled`.
+
 ## Noteworthy
 
 * The (base) location of tables created via Iceberg REST are mandated by Nessie, which will choose
