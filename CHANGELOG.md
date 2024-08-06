@@ -144,6 +144,7 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 ### New Features
 
 - CLI: New `REVERT CONTENT` command to update one or more tables or views to a previous state.
+- Catalog: Add secrets providers for AWS and Vault, experimental for Azure + GCP
 
 ### Changes
 

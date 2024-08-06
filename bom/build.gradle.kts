@@ -56,6 +56,7 @@ dependencies {
     api(project(":nessie-quarkus-common"))
     api(project(":nessie-quarkus-config"))
     api(project(":nessie-quarkus-rest"))
+    api(project(":nessie-quarkus-secrets"))
     api(project(":nessie-server-admin-tool"))
     api(project(":nessie-quarkus"))
     api(project(":nessie-quarkus-tests"))
@@ -111,6 +112,11 @@ dependencies {
     api(project(":nessie-catalog-service-impl"))
     api(project(":nessie-catalog-service-transfer"))
     api(project(":nessie-catalog-secrets-api"))
+    api(project(":nessie-catalog-secrets-cache"))
+    api(project(":nessie-catalog-secrets-aws"))
+    api(project(":nessie-catalog-secrets-gcs"))
+    api(project(":nessie-catalog-secrets-azure"))
+    api(project(":nessie-catalog-secrets-vault"))
 
     if (!isIncludedInNesQuEIT()) {
       api(project(":nessie-spark-antlr-runtime"))
