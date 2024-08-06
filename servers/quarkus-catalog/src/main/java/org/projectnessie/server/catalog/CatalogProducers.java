@@ -62,9 +62,9 @@ import org.projectnessie.catalog.files.s3.S3ExceptionMapper;
 import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
-import org.projectnessie.catalog.files.s3.S3SessionsManager;
 import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.files.s3.StsClientsPool;
+import org.projectnessie.catalog.files.s3.StsCredentialsManager;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
@@ -154,17 +154,17 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public S3SessionsManager s3SessionsManager(
+  public StsCredentialsManager s3SessionsManager(
       @NormalizedObjectStoreOptions S3Options s3options,
       StsClientsPool clientsPool,
       @Any Instance<MeterRegistry> meterRegistry) {
-    return new S3SessionsManager(
+    return new StsCredentialsManager(
         s3options, clientsPool, meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces
   @Singleton
-  public S3Sessions s3sessions(StoreConfig storeConfig, S3SessionsManager sessionsManager) {
+  public S3Sessions s3sessions(StoreConfig storeConfig, StsCredentialsManager sessionsManager) {
     String repositoryId = storeConfig.repositoryId();
     return new S3Sessions(repositoryId, sessionsManager);
   }

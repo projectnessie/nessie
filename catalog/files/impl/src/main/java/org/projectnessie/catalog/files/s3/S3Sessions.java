@@ -23,9 +23,9 @@ import software.amazon.awssdk.services.sts.model.Credentials;
 public class S3Sessions {
 
   private final String repositoryId;
-  private final S3SessionsManager sessionsManager;
+  private final StsCredentialsManager sessionsManager;
 
-  public S3Sessions(String repositoryId, S3SessionsManager sessionsManager) {
+  public S3Sessions(String repositoryId, StsCredentialsManager sessionsManager) {
     this.repositoryId = repositoryId;
     this.sessionsManager = sessionsManager;
   }

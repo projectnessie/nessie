@@ -32,15 +32,16 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
-/** Manages refreshing session credentials on demand. */
-public class S3SessionsManager {
+/** Manages refreshing STS session credentials on demand. */
+public class StsCredentialsManager {
   public static final String CACHE_NAME = "sts-sessions";
 
   private final LoadingCache<SessionKey, Credentials> sessions;
   private final Duration expiryReduction;
   private final StsCredentialsFetcher credentialsFetcher;
 
-  public S3SessionsManager(S3Options options, StsClientsPool clients, MeterRegistry meterRegistry) {
+  public StsCredentialsManager(
+      S3Options options, StsClientsPool clients, MeterRegistry meterRegistry) {
     this(
         options.effectiveSessionCredentialCacheMaxEntries(),
         options.effectiveSessionCredentialRefreshGracePeriod(),
@@ -50,7 +51,7 @@ public class S3SessionsManager {
   }
 
   @VisibleForTesting
-  S3SessionsManager(
+  StsCredentialsManager(
       int maxSize,
       Duration expiryReduction,
       StsCredentialsFetcher credentialsFetcher,

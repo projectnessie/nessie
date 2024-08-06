@@ -38,7 +38,7 @@ import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
 @ExtendWith(SoftAssertionsExtension.class)
-class TestS3SessionsManager {
+class TestStsCredentialsManager {
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -52,8 +52,8 @@ class TestS3SessionsManager {
 
     MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
-    S3SessionsManager manager =
-        new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
+    StsCredentialsManager manager =
+        new StsCredentialsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .region("R1")
@@ -101,8 +101,8 @@ class TestS3SessionsManager {
 
     MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
-    S3SessionsManager manager =
-        new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
+    StsCredentialsManager manager =
+        new StsCredentialsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
             .region("R1")
@@ -131,8 +131,8 @@ class TestS3SessionsManager {
 
     MockStsCredentialsFetcher loader = new MockStsCredentialsFetcher();
 
-    S3SessionsManager manager =
-        new S3SessionsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
+    StsCredentialsManager manager =
+        new StsCredentialsManager(10, Duration.ofMillis(10), loader, time::get, Optional.empty());
 
     S3BucketOptions options =
         ImmutableS3NamedBucketOptions.builder()
@@ -157,7 +157,7 @@ class TestS3SessionsManager {
   void testMetrics() {
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
-    new S3SessionsManager(
+    new StsCredentialsManager(
         10,
         Duration.ofMillis(10),
         new MockStsCredentialsFetcher(),
