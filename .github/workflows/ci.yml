@@ -909,9 +909,10 @@ jobs:
             17
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4
         with:
           cache-read-only: true
+          validate-wrappers: false
 
       - name: Iceberg Nessie test
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
