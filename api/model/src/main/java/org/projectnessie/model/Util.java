@@ -52,8 +52,10 @@ final class Util {
    *
    * <p>Escaping, for compatibility w/ <a
    * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0.html#uri-path-canonicalization">Jakarta
-   * Servlet Specification 6, URI Path Canonicalization</a>. This is available with Nessie Spec
-   * version 2.2.0, as advertised via {@link NessieConfiguration#getSpecVersion()}.
+   * Servlet Specification 6, URI Path Canonicalization</a> and <a
+   * href="https://datatracker.ietf.org/doc/html/rfc3986#section-3.3">RFC 3986, section 3.3</a>.
+   * This is available with Nessie Spec version 2.2.0, as advertised via {@link
+   * NessieConfiguration#getSpecVersion()}.
    *
    * <ul>
    *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
@@ -61,9 +63,11 @@ final class Util {
    *       occur in encoded content keys.
    *   <li>The sequence {@code ..~} is the encoded representation for a single dot character {@code
    *       .}.
-   *   <li>The sequence {@code ..} followed by character {@code != '~'} means that the first dot
-   *       represents an element boundary, decoding should continue after the first {@code .}
-   *       character.
+   *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
+   *       URI path separator.
+   *   <li>The sequence {@code ..} followed by a character {@code != '~'} and {@code != '^'} means
+   *       that the first dot represents an element boundary, decoding should continue after the
+   *       first {@code .} character.
    * </ul>
    *
    * @param encoded Path encoded string
@@ -84,6 +88,11 @@ final class Util {
               i += 2;
               // '..~' sequence -> single dot
               e.append(DOT);
+              break;
+            } else if (ctl == '^') {
+              i += 2;
+              // '..~' sequence -> slash (path separator)
+              e.append('/');
               break;
             } else {
               elements.add(e.toString());
@@ -140,6 +149,8 @@ final class Util {
         char c = element.charAt(i);
         if (c == DOT) {
           sb.append("..~");
+        } else if (c == '/') {
+          sb.append("..^");
         } else {
           sb.append(c);
         }
