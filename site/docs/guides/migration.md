@@ -107,6 +107,9 @@ See [Nessie Server Admin tool reference docs](/nessie-latest/export_import) for 
 
     docker run --rm -ti \
       --volume ./export-data:/data \
+      -e nessie.version.store.type=MONGODB \
+      -e quarkus.mongodb.database=nessie-source \
+      -e quarkus.mongodb.connection-string=mongodb://<user>:<password>@nessie.example.com:27017 \
       ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} \
       export \
       --path "/data/export-$(date +'%Y-%d-%m').zip" \
