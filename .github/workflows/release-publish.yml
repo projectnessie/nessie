@@ -328,7 +328,17 @@ jobs:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
           SWAGGERHUB_URL: "https://api.swaggerhub.com"
         with:
-          args: api:create projectnessie/nessie -f ./nessie-openapi-${{ env.RELEASE_VERSION }}.yaml --published=publish --setdefault --visibility=public
+          args: api:create projectnessie/nessie -f ./nessie-openapi-${{ env.RELEASE_VERSION }}.yaml --visibility=public
+
+      - name: Unpublish on SwaggerHub
+        uses: smartbear/swaggerhub-cli@20e5eaf4866bbbc44d72e9eb8a48a942c0d9e43b # v0.9.0
+        continue-on-error: true
+        env:
+          XDG_CONFIG_HOME: "/tmp"
+          SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
+          SWAGGERHUB_URL: "https://api.swaggerhub.com"
+        with:
+          args: api:unpublish projectnessie/nessie/${{ env.RELEASE_VERSION }}.yaml
 
       - name: Update SwaggerHub
         uses: smartbear/swaggerhub-cli@20e5eaf4866bbbc44d72e9eb8a48a942c0d9e43b # v0.9.0
