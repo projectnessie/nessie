@@ -15,6 +15,9 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.COMMIT_LOG_FETCH_OPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.COMMIT_LOG_FILTER;
+import static org.projectnessie.api.v2.doc.ApiDoc.LIMIT_HASH;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
 
@@ -33,7 +36,7 @@ import org.projectnessie.model.FetchOption;
  * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class CommitLogParams extends AbstractParams<CommitLogParams> {
+public class CommitLogParams extends AbstractParams<CommitLogParams> implements CommitLogSpec {
 
   @Nullable
   @jakarta.annotation.Nullable
@@ -44,9 +47,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
       regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
-      description =
-          "Hash on the given ref to identify the commit where the operation of fetching the log "
-              + "should stop, i.e. the 'far' end of the commit log, returned late in the result.",
+      description = LIMIT_HASH,
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("limit-hash")
   @jakarta.ws.rs.QueryParam("limit-hash")
@@ -55,13 +56,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   @Nullable
   @jakarta.annotation.Nullable
   @Parameter(
-      description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
-              + "Usable variables within the expression are:\n\n"
-              + "- 'commit' with fields 'author' (string), 'committer' (string), 'commitTime' (timestamp), 'hash' (string), ',message' (string), 'properties' (map)\n\n"
-              + "- 'operations' (list), each operation has the fields 'type' (string, either 'PUT' or 'DELETE'), 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)\n\n"
-              + "Note that the expression can only test against 'operations', if 'fetch' is set to 'ALL'.\n\n"
-              + "Hint: when filtering commits, you can determine whether commits are \"missing\" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.",
+      description = COMMIT_LOG_FILTER,
       examples = {
         @ExampleObject(ref = "expr_by_commit_author"),
         @ExampleObject(ref = "expr_by_commit_committer"),
@@ -73,9 +68,7 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
-  @Parameter(
-      description =
-          "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
+  @Parameter(description = COMMIT_LOG_FETCH_OPTION)
   @QueryParam("fetch")
   @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
@@ -99,18 +92,21 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public String startHash() {
     return startHash;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public String filter() {
     return filter;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public FetchOption fetchOption() {
     return fetchOption;
   }

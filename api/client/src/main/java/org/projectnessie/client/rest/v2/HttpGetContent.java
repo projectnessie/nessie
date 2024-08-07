@@ -27,9 +27,11 @@ import org.projectnessie.model.Reference;
 
 final class HttpGetContent extends BaseGetContentBuilder {
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetContent(HttpClient client) {
+  HttpGetContent(HttpClient client, HttpApiV2 api) {
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -47,7 +49,7 @@ final class HttpGetContent extends BaseGetContentBuilder {
         .newRequest()
         .path("trees/{ref}/contents/{key}")
         .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
-        .resolveTemplate("key", key.toPathString())
+        .resolveTemplate("key", api.toPathString(key))
         .queryParam("for-write", forWrite ? "true" : null)
         .unwrap(NessieNotFoundException.class)
         .get()

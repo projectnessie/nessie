@@ -199,4 +199,56 @@ public interface ApiDoc {
   String RETURN_CONFLICTS_AS_RESULT_DESCRIPTION =
       "When set to 'true' instructs the server to produce normal (non-error) responses in case a conflict is "
           + "detected and report conflict details in the response payload.";
+
+  String DIFF_FILTER_DESCRIPTION =
+      "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
+          + "Usable variables within the expression are:\n\n"
+          + "- 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)";
+
+  String PAGE_TOKEN =
+      "paging continuation token, as returned in the previous value of the field 'token' in "
+          + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse' or 'RefLogResponse'.";
+
+  String MAX_RECORDS = "maximum number of entries to return, just a hint for the server";
+
+  String LIMIT_HASH =
+      "Hash on the given ref to identify the commit where the operation of fetching the log "
+          + "should stop, i.e. the 'far' end of the commit log, returned late in the result.";
+
+  String COMMIT_LOG_FILTER =
+      "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
+          + "Usable variables within the expression are:\n\n"
+          + "- 'commit' with fields 'author' (string), 'committer' (string), 'commitTime' (timestamp), 'hash' (string), ',message' (string), 'properties' (map)\n\n"
+          + "- 'operations' (list), each operation has the fields 'type' (string, either 'PUT' or 'DELETE'), 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)\n\n"
+          + "Note that the expression can only test against 'operations', if 'fetch' is set to 'ALL'.\n\n"
+          + "Hint: when filtering commits, you can determine whether commits are \"missing\" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.";
+
+  String COMMIT_LOG_FETCH_OPTION =
+      "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.";
+
+  String ENTRIES_FILTER =
+      "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+          + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)";
+
+  String REFERENCES_FETCH_OPTION =
+      "Specifies how much extra information is to be retrived from the server.\n\n"
+          + "If the fetch option is set to 'ALL' the following addition information will be returned for each "
+          + "Branch object in the output:\n\n"
+          + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
+          + "- numCommitsBehind (number of commits behind the default branch)\n\n"
+          + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
+          + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
+          + "- numTotalCommits (the total number of commits from the root to the HEAD of the branch).\n\n"
+          + "The returned Tag instances will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
+          + "Note that computing & fetching additional metadata might be computationally expensive on the "
+          + "server-side, so this flag should be used with care.";
+
+  String REFERENCES_FILTER =
+      "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+          + "Usable variables within the expression are:\n\n"
+          + "- ref (Reference) describes the reference, with fields name (String), hash (String), metadata (ReferenceMetadata)\n\n"
+          + "- metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty\n\n"
+          + "- commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty\n\n"
+          + "- refType (String) - the reference type, either BRANCH or TAG\n\n"
+          + "Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.";
 }

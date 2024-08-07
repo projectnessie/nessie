@@ -19,74 +19,35 @@ import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MAX_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_MIN_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.KEY_PREFIX_PARAMETER_DESCRIPTION;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import javax.annotation.Nullable;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.ContentKey;
 
-public abstract class KeyRangeParams<IMPL extends KeyRangeParams<IMPL>> extends AbstractParams<IMPL>
-    implements KeyRangeSpec {
+public interface KeyRangeSpec extends AbstractSpec {
 
   @Parameter(
       description = KEY_MIN_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
-  @QueryParam("min-key")
-  @jakarta.ws.rs.QueryParam("min-key")
   @Nullable
   @jakarta.annotation.Nullable
-  private ContentKey minKey;
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  ContentKey minKey();
 
   @Parameter(
       description = KEY_MAX_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
-  @QueryParam("max-key")
-  @jakarta.ws.rs.QueryParam("max-key")
   @Nullable
   @jakarta.annotation.Nullable
-  private ContentKey maxKey;
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  ContentKey maxKey();
 
   @Parameter(
       description = KEY_PREFIX_PARAMETER_DESCRIPTION,
       examples = @ExampleObject(ref = "ContentKeyGet"))
-  @QueryParam("prefix-key")
-  @jakarta.ws.rs.QueryParam("prefix-key")
   @Nullable
   @jakarta.annotation.Nullable
-  private ContentKey prefixKey;
-
-  protected KeyRangeParams() {}
-
-  public KeyRangeParams(
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey prefixKey) {
-    super(maxRecords, pageToken);
-    this.minKey = minKey;
-    this.maxKey = maxKey;
-    this.prefixKey = prefixKey;
-  }
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Override
-  public ContentKey minKey() {
-    return minKey;
-  }
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Override
-  public ContentKey maxKey() {
-    return maxKey;
-  }
-
-  @Nullable
-  @jakarta.annotation.Nullable
-  @Override
-  public ContentKey prefixKey() {
-    return prefixKey;
-  }
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  ContentKey prefixKey();
 }

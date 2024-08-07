@@ -15,6 +15,9 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.REFERENCES_FETCH_OPTION;
+import static org.projectnessie.api.v2.doc.ApiDoc.REFERENCES_FILTER;
+
 import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -29,21 +32,9 @@ import org.projectnessie.model.FetchOption;
  * <p>For easier usage of this class, there is {@link ReferencesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class ReferencesParams extends AbstractParams<ReferencesParams> {
+public class ReferencesParams extends AbstractParams<ReferencesParams> implements ReferencesSpec {
 
-  @Parameter(
-      description =
-          "Specifies how much extra information is to be retrived from the server.\n\n"
-              + "If the fetch option is set to 'ALL' the following addition information will be returned for each "
-              + "Branch object in the output:\n\n"
-              + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
-              + "- numCommitsBehind (number of commits behind the default branch)\n\n"
-              + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
-              + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
-              + "- numTotalCommits (the total number of commits from the root to the HEAD of the branch).\n\n"
-              + "The returned Tag instances will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
-              + "Note that computing & fetching additional metadata might be computationally expensive on the "
-              + "server-side, so this flag should be used with care.")
+  @Parameter(description = REFERENCES_FETCH_OPTION)
   @QueryParam("fetch")
   @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
@@ -51,14 +42,7 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
   private FetchOption fetchOption;
 
   @Parameter(
-      description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-              + "Usable variables within the expression are:\n\n"
-              + "- ref (Reference) describes the reference, with fields name (String), hash (String), metadata (ReferenceMetadata)\n\n"
-              + "- metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty\n\n"
-              + "- commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty\n\n"
-              + "- refType (String) - the reference type, either BRANCH or TAG\n\n"
-              + "Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.",
+      description = REFERENCES_FILTER,
       examples = {
         @ExampleObject(ref = "expr_by_refType"),
         @ExampleObject(ref = "expr_by_ref_name"),
@@ -85,12 +69,14 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public FetchOption fetchOption() {
     return fetchOption;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public String filter() {
     return filter;
   }

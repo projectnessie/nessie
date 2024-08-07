@@ -16,6 +16,7 @@
 package org.projectnessie.client.rest.v2;
 
 import org.projectnessie.api.v2.params.EntriesParams;
+import org.projectnessie.api.v2.params.ImmutableEntriesJson;
 import org.projectnessie.client.api.GetEntriesBuilder;
 import org.projectnessie.client.builder.BaseGetEntriesBuilder;
 import org.projectnessie.client.http.HttpClient;
@@ -28,10 +29,12 @@ import org.projectnessie.model.Reference;
 final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
 
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetEntries(HttpClient client) {
+  HttpGetEntries(HttpClient client, HttpApiV2 api) {
     super(EntriesParams::forNextPage);
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -59,23 +62,30 @@ final class HttpGetEntries extends BaseGetEntriesBuilder<EntriesParams> {
         client
             .newRequest()
             .path("trees/{ref}/entries")
-            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef))
-            .queryParam("filter", p.filter())
-            .queryParam("content", p.withContent() ? "true" : null)
-            .queryParam("page-token", p.pageToken())
-            .queryParam("max-records", p.maxRecords());
-    p.getRequestedKeys().forEach(k -> req.queryParam("key", k.toPathString()));
+            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef));
+
+    if (api.isNessieSpec220()) {
+      return req.unwrap(NessieNotFoundException.class)
+          .post(ImmutableEntriesJson.builder().from(p).build())
+          .readEntity(EntriesResponse.class);
+    }
+
+    req.queryParam("filter", p.filter())
+        .queryParam("content", p.withContent() ? "true" : null)
+        .queryParam("page-token", p.pageToken())
+        .queryParam("max-records", p.maxRecords());
+    p.getRequestedKeys().forEach(k -> req.queryParam("key", api.toPathString(k)));
     ContentKey k = p.minKey();
     if (k != null) {
-      req.queryParam("min-key", k.toPathString());
+      req.queryParam("min-key", api.toPathString(k));
     }
     k = p.maxKey();
     if (k != null) {
-      req.queryParam("max-key", k.toPathString());
+      req.queryParam("max-key", api.toPathString(k));
     }
     k = p.prefixKey();
     if (k != null) {
-      req.queryParam("prefix-key", k.toPathString());
+      req.queryParam("prefix-key", api.toPathString(k));
     }
     return req.unwrap(NessieNotFoundException.class).get().readEntity(EntriesResponse.class);
   }

@@ -22,6 +22,19 @@ well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
 
+# 2.2.0
+
+* Released with Nessie version 0.96.0
+* Introduced content-key/namespace elements escaping that does not conflict with [Jakarta Servlet Spec 6,
+  chapter 3.5.2 URI Path Canonicalization](https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization).
+  The new escaping will be used for Nessie services that announce Nessie spec 2.2.0 or newer.
+  See the Javadoc of `org.projectnessie.model.Util.toPathStringEscaped` and `org.projectnessie.model.Util.fromPathString`.
+* Introduced HTTP `POST` method variants for the Nessie REST API v2 `GetEntries`, `GetCommitLog`, `GetAllReferences`
+  and `GetDiff` operations. The `POST` method variants are used by the Nessie client, if the service announces
+  Nessie spec 2.2.0 or newer.
+* **Note** Content-keys and related values in CEL filters **must** continue to use the current encoding and
+  **must not** use the escaped variant to retain compatibility.
+
 # 2.1.3
 
 * Released with Nessie version 0.73.0.

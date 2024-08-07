@@ -15,23 +15,23 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.MAX_RECORDS;
+import static org.projectnessie.api.v2.doc.ApiDoc.PAGE_TOKEN;
+
 import javax.annotation.Nullable;
 import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
-public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
+public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> implements AbstractSpec {
 
-  @Parameter(description = "maximum number of entries to return, just a hint for the server")
+  @Parameter(description = MAX_RECORDS)
   @QueryParam("max-records")
   @jakarta.ws.rs.QueryParam("max-records")
   @Nullable
   @jakarta.annotation.Nullable
   private Integer maxRecords;
 
-  @Parameter(
-      description =
-          "paging continuation token, as returned in the previous value of the field 'token' in "
-              + "the corresponding 'EntriesResponse' or 'LogResponse' or 'ReferencesResponse' or 'RefLogResponse'.")
+  @Parameter(description = PAGE_TOKEN)
   @QueryParam("page-token")
   @jakarta.ws.rs.QueryParam("page-token")
   @Nullable
@@ -47,12 +47,14 @@ public abstract class AbstractParams<IMPL extends AbstractParams<IMPL>> {
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public Integer maxRecords() {
     return maxRecords;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public String pageToken() {
     return pageToken;
   }
