@@ -45,7 +45,7 @@ services:
   ##      SELECT * FROM city;
   ##
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.94.4
+    image: ghcr.io/projectnessie/nessie:0.95.0
     ports:
       # Nessie API port not available externally, go via nginx at https://nessie-nginx.localhost.localdomain:8443/nessie/...
       #   - "19120:19120"
