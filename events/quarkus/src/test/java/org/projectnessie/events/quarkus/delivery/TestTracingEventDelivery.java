@@ -108,6 +108,8 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Override
   @Test
   void testDeliverySuccessNoRetry() {
+    when(processor.isStartRequired()).thenReturn(true);
+    when(processor.isEndRequired()).thenReturn(true);
     super.testDeliverySuccessNoRetry();
     verify(delegate).deliverySuccessful(1);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));
@@ -120,6 +122,8 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Override
   @Test
   void testDeliverySuccessWithRetry() {
+    when(processor.isStartRequired()).thenReturn(true);
+    when(processor.isEndRequired()).thenReturn(true);
     super.testDeliverySuccessWithRetry();
     verify(delegate).deliverySuccessful(3);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
@@ -136,6 +140,8 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Override
   @Test
   void testDeliveryFailureWithRetry() {
+    when(processor.isStartRequired()).thenReturn(true);
+    when(processor.isEndRequired()).thenReturn(true);
     super.testDeliveryFailureWithRetry();
     verify(delegate).deliveryFailed(eq(3), any());
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
@@ -152,6 +158,8 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   @Override
   @Test
   void testDeliveryRejected() {
+    when(processor.isStartRequired()).thenReturn(true);
+    when(processor.isEndRequired()).thenReturn(true);
     super.testDeliveryRejected();
     verify(delegate).deliveryRejected();
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));

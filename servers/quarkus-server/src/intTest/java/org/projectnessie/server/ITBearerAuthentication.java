@@ -16,7 +16,7 @@
 package org.projectnessie.server;
 
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -26,9 +26,7 @@ import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleMan
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
 
 @QuarkusIntegrationTest
-@QuarkusTestResource(
-    restrictToAnnotatedClass = true,
-    value = KeycloakTestResourceLifecycleManager.class)
+@WithTestResource(KeycloakTestResourceLifecycleManager.class)
 @TestProfile(value = ITBearerAuthentication.Profile.class)
 public class ITBearerAuthentication extends AbstractBearerAuthentication {
 

@@ -18,9 +18,8 @@ package org.projectnessie.events.quarkus.assertions;
 import static io.opentelemetry.sdk.trace.data.StatusData.error;
 import static io.opentelemetry.sdk.trace.data.StatusData.ok;
 import static io.opentelemetry.sdk.trace.data.StatusData.unset;
-import static io.opentelemetry.semconv.SemanticAttributes.ENDUSER_ID;
-import static io.opentelemetry.semconv.SemanticAttributes.EXCEPTION_TYPE;
-import static io.opentelemetry.semconv.SemanticAttributes.PEER_SERVICE;
+import static io.opentelemetry.semconv.ExceptionAttributes.EXCEPTION_TYPE;
+import static io.opentelemetry.semconv.ServiceAttributes.SERVICE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.projectnessie.events.api.EventType.COMMIT;
@@ -59,6 +58,7 @@ import org.projectnessie.versioned.ResultType;
 
 @Singleton
 public class TracingAssertions {
+  public static final AttributeKey<String> ENDUSER_ID = AttributeKey.stringKey("enduser.id");
 
   @Inject Instance<MockSpanExporter> exporter;
   @Inject Instance<Tracer> tracer;
@@ -410,7 +410,7 @@ public class TracingAssertions {
   }
 
   private void assertPeerService() {
-    assertSpanAttributeEquals("nessie", PEER_SERVICE, "Nessie");
+    assertSpanAttributeEquals("nessie", SERVICE_NAME, "Nessie");
   }
 
   private void assertResultTypeAttribute(ResultType resultType) {
