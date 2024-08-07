@@ -27,6 +27,7 @@ val cliGrammar by configurations.creating
 val doclet by configurations.creating
 val gcRunner by configurations.creating
 val cliRunner by configurations.creating
+val serverAdminRunner by configurations.creating
 
 val genProjectPaths = listOf(
   ":nessie-model",
@@ -66,6 +67,8 @@ dependencies {
   cliRunner(project(":nessie-cli"))
 
   gcRunner(nessieProject("nessie-gc-tool"))
+
+  serverAdminRunner(project(":nessie-server-admin-tool", "quarkusRunner"))
 }
 
 val generatedMarkdownDocsDir = layout.buildDirectory.dir("generatedMarkdownDocs")
@@ -131,7 +134,7 @@ val generatedMarkdownDocs = tasks.register<JavaExec>("generatedMarkdownDocs") {
 
 val cliHelpDir = layout.buildDirectory.dir("cliHelp")
 
-val cliHelp = tasks.register<JavaExec>("cliHelp") {
+val cliHelp by tasks.registering(JavaExec::class) {
   mainClass = "-jar"
 
   inputs.files(cliRunner)
@@ -157,8 +160,7 @@ val cliHelp = tasks.register<JavaExec>("cliHelp") {
 
 val gcHelpDir = layout.buildDirectory.dir("gcHelp")
 
-val gcHelp = tasks.register<JavaExec>("gcHelp") {
-  mainClass = "-jar"
+val gcHelp by tasks.registering(JavaExec::class) {
 
   inputs.files(gcRunner)
   outputs.dir(gcHelpDir)
@@ -193,7 +195,8 @@ val gcHelp = tasks.register<JavaExec>("gcHelp") {
       "show",
       "show-sql-create-schema-script",
       "create-sql-schema",
-      "completion-script"
+      "completion-script",
+      "show-licenses"
     )) {
       logger.info("Generating GC command help for '$cmd' ...")
       val capture = ByteArrayOutputStream()
@@ -209,10 +212,54 @@ val gcHelp = tasks.register<JavaExec>("gcHelp") {
   }
 }
 
+val serverAdminHelpDir = layout.buildDirectory.dir("serverAdminHelp")
+
+val serverAdminHelp by tasks.registering(JavaExec::class) {
+
+  inputs.files(serverAdminRunner)
+  outputs.dir(serverAdminHelpDir)
+
+  classpath(serverAdminRunner)
+  args("help")
+
+  doFirst {
+    delete(serverAdminHelpDir)
+  }
+
+  standardOutput = ByteArrayOutputStream()
+
+  doLast {
+    serverAdminHelpDir.get().asFile.mkdirs()
+
+    file(serverAdminHelpDir.get().file("serverAdmin-help.md")).writeText("```\n$standardOutput\n```\n")
+
+    for (cmd in listOf(
+      "info",
+      "check-content",
+      "delete-catalog-tasks",
+      "erase-repository",
+      "export",
+      "import",
+      "show-licenses"
+    )) {
+      logger.info("Generating GC command help for '$cmd' ...")
+      val capture = ByteArrayOutputStream()
+      javaexec {
+        standardInput = InputStream.nullInputStream()
+        standardOutput = capture
+        classpath(serverAdminRunner)
+        args("help", cmd)
+      }
+      file(serverAdminHelpDir.get().file("serverAdmin-help-$cmd.md")).writeText("```\n$capture\n```\n")
+    }
+  }
+}
+
 tasks.register<Sync>("generateDocs") {
   dependsOn(generatedMarkdownDocs)
   dependsOn(cliHelp)
   dependsOn(gcHelp)
+  dependsOn(serverAdminHelp)
 
   val targetDir = layout.buildDirectory.dir("markdown-docs")
 
@@ -224,6 +271,7 @@ tasks.register<Sync>("generateDocs") {
   from(generatedMarkdownDocsDir)
   from(cliHelpDir)
   from(gcHelpDir)
+  from(serverAdminHelpDir)
   from(provider { zipTree(cliGrammar.singleFile) }) {
     include("org/projectnessie/nessie/cli/syntax/*.help.txt")
     include("org/projectnessie/nessie/cli/syntax/*.md")

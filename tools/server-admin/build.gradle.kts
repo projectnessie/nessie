@@ -26,6 +26,11 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Server Admin Tool" }
 
+val quarkusRunner by
+  configurations.creating {
+    description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
+  }
+
 // Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
 // resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
 // for clients, we have to live with :nessie-model producing an MR-jar. See
@@ -125,6 +130,22 @@ quarkus {
         .toMap()
     }
   )
+}
+
+val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
+
+// Expose runnable jar via quarkusRunner configuration for integration-tests that require the
+// server.
+artifacts {
+  add(
+    quarkusRunner.name,
+    provider {
+      if (quarkusFatJar()) quarkusBuild.get().runnerJar
+      else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
+    }
+  ) {
+    builtBy(quarkusBuild)
+  }
 }
 
 if (quarkusFatJar()) {
