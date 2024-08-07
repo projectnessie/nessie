@@ -72,21 +72,15 @@ Server admin tool version since 0.94.0, the Nessie servers do not need to be sto
 
 ### Export
 
-Export the source Nessie repository to a ZIP file. In this example we assume a the MongoDB 
+Export the source Nessie repository to a ZIP file. In this example we assume the MongoDB 
 database is called `nessie-source` and is hosted on a MongoDB instance available at 
 `nessie.example.com:27017`:
 
 See [Nessie Server Admin tool reference docs](/nessie-latest/export_import) for details.
 
-=== "Docker Image"
-    The Docker image is available for Nessie Server admin tool since version 0.83.1.
-    ```bash
-    docker run --rm -ti quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }} \
-      export \
-      --path "/tmp/export-$(date +'%Y-%d-%m').zip" \
-      --commit-batch-size 1000
-    ```
 === "Standalone Jar"
+    Running the Nessie Server Admin tool standalone jar requires Java 17 or newer.
+
     ```bash
     curl -L -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
@@ -100,6 +94,22 @@ See [Nessie Server Admin tool reference docs](/nessie-latest/export_import) for 
       -jar  nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
       export \
       --path "/tmp/export-$(date +'%Y-%d-%m').zip" \
+      --commit-batch-size 1000
+    ```
+=== "Docker Image"
+    The Docker image is available for Nessie Server admin tool since version 0.83.1.
+
+    With the below settings, the export file(s) are going to be placed in a directory
+    named `export-data`, which is mapped as `/data` in the Docker container.
+
+    ```bash
+    mkdir -p export-data
+
+    docker run --rm -ti \
+      --volume ./export-data:/data \
+      ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} \
+      export \
+      --path "/data/export-$(date +'%Y-%d-%m').zip" \
       --commit-batch-size 1000
     ```
 
@@ -139,15 +149,9 @@ Import the ZIP file into the new Nessie repository:
 
 See [Nessie Server Admin tool reference docs](/nessie-latest/export_import) for details.
 
-=== "Docker Image"
-    The Docker image is available for Nessie Server admin tool since version 0.83.1.
-    ```bash
-    docker run --rm -ti quay.io/projectnessie/nessie-server-admin:{{ versions.nessie }} \
-      import \
-      --path "/tmp/export-$(date +'%Y-%d-%m').zip" \
-      --commit-batch-size 1000
-    ```
 === "Standalone Jar"
+    Running the Nessie Server Admin tool standalone jar requires Java 17 or newer.
+
     ```bash
     curl -L -o nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
       https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-server-admin-tool-{{ versions.nessie }}-runner.jar
@@ -161,6 +165,21 @@ See [Nessie Server Admin tool reference docs](/nessie-latest/export_import) for 
       -jar nessie-server-admin-tool-{{ versions.nessie }}-runner.jar \
       import \
       --path "/tmp/export-$(date +'%Y-%d-%m').zip" \
+      --commit-batch-size 1000
+    ```
+=== "Docker Image"
+    The Docker image is available for Nessie Server admin tool since version 0.83.1.
+
+    With the below settings, the export file(s) are expected to be in a directory named
+    `export-data`, which is mapped as `/data` in the Docker container.
+    See the [Export](#export) section above.
+
+    ```bash
+    docker run --rm -ti \
+      --volume ./export-data:/data \
+      ghcr.io/projectnessie/nessie-server-admin:{{ versions.nessie }} \
+      import \
+      --path "/data/export-$(date +'%Y-%d-%m').zip" \
       --commit-batch-size 1000
     ```
 
