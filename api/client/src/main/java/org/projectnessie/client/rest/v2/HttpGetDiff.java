@@ -26,10 +26,12 @@ import org.projectnessie.model.Reference;
 
 final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetDiff(HttpClient client) {
+  HttpGetDiff(HttpClient client, HttpApiV2 api) {
     super(DiffParams::forNextPage);
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -57,18 +59,18 @@ final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
             .queryParam("max-records", params.maxRecords())
             .queryParam("page-token", params.pageToken())
             .queryParam("filter", params.getFilter());
-    params.getRequestedKeys().forEach(k -> req.queryParam("key", k.toPathString()));
+    params.getRequestedKeys().forEach(k -> req.queryParam("key", api.toPathString(k)));
     ContentKey k = params.minKey();
     if (k != null) {
-      req.queryParam("min-key", k.toPathString());
+      req.queryParam("min-key", api.toPathString(k));
     }
     k = params.maxKey();
     if (k != null) {
-      req.queryParam("max-key", k.toPathString());
+      req.queryParam("max-key", api.toPathString(k));
     }
     k = params.prefixKey();
     if (k != null) {
-      req.queryParam("prefix-key", k.toPathString());
+      req.queryParam("prefix-key", api.toPathString(k));
     }
     return req.unwrap(NessieNotFoundException.class).get().readEntity(DiffResponse.class);
   }

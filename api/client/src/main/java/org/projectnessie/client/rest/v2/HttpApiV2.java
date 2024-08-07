@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.rest.v2;
 
+import java.util.Arrays;
 import java.util.Optional;
 import org.projectnessie.client.api.AssignBranchBuilder;
 import org.projectnessie.client.api.AssignReferenceBuilder;
@@ -39,6 +40,7 @@ import org.projectnessie.client.api.UpdateRepositoryConfigBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SingleReferenceResponse;
@@ -48,6 +50,21 @@ public class HttpApiV2 implements NessieApiV2 {
 
   public HttpApiV2(HttpClient client) {
     this.client = client;
+  }
+
+  private volatile boolean didGetConfig;
+  private volatile boolean isNessieSpec220;
+
+  boolean isNessieSpec220() {
+    if (!didGetConfig) {
+      getConfig();
+    }
+    return isNessieSpec220;
+  }
+
+  @Override
+  public String toPathString(ContentKey key) {
+    return isNessieSpec220() ? key.toPathStringEscaped() : key.toPathString();
   }
 
   @Override
@@ -64,7 +81,15 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public NessieConfiguration getConfig() {
-    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+    NessieConfiguration config =
+        client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
+    didGetConfig = true;
+    if (config.getSpecVersion() != null) {
+      int[] parts =
+          Arrays.stream(config.getSpecVersion().split("[.]")).mapToInt(Integer::parseInt).toArray();
+      isNessieSpec220 = parts[0] > 2 || (parts[0] == 2 && parts[1] >= 2);
+    }
+    return config;
   }
 
   @Override
@@ -81,7 +106,7 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public GetContentBuilder getContent() {
-    return new HttpGetContent(client);
+    return new HttpGetContent(client, this);
   }
 
   @Override
@@ -106,7 +131,7 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public GetEntriesBuilder getEntries() {
-    return new HttpGetEntries(client);
+    return new HttpGetEntries(client, this);
   }
 
   @Override
@@ -165,7 +190,7 @@ public class HttpApiV2 implements NessieApiV2 {
 
   @Override
   public GetDiffBuilder getDiff() {
-    return new HttpGetDiff(client);
+    return new HttpGetDiff(client, this);
   }
 
   @Override

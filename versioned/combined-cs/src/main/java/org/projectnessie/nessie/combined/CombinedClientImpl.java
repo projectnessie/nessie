@@ -43,6 +43,7 @@ import org.projectnessie.error.ImmutableNessieError;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Reference;
 
@@ -70,6 +71,11 @@ final class CombinedClientImpl implements NessieApiV2 {
       return ex;
     }
     return e;
+  }
+
+  @Override
+  public String toPathString(ContentKey key) {
+    return key.toPathStringEscaped();
   }
 
   @Override
