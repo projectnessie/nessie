@@ -2,6 +2,70 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.95.0 Release (August 07, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.95.0).
+
+### Catalog S3 bucket configuration changes / breaking
+
+- The S3 bucket configuration option `client-authentication-mode` has been removed (defaulted to `REQUEST_SIGNING`).
+- A new S3 bucket configuration option `request-signing-enabled` has been added (defaults to `true`).
+
+### Breaking changes
+
+- See above for breaking changes to S3 bucket configurations. 
+
+### New Features
+
+- Catalog/Trino: Add convenience REST endpoint to provide a _starter_ Trino catalog configuration.
+  Use `/iceberg-ext/v1/client-template/trino?format=static` for Trino 'static' catalog configurations,
+  `/iceberg-ext/v1/client-template/trino?format=dynamic` for Trino 'dynamic' catalog configurations.
+  Please take a look at the [Trino page](https://projectnessie.org/nessie-latest/trino/) for known
+  limitations in Trino.
+- Catalog: The Iceberg REST header `X-Iceberg-Access-Delegation` is now respected. The functionality
+  depends on the S3 bucket configuration options `request-signing-enabled` and `assume-role-enabled`.
+
+### Changes
+
+- Catalog: Only general object store configurations are returned via the `/iceberg/v1/config` endpoint.
+- Catalog: Table specific options are returned for each individual table, including scoped-down S3
+  credentials, if applicable.
+- The Nessie Spark SQL extensions are now based on the same syntax and options that are provided by the
+  Nessie CLI. A reference docs page for the Nessie Spark SQL command syntax was added to the web site.
+
+### Fixes
+
+- Declare the `contentType` variable for CEL Authorization rules.
+- Catalog: Make Nessie time-travel functionality available to all use cases, including DDL.
+
+### Commits
+* Quarkus 3.13.1 (#9236)
+* Helm Chart: mention imagePullSecrets in values.yaml (#9292)
+* Trino config-helper-endpoint & web site updates (#9270)
+* Catalog: split S3SessionsManager into several components (#9279)
+* Catalog: Enable time-travel and branch/tag selection for Iceberg REST in all cases (#9219)
+* Replace antlr w/ congocc grammar in SQL Extensions (#9256)
+* Build / IntelliJ: include the project root dir in the IDE window name (#9281)
+* Remove Windows CI (#9260)
+* Fix illegal access (#9280)
+* Catalog: expose `location` for namespaces, iam-policy per location (#9170)
+* Nit: remove references to unused `pr-native` label (#9272)
+* Release: make `publish-openapi` job idempotent (#9264)
+* Add signer-keys service (#9239)
+* Scala Compiler and how it disrespects things (#9261)
+* Adopt to Iceberg dropping support for Java 8 (#9259)
+* Blog: Polaris (#9257)
+* Fix Gradle/Kotlin deprecation warning (#9255)
+* Fix a Gradle deprecation (#9254)
+* Fix `NOTICE` vs `LICENSE` confusion (#9250)
+* Declare the `contentType` variable for CEL AuthZ rules. (#9251)
+* Add ability to generate IAM policies (#9244)
+* Protect Iceberg REST config endpoint (#9247)
+* Nit: make some test profiles non-`final` (#9243)
+* Rename `S3Clients.awsCredentialsProvider()` to make its usage clearer (#9242)
+* Add `StorageUri.pathWithoutLeadingTrailingSlash()` (#9241)
+* Add utility method to escape strings in IAMs (#9240)
+
 ## 0.94.4 Release (August 01, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.94.4).

@@ -8,35 +8,26 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.95.0] Release (2024-08-07)
+
 ### Catalog S3 bucket configuration changes / breaking
-
-**If you have configured S3 IAM/STS options, read this section carefully and adapt your configuration!**
-
-S3 buckets can now support both request-signing and assume-role/credentials-vending. To allow this, the
-following configuration options have _changed_:
 
 - The S3 bucket configuration option `client-authentication-mode` has been removed (defaulted to `REQUEST_SIGNING`).
 - A new S3 bucket configuration option `request-signing-enabled` has been added (defaults to `true`).
-
-The assume-role/credentials-vending configuration has been split into 2 sets: one for Nessie server
-credentials and one for client credentials. This allows the Nessie server to directly use the configured S3
-credentials, but hand out scoped-down credentials from STS to clients.
-
-- Nessie server IAM options are configured via the `.server-iam.` prefix.
-- Nessie server IAM must be enabled using `.server-iam.enabled=true` on either the default S3 options or
-  bucket-specific options.
-- Client IAM must be enabled using `.client-iam.enabled=true` on either the default S3 options or bucket-specific
-  options.
-- Inheritance of default / bucket-specific options is supported for both `.server-iam.*` and `.client-iam.*`
-  configuration options.
-- The `.server-authentication-mode` configuration has been renamed to `.auth-type`.
-- See [S3 settings](https://projectnessie.org/nessie-latest/configuration/#s3-settings).
-
-The client IAM policy can be provided using either a static policy via `.client-iam.policy`, or, if
-`.client-iam.policy` is not present, Nessie will generate the policy scoped down to a table's location.
-Additional IAM policy statements can be supplied via the `.client-iam.client-iam-statements` _list_ property.
-
-### Upgrade notes
 
 ### Breaking changes
 
@@ -60,14 +51,10 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 - The Nessie Spark SQL extensions are now based on the same syntax and options that are provided by the
   Nessie CLI. A reference docs page for the Nessie Spark SQL command syntax was added to the web site.
 
-### Deprecations
-
 ### Fixes
 
 - Declare the `contentType` variable for CEL Authorization rules.
 - Catalog: Make Nessie time-travel functionality available to all use cases, including DDL.
-
-### Commits
 
 ## [0.94.3] Release (2024-07-29)
 
@@ -752,7 +739,8 @@ Additional IAM policy statements can be supplied via the `.client-iam.client-iam
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.94.3...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.95.0...HEAD
+[0.95.0]: https://github.com/projectnessie/nessie/compare/nessie-0.94.3...nessie-0.95.0
 [0.94.3]: https://github.com/projectnessie/nessie/compare/nessie-0.94.2...nessie-0.94.3
 [0.94.2]: https://github.com/projectnessie/nessie/compare/nessie-0.94.1...nessie-0.94.2
 [0.94.1]: https://github.com/projectnessie/nessie/compare/nessie-0.94.0...nessie-0.94.1
