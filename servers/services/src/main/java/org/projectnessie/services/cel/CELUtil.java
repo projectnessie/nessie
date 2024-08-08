@@ -291,7 +291,7 @@ public final class CELUtil {
 
     @Override
     public String getEncodedKey() {
-      return key().toPathString();
+      return key().toPathStringControlChars();
     }
 
     @Override

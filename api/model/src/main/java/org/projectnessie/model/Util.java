@@ -32,97 +32,78 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
-  public static final char ESCAPE_FOR_SLASH = '^';
-  public static final char ESCAPE_FOR_BACKSLASH = '-';
-  public static final char ESCAPE_FOR_HASH = '=';
-  public static final char ESCAPE_FOR_DOT = '*';
-  public static final String DOT_DOT = "..";
-  public static final String ESCAPE_STRING_FOR_SLASH = DOT_DOT + ESCAPE_FOR_SLASH;
-  public static final String ESCAPE_STRING_FOR_BACKSLASH = DOT_DOT + ESCAPE_FOR_BACKSLASH;
-  public static final String ESCAPE_STRING_FOR_HASH = DOT_DOT + ESCAPE_FOR_HASH;
-  public static final String ESCAPE_STRING_FOR_DOT = DOT_DOT + ESCAPE_FOR_DOT;
+  private static final char DOT = '.';
+  private static final char SLASH = '/';
+  private static final char BACKSLASH = '\\';
+  private static final char PERCENT = '%';
+  private static final char ESCAPE_FOR_DOT = '_';
+  private static final char ESCAPE_FOR_SLASH = '{';
+  private static final char ESCAPE_FOR_BACKSLASH = '}';
+  private static final char ESCAPE_FOR_PERCENT = '[';
+  private static final String ESCAPE_STRING_FOR_DOT = "" + DOT + ESCAPE_FOR_DOT;
+  private static final String ESCAPE_STRING_FOR_SLASH = "" + DOT + ESCAPE_FOR_SLASH;
+  private static final String ESCAPE_STRING_FOR_BACKSLASH = "" + DOT + ESCAPE_FOR_BACKSLASH;
+  private static final String ESCAPE_STRING_FOR_PERCENT = "" + DOT + ESCAPE_FOR_PERCENT;
 
   private Util() {}
 
   public static final int FIRST_ALLOWED_KEY_CHAR = 0x20;
   public static final char ZERO_BYTE = '\u0000';
-  public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
-  public static final char URL_PATH_SEPARATOR = '/';
+  public static final char URL_PATH_SEPARATOR = SLASH;
   public static final String DOT_STRING = ".";
   public static final char REF_HASH_SEPARATOR = '@';
 
   /**
-   * Convert from path encoded string to normal string, supports all Nessie Spec versions.
-   *
-   * <p>The {@code encoded} parameter is split at dot ({@code .}) characters.
-   *
-   * <p>Legacy compatibility: a dot ({@code .}) character can be represented using ASCII 31 (0x1F)
-   * or ASCII 0 (0x00).
-   *
-   * <p>Escaping, for compatibility w/ <a
-   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0.html#uri-path-canonicalization">Jakarta
-   * Servlet Specification 6, URI Path Canonicalization</a> and <a
-   * href="https://datatracker.ietf.org/doc/html/rfc3986#section-3.3">RFC 3986, section 3.3</a>.
-   * This is available with Nessie Spec version 2.2.0, as advertised via {@link
-   * NessieConfiguration#getSpecVersion()}.
-   *
-   * <ul>
-   *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
-   *       elements, which is illegal. It is correct to assume that this character sequence does not
-   *       occur in encoded content keys.
-   *   <li>The sequence {@code ..*} is the encoded representation for a single dot character {@code
-   *       .}.
-   *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
-   *       is a URI path separator.
-   *   <li>The sequence {@code ..#} is the encoded representation for a hash {@code #}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
-   *       means that the first dot represents an element boundary, decoding should continue after
-   *       the first {@code .} character.
-   * </ul>
-   *
-   * @param encoded Path encoded string
-   * @return Actual key.
+   * Convert from path encoded string to elements, see {@link
+   * Elements#elementsFromPathString(String)}.
    */
   public static List<String> fromPathString(String encoded) {
     List<String> elements = new ArrayList<>();
     int l = encoded.length();
     StringBuilder e = new StringBuilder();
+    boolean escaped = false;
     for (int i = 0; i < l; i++) {
       char c = encoded.charAt(i);
       switch (c) {
         case DOT:
-          if (encoded.charAt(i + 1) == DOT) {
-            // '..' sequence - empty elements are not allowed in content-keys
-            char ctl = encoded.charAt(i + 2);
-            switch (ctl) {
+          if (!escaped) {
+            if (e.length() == 0) {
+              // Got a '.' at the beginning of an element. This and all following elements are
+              // escaped.
+              escaped = true;
+            } else {
+              elements.add(e.toString());
+              e.setLength(0);
+            }
+          } else {
+            c = encoded.charAt(++i);
+            switch (c) {
               case ESCAPE_FOR_DOT:
-                i += 2;
                 e.append(DOT);
                 break;
               case ESCAPE_FOR_SLASH:
-                i += 2;
-                e.append('/');
+                e.append(SLASH);
                 break;
               case ESCAPE_FOR_BACKSLASH:
-                i += 2;
-                e.append('\\');
+                e.append(BACKSLASH);
                 break;
-              case ESCAPE_FOR_HASH:
-                i += 2;
-                e.append('#');
+              case ESCAPE_FOR_PERCENT:
+                e.append(PERCENT);
+                break;
+              case DOT:
+                elements.add(e.toString());
+                e.setLength(0);
                 break;
               default:
+                // Any other character, that character is the first character of the _next_ element;
+                // throw new IllegalArgumentException("Illegal escape sequence character '"+c+" at
+                // index : " + c);
+                --i;
                 elements.add(e.toString());
                 e.setLength(0);
                 break;
             }
-          } else {
-            elements.add(e.toString());
-            e.setLength(0);
           }
           break;
         case GROUP_SEPARATOR:
@@ -140,11 +121,7 @@ final class Util {
     return elements;
   }
 
-  /**
-   * Convert these elements to a URL encoded path string.
-   *
-   * @return String encoded for path use.
-   */
+  /** Escapes content-key elements, see {@link Elements#toPathString()}. */
   public static String toPathString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
     for (String element : elements) {
@@ -160,35 +137,119 @@ final class Util {
     return sb.toString();
   }
 
+  /** Escapes content-key elements, see {@link Elements#toPathStringEscaped()}. */
   public static String toPathStringEscaped(List<String> elements) {
     StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
     for (String element : elements) {
       if (sb.length() > 0) {
-        sb.append('.');
-      }
-      int l = element.length();
-      for (int i = 0; i < l; i++) {
-        char c = element.charAt(i);
-        switch (c) {
-          case DOT:
-            sb.append(ESCAPE_STRING_FOR_DOT);
-            break;
-          case '/':
-            sb.append(ESCAPE_STRING_FOR_SLASH);
-            break;
-          case '\\':
-            sb.append(ESCAPE_STRING_FOR_BACKSLASH);
-            break;
-          case '%':
-            sb.append(ESCAPE_STRING_FOR_HASH);
-            break;
-          default:
-            sb.append(c);
-            break;
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
         }
       }
+      escaped = escapePathElement(element, sb, escaped);
     }
     return sb.toString();
+  }
+
+  /** Escapes all characters, that are "problematic" in URI paths. */
+  static boolean escapePathElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      switch (c) {
+        case DOT:
+        case SLASH:
+        case BACKSLASH:
+        case PERCENT:
+          if (!escaped) {
+            // Not yet "escaped", let the first escaped element start with a '.'
+            if (sb.length() > sbl) {
+              sb.insert(sbl, DOT);
+            } else {
+              sb.append(DOT);
+            }
+            escaped = true;
+          }
+          for (; i < l; i++) {
+            c = element.charAt(i);
+            switch (c) {
+              case DOT:
+                sb.append(ESCAPE_STRING_FOR_DOT);
+                break;
+              case SLASH:
+                sb.append(ESCAPE_STRING_FOR_SLASH);
+                break;
+              case BACKSLASH:
+                sb.append(ESCAPE_STRING_FOR_BACKSLASH);
+                break;
+              case PERCENT:
+                sb.append(ESCAPE_STRING_FOR_PERCENT);
+                break;
+              default:
+                sb.append(c);
+                break;
+            }
+          }
+          break;
+        default:
+          sb.append(c);
+          break;
+      }
+    }
+    return escaped;
+  }
+
+  /** Escapes content-key elements, see {@link Elements#toCanonicalString()}. */
+  public static String toCanonicalString(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
+        }
+      }
+      escaped = escapeCanonicalElement(element, sb, escaped);
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Similar to {@link #escapePathElement(String, StringBuilder, boolean)}, but escapes only the
+   * {@value #DOT} character.
+   */
+  static boolean escapeCanonicalElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      if (c == DOT) {
+        if (!escaped) {
+          // Not yet "escaped", let the first escaped element start with a '.'
+          if (sb.length() > sbl) {
+            sb.insert(sbl, DOT);
+          } else {
+            sb.append(DOT);
+          }
+          escaped = true;
+        }
+        for (; i < l; i++) {
+          c = element.charAt(i);
+          if (c == DOT) {
+            sb.append(ESCAPE_STRING_FOR_DOT);
+          } else {
+            sb.append(c);
+          }
+        }
+      } else {
+        sb.append(c);
+      }
+    }
+    return escaped;
   }
 
   public static String toPathStringRef(String name, String hash) {

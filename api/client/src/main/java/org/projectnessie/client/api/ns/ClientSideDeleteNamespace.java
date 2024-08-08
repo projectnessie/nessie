@@ -84,20 +84,22 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
     if (!(existing instanceof Namespace)) {
       throw new NessieNamespaceNotFoundException(
           contentKeyErrorDetails(key),
-          String.format("Namespace '%s' does not exist", key.toString()));
+          String.format("Namespace '%s' does not exist", key.toCanonicalString()));
     }
 
     try {
       if (api
           .getEntries()
           .reference(ref)
-          .filter(String.format("entry.encodedKey.startsWith('%s.')", namespace.toPathString()))
+          .filter(
+              String.format(
+                  "entry.encodedKey.startsWith('%s.')", namespace.toPathStringControlChars()))
           .stream()
           .findAny()
           .isPresent()) {
         throw new NessieNamespaceNotEmptyException(
             contentKeyErrorDetails(key),
-            String.format("Namespace '%s' is not empty", key.toString()));
+            String.format("Namespace '%s' is not empty", key.toCanonicalString()));
       }
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);

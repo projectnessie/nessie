@@ -15,9 +15,8 @@
  */
 package org.projectnessie.model;
 
+import static java.lang.String.format;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
-import static org.projectnessie.model.Util.DOT_STRING;
-import static org.projectnessie.model.Util.FIRST_ALLOWED_KEY_CHAR;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,10 +43,7 @@ import org.immutables.value.Value.Derived;
 @JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
 @JsonTypeName("NAMESPACE")
-public abstract class Namespace extends Content {
-
-  static final String ERROR_MSG_TEMPLATE =
-      "'%s' is not a valid namespace identifier (should not end with '.')";
+public abstract class Namespace extends Content implements Elements {
 
   /** This separate static class is needed to prevent class loader deadlocks. */
   public static final class Empty {
@@ -88,16 +84,19 @@ public abstract class Namespace extends Content {
 
   @NotNull
   @jakarta.validation.constraints.NotNull
+  @Override
   public abstract List<String> getElements();
 
   @JsonIgnore
   @Value.Redacted
+  @Override
   public String[] getElementsArray() {
     return getElements().toArray(new String[0]);
   }
 
   @JsonIgnore
   @Value.Redacted
+  @Override
   public int getElementCount() {
     return getElements().size();
   }
@@ -165,34 +164,22 @@ public abstract class Namespace extends Content {
       return EMPTY_NAMESPACE;
     }
 
-    for (String e : elements) {
-      if (e == null) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Namespace '%s' must not contain a null element.", Arrays.toString(elements)));
-      }
-      if (e.isEmpty()) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Namespace '%s' must not contain an empty element.", Arrays.toString(elements)));
-      }
-      if (e.chars().anyMatch(i -> i < FIRST_ALLOWED_KEY_CHAR)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Namespace '%s' must not contain characters less than 0x%2h.",
-                Arrays.toString(elements), FIRST_ALLOWED_KEY_CHAR));
-      }
-    }
-
-    if (DOT_STRING.equals(elements[elements.length - 1])) {
-      throw new IllegalArgumentException(
-          String.format(ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
-    }
-
     return ImmutableNamespace.builder()
         .elements(Arrays.asList(elements))
         .properties(properties)
         .build();
+  }
+
+  @Value.Check
+  protected void validate() {
+    Elements.super.validate("Namespace");
+
+    int elementCount = getElementCount();
+    List<String> elements = getElements();
+    if (elementCount > 0 && ".".equals(elements.get(elementCount - 1))) {
+      throw new IllegalArgumentException(
+          format("Namespace '%s' must not contain a '.' element", elements));
+    }
   }
 
   /**
@@ -235,9 +222,6 @@ public abstract class Namespace extends Content {
     if (identifier.isEmpty()) {
       return EMPTY_NAMESPACE;
     }
-    if (identifier.endsWith(DOT_STRING)) {
-      throw new IllegalArgumentException(String.format(ERROR_MSG_TEMPLATE, identifier));
-    }
     return Namespace.of(Util.fromPathString(identifier));
   }
 
@@ -265,42 +249,39 @@ public abstract class Namespace extends Content {
   }
 
   /**
-   * Convert from path encoded string to normal string.
-   *
-   * @param encoded Path encoded string
-   * @return Actual key.
+   * Parses the path encoded string to a {@link Namespace} object, supports all Nessie Spec
+   * versions, see {@link Elements#elementsFromPathString(String)}.
    */
   public static Namespace fromPathString(String encoded) {
     return parse(encoded);
   }
 
-  /**
-   * Convert this namespace to a URL encoded path string.
-   *
-   * @return String encoded for path use.
-   */
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
   public String toPathString() {
-    return Util.toPathString(getElements());
+    return Elements.super.toPathString();
   }
 
-  /**
-   * Convert this namespace to a URL encoded path string using control characters, see {@link
-   * Util#fromPathString(String)}.
-   *
-   * @return String encoded using control characters for path use.
-   */
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
   public String toPathStringControlChars() {
-    return Util.toPathString(getElements());
+    return Elements.super.toPathStringControlChars();
   }
 
-  /**
-   * Convert this namespace to a URL encoded path string using the escaped syntax, see {@link
-   * Util#fromPathString(String)}.
-   *
-   * @return String encoded using control characters for path use.
-   */
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
   public String toPathStringEscaped() {
-    return Util.toPathStringEscaped(getElements());
+    return Elements.super.toPathStringEscaped();
+  }
+
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
+  public String toCanonicalString() {
+    return Elements.super.toCanonicalString();
   }
 
   @Override
