@@ -16,11 +16,15 @@
 package org.projectnessie.catalog.files.adls;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface AdlsFileSystemOptions {
+
+  Duration DELEGATION_KEY_DEFAULT_EXPIRY = Duration.ofDays(7).minus(1, ChronoUnit.SECONDS);
+  Duration DELEGATION_SAS_DEFAULT_EXPIRY = Duration.ofHours(3);
 
   /** The authentication type to use. */
   Optional<AzureAuthType> authType();
@@ -34,6 +38,30 @@ public interface AdlsFileSystemOptions {
 
   /** SAS token to access the ADLS file system. */
   Optional<KeySecret> sasToken();
+
+  /**
+   * Enable short-lived user-delegation SAS tokens per file-system.
+   *
+   * <p>The current default is to not enable short-lived and scoped-down credentials, but the
+   * default may change to enable in the future.
+   */
+  Optional<Boolean> userDelegationEnable();
+
+  /**
+   * Expiration time / validity duration of the user-delegation <em>key</em>, this key is
+   * <em>not</em> passed to the client.
+   *
+   * <p>Defaults to 7 days minus 1 minute (the maximum), must be >= 1 second.
+   */
+  Optional<Duration> userDelegationKeyExpiry();
+
+  /**
+   * Expiration time / validity duration of the user-delegation <em>SAS token</em>, which
+   * <em>is</em> sent to the client.
+   *
+   * <p>Defaults to 3 hours, must be >= 1 second.
+   */
+  Optional<Duration> userDelegationSasExpiry();
 
   /**
    * Define a custom HTTP endpoint. In case clients need to use a different URI, use the {@code
