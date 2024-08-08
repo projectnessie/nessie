@@ -621,7 +621,7 @@ public class IcebergConfigurer {
 
     checkState(
         fileSystems.size() <= 1,
-        "Only one ADLS location supported %s",
+        "Only one ADLS filesystem supported for warehouse %s",
         storageLocations.warehouseLocation());
     checkState(
         storageAccounts.size() == 1,
