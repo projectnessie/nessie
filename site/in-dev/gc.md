@@ -206,6 +206,10 @@ Below is the output of the Nessie GC tool help for all commands.
 
 {% include './generated-docs/gc-help-completion-script.md' %}
 
+### `show-licenses`
+
+{% include './generated-docs/gc-help-show-licenses.md' %}
+
 ## Nessie GC for Nessie Administrators
 
 Please refer to the [Garbage Collection](../guides/management.md#garbage-collection) documentation for

@@ -204,3 +204,37 @@ Exported data can be written either into an empty directory or as a compressed z
 
 Users can optionally zip the contents of an export to a directory and pass that to the zip-file
 based importer.
+
+## Command Reference
+
+{% include './generated-docs/serverAdmin-help.md' %}
+
+Below is the output of the Nessie Server Admin tool help for all commands.
+
+### `info`
+
+{% include './generated-docs/serverAdmin-help-info.md' %}
+
+### `check-content`
+
+{% include './generated-docs/serverAdmin-help-check-content.md' %}
+
+### `delete-catalog-tasks`
+
+{% include './generated-docs/serverAdmin-help-delete-catalog-tasks.md' %}
+
+### `erase-repository`
+
+{% include './generated-docs/serverAdmin-help-erase-repository.md' %}
+
+### `export`
+
+{% include './generated-docs/serverAdmin-help-export.md' %}
+
+### `import`
+
+{% include './generated-docs/serverAdmin-help-import.md' %}
+
+### `show-licenses`
+
+{% include './generated-docs/serverAdmin-help-show-licenses.md' %}
