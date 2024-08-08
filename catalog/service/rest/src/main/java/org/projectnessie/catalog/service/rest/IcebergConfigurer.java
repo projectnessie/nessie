@@ -625,7 +625,7 @@ public class IcebergConfigurer {
         storageLocations.warehouseLocation());
     checkState(
         storageAccounts.size() == 1,
-        "Only one ADLS storage-account supported %s",
+        "Only one ADLS storage account supported for warehouse %s",
         storageLocations.warehouseLocation());
 
     Optional<String> fileSystem =
