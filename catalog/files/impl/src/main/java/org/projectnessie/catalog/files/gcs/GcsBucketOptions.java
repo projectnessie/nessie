@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.files.gcs;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -71,6 +72,29 @@ public interface GcsBucketOptions {
    * via secrets.
    */
   Optional<TokenSecret> oauth2Token();
+
+  /**
+   * Flag to enable the currently experimental option to send short-lived and scoped-down
+   * credentials to clients.
+   *
+   * <p>The current default is to not enable short-lived and scoped-down credentials, but the
+   * default may change to enable in the future.
+   */
+  Optional<Boolean> downscopedCredentialsEnable();
+
+  /**
+   * The expiration margin for the scoped down OAuth2 token.
+   *
+   * <p>Defaults to the Google defaults.
+   */
+  Optional<Duration> downscopedCredentialsExpirationMargin();
+
+  /**
+   * The refresh margin for the scoped down OAuth2 token.
+   *
+   * <p>Defaults to the Google defaults.
+   */
+  Optional<Duration> downscopedCredentialsRefreshMargin();
 
   /** The read chunk size in bytes. */
   OptionalInt readChunkSize();

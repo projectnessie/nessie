@@ -16,6 +16,8 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithName;
+import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -36,4 +38,16 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   @Override
   @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> decryptionKey();
+
+  @Override
+  @WithName("downscoped-credentials.enable")
+  Optional<Boolean> downscopedCredentialsEnable();
+
+  @Override
+  @WithName("downscoped-credentials.expiration-margin")
+  Optional<Duration> downscopedCredentialsExpirationMargin();
+
+  @Override
+  @WithName("downscoped-credentials.refresh-margin")
+  Optional<Duration> downscopedCredentialsRefreshMargin();
 }
