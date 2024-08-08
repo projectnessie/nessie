@@ -32,6 +32,16 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
+  public static final char ESCAPE_FOR_SLASH = '^';
+  public static final char ESCAPE_FOR_BACKSLASH = '-';
+  public static final char ESCAPE_FOR_HASH = '=';
+  public static final char ESCAPE_FOR_DOT = '*';
+  public static final String DOT_DOT = "..";
+  public static final String ESCAPE_STRING_FOR_SLASH = DOT_DOT + ESCAPE_FOR_SLASH;
+  public static final String ESCAPE_STRING_FOR_BACKSLASH = DOT_DOT + ESCAPE_FOR_BACKSLASH;
+  public static final String ESCAPE_STRING_FOR_HASH = DOT_DOT + ESCAPE_FOR_HASH;
+  public static final String ESCAPE_STRING_FOR_DOT = DOT_DOT + ESCAPE_FOR_DOT;
+
   private Util() {}
 
   public static final int FIRST_ALLOWED_KEY_CHAR = 0x20;
@@ -61,13 +71,17 @@ final class Util {
    *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
    *       elements, which is illegal. It is correct to assume that this character sequence does not
    *       occur in encoded content keys.
-   *   <li>The sequence {@code ..~} is the encoded representation for a single dot character {@code
+   *   <li>The sequence {@code ..*} is the encoded representation for a single dot character {@code
    *       .}.
    *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
    *       URI path separator.
-   *   <li>The sequence {@code ..} followed by a character {@code != '~'} and {@code != '^'} means
-   *       that the first dot represents an element boundary, decoding should continue after the
-   *       first {@code .} character.
+   *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
+   *       is a URI path separator.
+   *   <li>The sequence {@code ..#} is the encoded representation for a hash {@code #}, which is a
+   *       URI path separator.
+   *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
+   *       means that the first dot represents an element boundary, decoding should continue after
+   *       the first {@code .} character.
    * </ul>
    *
    * @param encoded Path encoded string
@@ -84,19 +98,27 @@ final class Util {
           if (encoded.charAt(i + 1) == DOT) {
             // '..' sequence - empty elements are not allowed in content-keys
             char ctl = encoded.charAt(i + 2);
-            if (ctl == '~') {
-              i += 2;
-              // '..~' sequence -> single dot
-              e.append(DOT);
-              break;
-            } else if (ctl == '^') {
-              i += 2;
-              // '..~' sequence -> slash (path separator)
-              e.append('/');
-              break;
-            } else {
-              elements.add(e.toString());
-              e.setLength(0);
+            switch (ctl) {
+              case ESCAPE_FOR_DOT:
+                i += 2;
+                e.append(DOT);
+                break;
+              case ESCAPE_FOR_SLASH:
+                i += 2;
+                e.append('/');
+                break;
+              case ESCAPE_FOR_BACKSLASH:
+                i += 2;
+                e.append('\\');
+                break;
+              case ESCAPE_FOR_HASH:
+                i += 2;
+                e.append('#');
+                break;
+              default:
+                elements.add(e.toString());
+                e.setLength(0);
+                break;
             }
           } else {
             elements.add(e.toString());
@@ -147,12 +169,22 @@ final class Util {
       int l = element.length();
       for (int i = 0; i < l; i++) {
         char c = element.charAt(i);
-        if (c == DOT) {
-          sb.append("..~");
-        } else if (c == '/') {
-          sb.append("..^");
-        } else {
-          sb.append(c);
+        switch (c) {
+          case DOT:
+            sb.append(ESCAPE_STRING_FOR_DOT);
+            break;
+          case '/':
+            sb.append(ESCAPE_STRING_FOR_SLASH);
+            break;
+          case '\\':
+            sb.append(ESCAPE_STRING_FOR_BACKSLASH);
+            break;
+          case '%':
+            sb.append(ESCAPE_STRING_FOR_HASH);
+            break;
+          default:
+            sb.append(c);
+            break;
         }
       }
     }
