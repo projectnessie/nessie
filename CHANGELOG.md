@@ -16,6 +16,9 @@ as necessary. Empty sections will not end in the release notes.
 
 - Catalog/ADLS: Added **experimental** support for short-lived SAS tokens passed down to clients. Those
   tokens still have read/write access to the whole file system and are **not** scoped down.
+- Catalog/GCS: Added **experimental** support for short-lived and scoped down access tokens passed down
+  to clients, providing a similar functionality as vended-credentials for S3, including object-storage
+  file layout.
 
 ### Changes
 
