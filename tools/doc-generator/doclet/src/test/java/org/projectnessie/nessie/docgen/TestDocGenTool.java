@@ -190,5 +190,21 @@ public class TestDocGenTool {
                 + "| `very.nested.nested-b1` |  | `int` | B1.  |\n"
                 + "| `very.nested.nested-a11` |  | `int` | A11.  |\n"
                 + "| `very.nested.nested-b12` |  | `int` | B12.  |\n");
+
+    Path fileSectionA = dir.resolve("smallrye-my_types_Section_A.md");
+    soft.assertThat(fileSectionA)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `my.types.map.py.`_`<name>`_ |  | `` | Another map of string to `MappedA`, in its own section.  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.some-duration` |  | `duration` | A duration of something.  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.nested` |  | `` |  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.nested.other-int` |  | `int` |  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
+                + "| `my.types.map.py.`_`<name>`_`.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
+                + "| `my.types.map.py.`_`<name>`_`.some-int-thing` |  | `int` | Something int-ish.  |\n");
   }
 }

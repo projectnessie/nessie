@@ -126,7 +126,7 @@ public class DocGenDoclet implements Doclet {
 
     for (SmallRyeConfigSection configSection : smallryeConfigs.buildConfigSections(environment)) {
       Path file =
-          outputDirectory.resolve("smallrye-" + safeFileName(configSection.prefix()) + ".md");
+          outputDirectory.resolve("smallrye-" + safeFileName(configSection.fileName()) + ".md");
       try (BufferedWriter fw = Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING);
           PrintWriter writer = new PrintWriter(fw)) {
 

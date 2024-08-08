@@ -20,20 +20,28 @@ import java.util.List;
 import javax.lang.model.element.TypeElement;
 
 public class SmallRyeConfigSection {
+
+  private final String fileName;
   private final String prefix;
   private final List<SmallRyeConfigPropertyInfo> properties;
   private final TypeElement element;
   private final DocCommentTree typeComment;
 
   SmallRyeConfigSection(
+      String fileName,
       String prefix,
       List<SmallRyeConfigPropertyInfo> properties,
       TypeElement element,
       DocCommentTree typeComment) {
+    this.fileName = fileName;
     this.prefix = prefix;
     this.properties = properties;
     this.element = element;
     this.typeComment = typeComment;
+  }
+
+  public String fileName() {
+    return fileName;
   }
 
   public String prefix() {
