@@ -213,25 +213,9 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    * This is available with Nessie Spec version 2.2.0, as advertised via {@link
    * NessieConfiguration#getSpecVersion()}.
    *
-   * <ul>
-   *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
-   *       elements, which is illegal. It is correct to assume that this character sequence does not
-   *       occur in encoded content keys.
-   *   <li>The sequence {@code ..*} is the encoded representation for a single dot character {@code
-   *       .}.
-   *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
-   *       is a URI path separator.
-   *   <li>The sequence {@code ..=} is the encoded representation for a hash {@code #}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
-   *       means that the first dot represents an element boundary, decoding should continue after
-   *       the first {@code .} character.
-   * </ul>
-   *
    * <p>This function can decode the representations returned by {@link #toPathString()}, {@link
-   * #toPathStringEscaped()} and {@link #toCanonicalString()}.
+   * #toPathStringEscaped()} and {@link #toCanonicalString()}. See those functions for a description
+   * of the possible characters and escape mechanism(s).
    *
    * @param encoded Path encoded string, as returned by {@link #toPathString()}, {@link
    *     #toPathStringEscaped()} and {@link #toCanonicalString()}.
@@ -241,18 +225,7 @@ public abstract class ContentKey implements Comparable<ContentKey> {
     return ContentKey.of(Util.fromPathString(encoded));
   }
 
-  /**
-   * Convert these elements to a URI path/query string, which <em>may violate</em> <a
-   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
-   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
-   * characters and ambiguous path elements.
-   *
-   * <p>Users must prefer {@link #toPathStringEscaped()}, if the service support Nessie spec version
-   * 2.2.0 or newer.
-   *
-   * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path or query.
-   */
+  /** This function is identical to {@link #toPathStringControlChars()}. */
   public String toPathString() {
     return Util.toPathString(getElements());
   }
@@ -264,10 +237,14 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    * characters and ambiguous path elements.
    *
    * <p>Users must prefer {@link #toPathStringEscaped()}, if the service support Nessie spec version
-   * 2.2.0 or newer.
+   * 2.2.0 or newer, except for content-key related values in CEL filters.
+   *
+   * <p>Elements are separated by {@code .} characters. {@code .} characters in elements are
+   * replaced with the ASCII group separator (ASCII 29, {@code %29}).
    *
    * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path or query.
+   *     returned value should be URL-encoded before added to a URI path or query. The returned
+   *     value can be parsed with {@link #fromPathString(String)}.
    */
   public String toPathStringControlChars() {
     return Util.toPathString(getElements());
@@ -279,6 +256,20 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
    * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
    *
+   * <p>Algorithm:
+   *
+   * <ul>
+   *   <li>Elements are separated using a single {@code .} character.
+   *   <li>If an element starts with a {@code .} character, that element <b>and all following
+   *       elements</b> use the "problematic character escaping":
+   *       <ul>
+   *         <li>a {@code .} is escaped as {@code ._}
+   *         <li>a {@code /} is escaped as <code>.{</code>
+   *         <li>a {@code \} is escaped as <code>.}</code>
+   *         <li>a {@code %} is escaped as {@code .[}
+   *       </ul>
+   * </ul>
+   *
    * <p>Some examples:
    *
    * <ul>
@@ -287,14 +278,15 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
    *       character of the second element, indicating that escaping starts at this element. {@code
    *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a.{.}.[aa"}
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as <code>".foo._.._bar.a.{.}.[aa"</code>.
    * </ul>
    *
    * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
    * newer.
    *
    * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path.
+   *     returned value should be URL-encoded before added to a URI path. The returned value can be
+   *     parsed with {@link #fromPathString(String)}.
    */
   public String toPathStringEscaped() {
     return Util.toPathStringEscaped(getElements());
@@ -304,6 +296,17 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    * Escapes content-key elements into a canonical form that escapes {@code .} characters. The
    * returned format is similar to {@linkplain #toPathStringEscaped()}, but does not escape
    * problematic URI characters.
+   *
+   * <p>Algorithm:
+   *
+   * <ul>
+   *   <li>Elements are separated using a single {@code .} character.
+   *   <li>If an element starts with a {@code .} character, that element <b>and all following
+   *       elements</b> use the "dot character escaping":
+   *       <ul>
+   *         <li>a {@code .} is escaped as {@code ._}
+   *       </ul>
+   * </ul>
    *
    * <p>Some examples:
    *
@@ -318,7 +321,8 @@ public abstract class ContentKey implements Comparable<ContentKey> {
    * </ul>
    *
    * @return The canonical representation of the given elements, possibly escaped. The returned
-   *     value should <em>not</em> be used in a URI path.
+   *     value should <em>not</em> be used in a URI path. The returned value can be parsed with
+   *     {@link #fromPathString(String)}.
    */
   public String toCanonicalString() {
     return Util.toCanonicalString(getElements());

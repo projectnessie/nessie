@@ -69,25 +69,9 @@ final class Util {
    * This is available with Nessie Spec version 2.2.0, as advertised via {@link
    * NessieConfiguration#getSpecVersion()}.
    *
-   * <ul>
-   *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
-   *       elements, which is illegal. It is correct to assume that this character sequence does not
-   *       occur in encoded content keys.
-   *   <li>The sequence {@code ..*} is the encoded representation for a single dot character {@code
-   *       .}.
-   *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
-   *       is a URI path separator.
-   *   <li>The sequence {@code ..=} is the encoded representation for a hash {@code #}, which is a
-   *       URI path separator.
-   *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
-   *       means that the first dot represents an element boundary, decoding should continue after
-   *       the first {@code .} character.
-   * </ul>
-   *
    * <p>This function can decode the representations returned by {@link #toPathString(List)}, {@link
-   * #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}.
+   * #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}. See those functions for a
+   * description of the possible characters and escape mechanism(s).
    *
    * @param encoded Path encoded string, as returned by {@link #toPathString(List)}, {@link
    *     #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}.
@@ -157,11 +141,15 @@ final class Util {
    * characters and ambiguous path elements.
    *
    * <p>Users must prefer {@link #toPathStringEscaped(List)}, if the service support Nessie spec
-   * version 2.2.0 or newer.
+   * version 2.2.0 or newer, except for content-key related values in CEL filters.
+   *
+   * <p>Elements are separated by {@code .} characters. {@code .} characters in elements are
+   * replaced with the ASCII group separator (ASCII 29, {@code %29}).
    *
    * @param elements The content-key or namespace elements to encode.
    * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path or query.
+   *     returned value should be URL-encoded before added to a URI path or query. The returned
+   *     value can be parsed with {@link #fromPathString(String)}.
    */
   public static String toPathString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
@@ -184,6 +172,20 @@ final class Util {
    * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
    * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
    *
+   * <p>Algorithm:
+   *
+   * <ul>
+   *   <li>Elements are separated using a single {@code .} character.
+   *   <li>If an element starts with a {@code .} character, that element <b>and all following
+   *       elements</b> use the "problematic character escaping":
+   *       <ul>
+   *         <li>a {@code .} is escaped as {@code ._}
+   *         <li>a {@code /} is escaped as <code>.{</code>
+   *         <li>a {@code \} is escaped as <code>.}</code>
+   *         <li>a {@code %} is escaped as {@code .[}
+   *       </ul>
+   * </ul>
+   *
    * <p>Some examples:
    *
    * <ul>
@@ -192,7 +194,7 @@ final class Util {
    *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
    *       character of the second element, indicating that escaping starts at this element. {@code
    *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a.{.}.[aa"}
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as <code>".foo._.._bar.a.{.}.[aa"</code>.
    * </ul>
    *
    * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
@@ -200,7 +202,8 @@ final class Util {
    *
    * @param elements The content-key or namespace elements to encode.
    * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path.
+   *     returned value should be URL-encoded before added to a URI path. The returned value can be
+   *     parsed with {@link #fromPathString(String)}.
    */
   public static String toPathStringEscaped(List<String> elements) {
     StringBuilder sb = new StringBuilder();
@@ -268,6 +271,17 @@ final class Util {
    * returned format is similar to {@linkplain #toPathStringEscaped(List)}, but does not escape
    * problematic URI characters.
    *
+   * <p>Algorithm:
+   *
+   * <ul>
+   *   <li>Elements are separated using a single {@code .} character.
+   *   <li>If an element starts with a {@code .} character, that element <b>and all following
+   *       elements</b> use the "dot character escaping":
+   *       <ul>
+   *         <li>a {@code .} is escaped as {@code ._}
+   *       </ul>
+   * </ul>
+   *
    * <p>Some examples:
    *
    * <ul>
@@ -282,7 +296,8 @@ final class Util {
    *
    * @param elements The content-key or namespace elements to encode.
    * @return The canonical representation of the given elements, possibly escaped. The returned
-   *     value should <em>not</em> be used in a URI path.
+   *     value should <em>not</em> be used in a URI path. The returned value can be parsed with
+   *     {@link #fromPathString(String)}.
    */
   public static String toCanonicalString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
