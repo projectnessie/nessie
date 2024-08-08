@@ -195,24 +195,39 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public ObjectIO objectIO(
+  public S3ClientSupplier s3ClientSupplier(
       @NormalizedObjectStoreOptions S3Options s3Options,
       @CatalogS3Client SdkHttpClient sdkClient,
+      S3Sessions sessions,
+      SecretsProvider secretsProvider) {
+
+    return new S3ClientSupplier(sdkClient, s3Options, secretsProvider, sessions);
+  }
+
+  @Produces
+  @Singleton
+  public AdlsClientSupplier adlsClientSupplier(
       @NormalizedObjectStoreOptions AdlsOptions adlsOptions,
       HttpClient adlsHttpClient,
+      SecretsProvider secretsProvider) {
+    return new AdlsClientSupplier(adlsHttpClient, adlsOptions, secretsProvider);
+  }
+
+  @Produces
+  @Singleton
+  public GcsStorageSupplier gcsStorageSupplier(
       @NormalizedObjectStoreOptions GcsOptions gcsOptions,
       HttpTransportFactory gcsHttpTransportFactory,
-      SecretsProvider secretsProvider,
-      S3Sessions sessions) {
-    S3ClientSupplier s3ClientSupplier =
-        new S3ClientSupplier(sdkClient, s3Options, secretsProvider, sessions);
+      SecretsProvider secretsProvider) {
+    return new GcsStorageSupplier(gcsHttpTransportFactory, gcsOptions, secretsProvider);
+  }
 
-    AdlsClientSupplier adlsClientSupplier =
-        new AdlsClientSupplier(adlsHttpClient, adlsOptions, secretsProvider);
-
-    GcsStorageSupplier gcsStorageSupplier =
-        new GcsStorageSupplier(gcsHttpTransportFactory, gcsOptions, secretsProvider);
-
+  @Produces
+  @Singleton
+  public ObjectIO objectIO(
+      S3ClientSupplier s3ClientSupplier,
+      GcsStorageSupplier gcsStorageSupplier,
+      AdlsClientSupplier adlsClientSupplier) {
     return new ResolvingObjectIO(s3ClientSupplier, adlsClientSupplier, gcsStorageSupplier);
   }
 
