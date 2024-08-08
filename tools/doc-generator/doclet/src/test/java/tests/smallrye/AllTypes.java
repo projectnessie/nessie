@@ -16,6 +16,7 @@
 package tests.smallrye;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /** Documentation for {@code my.types}. */
@@ -106,4 +108,9 @@ public interface AllTypes extends IntOne {
   /** Map of string to {@code MappedA}. */
   @ConfigPropertyName("mappy")
   Map<String, MappedA> mapStringMappedA();
+
+  /** Another map of string to {@code MappedA}, in its own section. */
+  @ConfigItem(section = "Section A")
+  @WithName("map.py")
+  Map<String, MappedA> anotherMapStringMappedA();
 }
