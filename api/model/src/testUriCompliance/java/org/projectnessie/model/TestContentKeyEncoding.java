@@ -95,32 +95,41 @@ public class TestContentKeyEncoding {
   static Stream<Arguments> fromPathString() {
     return Stream.of(
         arguments("hello", List.of("hello"), Set.of()),
-        arguments("he#llo", List.of("he#llo"), Set.of()),
-        arguments("he..^llo.world", List.of("he/llo", "world"), Set.of()),
-        arguments("hello..*", List.of("hello."), Set.of()),
-        arguments("..*hello..*", List.of(".hello."), Set.of()),
-        arguments("..*hello..*~", List.of(".hello.~"), Set.of()),
-        arguments("..*hello..*~hello", List.of(".hello.~hello"), Set.of()),
-        arguments("..*hello...*~hello", List.of(".hello", ".~hello"), Set.of()),
-        arguments("..*hello..*.~hello", List.of(".hello.", "~hello"), Set.of()),
-        arguments("..*hello..*...*~hello", List.of(".hello.", ".~hello"), Set.of()),
-        arguments("..*hello..*~.~hello", List.of(".hello.~", "~hello"), Set.of()),
-        arguments("..*~hello..*", List.of(".~hello."), Set.of()),
+        //
+        arguments("foo.bar.baz", List.of("foo", "bar", "baz"), Set.of()),
+        // Escaping can start at the 1st element...
+        arguments(".foo.bar.baz", List.of("foo", "bar", "baz"), Set.of()),
+        // .. at the 2nd element...
+        arguments("foo..bar.baz", List.of("foo", "bar", "baz"), Set.of()),
+        // .. or any other element.
+        arguments("foo.bar..baz", List.of("foo", "bar", "baz"), Set.of()),
+        //
+        arguments(".he.[llo", List.of("he%llo"), Set.of()),
+        arguments(".he.{llo.world", List.of("he/llo", "world"), Set.of()),
+        arguments(".hello._", List.of("hello."), Set.of()),
+        arguments(".._hello._", List.of(".hello."), Set.of()),
+        arguments(".._hello._~", List.of(".hello.~"), Set.of()),
+        arguments(".._hello._~hello", List.of(".hello.~hello"), Set.of()),
+        arguments(".._hello.._~hello", List.of(".hello", ".~hello"), Set.of()),
+        arguments(".._hello._.~hello", List.of(".hello.", "~hello"), Set.of()),
+        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello"), Set.of()),
+        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello"), Set.of()),
+        arguments(".._~hello._", List.of(".~hello."), Set.of()),
         arguments("hello.world", List.of("hello", "world"), Set.of()),
-        arguments("hello..*.world", List.of("hello.", "world"), Set.of()),
-        arguments("hello...*world", List.of("hello", ".world"), Set.of()),
-        arguments("he..*llo.wo..*rld", List.of("he.llo", "wo.rld"), Set.of()),
-        // path separators cause violations
+        arguments(".hello._.world", List.of("hello.", "world"), Set.of()),
+        arguments("hello..._world", List.of("hello", ".world"), Set.of()),
+        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld"), Set.of()),
+        // valid for canonical representation, path separators cause violations
         arguments("he/llo", List.of("he/llo"), Set.of(AMBIGUOUS_PATH_SEPARATOR)),
+        // valid for canonical representation, backslash is a violation
+        arguments("he\\llo.world", List.of("he\\llo", "world"), Set.of(SUSPICIOUS_PATH_CHARACTERS)),
+        // valid for canonical representation, % is ambiguous
+        arguments("he%llo.world", List.of("he%llo", "world"), Set.of(AMBIGUOUS_PATH_ENCODING)),
         // control-characters cause violations
         arguments(
             "he\u001dllo.wo\u001drld",
             List.of("he.llo", "wo.rld"),
-            Set.of(SUSPICIOUS_PATH_CHARACTERS)),
-        // backslash is a violation
-        arguments("he\\llo.world", List.of("he\\llo", "world"), Set.of(SUSPICIOUS_PATH_CHARACTERS)),
-        // % alone is ambiguous
-        arguments("he%llo.world", List.of("he%llo", "world"), Set.of(AMBIGUOUS_PATH_ENCODING)));
+            Set.of(SUSPICIOUS_PATH_CHARACTERS)));
   }
 
   @Test
@@ -185,7 +194,6 @@ public class TestContentKeyEncoding {
         arguments("he#llo.world", List.of("he#llo", "world"), Set.of()),
         arguments("he?llo.world", List.of("he?llo", "world"), Set.of()),
         arguments("he&llo.world", List.of("he&llo", "world"), Set.of()),
-        // path character causes violations
         arguments("he/llo.world", List.of("he/llo", "world"), Set.of(AMBIGUOUS_PATH_SEPARATOR)),
         // control-characters cause violations
         arguments(
@@ -207,6 +215,7 @@ public class TestContentKeyEncoding {
     String actualEncoded = Util.toPathStringEscaped(elements);
     soft.assertThat(actualEncoded).isEqualTo(encoded);
     soft.assertThat(encoded).isEqualTo(Util.toPathStringEscaped(elements));
+    soft.assertThat(Util.fromPathString(encoded)).containsExactlyElementsOf(elements);
 
     String uriEncoded = URLEncoder.encode(actualEncoded, UTF_8);
 
@@ -243,28 +252,66 @@ public class TestContentKeyEncoding {
     return Stream.of(
         arguments("hello.world", List.of("hello", "world")),
         arguments("he#llo", List.of("he#llo")),
-        arguments("he..-llo", List.of("he\\llo")),
-        arguments("he..=llo", List.of("he%llo")),
+        arguments(".he.}llo", List.of("he\\llo")),
+        arguments(".he.}llo", List.of("he\\llo")),
+        arguments(".he.[llo", List.of("he%llo")),
         arguments("he#llo.world", List.of("he#llo", "world")),
         arguments("he&llo.world", List.of("he&llo", "world")),
         arguments("he?llo.world", List.of("he?llo", "world")),
-        arguments("he..^llo.world", List.of("he/llo", "world")),
-        arguments("hello..*", List.of("hello.")),
-        arguments("..*hello..*", List.of(".hello.")),
-        arguments("..*hello..*~", List.of(".hello.~")),
-        arguments("..*hello..*~hello", List.of(".hello.~hello")),
-        arguments("..*hello...*~hello", List.of(".hello", ".~hello")),
-        arguments("..*hello..*.~hello", List.of(".hello.", "~hello")),
-        arguments("..*hello..*...*~hello", List.of(".hello.", ".~hello")),
-        arguments("..*hello..*~.~hello", List.of(".hello.~", "~hello")),
-        arguments("..*~hello..*", List.of(".~hello.")),
+        arguments(".he.{llo.world", List.of("he/llo", "world")),
+        arguments(".hello._", List.of("hello.")),
+        arguments(".._hello._", List.of(".hello.")),
+        arguments(".._hello._~", List.of(".hello.~")),
+        arguments(".._hello._~hello", List.of(".hello.~hello")),
+        arguments(".._hello.._~hello", List.of(".hello", ".~hello")),
+        arguments(".._hello._.~hello", List.of(".hello.", "~hello")),
+        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello")),
+        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".._~hello._", List.of(".~hello.")),
         arguments("hello.world", List.of("hello", "world")),
-        arguments("hello..*.world", List.of("hello.", "world")),
-        arguments("hello...*world", List.of("hello", ".world")),
-        arguments("he..*llo.wo..*rld", List.of("he.llo", "wo.rld")),
-        arguments("he..^llo.world", List.of("he/llo", "world")),
-        arguments("he..*llo.wo..*rld", List.of("he.llo", "wo.rld")),
-        arguments("he..*llo.wo..*rld", List.of("he.llo", "wo.rld")),
-        arguments("he..*l#..^lo~.~wo..*rld", List.of("he.l#/lo~", "~wo.rld")));
+        arguments(".hello._.world", List.of("hello.", "world")),
+        arguments("hello..._world", List.of("hello", ".world")),
+        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he.{llo.world", List.of("he/llo", "world")),
+        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he._l#.{lo~.~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void toCanonicalString(String encoded, List<String> elements) {
+    String actualEncoded = Util.toCanonicalString(elements);
+    soft.assertThat(actualEncoded).isEqualTo(encoded);
+    soft.assertThat(encoded).isEqualTo(Util.toCanonicalString(elements));
+    soft.assertThat(Util.fromPathString(encoded)).containsExactlyElementsOf(elements);
+  }
+
+  static Stream<Arguments> toCanonicalString() {
+    return Stream.of(
+        arguments("hello.world", List.of("hello", "world")),
+        arguments("he#llo", List.of("he#llo")),
+        arguments("he/llo", List.of("he/llo")),
+        arguments("he\\llo", List.of("he\\llo")),
+        arguments("he%llo", List.of("he%llo")),
+        arguments("he#llo.world", List.of("he#llo", "world")),
+        arguments("he&llo.world", List.of("he&llo", "world")),
+        arguments("he?llo.world", List.of("he?llo", "world")),
+        arguments("he/llo.world", List.of("he/llo", "world")),
+        arguments(".hello._", List.of("hello.")),
+        arguments(".._hello._", List.of(".hello.")),
+        arguments(".._hello._~", List.of(".hello.~")),
+        arguments(".._hello._~hello", List.of(".hello.~hello")),
+        arguments(".._hello.._~hello", List.of(".hello", ".~hello")),
+        arguments(".._hello._.~hello", List.of(".hello.", "~hello")),
+        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello")),
+        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".._~hello._", List.of(".~hello.")),
+        arguments("hello.world", List.of("hello", "world")),
+        arguments(".hello._.world", List.of("hello.", "world")),
+        arguments("hello..._world", List.of("hello", ".world")),
+        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
+        arguments("he/llo.world", List.of("he/llo", "world")),
+        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he._l#/lo~.~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
   }
 }

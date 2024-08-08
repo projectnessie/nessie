@@ -198,11 +198,43 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   }
 
   /**
-   * Convert from path encoded string to normal string, see {@linkplain Util#fromPathString(String)
-   * encoding specification}.
+   * Parses the path encoded string to a {@link ContentKey} object, supports all Nessie Spec
+   * versions.
    *
-   * @param encoded Path encoded string, see {@linkplain Util#fromPathString(String) encoding
-   *     specification}
+   * <p>The {@code encoded} parameter is split at dot ({@code .}) characters.
+   *
+   * <p>Legacy compatibility: a dot ({@code .}) character can be represented using ASCII 31 (0x1F)
+   * or ASCII 0 (0x00).
+   *
+   * <p>Escaping, for compatibility w/ <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0.html#uri-path-canonicalization">Jakarta
+   * Servlet Specification 6, URI Path Canonicalization</a> and <a
+   * href="https://datatracker.ietf.org/doc/html/rfc3986#section-3.3">RFC 3986, section 3.3</a>.
+   * This is available with Nessie Spec version 2.2.0, as advertised via {@link
+   * NessieConfiguration#getSpecVersion()}.
+   *
+   * <ul>
+   *   <li>Fact: two consecutive dots ({@code ..}) would represent an <em>empty</em> namespace
+   *       elements, which is illegal. It is correct to assume that this character sequence does not
+   *       occur in encoded content keys.
+   *   <li>The sequence {@code ..*} is the encoded representation for a single dot character {@code
+   *       .}.
+   *   <li>The sequence {@code ..^} is the encoded representation for a slash {@code /}, which is a
+   *       URI path separator.
+   *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
+   *       is a URI path separator.
+   *   <li>The sequence {@code ..=} is the encoded representation for a hash {@code #}, which is a
+   *       URI path separator.
+   *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
+   *       means that the first dot represents an element boundary, decoding should continue after
+   *       the first {@code .} character.
+   * </ul>
+   *
+   * <p>This function can decode the representations returned by {@link #toPathString()}, {@link
+   * #toPathStringEscaped()} and {@link #toCanonicalString()}.
+   *
+   * @param encoded Path encoded string, as returned by {@link #toPathString()}, {@link
+   *     #toPathStringEscaped()} and {@link #toCanonicalString()}.
    * @return Actual key.
    */
   public static ContentKey fromPathString(String encoded) {
@@ -210,32 +242,86 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   }
 
   /**
-   * Convert this key to a url encoded path string.
+   * Convert these elements to a URI path/query string, which <em>may violate</em> <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
+   * characters and ambiguous path elements.
    *
-   * @return String encoded for path use.
+   * <p>Users must prefer {@link #toPathStringEscaped()}, if the service support Nessie spec version
+   * 2.2.0 or newer.
+   *
+   * @return The URI path compatible representation of the given elements, possibly escaped. The
+   *     returned value should be URL-encoded before added to a URI path or query.
    */
   public String toPathString() {
     return Util.toPathString(getElements());
   }
 
   /**
-   * Convert this content key to a URL encoded path string using control characters, see {@link
-   * Util#fromPathString(String)}.
+   * Convert these elements to a URI path/query string, which <em>may violate</em> <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
+   * characters and ambiguous path elements.
    *
-   * @return String encoded using control characters for path use.
+   * <p>Users must prefer {@link #toPathStringEscaped()}, if the service support Nessie spec version
+   * 2.2.0 or newer.
+   *
+   * @return The URI path compatible representation of the given elements, possibly escaped. The
+   *     returned value should be URL-encoded before added to a URI path or query.
    */
   public String toPathStringControlChars() {
     return Util.toPathString(getElements());
   }
 
   /**
-   * Convert this content key to a URL encoded path string using the escaped syntax, see {@link
-   * Util#fromPathString(String)}.
+   * Escapes content-key elements into a URI path/query compatible form that does not violate <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
+   * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
    *
-   * @return String encoded using control characters for path use.
+   * <p>Some examples:
+   *
+   * <ul>
+   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
+   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
+   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
+   *       character of the second element, indicating that escaping starts at this element. {@code
+   *       ._} is the escape sequence for the {@code .} character.
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a.{.}.[aa"}
+   * </ul>
+   *
+   * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
+   * newer.
+   *
+   * @return The URI path compatible representation of the given elements, possibly escaped. The
+   *     returned value should be URL-encoded before added to a URI path.
    */
   public String toPathStringEscaped() {
     return Util.toPathStringEscaped(getElements());
+  }
+
+  /**
+   * Escapes content-key elements into a canonical form that escapes {@code .} characters. The
+   * returned format is similar to {@linkplain #toPathStringEscaped()}, but does not escape
+   * problematic URI characters.
+   *
+   * <p>Some examples:
+   *
+   * <ul>
+   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
+   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
+   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
+   *       character of the second element, indicating that escaping starts at this element. {@code
+   *       ._} is the escape sequence for the {@code .} character.
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a/\%aa"}
+   *   <li>{@code ["foo", "bar", "a/\%aa"]} returned as {@code "foo.bar..a/\%aa"}
+   * </ul>
+   *
+   * @return The canonical representation of the given elements, possibly escaped. The returned
+   *     value should <em>not</em> be used in a URI path.
+   */
+  public String toCanonicalString() {
+    return Util.toCanonicalString(getElements());
   }
 
   @Override

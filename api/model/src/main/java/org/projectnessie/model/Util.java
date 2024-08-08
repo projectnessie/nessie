@@ -32,23 +32,25 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
-  public static final char ESCAPE_FOR_SLASH = '^';
-  public static final char ESCAPE_FOR_BACKSLASH = '-';
-  public static final char ESCAPE_FOR_HASH = '=';
-  public static final char ESCAPE_FOR_DOT = '*';
-  public static final String DOT_DOT = "..";
-  public static final String ESCAPE_STRING_FOR_SLASH = DOT_DOT + ESCAPE_FOR_SLASH;
-  public static final String ESCAPE_STRING_FOR_BACKSLASH = DOT_DOT + ESCAPE_FOR_BACKSLASH;
-  public static final String ESCAPE_STRING_FOR_HASH = DOT_DOT + ESCAPE_FOR_HASH;
-  public static final String ESCAPE_STRING_FOR_DOT = DOT_DOT + ESCAPE_FOR_DOT;
+  public static final char DOT = '.';
+  public static final char SLASH = '/';
+  public static final char BACKSLASH = '\\';
+  public static final char PERCENT = '%';
+  public static final char ESCAPE_FOR_DOT = '_';
+  public static final char ESCAPE_FOR_SLASH = '{';
+  public static final char ESCAPE_FOR_BACKSLASH = '}';
+  public static final char ESCAPE_FOR_PERCENT = '[';
+  public static final String ESCAPE_STRING_FOR_DOT = "" + DOT + ESCAPE_FOR_DOT;
+  public static final String ESCAPE_STRING_FOR_SLASH = "" + DOT + ESCAPE_FOR_SLASH;
+  public static final String ESCAPE_STRING_FOR_BACKSLASH = "" + DOT + ESCAPE_FOR_BACKSLASH;
+  public static final String ESCAPE_STRING_FOR_PERCENT = "" + DOT + ESCAPE_FOR_PERCENT;
 
   private Util() {}
 
   public static final int FIRST_ALLOWED_KEY_CHAR = 0x20;
   public static final char ZERO_BYTE = '\u0000';
-  public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
-  public static final char URL_PATH_SEPARATOR = '/';
+  public static final char URL_PATH_SEPARATOR = SLASH;
   public static final String DOT_STRING = ".";
   public static final char REF_HASH_SEPARATOR = '@';
 
@@ -77,52 +79,60 @@ final class Util {
    *       URI path separator.
    *   <li>The sequence {@code ..=} is the encoded representation for a backslash {@code \}, which
    *       is a URI path separator.
-   *   <li>The sequence {@code ..#} is the encoded representation for a hash {@code #}, which is a
+   *   <li>The sequence {@code ..=} is the encoded representation for a hash {@code #}, which is a
    *       URI path separator.
    *   <li>The sequence {@code ..} followed by any character not mentioned in the sequences above,
    *       means that the first dot represents an element boundary, decoding should continue after
    *       the first {@code .} character.
    * </ul>
    *
-   * @param encoded Path encoded string
+   * <p>This function can decode the representations returned by {@link #toPathString(List)}, {@link
+   * #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}.
+   *
+   * @param encoded Path encoded string, as returned by {@link #toPathString(List)}, {@link
+   *     #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}.
    * @return Actual key.
    */
   public static List<String> fromPathString(String encoded) {
     List<String> elements = new ArrayList<>();
     int l = encoded.length();
     StringBuilder e = new StringBuilder();
+    boolean escaped = false;
     for (int i = 0; i < l; i++) {
       char c = encoded.charAt(i);
       switch (c) {
         case DOT:
-          if (encoded.charAt(i + 1) == DOT) {
-            // '..' sequence - empty elements are not allowed in content-keys
-            char ctl = encoded.charAt(i + 2);
-            switch (ctl) {
+          if (!escaped) {
+            if (e.length() == 0) {
+              // Got a '.' at the beginning of an element. This and all following elements are
+              // escaped.
+              escaped = true;
+            } else {
+              elements.add(e.toString());
+              e.setLength(0);
+            }
+          } else {
+            c = encoded.charAt(++i);
+            switch (c) {
               case ESCAPE_FOR_DOT:
-                i += 2;
                 e.append(DOT);
                 break;
               case ESCAPE_FOR_SLASH:
-                i += 2;
-                e.append('/');
+                e.append(SLASH);
                 break;
               case ESCAPE_FOR_BACKSLASH:
-                i += 2;
-                e.append('\\');
+                e.append(BACKSLASH);
                 break;
-              case ESCAPE_FOR_HASH:
-                i += 2;
-                e.append('#');
+              case ESCAPE_FOR_PERCENT:
+                e.append(PERCENT);
                 break;
               default:
+                // Any other character, that character is the first character of the _next_ element;
+                --i;
                 elements.add(e.toString());
                 e.setLength(0);
                 break;
             }
-          } else {
-            elements.add(e.toString());
-            e.setLength(0);
           }
           break;
         case GROUP_SEPARATOR:
@@ -141,9 +151,17 @@ final class Util {
   }
 
   /**
-   * Convert these elements to a URL encoded path string.
+   * Convert these elements to a URI path/query string, which <em>may violate</em> <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
+   * characters and ambiguous path elements.
    *
-   * @return String encoded for path use.
+   * <p>Users must prefer {@link #toPathStringEscaped(List)}, if the service support Nessie spec
+   * version 2.2.0 or newer.
+   *
+   * @param elements The content-key or namespace elements to encode.
+   * @return The URI path compatible representation of the given elements, possibly escaped. The
+   *     returned value should be URL-encoded before added to a URI path or query.
    */
   public static String toPathString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
@@ -160,35 +178,156 @@ final class Util {
     return sb.toString();
   }
 
+  /**
+   * Escapes content-key elements into a URI path/query compatible form that does not violate <a
+   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
+   * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
+   *
+   * <p>Some examples:
+   *
+   * <ul>
+   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
+   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
+   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
+   *       character of the second element, indicating that escaping starts at this element. {@code
+   *       ._} is the escape sequence for the {@code .} character.
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a.{.}.[aa"}
+   * </ul>
+   *
+   * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
+   * newer.
+   *
+   * @param elements The content-key or namespace elements to encode.
+   * @return The URI path compatible representation of the given elements, possibly escaped. The
+   *     returned value should be URL-encoded before added to a URI path.
+   */
   public static String toPathStringEscaped(List<String> elements) {
     StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
     for (String element : elements) {
       if (sb.length() > 0) {
         sb.append('.');
       }
-      int l = element.length();
-      for (int i = 0; i < l; i++) {
-        char c = element.charAt(i);
-        switch (c) {
-          case DOT:
-            sb.append(ESCAPE_STRING_FOR_DOT);
-            break;
-          case '/':
-            sb.append(ESCAPE_STRING_FOR_SLASH);
-            break;
-          case '\\':
-            sb.append(ESCAPE_STRING_FOR_BACKSLASH);
-            break;
-          case '%':
-            sb.append(ESCAPE_STRING_FOR_HASH);
-            break;
-          default:
-            sb.append(c);
-            break;
-        }
-      }
+      escaped = escapePathElement(element, sb, escaped);
     }
     return sb.toString();
+  }
+
+  /** Escapes all characters, that are "problematic" in URI paths. */
+  static boolean escapePathElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      switch (c) {
+        case DOT:
+        case SLASH:
+        case BACKSLASH:
+        case PERCENT:
+          if (!escaped) {
+            // Not yet "escaped", let the first escaped element start with a '.'
+            if (sb.length() > sbl) {
+              sb.insert(sbl, DOT);
+            } else {
+              sb.append(DOT);
+            }
+            escaped = true;
+          }
+          for (; i < l; i++) {
+            c = element.charAt(i);
+            switch (c) {
+              case DOT:
+                sb.append(ESCAPE_STRING_FOR_DOT);
+                break;
+              case SLASH:
+                sb.append(ESCAPE_STRING_FOR_SLASH);
+                break;
+              case BACKSLASH:
+                sb.append(ESCAPE_STRING_FOR_BACKSLASH);
+                break;
+              case PERCENT:
+                sb.append(ESCAPE_STRING_FOR_PERCENT);
+                break;
+              default:
+                sb.append(c);
+                break;
+            }
+          }
+          break;
+        default:
+          sb.append(c);
+          break;
+      }
+    }
+    return escaped;
+  }
+
+  /**
+   * Escapes content-key elements into a canonical form that escapes {@code .} characters. The
+   * returned format is similar to {@linkplain #toPathStringEscaped(List)}, but does not escape
+   * problematic URI characters.
+   *
+   * <p>Some examples:
+   *
+   * <ul>
+   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
+   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
+   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
+   *       character of the second element, indicating that escaping starts at this element. {@code
+   *       ._} is the escape sequence for the {@code .} character.
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a/\%aa"}
+   *   <li>{@code ["foo", "bar", "a/\%aa"]} returned as {@code "foo.bar..a/\%aa"}
+   * </ul>
+   *
+   * @param elements The content-key or namespace elements to encode.
+   * @return The canonical representation of the given elements, possibly escaped. The returned
+   *     value should <em>not</em> be used in a URI path.
+   */
+  public static String toCanonicalString(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append('.');
+      }
+      escaped = escapeCanonicalElement(element, sb, escaped);
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Similar to {@link #escapePathElement(String, StringBuilder, boolean)}, but escapes only the
+   * {@value #DOT} character.
+   */
+  static boolean escapeCanonicalElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      if (c == DOT) {
+        if (!escaped) {
+          // Not yet "escaped", let the first escaped element start with a '.'
+          if (sb.length() > sbl) {
+            sb.insert(sbl, DOT);
+          } else {
+            sb.append(DOT);
+          }
+          escaped = true;
+        }
+        for (; i < l; i++) {
+          c = element.charAt(i);
+          if (c == DOT) {
+            sb.append(ESCAPE_STRING_FOR_DOT);
+          } else {
+            sb.append(c);
+          }
+        }
+      } else {
+        sb.append(c);
+      }
+    }
+    return escaped;
   }
 
   public static String toPathStringRef(String name, String hash) {

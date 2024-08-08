@@ -103,7 +103,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Hash hash =
           commit(
               BranchName.of(refWithHash.getValue().getName()),
-              "create namespace " + namespace,
+              "create namespace '" + namespace.toCanonicalString() + "'",
               TreeApiImpl.toOp(put));
 
       Content content = getExplicitlyCreatedNamespace(namespace, hash).orElse(null);
