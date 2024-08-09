@@ -127,6 +127,7 @@ testing {
         implementation.add(project())
         implementation.add(platform(libs.jetty.bom))
         implementation.add("org.eclipse.jetty:jetty-http")
+        compileOnly(libs.microprofile.openapi)
       }
 
       targets {

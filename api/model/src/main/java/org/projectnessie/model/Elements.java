@@ -163,14 +163,17 @@ public interface Elements {
     return Util.toCanonicalString(getElements());
   }
 
-  default void validate(String type) {
+  default void validate(String type, boolean nsSingleDot) {
     List<String> elements = getElements();
-    if (elements.size() > MAX_ELEMENTS) {
+    int elems = elements.size();
+    if (elems > MAX_ELEMENTS) {
       throw new IllegalStateException(
           format("%s too long, max allowed number of elements: %s", type, MAX_ELEMENTS));
     }
     int sum = 0;
-    for (String e : elements) {
+    for (int i = 0; i < elems; i++) {
+      String e = elements.get(i);
+
       if (e == null) {
         throw new IllegalArgumentException(
             format("%s '%s' must not contain a null element", type, elements));
@@ -180,12 +183,12 @@ public interface Elements {
         throw new IllegalArgumentException(
             format("%s '%s' must not contain an empty element", type, elements));
       }
-      if (".".equals(e)) {
+      if (nsSingleDot && i == elems - 1 && ".".equals(e)) {
         throw new IllegalArgumentException(
             format("%s '%s' must not contain a '.' element", type, elements));
       }
-      for (int i = 0; i < l; i++) {
-        char c = e.charAt(i);
+      for (int j = 0; j < l; j++) {
+        char c = e.charAt(j);
         if (c < FIRST_ALLOWED_KEY_CHAR) {
           throw new IllegalArgumentException(
               format(

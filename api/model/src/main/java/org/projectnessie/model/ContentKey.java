@@ -166,7 +166,7 @@ public abstract class ContentKey implements Comparable<ContentKey>, Elements {
 
   @Value.Check
   protected void validate() {
-    Elements.super.validate("Content key");
+    Elements.super.validate("Content key", false);
   }
 
   /**

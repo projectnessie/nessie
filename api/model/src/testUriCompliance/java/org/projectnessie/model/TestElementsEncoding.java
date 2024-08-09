@@ -22,6 +22,7 @@ import static org.eclipse.jetty.http.UriCompliance.Violation.AMBIGUOUS_PATH_SEPA
 import static org.eclipse.jetty.http.UriCompliance.Violation.SUSPICIOUS_PATH_CHARACTERS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
@@ -87,6 +88,7 @@ public class TestElementsEncoding {
     }
 
     String uriEncoded = URLEncoder.encode(encoded, UTF_8);
+    soft.assertThat(URLDecoder.decode(uriEncoded, UTF_8)).isEqualTo(encoded);
 
     HttpURI uri = HttpURI.from(format("http://hostname/%s", uriEncoded));
     soft.assertThat(uri.getViolations())
@@ -186,6 +188,7 @@ public class TestElementsEncoding {
     soft.assertThat(encoded).isEqualTo(Util.toPathString(elements));
 
     String uriEncoded = URLEncoder.encode(actualEncoded, UTF_8);
+    soft.assertThat(URLDecoder.decode(uriEncoded, UTF_8)).isEqualTo(actualEncoded);
 
     HttpURI uri = HttpURI.from(format("http://hostname/%s", uriEncoded));
     soft.assertThat(uri.getViolations())
@@ -253,6 +256,7 @@ public class TestElementsEncoding {
     soft.assertThat(Util.fromPathString(encoded)).containsExactlyElementsOf(elements);
 
     String uriEncoded = URLEncoder.encode(actualEncoded, UTF_8);
+    soft.assertThat(URLDecoder.decode(uriEncoded, UTF_8)).isEqualTo(actualEncoded);
 
     HttpURI uri = HttpURI.from(format("http://hostname/%s", uriEncoded));
     soft.assertThat(uri.getViolations()).describedAs("path-beginning: %s", uriEncoded).isEmpty();
@@ -374,6 +378,8 @@ public class TestElementsEncoding {
     List<String> actualFromEscaped = Util.fromPathString(escaped);
     List<String> actualFromCanonical = Util.fromPathString(canonical);
     List<String> actualFromLegacy = Util.fromPathString(legacy);
+    String uriEncodedEscaped = URLEncoder.encode(escaped, UTF_8);
+    String uriEncodedLegacy = URLEncoder.encode(legacy, UTF_8);
 
     soft.assertThat(escaped).isEqualTo(expectedEscaped);
     soft.assertThat(canonical).isEqualTo(expectedCanonical);
@@ -381,6 +387,8 @@ public class TestElementsEncoding {
     soft.assertThat(actualFromEscaped).isEqualTo(elements);
     soft.assertThat(actualFromCanonical).isEqualTo(elements);
     soft.assertThat(actualFromLegacy).isEqualTo(elements);
+    soft.assertThat(URLDecoder.decode(uriEncodedEscaped, UTF_8)).isEqualTo(escaped);
+    soft.assertThat(URLDecoder.decode(uriEncodedLegacy, UTF_8)).isEqualTo(legacy);
   }
 
   static Stream<Arguments> roundTrips() {
@@ -426,10 +434,12 @@ public class TestElementsEncoding {
         .isThrownBy(() -> ContentKey.of(elements))
         .withMessageStartingWith("Content key")
         .withMessageEndingWith(message);
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> Namespace.of(elements))
-        .withMessageStartingWith("Namespace")
-        .withMessageEndingWith(message);
+    if (!elements.equals(List.of(""))) { // special treatment in Namespace.of()
+      soft.assertThatIllegalArgumentException()
+          .isThrownBy(() -> Namespace.of(elements))
+          .withMessageStartingWith("Namespace")
+          .withMessageEndingWith(message);
+    }
   }
 
   static Stream<Arguments> invalidElements() {
@@ -441,7 +451,6 @@ public class TestElementsEncoding {
         arguments(List.of(""), "must not contain an empty element"),
         arguments(List.of("", "abc"), "must not contain an empty element"),
         arguments(List.of("abc", ""), "must not contain an empty element"),
-        arguments(List.of(""), "must not contain an empty element"),
         arguments(List.of("abc", "", "def"), "must not contain an empty element"));
   }
 

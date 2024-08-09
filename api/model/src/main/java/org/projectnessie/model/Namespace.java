@@ -175,7 +175,7 @@ public abstract class Namespace extends Content implements Elements {
 
   @Value.Check
   protected void validate() {
-    Elements.super.validate("Namespace");
+    Elements.super.validate("Namespace", true);
   }
 
   /**
