@@ -15,6 +15,7 @@
  */
 package org.projectnessie.model;
 
+import static java.lang.String.format;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Util.DOT_STRING;
 
@@ -175,7 +176,14 @@ public abstract class Namespace extends Content implements Elements {
 
   @Value.Check
   protected void validate() {
-    Elements.super.validate("Namespace", true);
+    Elements.super.validate("Namespace");
+
+    int elementCount = getElementCount();
+    List<String> elements = getElements();
+    if (elementCount > 0 && ".".equals(elements.get(elementCount - 1))) {
+      throw new IllegalArgumentException(
+          format("Namespace '%s' must not contain a '.' element", elements));
+    }
   }
 
   /**

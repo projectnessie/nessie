@@ -163,7 +163,7 @@ public interface Elements {
     return Util.toCanonicalString(getElements());
   }
 
-  default void validate(String type, boolean nsSingleDot) {
+  default void validate(String type) {
     List<String> elements = getElements();
     int elems = elements.size();
     if (elems > MAX_ELEMENTS) {
@@ -182,10 +182,6 @@ public interface Elements {
       if (l == 0) {
         throw new IllegalArgumentException(
             format("%s '%s' must not contain an empty element", type, elements));
-      }
-      if (nsSingleDot && i == elems - 1 && ".".equals(e)) {
-        throw new IllegalArgumentException(
-            format("%s '%s' must not contain a '.' element", type, elements));
       }
       for (int j = 0; j < l; j++) {
         char c = e.charAt(j);

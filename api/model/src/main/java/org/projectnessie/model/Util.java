@@ -32,18 +32,18 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
-  public static final char DOT = '.';
-  public static final char SLASH = '/';
-  public static final char BACKSLASH = '\\';
-  public static final char PERCENT = '%';
-  public static final char ESCAPE_FOR_DOT = '_';
-  public static final char ESCAPE_FOR_SLASH = '{';
-  public static final char ESCAPE_FOR_BACKSLASH = '}';
-  public static final char ESCAPE_FOR_PERCENT = '[';
-  public static final String ESCAPE_STRING_FOR_DOT = "" + DOT + ESCAPE_FOR_DOT;
-  public static final String ESCAPE_STRING_FOR_SLASH = "" + DOT + ESCAPE_FOR_SLASH;
-  public static final String ESCAPE_STRING_FOR_BACKSLASH = "" + DOT + ESCAPE_FOR_BACKSLASH;
-  public static final String ESCAPE_STRING_FOR_PERCENT = "" + DOT + ESCAPE_FOR_PERCENT;
+  private static final char DOT = '.';
+  private static final char SLASH = '/';
+  private static final char BACKSLASH = '\\';
+  private static final char PERCENT = '%';
+  private static final char ESCAPE_FOR_DOT = '_';
+  private static final char ESCAPE_FOR_SLASH = '{';
+  private static final char ESCAPE_FOR_BACKSLASH = '}';
+  private static final char ESCAPE_FOR_PERCENT = '[';
+  private static final String ESCAPE_STRING_FOR_DOT = "" + DOT + ESCAPE_FOR_DOT;
+  private static final String ESCAPE_STRING_FOR_SLASH = "" + DOT + ESCAPE_FOR_SLASH;
+  private static final String ESCAPE_STRING_FOR_BACKSLASH = "" + DOT + ESCAPE_FOR_BACKSLASH;
+  private static final String ESCAPE_STRING_FOR_PERCENT = "" + DOT + ESCAPE_FOR_PERCENT;
 
   private Util() {}
 
