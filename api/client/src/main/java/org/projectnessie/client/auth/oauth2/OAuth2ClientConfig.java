@@ -205,8 +205,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecretSupplier()
-        .map(Supplier::get)
-        .map(s -> BasicAuthenticationProvider.create(getClientId(), s));
+        .map(secretSupplier -> BasicAuthenticationProvider.create(getClientId(), secretSupplier));
   }
 
   /**
@@ -220,8 +219,10 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .flatMap(
             clientId ->
                 getImpersonationConfig()
-                    .getClientSecret()
-                    .map(s -> BasicAuthenticationProvider.create(clientId, s.getString())));
+                    .getClientSecretSupplier()
+                    .map(
+                        secretSupplier ->
+                            BasicAuthenticationProvider.create(clientId, secretSupplier)));
   }
 
   /**

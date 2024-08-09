@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -33,7 +34,7 @@ import org.projectnessie.client.http.impl.HttpHeaders;
 import org.projectnessie.client.http.impl.RequestContextImpl;
 
 class TestBasicAuthProvider {
-  @SuppressWarnings({"deprecation", "resource"})
+  @SuppressWarnings({"deprecation", "resource", "DataFlowIssue"})
   @Test
   void testNullParams() {
     assertAll(
@@ -60,10 +61,21 @@ class TestBasicAuthProvider {
             assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, "pass"))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> BasicAuthenticationProvider.create("user", null))
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create("user", (String) null))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, null))
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, () -> "pass"))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(
+                    () -> BasicAuthenticationProvider.create("user", (Supplier<String>) null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(() -> BasicAuthenticationProvider.create(null, (String) null))
+                .isInstanceOf(NullPointerException.class),
+        () ->
+            assertThatThrownBy(
+                    () -> BasicAuthenticationProvider.create(null, (Supplier<String>) null))
                 .isInstanceOf(NullPointerException.class));
   }
 
@@ -101,6 +113,13 @@ class TestBasicAuthProvider {
   @Test
   void testStaticBuilder() {
     checkAuth(BasicAuthenticationProvider.create("Aladdin", "OpenSesame"));
+  }
+
+  @Test
+  void testStaticBuilderFromSupplier() {
+    NessieAuthentication authentication =
+        BasicAuthenticationProvider.create("Aladdin", () -> "OpenSesame");
+    checkAuth(authentication);
   }
 
   void checkAuth(NessieAuthentication authentication) {
