@@ -38,7 +38,7 @@ class CatalogUriResolverImpl implements CatalogService.CatalogUriResolver {
         "trees/"
             + encode(effectiveReference.toPathString(), UTF_8)
             + "/snapshot/"
-            + encode(key.toPathString(), UTF_8)
+            + encode(key.toPathStringEscaped(), UTF_8)
             + "?format=iceberg");
   }
 }

@@ -16,6 +16,7 @@
 package org.projectnessie.client.rest.v2;
 
 import org.projectnessie.api.v2.params.DiffParams;
+import org.projectnessie.api.v2.params.ImmutableDiffJson;
 import org.projectnessie.client.builder.BaseGetDiffBuilder;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
@@ -26,10 +27,12 @@ import org.projectnessie.model.Reference;
 
 final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetDiff(HttpClient client) {
+  HttpGetDiff(HttpClient client, HttpApiV2 api) {
     super(DiffParams::forNextPage);
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -48,27 +51,33 @@ final class HttpGetDiff extends BaseGetDiffBuilder<DiffParams> {
 
   @Override
   public DiffResponse get(DiffParams params) throws NessieNotFoundException {
-    HttpRequest req =
-        client
-            .newRequest()
-            .path("trees/{from}/diff/{to}")
-            .resolveTemplate("from", params.getFromRef())
-            .resolveTemplate("to", params.getToRef())
-            .queryParam("max-records", params.maxRecords())
-            .queryParam("page-token", params.pageToken())
-            .queryParam("filter", params.getFilter());
-    params.getRequestedKeys().forEach(k -> req.queryParam("key", k.toPathString()));
+    HttpRequest req = client.newRequest();
+
+    if (api.isNessieSpec220()) {
+      return req.path("trees/.diff")
+          .unwrap(NessieNotFoundException.class)
+          .post(ImmutableDiffJson.builder().from(params).build())
+          .readEntity(DiffResponse.class);
+    }
+
+    req.path("trees/{from}/diff/{to}")
+        .resolveTemplate("from", params.getFromRef())
+        .resolveTemplate("to", params.getToRef())
+        .queryParam("max-records", params.maxRecords())
+        .queryParam("page-token", params.pageToken())
+        .queryParam("filter", params.getFilter());
+    params.getRequestedKeys().forEach(k -> req.queryParam("key", api.toPathString(k)));
     ContentKey k = params.minKey();
     if (k != null) {
-      req.queryParam("min-key", k.toPathString());
+      req.queryParam("min-key", api.toPathString(k));
     }
     k = params.maxKey();
     if (k != null) {
-      req.queryParam("max-key", k.toPathString());
+      req.queryParam("max-key", api.toPathString(k));
     }
     k = params.prefixKey();
     if (k != null) {
-      req.queryParam("prefix-key", k.toPathString());
+      req.queryParam("prefix-key", api.toPathString(k));
     }
     return req.unwrap(NessieNotFoundException.class).get().readEntity(DiffResponse.class);
   }

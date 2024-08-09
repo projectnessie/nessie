@@ -25,45 +25,231 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.projectnessie.model.types.ContentTypes;
 import org.projectnessie.model.types.RepositoryConfigTypes;
 
 final class Util {
 
+  public static final char DOT = '.';
+  public static final char SLASH = '/';
+  public static final char BACKSLASH = '\\';
+  public static final char PERCENT = '%';
+  public static final char ESCAPE_FOR_DOT = '_';
+  public static final char ESCAPE_FOR_SLASH = '{';
+  public static final char ESCAPE_FOR_BACKSLASH = '}';
+  public static final char ESCAPE_FOR_PERCENT = '[';
+  public static final String ESCAPE_STRING_FOR_DOT = "" + DOT + ESCAPE_FOR_DOT;
+  public static final String ESCAPE_STRING_FOR_SLASH = "" + DOT + ESCAPE_FOR_SLASH;
+  public static final String ESCAPE_STRING_FOR_BACKSLASH = "" + DOT + ESCAPE_FOR_BACKSLASH;
+  public static final String ESCAPE_STRING_FOR_PERCENT = "" + DOT + ESCAPE_FOR_PERCENT;
+
   private Util() {}
 
   public static final int FIRST_ALLOWED_KEY_CHAR = 0x20;
   public static final char ZERO_BYTE = '\u0000';
-  public static final char DOT = '.';
   public static final char GROUP_SEPARATOR = '\u001D';
-  public static final char URL_PATH_SEPARATOR = '/';
+  public static final char URL_PATH_SEPARATOR = SLASH;
   public static final String DOT_STRING = ".";
   public static final char REF_HASH_SEPARATOR = '@';
 
   /**
-   * Convert from path encoded string to normal string.
-   *
-   * @param encoded Path encoded string
-   * @return Actual key.
+   * Convert from path encoded string to elements, see {@link
+   * Elements#elementsFromPathString(String)}.
    */
   public static List<String> fromPathString(String encoded) {
-    return Arrays.stream(encoded.split("\\."))
-        .map(x -> x.replace(GROUP_SEPARATOR, DOT).replace(ZERO_BYTE, DOT))
-        .collect(Collectors.toList());
+    List<String> elements = new ArrayList<>();
+    int l = encoded.length();
+    StringBuilder e = new StringBuilder();
+    boolean escaped = false;
+    for (int i = 0; i < l; i++) {
+      char c = encoded.charAt(i);
+      switch (c) {
+        case DOT:
+          if (!escaped) {
+            if (e.length() == 0) {
+              // Got a '.' at the beginning of an element. This and all following elements are
+              // escaped.
+              escaped = true;
+            } else {
+              elements.add(e.toString());
+              e.setLength(0);
+            }
+          } else {
+            c = encoded.charAt(++i);
+            switch (c) {
+              case ESCAPE_FOR_DOT:
+                e.append(DOT);
+                break;
+              case ESCAPE_FOR_SLASH:
+                e.append(SLASH);
+                break;
+              case ESCAPE_FOR_BACKSLASH:
+                e.append(BACKSLASH);
+                break;
+              case ESCAPE_FOR_PERCENT:
+                e.append(PERCENT);
+                break;
+              case DOT:
+                elements.add(e.toString());
+                e.setLength(0);
+                break;
+              default:
+                // Any other character, that character is the first character of the _next_ element;
+                // throw new IllegalArgumentException("Illegal escape sequence character '"+c+" at
+                // index : " + c);
+                --i;
+                elements.add(e.toString());
+                e.setLength(0);
+                break;
+            }
+          }
+          break;
+        case GROUP_SEPARATOR:
+        case ZERO_BYTE:
+          e.append(DOT);
+          break;
+        default:
+          e.append(c);
+          break;
+      }
+    }
+    if (e.length() > 0) {
+      elements.add(e.toString());
+    }
+    return elements;
+  }
+
+  /** Escapes content-key elements, see {@link Elements#toPathString()}. */
+  public static String toPathString(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append('.');
+      }
+      int l = element.length();
+      for (int i = 0; i < l; i++) {
+        char c = element.charAt(i);
+        sb.append(c == DOT || c == ZERO_BYTE ? GROUP_SEPARATOR : c);
+      }
+    }
+    return sb.toString();
+  }
+
+  /** Escapes content-key elements, see {@link Elements#toPathStringEscaped()}. */
+  public static String toPathStringEscaped(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
+        }
+      }
+      escaped = escapePathElement(element, sb, escaped);
+    }
+    return sb.toString();
+  }
+
+  /** Escapes all characters, that are "problematic" in URI paths. */
+  static boolean escapePathElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      switch (c) {
+        case DOT:
+        case SLASH:
+        case BACKSLASH:
+        case PERCENT:
+          if (!escaped) {
+            // Not yet "escaped", let the first escaped element start with a '.'
+            if (sb.length() > sbl) {
+              sb.insert(sbl, DOT);
+            } else {
+              sb.append(DOT);
+            }
+            escaped = true;
+          }
+          for (; i < l; i++) {
+            c = element.charAt(i);
+            switch (c) {
+              case DOT:
+                sb.append(ESCAPE_STRING_FOR_DOT);
+                break;
+              case SLASH:
+                sb.append(ESCAPE_STRING_FOR_SLASH);
+                break;
+              case BACKSLASH:
+                sb.append(ESCAPE_STRING_FOR_BACKSLASH);
+                break;
+              case PERCENT:
+                sb.append(ESCAPE_STRING_FOR_PERCENT);
+                break;
+              default:
+                sb.append(c);
+                break;
+            }
+          }
+          break;
+        default:
+          sb.append(c);
+          break;
+      }
+    }
+    return escaped;
+  }
+
+  /** Escapes content-key elements, see {@link Elements#toCanonicalString()}. */
+  public static String toCanonicalString(List<String> elements) {
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (String element : elements) {
+      if (sb.length() > 0) {
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
+        }
+      }
+      escaped = escapeCanonicalElement(element, sb, escaped);
+    }
+    return sb.toString();
   }
 
   /**
-   * Convert these elements to a URL encoded path string.
-   *
-   * @return String encoded for path use.
+   * Similar to {@link #escapePathElement(String, StringBuilder, boolean)}, but escapes only the
+   * {@value #DOT} character.
    */
-  public static String toPathString(List<String> elements) {
-    return elements.stream()
-        .map(x -> x.replace(DOT, GROUP_SEPARATOR).replace(ZERO_BYTE, GROUP_SEPARATOR))
-        .collect(Collectors.joining("."));
+  static boolean escapeCanonicalElement(String element, StringBuilder sb, boolean escaped) {
+    int sbl = sb.length();
+    int l = element.length();
+    for (int i = 0; i < l; i++) {
+      char c = element.charAt(i);
+      if (c == DOT) {
+        if (!escaped) {
+          // Not yet "escaped", let the first escaped element start with a '.'
+          if (sb.length() > sbl) {
+            sb.insert(sbl, DOT);
+          } else {
+            sb.append(DOT);
+          }
+          escaped = true;
+        }
+        for (; i < l; i++) {
+          c = element.charAt(i);
+          if (c == DOT) {
+            sb.append(ESCAPE_STRING_FOR_DOT);
+          } else {
+            sb.append(c);
+          }
+        }
+      } else {
+        sb.append(c);
+      }
+    }
+    return escaped;
   }
 
   public static String toPathStringRef(String name, String hash) {

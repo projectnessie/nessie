@@ -27,14 +27,22 @@ import jakarta.ws.rs.Path;
 import java.util.List;
 import java.util.Locale;
 import org.projectnessie.api.v2.http.HttpTreeApi;
+import org.projectnessie.api.v2.params.CommitLogJson;
 import org.projectnessie.api.v2.params.CommitLogParams;
+import org.projectnessie.api.v2.params.CommitLogSpec;
+import org.projectnessie.api.v2.params.DiffJson;
 import org.projectnessie.api.v2.params.DiffParams;
+import org.projectnessie.api.v2.params.DiffParamsSpec;
+import org.projectnessie.api.v2.params.EntriesJson;
 import org.projectnessie.api.v2.params.EntriesParams;
+import org.projectnessie.api.v2.params.EntriesParamsSpec;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.api.v2.params.ReferenceHistoryParams;
+import org.projectnessie.api.v2.params.ReferencesJson;
 import org.projectnessie.api.v2.params.ReferencesParams;
+import org.projectnessie.api.v2.params.ReferencesSpec;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -119,7 +127,17 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
+  public ReferencesResponse getAllReferencesPost(ReferencesJson params) {
+    return getAllReferencesImpl(params);
+  }
+
+  @JsonView(Views.V2.class)
+  @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
+    return getAllReferencesImpl(params);
+  }
+
+  ReferencesResponse getAllReferencesImpl(ReferencesSpec params) {
     Integer maxRecords = params.maxRecords();
     return tree()
         .getAllReferences(
@@ -192,7 +210,19 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
+  public EntriesResponse getEntriesPost(String ref, EntriesJson params)
+      throws NessieNotFoundException {
+    return getEntriesImpl(ref, params);
+  }
+
+  @JsonView(Views.V2.class)
+  @Override
   public EntriesResponse getEntries(String ref, EntriesParams params)
+      throws NessieNotFoundException {
+    return getEntriesImpl(ref, params);
+  }
+
+  EntriesResponse getEntriesImpl(String ref, EntriesParamsSpec params)
       throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     Integer maxRecords = params.maxRecords();
@@ -231,8 +261,19 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
+  public LogResponse getCommitLogPost(String ref, CommitLogJson params)
+      throws NessieNotFoundException {
+    return getCommitLogImpl(ref, params);
+  }
+
+  @JsonView(Views.V2.class)
+  @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
+    return getCommitLogImpl(ref, params);
+  }
+
+  LogResponse getCommitLogImpl(String ref, CommitLogSpec params) throws NessieNotFoundException {
     ParsedReference reference = parseRefPathString(ref);
     Integer maxRecords = params.maxRecords();
     return tree()
@@ -266,7 +307,17 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @JsonView(Views.V2.class)
   @Override
+  public DiffResponse getDiffPost(DiffJson params) throws NessieNotFoundException {
+    return getDiffImpl(params);
+  }
+
+  @JsonView(Views.V2.class)
+  @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
+    return getDiffImpl(params);
+  }
+
+  DiffResponse getDiffImpl(DiffParamsSpec params) throws NessieNotFoundException {
     Integer maxRecords = params.maxRecords();
     ParsedReference from = parseRefPathString(params.getFromRef());
     ParsedReference to = parseRefPathString(params.getToRef());

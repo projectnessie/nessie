@@ -51,12 +51,16 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.projectnessie.api.v2.TreeApi;
+import org.projectnessie.api.v2.params.CommitLogJson;
 import org.projectnessie.api.v2.params.CommitLogParams;
+import org.projectnessie.api.v2.params.DiffJson;
 import org.projectnessie.api.v2.params.DiffParams;
+import org.projectnessie.api.v2.params.EntriesJson;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.api.v2.params.ReferenceHistoryParams;
+import org.projectnessie.api.v2.params.ReferencesJson;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -91,7 +95,8 @@ public interface HttpTreeApi extends TreeApi {
   @Produces(MediaType.APPLICATION_JSON)
   @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(
-      summary = "Get information about all branches and tags",
+      summary =
+          "Get information about all branches and tags.\n\nThe POST method variant should be preferred.",
       operationId = "getAllReferencesV2")
   @APIResponses({
     @APIResponse(
@@ -109,6 +114,36 @@ public interface HttpTreeApi extends TreeApi {
   })
   @JsonView(Views.V2.class)
   ReferencesResponse getAllReferences(@BeanParam @jakarta.ws.rs.BeanParam ReferencesParams params);
+
+  @Override
+  @POST
+  @jakarta.ws.rs.POST
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Path(".all")
+  @jakarta.ws.rs.Path(".all")
+  @Operation(
+      summary =
+          "Get information about all branches and tags.\n\nAvailable since Nessie spec 2.2.0.",
+      operationId = "getAllReferencesPostV2")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Returned references.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = {
+                  @ExampleObject(ref = "referencesResponse"),
+                  @ExampleObject(ref = "referencesResponseWithMetadata")
+                },
+                schema = @Schema(implementation = ReferencesResponse.class))),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+  })
+  @JsonView(Views.V2.class)
+  ReferencesResponse getAllReferencesPost(
+      @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON))
+          ReferencesJson params);
 
   @Override
   @POST
@@ -247,7 +282,8 @@ public interface HttpTreeApi extends TreeApi {
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
   @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
   @Operation(
-      summary = "Fetch all entries for a given reference",
+      summary =
+          "Fetch all entries for a given reference.\n\nThe POST method variant should be preferred.",
       description =
           "Retrieves objects for a ref, potentially truncated by the backend.\n"
               + "\n"
@@ -311,6 +347,78 @@ public interface HttpTreeApi extends TreeApi {
       throws NessieNotFoundException;
 
   @Override
+  @POST
+  @jakarta.ws.rs.POST
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/entries")
+  @Operation(
+      summary = "Fetch all entries for a given reference.\n\nAvailable since Nessie spec 2.2.0.",
+      description =
+          "Retrieves objects for a ref, potentially truncated by the backend.\n"
+              + "\n"
+              + "Retrieves up to 'maxRecords' entries for the "
+              + "given named reference (tag or branch) or the given hash. "
+              + "The backend may respect the given 'max' records hint, but return less or more entries. "
+              + "Backends may also cap the returned entries at a hard-coded limit, the default "
+              + "REST server implementation has such a hard-coded limit.\n"
+              + "\n"
+              + PAGING_INFO
+              + "\n"
+              + "The 'filter' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n",
+      operationId = "getEntriesPostV2")
+  @APIResponses({
+    @APIResponse(
+        description = "List names and object types in a contents tree",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {@ExampleObject(ref = "entriesResponseV2")},
+              schema = @Schema(implementation = EntriesResponse.class))
+        }),
+    @APIResponse(responseCode = "200", description = "Returned successfully."),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or fetch entries for it"),
+    @APIResponse(responseCode = "404", description = "Ref not found")
+  })
+  @JsonView(Views.V2.class)
+  EntriesResponse getEntriesPost(
+      @Parameter(
+              schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
+              description = REF_PARAMETER_DESCRIPTION,
+              examples = {
+                @ExampleObject(ref = "ref"),
+                @ExampleObject(ref = "refWithHash"),
+                @ExampleObject(
+                    ref = "refWithTimestampMillisSinceEpoch",
+                    description =
+                        "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
+                @ExampleObject(
+                    ref = "refWithTimestampInstant",
+                    description = "The commit 'valid for' the given ISO-8601 instant on main"),
+                @ExampleObject(
+                    ref = "refWithNthPredecessor",
+                    description = "The 10th commit from HEAD of main"),
+                @ExampleObject(
+                    ref = "refWithMergeParent",
+                    description =
+                        "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
+                @ExampleObject(ref = "refDefault"),
+                @ExampleObject(ref = "refDetached"),
+              })
+          @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
+          String ref,
+      @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON))
+          EntriesJson params)
+      throws NessieNotFoundException;
+
+  @Override
   @GET
   @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -318,7 +426,8 @@ public interface HttpTreeApi extends TreeApi {
   @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
   @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
   @Operation(
-      summary = "Get commit log for a particular reference",
+      summary =
+          "Get commit log for a particular reference.\n\nThe POST method variant should be preferred.",
       description =
           "Retrieve the commit log for a reference, potentially truncated by the backend.\n"
               + "\n"
@@ -386,6 +495,82 @@ public interface HttpTreeApi extends TreeApi {
       throws NessieNotFoundException;
 
   @Override
+  @POST
+  @jakarta.ws.rs.POST
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
+  @jakarta.ws.rs.Path("{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/history")
+  @Operation(
+      summary = "Get commit log for a particular reference.\n\nAvailable since Nessie spec 2.2.0.",
+      description =
+          "Retrieve the commit log for a reference, potentially truncated by the backend.\n"
+              + "\n"
+              + "The backend may respect the given 'max-entries' records hint, or may return more or less entries. "
+              + "Backends may also cap the returned entries at a hard-coded limit\n"
+              + "\n"
+              + PAGING_INFO
+              + "\n"
+              + "The 'filter' parameter allows for advanced filtering capabilities using the Common Expression Language (CEL).\n"
+              + "An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
+              + "\n"
+              + "The fetching of the log starts from the HEAD of the given ref (or a more specific commit, if provided "
+              + "as part of the 'ref' path element) and proceeds until the 'root' commit or the 'limit-hash' commit "
+              + "are encountered.",
+      operationId = "getCommitLogPostV2")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Returned commits.",
+        content = {
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              examples = {
+                @ExampleObject(ref = "logResponseAdditionalInfo"),
+                @ExampleObject(ref = "logResponseSimple")
+              },
+              schema = @Schema(implementation = LogResponse.class))
+        }),
+    @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(
+        responseCode = "403",
+        description = "Not allowed to view the given reference or get commit log for it"),
+    @APIResponse(responseCode = "404", description = "Ref doesn't exists")
+  })
+  @JsonView(Views.V2.class)
+  LogResponse getCommitLogPost(
+      @Parameter(
+              schema = @Schema(pattern = REF_NAME_PATH_ELEMENT_REGEX),
+              description = REF_PARAMETER_DESCRIPTION,
+              examples = {
+                @ExampleObject(ref = "ref"),
+                @ExampleObject(ref = "refWithHash"),
+                @ExampleObject(
+                    ref = "refWithTimestampMillisSinceEpoch",
+                    description =
+                        "The commit 'valid for' the timestamp 1685185847230 in ms since epoch on main"),
+                @ExampleObject(
+                    ref = "refWithTimestampInstant",
+                    description = "The commit 'valid for' the given ISO-8601 instant on main"),
+                @ExampleObject(
+                    ref = "refWithNthPredecessor",
+                    description = "The 10th commit from HEAD of main"),
+                @ExampleObject(
+                    ref = "refWithMergeParent",
+                    description =
+                        "References the merge-parent of commit 2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d on main"),
+                @ExampleObject(ref = "refDefault"),
+                @ExampleObject(ref = "refDetached"),
+              })
+          @PathParam("ref")
+          @jakarta.ws.rs.PathParam("ref")
+          String ref,
+      @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON))
+          CommitLogJson params)
+      throws NessieNotFoundException;
+
+  @Override
   @GET
   @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -403,7 +588,8 @@ public interface HttpTreeApi extends TreeApi {
           + REF_NAME_PATH_ELEMENT_REGEX
           + "}")
   @Operation(
-      summary = "Get contents that differ in the trees specified by the two given references",
+      summary =
+          "Get contents that differ in the trees specified by the two given references.\n\nThe POST method variant should be preferred.",
       description =
           "The URL pattern is basically 'from' and 'to' reference specs separated by '/diff/'\n"
               + "\n"
@@ -434,6 +620,50 @@ public interface HttpTreeApi extends TreeApi {
   })
   @JsonView(Views.V2.class)
   DiffResponse getDiff(@BeanParam @jakarta.ws.rs.BeanParam DiffParams params)
+      throws NessieNotFoundException;
+
+  @Override
+  @POST
+  @jakarta.ws.rs.POST
+  @Produces(MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Path(".diff")
+  @jakarta.ws.rs.Path(".diff")
+  @Operation(
+      summary =
+          "Get contents that differ in the trees specified by the two given references.\n\nAvailable since Nessie spec 2.2.0.",
+      description =
+          "The URL pattern is basically 'from' and 'to' reference specs separated by '/diff/'\n"
+              + "\n"
+              + "Examples: \n"
+              + "- main/diff/myBranch\n"
+              + "- main@1234567890123456/diff/myBranch\n"
+              + "- main@1234567890123456/diff/myBranch@23445678\n"
+              + "- main/diff/myBranch@23445678\n"
+              + "- main/diff/myBranch@23445678\n"
+              + "- my/branch@/diff/main\n"
+              + "- myBranch/diff/-\n",
+      operationId = "getDiffPostV2")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Returned diff for the given references.",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                examples = {
+                  @ExampleObject(ref = "diffResponseWithRef"),
+                },
+                schema = @Schema(implementation = DiffResponse.class))),
+    @APIResponse(responseCode = "400", description = "Invalid input, fromRef/toRef name not valid"),
+    @APIResponse(responseCode = "401", description = "Invalid credentials provided"),
+    @APIResponse(responseCode = "403", description = "Not allowed to view the given fromRef/toRef"),
+    @APIResponse(responseCode = "404", description = "fromRef/toRef not found"),
+  })
+  @JsonView(Views.V2.class)
+  DiffResponse getDiffPost(
+      @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON))
+          DiffJson params)
       throws NessieNotFoundException;
 
   @Override

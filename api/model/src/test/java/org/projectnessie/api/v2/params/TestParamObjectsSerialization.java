@@ -18,9 +18,11 @@ package org.projectnessie.api.v2.params;
 import static org.projectnessie.model.JsonUtil.arrayNode;
 import static org.projectnessie.model.JsonUtil.objectNode;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.Arrays;
 import java.util.List;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.TestModelObjectsSerialization;
@@ -39,6 +41,90 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
     final String branchName = "testBranch";
 
     return Arrays.asList(
+        new Case(ReferencesJson.class)
+            .obj(
+                ImmutableReferencesJson.builder()
+                    .maxRecords(999)
+                    .pageToken("pageToken")
+                    .fetchOption(FetchOption.ALL)
+                    .filter("my CEL filter")
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("maxRecords", 999)
+                        .put("pageToken", "pageToken")
+                        .put("filter", "my CEL filter")
+                        .put("fetchOption", "ALL")),
+        new Case(CommitLogJson.class)
+            .obj(
+                ImmutableCommitLogJson.builder()
+                    .startHash("startHashValue")
+                    .maxRecords(999)
+                    .pageToken("pageToken")
+                    .filter("my CEL filter")
+                    .fetchOption(FetchOption.ALL)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("limitHash", "startHashValue")
+                        .put("maxRecords", 999)
+                        .put("pageToken", "pageToken")
+                        .put("filter", "my CEL filter")
+                        .put("fetchOption", "ALL")),
+        new Case(EntriesJson.class)
+            .obj(
+                ImmutableEntriesJson.builder()
+                    .maxRecords(999)
+                    .pageToken("pageToken")
+                    .minKey(ContentKey.of("abc", "def"))
+                    .maxKey(ContentKey.of("xyz", "foo"))
+                    .prefixKey(ContentKey.of("ddd"))
+                    .requestedKeys(List.of(ContentKey.of("1", "1"), ContentKey.of("2", "2")))
+                    .filter("my CEL filter")
+                    .withContent(true)
+                    .build())
+            .jsonNode(
+                o -> {
+                  o.put("filter", "my CEL filter")
+                      .put("maxRecords", 999)
+                      .put("pageToken", "pageToken")
+                      .put("withContent", true);
+                  ArrayNode arr = o.withArray("requestedKeys");
+                  arr.addObject().withArray("elements").add("1").add("1");
+                  arr.addObject().withArray("elements").add("2").add("2");
+
+                  o.withObject("minKey").withArray("elements").add("abc").add("def");
+                  o.withObject("maxKey").withArray("elements").add("xyz").add("foo");
+                  o.withObject("prefixKey").withArray("elements").add("ddd");
+                }),
+        new Case(DiffJson.class)
+            .obj(
+                ImmutableDiffJson.builder()
+                    .fromRef("fromRefName")
+                    .toRef("toRefName")
+                    .maxRecords(999)
+                    .pageToken("pageToken")
+                    .minKey(ContentKey.of("abc", "def"))
+                    .maxKey(ContentKey.of("xyz", "foo"))
+                    .prefixKey(ContentKey.of("ddd"))
+                    .requestedKeys(List.of(ContentKey.of("1", "1"), ContentKey.of("2", "2")))
+                    .filter("my CEL filter")
+                    .build())
+            .jsonNode(
+                o -> {
+                  o.put("fromRef", "fromRefName")
+                      .put("toRef", "toRefName")
+                      .put("filter", "my CEL filter")
+                      .put("maxRecords", 999)
+                      .put("pageToken", "pageToken");
+                  ArrayNode arr = o.withArray("requestedKeys");
+                  arr.addObject().withArray("elements").add("1").add("1");
+                  arr.addObject().withArray("elements").add("2").add("2");
+
+                  o.withObject("minKey").withArray("elements").add("abc").add("def");
+                  o.withObject("maxKey").withArray("elements").add("xyz").add("foo");
+                  o.withObject("prefixKey").withArray("elements").add("ddd");
+                }),
         new Case(Transplant.class)
             .obj(
                 ImmutableTransplant.builder()

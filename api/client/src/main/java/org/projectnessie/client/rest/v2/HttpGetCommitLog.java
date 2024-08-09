@@ -16,8 +16,10 @@
 package org.projectnessie.client.rest.v2;
 
 import org.projectnessie.api.v2.params.CommitLogParams;
+import org.projectnessie.api.v2.params.ImmutableCommitLogJson;
 import org.projectnessie.client.builder.BaseGetCommitLogBuilder;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.LogResponse;
@@ -26,10 +28,12 @@ import org.projectnessie.model.Reference;
 final class HttpGetCommitLog extends BaseGetCommitLogBuilder<CommitLogParams> {
 
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetCommitLog(HttpClient client) {
+  HttpGetCommitLog(HttpClient client, HttpApiV2 api) {
     super(CommitLogParams::forNextPage);
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -44,13 +48,19 @@ final class HttpGetCommitLog extends BaseGetCommitLogBuilder<CommitLogParams> {
 
   @Override
   protected LogResponse get(CommitLogParams p) throws NessieNotFoundException {
-    return client
-        .newRequest()
-        .path("trees/{ref}/history")
-        .resolveTemplate(
-            "ref",
-            Reference.toPathString(refName, hashOnRef)) // TODO: move refName, hashOnRef to params
-        .queryParam("max-records", p.maxRecords())
+    HttpRequest req =
+        client
+            .newRequest()
+            .path("trees/{ref}/history")
+            .resolveTemplate("ref", Reference.toPathString(refName, hashOnRef));
+
+    if (api.isNessieSpec220()) {
+      return req.unwrap(NessieNotFoundException.class)
+          .post(ImmutableCommitLogJson.builder().from(p).build())
+          .readEntity(LogResponse.class);
+    }
+
+    return req.queryParam("max-records", p.maxRecords())
         .queryParam("page-token", p.pageToken())
         .queryParam("filter", p.filter())
         .queryParam("limit-hash", p.startHash())

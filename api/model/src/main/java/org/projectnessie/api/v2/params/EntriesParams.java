@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.ENTRIES_FILTER;
 import static org.projectnessie.api.v2.doc.ApiDoc.REQUESTED_KEY_PARAMETER_DESCRIPTION;
 
 import java.util.List;
@@ -32,7 +33,7 @@ import org.projectnessie.model.ContentKey;
  * <p>For easier usage of this class, there is {@link EntriesParams#builder()}, which allows
  * configuring/setting the different parameters.
  */
-public class EntriesParams extends KeyRangeParams<EntriesParams> {
+public class EntriesParams extends KeyRangeParams<EntriesParams> implements EntriesParamsSpec {
 
   @Parameter(description = REQUESTED_KEY_PARAMETER_DESCRIPTION)
   @QueryParam("key")
@@ -42,9 +43,7 @@ public class EntriesParams extends KeyRangeParams<EntriesParams> {
   @Nullable
   @jakarta.annotation.Nullable
   @Parameter(
-      description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-              + "Usable variables within the expression are 'entry.namespace' (string) & 'entry.contentType' (string)",
+      description = ENTRIES_FILTER,
       examples = {
         @ExampleObject(ref = "expr_by_namespace"),
         @ExampleObject(ref = "expr_by_contentType"),
@@ -87,16 +86,19 @@ public class EntriesParams extends KeyRangeParams<EntriesParams> {
     return builder().build();
   }
 
+  @Override
   public List<ContentKey> getRequestedKeys() {
     return requestedKeys;
   }
 
   @Nullable
   @jakarta.annotation.Nullable
+  @Override
   public String filter() {
     return filter;
   }
 
+  @Override
   public boolean withContent() {
     return withContent != null && withContent;
   }

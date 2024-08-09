@@ -15,6 +15,7 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.projectnessie.api.v2.doc.ApiDoc.DIFF_FILTER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REQUESTED_KEY_PARAMETER_DESCRIPTION;
 
@@ -37,7 +38,7 @@ import org.projectnessie.model.Validation;
  * intention is to allow clients to request a diff on a sub-set of keys (e.g. in one particular
  * namespace) or just for one particular key.
  */
-public class DiffParams extends KeyRangeParams<DiffParams> {
+public class DiffParams extends KeyRangeParams<DiffParams> implements DiffParamsSpec {
 
   @NotNull
   @jakarta.validation.constraints.NotNull
@@ -89,11 +90,7 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
   @jakarta.ws.rs.QueryParam("key")
   private List<ContentKey> requestedKeys;
 
-  @Parameter(
-      description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
-              + "Usable variables within the expression are:\n\n"
-              + "- 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)")
+  @Parameter(description = DIFF_FILTER_DESCRIPTION)
   @QueryParam("filter")
   @jakarta.ws.rs.QueryParam("filter")
   private String filter;

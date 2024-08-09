@@ -15,19 +15,23 @@
  */
 package org.projectnessie.client.rest.v2;
 
+import org.projectnessie.api.v2.params.ImmutableReferencesJson;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.client.builder.BaseGetAllReferencesBuilder;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.ReferencesResponse;
 
 final class HttpGetAllReferences extends BaseGetAllReferencesBuilder<ReferencesParams> {
 
   private final HttpClient client;
+  private final HttpApiV2 api;
 
-  HttpGetAllReferences(HttpClient client) {
+  HttpGetAllReferences(HttpClient client, HttpApiV2 api) {
     super(ReferencesParams::forNextPage);
     this.client = client;
+    this.api = api;
   }
 
   @Override
@@ -41,9 +45,15 @@ final class HttpGetAllReferences extends BaseGetAllReferencesBuilder<ReferencesP
 
   @Override
   protected ReferencesResponse get(ReferencesParams p) {
-    return client
-        .newRequest()
-        .path("trees")
+    HttpRequest req = client.newRequest();
+
+    if (api.isNessieSpec220()) {
+      return req.path("trees/.all")
+          .post(ImmutableReferencesJson.builder().from(p).build())
+          .readEntity(ReferencesResponse.class);
+    }
+
+    return req.path("trees")
         .queryParam("fetch", FetchOption.getFetchOptionName(p.fetchOption()))
         .queryParam("max-records", p.maxRecords())
         .queryParam("page-token", p.pageToken())

@@ -19,12 +19,16 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import org.projectnessie.api.v2.params.CommitLogJson;
 import org.projectnessie.api.v2.params.CommitLogParams;
+import org.projectnessie.api.v2.params.DiffJson;
 import org.projectnessie.api.v2.params.DiffParams;
+import org.projectnessie.api.v2.params.EntriesJson;
 import org.projectnessie.api.v2.params.EntriesParams;
 import org.projectnessie.api.v2.params.GetReferenceParams;
 import org.projectnessie.api.v2.params.Merge;
 import org.projectnessie.api.v2.params.ReferenceHistoryParams;
+import org.projectnessie.api.v2.params.ReferencesJson;
 import org.projectnessie.api.v2.params.ReferencesParams;
 import org.projectnessie.api.v2.params.Transplant;
 import org.projectnessie.error.NessieConflictException;
@@ -70,6 +74,9 @@ public interface TreeApi {
    * @return A {@link ReferencesResponse} instance containing all references.
    */
   ReferencesResponse getAllReferences(ReferencesParams params);
+
+  /** Same as {@link #getAllReferences(ReferencesParams)}, but uses HTTP {@code POST}. */
+  ReferencesResponse getAllReferencesPost(ReferencesJson params);
 
   /**
    * Create a new reference.
@@ -159,6 +166,23 @@ public interface TreeApi {
           EntriesParams params)
       throws NessieNotFoundException;
 
+  /** Same as {@link #getEntries(String, EntriesParams)}, but uses HTTP {@code POST}. */
+  EntriesResponse getEntriesPost(
+      @Valid
+          @jakarta.validation.Valid
+          @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          String refName,
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          EntriesJson params)
+      throws NessieNotFoundException;
+
   /**
    * Retrieve the commit log for a ref, potentially truncated by the backend.
    *
@@ -192,6 +216,23 @@ public interface TreeApi {
           CommitLogParams params)
       throws NessieNotFoundException;
 
+  /** Same as {@link #getCommitLog(String, CommitLogParams)}, but uses HTTP {@code POST}. */
+  LogResponse getCommitLogPost(
+      @Valid
+          @jakarta.validation.Valid
+          @NotNull
+          @jakarta.validation.constraints.NotNull
+          @Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          @jakarta.validation.constraints.Pattern(
+              regexp = Validation.REF_NAME_PATH_REGEX,
+              message = Validation.REF_NAME_PATH_MESSAGE)
+          String ref,
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          CommitLogJson params)
+      throws NessieNotFoundException;
+
   /**
    * Returns a set of content differences between two given references.
    *
@@ -201,6 +242,12 @@ public interface TreeApi {
   DiffResponse getDiff(
       @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
           DiffParams params)
+      throws NessieNotFoundException;
+
+  /** Same as {@link #getDiff(DiffParams)}, using HTTP {@code POST}. */
+  DiffResponse getDiffPost(
+      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
+          DiffJson params)
       throws NessieNotFoundException;
 
   /**
