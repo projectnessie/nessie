@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 import org.immutables.value.Value;
 import org.projectnessie.client.NessieConfigConstants;
@@ -202,9 +203,21 @@ public interface OAuth2AuthenticatorConfig {
   /**
    * The OAuth2 client secret. Must be set, if required by the IdP.
    *
+   * @deprecated Use {@link #getClientSecretSupplier()} instead.
+   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  @Value.Derived
+  default Optional<Secret> getClientSecret() {
+    return getClientSecretSupplier().map(Supplier::get).map(Secret::new);
+  }
+
+  /**
+   * The OAuth2 client secret supplier. Must be set, if required by the IdP.
+   *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SECRET
    */
-  Optional<Secret> getClientSecret();
+  Optional<Supplier<String>> getClientSecretSupplier();
 
   /**
    * The OAuth2 username. Only relevant for {@link GrantType#PASSWORD} grant type.
@@ -216,9 +229,21 @@ public interface OAuth2AuthenticatorConfig {
   /**
    * The OAuth2 password. Only relevant for {@link GrantType#PASSWORD} grant type.
    *
+   * @deprecated Use {@link #getPasswordSupplier()} instead.
+   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  @Value.Derived
+  default Optional<Secret> getPassword() {
+    return getPasswordSupplier().map(Supplier::get).map(Secret::new);
+  }
+
+  /**
+   * The OAuth2 password supplier. Only relevant for {@link GrantType#PASSWORD} grant type.
+   *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_PASSWORD
    */
-  Optional<Secret> getPassword();
+  Optional<Supplier<String>> getPasswordSupplier();
 
   @Value.Derived
   @Deprecated
@@ -411,20 +436,36 @@ public interface OAuth2AuthenticatorConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecret(Secret clientSecret);
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
 
+    @CanIgnoreReturnValue
+    @Deprecated
+    default Builder clientSecret(Secret clientSecret) {
+      return clientSecretSupplier(clientSecret::getString);
+    }
+
+    @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      return clientSecret(new Secret(clientSecret));
+      char[] chars = clientSecret.toCharArray();
+      return clientSecretSupplier(() -> new String(chars));
     }
 
     @CanIgnoreReturnValue
     Builder username(String username);
 
     @CanIgnoreReturnValue
-    Builder password(Secret password);
+    Builder passwordSupplier(Supplier<String> password);
 
+    @CanIgnoreReturnValue
+    @Deprecated
+    default Builder password(Secret password) {
+      return passwordSupplier(password::getString);
+    }
+
+    @CanIgnoreReturnValue
     default Builder password(String password) {
-      return password(new Secret(password));
+      char[] chars = password.toCharArray();
+      return passwordSupplier(() -> new String(chars));
     }
 
     @CanIgnoreReturnValue

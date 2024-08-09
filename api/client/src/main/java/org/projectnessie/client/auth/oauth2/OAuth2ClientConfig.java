@@ -130,7 +130,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
   @Value.Derived
   boolean isPublicClient() {
-    return !getClientSecret().isPresent();
+    return !getClientSecretSupplier().isPresent();
   }
 
   @Value.Lazy
@@ -204,8 +204,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
    */
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
-    return getClientSecret()
-        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()));
+    return getClientSecretSupplier()
+        .map(Supplier::get)
+        .map(s -> BasicAuthenticationProvider.create(getClientId(), s));
   }
 
   /**
@@ -263,7 +264,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     check(
         violations,
         CONF_NESSIE_OAUTH2_GRANT_TYPE + " / " + CONF_NESSIE_OAUTH2_CLIENT_SECRET,
-        getClientSecret().isPresent() || getGrantType() != GrantType.CLIENT_CREDENTIALS,
+        getClientSecretSupplier().isPresent() || getGrantType() != GrantType.CLIENT_CREDENTIALS,
         "client secret must not be empty when grant type is '%s'",
         CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS);
     check(
@@ -316,7 +317,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
       check(
           violations,
           CONF_NESSIE_OAUTH2_PASSWORD,
-          getPassword().isPresent() && getPassword().get().isNotEmpty(),
+          getPasswordSupplier().isPresent(),
           "password must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
     }
@@ -445,21 +446,35 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     @Override
     Builder clientId(String clientId);
 
-    @Override
-    Builder clientSecret(Secret clientSecret);
+    @CanIgnoreReturnValue
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
 
+    @CanIgnoreReturnValue
+    @SuppressWarnings("deprecation")
+    default Builder clientSecret(Secret clientSecret) {
+      return clientSecretSupplier(clientSecret::getString);
+    }
+
+    @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      return clientSecret(new Secret(clientSecret));
+      return clientSecretSupplier(() -> clientSecret);
     }
 
     @Override
     Builder username(String username);
 
-    @Override
-    Builder password(Secret password);
+    @CanIgnoreReturnValue
+    Builder passwordSupplier(Supplier<String> password);
 
+    @CanIgnoreReturnValue
+    @SuppressWarnings("deprecation")
+    default Builder password(Secret password) {
+      return passwordSupplier(password::getString);
+    }
+
+    @CanIgnoreReturnValue
     default Builder password(String password) {
-      return password(new Secret(password));
+      return passwordSupplier(() -> password);
     }
 
     @Override
