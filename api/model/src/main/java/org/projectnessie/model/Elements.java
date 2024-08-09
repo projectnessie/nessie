@@ -69,8 +69,8 @@ public interface Elements {
    * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
    * characters and ambiguous path elements.
    *
-   * <p>Users must prefer {@link #toPathStringEscaped()}, if the service support Nessie spec version
-   * 2.2.0 or newer, except for content-key related values in CEL filters.
+   * <p>Users must prefer {@link #toPathStringEscaped()}, if the service supports Nessie spec
+   * version 2.2.0 or newer, except for content-key related values in CEL filters.
    *
    * <p>Elements are separated by {@code .} characters. {@code .} characters in elements are
    * replaced with the ASCII group separator (ASCII 29, {@code %29}).
