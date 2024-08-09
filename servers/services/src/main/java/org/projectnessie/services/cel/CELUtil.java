@@ -291,12 +291,12 @@ public final class CELUtil {
 
     @Override
     public String getEncodedKey() {
-      return key().toPathString();
+      return key().toPathStringControlChars();
     }
 
     @Override
     public String getNamespace() {
-      return key().getNamespace().name();
+      return key().getNamespace().toPathStringControlChars();
     }
 
     @Override

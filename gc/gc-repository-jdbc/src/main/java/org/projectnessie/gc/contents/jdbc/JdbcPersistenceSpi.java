@@ -231,7 +231,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
             ContentReference ref = iter.next();
             stmt.setString(2, ref.contentId());
             stmt.setString(3, ref.commitId());
-            stmt.setString(4, ref.contentKey().toPathString());
+            stmt.setString(4, ref.contentKey().toPathStringControlChars());
             stmt.setString(5, ref.contentType().name());
             if (ref.contentType().equals(ICEBERG_TABLE) || ref.contentType().equals(ICEBERG_VIEW)) {
               stmt.setString(

@@ -250,7 +250,7 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     List<LogEntry> log = commitLog(base.getName(), MINIMAL, base.getHash(), null, null);
     // merging should not have been possible ("test-merge-branch1" shouldn't be in the commits)
     soft.assertThat(log.stream().map(LogEntry::getCommitMeta).map(CommitMeta::getMessage))
-        .containsExactly("create namespace a.b.c");
+        .containsExactly("create namespace 'a.b.c'");
 
     List<EntriesResponse.Entry> entries = entries(base.getName(), null);
     soft.assertThat(entries.stream().map(EntriesResponse.Entry::getName))

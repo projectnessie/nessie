@@ -180,7 +180,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     String celFilter =
         format(
             "entry.contentType == 'ICEBERG_VIEW' && entry.encodedKey.startsWith('%s.')",
-            namespaceRef.namespace().toPathString());
+            namespaceRef.namespace().toPathStringEscaped());
 
     listContent(namespaceRef, pageToken, pageSize, false, celFilter, response::nextPageToken)
         .map(e -> fromNessieContentKey(e.getName()))

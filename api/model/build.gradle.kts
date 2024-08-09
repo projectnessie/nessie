@@ -57,8 +57,8 @@ dependencies {
   testCompileOnly(libs.jakarta.annotation.api)
   testCompileOnly(libs.findbugs.jsr305)
 
-  testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.bundles.junit.testing)
+  testFixturesApi(platform(libs.junit.bom))
+  testFixturesApi(libs.bundles.junit.testing)
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
@@ -117,3 +117,35 @@ tasks.named<Test>("intTest").configure {
   )
   systemProperty("redoclyConfDir", "$projectDir/src/redocly")
 }
+
+testing {
+  suites {
+    register("testUriCompliance", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      dependencies {
+        implementation.add(project())
+        implementation.add(platform(libs.jetty.bom))
+        implementation.add("org.eclipse.jetty:jetty-http")
+        compileOnly(libs.microprofile.openapi)
+      }
+
+      targets {
+        all {
+          testTask.configure {
+            usesService(
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+            )
+          }
+          tasks.named("test").configure { dependsOn(testTask) }
+        }
+      }
+    }
+  }
+}
+
+configurations.named("testUriComplianceImplementation").configure {
+  extendsFrom(configurations.getByName("testImplementation"))
+}
+
+tasks.named<JavaCompile>("compileTestUriComplianceJava") { options.release = 17 }

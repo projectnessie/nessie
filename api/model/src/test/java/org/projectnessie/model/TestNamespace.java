@@ -17,69 +17,77 @@ package org.projectnessie.model;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public class TestNamespace {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
   public void testNullAndEmpty() {
-    assertThatThrownBy(() -> Namespace.of((String[]) null))
+    soft.assertThatThrownBy(() -> Namespace.of((String[]) null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("elements must be non-null");
 
-    assertThatThrownBy(() -> Namespace.of((List<String>) null))
+    soft.assertThatThrownBy(() -> Namespace.of((List<String>) null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("elements must be non-null");
 
-    assertThatThrownBy(() -> Namespace.parse(null))
+    soft.assertThatThrownBy(() -> Namespace.parse(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("identifier must be non-null");
 
-    assertThat(Namespace.of().name()).isEmpty();
-    assertThat(Namespace.parse("").name()).isEmpty();
-    assertThat(Namespace.of(""))
+    soft.assertThat(Namespace.of().name()).isEmpty();
+    soft.assertThat(Namespace.parse("").name()).isEmpty();
+    soft.assertThat(Namespace.of(""))
         .extracting(Namespace::name, Namespace::isEmpty)
         .containsExactly("", true);
 
-    assertThat(Namespace.of("")).isEqualTo(EMPTY_NAMESPACE);
-    assertThat(Namespace.of(Collections.emptyList())).isEqualTo(EMPTY_NAMESPACE);
-    assertThat(Namespace.of(singletonList(""))).isEqualTo(EMPTY_NAMESPACE);
+    soft.assertThat(Namespace.of("")).isEqualTo(EMPTY_NAMESPACE);
+    soft.assertThat(Namespace.of(Collections.emptyList())).isEqualTo(EMPTY_NAMESPACE);
+    soft.assertThat(Namespace.of(singletonList(""))).isEqualTo(EMPTY_NAMESPACE);
 
-    assertThatThrownBy(() -> Namespace.of("", "something"))
+    soft.assertThatThrownBy(() -> Namespace.of("", "something"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Namespace '[, something]' must not contain an empty element.");
-    assertThatThrownBy(() -> Namespace.of("", "something", "x"))
+        .hasMessage("Namespace '[, something]' must not contain an empty element");
+    soft.assertThatThrownBy(() -> Namespace.of("", "something", "x"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Namespace '[, something, x]' must not contain an empty element.");
+        .hasMessage("Namespace '[, something, x]' must not contain an empty element");
 
-    assertThatThrownBy(() -> Namespace.of("something", "", "x"))
+    soft.assertThatThrownBy(() -> Namespace.of("something", "", "x"))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Namespace '[something, , x]' must not contain an empty element.");
+        .hasMessage("Namespace '[something, , x]' must not contain an empty element");
 
-    assertThatThrownBy(() -> Namespace.of("something", "x", ""))
+    soft.assertThatThrownBy(() -> Namespace.of("something", "x", ""))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Namespace '[something, x, ]' must not contain an empty element.");
+        .hasMessage("Namespace '[something, x, ]' must not contain an empty element");
+  }
+
+  @Test
+  public void emptyElement() {
+    Namespace namespace = Namespace.of("");
+    soft.assertThat(namespace).isSameAs(EMPTY_NAMESPACE);
   }
 
   @Test
   public void testOneElement() {
     Namespace namespace = Namespace.of("foo");
-    assertThat(namespace)
+    soft.assertThat(namespace)
         .extracting(Namespace::name, Namespace::isEmpty)
         .containsExactly("foo", false);
   }
@@ -89,60 +97,46 @@ public class TestNamespace {
     List<String> elements = asList("a", "b.c", "namespace");
     String pathString = Util.toPathString(elements);
     String expectedPathString = "a.b\u001Dc.namespace";
-    assertThat(pathString).isEqualTo(expectedPathString);
+    soft.assertThat(pathString).isEqualTo(expectedPathString);
     Namespace namespace = Namespace.parse(pathString);
-    assertThat(namespace.name()).isEqualTo(pathString);
-    assertThat(namespace.getElements()).isEqualTo(elements);
-    assertThat(namespace.toString()).isEqualTo(pathString);
-    assertThat(namespace.toPathString()).isEqualTo(pathString);
-    assertThat(namespace.name()).startsWith("a.b");
-    assertThat(namespace.name()).startsWith("a.b\u001D");
-    assertThat(namespace.name()).startsWith("a.b\u001Dc");
-    assertThat(namespace.name()).startsWith("a.b\u001Dc.namespa");
-    assertThat(namespace.name()).doesNotStartWith("a.b.c");
-    assertThat(Namespace.parse("a.b.c").name()).doesNotStartWith("a.b\u001D");
+    soft.assertThat(namespace.name()).isEqualTo(pathString);
+    soft.assertThat(namespace.getElements()).isEqualTo(elements);
+    soft.assertThat(namespace.toString()).isEqualTo(pathString);
+    soft.assertThat(namespace.toPathString()).isEqualTo(pathString);
+    soft.assertThat(namespace.name()).startsWith("a.b");
+    soft.assertThat(namespace.name()).startsWith("a.b\u001D");
+    soft.assertThat(namespace.name()).startsWith("a.b\u001Dc");
+    soft.assertThat(namespace.name()).startsWith("a.b\u001Dc.namespa");
+    soft.assertThat(namespace.name()).doesNotStartWith("a.b.c");
+    soft.assertThat(Namespace.parse("a.b.c").name()).doesNotStartWith("a.b\u001D");
   }
 
   @Test
   public void testIsSameOrSubElementOf() {
     Namespace namespace = Namespace.of(asList("a", "b.c", "namespace"));
 
-    assertThatThrownBy(() -> EMPTY_NAMESPACE.isSameOrSubElementOf(null))
+    soft.assertThatThrownBy(() -> EMPTY_NAMESPACE.isSameOrSubElementOf(null))
         .hasMessage("namespace must be non-null");
 
-    assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a"))).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a"))).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b"))).isFalse();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc"))).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespa"))).isFalse();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespace"))).isTrue();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u0000c.namespace"))).isTrue();
-
-    assertThat(namespace.isSameOrSubElementOf(Namespace.of("x"))).isFalse();
-    assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b", "c"))).isFalse();
-
-    assertThat(Namespace.parse("a.b.c").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
+    soft.assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(EMPTY_NAMESPACE)).isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.of("a"))).isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a"))).isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b"))).isFalse();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc"))).isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespa")))
         .isFalse();
-    assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(Namespace.of("a"))).isFalse();
-  }
-
-  @Test
-  public void testDifferentZeroByteRepresentations() {
-    assertThat(Namespace.parse("a.b\u001Dc.d")).isEqualTo(Namespace.parse("a.b\u0000c.d"));
-    assertThat(
-            Namespace.parse("a.b\u001Dc.d").isSameOrSubElementOf(Namespace.parse("a.b\u0000c.d")))
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u001Dc.namespace")))
+        .isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.parse("a.b\u0000c.namespace")))
         .isTrue();
 
-    assertThat(Namespace.parse("a.b\u001Dc.d").isSameOrSubElementOf(Namespace.parse("a.b\u0000c")))
-        .isTrue();
-    assertThat(Namespace.parse("a.b\u0000c.d").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
-        .isTrue();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.of("x"))).isFalse();
+    soft.assertThat(namespace.isSameOrSubElementOf(Namespace.of("a", "b", "c"))).isFalse();
 
-    // even though we treat the zero byte + the group separator equally, we can't do comparisons
-    // based on strings only
-    assertThat(Namespace.of(asList("a", "b.c", "namespace")).name()).doesNotStartWith("a.b\u0000c");
+    soft.assertThat(Namespace.parse("a.b.c").isSameOrSubElementOf(Namespace.parse("a.b\u001Dc")))
+        .isFalse();
+    soft.assertThat(EMPTY_NAMESPACE.isSameOrSubElementOf(Namespace.of("a"))).isFalse();
   }
 
   @Test
@@ -151,154 +145,34 @@ public class TestNamespace {
     properties.put("location", "/tmp");
     properties.put("x", "y");
     Namespace namespace = Namespace.of(properties, "a", "b.c", "d");
-    assertThat(namespace.getProperties()).isEqualTo(properties);
+    soft.assertThat(namespace.getProperties()).isEqualTo(properties);
   }
 
-  @ParameterizedTest(name = "{displayName}[{index}]")
-  @MethodSource("elementsProvider")
-  void testNamespaceFromElements(String[] elements, String expectedNamespace) {
-    Namespace namespace = Namespace.of(elements);
-    assertThat(namespace.name()).isEqualTo(expectedNamespace);
-    assertThat(namespace.isEmpty()).isFalse();
-    assertThat(namespace.getElements()).containsExactly(elements);
-
-    namespace = Namespace.of(elements);
-    assertThat(namespace.name()).isEqualTo(expectedNamespace);
-    assertThat(namespace.isEmpty()).isFalse();
-    assertThat(namespace.getElements()).isEqualTo(Arrays.asList(elements));
-  }
-
-  @ParameterizedTest
-  @MethodSource("identifierProvider")
-  void testNamespaceParsing(String identifier, String expectedNamespace) {
-    Namespace namespace = Namespace.parse(identifier);
-    assertThat(namespace.name()).isEqualTo(expectedNamespace);
-    assertThat(namespace.isEmpty()).isFalse();
-  }
-
-  @ParameterizedTest
-  @MethodSource("invalidElementsProvider")
-  void testInvalidElements(String[] elements) {
-    assertThatThrownBy(() -> Namespace.of(elements))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
-
-    assertThatThrownBy(() -> Namespace.of(elements))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, Arrays.toString(elements)));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {".", "a.", "a.b.c."})
-  void testInvalidParsing(String identifier) {
-    assertThatThrownBy(() -> Namespace.parse(identifier))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(String.format(Namespace.ERROR_MSG_TEMPLATE, identifier));
-  }
-
-  @ParameterizedTest(name = "{displayName}[{index}]")
-  @ValueSource(
-      strings = {"\u0000", "a.\u0000", "a.b.c.\u0000", "\u001D", "a.\u001D", "a.b.c.\u001D"})
-  void testZeroByteUsage(String identifier) {
-    assertThatThrownBy(() -> Namespace.of(identifier))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            String.format(
-                "Namespace '%s' must not contain characters less than 0x20.",
-                singletonList(identifier)));
-  }
-
-  @ParameterizedTest
-  @MethodSource("invalidElementsWithNullsProvider")
-  void testNullsInElements(String[] elements) {
-    assertThatThrownBy(() -> Namespace.of(elements))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            String.format(
-                "Namespace '%s' must not contain a null element.", Arrays.toString(elements)));
-  }
-
-  private static Stream<Arguments> elementsProvider() {
-    return Stream.of(
-        Arguments.of(new String[] {"a", "b"}, "a.b"),
-        Arguments.of(new String[] {"a", "b", "c"}, "a.b.c"),
-        Arguments.of(new String[] {"a", "b.c", "d"}, "a.b\u001Dc.d"),
-        Arguments.of(new String[] {"a", "b_c", "d.e"}, "a.b_c.d\u001De"),
-        Arguments.of(new String[] {"a.c", "b.d"}, "a\u001Dc.b\u001Dd"));
-  }
-
-  private static Stream<Arguments> identifierProvider() {
-    return Stream.of(
-        Arguments.of("a", "a"), Arguments.of("a.b", "a.b"), Arguments.of("a.b.c", "a.b.c"));
-  }
-
-  private static Stream<Arguments> invalidElementsProvider() {
-    return Stream.of(
-        Arguments.of(new String[] {"."}, "x"),
-        Arguments.of(new String[] {"a", "."}, "x"),
-        Arguments.of(new String[] {"a", "b", "c", "."}, "x"));
-  }
-
-  private static Stream<Arguments> invalidElementsWithNullsProvider() {
-    return Stream.of(
-        Arguments.of(new String[] {null}, "x"),
-        Arguments.of(new String[] {"a", ".", null}, "x"),
-        Arguments.of(new String[] {"a", "b", "c", ".", null}, "x"));
-  }
-
-  @ParameterizedTest
-  @MethodSource("namespaceOfAndParseCases")
-  void namespaceOfAndParse(Namespace namespace, List<String> elements, String name) {
-    assertThat(namespace)
-        .extracting(
-            Namespace::getElements,
-            Namespace::toContentKey,
-            Namespace::name,
-            Namespace::toString,
-            Namespace::toPathString)
-        .containsExactly(elements, namespace.toContentKey(), name, name, name);
-  }
-
-  static List<Arguments> namespaceOfAndParseCases() {
-    return asList(
-        arguments(
-            Namespace.fromPathString(Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
-            Arrays.asList("a", "b.c", "namespace"),
-            Util.toPathString(Arrays.asList("a", "b.c", "namespace"))),
-        arguments(
-            Namespace.fromPathString(
-                Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
-            Arrays.asList("a", "b.c", "d.e.f.namespace"),
-            Util.toPathString(Arrays.asList("a", "b.c", "d.e.f.namespace"))),
-        arguments(Namespace.fromPathString("a.namespace"), asList("a", "namespace"), "a.namespace"),
-        arguments(Namespace.of("a", "namespace"), asList("a", "namespace"), "a.namespace"),
-        arguments(Namespace.of(asList("a", "namespace")), asList("a", "namespace"), "a.namespace"),
-        arguments(
-            Namespace.fromPathString("a.b.namespace"),
-            asList("a", "b", "namespace"),
-            "a.b.namespace"),
-        arguments(
-            Namespace.of("a", "b", "namespace"), asList("a", "b", "namespace"), "a.b.namespace"),
-        arguments(
-            Namespace.of(asList("a", "b", "namespace")),
-            asList("a", "b", "namespace"),
-            "a.b.namespace"),
-        arguments(EMPTY_NAMESPACE, Collections.emptyList(), ""),
-        arguments(
-            Namespace.of(singletonList("namespace")), singletonList("namespace"), "namespace"),
-        arguments(Namespace.fromPathString("namespace"), singletonList("namespace"), "namespace"));
-  }
-
-  static Stream<Arguments> getParent() {
-    return Stream.of(
-        arguments(Namespace.of("a", "b", "c", "d"), Namespace.of("a", "b", "c")),
-        arguments(Namespace.of("a", "b", "c"), Namespace.of("a", "b")),
-        arguments(Namespace.of("a", "b"), Namespace.of("a")));
+  @Test
+  void noParent() {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.of("x").getParent())
+        .withMessage("Namespace has no parent");
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.of().getParent())
+        .withMessage("Namespace has no parent");
   }
 
   @ParameterizedTest
   @MethodSource
-  void getParent(Namespace in, Namespace parent) {
-    assertThat(in).extracting(Namespace::getParent).isEqualTo(parent);
+  void invalidElements(List<String> elements, String message) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.of(elements))
+        .withMessageStartingWith("Namespace")
+        .withMessageEndingWith(message);
+  }
+
+  static Stream<Arguments> invalidElements() {
+    return Stream.of(
+        arguments(List.of("."), "must not contain a '.' element"),
+        arguments(List.of("abc", "."), "must not contain a '.' element"),
+        arguments(List.of("", "abc"), "must not contain an empty element"),
+        arguments(List.of("abc", ""), "must not contain an empty element"),
+        arguments(List.of("abc", "", "def"), "must not contain an empty element"));
   }
 }
