@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog/ADLS: Added **experimental** support for short-lived SAS tokens passed down to clients. Those
+  tokens still have read/write access to the whole file system and are **not** scoped down.
+
 ### Changes
 
 ### Deprecations

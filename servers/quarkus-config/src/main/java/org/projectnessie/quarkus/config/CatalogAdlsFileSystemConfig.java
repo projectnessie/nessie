@@ -16,6 +16,8 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithName;
+import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -24,4 +26,16 @@ public interface CatalogAdlsFileSystemConfig extends AdlsFileSystemOptions {
   @Override
   @WithConverter(KeySecretConverter.class)
   Optional<KeySecret> sasToken();
+
+  @Override
+  @WithName("user-delegation.enable")
+  Optional<Boolean> userDelegationEnable();
+
+  @Override
+  @WithName("user-delegation.key-expiry")
+  Optional<Duration> userDelegationKeyExpiry();
+
+  @Override
+  @WithName("user-delegation.sas-expiry")
+  Optional<Duration> userDelegationSasExpiry();
 }
