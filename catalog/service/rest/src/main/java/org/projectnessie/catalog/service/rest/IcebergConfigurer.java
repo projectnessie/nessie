@@ -50,11 +50,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
+import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
 import org.projectnessie.catalog.files.gcs.GcsOptions;
+import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Credentials;
 import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
@@ -117,6 +119,8 @@ public class IcebergConfigurer {
   @Inject ServerConfig serverConfig;
   @Inject CatalogConfig catalogConfig;
   @Inject S3CredentialsResolver s3CredentialsResolver;
+  @Inject GcsStorageSupplier gcsStorageSupplier;
+  @Inject AdlsClientSupplier adlsClientSupplier;
   @Inject @NormalizedObjectStoreOptions S3Options s3Options;
   @Inject @NormalizedObjectStoreOptions GcsOptions gcsOptions;
   @Inject @NormalizedObjectStoreOptions AdlsOptions adlsOptions;
@@ -598,6 +602,18 @@ public class IcebergConfigurer {
         .ifPresent(dbs -> configOverrides.put(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
     if (gcsBucketOptions.effectiveAuthType() == GcsBucketOptions.GcsAuthType.NONE) {
       configOverrides.put(GCS_NO_AUTH, "true");
+    } else if (forTable) {
+      gcsStorageSupplier
+          .generateDelegationToken(storageLocations, gcsBucketOptions)
+          .ifPresent(
+              t -> {
+                configOverrides.put(GCS_OAUTH2_TOKEN, t.token());
+                t.expiresAt()
+                    .ifPresent(
+                        i ->
+                            configOverrides.put(
+                                GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
+              });
     }
   }
 
@@ -644,5 +660,12 @@ public class IcebergConfigurer {
     adlsOptions
         .writeBlockSize()
         .ifPresent(s -> configOverrides.put(ADLS_WRITE_BLOCK_SIZE_BYTES, Long.toString(s)));
+
+    if (forTable) {
+      adlsClientSupplier
+          .generateUserDelegationSas(storageLocations, fileSystemOptions)
+          .ifPresent(
+              sasToken -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken));
+    }
   }
 }

@@ -64,6 +64,8 @@ dependencies {
 
   testFixturesApi(project(":nessie-object-storage-mock"))
 
+  testImplementation(platform(libs.cel.bom))
+  testImplementation("org.projectnessie.cel:cel-standalone")
   testRuntimeOnly(libs.logback.classic)
 
   jmhImplementation(libs.jmh.core)
