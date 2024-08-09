@@ -55,27 +55,8 @@ final class Util {
   public static final char REF_HASH_SEPARATOR = '@';
 
   /**
-   * Convert from path encoded string to normal string, supports all Nessie Spec versions.
-   *
-   * <p>The {@code encoded} parameter is split at dot ({@code .}) characters.
-   *
-   * <p>Legacy compatibility: a dot ({@code .}) character can be represented using ASCII 31 (0x1F)
-   * or ASCII 0 (0x00).
-   *
-   * <p>Escaping, for compatibility w/ <a
-   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0.html#uri-path-canonicalization">Jakarta
-   * Servlet Specification 6, URI Path Canonicalization</a> and <a
-   * href="https://datatracker.ietf.org/doc/html/rfc3986#section-3.3">RFC 3986, section 3.3</a>.
-   * This is available with Nessie Spec version 2.2.0, as advertised via {@link
-   * NessieConfiguration#getSpecVersion()}.
-   *
-   * <p>This function can decode the representations returned by {@link #toPathString(List)}, {@link
-   * #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}. See those functions for a
-   * description of the possible characters and escape mechanism(s).
-   *
-   * @param encoded Path encoded string, as returned by {@link #toPathString(List)}, {@link
-   *     #toPathStringEscaped(List)} and {@link #toCanonicalString(List)}.
-   * @return Actual key.
+   * Convert from path encoded string to elements, see {@link
+   * Elements#elementsFromPathString(String)}.
    */
   public static List<String> fromPathString(String encoded) {
     List<String> elements = new ArrayList<>();
@@ -110,8 +91,14 @@ final class Util {
               case ESCAPE_FOR_PERCENT:
                 e.append(PERCENT);
                 break;
+              case DOT:
+                elements.add(e.toString());
+                e.setLength(0);
+                break;
               default:
                 // Any other character, that character is the first character of the _next_ element;
+                // throw new IllegalArgumentException("Illegal escape sequence character '"+c+" at
+                // index : " + c);
                 --i;
                 elements.add(e.toString());
                 e.setLength(0);
@@ -134,23 +121,7 @@ final class Util {
     return elements;
   }
 
-  /**
-   * Convert these elements to a URI path/query string, which <em>may violate</em> <a
-   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
-   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a>, because it uses so-called control
-   * characters and ambiguous path elements.
-   *
-   * <p>Users must prefer {@link #toPathStringEscaped(List)}, if the service support Nessie spec
-   * version 2.2.0 or newer, except for content-key related values in CEL filters.
-   *
-   * <p>Elements are separated by {@code .} characters. {@code .} characters in elements are
-   * replaced with the ASCII group separator (ASCII 29, {@code %29}).
-   *
-   * @param elements The content-key or namespace elements to encode.
-   * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path or query. The returned
-   *     value can be parsed with {@link #fromPathString(String)}.
-   */
+  /** Escapes content-key elements, see {@link Elements#toPathString()}. */
   public static String toPathString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
     for (String element : elements) {
@@ -166,51 +137,16 @@ final class Util {
     return sb.toString();
   }
 
-  /**
-   * Escapes content-key elements into a URI path/query compatible form that does not violate <a
-   * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
-   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
-   * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
-   *
-   * <p>Algorithm:
-   *
-   * <ul>
-   *   <li>Elements are separated using a single {@code .} character.
-   *   <li>If an element starts with a {@code .} character, that element <b>and all following
-   *       elements</b> use the "problematic character escaping":
-   *       <ul>
-   *         <li>a {@code .} is escaped as {@code ._}
-   *         <li>a {@code /} is escaped as <code>.{</code>
-   *         <li>a {@code \} is escaped as <code>.}</code>
-   *         <li>a {@code %} is escaped as {@code .[}
-   *       </ul>
-   * </ul>
-   *
-   * <p>Some examples:
-   *
-   * <ul>
-   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
-   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
-   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
-   *       character of the second element, indicating that escaping starts at this element. {@code
-   *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as <code>".foo._.._bar.a.{.}.[aa"</code>.
-   * </ul>
-   *
-   * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
-   * newer.
-   *
-   * @param elements The content-key or namespace elements to encode.
-   * @return The URI path compatible representation of the given elements, possibly escaped. The
-   *     returned value should be URL-encoded before added to a URI path. The returned value can be
-   *     parsed with {@link #fromPathString(String)}.
-   */
+  /** Escapes content-key elements, see {@link Elements#toPathStringEscaped()}. */
   public static String toPathStringEscaped(List<String> elements) {
     StringBuilder sb = new StringBuilder();
     boolean escaped = false;
     for (String element : elements) {
       if (sb.length() > 0) {
-        sb.append('.');
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
+        }
       }
       escaped = escapePathElement(element, sb, escaped);
     }
@@ -266,45 +202,16 @@ final class Util {
     return escaped;
   }
 
-  /**
-   * Escapes content-key elements into a canonical form that escapes {@code .} characters. The
-   * returned format is similar to {@linkplain #toPathStringEscaped(List)}, but does not escape
-   * problematic URI characters.
-   *
-   * <p>Algorithm:
-   *
-   * <ul>
-   *   <li>Elements are separated using a single {@code .} character.
-   *   <li>If an element starts with a {@code .} character, that element <b>and all following
-   *       elements</b> use the "dot character escaping":
-   *       <ul>
-   *         <li>a {@code .} is escaped as {@code ._}
-   *       </ul>
-   * </ul>
-   *
-   * <p>Some examples:
-   *
-   * <ul>
-   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
-   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar.baz"} - escaping needed
-   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
-   *       character of the second element, indicating that escaping starts at this element. {@code
-   *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar.a/\%aa"}
-   *   <li>{@code ["foo", "bar", "a/\%aa"]} returned as {@code "foo.bar..a/\%aa"}
-   * </ul>
-   *
-   * @param elements The content-key or namespace elements to encode.
-   * @return The canonical representation of the given elements, possibly escaped. The returned
-   *     value should <em>not</em> be used in a URI path. The returned value can be parsed with
-   *     {@link #fromPathString(String)}.
-   */
+  /** Escapes content-key elements, see {@link Elements#toCanonicalString()}. */
   public static String toCanonicalString(List<String> elements) {
     StringBuilder sb = new StringBuilder();
     boolean escaped = false;
     for (String element : elements) {
       if (sb.length() > 0) {
-        sb.append('.');
+        sb.append(DOT);
+        if (escaped) {
+          sb.append(DOT);
+        }
       }
       escaped = escapeCanonicalElement(element, sb, escaped);
     }

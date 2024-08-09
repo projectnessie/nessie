@@ -26,6 +26,7 @@ import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -39,7 +40,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestContentKeyEncoding {
+public class TestElementsEncoding {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
@@ -58,6 +59,32 @@ public class TestContentKeyEncoding {
     List<String> actualElements = Util.fromPathString(encoded);
     soft.assertThat(actualElements).containsExactlyElementsOf(elements);
     soft.assertThat(actualElements).containsExactlyElementsOf(Util.fromPathString(encoded));
+
+    soft.assertThat(Namespace.fromPathString(encoded))
+        .extracting(Namespace::getElements, Namespace::getElementCount)
+        .containsExactly(elements, elements.size());
+    soft.assertThat(ContentKey.fromPathString(encoded))
+        .extracting(
+            ContentKey::getElements,
+            ContentKey::getName,
+            ContentKey::getNamespace,
+            ContentKey::getElementCount)
+        .containsExactly(
+            elements,
+            elements.get(elements.size() - 1),
+            Namespace.of(elements.subList(0, elements.size() - 1)),
+            elements.size());
+    soft.assertThat(Namespace.fromPathString(encoded))
+        .extracting(Namespace::toContentKey)
+        .isEqualTo(ContentKey.fromPathString(encoded));
+    if (elements.size() > 1) {
+      soft.assertThat(Namespace.fromPathString(encoded))
+          .extracting(Namespace::getParent)
+          .isEqualTo(Namespace.of(elements.subList(0, elements.size() - 1)));
+      soft.assertThat(ContentKey.fromPathString(encoded))
+          .extracting(ContentKey::getParent)
+          .isEqualTo(ContentKey.of(elements.subList(0, elements.size() - 1)));
+    }
 
     String uriEncoded = URLEncoder.encode(encoded, UTF_8);
 
@@ -104,15 +131,24 @@ public class TestContentKeyEncoding {
         // .. or any other element.
         arguments("foo.bar..baz", List.of("foo", "bar", "baz"), Set.of()),
         //
+        arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
+        arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
+        arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
+        arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
+        arguments("foo.._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
+        arguments("foo..{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
+        arguments("foo..}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
+        arguments("foo..[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
+        //
         arguments(".he.[llo", List.of("he%llo"), Set.of()),
         arguments(".he.{llo.world", List.of("he/llo", "world"), Set.of()),
         arguments(".hello._", List.of("hello."), Set.of()),
         arguments(".._hello._", List.of(".hello."), Set.of()),
         arguments(".._hello._~", List.of(".hello.~"), Set.of()),
         arguments(".._hello._~hello", List.of(".hello.~hello"), Set.of()),
-        arguments(".._hello.._~hello", List.of(".hello", ".~hello"), Set.of()),
+        arguments(".._hello..._~hello", List.of(".hello", ".~hello"), Set.of()),
         arguments(".._hello._.~hello", List.of(".hello.", "~hello"), Set.of()),
-        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello"), Set.of()),
+        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello"), Set.of()),
         arguments(".._hello._~.~hello", List.of(".hello.~", "~hello"), Set.of()),
         arguments(".._~hello._", List.of(".~hello."), Set.of()),
         arguments("hello.world", List.of("hello", "world"), Set.of()),
@@ -214,7 +250,6 @@ public class TestContentKeyEncoding {
   public void toPathStringEscaped(String encoded, List<String> elements) {
     String actualEncoded = Util.toPathStringEscaped(elements);
     soft.assertThat(actualEncoded).isEqualTo(encoded);
-    soft.assertThat(encoded).isEqualTo(Util.toPathStringEscaped(elements));
     soft.assertThat(Util.fromPathString(encoded)).containsExactlyElementsOf(elements);
 
     String uriEncoded = URLEncoder.encode(actualEncoded, UTF_8);
@@ -250,6 +285,12 @@ public class TestContentKeyEncoding {
 
   static Stream<Arguments> toPathStringEscaped() {
     return Stream.of(
+        //
+        arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
+        arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
+        arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
+        arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
+        //
         arguments("hello.world", List.of("hello", "world")),
         arguments("he#llo", List.of("he#llo")),
         arguments(".he.}llo", List.of("he\\llo")),
@@ -258,23 +299,23 @@ public class TestContentKeyEncoding {
         arguments("he#llo.world", List.of("he#llo", "world")),
         arguments("he&llo.world", List.of("he&llo", "world")),
         arguments("he?llo.world", List.of("he?llo", "world")),
-        arguments(".he.{llo.world", List.of("he/llo", "world")),
+        arguments(".he.{llo..world", List.of("he/llo", "world")),
         arguments(".hello._", List.of("hello.")),
         arguments(".._hello._", List.of(".hello.")),
         arguments(".._hello._~", List.of(".hello.~")),
         arguments(".._hello._~hello", List.of(".hello.~hello")),
-        arguments(".._hello.._~hello", List.of(".hello", ".~hello")),
-        arguments(".._hello._.~hello", List.of(".hello.", "~hello")),
-        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello")),
-        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".._hello..._~hello", List.of(".hello", ".~hello")),
+        arguments(".._hello._..~hello", List.of(".hello.", "~hello")),
+        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello")),
+        arguments(".._hello._~..~hello", List.of(".hello.~", "~hello")),
         arguments(".._~hello._", List.of(".~hello.")),
         arguments("hello.world", List.of("hello", "world")),
-        arguments(".hello._.world", List.of("hello.", "world")),
+        arguments(".hello._..world", List.of("hello.", "world")),
         arguments("hello..._world", List.of("hello", ".world")),
-        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he.{llo.world", List.of("he/llo", "world")),
-        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he._l#.{lo~.~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he.{llo..world", List.of("he/llo", "world")),
+        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he._l#.{lo~..~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
   }
 
   @ParameterizedTest
@@ -288,6 +329,11 @@ public class TestContentKeyEncoding {
 
   static Stream<Arguments> toCanonicalString() {
     return Stream.of(
+        arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
+        arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
+        arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
+        arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
+        //
         arguments("hello.world", List.of("hello", "world")),
         arguments("he#llo", List.of("he#llo")),
         arguments("he/llo", List.of("he/llo")),
@@ -301,17 +347,120 @@ public class TestContentKeyEncoding {
         arguments(".._hello._", List.of(".hello.")),
         arguments(".._hello._~", List.of(".hello.~")),
         arguments(".._hello._~hello", List.of(".hello.~hello")),
-        arguments(".._hello.._~hello", List.of(".hello", ".~hello")),
-        arguments(".._hello._.~hello", List.of(".hello.", "~hello")),
-        arguments(".._hello._.._~hello", List.of(".hello.", ".~hello")),
-        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".._hello..._~hello", List.of(".hello", ".~hello")),
+        arguments(".._hello._..~hello", List.of(".hello.", "~hello")),
+        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello")),
+        arguments(".._hello._~..~hello", List.of(".hello.~", "~hello")),
         arguments(".._~hello._", List.of(".~hello.")),
         arguments("hello.world", List.of("hello", "world")),
-        arguments(".hello._.world", List.of("hello.", "world")),
+        arguments(".hello._..world", List.of("hello.", "world")),
         arguments("hello..._world", List.of("hello", ".world")),
-        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
         arguments("he/llo.world", List.of("he/llo", "world")),
-        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he._l#/lo~.~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".he._l#/lo~..~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void roundTrips(
+      List<String> elements,
+      String expectedEscaped,
+      String expectedCanonical,
+      String expectedLegacy) {
+    String escaped = Util.toPathStringEscaped(elements);
+    String canonical = Util.toCanonicalString(elements);
+    String legacy = Util.toPathString(elements);
+    List<String> actualFromEscaped = Util.fromPathString(escaped);
+    List<String> actualFromCanonical = Util.fromPathString(canonical);
+    List<String> actualFromLegacy = Util.fromPathString(legacy);
+
+    soft.assertThat(escaped).isEqualTo(expectedEscaped);
+    soft.assertThat(canonical).isEqualTo(expectedCanonical);
+    soft.assertThat(legacy).isEqualTo(expectedLegacy);
+    soft.assertThat(actualFromEscaped).isEqualTo(elements);
+    soft.assertThat(actualFromCanonical).isEqualTo(elements);
+    soft.assertThat(actualFromLegacy).isEqualTo(elements);
+  }
+
+  static Stream<Arguments> roundTrips() {
+    return Stream.of(
+        arguments(List.of("abc.", "{def"), ".abc._..{def", ".abc._..{def", "abc\u001d.{def"),
+        arguments(List.of("abc.", ".def"), ".abc._..._def", ".abc._..._def", "abc\u001d.\u001ddef"),
+        arguments(List.of("abc.", "}def"), ".abc._..}def", ".abc._..}def", "abc\u001d.}def"),
+        arguments(List.of("abc.", "[def"), ".abc._..[def", ".abc._..[def", "abc\u001d.[def"),
+        arguments(List.of("abc.", "/def"), ".abc._...{def", ".abc._../def", "abc\u001d./def"),
+        arguments(List.of("abc.", "%def"), ".abc._...[def", ".abc._..%def", "abc\u001d.%def"),
+        arguments(List.of("abc.", "\\def"), ".abc._...}def", ".abc._..\\def", "abc\u001d.\\def"),
+        arguments(List.of("/%", "#&&"), "..{.[..#&&", "/%.#&&", "/%.#&&"),
+        arguments(List.of("/%国", "国.国"), "..{.[国..国._国", "/%国..国._国", "/%国.国\u001d国")
+        //
+        );
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void legacyZero(String legacy, List<String> elements) {
+    soft.assertThat(Util.fromPathString(legacy)).containsExactlyElementsOf(elements);
+    soft.assertThat(Util.fromPathString(legacy.replace('\u0000', '\u001d')))
+        .containsExactlyElementsOf(elements);
+  }
+
+  static Stream<Arguments> legacyZero() {
+    return Stream.of(
+        arguments("a\u0000b", List.of("a.b")),
+        arguments("\u0000b", List.of(".b")),
+        arguments("a\u0000", List.of("a.")),
+        arguments("a\u0000b.x", List.of("a.b", "x")),
+        arguments("\u0000b.x", List.of(".b", "x")),
+        arguments("a\u0000.x", List.of("a.", "x")),
+        arguments("x.a\u0000b", List.of("x", "a.b")),
+        arguments("x.\u0000b", List.of("x", ".b")),
+        arguments("x.a\u0000", List.of("x", "a.")));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void invalidElements(List<String> elements, String message) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> ContentKey.of(elements))
+        .withMessageStartingWith("Content key")
+        .withMessageEndingWith(message);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.of(elements))
+        .withMessageStartingWith("Namespace")
+        .withMessageEndingWith(message);
+  }
+
+  static Stream<Arguments> invalidElements() {
+    return Stream.of(
+        arguments(List.of("."), "must not contain a '.' element"),
+        arguments(List.of(".", "abc"), "must not contain a '.' element"),
+        arguments(List.of("abc", "."), "must not contain a '.' element"),
+        arguments(List.of("abc", ".", "def"), "must not contain a '.' element"),
+        arguments(List.of(""), "must not contain an empty element"),
+        arguments(List.of("", "abc"), "must not contain an empty element"),
+        arguments(List.of("abc", ""), "must not contain an empty element"),
+        arguments(List.of(""), "must not contain an empty element"),
+        arguments(List.of("abc", "", "def"), "must not contain an empty element"));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void invalidEncoded(String encoded, String message) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> ContentKey.fromPathString(encoded))
+        .withMessageStartingWith("Content key")
+        .withMessageEndingWith(message);
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.fromPathString(encoded))
+        .withMessageStartingWith("Namespace")
+        .withMessageEndingWith(message);
+  }
+
+  static Stream<Arguments> invalidEncoded() {
+    return IntStream.range(1, 0x1f)
+        .filter(i -> i != 0x1d)
+        .mapToObj(i -> arguments("" + (char) i, "must not contain characters less than 0x20"));
   }
 }
