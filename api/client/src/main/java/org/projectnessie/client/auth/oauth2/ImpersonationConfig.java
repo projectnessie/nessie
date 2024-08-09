@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.immutables.value.Value;
 import org.projectnessie.client.NessieConfigConstants;
 
@@ -89,9 +90,22 @@ public interface ImpersonationConfig {
    * An alternate client secret to use for impersonations only. Required if the alternate client
    * obtained from {@link #getClientId()} is confidential.
    *
+   * @deprecated Use {@link #getClientSecretSupplier()} instead.
+   */
+  @SuppressWarnings("DeprecatedIsStillUsed")
+  @Deprecated
+  @Value.Derived
+  default Optional<Secret> getClientSecret() {
+    return getClientSecretSupplier().map(Supplier::get).map(Secret::new);
+  }
+
+  /**
+   * An alternate client secret to use for impersonations only. Required if the alternate client
+   * obtained from {@link #getClientId()} is confidential.
+   *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET
    */
-  Optional<Secret> getClientSecret();
+  Optional<Supplier<String>> getClientSecretSupplier();
 
   /**
    * The root URL of an alternate OpenID Connect identity issuer provider, which will be used for
@@ -146,11 +160,17 @@ public interface ImpersonationConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecret(Secret clientSecret);
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
+
+    @CanIgnoreReturnValue
+    @SuppressWarnings("deprecation")
+    default Builder clientSecret(Secret clientSecret) {
+      return clientSecretSupplier(clientSecret::getString);
+    }
 
     @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      return clientSecret(new Secret(clientSecret));
+      return clientSecretSupplier(() -> clientSecret);
     }
 
     @CanIgnoreReturnValue
