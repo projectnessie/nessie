@@ -429,33 +429,6 @@ public class TestElementsEncoding {
 
   @ParameterizedTest
   @MethodSource
-  void invalidElements(List<String> elements, String message) {
-    soft.assertThatIllegalArgumentException()
-        .isThrownBy(() -> ContentKey.of(elements))
-        .withMessageStartingWith("Content key")
-        .withMessageEndingWith(message);
-    if (!elements.equals(List.of(""))) { // special treatment in Namespace.of()
-      soft.assertThatIllegalArgumentException()
-          .isThrownBy(() -> Namespace.of(elements))
-          .withMessageStartingWith("Namespace")
-          .withMessageEndingWith(message);
-    }
-  }
-
-  static Stream<Arguments> invalidElements() {
-    return Stream.of(
-        arguments(List.of("."), "must not contain a '.' element"),
-        arguments(List.of(".", "abc"), "must not contain a '.' element"),
-        arguments(List.of("abc", "."), "must not contain a '.' element"),
-        arguments(List.of("abc", ".", "def"), "must not contain a '.' element"),
-        arguments(List.of(""), "must not contain an empty element"),
-        arguments(List.of("", "abc"), "must not contain an empty element"),
-        arguments(List.of("abc", ""), "must not contain an empty element"),
-        arguments(List.of("abc", "", "def"), "must not contain an empty element"));
-  }
-
-  @ParameterizedTest
-  @MethodSource
   void invalidEncoded(String encoded, String message) {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> ContentKey.fromPathString(encoded))

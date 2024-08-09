@@ -269,4 +269,21 @@ class TestContentKey {
         .isThrownBy(() -> ContentKey.of().getParent())
         .withMessage("ContentKey has no parent");
   }
+
+  @ParameterizedTest
+  @MethodSource
+  void invalidElements(List<String> elements, String message) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> ContentKey.of(elements))
+        .withMessageStartingWith("Content key")
+        .withMessageEndingWith(message);
+  }
+
+  static Stream<Arguments> invalidElements() {
+    return Stream.of(
+        arguments(List.of(""), "must not contain an empty element"),
+        arguments(List.of("", "abc"), "must not contain an empty element"),
+        arguments(List.of("abc", ""), "must not contain an empty element"),
+        arguments(List.of("abc", "", "def"), "must not contain an empty element"));
+  }
 }

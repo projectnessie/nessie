@@ -137,7 +137,7 @@ testing {
               gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
             )
           }
-          tasks.named("check").configure { dependsOn(testTask) }
+          tasks.named("test").configure { dependsOn(testTask) }
         }
       }
     }

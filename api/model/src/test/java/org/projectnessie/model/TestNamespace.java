@@ -17,17 +17,22 @@ package org.projectnessie.model;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestNamespace {
@@ -71,6 +76,12 @@ public class TestNamespace {
     soft.assertThatThrownBy(() -> Namespace.of("something", "x", ""))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Namespace '[something, x, ]' must not contain an empty element");
+  }
+
+  @Test
+  public void emptyElement() {
+    Namespace namespace = Namespace.of("");
+    soft.assertThat(namespace).isSameAs(EMPTY_NAMESPACE);
   }
 
   @Test
@@ -145,5 +156,23 @@ public class TestNamespace {
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Namespace.of().getParent())
         .withMessage("Namespace has no parent");
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void invalidElements(List<String> elements, String message) {
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> Namespace.of(elements))
+        .withMessageStartingWith("Namespace")
+        .withMessageEndingWith(message);
+  }
+
+  static Stream<Arguments> invalidElements() {
+    return Stream.of(
+        arguments(List.of("."), "must not contain a '.' element"),
+        arguments(List.of("abc", "."), "must not contain a '.' element"),
+        arguments(List.of("", "abc"), "must not contain an empty element"),
+        arguments(List.of("abc", ""), "must not contain an empty element"),
+        arguments(List.of("abc", "", "def"), "must not contain an empty element"));
   }
 }
