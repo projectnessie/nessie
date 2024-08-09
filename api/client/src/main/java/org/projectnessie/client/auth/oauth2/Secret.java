@@ -15,6 +15,12 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+/**
+ * A secret value.
+ *
+ * @deprecated will be removed in a future release.
+ */
+@Deprecated
 public final class Secret {
 
   private final char[] value;

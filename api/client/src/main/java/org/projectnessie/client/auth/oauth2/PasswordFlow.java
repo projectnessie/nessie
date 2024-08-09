@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
@@ -34,8 +35,8 @@ class PasswordFlow extends AbstractFlow {
         config.getUsername().orElseThrow(() -> new IllegalStateException("Username is required"));
     String password =
         config
-            .getPassword()
-            .map(Secret::getString)
+            .getPasswordSupplier()
+            .map(Supplier::get)
             .orElseThrow(() -> new IllegalStateException("Password is required"));
     PasswordTokenRequest.Builder request =
         PasswordTokenRequest.builder().username(username).password(password);

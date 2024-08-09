@@ -169,16 +169,6 @@ class TestOAuth2ClientConfig {
                 .clientId("Alice")
                 .clientSecret("s3cr3t")
                 .tokenEndpoint(URI.create("https://example.com/token"))
-                .grantType(GrantType.PASSWORD)
-                .username("Alice")
-                .password(""),
-            singletonList(
-                "password must be set if grant type is 'password' (nessie.authentication.oauth2.password)")),
-        Arguments.of(
-            OAuth2ClientConfig.builder()
-                .clientId("Alice")
-                .clientSecret("s3cr3t")
-                .tokenEndpoint(URI.create("https://example.com/token"))
                 .grantType(GrantType.AUTHORIZATION_CODE),
             singletonList(
                 "either issuer URL or authorization endpoint must be set if grant type is 'authorization_code' (nessie.authentication.oauth2.issuer-url / nessie.authentication.oauth2.auth-endpoint)")),
