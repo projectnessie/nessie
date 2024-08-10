@@ -91,9 +91,7 @@ public final class ClientSideDeleteNamespace extends BaseDeleteNamespaceBuilder 
       if (api
           .getEntries()
           .reference(ref)
-          .filter(
-              String.format(
-                  "entry.encodedKey.startsWith('%s.')", namespace.toPathStringControlChars()))
+          .filter(String.format("entry.encodedKey.startsWith('%s.')", namespace.toPathString()))
           .stream()
           .findAny()
           .isPresent()) {

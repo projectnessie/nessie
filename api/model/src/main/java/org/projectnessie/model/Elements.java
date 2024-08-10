@@ -58,11 +58,6 @@ public interface Elements {
     return Util.fromPathString(encoded);
   }
 
-  /** This function is identical to {@link #toPathStringControlChars()}. */
-  default String toPathString() {
-    return Util.toPathString(getElements());
-  }
-
   /**
    * Convert these elements to a URI path/query string, which <em>may violate</em> <a
    * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
@@ -79,7 +74,7 @@ public interface Elements {
    *     returned value should be URL-encoded before added to a URI path or query. The returned
    *     value can be parsed with {@link #elementsFromPathString(String)}.
    */
-  default String toPathStringControlChars() {
+  default String toPathString() {
     return Util.toPathString(getElements());
   }
 

@@ -139,16 +139,19 @@ public interface ApiDoc {
           + "dot ('.') characters that are not Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n"
           + "\n"
           + "_Escaping behavior_, compatible with Jakarta Servlet Spec v6 (since Nessie spec 2.2.0, see `NessieConfiguration.spec-version`): "
-          + "Keys must be escaped using the following rules:\n"
-          + "* A dot `.` in an element serialized as `..~`\n"
-          + "* A slash `/` in an element serialized as `..^`\n"
+          + "Algorithm:\n"
+          + "* Elements are separated using a single `.` character when <em>not</em> escaping,\n"
+          + "* Elements are separated using a two dots `..` characters when escaping,\n"
+          + "* If an element starts with a `.` character, that element **and all following elements** use the \"problematic character escaping\":\n"
+          + "    * a `.` is escaped as `._`\n"
+          + "    * a `/` is escaped as `.{`\n"
+          + "    * a `\\` is escaped as `.}`\n"
+          + "    * a `%` is escaped as `.[`\n"
           + "\n"
-          + "Examples:\n"
-          + "* components `[\"foo\", \"bar\"] is escaped as `foo.bar`\n"
-          + "* components `[\"f.o.o\", \"bar\"] is escaped as `f..~o..~o.bar`\n"
-          + "* components `[\"f/o/o\", \"bar\"] is escaped as `f..^o..^o.bar`\n"
-          + "* components `[\".hello\", \".~hello\"] is escaped as `..~hello...~~hello`\n"
-          + "* components `[\".hello.\", \".~hello\"] is escaped as `..~hello..~...~~hello`\n";
+          + "Some examples:\n"
+          + "* `[\"foo\", \"bar\", \"baz\"]` returned as `\"foo.bar.baz\"` - no escaping needed.\n"
+          + "* `[\"foo\", \".bar\", \"baz\"]` returned as `\"foo..._bar.baz\"` - escaping needed with the 2nd element. The first dot is the element separator. The 2nd dot is the first character of the second element, indicating that escaping starts at this element. `._` is the escape sequence for the `.` character.\n"
+          + "* `[\"foo.\", \".bar\", \"a/\\%aa\"]` returned as `\".foo._.._bar.a.{.}.[aa\"`.";
 
   String KEY_PARAMETER_DESCRIPTION = "The key to a content object.\n\n" + KEY_ELEMENTS_DESCRIPTION;
 

@@ -489,7 +489,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     String celFilter =
         format(
             "entry.contentType == 'ICEBERG_TABLE' && entry.encodedKey.startsWith('%s.')",
-            namespaceRef.namespace().toPathStringEscaped());
+            namespaceRef.namespace().toPathString());
 
     listContent(namespaceRef, pageToken, pageSize, false, celFilter, response::nextPageToken)
         .map(e -> fromNessieContentKey(e.getName()))

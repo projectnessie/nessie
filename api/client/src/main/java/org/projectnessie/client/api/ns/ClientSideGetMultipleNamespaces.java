@@ -61,7 +61,7 @@ public final class ClientSideGetMultipleNamespaces extends BaseGetMultipleNamesp
 
       String filter = "entry.contentType == 'NAMESPACE'";
       if (namespace != null && !namespace.isEmpty()) {
-        String nsName = namespace.toPathStringControlChars();
+        String nsName = namespace.toPathString();
         filter +=
             onlyDirectChildren
                 ? format(

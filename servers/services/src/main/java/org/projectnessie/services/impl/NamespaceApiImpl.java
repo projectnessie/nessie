@@ -144,7 +144,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
 
       commit(
           BranchName.of(refWithHash.getValue().getName()),
-          "delete namespace " + namespace,
+          "delete namespace '" + namespace.toCanonicalString() + "'",
           TreeApiImpl.toOp(delete));
     } catch (ReferenceNotFoundException | ReferenceConflictException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
@@ -274,7 +274,7 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Put put = Put.of(updatedNamespace.toContentKey(), updatedNamespace);
       commit(
           BranchName.of(refWithHash.getValue().getName()),
-          "update properties for namespace " + updatedNamespace,
+          "update properties for namespace '" + updatedNamespace.toCanonicalString() + "'",
           TreeApiImpl.toOp(put));
 
     } catch (ReferenceNotFoundException | ReferenceConflictException e) {

@@ -63,57 +63,60 @@ final class Util {
     int l = encoded.length();
     StringBuilder e = new StringBuilder();
     boolean escaped = false;
-    for (int i = 0; i < l; i++) {
-      char c = encoded.charAt(i);
-      switch (c) {
-        case DOT:
-          if (!escaped) {
-            if (e.length() == 0) {
-              // Got a '.' at the beginning of an element. This and all following elements are
-              // escaped.
-              escaped = true;
+    try {
+      for (int i = 0; i < l; i++) {
+        char c = encoded.charAt(i);
+        switch (c) {
+          case DOT:
+            if (!escaped) {
+              if (e.length() == 0) {
+                // Got a '.' at the beginning of an element. This and all following elements are
+                // escaped.
+                escaped = true;
+              } else {
+                elements.add(e.toString());
+                e.setLength(0);
+              }
             } else {
-              elements.add(e.toString());
-              e.setLength(0);
+              c = encoded.charAt(++i);
+              switch (c) {
+                case ESCAPE_FOR_DOT:
+                  e.append(DOT);
+                  break;
+                case ESCAPE_FOR_SLASH:
+                  e.append(SLASH);
+                  break;
+                case ESCAPE_FOR_BACKSLASH:
+                  e.append(BACKSLASH);
+                  break;
+                case ESCAPE_FOR_PERCENT:
+                  e.append(PERCENT);
+                  break;
+                case DOT:
+                  elements.add(e.toString());
+                  e.setLength(0);
+                  break;
+                default:
+                  // Any other character, that character is the first character of the _next_
+                  // element;
+                  --i;
+                  elements.add(e.toString());
+                  e.setLength(0);
+                  break;
+              }
             }
-          } else {
-            c = encoded.charAt(++i);
-            switch (c) {
-              case ESCAPE_FOR_DOT:
-                e.append(DOT);
-                break;
-              case ESCAPE_FOR_SLASH:
-                e.append(SLASH);
-                break;
-              case ESCAPE_FOR_BACKSLASH:
-                e.append(BACKSLASH);
-                break;
-              case ESCAPE_FOR_PERCENT:
-                e.append(PERCENT);
-                break;
-              case DOT:
-                elements.add(e.toString());
-                e.setLength(0);
-                break;
-              default:
-                // Any other character, that character is the first character of the _next_ element;
-                // throw new IllegalArgumentException("Illegal escape sequence character '"+c+" at
-                // index : " + c);
-                --i;
-                elements.add(e.toString());
-                e.setLength(0);
-                break;
-            }
-          }
-          break;
-        case GROUP_SEPARATOR:
-        case ZERO_BYTE:
-          e.append(DOT);
-          break;
-        default:
-          e.append(c);
-          break;
+            break;
+          case GROUP_SEPARATOR:
+          case ZERO_BYTE:
+            e.append(DOT);
+            break;
+          default:
+            e.append(c);
+            break;
+        }
       }
+    } catch (StringIndexOutOfBoundsException oob) {
+      throw new IllegalArgumentException("Illegal escaping in encoded path: " + encoded, oob);
     }
     if (e.length() > 0) {
       elements.add(e.toString());

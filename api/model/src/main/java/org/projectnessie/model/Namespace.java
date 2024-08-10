@@ -73,7 +73,7 @@ public abstract class Namespace extends Content implements Elements {
   @Derived
   @JsonIgnore
   public String name() {
-    return toPathStringControlChars();
+    return toPathString();
   }
 
   @JsonIgnore
@@ -266,13 +266,6 @@ public abstract class Namespace extends Content implements Elements {
   @Override
   @Value.NonAttribute
   @JsonIgnore
-  public String toPathStringControlChars() {
-    return Elements.super.toPathStringControlChars();
-  }
-
-  @Override
-  @Value.NonAttribute
-  @JsonIgnore
   public String toPathStringEscaped() {
     return Elements.super.toPathStringEscaped();
   }
@@ -286,7 +279,7 @@ public abstract class Namespace extends Content implements Elements {
 
   @Override
   public String toString() {
-    return toPathStringControlChars();
+    return toPathString();
   }
 
   public ContentKey toContentKey() {

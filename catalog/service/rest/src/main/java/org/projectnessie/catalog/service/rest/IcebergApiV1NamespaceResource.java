@@ -136,7 +136,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             + ((namespace != null && !namespace.isEmpty())
                 ? format(
                     " && size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
-                    namespace.getElementCount() + 1, namespace.toPathStringControlChars())
+                    namespace.getElementCount() + 1, namespace.toPathString())
                 : " && size(entry.keyElements) == 1");
 
     listContent(namespaceRef, pageToken, pageSize, true, celFilter, response::nextPageToken)

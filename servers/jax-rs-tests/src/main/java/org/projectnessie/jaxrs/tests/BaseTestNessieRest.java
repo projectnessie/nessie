@@ -931,8 +931,7 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
     contents.forEach(
         (key, expectedContent) -> {
-          for (String keyRepresentation :
-              List.of(key.toPathStringControlChars(), key.toPathStringEscaped())) {
+          for (String keyRepresentation : List.of(key.toPathString(), key.toPathStringEscaped())) {
 
             soft.assertThatCode(
                     () -> {

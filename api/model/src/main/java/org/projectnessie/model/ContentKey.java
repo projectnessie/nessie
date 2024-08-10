@@ -187,13 +187,6 @@ public abstract class ContentKey implements Comparable<ContentKey>, Elements {
   @Override
   @Value.NonAttribute
   @JsonIgnore
-  public String toPathStringControlChars() {
-    return Elements.super.toPathStringControlChars();
-  }
-
-  @Override
-  @Value.NonAttribute
-  @JsonIgnore
   public String toPathStringEscaped() {
     return Elements.super.toPathStringEscaped();
   }
