@@ -28,8 +28,8 @@ configurations.testFixturesApi { extendsFrom(syntaxGen) }
 
 dependencies {
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   implementation(libs.guava)
   implementation(libs.slf4j.api)
@@ -42,7 +42,7 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
   testFixturesApi(libs.jakarta.annotation.api)
-  testFixturesApi(libs.immutables.value.annotations)
+  testFixturesApi(project(":nessie-immutables-std"))
 
   testFixturesRuntimeOnly(libs.logback.classic)
 

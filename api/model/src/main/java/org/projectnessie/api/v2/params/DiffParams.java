@@ -18,12 +18,12 @@ package org.projectnessie.api.v2.params;
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_PARAMETER_DESCRIPTION;
 import static org.projectnessie.api.v2.doc.ApiDoc.REQUESTED_KEY_PARAMETER_DESCRIPTION;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
@@ -40,11 +40,7 @@ import org.projectnessie.model.Validation;
 public class DiffParams extends KeyRangeParams<DiffParams> {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_PATH_REGEX,
-      message = Validation.REF_NAME_PATH_MESSAGE)
   @Parameter(
       description = REF_PARAMETER_DESCRIPTION,
       examples = {
@@ -68,25 +64,18 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
         @ExampleObject(ref = "refDetached"),
       })
   @PathParam("from-ref")
-  @jakarta.ws.rs.PathParam("from-ref")
   private String fromRef;
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_PATH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_PATH_REGEX,
-      message = Validation.REF_NAME_PATH_MESSAGE)
   @Parameter(
       description =
           "Same reference spec as in the 'from-ref' parameter but identifying the other tree for comparison.")
   @PathParam("to-ref")
-  @jakarta.ws.rs.PathParam("to-ref")
   private String toRef;
 
   @Parameter(description = REQUESTED_KEY_PARAMETER_DESCRIPTION)
   @QueryParam("key")
-  @jakarta.ws.rs.QueryParam("key")
   private List<ContentKey> requestedKeys;
 
   @Parameter(
@@ -95,22 +84,21 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
               + "Usable variables within the expression are:\n\n"
               + "- 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)")
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   public DiffParams() {}
 
   @Constructor
   DiffParams(
-      @NotNull @jakarta.validation.constraints.NotNull String fromRef,
-      @NotNull @jakarta.validation.constraints.NotNull String toRef,
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey prefixKey,
-      @Nullable @jakarta.annotation.Nullable List<ContentKey> requestedKeys,
-      @Nullable @jakarta.annotation.Nullable String filter) {
+      @NotNull String fromRef,
+      @NotNull String toRef,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable ContentKey minKey,
+      @Nullable ContentKey maxKey,
+      @Nullable ContentKey prefixKey,
+      @Nullable List<ContentKey> requestedKeys,
+      @Nullable String filter) {
     super(maxRecords, pageToken, minKey, maxKey, prefixKey);
     this.fromRef = fromRef;
     this.toRef = toRef;

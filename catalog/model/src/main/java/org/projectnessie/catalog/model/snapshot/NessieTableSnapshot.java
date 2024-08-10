@@ -26,13 +26,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieTable;
 import org.projectnessie.catalog.model.id.NessieId;
@@ -76,7 +76,6 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   NessieId currentPartitionDefinitionId();
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -95,7 +94,6 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   NessieId currentSortDefinitionId();
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -117,27 +115,22 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Long icebergSnapshotId();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Long icebergLastSequenceNumber();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Long icebergSnapshotSequenceNumber();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Integer icebergLastColumnId();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Integer icebergLastPartitionId();
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -156,7 +149,6 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   String icebergManifestListLocation();
 
   /**

@@ -18,9 +18,9 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
 
@@ -29,7 +29,6 @@ import org.projectnessie.model.ser.Views;
 @JsonDeserialize(as = ImmutableGetNamespacesResponse.class)
 public interface GetNamespacesResponse {
   @NotNull
-  @jakarta.validation.constraints.NotNull
   List<Namespace> getNamespaces();
 
   /**
@@ -38,7 +37,6 @@ public interface GetNamespacesResponse {
    */
   @JsonView(Views.V2.class)
   @Nullable // Only nullable in V1
-  @jakarta.annotation.Nullable
   Reference getEffectiveReference();
 
   static ImmutableGetNamespacesResponse.Builder builder() {

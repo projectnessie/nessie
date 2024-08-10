@@ -26,9 +26,9 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -42,7 +42,6 @@ public abstract class GenericErrorDetails implements NessieErrorDetails {
   public abstract String getType();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Schema(type = SchemaType.OBJECT)
   @Value.Parameter(order = 2)
   @JsonInclude(JsonInclude.Include.NON_NULL)

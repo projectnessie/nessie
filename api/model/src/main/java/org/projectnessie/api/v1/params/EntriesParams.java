@@ -15,11 +15,11 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.Validation;
@@ -34,32 +34,24 @@ import org.projectnessie.model.Validation;
 public class EntriesParams extends AbstractParams<EntriesParams> {
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(
-      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
-  @jakarta.ws.rs.QueryParam("hashOnRef")
   private String hashOnRef;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "If set > 0 will filter the results to only return namespaces/tables to the depth of namespaceDepth. If not set or <=0 has no effect\n"
               + "Setting this parameter > 0 will turn off paging.")
   @QueryParam("namespaceDepth")
-  @jakarta.ws.rs.QueryParam("namespaceDepth")
   private Integer namespaceDepth;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
@@ -70,18 +62,17 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
         @ExampleObject(ref = "expr_by_namespace_and_contentType")
       })
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   public EntriesParams() {}
 
   @org.immutables.builder.Builder.Constructor
   EntriesParams(
-      @Nullable @jakarta.annotation.Nullable String hashOnRef,
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable Integer namespaceDepth,
-      @Nullable @jakarta.annotation.Nullable String filter) {
+      @Nullable String hashOnRef,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable Integer namespaceDepth,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.hashOnRef = hashOnRef;
     this.namespaceDepth = namespaceDepth;
@@ -97,19 +88,16 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String hashOnRef() {
     return hashOnRef;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public Integer namespaceDepth() {
     return namespaceDepth;
   }

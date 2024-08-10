@@ -24,6 +24,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,8 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.client.NessieConfigConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +58,8 @@ public final class NessieClientConfigSources {
   private static final NessieClientConfigSource EMPTY_CONFIG_SOURCE =
       new NessieClientConfigSource() {
         @Nullable
-        @jakarta.annotation.Nullable
         @Override
-        public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+        public String getValue(@Nonnull String key) {
           return null;
         }
       };
@@ -131,9 +130,8 @@ public final class NessieClientConfigSources {
 
     return new NessieClientConfigSource() {
       @Nullable
-      @jakarta.annotation.Nullable
       @Override
-      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+      public String getValue(@Nonnull String key) {
         String envName = propertyNameToEnvironmentName(key);
         String v = props.getProperty(envName);
         LOGGER.debug("Config value for key {} as {} retrieved from {}", key, envName, envFile);
@@ -153,9 +151,8 @@ public final class NessieClientConfigSources {
   public static NessieClientConfigSource environmentConfigSource(Map<String, String> environment) {
     return new NessieClientConfigSource() {
       @Nullable
-      @jakarta.annotation.Nullable
       @Override
-      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+      public String getValue(@Nonnull String key) {
         String envName = propertyNameToEnvironmentName(key);
         String v = environment.get(envName);
         LOGGER.debug("Config value for key {} as {} retrieved from environment", key, envName);
@@ -178,9 +175,8 @@ public final class NessieClientConfigSources {
 
     return new NessieClientConfigSource() {
       @Nullable
-      @jakarta.annotation.Nullable
       @Override
-      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+      public String getValue(@Nonnull String key) {
         String v = props.getProperty(key);
         LOGGER.debug("Config value for key {} retrieved from {}", key, propertiesFile);
         return v;
@@ -197,9 +193,8 @@ public final class NessieClientConfigSources {
   public static NessieClientConfigSource propertiesConfigSource(Properties properties) {
     return new NessieClientConfigSource() {
       @Nullable
-      @jakarta.annotation.Nullable
       @Override
-      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+      public String getValue(@Nonnull String key) {
         String v = properties.getProperty(key);
         LOGGER.debug("Config value for key {} retrieved from properties", key);
         return v;
@@ -215,9 +210,8 @@ public final class NessieClientConfigSources {
   public static NessieClientConfigSource mapConfigSource(Map<String, String> properties) {
     return new NessieClientConfigSource() {
       @Nullable
-      @jakarta.annotation.Nullable
       @Override
-      public String getValue(@Nonnull @jakarta.annotation.Nonnull String key) {
+      public String getValue(@Nonnull String key) {
         String v = properties.get(key);
         LOGGER.debug("Config value for key {} retrieved from map", key);
         return v;

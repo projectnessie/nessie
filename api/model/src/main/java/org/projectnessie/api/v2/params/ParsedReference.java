@@ -15,7 +15,7 @@
  */
 package org.projectnessie.api.v2.params;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Detached;
 import org.projectnessie.model.Reference.ReferenceType;
@@ -28,17 +28,14 @@ import org.projectnessie.model.Reference.ReferenceType;
 public interface ParsedReference {
   @Value.Parameter(order = 1)
   @Nullable
-  @jakarta.annotation.Nullable
   String name();
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   String hashWithRelativeSpec();
 
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   ReferenceType type();
 
   @Value.Check
@@ -50,9 +47,7 @@ public interface ParsedReference {
   }
 
   static ParsedReference parsedReference(
-      @Nullable @jakarta.annotation.Nullable String name,
-      @Nullable @jakarta.annotation.Nullable String hashWithRelativeSpec,
-      @Nullable @jakarta.annotation.Nullable ReferenceType type) {
+      @Nullable String name, @Nullable String hashWithRelativeSpec, @Nullable ReferenceType type) {
     if (hashWithRelativeSpec != null && name == null) {
       name = Detached.REF_NAME;
     }

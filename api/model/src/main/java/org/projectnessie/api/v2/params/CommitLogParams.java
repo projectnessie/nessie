@@ -18,9 +18,9 @@ package org.projectnessie.api.v2.params;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.QueryParam;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
@@ -36,11 +36,7 @@ import org.projectnessie.model.FetchOption;
 public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(
-      regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
@@ -49,11 +45,9 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
               + "should stop, i.e. the 'far' end of the commit log, returned late in the result.",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("limit-hash")
-  @jakarta.ws.rs.QueryParam("limit-hash")
   private String startHash;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
@@ -70,27 +64,24 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
         @ExampleObject(ref = "expr_by_commit_operations_type")
       })
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @Parameter(
       description =
           "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
   @QueryParam("fetch")
-  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
-  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   public CommitLogParams() {}
 
   @Constructor
   CommitLogParams(
-      @Nullable @jakarta.annotation.Nullable String startHash,
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable String filter,
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+      @Nullable String startHash,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter,
+      @Nullable FetchOption fetchOption) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.filter = filter;
@@ -98,19 +89,16 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String startHash() {
     return startHash;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }

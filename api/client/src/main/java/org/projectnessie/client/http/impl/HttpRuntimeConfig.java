@@ -16,9 +16,9 @@
 package org.projectnessie.client.http.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.util.List;
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import org.immutables.value.Value;
@@ -46,13 +46,11 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   URI getBaseUri();
 
   ObjectMapper getMapper();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Class<?> getJsonView();
 
   HttpResponseFactory responseFactory();
@@ -73,11 +71,9 @@ public interface HttpRuntimeConfig extends AutoCloseable {
   List<ResponseFilter> getResponseFilters();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String getFollowRedirects();
 
   @Nullable
-  @jakarta.annotation.Nullable
   SSLParameters getSslParameters();
 
   @Value.Default

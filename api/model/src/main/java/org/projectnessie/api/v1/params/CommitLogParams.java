@@ -15,11 +15,11 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.FetchOption;
@@ -35,25 +35,16 @@ import org.projectnessie.model.Validation;
 public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash on the given ref to start from (in chronological sense), the 'far' end of the commit log, returned 'late' in the result.",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("startHash")
-  @jakarta.ws.rs.QueryParam("startHash")
   private String startHash;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(
-      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Parameter(
@@ -61,11 +52,9 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
           "Hash on the given ref to end at (in chronological sense), the 'near' end of the commit log, returned 'early' in the result.",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("endHash")
-  @jakarta.ws.rs.QueryParam("endHash")
   private String endHash;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
@@ -82,28 +71,25 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
         @ExampleObject(ref = "expr_by_commit_operations_type")
       })
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @Parameter(
       description =
           "Specify how much information to be returned. Will fetch additional metadata such as parent commit hash and operations in a commit, for each commit if set to 'ALL'.")
   @QueryParam("fetch")
-  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
-  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   public CommitLogParams() {}
 
   @org.immutables.builder.Builder.Constructor
   CommitLogParams(
-      @Nullable @jakarta.annotation.Nullable String startHash,
-      @Nullable @jakarta.annotation.Nullable String endHash,
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable String filter,
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+      @Nullable String startHash,
+      @Nullable String endHash,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter,
+      @Nullable FetchOption fetchOption) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
@@ -112,25 +98,21 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String startHash() {
     return startHash;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String endHash() {
     return endHash;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }

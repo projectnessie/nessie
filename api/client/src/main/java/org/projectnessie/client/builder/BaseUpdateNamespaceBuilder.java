@@ -15,11 +15,11 @@
  */
 package org.projectnessie.client.builder;
 
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 import org.projectnessie.client.api.UpdateNamespaceBuilder;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
@@ -52,7 +52,7 @@ public abstract class BaseUpdateNamespaceBuilder implements UpdateNamespaceBuild
   }
 
   @Override
-  public UpdateNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
+  public UpdateNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

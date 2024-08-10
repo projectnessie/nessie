@@ -21,9 +21,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.Locale;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -50,16 +50,12 @@ public interface Conflict {
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   ContentKey key();
 
   @Value.Parameter(order = 3)
   String message();
 
-  static Conflict conflict(
-      ConflictType conflictType,
-      @Nullable @jakarta.annotation.Nullable ContentKey key,
-      String message) {
+  static Conflict conflict(ConflictType conflictType, @Nullable ContentKey key, String message) {
     return ImmutableConflict.of(conflictType, key, message);
   }
 

@@ -16,7 +16,7 @@
 package org.projectnessie.catalog.formats.iceberg.meta;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
@@ -39,7 +39,6 @@ public interface IcebergPartitionFieldSummary {
   // TODO how is this encoded?? in IJ's Avro/Parquet viewer string values appear "interesting"
   // TODO Use Agrona-Collections
   @Nullable
-  @jakarta.annotation.Nullable
   byte[] lowerBound();
 
   // TODO subject to write.metadata.metrics.default / write.metadata.metrics.column.* settings !!
@@ -51,11 +50,9 @@ public interface IcebergPartitionFieldSummary {
   //  org.apache.parquet.internal.column.columnindex.BinaryTruncator.truncateMax?
   // TODO Use Agrona-Collections
   @Nullable
-  @jakarta.annotation.Nullable
   byte[] upperBound();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Boolean containsNan();
 
   @SuppressWarnings("unused")

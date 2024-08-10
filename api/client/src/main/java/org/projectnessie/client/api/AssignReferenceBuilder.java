@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -49,9 +49,7 @@ public interface AssignReferenceBuilder<T extends Reference>
     return (AssignReferenceBuilder<R>) ChangeReferenceBuilder.super.reference(reference);
   }
 
-  AssignReferenceBuilder<T> assignTo(
-      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          Reference assignTo);
+  AssignReferenceBuilder<T> assignTo(@Valid @NotNull Reference assignTo);
 
   void assign() throws NessieNotFoundException, NessieConflictException;
 

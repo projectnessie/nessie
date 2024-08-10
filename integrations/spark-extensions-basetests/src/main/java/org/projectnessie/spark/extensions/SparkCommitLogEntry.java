@@ -15,11 +15,11 @@
  */
 package org.projectnessie.spark.extensions;
 
+import jakarta.annotation.Nullable;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitMeta;
 

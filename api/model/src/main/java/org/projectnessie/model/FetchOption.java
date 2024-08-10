@@ -15,8 +15,8 @@
  */
 package org.projectnessie.model;
 
+import jakarta.annotation.Nullable;
 import java.util.Locale;
-import javax.annotation.Nullable;
 
 /**
  * This enum defines the levels of details that may be represented by model objects. For example,
@@ -35,7 +35,7 @@ public enum FetchOption {
    * @return <code>true</code> if the given <code>fetchOption</code> is {@link FetchOption#ALL},
    *     <code>false</code> otherwise.
    */
-  public static boolean isFetchAll(@Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+  public static boolean isFetchAll(@Nullable FetchOption fetchOption) {
     return ALL == fetchOption;
   }
 
@@ -47,8 +47,7 @@ public enum FetchOption {
    * @return The name of the given <code>fetchOption</code> or {@link FetchOption#MINIMAL} if the
    *     given <code>fetchOption</code> is <code>null</code>
    */
-  public static String getFetchOptionName(
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+  public static String getFetchOptionName(@Nullable FetchOption fetchOption) {
     return null == fetchOption ? FetchOption.MINIMAL.name() : fetchOption.name();
   }
 

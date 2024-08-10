@@ -15,29 +15,20 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
 /** Base interface for requests against a tag. */
 public interface OnTagBuilder<R extends OnTagBuilder<R>> {
   R tagName(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String tagName);
 
   R hash(
       @NotNull
-          @jakarta.validation.constraints.NotNull
           @Pattern(
-              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hash);

@@ -18,7 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 /** Represents documentation for a content object in Nessie. */
@@ -37,13 +37,11 @@ public interface Documentation {
    * type.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   String getMimeType();
 
   /** Documentation text, format according to {@link #getMimeType()}. */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 2)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String getText();

@@ -22,10 +22,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -64,9 +64,7 @@ public abstract class IcebergTable extends IcebergContent {
    * (implementation of) Iceberg's {@code FileIO} configured for the particular Iceberg table.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   @Override
   public abstract String getMetadataLocation();
 
@@ -96,7 +94,6 @@ public abstract class IcebergTable extends IcebergContent {
 
   @Deprecated
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V1.class)
   // Left here in case an old Nessie client sends this piece of information.

@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
-import javax.annotation.Nullable;
 
 /** A token issued by the authorization server. */
 public interface Token {

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 /** Represents a pair of access and refresh tokens, issued by an authorization server. */

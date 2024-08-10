@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
 
@@ -47,7 +47,6 @@ public interface MergeKeyBehavior {
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable
   Content getExpectedTargetContent();
 
   /**
@@ -64,7 +63,6 @@ public interface MergeKeyBehavior {
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable
   Content getResolvedContent();
 
   /**
@@ -80,7 +78,6 @@ public interface MergeKeyBehavior {
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable
   Documentation getExpectedTargetDocumentation();
 
   /**
@@ -97,7 +94,6 @@ public interface MergeKeyBehavior {
   @JsonInclude(Include.NON_NULL)
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable
   Documentation getResolvedDocumentation();
 
   /**

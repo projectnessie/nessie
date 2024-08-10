@@ -17,7 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -34,7 +34,6 @@ public interface UpdateRepositoryConfigResponse {
    * repository config type exists, this value will be {@code null}.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @Schema(
       implementation = RepositoryConfig.class,
       title = "The previous state of the repository configuration object.",

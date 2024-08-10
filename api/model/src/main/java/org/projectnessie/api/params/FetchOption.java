@@ -15,7 +15,7 @@
  */
 package org.projectnessie.api.params;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /** Legacy {@code FetchOption} enum. Use {@link org.projectnessie.model.FetchOption} instead. */
 @Deprecated
@@ -31,7 +31,7 @@ public enum FetchOption {
    * @return <code>true</code> if the given <code>fetchOption</code> is {@link FetchOption#ALL},
    *     <code>false</code> otherwise.
    */
-  public static boolean isFetchAll(@Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+  public static boolean isFetchAll(@Nullable FetchOption fetchOption) {
     return ALL == fetchOption;
   }
 
@@ -43,8 +43,7 @@ public enum FetchOption {
    * @return The name of the given <code>fetchOption</code> or {@link FetchOption#MINIMAL} if the
    *     given <code>fetchOption</code> is <code>null</code>
    */
-  public static String getFetchOptionName(
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+  public static String getFetchOptionName(@Nullable FetchOption fetchOption) {
     return null == fetchOption ? FetchOption.MINIMAL.name() : fetchOption.name();
   }
 

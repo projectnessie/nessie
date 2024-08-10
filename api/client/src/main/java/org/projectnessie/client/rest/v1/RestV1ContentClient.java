@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.rest.v1;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieNotFoundException;
@@ -33,8 +33,7 @@ class RestV1ContentClient implements HttpContentApi {
   }
 
   @Override
-  public Content getContent(
-      @NotNull @jakarta.validation.constraints.NotNull ContentKey key, String ref, String hashOnRef)
+  public Content getContent(@NotNull ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -48,9 +47,7 @@ class RestV1ContentClient implements HttpContentApi {
 
   @Override
   public GetMultipleContentsResponse getMultipleContents(
-      @NotNull @jakarta.validation.constraints.NotNull String ref,
-      String hashOnRef,
-      @NotNull @jakarta.validation.constraints.NotNull GetMultipleContentsRequest request)
+      @NotNull String ref, String hashOnRef, @NotNull GetMultipleContentsRequest request)
       throws NessieNotFoundException {
     return client
         .newRequest()

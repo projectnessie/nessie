@@ -17,10 +17,10 @@ package org.projectnessie.api.v1.params;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
@@ -29,37 +29,28 @@ import org.projectnessie.model.Validation;
 public interface BaseMergeTransplant {
 
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   String getFromRefName();
 
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   @Deprecated
   Boolean keepIndividualCommits();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   List<MergeKeyBehavior> getKeyMergeModes();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   MergeBehavior getDefaultKeyMergeMode();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isDryRun();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isFetchAdditionalInfo();
 
@@ -69,7 +60,6 @@ public interface BaseMergeTransplant {
    * throwing a {@link org.projectnessie.error.NessieReferenceConflictException}.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   Boolean isReturnConflictAsResult();
 }

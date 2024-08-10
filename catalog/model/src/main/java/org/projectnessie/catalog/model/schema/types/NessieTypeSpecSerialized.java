@@ -20,9 +20,9 @@ import static java.util.Objects.requireNonNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.schema.NessieField;
 import org.projectnessie.catalog.model.schema.NessieStruct;
@@ -35,7 +35,6 @@ public interface NessieTypeSpecSerialized {
   String type();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - big-decimal (scale)
@@ -43,7 +42,6 @@ public interface NessieTypeSpecSerialized {
   Integer length();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - big-decimal
@@ -52,7 +50,6 @@ public interface NessieTypeSpecSerialized {
   Integer precision();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - time
@@ -60,7 +57,6 @@ public interface NessieTypeSpecSerialized {
   Boolean withTimeZone();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - list
@@ -68,7 +64,6 @@ public interface NessieTypeSpecSerialized {
   NessieTypeSpecSerialized elementType();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - list
@@ -76,7 +71,6 @@ public interface NessieTypeSpecSerialized {
   Integer icebergElementFieldId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - list
@@ -84,14 +78,12 @@ public interface NessieTypeSpecSerialized {
   Boolean elementsNullable();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - map
   NessieTypeSpecSerialized keyType();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Used for:
   // - map
@@ -103,7 +95,6 @@ public interface NessieTypeSpecSerialized {
   List<NessieField> fields();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String icebergRecordName();
 

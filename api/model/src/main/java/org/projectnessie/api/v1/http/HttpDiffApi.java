@@ -16,12 +16,12 @@
 package org.projectnessie.api.v1.http;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -37,17 +37,12 @@ import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Consumes(MediaType.APPLICATION_JSON)
-@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 @Path("v1/diffs")
-@jakarta.ws.rs.Path("v1/diffs")
 public interface HttpDiffApi extends DiffApi {
 
   @GET
-  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Path("{fromRefWithHash}...{toRefWithHash}")
-  @jakarta.ws.rs.Path("{fromRefWithHash}...{toRefWithHash}")
   @Operation(
       summary = "Get a diff for two given references",
       description =
@@ -78,6 +73,5 @@ public interface HttpDiffApi extends DiffApi {
   })
   @JsonView(Views.V1.class)
   @Override
-  DiffResponse getDiff(@BeanParam @jakarta.ws.rs.BeanParam DiffParams params)
-      throws NessieNotFoundException;
+  DiffResponse getDiff(@BeanParam DiffParams params) throws NessieNotFoundException;
 }

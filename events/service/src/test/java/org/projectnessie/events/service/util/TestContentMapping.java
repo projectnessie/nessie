@@ -18,11 +18,11 @@ package org.projectnessie.events.service.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

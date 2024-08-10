@@ -15,9 +15,9 @@
  */
 package org.projectnessie.client.api;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.MergeResponse;
@@ -41,11 +41,7 @@ public interface TransplantCommitsBuilder extends MergeTransplantBuilder<Transpl
   TransplantCommitsBuilder message(String message);
 
   TransplantCommitsBuilder hashesToTransplant(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Size
-          @jakarta.validation.constraints.Size(min = 1)
-          List<String> hashesToTransplant);
+      @NotNull @Size(min = 1) List<String> hashesToTransplant);
 
   MergeResponse transplant() throws NessieNotFoundException, NessieConflictException;
 }

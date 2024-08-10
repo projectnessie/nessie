@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
@@ -50,17 +50,14 @@ public interface IcebergSnapshotRef {
   String type();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Integer minSnapshotsToKeep();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Long maxSnapshotAgeMs();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Long maxRefAgeMs();
 

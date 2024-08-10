@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.model.id.Hashable;
 import org.projectnessie.catalog.model.id.NessieIdHasher;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -38,7 +38,6 @@ public interface NessieStruct extends Hashable {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   @Nullable
-  @jakarta.annotation.Nullable
   String icebergRecordName();
 
   @Override

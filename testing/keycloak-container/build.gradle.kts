@@ -21,16 +21,15 @@ publishingHelper { mavenName = "Nessie - Keycloak testcontainer" }
 dependencies {
   implementation(libs.slf4j.api)
   implementation(project(":nessie-container-spec-helper"))
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
   api(libs.keycloak.admin.client)
   api(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
 
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 }

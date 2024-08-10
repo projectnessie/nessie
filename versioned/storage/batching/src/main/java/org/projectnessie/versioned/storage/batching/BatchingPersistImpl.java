@@ -116,8 +116,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public boolean storeObj(
-      @Nonnull @javax.annotation.Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     if (!ignoreSoftSizeRestrictions) {
       verifySoftRestrictions(obj);
@@ -133,7 +132,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public void upsertObj(@Nonnull @javax.annotation.Nonnull Obj obj) throws ObjTooLargeException {
+  public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     verifySoftRestrictions(obj);
     writeLock();
     try {
@@ -146,9 +145,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public boolean[] storeObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     writeLock();
     try {
       for (Obj obj : objs) {
@@ -165,8 +162,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public void upsertObjs(@Nonnull @javax.annotation.Nonnull Obj[] objs)
-      throws ObjTooLargeException {
+  public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     writeLock();
     try {
       for (Obj obj : objs) {
@@ -189,10 +185,8 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
   public <T extends Obj> T fetchTypedObj(
-      @Nonnull @javax.annotation.Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass)
-      throws ObjNotFoundException {
+      @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     readLock();
     try {
       Obj r = pendingObj(id);
@@ -212,9 +206,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public ObjType fetchObjType(@Nonnull @javax.annotation.Nonnull ObjId id)
-      throws ObjNotFoundException {
+  public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     readLock();
     try {
       Obj r = pendingObj(id);
@@ -229,7 +221,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
   public <T extends Obj> T[] fetchTypedObjs(
       @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
 
@@ -285,7 +276,6 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
   public <T extends Obj> T[] fetchTypedObjsIfExist(
       @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
 
@@ -304,7 +294,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public void deleteObj(@Nonnull @javax.annotation.Nonnull ObjId id) {
+  public void deleteObj(@Nonnull ObjId id) {
     writeLock();
     try {
       delegate().deleteObj(id);
@@ -316,7 +306,7 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
-  public void deleteObjs(@Nonnull @javax.annotation.Nonnull ObjId[] ids) {
+  public void deleteObjs(@Nonnull ObjId[] ids) {
     writeLock();
     try {
       for (ObjId id : ids) {
@@ -369,46 +359,38 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
   public String name() {
     return delegate().name();
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
   public StoreConfig config() {
     return delegate().config();
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public Reference addReference(@Nonnull @javax.annotation.Nonnull Reference reference)
-      throws RefAlreadyExistsException {
+  public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     return delegate().addReference(reference);
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public Reference markReferenceAsDeleted(@Nonnull @javax.annotation.Nonnull Reference reference)
+  public Reference markReferenceAsDeleted(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     return delegate().markReferenceAsDeleted(reference);
   }
 
   @Override
-  public void purgeReference(@Nonnull @javax.annotation.Nonnull Reference reference)
+  public void purgeReference(@Nonnull Reference reference)
       throws RefNotFoundException, RefConditionFailedException {
     delegate().purgeReference(reference);
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public Reference updateReferencePointer(
-      @Nonnull @javax.annotation.Nonnull Reference reference,
-      @Nonnull @javax.annotation.Nonnull ObjId newPointer)
+  public Reference updateReferencePointer(@Nonnull Reference reference, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException {
     return delegate().updateReferencePointer(reference, newPointer);
   }
@@ -416,36 +398,32 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   @Override
   @Nullable
   @javax.annotation.Nullable
-  public Reference fetchReference(@Nonnull @javax.annotation.Nonnull String name) {
+  public Reference fetchReference(@Nonnull String name) {
     return delegate().fetchReference(name);
   }
 
   @Override
   @Nullable
   @javax.annotation.Nullable
-  public Reference fetchReferenceForUpdate(@Nonnull @javax.annotation.Nonnull String name) {
+  public Reference fetchReferenceForUpdate(@Nonnull String name) {
     return delegate().fetchReferenceForUpdate(name);
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public Reference[] fetchReferences(@Nonnull @javax.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferences(@Nonnull String[] names) {
     return delegate().fetchReferences(names);
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public Reference[] fetchReferencesForUpdate(@Nonnull @javax.annotation.Nonnull String[] names) {
+  public Reference[] fetchReferencesForUpdate(@Nonnull String[] names) {
     return delegate().fetchReferencesForUpdate(names);
   }
 
   @Override
   @Nonnull
-  @javax.annotation.Nonnull
-  public CloseableIterator<Obj> scanAllObjects(
-      @Nonnull @javax.annotation.Nonnull Set<ObjType> returnedObjTypes) {
+  public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
     throw new UnsupportedOperationException();
   }
 

@@ -22,9 +22,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -56,11 +56,7 @@ import org.immutables.value.Value;
 public interface Reference extends Base {
   /** Human-readable reference name. */
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   String getName();
 
   /**
@@ -71,9 +67,6 @@ public interface Reference extends Base {
    * Nessie spec 2.1.0).
    */
   @Pattern(
-      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getHash();
@@ -101,7 +94,6 @@ public interface Reference extends Base {
    */
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   ReferenceMetadata getMetadata();
 
   @JsonIgnore

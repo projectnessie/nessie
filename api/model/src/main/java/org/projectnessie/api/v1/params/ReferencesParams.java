@@ -15,10 +15,10 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.api.v1.http.HttpTreeApi;
@@ -45,9 +45,7 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
-  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
-  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   @Parameter(
@@ -65,32 +63,28 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
         @ExampleObject(ref = "expr_by_ref_commit")
       })
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   @Nullable
-  @jakarta.annotation.Nullable
   private String filter;
 
   public ReferencesParams() {}
 
   @org.immutables.builder.Builder.Constructor
   ReferencesParams(
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption,
-      @Nullable @jakarta.annotation.Nullable String filter) {
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable FetchOption fetchOption,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.fetchOption = fetchOption;
     this.filter = filter;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

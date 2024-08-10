@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -51,8 +51,7 @@ public interface MergeReferenceBuilder extends MergeTransplantBuilder<MergeRefer
    */
   MergeReferenceBuilder commitMeta(CommitMeta commitMeta);
 
-  MergeReferenceBuilder fromHash(
-      @NotBlank @jakarta.validation.constraints.NotBlank String fromHash);
+  MergeReferenceBuilder fromHash(@NotBlank String fromHash);
 
   /**
    * Convenience for {@link #fromRefName(String) fromRefName(fromRef.getName())}{@code .}{@link

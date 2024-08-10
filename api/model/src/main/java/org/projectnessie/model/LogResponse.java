@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -35,7 +35,6 @@ import org.projectnessie.model.ser.Views;
 public interface LogResponse extends PaginatedResponse {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   List<LogEntry> getLogEntries();
 
   static ImmutableLogResponse.Builder builder() {
@@ -52,7 +51,6 @@ public interface LogResponse extends PaginatedResponse {
     }
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     CommitMeta getCommitMeta();
 
     @SuppressWarnings("DeprecatedIsStillUsed")
@@ -62,11 +60,9 @@ public interface LogResponse extends PaginatedResponse {
     List<String> getAdditionalParents();
 
     @Nullable
-    @jakarta.annotation.Nullable
     String getParentCommitHash();
 
     @Nullable
-    @jakarta.annotation.Nullable
     List<Operation> getOperations();
   }
 }

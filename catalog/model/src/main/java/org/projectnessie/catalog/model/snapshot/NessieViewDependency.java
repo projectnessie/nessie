@@ -17,8 +17,8 @@ package org.projectnessie.catalog.model.snapshot;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -33,11 +33,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @JsonDeserialize(as = ImmutableNessieViewDependency.class)
 public interface NessieViewDependency {
   @Nullable
-  @jakarta.annotation.Nullable
   NessieId tableSnapshot();
 
   @Nullable
-  @jakarta.annotation.Nullable
   NessieId viewSnapshot();
 
   List<NessieId> referencedColumns();

@@ -16,12 +16,12 @@
 package org.projectnessie.storage.uri;
 
 import com.google.common.base.Preconditions;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A utility class for working with file storage locations to be used instead of {@link URI} since

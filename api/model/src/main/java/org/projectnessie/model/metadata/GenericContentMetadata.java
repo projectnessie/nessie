@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -40,7 +40,6 @@ public interface GenericContentMetadata extends ContentMetadata {
   String getVariant();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Schema(type = SchemaType.OBJECT)
   @Value.Parameter(order = 2)
   @JsonInclude(Include.NON_NULL)

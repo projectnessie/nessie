@@ -17,8 +17,8 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -46,25 +46,21 @@ public interface ReferenceHistoryResponse {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   Reference getReference();
 
   @Schema(description = "Consistency status of the current HEAD commit.")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   ReferenceHistoryState current();
 
   @Schema(
       description =
           "Consistency status of the recorded recent HEADs of the reference, including re-assign operations.")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   List<ReferenceHistoryState> previous();
 
   @Schema(
       description =
           "Combined consistency status of the commit-log of the reference, if requested by the client.")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   CommitConsistency commitLogConsistency();
 }

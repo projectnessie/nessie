@@ -16,10 +16,10 @@
 package org.projectnessie.api.v1.http;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -33,14 +33,11 @@ import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Path("v1/config")
-@jakarta.ws.rs.Path("v1/config")
 public interface HttpConfigApi extends ConfigApi {
 
   @Override
   @GET
-  @jakarta.ws.rs.GET
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings")
   @APIResponses({
     @APIResponse(

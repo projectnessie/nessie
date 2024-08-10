@@ -27,9 +27,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
 import org.immutables.value.Value;
@@ -72,9 +72,7 @@ public interface Merge extends BaseMergeTransplant {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   @Deprecated
   String getMessage();
 
@@ -83,7 +81,6 @@ public interface Merge extends BaseMergeTransplant {
    * attribute, {@link #getMessage()} will be ignored.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   CommitMeta getCommitMeta();
 
@@ -95,11 +92,7 @@ public interface Merge extends BaseMergeTransplant {
   @Pattern(
       regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   @Nullable
-  @jakarta.annotation.Nullable
   String getFromHash();
 
   /**

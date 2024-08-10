@@ -20,8 +20,8 @@ publishingHelper { mavenName = "Nessie - GC - JDBC live-contents-set persistence
 
 dependencies {
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
   compileOnly(libs.jetbrains.annotations)
 
   implementation(nessieProject("nessie-model"))
@@ -66,5 +66,5 @@ dependencies {
   intTestImplementation("org.testcontainers:mysql")
   intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(project(":nessie-container-spec-helper"))
-  intTestCompileOnly(libs.immutables.value.annotations)
+  intTestCompileOnly(project(":nessie-immutables-std"))
 }

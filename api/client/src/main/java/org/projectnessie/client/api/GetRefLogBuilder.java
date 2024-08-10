@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
 import org.projectnessie.model.Validation;
@@ -38,12 +38,7 @@ public interface GetRefLogBuilder
    * reflog.
    */
   GetRefLogBuilder untilHash(
-      @Nullable
-          @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String untilHash);
 
   /**
@@ -51,12 +46,7 @@ public interface GetRefLogBuilder
    * reflog.
    */
   GetRefLogBuilder fromHash(
-      @Nullable
-          @jakarta.annotation.Nullable
-          @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.HASH_REGEX,
-              message = Validation.HASH_MESSAGE)
+      @Nullable @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
           String fromHash);
 
   @Override // kept for byte-code compatibility

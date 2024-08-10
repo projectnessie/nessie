@@ -18,10 +18,10 @@ package org.projectnessie.client.auth.oauth2;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 
 /**
  * Common base for {@link ClientCredentialsTokenResponse}, {@link RefreshTokenResponse} and {@link

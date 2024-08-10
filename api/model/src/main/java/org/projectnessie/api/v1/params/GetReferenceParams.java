@@ -15,13 +15,13 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder;
@@ -34,13 +34,8 @@ public class GetReferenceParams {
       description = "name of ref to fetch",
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
-  @jakarta.ws.rs.PathParam("ref")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
@@ -55,23 +50,18 @@ public class GetReferenceParams {
               + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
               + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
   @QueryParam("fetch")
-  @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
-  @jakarta.annotation.Nullable
   private FetchOption fetchOption;
 
   public GetReferenceParams() {}
 
   @Builder.Constructor
-  GetReferenceParams(
-      @NotNull @jakarta.validation.constraints.NotNull String refName,
-      @Nullable @jakarta.annotation.Nullable FetchOption fetchOption) {
+  GetReferenceParams(@NotNull String refName, @Nullable FetchOption fetchOption) {
     this.refName = refName;
     this.fetchOption = fetchOption;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public FetchOption fetchOption() {
     return fetchOption;
   }

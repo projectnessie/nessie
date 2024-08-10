@@ -18,9 +18,9 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
@@ -35,7 +35,6 @@ public interface EntriesResponse extends PaginatedResponse {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   List<Entry> getEntries();
 
   /**
@@ -43,7 +42,6 @@ public interface EntriesResponse extends PaginatedResponse {
    * entries were fetched. Never null when using REST API v2.
    */
   @Nullable // Only nullable in V1
-  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveReference();
 
@@ -57,26 +55,24 @@ public interface EntriesResponse extends PaginatedResponse {
     }
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
     @Schema(ref = "#/components/schemas/Type") // workaround self-referencing 'ref'
     Content.Type getType();
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 1)
     ContentKey getName();
 
     @JsonView(Views.V2.class)
     @Value.Parameter(order = 3)
     @Nullable
-    @jakarta.annotation.Nullable // for V1 backwards compatibility
+    // for V1 backwards compatibility
     String getContentId();
 
     @JsonView(Views.V2.class)
     @Value.Parameter(order = 4)
     @Nullable
-    @jakarta.annotation.Nullable // for V1 backwards compatibility
+    // for V1 backwards compatibility
     Content getContent();
 
     @Value.Check

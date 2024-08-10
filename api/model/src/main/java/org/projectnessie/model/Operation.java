@@ -23,9 +23,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -55,7 +55,6 @@ import org.projectnessie.model.ser.Views;
 public interface Operation {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   ContentKey getKey();
 
   @Schema(
@@ -84,11 +83,9 @@ public interface Operation {
   @JsonTypeName("PUT")
   interface Put extends Operation {
     @NotNull
-    @jakarta.validation.constraints.NotNull
     Content getContent();
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Deprecated
     @SuppressWarnings("DeprecatedIsStillUsed")
     @JsonView(Views.V1.class)
@@ -104,7 +101,6 @@ public interface Operation {
     List<ContentMetadata> getMetadata();
 
     @Nullable
-    @jakarta.annotation.Nullable
     @JsonView(Views.V2.class)
     Documentation getDocumentation();
 

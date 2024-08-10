@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
@@ -52,12 +52,10 @@ public interface TableRef {
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   ParsedReference reference();
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   String warehouse();
 
   static TableRef tableRef(ContentKey contentKey, ParsedReference reference, String warehouse) {

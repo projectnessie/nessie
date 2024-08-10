@@ -25,10 +25,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -49,7 +49,6 @@ public interface IcebergTableMetadata {
   int formatVersion();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String tableUuid();
 
   /**
@@ -61,7 +60,6 @@ public interface IcebergTableMetadata {
   @JsonView(IcebergSpec.IcebergSpecV2.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Long lastSequenceNumber();
 
   long lastUpdatedMs();
@@ -71,14 +69,12 @@ public interface IcebergTableMetadata {
   @JsonView(IcebergSpec.IcebergSpecV1.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   IcebergSchema schema();
 
   List<IcebergSchema> schemas();
 
   // Optional in V1
   @Nullable
-  @jakarta.annotation.Nullable
   Integer currentSchemaId();
 
   @JsonView(IcebergSpec.IcebergSpecV1.class)
@@ -89,17 +85,14 @@ public interface IcebergTableMetadata {
 
   // Optional in V1
   @Nullable
-  @jakarta.annotation.Nullable
   Integer defaultSpecId();
 
   // Optional in V1
   @Nullable
-  @jakarta.annotation.Nullable
   Integer lastPartitionId();
 
   // Optional in V1
   @Nullable
-  @jakarta.annotation.Nullable
   Integer defaultSortOrderId();
 
   List<IcebergSortOrder> sortOrders();
@@ -111,7 +104,6 @@ public interface IcebergTableMetadata {
   @JsonView(IcebergSpec.IcebergSpecV2.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Map<String, IcebergSnapshotRef> refs();
 
   List<IcebergSnapshot> snapshots();

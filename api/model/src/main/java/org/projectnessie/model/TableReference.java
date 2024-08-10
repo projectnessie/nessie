@@ -15,11 +15,11 @@
  */
 package org.projectnessie.model;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 /**
@@ -49,15 +49,11 @@ public abstract class TableReference {
       Pattern.compile("^([^@#]+)(@([^@#]+))?(#([^@#]+))?$");
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   public abstract String getName();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   public abstract String getReference();
 
   @Value.Redacted
@@ -66,9 +62,7 @@ public abstract class TableReference {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   public abstract String getTimestamp();
 
   @Value.Redacted
@@ -77,9 +71,7 @@ public abstract class TableReference {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   public abstract String getHash();
 
   @Value.Redacted

@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.model.id.Hashable;
 import org.projectnessie.catalog.model.id.NessieIdHasher;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -32,7 +32,6 @@ public interface NessieFieldValue extends Hashable {
   UUID fieldId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Integer icebergFieldId();
 

@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Reference;
@@ -28,9 +28,7 @@ import org.projectnessie.model.Tag;
  * @since {@link NessieApiV1}
  */
 public interface AssignTagBuilder extends OnTagBuilder<AssignTagBuilder> {
-  AssignTagBuilder assignTo(
-      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          Reference assignTo);
+  AssignTagBuilder assignTo(@Valid @NotNull Reference assignTo);
 
   void assign() throws NessieNotFoundException, NessieConflictException;
 

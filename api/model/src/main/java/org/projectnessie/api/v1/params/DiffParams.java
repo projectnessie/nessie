@@ -15,11 +15,11 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.PathParam;
 import java.util.Objects;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.Validation;
@@ -31,45 +31,29 @@ public class DiffParams {
   private static final char HASH_SEPARATOR = '*';
 
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   private String fromRef;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = HASH_OPTIONAL_REGEX,
-      message = Validation.HASH_MESSAGE)
   private String fromHashOnRef;
 
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   private String toRef;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(regexp = HASH_OPTIONAL_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = HASH_OPTIONAL_REGEX,
-      message = Validation.HASH_MESSAGE)
   private String toHashOnRef;
 
   @Parameter(
       description = "The 'from' reference (and optional hash) to start the diff from",
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("fromRefWithHash")
-  @jakarta.ws.rs.PathParam("fromRefWithHash")
   private String fromRefWithHash;
 
   @Parameter(
       description = "The 'to' reference (and optional hash) to end the diff at.",
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refForDiffWithHash")})
   @PathParam("toRefWithHash")
-  @jakarta.ws.rs.PathParam("toRefWithHash")
   private String toRefWithHash;
 
   public DiffParams() {}
@@ -82,10 +66,10 @@ public class DiffParams {
 
   @org.immutables.builder.Builder.Constructor
   DiffParams(
-      @NotNull @jakarta.validation.constraints.NotNull String fromRef,
-      @Nullable @jakarta.annotation.Nullable String fromHashOnRef,
-      @NotNull @jakarta.validation.constraints.NotNull String toRef,
-      @Nullable @jakarta.annotation.Nullable String toHashOnRef) {
+      @NotNull String fromRef,
+      @Nullable String fromHashOnRef,
+      @NotNull String toRef,
+      @Nullable String toHashOnRef) {
     this.fromRef = fromRef;
     this.fromHashOnRef = fromHashOnRef;
     this.toRef = toRef;
@@ -112,7 +96,6 @@ public class DiffParams {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String getFromHashOnRef() {
     if (fromRefWithHash != null) {
       this.fromRef = parseRefName(fromRefWithHash);
@@ -132,7 +115,6 @@ public class DiffParams {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String getToHashOnRef() {
     if (toRefWithHash != null) {
       this.toRef = parseRefName(toRefWithHash);

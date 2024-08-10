@@ -23,10 +23,10 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -52,7 +52,6 @@ public interface MergeResponse {
 
   /** Commit-ID of the target branch after the merge/transplant operation. */
   @Nullable
-  @jakarta.annotation.Nullable
   String getResultantTargetHash();
 
   /**
@@ -64,7 +63,6 @@ public interface MergeResponse {
    * Since renaming a public API fields is not good practice, this field represents the merge-base.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   String getCommonAncestor();
 
   /** Name of the target branch. */
@@ -75,7 +73,6 @@ public interface MergeResponse {
 
   /** The expected commit-ID of the target branch, as specified by the caller. */
   @Nullable
-  @jakarta.annotation.Nullable
   String getExpectedHash();
 
   @SuppressWarnings("DeprecatedIsStillUsed")
@@ -86,7 +83,6 @@ public interface MergeResponse {
 
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Nullable
-  @jakarta.annotation.Nullable
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
   @JsonView(Views.V1.class)
@@ -130,7 +126,6 @@ public interface MergeResponse {
     @JsonInclude(Include.NON_NULL)
     @JsonView(Views.V2.class)
     @Nullable
-    @jakarta.annotation.Nullable
     Conflict getConflict();
   }
 

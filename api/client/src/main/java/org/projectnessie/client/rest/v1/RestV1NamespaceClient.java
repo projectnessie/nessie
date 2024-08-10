@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.rest.v1;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -37,9 +37,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
   }
 
   @Override
-  public Namespace createNamespace(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
-      @NotNull @jakarta.validation.constraints.NotNull Namespace namespace)
+  public Namespace createNamespace(@NotNull NamespaceParams params, @NotNull Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
     return client
         .newRequest()
@@ -52,8 +50,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
   }
 
   @Override
-  public void deleteNamespace(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+  public void deleteNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException,
           NessieNamespaceNotEmptyException,
           NessieReferenceNotFoundException {
@@ -66,8 +63,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
   }
 
   @Override
-  public Namespace getNamespace(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+  public Namespace getNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     return client
         .newRequest()
@@ -80,8 +76,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
   }
 
   @Override
-  public GetNamespacesResponse getNamespaces(
-      @NotNull @jakarta.validation.constraints.NotNull MultipleNamespacesParams params)
+  public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     return client
         .newRequest()
@@ -96,8 +91,7 @@ class RestV1NamespaceClient implements HttpNamespaceApi {
 
   @Override
   public void updateProperties(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceUpdate namespaceUpdate)
+      @NotNull NamespaceParams params, @NotNull NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     client
         .newRequest()

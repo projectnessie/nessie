@@ -15,25 +15,19 @@
  */
 package org.projectnessie.client.api;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.model.Validation;
 
 public interface ReferenceHistoryBuilder {
   ReferenceHistoryBuilder refName(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String refName);
 
-  ReferenceHistoryBuilder headCommitsToScan(
-      @Nullable @jakarta.annotation.Nullable Integer headCommitsToScan);
+  ReferenceHistoryBuilder headCommitsToScan(@Nullable Integer headCommitsToScan);
 
   ReferenceHistoryResponse get() throws NessieNotFoundException;
 }

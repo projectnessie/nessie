@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergType;
@@ -56,7 +56,6 @@ public interface IcebergNestedField {
   IcebergType type();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String doc();
 

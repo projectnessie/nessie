@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.ext;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import org.projectnessie.client.api.NessieApiV1;
 
 /**
@@ -30,12 +30,10 @@ public interface NessieClientFactory {
   NessieApiVersion apiVersion();
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   default NessieApiV1 make() {
     return make((builder, version) -> builder);
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   NessieApiV1 make(NessieClientCustomizer customizer);
 }

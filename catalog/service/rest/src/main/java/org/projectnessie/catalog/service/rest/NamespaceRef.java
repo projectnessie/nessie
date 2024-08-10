@@ -15,7 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
 import org.projectnessie.model.ContentKey;
@@ -52,17 +52,14 @@ public interface NamespaceRef {
 
   @Value.Parameter(order = 2)
   @Nullable
-  @jakarta.annotation.Nullable
   String referenceName();
 
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   String hashWithRelativeSpec();
 
   @Value.Parameter(order = 4)
   @Nullable
-  @jakarta.annotation.Nullable
   String warehouse();
 
   static NamespaceRef namespaceRef(

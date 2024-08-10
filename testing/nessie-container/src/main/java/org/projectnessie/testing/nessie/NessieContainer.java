@@ -18,6 +18,7 @@ package org.projectnessie.testing.nessie;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
@@ -25,7 +26,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;

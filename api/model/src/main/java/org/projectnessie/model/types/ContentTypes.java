@@ -18,13 +18,13 @@ package org.projectnessie.model.types;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import javax.annotation.Nonnull;
 import org.projectnessie.model.Content;
 
 /**
@@ -41,7 +41,6 @@ public final class ContentTypes {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   public static Content.Type forName(String name) {
     return Registry.forName(name);
   }

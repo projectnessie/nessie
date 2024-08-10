@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotBlank;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -30,33 +30,27 @@ import org.immutables.value.Value;
 public abstract class UDF extends Content {
 
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
   public abstract String getSqlText();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
   public abstract String getDialect();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public abstract String getVersionId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public abstract String getSignatureId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public abstract String getMetadataLocation();
 

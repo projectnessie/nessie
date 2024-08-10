@@ -18,12 +18,12 @@ package org.projectnessie.client.ext;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.ext.MultiVersionApiTest.apiVersion;
 
+import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -132,7 +132,6 @@ public abstract class NessieClientResolver implements ParameterResolver {
 
       return new ClientFactory(uri, mainConfigSource, apiVersion, responseFactoryClass) {
         @Nonnull
-        @jakarta.annotation.Nonnull
         @Override // Note: this object is not serializable
         public NessieApiV1 make(NessieClientCustomizer customizer) {
           return super.make(
@@ -171,7 +170,6 @@ public abstract class NessieClientResolver implements ParameterResolver {
     }
 
     @Nonnull
-    @jakarta.annotation.Nonnull
     @Override
     public NessieApiV1 make(NessieClientCustomizer customizer) {
       NessieClientBuilder clientBuilder =

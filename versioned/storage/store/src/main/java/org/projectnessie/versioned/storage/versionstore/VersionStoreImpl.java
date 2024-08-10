@@ -735,7 +735,6 @@ public class VersionStoreImpl implements VersionStore {
     // filters out non-content keys and non-live CommitOps.
     Iterator<ContentKeyWithCommitOp> keyAndOp =
         new AbstractIterator<>() {
-          @CheckForNull
           @Override
           protected ContentKeyWithCommitOp computeNext() {
             while (true) {

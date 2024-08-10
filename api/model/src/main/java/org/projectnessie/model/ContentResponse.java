@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.ser.Views;
 
@@ -34,7 +34,6 @@ public interface ContentResponse {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   Content getContent();
 
@@ -43,12 +42,10 @@ public interface ContentResponse {
    * entries were fetched. Never null.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Value.Parameter(order = 3)

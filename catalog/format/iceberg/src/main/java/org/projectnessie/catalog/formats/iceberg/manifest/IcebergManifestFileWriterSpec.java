@@ -17,8 +17,8 @@ package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
@@ -68,7 +68,6 @@ public interface IcebergManifestFileWriterSpec {
   Map<String, String> tableProperties();
 
   @Nullable
-  @jakarta.annotation.Nullable
   byte[] keyMetadata();
 
   String manifestPath();

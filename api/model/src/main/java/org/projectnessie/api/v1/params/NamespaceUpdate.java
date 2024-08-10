@@ -17,9 +17,9 @@ package org.projectnessie.api.v1.params;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -28,10 +28,8 @@ import org.immutables.value.Value;
 public abstract class NamespaceUpdate {
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Map<String, String> getPropertyUpdates();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract Set<String> getPropertyRemovals();
 }

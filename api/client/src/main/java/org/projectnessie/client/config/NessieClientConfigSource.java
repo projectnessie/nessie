@@ -15,21 +15,18 @@
  */
 package org.projectnessie.client.config;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /** Helper functional interface adding a fallback-mechanism to chain multiple config-sources. */
 @FunctionalInterface
 public interface NessieClientConfigSource {
   @Nullable
-  @jakarta.annotation.Nullable
-  String getValue(@Nonnull @jakarta.annotation.Nonnull String key);
+  String getValue(@Nonnull String key);
 
   @Nonnull
-  @jakarta.annotation.Nonnull
-  default NessieClientConfigSource fallbackTo(
-      @Nonnull @jakarta.annotation.Nonnull NessieClientConfigSource fallback) {
+  default NessieClientConfigSource fallbackTo(@Nonnull NessieClientConfigSource fallback) {
     return k -> {
       String v = getValue(k);
       return v != null ? v : fallback.getValue(k);
@@ -37,7 +34,6 @@ public interface NessieClientConfigSource {
   }
 
   @Nonnull
-  @jakarta.annotation.Nonnull
   default Function<String, String> asFunction() {
     return this::getValue;
   }

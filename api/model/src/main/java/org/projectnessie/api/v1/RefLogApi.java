@@ -15,8 +15,8 @@
  */
 package org.projectnessie.api.v1;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.api.v1.params.RefLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.RefLogResponse;
@@ -51,8 +51,5 @@ public interface RefLogApi {
    * @return {@link RefLogResponse}
    */
   @Deprecated
-  RefLogResponse getRefLog(
-      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          RefLogParams params)
-      throws NessieNotFoundException;
+  RefLogResponse getRefLog(@Valid @NotNull RefLogParams params) throws NessieNotFoundException;
 }

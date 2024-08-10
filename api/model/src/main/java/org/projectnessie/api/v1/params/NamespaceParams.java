@@ -15,13 +15,13 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder;
@@ -34,38 +34,28 @@ public class NamespaceParams {
       description = "name of ref to fetch",
       examples = {@ExampleObject(ref = "ref")})
   @PathParam("ref")
-  @jakarta.ws.rs.PathParam("ref")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   private String refName;
 
   @Parameter(
       description = "the name of the namespace",
       examples = {@ExampleObject(ref = "namespaceName")})
   @PathParam("name")
-  @jakarta.ws.rs.PathParam("name")
   private Namespace namespace;
 
   @Parameter(
       description = "a particular hash on the given ref",
       examples = {@ExampleObject(ref = "nullHash"), @ExampleObject(ref = "hash")})
   @QueryParam("hashOnRef")
-  @jakarta.ws.rs.QueryParam("hashOnRef")
   @Nullable
-  @jakarta.annotation.Nullable
   private String hashOnRef;
 
   public NamespaceParams() {}
 
   @Builder.Constructor
   NamespaceParams(
-      @NotNull @jakarta.validation.constraints.NotNull String refName,
-      @NotNull @jakarta.validation.constraints.NotNull Namespace namespace,
-      @Nullable @jakarta.annotation.Nullable String hashOnRef) {
+      @NotNull String refName, @NotNull Namespace namespace, @Nullable String hashOnRef) {
     this.refName = refName;
     this.namespace = namespace;
     this.hashOnRef = hashOnRef;
@@ -80,7 +70,6 @@ public class NamespaceParams {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String getHashOnRef() {
     return hashOnRef;
   }

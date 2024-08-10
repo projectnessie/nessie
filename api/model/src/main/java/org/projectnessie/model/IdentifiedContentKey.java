@@ -20,12 +20,12 @@ import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.ide
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -33,13 +33,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableIdentifiedContentKey.class)
 public interface IdentifiedContentKey {
   @NotNull
-  @jakarta.validation.constraints.NotNull
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   List<IdentifiedElement> elements();
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   ContentKey contentKey();
 
   @JsonIgnore
@@ -50,7 +47,6 @@ public interface IdentifiedContentKey {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   Content.Type type();
 
   @Value.Check
@@ -70,7 +66,6 @@ public interface IdentifiedContentKey {
 
     @Value.Parameter(order = 2)
     @Nullable
-    @jakarta.annotation.Nullable
     String contentId();
 
     static IdentifiedElement identifiedElement(String element, String contentId) {

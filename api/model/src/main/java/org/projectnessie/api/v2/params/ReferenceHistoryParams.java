@@ -17,11 +17,11 @@ package org.projectnessie.api.v2.params;
 
 import static org.projectnessie.api.v2.doc.ApiDoc.REF_GET_PARAMETER_DESCRIPTION;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
@@ -33,13 +33,8 @@ public class ReferenceHistoryParams {
       description = REF_GET_PARAMETER_DESCRIPTION,
       examples = {@ExampleObject(ref = "ref"), @ExampleObject(ref = "refDefault")})
   @PathParam("ref")
-  @jakarta.ws.rs.PathParam("ref")
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Pattern(regexp = Validation.REF_NAME_PATH_REGEX, message = Validation.REF_NAME_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.REF_NAME_PATH_REGEX,
-      message = Validation.REF_NAME_MESSAGE)
   private String ref;
 
   @Parameter(
@@ -48,23 +43,18 @@ public class ReferenceHistoryParams {
               + "limited to the given amount of commits. Default is to not scan the commit log. The server "
               + "may impose a hard limit on the amount of commits from the commit log.")
   @QueryParam("scan-commits")
-  @jakarta.ws.rs.QueryParam("scan-commits")
   @Nullable
-  @jakarta.annotation.Nullable
   private Integer headCommitsToScan;
 
   public ReferenceHistoryParams() {}
 
   @Constructor
-  ReferenceHistoryParams(
-      @NotNull @jakarta.validation.constraints.NotNull String ref,
-      @Nullable @jakarta.annotation.Nullable Integer headCommitsToScan) {
+  ReferenceHistoryParams(@NotNull String ref, @Nullable Integer headCommitsToScan) {
     this.ref = ref;
     this.headCommitsToScan = headCommitsToScan;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public Integer headCommitsToScan() {
     return headCommitsToScan;
   }

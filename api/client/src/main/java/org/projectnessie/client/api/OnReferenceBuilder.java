@@ -18,8 +18,8 @@ package org.projectnessie.client.api;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE;
 import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
@@ -28,9 +28,6 @@ import org.projectnessie.model.Validation;
 public interface OnReferenceBuilder<R extends OnReferenceBuilder<R>> {
   R refName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
           String refName);
 
   /**
@@ -69,11 +66,7 @@ public interface OnReferenceBuilder<R extends OnReferenceBuilder<R>> {
    */
   R hashOnRef(
       @Nullable
-          @jakarta.annotation.Nullable
           @Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef);

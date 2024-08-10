@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -29,9 +29,6 @@ public interface MergeTransplantBuilder<R extends MergeTransplantBuilder<R>>
 
   R fromRefName(
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
           String fromRefName);
 
   R keepIndividualCommits(boolean keepIndividualCommits);

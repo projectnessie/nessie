@@ -26,13 +26,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieEntity;
 import org.projectnessie.catalog.model.id.NessieId;
@@ -63,7 +63,6 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   NessieId currentSchemaId();
 
   List<NessieSchema> schemas();
@@ -92,7 +91,6 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Integer icebergFormatVersion();
 
   /**
@@ -101,12 +99,11 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   String icebergLocation();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
+
   // Can be null, if for example no Iceberg snapshot exists in a table-metadata
   @JsonSerialize(using = CommitMeta.InstantSerializer.class)
   @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)

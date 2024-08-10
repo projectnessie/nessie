@@ -86,8 +86,8 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   openapiSource(project(":nessie-model")) { isTransitive = false }
 
@@ -169,11 +169,6 @@ dependencies {
   testFixturesApi("org.apache.iceberg:iceberg-api:$versionIceberg:tests")
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg:tests")
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
-
-  // These two testFixturesRuntimeOnly are here to avoid the 'Failed to index javax...: Class does
-  // not exist in ClassLoader' warnings
-  testFixturesRuntimeOnly(libs.javax.validation.api)
-  testFixturesRuntimeOnly(libs.javax.ws.rs)
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 

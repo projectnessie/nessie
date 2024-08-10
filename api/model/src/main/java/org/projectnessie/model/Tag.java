@@ -20,7 +20,7 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -38,14 +38,12 @@ public interface Tag extends Reference {
   String getName();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 3)
   ReferenceMetadata getMetadata();
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String getHash();
 

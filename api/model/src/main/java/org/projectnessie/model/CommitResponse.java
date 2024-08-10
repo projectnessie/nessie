@@ -18,11 +18,11 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -44,12 +44,11 @@ public interface CommitResponse {
    * <p>Specifically, the hash of the {@link Branch} will be the hash of the applied commit.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   Branch getTargetBranch();
 
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable // for V1 backwards compatibility
+  // for V1 backwards compatibility
   List<AddedContent> getAddedContents();
 
   @Value.NonAttribute
@@ -90,12 +89,10 @@ public interface CommitResponse {
   @JsonDeserialize(as = ImmutableAddedContent.class)
   interface AddedContent {
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
     String contentId();
 

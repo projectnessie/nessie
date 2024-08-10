@@ -16,8 +16,8 @@
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionFieldSummary;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -34,47 +34,36 @@ public interface IcebergManifestFile {
   int partitionSpecId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long addedSnapshotId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer addedFilesCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer existingFilesCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer deletedFilesCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long addedRowsCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long existingRowsCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long deletedRowsCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long sequenceNumber();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long minSequenceNumber();
 
   @Nullable
-  @jakarta.annotation.Nullable
   IcebergManifestContent content();
 
   @Nullable
-  @jakarta.annotation.Nullable
   byte[] keyMetadata();
 
   List<IcebergPartitionFieldSummary> partitions();

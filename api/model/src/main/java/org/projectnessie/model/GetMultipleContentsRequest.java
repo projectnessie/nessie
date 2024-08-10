@@ -17,9 +17,9 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -31,9 +31,7 @@ import org.immutables.value.Value;
 public interface GetMultipleContentsRequest {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   List<ContentKey> getRequestedKeys();
 
   static ImmutableGetMultipleContentsRequest.Builder builder() {

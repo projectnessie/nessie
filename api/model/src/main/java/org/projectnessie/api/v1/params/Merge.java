@@ -19,8 +19,8 @@ import static org.projectnessie.model.Validation.validateHash;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -41,11 +41,7 @@ import org.projectnessie.model.Validation;
 public interface Merge extends BaseMergeTransplant {
 
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
   String getFromHash();
 
   /**

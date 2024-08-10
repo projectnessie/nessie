@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -64,7 +64,6 @@ public interface NessieError {
    *     Nessie-Client-Spec} with an integer value that is at least 2.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
   NessieErrorDetails getErrorDetails();
 
@@ -75,7 +74,6 @@ public interface NessieError {
 
   /** Server-side exception stack trace related to this error (if available). */
   @Nullable
-  @jakarta.annotation.Nullable
   String getServerStackTrace();
 
   /**
@@ -90,7 +88,6 @@ public interface NessieError {
   @JsonIgnore
   @Value.Auxiliary
   @Nullable
-  @jakarta.annotation.Nullable
   @Deprecated
   Exception getClientProcessingException();
 
@@ -103,7 +100,6 @@ public interface NessieError {
   @JsonIgnore
   @Value.Auxiliary
   @Nullable
-  @jakarta.annotation.Nullable
   String getClientProcessingError();
 
   /**

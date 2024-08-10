@@ -15,11 +15,11 @@
  */
 package org.projectnessie.api.v1.params;
 
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
+import jakarta.ws.rs.QueryParam;
 import java.util.Objects;
 import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.projectnessie.model.Validation;
 
@@ -35,37 +35,26 @@ import org.projectnessie.model.Validation;
 public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash of the reflog (inclusive) to start from (in chronological sense), the 'far' end of the reflog, "
               + "returned "
               + "'late' in the result.")
   @QueryParam("startHash")
-  @jakarta.ws.rs.QueryParam("startHash")
   private String startHash;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
-      regexp = Validation.HASH_REGEX,
-      message = Validation.HASH_MESSAGE)
   @Parameter(
       description =
           "Hash of the reflog (inclusive) to end at (in chronological sense), the 'near' end of the reflog, returned "
               + "'early' "
               + "in the result.")
   @QueryParam("endHash")
-  @jakarta.ws.rs.QueryParam("endHash")
   private String endHash;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
@@ -76,7 +65,6 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
               + "checking whether 'ReflogResponseEntry.parentRefLogId' is different from the hash of the previous "
               + "reflog in the log response.")
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @SuppressWarnings("unused")
@@ -84,11 +72,11 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
 
   @org.immutables.builder.Builder.Constructor
   RefLogParams(
-      @Nullable @jakarta.annotation.Nullable String startHash,
-      @Nullable @jakarta.annotation.Nullable String endHash,
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable String filter) {
+      @Nullable String startHash,
+      @Nullable String endHash,
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable String filter) {
     super(maxRecords, pageToken);
     this.startHash = startHash;
     this.endHash = endHash;
@@ -96,19 +84,16 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String startHash() {
     return startHash;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String endHash() {
     return endHash;
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

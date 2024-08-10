@@ -17,7 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -50,7 +50,6 @@ public interface ReferenceHistoryState {
   @Schema(description = "Meta information from the commit, if available.")
   @Value.Parameter(order = 3)
   @Nullable
-  @jakarta.annotation.Nullable
   CommitMeta meta();
 
   static ReferenceHistoryState referenceHistoryElement(

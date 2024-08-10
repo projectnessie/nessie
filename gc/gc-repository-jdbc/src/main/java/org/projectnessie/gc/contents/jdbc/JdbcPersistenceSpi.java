@@ -43,6 +43,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -60,7 +61,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.immutables.value.Value;
 import org.intellij.lang.annotations.Language;
@@ -124,7 +124,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   public void finishedIdentifyLiveContents(
-      UUID liveSetId, Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      UUID liveSetId, Instant finished, @Nullable Throwable failure) {
     singleStatement(
         FINISH_IDENTIFY,
         (conn, stmt) -> {
@@ -161,7 +161,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
 
   @Override
   public LiveContentSet finishedExpireContents(
-      UUID liveSetId, Instant finished, @Nullable @jakarta.annotation.Nullable Throwable failure) {
+      UUID liveSetId, Instant finished, @Nullable Throwable failure) {
     return singleStatement(
         FINISH_EXPIRE,
         (conn, stmt) -> {

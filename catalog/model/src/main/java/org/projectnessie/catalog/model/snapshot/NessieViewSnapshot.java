@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieView;
 import org.projectnessie.catalog.model.id.NessieId;
@@ -67,7 +67,6 @@ public interface NessieViewSnapshot extends NessieEntitySnapshot<NessieView> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   Long icebergCurrentVersionId();
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -75,12 +74,10 @@ public interface NessieViewSnapshot extends NessieEntitySnapshot<NessieView> {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   String icebergDefaultCatalog();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   List<String> icebergNamespace();
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)

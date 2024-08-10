@@ -34,8 +34,8 @@ dependencies {
   implementation(nessieProject("nessie-notice"))
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   implementation(platform(libs.iceberg.bom))
   implementation("org.apache.iceberg:iceberg-core")
@@ -99,8 +99,8 @@ dependencies {
 
   testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(nessieProject("nessie-immutables-std"))
+  testAnnotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(libs.microprofile.openapi)

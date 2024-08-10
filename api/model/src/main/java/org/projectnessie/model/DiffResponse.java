@@ -18,8 +18,8 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -42,7 +42,6 @@ public interface DiffResponse extends PaginatedResponse {
    * the diffs were fetched. Never null when using REST API v2.
    */
   @Nullable // Only nullable in V1
-  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveFromReference();
 
@@ -51,7 +50,6 @@ public interface DiffResponse extends PaginatedResponse {
    * the diffs were fetched. Never null when using REST API v2.
    */
   @Nullable // Only nullable in V1
-  @jakarta.annotation.Nullable
   @JsonView(Views.V2.class)
   Reference getEffectiveToReference();
 
@@ -63,13 +61,11 @@ public interface DiffResponse extends PaginatedResponse {
     ContentKey getKey();
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Value.Parameter(order = 2)
     @SuppressWarnings("immutables:from")
     Content getFrom();
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Value.Parameter(order = 3)
     Content getTo();
 

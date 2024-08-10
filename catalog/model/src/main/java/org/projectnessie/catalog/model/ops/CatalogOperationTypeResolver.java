@@ -15,8 +15,8 @@
  */
 package org.projectnessie.catalog.model.ops;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.Content;
 
 /**

@@ -28,5 +28,4 @@ dependencies {
 
   // javax/jakarta
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
 }

@@ -15,9 +15,9 @@
  */
 package org.projectnessie.client.builder;
 
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.projectnessie.client.api.CreateNamespaceBuilder;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
@@ -49,7 +49,7 @@ public abstract class BaseCreateNamespaceBuilder implements CreateNamespaceBuild
   }
 
   @Override
-  public CreateNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
+  public CreateNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

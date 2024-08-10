@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentKey;
 
@@ -39,12 +39,10 @@ public interface ContentKeyErrorDetails extends NessieErrorDetails {
 
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 1)
   ContentKey contentKey();
 
-  static ContentKeyErrorDetails contentKeyErrorDetails(
-      @Nullable @jakarta.annotation.Nullable ContentKey contentKey) {
+  static ContentKeyErrorDetails contentKeyErrorDetails(@Nullable ContentKey contentKey) {
     return ImmutableContentKeyErrorDetails.of(contentKey);
   }
 }

@@ -20,28 +20,18 @@ import static org.projectnessie.model.Validation.HASH_OR_RELATIVE_COMMIT_SPEC_RE
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_REGEX;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.model.Branch;
 
 /** Base interface for requests against a branch. */
 public interface OnBranchBuilder<R extends OnBranchBuilder<R>> {
   R branchName(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = REF_NAME_REGEX,
-              message = REF_NAME_MESSAGE)
-          String branchName);
+      @NotNull @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE) String branchName);
 
   R hash(
       @NotNull
-          @jakarta.validation.constraints.NotNull
           @Pattern(
-              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hash);

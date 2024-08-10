@@ -15,9 +15,9 @@
  */
 package org.projectnessie.client.api;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import javax.validation.Valid;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -30,7 +30,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
  * @since {@link NessieApiV1}
  */
 public interface GetContentBuilder extends OnReferenceBuilder<GetContentBuilder> {
-  GetContentBuilder key(@Valid @jakarta.validation.Valid ContentKey key);
+  GetContentBuilder key(@Valid ContentKey key);
 
   GetContentBuilder keys(List<ContentKey> keys);
 
@@ -46,8 +46,7 @@ public interface GetContentBuilder extends OnReferenceBuilder<GetContentBuilder>
     return this;
   }
 
-  ContentResponse getSingle(@Valid @jakarta.validation.Valid ContentKey key)
-      throws NessieNotFoundException;
+  ContentResponse getSingle(@Valid ContentKey key) throws NessieNotFoundException;
 
   Map<ContentKey, Content> get() throws NessieNotFoundException;
 

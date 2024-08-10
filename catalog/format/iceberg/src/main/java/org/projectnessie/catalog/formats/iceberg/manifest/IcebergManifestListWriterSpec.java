@@ -16,8 +16,8 @@
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.apache.avro.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
@@ -43,7 +43,6 @@ public interface IcebergManifestListWriterSpec {
   long snapshotId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long parentSnapshotId();
 
   @Value.Default

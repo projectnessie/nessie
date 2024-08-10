@@ -19,11 +19,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -36,7 +36,6 @@ import org.projectnessie.model.ser.Views;
 public interface GetMultipleContentsResponse {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   List<ContentWithKey> getContents();
 
@@ -45,7 +44,6 @@ public interface GetMultipleContentsResponse {
    * contents were fetched. Never null when using REST API v2.
    */
   @Nullable // Only nullable in V1
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   @JsonView(Views.V2.class)
   Reference getEffectiveReference();
@@ -66,17 +64,14 @@ public interface GetMultipleContentsResponse {
   interface ContentWithKey {
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 1)
     ContentKey getKey();
 
     @NotNull
-    @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
     Content getContent();
 
     @Nullable
-    @jakarta.annotation.Nullable
     @JsonView(Views.V2.class)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Value.Parameter(order = 3)

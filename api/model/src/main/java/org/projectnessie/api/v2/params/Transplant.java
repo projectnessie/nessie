@@ -25,11 +25,11 @@ import static org.projectnessie.model.Validation.validateHashOrRelativeSpec;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -67,9 +67,7 @@ public interface Transplant extends BaseMergeTransplant {
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   String getMessage();
 
   /**
@@ -78,14 +76,9 @@ public interface Transplant extends BaseMergeTransplant {
    * <p>Since Nessie spec 2.1.1, hashes can be absolute or relative.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   List<
           @Pattern(
-              regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-              message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
               regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String>

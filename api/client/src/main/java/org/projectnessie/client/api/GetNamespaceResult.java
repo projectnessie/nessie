@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Reference;
@@ -24,12 +24,10 @@ import org.projectnessie.model.Reference;
 @Value.Immutable
 public interface GetNamespaceResult {
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
   Namespace getNamespace();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   Reference getEffectiveReference();
 

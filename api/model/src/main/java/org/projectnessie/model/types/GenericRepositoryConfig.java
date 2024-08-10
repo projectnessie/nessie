@@ -27,10 +27,10 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -54,7 +54,6 @@ public abstract class GenericRepositoryConfig implements RepositoryConfig {
   public abstract RepositoryConfig.Type getType();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Schema(type = SchemaType.OBJECT)
   @Value.Parameter(order = 3)
   @JsonInclude(Include.NON_NULL)

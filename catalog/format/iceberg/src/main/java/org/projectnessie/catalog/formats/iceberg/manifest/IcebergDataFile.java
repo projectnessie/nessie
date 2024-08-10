@@ -16,9 +16,9 @@
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.apache.avro.generic.GenericData;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -44,7 +44,6 @@ public interface IcebergDataFile {
   long fileSizeInBytes();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Default
   // Iceberg spec V1 only (not in V2)
   default Long blockSizeInBytes() {
@@ -94,17 +93,14 @@ public interface IcebergDataFile {
   Map<Integer, byte[]> upperBounds();
 
   @Nullable
-  @jakarta.annotation.Nullable
   byte[] keyMetadata();
 
   // TODO Use Agrona-Collections
   @Nullable
-  @jakarta.annotation.Nullable
   List<Long> splitOffsets();
 
   // TODO Use Agrona-Collections
   @Nullable
-  @jakarta.annotation.Nullable
   List<Integer> equalityIds();
 
   @Value.Default
@@ -113,7 +109,6 @@ public interface IcebergDataFile {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer specId();
 
   GenericData.Record partition();

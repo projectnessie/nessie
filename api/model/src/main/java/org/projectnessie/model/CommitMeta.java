@@ -26,6 +26,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -33,9 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
@@ -59,7 +59,6 @@ public abstract class CommitMeta {
    * <p>This is not known at creation time and is only valid when reading the log.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String getHash();
 
   /**
@@ -74,12 +73,10 @@ public abstract class CommitMeta {
    * docs</a>.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String getCommitter();
 
   /** The author of a commit. This is the original committer. */
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Derived
   @JsonView(Views.V1.class)
   public String getAuthor() {
@@ -87,7 +84,6 @@ public abstract class CommitMeta {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonProperty("authors")
   public abstract List<String> getAllAuthors();
@@ -99,7 +95,6 @@ public abstract class CommitMeta {
    * by the person who started the job.
    */
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Derived
   @JsonView(Views.V1.class)
   public String getSignedOffBy() {
@@ -107,7 +102,6 @@ public abstract class CommitMeta {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   public abstract List<String> getAllSignedOffBy();
 
@@ -117,19 +111,16 @@ public abstract class CommitMeta {
    * <p>Like github if this message is in markdown it may be displayed cleanly in the UI.
    */
   @NotBlank
-  @jakarta.validation.constraints.NotBlank
   public abstract String getMessage();
 
   /** Commit time in UTC. Set by the server. */
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getCommitTime();
 
   /** Original commit time in UTC. Set by the server. */
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getAuthorTime();
@@ -141,7 +132,6 @@ public abstract class CommitMeta {
    * hostnames etc.
    */
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Value.NonAttribute
   @JsonView(Views.V1.class)
   public Map<String, String> getProperties() {
@@ -156,13 +146,11 @@ public abstract class CommitMeta {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract Map<String, List<String>> getAllProperties();
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @JsonView(Views.V2.class)
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   public abstract List<String> getParentCommitHashes();

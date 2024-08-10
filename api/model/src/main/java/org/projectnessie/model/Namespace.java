@@ -24,12 +24,12 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
@@ -69,7 +69,6 @@ public abstract class Namespace extends Content implements Elements {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @Derived
   @JsonIgnore
   public String name() {
@@ -83,8 +82,6 @@ public abstract class Namespace extends Content implements Elements {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
-  @Override
   public abstract List<String> getElements();
 
   @JsonIgnore
@@ -122,7 +119,6 @@ public abstract class Namespace extends Content implements Elements {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   @JsonInclude(Include.NON_EMPTY)
   public abstract Map<String, String> getProperties();
 

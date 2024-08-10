@@ -20,12 +20,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import jakarta.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.builder.StreamingUtil.ResultStreamPaginator;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -178,7 +178,6 @@ class TestResultStreamPaginator {
     }
 
     @Nullable
-    @jakarta.annotation.Nullable
     @Override
     public String getToken() {
       return token;

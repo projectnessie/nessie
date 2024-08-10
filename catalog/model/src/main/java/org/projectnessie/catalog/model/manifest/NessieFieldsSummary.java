@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /**
@@ -37,7 +37,6 @@ public interface NessieFieldsSummary {
   int[] fieldIds();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for manifest file entries
   // Only for Iceberg
@@ -45,27 +44,23 @@ public interface NessieFieldsSummary {
   long[] columnSizes();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for manifest file entries
   BooleanArray containsNull();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for manifest file entries
   // Only for Iceberg
   BooleanArray containsNan();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for data file entries
   // -1 means not present
   long[] nullValueCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for data file entries
   // Only for Iceberg
@@ -73,7 +68,6 @@ public interface NessieFieldsSummary {
   long[] nanValueCount();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   // Present for data file entries
   // -1 means not present
@@ -85,7 +79,6 @@ public interface NessieFieldsSummary {
   //  https://iceberg.apache.org/docs/1.3.0/configuration/#write-properties
   // TODO how is this encoded?? in IJ's Avro/Parquet viewer string values appear "interesting"
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   byte[][] lowerBound();
 
@@ -98,7 +91,6 @@ public interface NessieFieldsSummary {
   //  uses Parquet's functionality, see
   //  org.apache.parquet.internal.column.columnindex.BinaryTruncator.truncateMax?
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   byte[][] upperBound();
 

@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Pattern;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -51,18 +51,13 @@ public interface Detached extends Reference {
 
   @Override
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   @Value.Parameter(order = 1)
   @Pattern(
-      regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
-      message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
       message = Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
   String getHash();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 2)
   ReferenceMetadata getMetadata();

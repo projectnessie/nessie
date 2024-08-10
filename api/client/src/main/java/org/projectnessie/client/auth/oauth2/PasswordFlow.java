@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import jakarta.annotation.Nullable;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 
 /**
  * An implementation of the <a

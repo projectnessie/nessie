@@ -15,7 +15,7 @@
  */
 package org.projectnessie.api.v1;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
 import org.projectnessie.api.v1.params.NamespaceUpdate;
@@ -37,9 +37,7 @@ public interface NamespaceApi {
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    * @throws NessieNamespaceAlreadyExistsException If the namespace already exists.
    */
-  Namespace createNamespace(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
-      @NotNull @jakarta.validation.constraints.NotNull Namespace namespace)
+  Namespace createNamespace(@NotNull NamespaceParams params, @NotNull Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   /**
@@ -50,7 +48,7 @@ public interface NamespaceApi {
    * @throws NessieNamespaceNotEmptyException If the namespace is not empty and contains tables.
    * @throws NessieNamespaceNotFoundException If the namespace to be deleted could not be found.
    */
-  void deleteNamespace(@NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+  void deleteNamespace(@NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
@@ -63,7 +61,7 @@ public interface NamespaceApi {
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    * @throws NessieNamespaceNotFoundException If the namespace does not exist.
    */
-  Namespace getNamespace(@NotNull @jakarta.validation.constraints.NotNull NamespaceParams params)
+  Namespace getNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   /**
@@ -75,8 +73,7 @@ public interface NamespaceApi {
    *     given namespace prefix.
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    */
-  GetNamespacesResponse getNamespaces(
-      @NotNull @jakarta.validation.constraints.NotNull MultipleNamespacesParams params)
+  GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 
   /**
@@ -87,8 +84,6 @@ public interface NamespaceApi {
    * @throws NessieNamespaceNotFoundException If the namespace does not exist.
    * @throws NessieReferenceNotFoundException If the reference could not be found.
    */
-  void updateProperties(
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceParams params,
-      @NotNull @jakarta.validation.constraints.NotNull NamespaceUpdate namespaceUpdate)
+  void updateProperties(@NotNull NamespaceParams params, @NotNull NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

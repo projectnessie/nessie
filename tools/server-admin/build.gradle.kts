@@ -80,9 +80,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-versioned-tests"))

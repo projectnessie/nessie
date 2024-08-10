@@ -17,9 +17,9 @@ package org.projectnessie.api.v2.params;
 
 import static org.projectnessie.api.v2.doc.ApiDoc.REQUESTED_KEY_PARAMETER_DESCRIPTION;
 
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.QueryParam;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.immutables.builder.Builder.Constructor;
@@ -36,11 +36,9 @@ public class EntriesParams extends KeyRangeParams<EntriesParams> {
 
   @Parameter(description = REQUESTED_KEY_PARAMETER_DESCRIPTION)
   @QueryParam("key")
-  @jakarta.ws.rs.QueryParam("key")
   private List<ContentKey> requestedKeys;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(
       description =
           "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
@@ -51,28 +49,25 @@ public class EntriesParams extends KeyRangeParams<EntriesParams> {
         @ExampleObject(ref = "expr_by_namespace_and_contentType")
       })
   @QueryParam("filter")
-  @jakarta.ws.rs.QueryParam("filter")
   private String filter;
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Parameter(description = "Optionally request to return 'Content' objects for the returned keys.")
   @QueryParam("content")
-  @jakarta.ws.rs.QueryParam("content")
   private Boolean withContent;
 
   public EntriesParams() {}
 
   @Constructor
   EntriesParams(
-      @Nullable @jakarta.annotation.Nullable Integer maxRecords,
-      @Nullable @jakarta.annotation.Nullable String pageToken,
-      @Nullable @jakarta.annotation.Nullable ContentKey minKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey maxKey,
-      @Nullable @jakarta.annotation.Nullable ContentKey prefixKey,
-      @Nullable @jakarta.annotation.Nullable List<ContentKey> requestedKeys,
-      @Nullable @jakarta.annotation.Nullable String filter,
-      @Nullable @jakarta.annotation.Nullable Boolean withContent) {
+      @Nullable Integer maxRecords,
+      @Nullable String pageToken,
+      @Nullable ContentKey minKey,
+      @Nullable ContentKey maxKey,
+      @Nullable ContentKey prefixKey,
+      @Nullable List<ContentKey> requestedKeys,
+      @Nullable String filter,
+      @Nullable Boolean withContent) {
     super(maxRecords, pageToken, minKey, maxKey, prefixKey);
     this.filter = filter;
     this.withContent = withContent;
@@ -92,7 +87,6 @@ public class EntriesParams extends KeyRangeParams<EntriesParams> {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   public String filter() {
     return filter;
   }

@@ -25,9 +25,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.apache.avro.JsonProperties;
 import org.apache.avro.Schema;
 import org.immutables.value.Value;
@@ -54,7 +54,6 @@ public interface IcebergStructType extends IcebergComplexType {
   List<IcebergNestedField> fields();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonIgnore
   String avroRecordName();
 

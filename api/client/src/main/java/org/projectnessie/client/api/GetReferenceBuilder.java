@@ -15,8 +15,8 @@
  */
 package org.projectnessie.client.api;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.Reference;
@@ -29,12 +29,7 @@ import org.projectnessie.model.Validation;
  */
 public interface GetReferenceBuilder {
   GetReferenceBuilder refName(
-      @NotNull
-          @jakarta.validation.constraints.NotNull
-          @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-          @jakarta.validation.constraints.Pattern(
-              regexp = Validation.REF_NAME_REGEX,
-              message = Validation.REF_NAME_MESSAGE)
+      @NotNull @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
           String refName);
 
   /**

@@ -17,8 +17,8 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -31,6 +31,5 @@ public interface ReferencesResponse extends PaginatedResponse {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   List<Reference> getReferences();
 }

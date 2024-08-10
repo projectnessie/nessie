@@ -16,7 +16,7 @@
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
@@ -29,19 +29,15 @@ public interface IcebergManifestEntry {
   IcebergManifestEntryStatus status();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long snapshotId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long sequenceNumber();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long fileSequenceNumber();
 
   @Nullable
-  @jakarta.annotation.Nullable
   IcebergDataFile dataFile();
 
   @SuppressWarnings("unused")

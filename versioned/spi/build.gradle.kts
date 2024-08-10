@@ -22,9 +22,8 @@ dependencies {
   implementation(project(":nessie-model"))
   api(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
   implementation("com.fasterxml.jackson.core:jackson-databind")
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   compileOnly(libs.microprofile.openapi)
 
   compileOnly(platform(libs.opentelemetry.instrumentation.bom.alpha))
@@ -47,8 +46,8 @@ dependencies {
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testCompileOnly(libs.microprofile.openapi)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   testCompileOnly(libs.jakarta.ws.rs.api)
   testCompileOnly(libs.jakarta.validation.api)
   testCompileOnly(libs.jakarta.annotation.api)

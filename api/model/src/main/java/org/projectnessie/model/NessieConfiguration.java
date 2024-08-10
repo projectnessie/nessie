@@ -20,10 +20,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.Map;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -46,9 +46,7 @@ public abstract class NessieConfiguration {
    * as an API call parameter.
    */
   @Nullable
-  @jakarta.annotation.Nullable
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   public abstract String getDefaultBranch();
 
   /**
@@ -97,7 +95,6 @@ public abstract class NessieConfiguration {
               + "added functionality.")
   @JsonView(Views.V2.class)
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String getSpecVersion();
 
   /**
@@ -108,7 +105,6 @@ public abstract class NessieConfiguration {
   @JsonView(Views.V2.class)
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String getNoAncestorHash();
 
   /**
@@ -119,7 +115,6 @@ public abstract class NessieConfiguration {
   @JsonView(Views.V2.class)
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getRepositoryCreationTimestamp();
@@ -135,7 +130,6 @@ public abstract class NessieConfiguration {
   @JsonView(Views.V2.class)
   @JsonInclude(Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getOldestPossibleCommitTimestamp();

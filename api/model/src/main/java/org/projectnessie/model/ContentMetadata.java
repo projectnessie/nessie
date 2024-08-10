@@ -17,7 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.projectnessie.model.metadata.ContentMetadataVariantResolver;
@@ -28,6 +28,5 @@ import org.projectnessie.model.metadata.ContentMetadataVariantResolver;
 public interface ContentMetadata {
 
   @NotEmpty
-  @jakarta.validation.constraints.NotEmpty
   String getVariant();
 }

@@ -31,11 +31,8 @@ dependencies {
 
   // javax/jakarta
   compileOnly(libs.jakarta.annotation.api)
-  compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.jakarta.validation.api)
-  compileOnly(libs.javax.validation.api)
   compileOnly(libs.jakarta.ws.rs.api)
-  compileOnly(libs.javax.ws.rs)
 
   compileOnly(libs.httpclient5)
 
@@ -44,9 +41,8 @@ dependencies {
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testFixturesApi(libs.guava)
   testFixturesApi(libs.bouncycastle.bcprov)
@@ -84,9 +80,8 @@ dependencies {
 
   testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly(libs.immutables.builder)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
@@ -96,7 +91,7 @@ dependencies {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
   }
   intTestImplementation(project(":nessie-container-spec-helper"))
-  intTestCompileOnly(libs.immutables.value.annotations)
+  intTestCompileOnly(project(":nessie-immutables-std"))
 }
 
 jandex { skipDefaultProcessing() }

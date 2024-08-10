@@ -92,7 +92,7 @@ public interface ContentService {
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
-      @Valid @Size @jakarta.validation.constraints.Size(min = 1) List<ContentKey> keys,
+      @Valid @Size(min = 1) List<ContentKey> keys,
       boolean withDocumentation,
       boolean forWrite)
       throws NessieNotFoundException;

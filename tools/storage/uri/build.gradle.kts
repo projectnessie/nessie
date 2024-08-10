@@ -18,6 +18,7 @@ plugins { id("nessie-conventions-server") }
 
 dependencies {
   implementation(libs.guava)
+  compileOnly(libs.jakarta.annotation.api)
 
   testImplementation(libs.assertj.core)
 }

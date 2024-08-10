@@ -18,7 +18,7 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -40,22 +40,17 @@ import org.immutables.value.Value;
 public interface ReferenceMetadata {
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer getNumCommitsAhead();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Integer getNumCommitsBehind();
 
   @Nullable
-  @jakarta.annotation.Nullable
   CommitMeta getCommitMetaOfHEAD();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String getCommonAncestorHash();
 
   @Nullable
-  @jakarta.annotation.Nullable
   Long getNumTotalCommits();
 }

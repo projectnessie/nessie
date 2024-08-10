@@ -15,9 +15,9 @@
  */
 package org.projectnessie.client.rest.v1;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.Locale;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.CommitLogParams;
 import org.projectnessie.api.v1.params.EntriesParams;
@@ -60,8 +60,7 @@ class RestV1TreeClient implements HttpTreeApi {
   }
 
   @Override
-  public Reference createReference(
-      String sourceRefName, @NotNull @jakarta.validation.constraints.NotNull Reference reference)
+  public Reference createReference(String sourceRefName, @NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
@@ -72,8 +71,7 @@ class RestV1TreeClient implements HttpTreeApi {
   }
 
   @Override
-  public Reference getReferenceByName(
-      @NotNull @jakarta.validation.constraints.NotNull GetReferenceParams params)
+  public Reference getReferenceByName(@NotNull GetReferenceParams params)
       throws NessieNotFoundException {
     return client
         .newRequest()
@@ -86,11 +84,10 @@ class RestV1TreeClient implements HttpTreeApi {
 
   @Override
   public void assignReference(
-      @NotNull @jakarta.validation.constraints.NotNull Reference.ReferenceType referenceType,
-      @NotNull @jakarta.validation.constraints.NotNull String referenceName,
-      @NotNull @jakarta.validation.constraints.NotNull String expectedHash,
-      @Valid @jakarta.validation.Valid @NotNull @jakarta.validation.constraints.NotNull
-          Reference assignTo)
+      @NotNull Reference.ReferenceType referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash,
+      @Valid @NotNull Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
     client
         .newRequest()
@@ -103,9 +100,9 @@ class RestV1TreeClient implements HttpTreeApi {
 
   @Override
   public void deleteReference(
-      @NotNull @jakarta.validation.constraints.NotNull Reference.ReferenceType referenceType,
-      @NotNull @jakarta.validation.constraints.NotNull String referenceName,
-      @NotNull @jakarta.validation.constraints.NotNull String expectedHash)
+      @NotNull Reference.ReferenceType referenceType,
+      @NotNull String referenceName,
+      @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
     client
         .newRequest()
@@ -122,9 +119,7 @@ class RestV1TreeClient implements HttpTreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(
-      @NotNull @jakarta.validation.constraints.NotNull String ref,
-      @NotNull @jakarta.validation.constraints.NotNull CommitLogParams params)
+  public LogResponse getCommitLog(@NotNull String ref, @NotNull CommitLogParams params)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
@@ -141,10 +136,10 @@ class RestV1TreeClient implements HttpTreeApi {
 
   @Override
   public MergeResponse transplantCommitsIntoBranch(
-      @NotNull @jakarta.validation.constraints.NotNull String branchName,
-      @NotNull @jakarta.validation.constraints.NotNull String expectedHash,
+      @NotNull String branchName,
+      @NotNull String expectedHash,
       String message,
-      @Valid @jakarta.validation.Valid Transplant transplant)
+      @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
@@ -158,9 +153,7 @@ class RestV1TreeClient implements HttpTreeApi {
 
   @Override
   public MergeResponse mergeRefIntoBranch(
-      @NotNull @jakarta.validation.constraints.NotNull String branchName,
-      @NotNull @jakarta.validation.constraints.NotNull String expectedHash,
-      @NotNull @jakarta.validation.constraints.NotNull @Valid @jakarta.validation.Valid Merge merge)
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull @Valid Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()
@@ -172,9 +165,7 @@ class RestV1TreeClient implements HttpTreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(
-      @NotNull @jakarta.validation.constraints.NotNull String refName,
-      @NotNull @jakarta.validation.constraints.NotNull EntriesParams params)
+  public EntriesResponse getEntries(@NotNull String refName, @NotNull EntriesParams params)
       throws NessieNotFoundException {
     HttpRequest builder =
         client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
@@ -192,9 +183,7 @@ class RestV1TreeClient implements HttpTreeApi {
 
   @Override
   public Branch commitMultipleOperations(
-      String branch,
-      @NotNull @jakarta.validation.constraints.NotNull String expectedHash,
-      @NotNull @jakarta.validation.constraints.NotNull Operations operations)
+      String branch, @NotNull String expectedHash, @NotNull Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     return client
         .newRequest()

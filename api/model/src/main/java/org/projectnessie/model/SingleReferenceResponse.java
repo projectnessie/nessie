@@ -17,7 +17,7 @@ package org.projectnessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -33,6 +33,5 @@ public interface SingleReferenceResponse {
   }
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   Reference getReference();
 }

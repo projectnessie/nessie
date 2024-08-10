@@ -15,9 +15,9 @@
  */
 package org.projectnessie.tools.contentgenerator.keygen;
 
+import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.Random;
-import javax.annotation.Nonnull;
 import org.immutables.value.Value;
 
 public class KeyGenerator {

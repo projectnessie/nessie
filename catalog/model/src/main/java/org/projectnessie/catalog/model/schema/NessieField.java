@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.schema.types.NessieTypeSpec;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -76,7 +76,6 @@ public interface NessieField {
   // TODO Iceberg embeds documentation into the schema. This isn't great for large docs though.
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   String doc();
 
   @SuppressWarnings("unused")

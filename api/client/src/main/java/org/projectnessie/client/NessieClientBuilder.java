@@ -37,6 +37,7 @@ import static org.projectnessie.client.config.NessieClientConfigSources.emptyCon
 import static org.projectnessie.client.config.NessieClientConfigSources.systemPropertiesConfigSource;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nonnull;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +49,6 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -266,7 +266,6 @@ public interface NessieClientBuilder {
    *     implementation class could be found
    */
   @Nonnull
-  @jakarta.annotation.Nonnull
   static NessieClientBuilder createClientBuilder(String clientName, String clientBuilderImpl) {
     ServiceLoader<NessieClientBuilder> implementations =
         ServiceLoader.load(NessieClientBuilder.class);

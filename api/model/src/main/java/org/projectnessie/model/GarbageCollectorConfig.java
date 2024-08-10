@@ -21,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Pattern;
 import java.time.Duration;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Pattern;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -60,12 +60,8 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
               + "- an ISO instant "
               + "- 'NONE', means everything's considered as live")
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Pattern(
-      regexp = Validation.DEFAULT_CUT_OFF_POLICY_REGEX,
-      message = Validation.DEFAULT_CUT_OFF_POLICY_MESSAGE)
-  @jakarta.validation.constraints.Pattern(
       regexp = Validation.DEFAULT_CUT_OFF_POLICY_REGEX,
       message = Validation.DEFAULT_CUT_OFF_POLICY_MESSAGE)
   String getDefaultCutoffPolicy();
@@ -90,7 +86,6 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
       description =
           "Files that have been created after 'gc-start-time - new-files-grace-period' are not being deleted.")
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @JsonSerialize(using = Util.DurationSerializer.class)
   @JsonDeserialize(using = Util.DurationDeserializer.class)
@@ -98,7 +93,6 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
 
   @Schema(title = "The total number of expected live files for a single content.")
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Integer getExpectedFileCountPerContent();
 

@@ -25,9 +25,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -63,7 +63,6 @@ public interface IcebergSnapshot {
   }
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @JsonView(IcebergSpec.IcebergSpecV2.class)
   Long sequenceNumber();
@@ -71,7 +70,6 @@ public interface IcebergSnapshot {
   long snapshotId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Long parentSnapshotId();
 
@@ -88,11 +86,9 @@ public interface IcebergSnapshot {
   @JsonView(IcebergSpec.IcebergSpecV2.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
-  @jakarta.annotation.Nullable
   String manifestList();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   Integer schemaId();
 

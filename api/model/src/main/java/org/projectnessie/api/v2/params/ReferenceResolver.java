@@ -18,10 +18,10 @@ package org.projectnessie.api.v2.params;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_PATTERN;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Validation;
 
@@ -32,9 +32,9 @@ public final class ReferenceResolver {
   private ReferenceResolver() {}
 
   public static ParsedReference resolveReferencePathElement(
-      @Nonnull @jakarta.annotation.Nonnull String refPathString,
-      @Nullable @jakarta.annotation.Nullable Reference.ReferenceType namedRefType,
-      @Nonnull @jakarta.annotation.Nonnull Supplier<String> defaultBranchSupplier) {
+      @Nonnull String refPathString,
+      @Nullable Reference.ReferenceType namedRefType,
+      @Nonnull Supplier<String> defaultBranchSupplier) {
     Matcher refNameMatcher = REF_NAME_PATH_PATTERN.matcher(refPathString);
     if (!refNameMatcher.find()) {
       throw new IllegalArgumentException(Validation.REF_NAME_MESSAGE);

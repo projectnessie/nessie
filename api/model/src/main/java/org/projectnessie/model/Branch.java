@@ -20,7 +20,7 @@ import static org.projectnessie.model.Validation.validateReferenceName;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -38,14 +38,12 @@ public interface Branch extends Reference {
   String getName();
 
   @Nullable
-  @jakarta.annotation.Nullable
   @Override
   @Value.Parameter(order = 3)
   ReferenceMetadata getMetadata();
 
   @Override
   @Nullable
-  @jakarta.annotation.Nullable
   @Value.Parameter(order = 2)
   String getHash();
 
@@ -66,12 +64,11 @@ public interface Branch extends Reference {
     return ImmutableBranch.builder();
   }
 
-  static Branch of(String name, @Nullable @jakarta.annotation.Nullable String hash) {
+  static Branch of(String name, @Nullable String hash) {
     return ImmutableBranch.of(name, hash, null);
   }
 
-  static Branch of(
-      String name, @Nullable @jakarta.annotation.Nullable String hash, ReferenceMetadata metadata) {
+  static Branch of(String name, @Nullable String hash, ReferenceMetadata metadata) {
     return ImmutableBranch.of(name, hash, metadata);
   }
 }

@@ -41,9 +41,8 @@ dependencies {
     exclude("com.github.spotbugs", "spotbugs-annotations")
   }
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))

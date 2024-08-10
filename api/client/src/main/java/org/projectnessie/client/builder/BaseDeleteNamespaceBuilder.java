@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.builder;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.client.api.DeleteNamespaceBuilder;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Namespace;
@@ -46,7 +46,7 @@ public abstract class BaseDeleteNamespaceBuilder implements DeleteNamespaceBuild
   }
 
   @Override
-  public DeleteNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
+  public DeleteNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

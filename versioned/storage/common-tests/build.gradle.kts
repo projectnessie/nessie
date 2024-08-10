@@ -38,9 +38,8 @@ dependencies {
 
   implementation(libs.logback.classic)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   compileOnly(libs.microprofile.openapi)
   implementation(platform(libs.jackson.bom))

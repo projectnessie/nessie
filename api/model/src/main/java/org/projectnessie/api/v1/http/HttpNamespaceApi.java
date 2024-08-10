@@ -16,16 +16,16 @@
 package org.projectnessie.api.v1.http;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
@@ -48,18 +48,13 @@ import org.projectnessie.model.ser.Views;
 
 @Tag(name = "v1")
 @Path("v1/namespaces")
-@jakarta.ws.rs.Path("v1/namespaces")
 @Consumes(MediaType.APPLICATION_JSON)
-@jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
 public interface HttpNamespaceApi extends NamespaceApi {
 
   @Override
   @PUT
-  @jakarta.ws.rs.PUT
   @Path("/namespace/{ref}/{name}")
-  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Creates a Namespace")
   @APIResponses({
     @APIResponse(
@@ -79,18 +74,13 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   Namespace createNamespace(
-      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
-          NamespaceParams params,
-      @NotNull @jakarta.validation.constraints.NotNull @RequestBody Namespace namespace)
+      @BeanParam @NotNull NamespaceParams params, @NotNull @RequestBody Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   @Override
   @DELETE
-  @jakarta.ws.rs.DELETE
   @Path("/namespace/{ref}/{name}")
-  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Deletes a Namespace")
   @APIResponses({
     @APIResponse(responseCode = "200", description = "Namespace successfully deleted."),
@@ -100,20 +90,15 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "409", description = "Namespace not empty"),
   })
   @JsonView(Views.V1.class)
-  void deleteNamespace(
-      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
-          NamespaceParams params)
+  void deleteNamespace(@BeanParam @NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException,
           NessieNamespaceNotFoundException;
 
   @Override
   @GET
-  @jakarta.ws.rs.GET
   @Path("/namespace/{ref}/{name}")
-  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @Operation(summary = "Retrieves a Namespace")
   @APIResponses({
     @APIResponse(
@@ -131,18 +116,13 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference or Namespace not found"),
   })
   @JsonView(Views.V1.class)
-  Namespace getNamespace(
-      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
-          NamespaceParams params)
+  Namespace getNamespace(@BeanParam @NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   @Override
   @GET
-  @jakarta.ws.rs.GET
   @Path("/{ref}")
-  @jakarta.ws.rs.Path("/{ref}")
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -159,18 +139,13 @@ public interface HttpNamespaceApi extends NamespaceApi {
     @APIResponse(responseCode = "404", description = "Reference not found"),
   })
   @JsonView(Views.V1.class)
-  GetNamespacesResponse getNamespaces(
-      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
-          MultipleNamespacesParams params)
+  GetNamespacesResponse getNamespaces(@BeanParam @NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException;
 
   @Override
   @POST
-  @jakarta.ws.rs.POST
   @Path("/namespace/{ref}/{name}")
-  @jakarta.ws.rs.Path("/namespace/{ref}/{name}")
   @Produces(MediaType.APPLICATION_JSON)
-  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -181,8 +156,7 @@ public interface HttpNamespaceApi extends NamespaceApi {
   })
   @JsonView(Views.V1.class)
   void updateProperties(
-      @BeanParam @jakarta.ws.rs.BeanParam @NotNull @jakarta.validation.constraints.NotNull
-          NamespaceParams params,
+      @BeanParam @NotNull NamespaceParams params,
       @RequestBody(
               description = "Namespace properties to update/delete.",
               content = {
@@ -191,7 +165,6 @@ public interface HttpNamespaceApi extends NamespaceApi {
                     examples = {@ExampleObject(ref = "namespaceUpdate")})
               })
           @NotNull
-          @jakarta.validation.constraints.NotNull
           NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 }

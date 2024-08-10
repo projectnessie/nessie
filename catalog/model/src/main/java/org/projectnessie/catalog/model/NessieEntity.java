@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import jakarta.annotation.Nullable;
 import java.time.Instant;
-import javax.annotation.Nullable;
 import org.projectnessie.catalog.model.snapshot.TableFormat;
 import org.projectnessie.model.CommitMeta.InstantDeserializer;
 import org.projectnessie.model.CommitMeta.InstantSerializer;
@@ -39,11 +39,9 @@ public interface NessieEntity {
   String nessieContentId();
 
   @Nullable
-  @jakarta.annotation.Nullable
   String icebergUuid();
 
   @Nullable
-  @jakarta.annotation.Nullable
   TableFormat tableFormat();
 
   // FIXME move this serializer out of CommitMeta - or add module

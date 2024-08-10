@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.builder;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.client.api.GetNamespaceBuilder;
 import org.projectnessie.model.Namespace;
 
@@ -38,7 +38,7 @@ public abstract class BaseGetNamespaceBuilder implements GetNamespaceBuilder {
   }
 
   @Override
-  public GetNamespaceBuilder hashOnRef(@Nullable @jakarta.annotation.Nullable String hashOnRef) {
+  public GetNamespaceBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }

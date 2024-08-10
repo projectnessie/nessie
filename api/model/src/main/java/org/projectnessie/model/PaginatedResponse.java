@@ -16,8 +16,8 @@
 package org.projectnessie.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.annotation.Nullable;
-import javax.validation.constraints.Size;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Size;
 import org.immutables.value.Value.Default;
 
 public interface PaginatedResponse {
@@ -47,8 +47,6 @@ public interface PaginatedResponse {
    *     {@code false}.
    */
   @Nullable
-  @jakarta.annotation.Nullable
-  @Size
-  @jakarta.validation.constraints.Size(min = 1)
+  @Size(min = 1)
   String getToken();
 }

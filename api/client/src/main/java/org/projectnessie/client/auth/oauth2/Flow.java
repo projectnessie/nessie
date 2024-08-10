@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 interface Flow extends AutoCloseable {
 

@@ -18,9 +18,9 @@ package org.projectnessie.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -30,15 +30,12 @@ import org.immutables.value.Value;
 public abstract class DeltaLakeTable extends Content {
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   public abstract List<String> getMetadataLocationHistory();
 
   @NotNull
-  @jakarta.validation.constraints.NotNull
   public abstract List<String> getCheckpointLocationHistory();
 
   @Nullable
-  @jakarta.annotation.Nullable
   public abstract String getLastCheckpoint();
 
   @Override

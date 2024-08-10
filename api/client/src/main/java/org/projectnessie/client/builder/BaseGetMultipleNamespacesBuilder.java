@@ -15,7 +15,7 @@
  */
 package org.projectnessie.client.builder;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.projectnessie.client.api.GetMultipleNamespacesBuilder;
 import org.projectnessie.model.Namespace;
 
@@ -38,8 +38,7 @@ public abstract class BaseGetMultipleNamespacesBuilder implements GetMultipleNam
   }
 
   @Override
-  public GetMultipleNamespacesBuilder hashOnRef(
-      @Nullable @jakarta.annotation.Nullable String hashOnRef) {
+  public GetMultipleNamespacesBuilder hashOnRef(@Nullable String hashOnRef) {
     this.hashOnRef = hashOnRef;
     return this;
   }
