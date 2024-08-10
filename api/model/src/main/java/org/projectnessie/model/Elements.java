@@ -43,8 +43,7 @@ public interface Elements {
    * Servlet Specification 6, URI Path Canonicalization</a> and <a
    * href="https://datatracker.ietf.org/doc/html/rfc3986#section-3.3">RFC 3986, section 3.3</a>.
    * This is available with Nessie Spec version 2.2.0, as advertised via {@link
-   * NessieConfiguration#getSpecVersion()}. If escaping is active, two dots characters {@code ..}
-   * separate elements.
+   * NessieConfiguration#getSpecVersion()}.
    *
    * <p>This function can decode the representations returned by {@link #toPathString()}, {@link
    * #toPathStringEscaped()} and {@link #toCanonicalString()}. See those functions for a description
@@ -81,33 +80,33 @@ public interface Elements {
   /**
    * Escapes content-key elements into a URI path/query compatible form that does not violate <a
    * href="https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization">Jakarta
-   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the characters {@code
-   * /}, {@code \}, {@code %}, and if escaping also the {@code .}.
+   * Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization</a> by escaping the problematic
+   * characters.
    *
-   * <p>Algorithm:
+   * <p>The characters {@code .}, {@code /}, {@code \} and {@code %} trigger escaping (see {@link
+   * #toCanonicalString()}). The escaped representation starts with a single {@code .}.
+   *
+   * <p>If no escaping is necessary, the returned string is the same as {@code String.join(".",
+   * getElements())}, the elements are joined to a string using {@code .} as the delimiter. For
+   * example {@code ["foo", "bar"]} yields {@code "foo.bar"}.
+   *
+   * <p>If escaping is necessary:
    *
    * <ul>
-   *   <li>Elements are separated using a single {@code .} character when <em>not</em> escaping,
-   *   <li>Elements are separated using a two dots {@code ..} characters when escaping,
-   *   <li>If an element starts with a {@code .} character, that element <b>and all following
-   *       elements</b> use the "problematic character escaping":
-   *       <ul>
-   *         <li>a {@code .} is escaped as {@code ._}
-   *         <li>a {@code /} is escaped as <code>.{</code>
-   *         <li>a {@code \} is escaped as <code>.}</code>
-   *         <li>a {@code %} is escaped as {@code .[}
-   *       </ul>
+   *   <li>The returned string starts with a {@code .}
+   *   <li>{@code .} is escaped as {@code *_}
+   *   <li>{@code *} is escaped as {@code **}
+   *   <li>{@code /} is escaped as <code>*{</code> (not for {@link #toCanonicalString()})
+   *   <li>{@code \} is escaped as <code>*}</code> (not for {@link #toCanonicalString()})
+   *   <li>{@code %} is escaped as {@code *[} (not for {@link #toCanonicalString()})
    * </ul>
    *
    * <p>Some examples:
    *
    * <ul>
    *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
-   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar..baz"} - escaping needed
-   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
-   *       character of the second element, indicating that escaping starts at this element. {@code
-   *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as <code>".foo._..._bar..a.{.}.[aa"</code>.
+   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code ".foo.*.bar.baz"} - escaping needed.
+   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as <code>".foo*..*.bar.a*{*}*[aa"</code>.
    * </ul>
    *
    * <p>The returned value is always processable by Nessie services announcing Nessie spec 2.2.0 or
@@ -124,31 +123,7 @@ public interface Elements {
   /**
    * Escapes content-key elements into a canonical form that escapes {@code .} characters. The
    * returned format is similar to {@linkplain #toPathStringEscaped()}, but does not escape
-   * problematic URI characters.
-   *
-   * <p>Algorithm:
-   *
-   * <ul>
-   *   <li>Elements are separated using a single {@code .} character when <em>not</em> escaping,
-   *   <li>Elements are separated using a two dots {@code ..} characters when escaping,
-   *   <li>If an element starts with a {@code .} character, that element <b>and all following
-   *       elements</b> use the "dot character escaping":
-   *       <ul>
-   *         <li>a {@code .} is escaped as {@code ._}
-   *       </ul>
-   * </ul>
-   *
-   * <p>Some examples:
-   *
-   * <ul>
-   *   <li>{@code ["foo", "bar", "baz"]} returned as {@code "foo.bar.baz"} - no escaping needed.
-   *   <li>{@code ["foo", ".bar", "baz"]} returned as {@code "foo..._bar..baz"} - escaping needed
-   *       with the 2nd element. The first dot is the element separator. The 2nd dot is the first
-   *       character of the second element, indicating that escaping starts at this element. {@code
-   *       ._} is the escape sequence for the {@code .} character.
-   *   <li>{@code ["foo.", ".bar", "a/\%aa"]} returned as {@code ".foo._.._bar..a/\%aa"}
-   *   <li>{@code ["foo", "bar", "a/\%aa"]} returned as {@code "foo.bar.a/\%aa"}
-   * </ul>
+   * problematic URI characters, only the {@code .} is escaped.
    *
    * @return The canonical representation of the given elements, possibly escaped. The returned
    *     value should <em>not</em> be used in a URI path. The returned value can be parsed with

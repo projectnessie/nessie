@@ -24,8 +24,10 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -123,46 +125,45 @@ public class TestElementsEncoding {
 
   static Stream<Arguments> fromPathString() {
     return Stream.of(
+        // 1
         arguments("hello", List.of("hello"), Set.of()),
-        //
         arguments("foo.bar.baz", List.of("foo", "bar", "baz"), Set.of()),
-        // Escaping can start at the 1st element...
         arguments(".foo.bar.baz", List.of("foo", "bar", "baz"), Set.of()),
-        // .. at the 2nd element...
-        arguments("foo..bar.baz", List.of("foo", "bar", "baz"), Set.of()),
-        // .. or any other element.
-        arguments("foo.bar..baz", List.of("foo", "bar", "baz"), Set.of()),
-        //
         arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
+        // 5
         arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
         arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
         arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
-        arguments("foo.._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
-        arguments("foo..{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
-        arguments("foo..}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
-        arguments("foo..[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
-        //
-        arguments(".he.[llo", List.of("he%llo"), Set.of()),
-        arguments(".he.{llo.world", List.of("he/llo", "world"), Set.of()),
-        arguments(".hello._", List.of("hello."), Set.of()),
-        arguments(".._hello._", List.of(".hello."), Set.of()),
-        arguments(".._hello._~", List.of(".hello.~"), Set.of()),
-        arguments(".._hello._~hello", List.of(".hello.~hello"), Set.of()),
-        arguments(".._hello..._~hello", List.of(".hello", ".~hello"), Set.of()),
-        arguments(".._hello._.~hello", List.of(".hello.", "~hello"), Set.of()),
-        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello"), Set.of()),
-        arguments(".._hello._~.~hello", List.of(".hello.~", "~hello"), Set.of()),
-        arguments(".._~hello._", List.of(".~hello."), Set.of()),
+        arguments(".foo.**ar.baz", List.of("foo", "*ar", "baz"), Set.of()),
+        arguments(".foo.*.ar.baz", List.of("foo", ".ar", "baz"), Set.of()),
+        // 10
+        arguments(".foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
+        arguments(".foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
+        arguments(".he*[llo", List.of("he%llo"), Set.of()),
+        arguments(".he*{llo.world", List.of("he/llo", "world"), Set.of()),
+        arguments(".hello*.", List.of("hello."), Set.of()),
+        // 15
+        arguments(".*.hello*.", List.of(".hello."), Set.of()),
+        arguments(".*.hello*.~", List.of(".hello.~"), Set.of()),
+        arguments(".*.hello*.~hello", List.of(".hello.~hello"), Set.of()),
+        arguments(".*.hello.*.~hello", List.of(".hello", ".~hello"), Set.of()),
+        arguments(".*.hello*..~hello", List.of(".hello.", "~hello"), Set.of()),
+        // 20
+        arguments(".*.hello*..*.~hello", List.of(".hello.", ".~hello"), Set.of()),
+        arguments(".*.hello*.~.~hello", List.of(".hello.~", "~hello"), Set.of()),
+        arguments(".*.~hello*.", List.of(".~hello."), Set.of()),
         arguments("hello.world", List.of("hello", "world"), Set.of()),
-        arguments(".hello._.world", List.of("hello.", "world"), Set.of()),
-        arguments("hello..._world", List.of("hello", ".world"), Set.of()),
-        arguments(".he._llo.wo._rld", List.of("he.llo", "wo.rld"), Set.of()),
+        arguments(".hello*..world", List.of("hello.", "world"), Set.of()),
+        // 25
+        arguments(".hello.*.world", List.of("hello", ".world"), Set.of()),
+        arguments(".he*.llo.wo*.rld", List.of("he.llo", "wo.rld"), Set.of()),
         // valid for canonical representation, path separators cause violations
         arguments("he/llo", List.of("he/llo"), Set.of(AMBIGUOUS_PATH_SEPARATOR)),
         // valid for canonical representation, backslash is a violation
         arguments("he\\llo.world", List.of("he\\llo", "world"), Set.of(SUSPICIOUS_PATH_CHARACTERS)),
         // valid for canonical representation, % is ambiguous
         arguments("he%llo.world", List.of("he%llo", "world"), Set.of(AMBIGUOUS_PATH_ENCODING)),
+        // 30
         // control-characters cause violations
         arguments(
             "he\u001dllo.wo\u001drld",
@@ -289,37 +290,43 @@ public class TestElementsEncoding {
 
   static Stream<Arguments> toPathStringEscaped() {
     return Stream.of(
-        //
+        // 1
         arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
         arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
         arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
         arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
-        //
+        // 5
         arguments("hello.world", List.of("hello", "world")),
         arguments("he#llo", List.of("he#llo")),
-        arguments(".he.}llo", List.of("he\\llo")),
-        arguments(".he.}llo", List.of("he\\llo")),
-        arguments(".he.[llo", List.of("he%llo")),
+        arguments(".he*{llo", List.of("he/llo")),
+        arguments(".he*}llo", List.of("he\\llo")),
+        arguments(".he*[llo", List.of("he%llo")),
+        // 10
         arguments("he#llo.world", List.of("he#llo", "world")),
         arguments("he&llo.world", List.of("he&llo", "world")),
         arguments("he?llo.world", List.of("he?llo", "world")),
-        arguments(".he.{llo..world", List.of("he/llo", "world")),
-        arguments(".hello._", List.of("hello.")),
-        arguments(".._hello._", List.of(".hello.")),
-        arguments(".._hello._~", List.of(".hello.~")),
-        arguments(".._hello._~hello", List.of(".hello.~hello")),
-        arguments(".._hello..._~hello", List.of(".hello", ".~hello")),
-        arguments(".._hello._..~hello", List.of(".hello.", "~hello")),
-        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello")),
-        arguments(".._hello._~..~hello", List.of(".hello.~", "~hello")),
-        arguments(".._~hello._", List.of(".~hello.")),
+        arguments(".he*{llo.world", List.of("he/llo", "world")),
+        arguments(".hello*.", List.of("hello.")),
+        // 15
+        arguments(".*.hello*.", List.of(".hello.")),
+        arguments(".*.hello*.~", List.of(".hello.~")),
+        arguments(".*.hello*.~hello", List.of(".hello.~hello")),
+        arguments(".*.hello.*.~hello", List.of(".hello", ".~hello")),
+        arguments(".*.hello*..~hello", List.of(".hello.", "~hello")),
+        // 20
+        arguments(".*.hello*..*.~hello", List.of(".hello.", ".~hello")),
+        arguments(".*.hello*.~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".*.~hello*.", List.of(".~hello.")),
         arguments("hello.world", List.of("hello", "world")),
-        arguments(".hello._..world", List.of("hello.", "world")),
-        arguments("hello..._world", List.of("hello", ".world")),
-        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he.{llo..world", List.of("he/llo", "world")),
-        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he._l#.{lo~..~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+        arguments(".hello*..world", List.of("hello.", "world")),
+        // 25
+        arguments(".hello.*.world", List.of("hello", ".world")),
+        arguments(".he*.llo.wo*.rld", List.of("he.llo", "wo.rld")),
+        arguments(".he*{llo.world", List.of("he/llo", "world")),
+        arguments(".he*.llo.wo*.rld", List.of("he.llo", "wo.rld")),
+        arguments(".he*.l#*{lo~.~wo*.rld", List.of("he.l#/lo~", "~wo.rld"))
+        // 30
+        );
   }
 
   @ParameterizedTest
@@ -333,36 +340,41 @@ public class TestElementsEncoding {
 
   static Stream<Arguments> toCanonicalString() {
     return Stream.of(
+        // 1
         arguments("foo._ar.baz", List.of("foo", "_ar", "baz"), Set.of()),
         arguments("foo.{ar.baz", List.of("foo", "{ar", "baz"), Set.of()),
         arguments("foo.}ar.baz", List.of("foo", "}ar", "baz"), Set.of()),
         arguments("foo.[ar.baz", List.of("foo", "[ar", "baz"), Set.of()),
-        //
+        // 5
         arguments("hello.world", List.of("hello", "world")),
         arguments("he#llo", List.of("he#llo")),
         arguments("he/llo", List.of("he/llo")),
         arguments("he\\llo", List.of("he\\llo")),
         arguments("he%llo", List.of("he%llo")),
+        // 10
         arguments("he#llo.world", List.of("he#llo", "world")),
         arguments("he&llo.world", List.of("he&llo", "world")),
         arguments("he?llo.world", List.of("he?llo", "world")),
         arguments("he/llo.world", List.of("he/llo", "world")),
-        arguments(".hello._", List.of("hello.")),
-        arguments(".._hello._", List.of(".hello.")),
-        arguments(".._hello._~", List.of(".hello.~")),
-        arguments(".._hello._~hello", List.of(".hello.~hello")),
-        arguments(".._hello..._~hello", List.of(".hello", ".~hello")),
-        arguments(".._hello._..~hello", List.of(".hello.", "~hello")),
-        arguments(".._hello._..._~hello", List.of(".hello.", ".~hello")),
-        arguments(".._hello._~..~hello", List.of(".hello.~", "~hello")),
-        arguments(".._~hello._", List.of(".~hello.")),
+        arguments(".hello*.", List.of("hello.")),
+        // 15
+        arguments(".*.hello*.", List.of(".hello.")),
+        arguments(".*.hello*.~", List.of(".hello.~")),
+        arguments(".*.hello*.~hello", List.of(".hello.~hello")),
+        arguments(".*.hello.*.~hello", List.of(".hello", ".~hello")),
+        arguments(".*.hello*..~hello", List.of(".hello.", "~hello")),
+        // 20
+        arguments(".*.hello*..*.~hello", List.of(".hello.", ".~hello")),
+        arguments(".*.hello*.~.~hello", List.of(".hello.~", "~hello")),
+        arguments(".*.~hello*.", List.of(".~hello.")),
         arguments("hello.world", List.of("hello", "world")),
-        arguments(".hello._..world", List.of("hello.", "world")),
-        arguments("hello..._world", List.of("hello", ".world")),
-        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
+        arguments(".hello*..world", List.of("hello.", "world")),
+        // 25
+        arguments(".hello.*.world", List.of("hello", ".world")),
+        arguments(".he*.llo.wo*.rld", List.of("he.llo", "wo.rld")),
         arguments("he/llo.world", List.of("he/llo", "world")),
-        arguments(".he._llo..wo._rld", List.of("he.llo", "wo.rld")),
-        arguments(".he._l#/lo~..~wo._rld", List.of("he.l#/lo~", "~wo.rld")));
+        arguments(".he*.llo.wo*.rld", List.of("he.llo", "wo.rld")),
+        arguments(".he*.l#/lo~.~wo*.rld", List.of("he.l#/lo~", "~wo.rld")));
   }
 
   @ParameterizedTest
@@ -393,15 +405,21 @@ public class TestElementsEncoding {
 
   static Stream<Arguments> roundTrips() {
     return Stream.of(
-        arguments(List.of("abc.", "{def"), ".abc._..{def", ".abc._..{def", "abc\u001d.{def"),
-        arguments(List.of("abc.", ".def"), ".abc._..._def", ".abc._..._def", "abc\u001d.\u001ddef"),
-        arguments(List.of("abc.", "}def"), ".abc._..}def", ".abc._..}def", "abc\u001d.}def"),
-        arguments(List.of("abc.", "[def"), ".abc._..[def", ".abc._..[def", "abc\u001d.[def"),
-        arguments(List.of("abc.", "/def"), ".abc._...{def", ".abc._../def", "abc\u001d./def"),
-        arguments(List.of("abc.", "%def"), ".abc._...[def", ".abc._..%def", "abc\u001d.%def"),
-        arguments(List.of("abc.", "\\def"), ".abc._...}def", ".abc._..\\def", "abc\u001d.\\def"),
-        arguments(List.of("/%", "#&&"), "..{.[..#&&", "/%.#&&", "/%.#&&"),
-        arguments(List.of("/%国", "国.国"), "..{.[国..国._国", "/%国..国._国", "/%国.国\u001d国")
+        // 1
+        arguments(List.of("abc.", "*def"), ".abc*..**def", ".abc*..**def", "abc\u001d.*def"),
+        arguments(List.of("abc*", ".def"), ".abc**.*.def", ".abc**.*.def", "abc*.\u001ddef"),
+        arguments(List.of("abc*", "*def"), "abc*.*def", "abc*.*def", "abc*.*def"),
+        arguments(List.of("abc.", "{def"), ".abc*..{def", ".abc*..{def", "abc\u001d.{def"),
+        // 5
+        arguments(List.of("abc.", ".def"), ".abc*..*.def", ".abc*..*.def", "abc\u001d.\u001ddef"),
+        arguments(List.of("abc.", "}def"), ".abc*..}def", ".abc*..}def", "abc\u001d.}def"),
+        arguments(List.of("abc.", "[def"), ".abc*..[def", ".abc*..[def", "abc\u001d.[def"),
+        arguments(List.of("abc.", "/def"), ".abc*..*{def", ".abc*../def", "abc\u001d./def"),
+        arguments(List.of("abc.", "%def"), ".abc*..*[def", ".abc*..%def", "abc\u001d.%def"),
+        // 10
+        arguments(List.of("abc.", "\\def"), ".abc*..*}def", ".abc*..\\def", "abc\u001d.\\def"),
+        arguments(List.of("/%", "#&&"), ".*{*[.#&&", "/%.#&&", "/%.#&&"),
+        arguments(List.of("/%国", "国.国"), ".*{*[国.国*.国", "./%国.国*.国", "/%国.国\u001d国")
         //
         );
   }
@@ -444,5 +462,37 @@ public class TestElementsEncoding {
     return IntStream.range(1, 0x1f)
         .filter(i -> i != 0x1d)
         .mapToObj(i -> arguments("" + (char) i, "must not contain characters less than 0x20"));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void randomRoundTrips(List<String> elements) {
+    String escaped = Util.toPathStringEscaped(elements);
+    String canonical = Util.toCanonicalString(elements);
+
+    List<String> elementsFromEscaped = Util.fromPathString(escaped);
+    List<String> elementsFromCanonical = Util.fromPathString(canonical);
+
+    soft.assertThat(elementsFromEscaped).containsExactlyElementsOf(elements);
+    soft.assertThat(elementsFromCanonical).containsExactlyElementsOf(elements);
+  }
+
+  static List<List<String>> randomRoundTrips() {
+    char[] chars = {'a', 'b', 'c', '*', '.', '{', '}', '[', '~', '/', '\\', '%'};
+
+    List<List<String>> r = new ArrayList<>(500) {};
+    Random rand = new Random(5733746443528016288L); // From some random
+    for (int i = 0; i < 500; i++) {
+      List<String> elements = new ArrayList<>();
+      for (int e = 0; e < 3; e++) {
+        StringBuilder sb = new StringBuilder();
+        for (int c = 0; c < 6; c++) {
+          sb.append(chars[rand.nextInt(chars.length)]);
+        }
+        elements.add(sb.toString());
+      }
+      r.add(elements);
+    }
+    return r;
   }
 }
