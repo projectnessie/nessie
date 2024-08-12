@@ -530,7 +530,7 @@ public class IcebergConfigurer {
 
         long expirationTimestamp = systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
 
-        String contentKeyPathString = contentKey.toPathString();
+        String contentKeyPathString = contentKey.toPathStringEscaped();
         String uriQuery =
             SignerSignature.builder()
                 .expirationTimestamp(expirationTimestamp)

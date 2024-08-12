@@ -94,6 +94,7 @@ javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "4.0.5" }
 jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "3.1.8" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.1.0" }
+jetty-bom = { module = "org.eclipse.jetty:jetty-bom", version = "12.0.12" }
 jline = { module = "org.jline:jline", version = "3.26.3" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }

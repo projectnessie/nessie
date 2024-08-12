@@ -3,7 +3,7 @@
 The Nessie `ConfigApi` (v2) allows the caller to retrieve the server's 'specVersion', which is a semver string
 defining the behaviour of the Nessie Server.
 
-The currently defined Nessie Specification is [2.0.0-beta.1](NESSIE-SPEC-2-0.md).
+The currently defined Nessie Specification version is [2.2.0](NESSIE-SPEC-2-0.md).
 
 # Nessie Model and API
 

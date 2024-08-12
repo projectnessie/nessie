@@ -1,3 +1,9 @@
+<!--
+
+IMPORTANT: there are permalinks to this file - do not move or delete this file!!
+
+-->
+
 # Nessie Specification
 
 Nessie Specifications define the behaviour of Nessie Servers. The same behaviour can be expected to be observable
@@ -21,6 +27,69 @@ Servers MAY show behaviours that are not covered by the spec, as long as those b
 well-specified behaviours.
 
 Refer to the [Nessie API documentation](./README.md) for the meaning of Nessie-specific terms.
+
+## Content key and namespace string representation in URI paths
+
+Content key and namespace components are separated by the dot (`.`) character.
+The components itself must be escaped using the following representations.
+
+Nessie servers accept all representation and those can be used interchangeably, unless the server runs on a service
+that is compliant with
+[Jakarta Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization](https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization),
+in which case the legacy representation might be rejected by the servlet container.
+
+### Legacy representation
+
+The legacy behavior **is not** compatible with
+[Jakarta Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization](https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization)
+(all Nessie spec versions). It is available in all Nessie spec versions.
+
+Algorithm:
+
+* Elements are separated using a single `.` character,
+* Dot (`.`) characters in elements are encoded as the ASCII 'group separator' character (0x1D).
+
+### Escaping representation
+
+The escaping behavior **is** compatible with
+[Jakarta Servlet Spec 6, chapter 3.5.2 URI Path Canonicalization](https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization)
+(since Nessie spec 2.2.0, see `NessieConfiguration.spec-version`). Introduced with Nessie spec 2.2.0.
+
+Algorithm:
+
+* Elements are separated using a single `.` character,
+* Escaping is needed, if any of the elements contains any of the characters `.`, `/`, `\` or `%`.
+* Escaped representations start with a single `.`.
+* Escape sequences:
+  * a `.` is escaped as `*.`
+  * a `*` is escaped as `**`
+  * a `/` is escaped as `*{`
+  * a `\` is escaped as `*}`
+  * a `%` is escaped as `*[`
+
+Some examples:
+* `["foo", "bar", "baz"]` returned as `"foo.bar.baz"` - no escaping needed.
+* `["foo", ".bar", "baz"]` returned as `".foo.*.bar.baz"` - escaping needed.
+* `["foo.", ".bar", "a/\%aa"]` returned as `".foo*..*.bar.a*{*}*[aa"` - escaping needed.
+
+### Canonical representation
+
+The canonical representation is similar to "escaping" described above, except that the problematic URI
+characters `/`, `\` and `%` are not escaped. The canonical representation is useful for example on the
+command line. Introduced with Nessie spec 2.2.0.
+
+# 2.2.0
+
+* Released with Nessie version 0.96.0
+* Introduced content-key/namespace elements escaping that does not conflict with [Jakarta Servlet Spec 6,
+  chapter 3.5.2 URI Path Canonicalization](https://jakarta.ee/specifications/servlet/6.0/jakarta-servlet-spec-6.0#uri-path-canonicalization).
+  The [new escaping](#content-key-and-namespace-string-representation-in-uri-paths) will be used for Nessie
+  services that announce Nessie spec 2.2.0 or newer.
+* Introduced HTTP `POST` method variants for the Nessie REST API v2 `GetEntries`, `GetCommitLog`, `GetAllReferences`
+  and `GetDiff` operations. The `POST` method variants are used by the Nessie client, if the service announces
+  Nessie spec 2.2.0 or newer.
+* **Note** Content-keys and related values in CEL filters **must** continue to use the current encoding and
+  **must not** use the escaped variant to retain compatibility.
 
 # 2.1.3
 

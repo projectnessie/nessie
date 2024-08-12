@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +39,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.data.MapEntry;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
@@ -861,5 +866,90 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
                 .as(SingleReferenceResponse.class))
         .extracting(SingleReferenceResponse::getReference)
         .isEqualTo(testTag2);
+  }
+
+  @Test
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  public void problematicCharactersInContentKeys() throws Exception {
+    Branch branch = createBranchV2("problematicCharactersInContentKeys");
+
+    Map<ContentKey, IcebergTable> contents =
+        Stream.of(
+                ContentKey.of("abc.", "{def"),
+                ContentKey.of("abc.", ".def"),
+                ContentKey.of("abc.", "}def"),
+                ContentKey.of("abc.", "[def"),
+                ContentKey.of("abc.", "/def"),
+                ContentKey.of("abc.", "%def"),
+                ContentKey.of("abc.", "\\def"),
+                ContentKey.of("/%", "#&&"),
+                ContentKey.of("/%国", "国.国"),
+                ContentKey.of("he\\llo"),
+                ContentKey.of("he%llo"),
+                ContentKey.of("he#llo", "world"),
+                ContentKey.of("he&llo", "world"),
+                ContentKey.of("he?llo", "world"),
+                ContentKey.of("he/llo", "world"),
+                ContentKey.of("hello."),
+                ContentKey.of(".hello.~hello"),
+                ContentKey.of(".hello", ".~hello"),
+                ContentKey.of(".hello.", "~hello"),
+                ContentKey.of(".hello.", ".~hello"),
+                ContentKey.of(".hello.~", "~hello"),
+                ContentKey.of("foo", "_ar", "baz"),
+                ContentKey.of("foo", "{ar", "baz"),
+                ContentKey.of("foo", "}ar", "baz"),
+                ContentKey.of("foo", "[ar", "baz"))
+            .collect(
+                Collectors.toMap(
+                    Function.identity(),
+                    k -> IcebergTable.of("meta-" + UUID.randomUUID(), 1, 2, 3, 4)));
+
+    List<Namespace> namespaces =
+        contents.keySet().stream()
+            .flatMap(
+                k ->
+                    IntStream.range(1, k.getElementCount())
+                        .mapToObj(l -> Namespace.of(k.getElements().subList(0, l))))
+            .distinct()
+            .collect(Collectors.toList());
+
+    @SuppressWarnings("resource")
+    NessieApiV2 api = apiV2();
+
+    CommitMultipleOperationsBuilder commitNamespaces =
+        api.commitMultipleOperations().branch(branch).commitMeta(fromMessage("create namespaces"));
+    namespaces.forEach(n -> commitNamespaces.operation(Put.of(n.toContentKey(), n)));
+    CommitResponse namespacesCommit = commitNamespaces.commitWithResponse();
+
+    CommitMultipleOperationsBuilder commitContent =
+        api.commitMultipleOperations()
+            .branch(namespacesCommit.getTargetBranch())
+            .commitMeta(fromMessage("create content"));
+    contents.forEach((key, content) -> commitContent.operation(Put.of(key, content)));
+    commitContent.commitWithResponse();
+
+    contents.forEach(
+        (key, expectedContent) -> {
+          for (String keyRepresentation : List.of(key.toPathString(), key.toPathStringEscaped())) {
+
+            soft.assertThatCode(
+                    () -> {
+                      ContentResponse response =
+                          rest()
+                              .get(
+                                  "trees/{branch}/contents/{key}",
+                                  branch.getName(),
+                                  keyRepresentation)
+                              .then()
+                              .statusCode(200)
+                              .extract()
+                              .as(ContentResponse.class);
+                      assertThat(response.getContent().withId(null)).isEqualTo(expectedContent);
+                    })
+                .describedAs("key %s - using URI path %s", key, keyRepresentation)
+                .doesNotThrowAnyException();
+          }
+        });
   }
 }

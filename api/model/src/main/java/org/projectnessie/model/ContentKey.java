@@ -15,9 +15,7 @@
  */
 package org.projectnessie.model;
 
-import static java.lang.String.format;
 import static org.projectnessie.model.Util.DOT_STRING;
-import static org.projectnessie.model.Util.FIRST_ALLOWED_KEY_CHAR;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,7 +38,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentKey.class)
 @JsonDeserialize(as = ImmutableContentKey.class)
-public abstract class ContentKey implements Comparable<ContentKey> {
+public abstract class ContentKey implements Comparable<ContentKey>, Elements {
 
   /** Maximum number of characters in a key. Note: characters can take up to 3 bytes via UTF-8. */
   public static final int MAX_LENGTH = 500;
@@ -53,16 +51,19 @@ public abstract class ContentKey implements Comparable<ContentKey> {
   @Size
   @jakarta.validation.constraints.Size(min = 1)
   @Value.Parameter(order = 1)
+  @Override
   public abstract List<String> getElements();
 
   @JsonIgnore
   @Value.Redacted
+  @Override
   public String[] getElementsArray() {
     return getElements().toArray(new String[0]);
   }
 
   @JsonIgnore
   @Value.Redacted
+  @Override
   public int getElementCount() {
     return getElements().size();
   }
@@ -165,55 +166,36 @@ public abstract class ContentKey implements Comparable<ContentKey> {
 
   @Value.Check
   protected void validate() {
-    List<String> elements = getElements();
-    if (elements.size() > MAX_ELEMENTS) {
-      throw new IllegalStateException(
-          "Key too long, max allowed number of elements: " + MAX_ELEMENTS);
-    }
-    int sum = 0;
-    for (String e : elements) {
-      if (e == null) {
-        throw new IllegalArgumentException(
-            format("Content key '%s' must not contain a null element.", elements));
-      }
-      int l = e.length();
-      if (l == 0) {
-        throw new IllegalArgumentException(
-            format("Content key '%s' must not contain an empty element.", elements));
-      }
-      for (int i = 0; i < l; i++) {
-        char c = e.charAt(i);
-        if (c < FIRST_ALLOWED_KEY_CHAR) {
-          throw new IllegalArgumentException(
-              format(
-                  "Content key '%s' must not contain characters less than 0x%2h.",
-                  elements, FIRST_ALLOWED_KEY_CHAR));
-        }
-      }
-      sum += l;
-    }
-    if (sum > MAX_LENGTH) {
-      throw new IllegalStateException("Key too long, max allowed length: " + MAX_LENGTH);
-    }
+    Elements.super.validate("Content key");
   }
 
   /**
-   * Convert from path encoded string to normal string.
-   *
-   * @param encoded Path encoded string
-   * @return Actual key.
+   * Parses the path encoded string to a {@link ContentKey} object, supports all Nessie Spec
+   * versions, see {@link Elements#elementsFromPathString(String)}.
    */
   public static ContentKey fromPathString(String encoded) {
     return ContentKey.of(Util.fromPathString(encoded));
   }
 
-  /**
-   * Convert this key to a url encoded path string.
-   *
-   * @return String encoded for path use.
-   */
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
   public String toPathString() {
-    return Util.toPathString(getElements());
+    return Elements.super.toPathString();
+  }
+
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
+  public String toPathStringEscaped() {
+    return Elements.super.toPathStringEscaped();
+  }
+
+  @Override
+  @Value.NonAttribute
+  @JsonIgnore
+  public String toCanonicalString() {
+    return Elements.super.toCanonicalString();
   }
 
   @Override

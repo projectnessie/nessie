@@ -58,13 +58,13 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
       if (!(c instanceof Namespace)) {
         throw new NessieNamespaceNotFoundException(
             contentKeyErrorDetails(key),
-            String.format("Namespace '%s' does not exist", key.toPathString()));
+            String.format("Namespace '%s' does not exist", key.toCanonicalString()));
       }
       return GetNamespaceResult.of((Namespace) c, contentResponse.getEffectiveReference());
     } catch (NessieContentNotFoundException e) {
       throw new NessieNamespaceNotFoundException(
           contentKeyErrorDetails(key),
-          String.format("Namespace '%s' does not exist", key.toPathString()));
+          String.format("Namespace '%s' does not exist", key.toCanonicalString()));
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }

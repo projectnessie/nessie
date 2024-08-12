@@ -132,8 +132,9 @@ public interface ApiDoc {
           + "expects.\n";
 
   String KEY_ELEMENTS_DESCRIPTION =
-      "Key components (namespaces) are separated by the dot ('.') character. Dot ('.') characters that are not "
-          + "Nessie namespace separators must be encoded as the 'group separator' ASCII character (0x1D).\n";
+      "Content key and namespace components are separated by the dot (`.`) character.\n"
+          + "The components itself must be escaped using the rules described in "
+          + "[NESSIE-SPEC-2.0.md in the repository](https://github.com/projectnessie/nessie/blob/main/api/NESSIE-SPEC-2-0.md).";
 
   String KEY_PARAMETER_DESCRIPTION = "The key to a content object.\n\n" + KEY_ELEMENTS_DESCRIPTION;
 
