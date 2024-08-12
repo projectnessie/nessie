@@ -80,16 +80,14 @@ public class TestS3Clients extends AbstractClients {
               .build());
     }
 
+    SecretsProvider secretsProvider =
+        new SecretsProvider(
+            names ->
+                names.stream()
+                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
     S3ClientSupplier supplier =
-        new S3ClientSupplier(
-            sdkHttpClient,
-            s3options.build(),
-            new SecretsProvider(
-                names ->
-                    names.stream()
-                        .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret")))),
-            null);
-    return new S3ObjectIO(supplier);
+        new S3ClientSupplier(sdkHttpClient, s3options.build(), secretsProvider, null);
+    return new S3ObjectIO(supplier, null);
   }
 
   @Override

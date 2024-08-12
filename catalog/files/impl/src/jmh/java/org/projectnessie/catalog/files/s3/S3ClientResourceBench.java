@@ -102,7 +102,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, null);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/key"))) {
       bh.consume(in.readAllBytes());
     }
@@ -110,7 +110,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get250k(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, null);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-256000"))) {
       bh.consume(in.readAllBytes());
     }
@@ -118,7 +118,7 @@ public class S3ClientResourceBench {
 
   @Benchmark
   public void s3Get4M(BenchmarkParam param, Blackhole bh) throws IOException {
-    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier);
+    S3ObjectIO objectIO = new S3ObjectIO(param.clientSupplier, null);
     try (InputStream in = objectIO.readObject(StorageUri.of("s3://bucket/s-4194304"))) {
       bh.consume(in.readAllBytes());
     }

@@ -67,6 +67,9 @@ dependencies {
   testFixturesApi(libs.bundles.junit.testing)
 
   testCompileOnly(libs.microprofile.openapi)
+
+  testImplementation(platform(libs.awssdk.bom))
+  testImplementation("software.amazon.awssdk:s3")
 }
 
 annotationStripper {

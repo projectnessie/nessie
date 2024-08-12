@@ -39,8 +39,7 @@ public final class AdlsLocation {
   public static AdlsLocation adlsLocation(StorageUri location) {
     checkArgument(location != null, "Invalid location: null");
     String scheme = location.scheme();
-    checkArgument(
-        "abfs".equals(scheme) || "abfss".equals(scheme), "Invalid ADLS scheme: %s", location);
+    checkArgument(isAdlsScheme(scheme), "Invalid ADLS scheme: %s", location);
 
     String authority = location.requiredAuthority();
     String[] parts = authority.split("@", -1);
@@ -57,6 +56,10 @@ public final class AdlsLocation {
     String path = location.path();
     path = path == null ? "" : path.startsWith("/") ? path.substring(1) : path;
     return new AdlsLocation(location, storageAccount, container, path);
+  }
+
+  public static boolean isAdlsScheme(String scheme) {
+    return "abfs".equals(scheme) || "abfss".equals(scheme);
   }
 
   public StorageUri getUri() {

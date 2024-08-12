@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
@@ -29,4 +32,22 @@ public interface ObjectIO {
   OutputStream writeObject(StorageUri uri) throws IOException;
 
   void deleteObjects(List<StorageUri> uris) throws IOException;
+
+  void icebergWarehouseConfig(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride);
+
+  void icebergTableConfig(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      Predicate<StorageLocations> signingPredicate,
+      boolean canDoCredentialsVending);
+
+  void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties);
+
+  String FILE_IO_IMPL = "io-impl";
 }

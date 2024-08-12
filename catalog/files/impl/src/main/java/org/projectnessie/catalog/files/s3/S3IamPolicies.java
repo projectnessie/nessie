@@ -31,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 

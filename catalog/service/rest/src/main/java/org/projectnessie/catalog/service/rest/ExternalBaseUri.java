@@ -22,8 +22,8 @@ import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReference
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -75,20 +75,17 @@ public interface ExternalBaseUri {
         });
   }
 
-  default Map<String, String> icebergConfigDefaults() {
-    return Map.of();
-  }
+  default void icebergConfigDefaults(BiConsumer<String, String> config) {}
 
-  default Map<String, String> icebergConfigOverrides() {
-    return Map.of(
-        // Make sure that `nessie.core-base-uri` always returns a `/` terminated URI.
-        "nessie.core-base-uri", coreRootURI().toString(),
-        // Make sure that `nessie.catalog-base-uri` always returns a `/` terminated URI.
-        "nessie.catalog-base-uri", catalogBaseURI().toString(),
-        // Iceberg base URI exposed twice for Spark SQL extensions, which update the `uri` config
-        // when the branch is changed.
-        "nessie.iceberg-base-uri", icebergBaseURI().toString(),
-        "uri", icebergBaseURI().toString());
+  default void icebergConfigOverrides(BiConsumer<String, String> config) {
+    // Make sure that `nessie.core-base-uri` always returns a `/` terminated URI.
+    config.accept("nessie.core-base-uri", coreRootURI().toString());
+    // Make sure that `nessie.catalog-base-uri` always returns a `/` terminated URI.
+    config.accept("nessie.catalog-base-uri", catalogBaseURI().toString());
+    // Iceberg base URI exposed twice for Spark SQL extensions, which update the `uri` config
+    // when the branch is changed.
+    config.accept("nessie.iceberg-base-uri", icebergBaseURI().toString());
+    config.accept("uri", icebergBaseURI().toString());
   }
 
   /**

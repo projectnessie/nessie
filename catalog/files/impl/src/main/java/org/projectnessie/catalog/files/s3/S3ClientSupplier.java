@@ -59,8 +59,12 @@ public class S3ClientSupplier {
     this.sessions = sessions;
   }
 
-  public S3Options s3options() {
+  S3Options s3options() {
     return s3options;
+  }
+
+  SecretsProvider secretsProvider() {
+    return secretsProvider;
   }
 
   /**

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.services.sts.model.Credentials;
 

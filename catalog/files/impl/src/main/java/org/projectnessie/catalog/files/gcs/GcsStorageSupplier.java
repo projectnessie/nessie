@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.projectnessie.catalog.files.s3.StorageLocations;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.slf4j.Logger;
@@ -60,6 +60,14 @@ public final class GcsStorageSupplier {
     this.httpTransportFactory = httpTransportFactory;
     this.gcsOptions = gcsOptions;
     this.secretsProvider = secretsProvider;
+  }
+
+  GcsOptions gcsOptions() {
+    return gcsOptions;
+  }
+
+  SecretsProvider secretsProvider() {
+    return secretsProvider;
   }
 
   public GcsBucketOptions bucketOptions(GcsLocation location) {

@@ -36,7 +36,7 @@ public final class GcsLocation {
   public static GcsLocation gcsLocation(StorageUri location) {
     checkArgument(location != null, "Invalid location: null");
     String scheme = location.scheme();
-    checkArgument("gs".equals(scheme), "Invalid GCS scheme: %s", location);
+    checkArgument(isGcsScheme(scheme), "Invalid GCS scheme: %s", location);
 
     String bucket = location.authority();
 
@@ -52,5 +52,9 @@ public final class GcsLocation {
 
   public String path() {
     return path;
+  }
+
+  public static boolean isGcsScheme(String scheme) {
+    return "gs".equals(scheme);
   }
 }

@@ -18,6 +18,7 @@ package org.projectnessie.catalog.files.s3;
 import static org.projectnessie.catalog.files.s3.S3IamPolicies.locationDependentPolicy;
 
 import java.util.Optional;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;

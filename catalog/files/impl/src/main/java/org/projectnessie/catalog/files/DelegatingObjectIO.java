@@ -18,7 +18,11 @@ package org.projectnessie.catalog.files;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
 
 public abstract class DelegatingObjectIO implements ObjectIO {
@@ -37,5 +41,31 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     return resolve(uri).readObject(uri);
+  }
+
+  @Override
+  public void icebergWarehouseConfig(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride) {
+    resolve(warehouse).icebergWarehouseConfig(warehouse, defaultConfig, configOverride);
+  }
+
+  @Override
+  public void icebergTableConfig(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      Predicate<StorageLocations> signingPredicate,
+      boolean canDoCredentialsVending) {
+    resolve(storageLocations.warehouseLocation())
+        .icebergTableConfig(storageLocations, config, signingPredicate, canDoCredentialsVending);
+  }
+
+  @Override
+  public void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties) {
+    resolve(warehouse).trinoSampleConfig(warehouse, icebergConfig, properties);
   }
 }

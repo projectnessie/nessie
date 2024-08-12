@@ -24,7 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
 
 /** An {@link ObjectIO} implementation purely for unit tests - and nothing else. */
@@ -73,6 +77,25 @@ public class LocalObjectIO implements ObjectIO {
       throw ex;
     }
   }
+
+  @Override
+  public void icebergWarehouseConfig(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride) {}
+
+  @Override
+  public void icebergTableConfig(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      Predicate<StorageLocations> signingPredicate,
+      boolean canDoCredentialsVending) {}
+
+  @Override
+  public void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties) {}
 
   private static Path filePath(StorageUri uri) {
     return Paths.get(uri.requiredPath());
