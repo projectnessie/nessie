@@ -1231,6 +1231,12 @@ public abstract class BaseTestNessieApi {
         .satisfies(u -> assertThat(u.getId()).isNotNull())
         .extracting(UDF::getMetadataLocation, UDF::getVersionId, UDF::getSignatureId)
         .containsExactly("loc1", "v1", "s1");
+
+    soft.assertThat(api().getEntries().reference(main).stream())
+        .hasSize(1)
+        .element(0)
+        .extracting(Entry::getType, Entry::getName)
+        .containsExactly(Content.Type.UDF, key);
   }
 
   @Test
