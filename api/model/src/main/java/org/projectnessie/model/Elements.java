@@ -67,7 +67,7 @@ public interface Elements {
    * version 2.2.0 or newer, except for content-key related values in CEL filters.
    *
    * <p>Elements are separated by {@code .} characters. {@code .} characters in elements are
-   * replaced with the ASCII group separator (ASCII 29, {@code %29}).
+   * replaced with the ASCII group separator (ASCII 29, {@code %1D}).
    *
    * @return The URI path compatible representation of the given elements, possibly escaped. The
    *     returned value should be URL-encoded before added to a URI path or query. The returned
