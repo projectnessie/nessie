@@ -15,14 +15,20 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
+import static org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.DELEGATION_KEY_DEFAULT_EXPIRY;
+import static org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.DELEGATION_SAS_DEFAULT_EXPIRY;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
 
+import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.policy.ExponentialBackoffOptions;
 import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.RetryOptions;
+import com.azure.core.util.Configuration;
 import com.azure.core.util.ConfigurationBuilder;
+import com.azure.identity.DefaultAzureCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.common.policy.RequestRetryOptions;
@@ -30,12 +36,29 @@ import com.azure.storage.common.policy.RetryPolicyType;
 import com.azure.storage.file.datalake.DataLakeFileClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClient;
 import com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder;
+import com.azure.storage.file.datalake.DataLakeServiceClient;
+import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
+import com.azure.storage.file.datalake.models.UserDelegationKey;
+import com.azure.storage.file.datalake.sas.DataLakeServiceSasSignatureValues;
+import com.azure.storage.file.datalake.sas.PathSasPermission;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.function.Consumer;
+import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.AzureAuthType;
+import org.projectnessie.catalog.files.s3.StorageLocations;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class AdlsClientSupplier {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AdlsClientSupplier.class);
+
   private final HttpClient httpClient;
   private final AdlsOptions adlsOptions;
   private final SecretsProvider secretsProvider;
@@ -64,68 +87,167 @@ public final class AdlsClientSupplier {
   }
 
   DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
-    ConfigurationBuilder clientConfig = new ConfigurationBuilder();
-    adlsOptions.configurationOptions().forEach(clientConfig::putProperty);
+    Configuration clientConfig = buildClientConfiguration();
 
     AdlsFileSystemOptions fileSystemOptions =
         adlsOptions.effectiveOptionsForFileSystem(location.container(), secretsProvider);
 
-    DataLakeFileSystemClientBuilder clientBuilder =
-        new DataLakeFileSystemClientBuilder()
-            .httpClient(httpClient)
-            .configuration(clientConfig.build());
+    String endpoint = endpointForLocation(location, fileSystemOptions);
 
+    return buildFileSystemClient(location, fileSystemOptions, clientConfig, endpoint);
+  }
+
+  public Optional<String> generateUserDelegationSas(
+      StorageLocations storageLocations, AdlsFileSystemOptions fileSystemOptions) {
+    AdlsLocation location = adlsLocation(storageLocations.warehouseLocation());
+
+    if (!fileSystemOptions.userDelegationEnable().orElse(false)) {
+      return Optional.empty();
+    }
+
+    if (fileSystemOptions.authType().orElse(AzureAuthType.NONE) == AzureAuthType.NONE) {
+      LOGGER.warn(
+          "User delegation enabled for {}, but auth-type is NONE",
+          storageLocations.warehouseLocation());
+    }
+
+    Configuration clientConfig = buildClientConfiguration();
+
+    String endpoint = endpointForLocation(location, fileSystemOptions);
+
+    DataLakeFileSystemClient client =
+        buildFileSystemClient(location, fileSystemOptions, clientConfig, endpoint);
+
+    DataLakeServiceClientBuilder dataLakeServiceClientBuilder =
+        new DataLakeServiceClientBuilder()
+            .endpoint(endpoint)
+            .httpClient(httpClient)
+            .configuration(clientConfig);
+
+    checkState(
+        applyCredentials(
+            fileSystemOptions,
+            dataLakeServiceClientBuilder::credential,
+            dataLakeServiceClientBuilder::sasToken,
+            dataLakeServiceClientBuilder::credential));
+
+    Duration keyValidity =
+        fileSystemOptions.userDelegationKeyExpiry().orElse(DELEGATION_KEY_DEFAULT_EXPIRY);
+    Duration sasValidity =
+        fileSystemOptions.userDelegationSasExpiry().orElse(DELEGATION_SAS_DEFAULT_EXPIRY);
+
+    Instant start = Instant.now();
+    OffsetDateTime startTime = start.truncatedTo(ChronoUnit.SECONDS).atOffset(ZoneOffset.UTC);
+    OffsetDateTime keyExpiry = start.plus(keyValidity).atOffset(ZoneOffset.UTC);
+    OffsetDateTime sasExpiry = start.plus(sasValidity).atOffset(ZoneOffset.UTC);
+
+    DataLakeServiceClient dataLakeServiceClient = dataLakeServiceClientBuilder.buildClient();
+    UserDelegationKey userDelegationKey =
+        dataLakeServiceClient.getUserDelegationKey(startTime, keyExpiry);
+
+    PathSasPermission pathSasPermission = new PathSasPermission();
+    pathSasPermission.setListPermission(true);
+    pathSasPermission.setReadPermission(true);
+    if (!storageLocations.writeableLocations().isEmpty()) {
+      pathSasPermission.setAddPermission(true);
+      pathSasPermission.setWritePermission(true);
+      pathSasPermission.setDeletePermission(true);
+    }
+
+    DataLakeServiceSasSignatureValues sasSignatureValues =
+        new DataLakeServiceSasSignatureValues(sasExpiry, pathSasPermission);
+
+    String sasToken = client.generateUserDelegationSas(sasSignatureValues, userDelegationKey);
+
+    System.err.println("generateUserDelegationSas / RETURN " + sasToken);
+
+    return Optional.of(sasToken);
+  }
+
+  private DataLakeFileSystemClient buildFileSystemClient(
+      AdlsLocation location,
+      AdlsFileSystemOptions fileSystemOptions,
+      Configuration clientConfig,
+      String endpoint) {
     // MUST set the endpoint FIRST, because it ALSO sets accountName, fileSystemName and sasToken!
     // See com.azure.storage.file.datalake.DataLakeFileSystemClientBuilder.endpoint
 
-    Optional<BasicCredentials> account = fileSystemOptions.account();
-
-    String accountName = account.map(BasicCredentials::name).orElse(location.storageAccount());
-
-    clientBuilder.endpoint(
-        fileSystemOptions
-            .endpoint()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        format(
-                            "Mandatory ADLS endpoint is not configured for storage account %s%s.",
-                            location.storageAccount(),
-                            location.container().map(c -> ", container " + c).orElse("")))));
-
-    AdlsFileSystemOptions.AzureAuthType authType =
-        fileSystemOptions.authType().orElse(AdlsFileSystemOptions.AzureAuthType.NONE);
-    switch (authType) {
-      case NONE:
-        clientBuilder.setAnonymousAccess();
-        break;
-      case STORAGE_SHARED_KEY:
-        String accountKey =
-            fileSystemOptions
-                .account()
-                .orElseThrow(() -> new IllegalStateException("account key missing"))
-                .secret();
-        clientBuilder.credential(new StorageSharedKeyCredential(accountName, accountKey));
-        break;
-      case SAS_TOKEN:
-        clientBuilder.sasToken(
-            fileSystemOptions
-                .sasToken()
-                .orElseThrow(() -> new IllegalStateException("SAS token missing"))
-                .key());
-        break;
-      case APPLICATION_DEFAULT:
-        clientBuilder.credential(new DefaultAzureCredentialBuilder().build());
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported auth type " + authType);
-    }
+    DataLakeFileSystemClientBuilder clientBuilder =
+        new DataLakeFileSystemClientBuilder()
+            .httpClient(httpClient)
+            .configuration(clientConfig)
+            .endpoint(endpoint);
 
     buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
     buildRequestRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
     location.container().ifPresent(clientBuilder::fileSystemName);
 
+    if (!applyCredentials(
+        fileSystemOptions,
+        clientBuilder::credential,
+        clientBuilder::sasToken,
+        clientBuilder::credential)) {
+      clientBuilder.setAnonymousAccess();
+    }
+
     return clientBuilder.buildClient();
+  }
+
+  private static String endpointForLocation(
+      AdlsLocation location, AdlsFileSystemOptions fileSystemOptions) {
+    return fileSystemOptions
+        .endpoint()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    format(
+                        "Mandatory ADLS endpoint is not configured for storage account %s%s.",
+                        location.storageAccount(),
+                        location.container().map(c -> ", container " + c).orElse(""))));
+  }
+
+  private Configuration buildClientConfiguration() {
+    ConfigurationBuilder clientConfigBuilder = new ConfigurationBuilder();
+    adlsOptions.configurationOptions().forEach(clientConfigBuilder::putProperty);
+    return clientConfigBuilder.build();
+  }
+
+  private boolean applyCredentials(
+      AdlsFileSystemOptions fileSystemOptions,
+      Consumer<StorageSharedKeyCredential> sharedKeyCredentialConsumer,
+      Consumer<String> sasTokenConsumer,
+      Consumer<TokenCredential> tokenCredentialConsumer) {
+    AzureAuthType authType = fileSystemOptions.authType().orElse(AzureAuthType.NONE);
+    switch (authType) {
+      case NONE:
+        return false;
+      case STORAGE_SHARED_KEY:
+        BasicCredentials account =
+            fileSystemOptions
+                .account()
+                .orElseThrow(() -> new IllegalStateException("storage shared key missing"));
+
+        sharedKeyCredentialConsumer.accept(
+            new StorageSharedKeyCredential(account.name(), account.secret()));
+        return true;
+      case SAS_TOKEN:
+        sasTokenConsumer.accept(
+            fileSystemOptions
+                .sasToken()
+                .orElseThrow(() -> new IllegalStateException("SAS token missing"))
+                .key());
+        return true;
+      case APPLICATION_DEFAULT:
+        tokenCredentialConsumer.accept(DefaultAzureCredentialsLazy.DEFAULT_AZURE_CREDENTIAL);
+        return true;
+      default:
+        throw new IllegalArgumentException("Unsupported auth type " + authType);
+    }
+  }
+
+  private static final class DefaultAzureCredentialsLazy {
+    static final DefaultAzureCredential DEFAULT_AZURE_CREDENTIAL =
+        new DefaultAzureCredentialBuilder().build();
   }
 
   // Both RetryOptions + RequestRetryOptions look redundant, but neither type inherits the other -

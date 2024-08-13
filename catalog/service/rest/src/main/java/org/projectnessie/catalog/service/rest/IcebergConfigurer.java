@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
+import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.adls.AdlsLocation;
 import org.projectnessie.catalog.files.adls.AdlsOptions;
@@ -117,6 +118,7 @@ public class IcebergConfigurer {
   @Inject ServerConfig serverConfig;
   @Inject CatalogConfig catalogConfig;
   @Inject S3CredentialsResolver s3CredentialsResolver;
+  @Inject AdlsClientSupplier adlsClientSupplier;
   @Inject @NormalizedObjectStoreOptions S3Options s3Options;
   @Inject @NormalizedObjectStoreOptions GcsOptions gcsOptions;
   @Inject @NormalizedObjectStoreOptions AdlsOptions adlsOptions;
@@ -644,5 +646,12 @@ public class IcebergConfigurer {
     adlsOptions
         .writeBlockSize()
         .ifPresent(s -> configOverrides.put(ADLS_WRITE_BLOCK_SIZE_BYTES, Long.toString(s)));
+
+    if (forTable) {
+      adlsClientSupplier
+          .generateUserDelegationSas(storageLocations, fileSystemOptions)
+          .ifPresent(
+              sasToken -> configOverrides.put(ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken));
+    }
   }
 }
