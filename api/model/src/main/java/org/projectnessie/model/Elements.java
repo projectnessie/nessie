@@ -160,6 +160,9 @@ public interface Elements {
               format(
                   "%s '%s' must not contain characters less than 0x%2h",
                   type, elements, FIRST_ALLOWED_KEY_CHAR));
+        } else if (c == 0x7f) {
+          throw new IllegalArgumentException(
+              format("%s '%s' must not contain the character 0x7F", type, elements));
         }
       }
       sum += l;
