@@ -74,6 +74,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableBranch;
 import org.projectnessie.model.ImmutableOperations;
+import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Reference;
@@ -554,6 +555,57 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .extract()
         .as(ContentResponse.class)
         .getContent();
+  }
+
+  @NessieApiVersions(versions = {NessieApiVersion.V2})
+  @Test
+  void testCommitMetaHeaders() {
+    String message = "My own commit message";
+    String author1 = "Me <me@me.internal>";
+    String author2 = "I <me@me.internal>";
+    String signedOffBy1 = "Myself <myself@me.internal>";
+    String signedOffBy2 = "My other self <myself@me.internal>";
+
+    Branch branch = createBranchV2("testCommitMetaHeaders");
+
+    ImmutableOperations.Builder ops =
+        ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("test commit"));
+    ops.addOperations(Put.of(ContentKey.of("my-namespace"), Namespace.of("my-namespace")));
+    rest()
+        .body(ops.build())
+        .header("Nessie-Commit-Message", message)
+        .header("Nessie-Commit-Authors", author1, author2)
+        .header("Nessie-Commit-SignedOffBy", signedOffBy1, signedOffBy2)
+        .header("Nessie-Commit-Property-foo", "bar", "baz")
+        .header("Nessie-Commit-Property-dog", "Elani")
+        .post("trees/{ref}/history/commit", branch.toPathString())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(CommitResponse.class);
+
+    List<LogResponse.LogEntry> commits =
+        rest()
+            .get("trees/{ref}/history", branch.getName())
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(LogResponse.class)
+            .getLogEntries();
+
+    soft.assertThat(commits)
+        .extracting(LogResponse.LogEntry::getCommitMeta)
+        .allSatisfy(
+            meta -> {
+              soft.assertThat(meta.getAllAuthors())
+                  .containsExactlyElementsOf(List.of(author1, author2));
+              soft.assertThat(meta.getAllSignedOffBy())
+                  .containsExactlyElementsOf(List.of(signedOffBy1, signedOffBy2));
+              soft.assertThat(meta.getMessage()).isEqualTo(message);
+              soft.assertThat(meta.getAllProperties())
+                  .containsExactlyInAnyOrderEntriesOf(
+                      Map.of("foo", List.of("bar", "baz"), "dog", List.of("Elani")));
+            });
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})

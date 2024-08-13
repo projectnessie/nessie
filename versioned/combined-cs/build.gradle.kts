@@ -64,4 +64,5 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testImplementation(project(":nessie-client-testextension"))
   testCompileOnly("org.junit.jupiter:junit-jupiter-engine")
+  testRuntimeOnly(libs.jakarta.ws.rs.api)
 }

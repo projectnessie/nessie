@@ -632,6 +632,25 @@ public final class NessieConfigConstants {
   @ConfigItem
   public static final String CONF_NESSIE_CLIENT_API_VERSION = "nessie.client-api-version";
 
+  /**
+   * Override all commit messages with the configured value. The corresponding HTTP header is {@code
+   * Nessie-Commit-Message}.
+   */
+  @ConfigItem public static final String CONF_NESSIE_COMMIT_MESSAGE = "nessie.commit-meta.message";
+
+  /**
+   * Set/override the author of all commits. The corresponding HTTP header is {@code
+   * Nessie-Commit-Authors}.
+   */
+  @ConfigItem public static final String CONF_NESSIE_COMMIT_AUTHOR = "nessie.commit-meta.author";
+
+  /**
+   * Set/override the signed-off-by of all commits. The corresponding HTTP header is {@code
+   * Nessie-Commit-SignedOffBy}.
+   */
+  @ConfigItem
+  public static final String CONF_NESSIE_COMMIT_SIGNED_OFF_BY = "nessie.commit-meta.signed-off-by";
+
   public static final int DEFAULT_READ_TIMEOUT_MILLIS = 25000;
   public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5000;
 

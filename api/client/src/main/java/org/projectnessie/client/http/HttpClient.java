@@ -128,6 +128,9 @@ public interface HttpClient extends AutoCloseable {
     @CanIgnoreReturnValue
     Builder setCancellationFuture(CompletionStage<?> cancellationFuture);
 
+    @CanIgnoreReturnValue
+    Builder addCustomHeader(String header, String value);
+
     /** Construct an HttpClient from builder settings. */
     HttpClient build();
   }

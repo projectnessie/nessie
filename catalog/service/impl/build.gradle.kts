@@ -73,6 +73,7 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-storage-store"))
   testFixturesApi(project(":nessie-rest-services"))
   testFixturesApi(libs.threeten.extra)
+  testFixturesApi(libs.jakarta.ws.rs.api)
 
   testImplementation(platform(libs.awssdk.bom))
   testImplementation("software.amazon.awssdk:s3")

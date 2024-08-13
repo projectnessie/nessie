@@ -255,6 +255,12 @@ public class NessieHttpClientBuilderImpl
   }
 
   @Override
+  public NessieHttpClientBuilder withHttpHeader(String header, String value) {
+    builder.addCustomHeader(header, value);
+    return this;
+  }
+
+  @Override
   public NessieClientBuilder withCancellationFuture(CompletionStage<?> cancellationFuture) {
     builder.setCancellationFuture(cancellationFuture);
     return this;

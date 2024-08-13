@@ -127,6 +127,9 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
   @CanIgnoreReturnValue
   NessieHttpClientBuilder withSSLParameters(SSLParameters sslParameters);
 
+  @CanIgnoreReturnValue
+  NessieHttpClientBuilder withHttpHeader(String header, String value);
+
   /** Convenience base class for implementations of {@link NessieHttpClientBuilder}. */
   abstract class AbstractNessieHttpClientBuilder
       extends NessieClientBuilder.AbstractNessieClientBuilder implements NessieHttpClientBuilder {
@@ -267,6 +270,11 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
     @Override
     public NessieHttpClientBuilder withSSLParameters(SSLParameters sslParameters) {
       return (NessieHttpClientBuilder) super.withSSLParameters(sslParameters);
+    }
+
+    @Override
+    public NessieHttpClientBuilder withHttpHeader(String header, String value) {
+      return (NessieHttpClientBuilder) super.withHttpHeader(header, value);
     }
   }
 }

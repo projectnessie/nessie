@@ -24,8 +24,10 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import org.projectnessie.api.v2.http.HttpTreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -52,6 +54,7 @@ import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableGetMultipleContentsRequest;
 import org.projectnessie.model.ImmutableLogResponse;
+import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.ImmutableReferencesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.LogResponse.LogEntry;
@@ -77,10 +80,11 @@ public class RestV2TreeResource implements HttpTreeApi {
   private final TreeService treeService;
   private final ContentService contentService;
   private final DiffService diffService;
+  private final HttpHeaders httpHeaders;
 
   // Mandated by CDI 2.0
   public RestV2TreeResource() {
-    this(null, null, null, null);
+    this(null, null, null, null, null);
   }
 
   @Inject
@@ -88,11 +92,13 @@ public class RestV2TreeResource implements HttpTreeApi {
       ConfigService configService,
       TreeService treeService,
       ContentService contentService,
-      DiffService diffService) {
+      DiffService diffService,
+      HttpHeaders httpHeaders) {
     this.configService = configService;
     this.treeService = treeService;
     this.contentService = contentService;
     this.diffService = diffService;
+    this.httpHeaders = httpHeaders;
   }
 
   private ParsedReference parseRefPathString(String refPathString) {
@@ -377,7 +383,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     ParsedReference ref = parseRefPathString(branch);
 
     String msg = transplant.getMessage();
-    CommitMeta meta = CommitMeta.fromMessage(msg == null ? "" : msg);
+    CommitMeta meta = commitMeta(CommitMeta.builder().message(msg == null ? "" : msg)).build();
 
     return tree()
         .transplantCommitsIntoBranch(
@@ -412,6 +418,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     } else {
       meta.message(msg == null ? "" : msg);
     }
+    commitMeta(meta);
 
     return tree()
         .mergeRefIntoBranch(
@@ -431,7 +438,57 @@ public class RestV2TreeResource implements HttpTreeApi {
   @Override
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
+    ImmutableOperations.Builder ops =
+        ImmutableOperations.builder()
+            .from(operations)
+            .commitMeta(commitMeta(CommitMeta.builder().from(operations.getCommitMeta())).build());
+
     ParsedReference ref = parseRefPathString(branch);
-    return tree().commitMultipleOperations(ref.name(), ref.hashWithRelativeSpec(), operations);
+    return tree().commitMultipleOperations(ref.name(), ref.hashWithRelativeSpec(), ops.build());
+  }
+
+  CommitMeta.Builder commitMeta(CommitMeta.Builder commitMeta) {
+    httpHeaders
+        .getRequestHeaders()
+        .forEach(
+            (k, v) -> {
+              if (!v.isEmpty()) {
+                String lower = k.toLowerCase(Locale.ROOT);
+                switch (lower) {
+                  case "nessie-commit-message":
+                    v.stream()
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .findFirst()
+                        .ifPresent(commitMeta::message);
+                    break;
+                  case "nessie-commit-authors":
+                    v.stream()
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .forEach(commitMeta::addAllAuthors);
+                    break;
+                  case "nessie-commit-signedoffby":
+                    v.stream()
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .forEach(commitMeta::addAllSignedOffBy);
+                    break;
+                  default:
+                    if (lower.startsWith("nessie-commit-property-")) {
+                      String prop = lower.substring("nessie-commit-property-".length()).trim();
+                      commitMeta.putAllProperties(
+                          prop,
+                          v.stream()
+                              .map(String::trim)
+                              .filter(s -> !s.isEmpty())
+                              .collect(Collectors.toList()));
+                    }
+                    break;
+                }
+              }
+            });
+
+    return commitMeta;
   }
 }

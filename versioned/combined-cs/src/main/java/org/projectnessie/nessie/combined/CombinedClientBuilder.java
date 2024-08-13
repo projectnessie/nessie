@@ -15,6 +15,8 @@
  */
 package org.projectnessie.nessie.combined;
 
+import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
+
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
@@ -114,7 +116,9 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
 
     configResource =
         new RestV2ConfigResource(serverConfig, versionStore, authorizer, accessContext);
-    treeResource = new RestV2TreeResource(configService, treeService, contentService, diffService);
+    treeResource =
+        new RestV2TreeResource(
+            configService, treeService, contentService, diffService, emptyHttpHeaders());
 
     // Optimistic cast...
     @SuppressWarnings("unchecked")
