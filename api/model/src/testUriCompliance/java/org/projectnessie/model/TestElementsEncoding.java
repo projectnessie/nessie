@@ -393,6 +393,11 @@ public class TestElementsEncoding {
     String uriEncodedEscaped = URLEncoder.encode(escaped, UTF_8);
     String uriEncodedLegacy = URLEncoder.encode(legacy, UTF_8);
 
+    HttpURI uri = HttpURI.from(format("http://hostname/foo/%s", uriEncodedEscaped));
+    soft.assertThat(uri.getViolations())
+        .describedAs("escaped: %s -  url: %s", escaped, uriEncodedEscaped)
+        .isEmpty();
+
     soft.assertThat(escaped).isEqualTo(expectedEscaped);
     soft.assertThat(canonical).isEqualTo(expectedCanonical);
     soft.assertThat(legacy).isEqualTo(expectedLegacy);
@@ -470,6 +475,12 @@ public class TestElementsEncoding {
     String escaped = Util.toPathStringEscaped(elements);
     String canonical = Util.toCanonicalString(elements);
 
+    String uriEncodedEscaped = URLEncoder.encode(escaped, UTF_8);
+    HttpURI uri = HttpURI.from(format("http://hostname/foo/%s", uriEncodedEscaped));
+    soft.assertThat(uri.getViolations())
+        .describedAs("escaped: %s -  url: %s", escaped, uriEncodedEscaped)
+        .isEmpty();
+
     List<String> elementsFromEscaped = Util.fromPathString(escaped);
     List<String> elementsFromCanonical = Util.fromPathString(canonical);
 
@@ -477,8 +488,11 @@ public class TestElementsEncoding {
     soft.assertThat(elementsFromCanonical).containsExactlyElementsOf(elements);
   }
 
+  @SuppressWarnings("AvoidEscapedUnicodeCharacters")
   static List<List<String>> randomRoundTrips() {
-    char[] chars = {'a', 'b', 'c', '*', '.', '{', '}', '[', '~', '/', '\\', '%'};
+    char[] chars = {
+      'a', 'b', 'c', 'ä', 'é', '\uD83D', '\uDE04', '《', '*', '.', '{', '}', '[', '~', '/', '\\', '%'
+    };
 
     List<List<String>> r = new ArrayList<>(500) {};
     Random rand = new Random(5733746443528016288L); // From some random
@@ -494,5 +508,42 @@ public class TestElementsEncoding {
       r.add(elements);
     }
     return r;
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void allCharacters(String element) {
+    List<String> elements = List.of(element);
+    String escaped = Util.toPathStringEscaped(elements);
+    String canonical = Util.toCanonicalString(elements);
+
+    String uriEncodedEscaped = URLEncoder.encode(escaped, UTF_8);
+    HttpURI uri = HttpURI.from(format("http://hostname/foo/%s", uriEncodedEscaped));
+    soft.assertThat(uri.getViolations())
+        .describedAs("escaped: %s -  url: %s", escaped, uriEncodedEscaped)
+        .isEmpty();
+
+    List<String> elementsFromEscaped = Util.fromPathString(escaped);
+    List<String> elementsFromCanonical = Util.fromPathString(canonical);
+
+    soft.assertThat(elementsFromEscaped).containsExactlyElementsOf(elements);
+    soft.assertThat(elementsFromCanonical).containsExactlyElementsOf(elements);
+  }
+
+  static Stream<String> allCharacters() {
+    int split = 32;
+    return IntStream.rangeClosed(32 / split, 0xffff / split)
+        .mapToObj(
+            i -> {
+              char c = (char) (i * split);
+              StringBuilder sb = new StringBuilder(split);
+              for (int i1 = 0; i1 < split; i1++) {
+                if (c != 0x7f) {
+                  sb.append(c);
+                }
+                c++;
+              }
+              return sb.toString();
+            });
   }
 }
