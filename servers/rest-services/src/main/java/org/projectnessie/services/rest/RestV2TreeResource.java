@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.projectnessie.api.v2.http.HttpTreeApi;
 import org.projectnessie.api.v2.params.CommitLogParams;
 import org.projectnessie.api.v2.params.DiffParams;
@@ -125,6 +126,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getAllReferences")
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Integer maxRecords = params.maxRecords();
@@ -155,6 +157,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.createReference")
   @Override
   public SingleReferenceResponse createReference(String name, String type, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
@@ -174,6 +177,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getReferenceByName")
   @Override
   public SingleReferenceResponse getReferenceByName(GetReferenceParams params)
       throws NessieNotFoundException {
@@ -187,6 +191,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getReferenceHistory")
   @Override
   public ReferenceHistoryResponse getReferenceHistory(ReferenceHistoryParams params)
       throws NessieNotFoundException {
@@ -198,6 +203,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getEntries")
   @Override
   public EntriesResponse getEntries(String ref, EntriesParams params)
       throws NessieNotFoundException {
@@ -237,6 +243,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getCommitLog")
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
@@ -272,6 +279,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getDiff")
   @Override
   public DiffResponse getDiff(DiffParams params) throws NessieNotFoundException {
     Integer maxRecords = params.maxRecords();
@@ -312,6 +320,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.assignReference")
   @Override
   public SingleReferenceResponse assignReference(String type, String ref, Reference assignTo)
       throws NessieNotFoundException, NessieConflictException {
@@ -324,6 +333,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.deleteReference")
   @Override
   public SingleReferenceResponse deleteReference(String type, String ref)
       throws NessieConflictException, NessieNotFoundException {
@@ -342,6 +352,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getContent")
   @Override
   public ContentResponse getContent(
       ContentKey key, String ref, boolean withDocumentation, boolean forWrite)
@@ -353,6 +364,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getSeveralContents")
   @Override
   public GetMultipleContentsResponse getSeveralContents(
       String ref, List<String> keys, boolean withDocumentation, boolean forWrite)
@@ -363,6 +375,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getMultipleContents")
   @Override
   public GetMultipleContentsResponse getMultipleContents(
       String ref, GetMultipleContentsRequest request, boolean withDocumentation, boolean forWrite)
@@ -378,6 +391,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.transplantCommitsIntoBranch")
   @Override
   public MergeResponse transplantCommitsIntoBranch(String branch, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
@@ -401,6 +415,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.mergeRefIntoBranch")
   @Override
   public MergeResponse mergeRefIntoBranch(String branch, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
@@ -436,6 +451,7 @@ public class RestV2TreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.commitMultipleOperations")
   @Override
   public CommitResponse commitMultipleOperations(String branch, Operations operations)
       throws NessieNotFoundException, NessieConflictException {

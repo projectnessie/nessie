@@ -22,6 +22,7 @@ import jakarta.ws.rs.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.projectnessie.api.v2.http.HttpConfigApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.model.ImmutableRepositoryConfigResponse;
@@ -59,6 +60,7 @@ public class RestV2ConfigResource implements HttpConfigApi {
 
   @Override
   @JsonView(Views.V2.class)
+  @Operation(operationId = "nessie.v2.getConfig")
   public NessieConfiguration getConfig() {
     return config.getConfig();
   }

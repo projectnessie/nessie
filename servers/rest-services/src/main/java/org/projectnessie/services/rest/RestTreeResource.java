@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.projectnessie.api.v1.http.HttpTreeApi;
 import org.projectnessie.api.v1.params.BaseMergeTransplant;
 import org.projectnessie.api.v1.params.CommitLogParams;
@@ -75,6 +76,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getAllReferences")
   @Override
   public ReferencesResponse getAllReferences(ReferencesParams params) {
     Integer maxRecords = params.maxRecords();
@@ -105,12 +107,14 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getDefaultBranch")
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
     return resource().getDefaultBranch();
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.createReference")
   @Override
   public Reference createReference(String sourceRefName, Reference reference)
       throws NessieNotFoundException, NessieConflictException {
@@ -120,12 +124,14 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getReferenceByName")
   @Override
   public Reference getReferenceByName(GetReferenceParams params) throws NessieNotFoundException {
     return resource().getReferenceByName(params.getRefName(), params.fetchOption());
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getEntries")
   @Override
   public EntriesResponse getEntries(String refName, EntriesParams params)
       throws NessieNotFoundException {
@@ -164,6 +170,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getCommitLog")
   @Override
   public LogResponse getCommitLog(String ref, CommitLogParams params)
       throws NessieNotFoundException {
@@ -198,6 +205,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.assignReference")
   @Override
   public void assignReference(
       Reference.ReferenceType referenceType,
@@ -209,6 +217,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.deleteReference")
   @Override
   public void deleteReference(
       Reference.ReferenceType referenceType, String referenceName, String expectedHash)
@@ -217,6 +226,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.transplantCommitsIntoBranch")
   @Override
   public MergeResponse transplantCommitsIntoBranch(
       String branchName, String expectedHash, String message, Transplant transplant)
@@ -237,6 +247,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.mergeRefIntoBranch")
   @Override
   public MergeResponse mergeRefIntoBranch(String branchName, String expectedHash, Merge merge)
       throws NessieNotFoundException, NessieConflictException {
@@ -267,6 +278,7 @@ public class RestTreeResource implements HttpTreeApi {
   }
 
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.commitMultipleOperations")
   @Override
   public Branch commitMultipleOperations(
       String branchName, String expectedHash, Operations operations)

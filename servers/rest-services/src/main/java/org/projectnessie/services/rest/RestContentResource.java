@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.projectnessie.api.v1.http.HttpContentApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
@@ -55,6 +56,7 @@ public class RestContentResource implements HttpContentApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getContent")
   public Content getContent(ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
     return resource().getContent(key, ref, hashOnRef, false, false).getContent();
@@ -62,6 +64,7 @@ public class RestContentResource implements HttpContentApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getMultipleContents")
   public GetMultipleContentsResponse getMultipleContents(
       String ref, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {

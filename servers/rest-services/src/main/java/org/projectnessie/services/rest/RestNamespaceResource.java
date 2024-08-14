@@ -20,6 +20,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Path;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.projectnessie.api.v1.http.HttpNamespaceApi;
 import org.projectnessie.api.v1.params.MultipleNamespacesParams;
 import org.projectnessie.api.v1.params.NamespaceParams;
@@ -60,6 +61,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.createNamespace")
   public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
     return resource().createNamespace(params.getRefName(), namespace);
@@ -67,6 +69,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.deleteNamespace")
   public void deleteNamespace(@NotNull NamespaceParams params)
       throws NessieReferenceNotFoundException,
           NessieNamespaceNotEmptyException,
@@ -76,6 +79,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getNamespace")
   public Namespace getNamespace(@NotNull NamespaceParams params)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     return resource()
@@ -84,6 +88,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.getNamespaces")
   public GetNamespacesResponse getNamespaces(@NotNull MultipleNamespacesParams params)
       throws NessieReferenceNotFoundException {
     return resource()
@@ -92,6 +97,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   @Override
   @JsonView(Views.V1.class)
+  @Operation(operationId = "nessie.v1.updateProperties")
   public void updateProperties(NamespaceParams params, NamespaceUpdate namespaceUpdate)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException {
     resource()
