@@ -1,9 +1,8 @@
 # Rest API
 
 Nessie's REST APIs are how all applications interact with Nessie. The APIs are specified 
-according to the openapi v3 standard and are available when running the server by going 
-to [localhost:19120/q/openapi](http://localhost:9000/q/openapi). You can also peruse the set of operations our APIs support 
-by going to [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).
+according to the openapi v3 standard and are available when running the server by at the path
+`/nessie-openapi/openapi.yaml` (for example via `curl http://127.0.0.1:19120//nessie-openapi/openapi.yaml`)
+and on the Download/Release pages.
 
-If you are working in development, our Quarkus server will automatically start with 
-the swagger-ui for experimentation. You can find that at [localhost:9000/q/swagger-ui/](http://localhost:9000/q/swagger-ui/)
+The API can also be inspected at [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).

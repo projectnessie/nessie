@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
@@ -67,6 +68,7 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.UNKNOWN);
   }
 
+  @Operation(operationId = "iceberg.v1.s3sign")
   @POST
   @Path("/v1/{prefix}/s3-sign/{identifier}")
   @Blocking

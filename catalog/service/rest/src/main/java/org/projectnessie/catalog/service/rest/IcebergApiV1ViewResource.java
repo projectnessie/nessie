@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitViewRequest;
@@ -67,7 +68,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with views. */
 @RequestScoped
@@ -83,6 +84,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.VIEW);
   }
 
+  @Operation(operationId = "iceberg.v1.createView")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/views")
   @Blocking
@@ -137,6 +139,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     return builder.metadata(viewMetadata).metadataLocation(metadataLocation).build();
   }
 
+  @Operation(operationId = "iceberg.v1.dropView")
   @DELETE
   @Path("/v1/{prefix}/namespaces/{namespace}/views/{view}")
   @Blocking
@@ -155,7 +158,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         .commitMultipleOperations()
         .branch(ref)
         .commitMeta(fromMessage(format("Drop ICEBERG_VIEW %s", tableRef.contentKey())))
-        .operation(Operation.Delete.of(tableRef.contentKey()))
+        .operation(Delete.of(tableRef.contentKey()))
         .commitWithResponse();
   }
 
@@ -164,6 +167,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", forWrite);
   }
 
+  @Operation(operationId = "iceberg.v1.listViews")
   @GET
   @Path("/v1/{prefix}/namespaces/{namespace}/views")
   @Blocking
@@ -189,6 +193,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     return response.build();
   }
 
+  @Operation(operationId = "iceberg.v1.loadView")
   @GET
   @Path("/v1/{prefix}/namespaces/{namespace}/views/{view}")
   @Blocking
@@ -212,6 +217,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         .map(snap -> loadViewResultFromSnapshotResponse(snap, IcebergLoadViewResponse.builder()));
   }
 
+  @Operation(operationId = "iceberg.v1.renameView")
   @POST
   @Path("/v1/{prefix}/views/rename")
   @Blocking
@@ -223,6 +229,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     renameContent(prefix, renameTableRequest, ICEBERG_VIEW);
   }
 
+  @Operation(operationId = "iceberg.v1.viewExists")
   @HEAD
   @Path("/v1/{prefix}/namespaces/{namespace}/views/{view}")
   @Blocking
@@ -236,6 +243,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     fetchIcebergView(tableRef, false);
   }
 
+  @Operation(operationId = "iceberg.v1.updateView")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/views/{view}")
   @Blocking
