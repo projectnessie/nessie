@@ -18,6 +18,7 @@ package org.projectnessie.catalog.secrets;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 
@@ -41,6 +42,18 @@ public interface TokenSecret extends Secret {
 
   @Nonnull
   Optional<Instant> expiresAt();
+
+  @Override
+  default Map<String, String> asMap() {
+    if (expiresAt().isEmpty()) {
+      return Map.of(JSON_TOKEN, token());
+    }
+    return Map.of(
+        JSON_TOKEN,
+        token(),
+        JSON_EXPIRES_AT,
+        expiresAt().get().atOffset(ZoneOffset.UTC).toString());
+  }
 
   static TokenSecret tokenSecret(@Nonnull String token, @Nullable Instant expiresAt) {
     return new TokenSecret() {

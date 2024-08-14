@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
 @Value.Immutable
@@ -88,11 +87,11 @@ public interface S3Config {
   Optional<String> trustStoreType();
 
   /**
-   * Override to set the password for the custom SSL trust store specified in {@code
-   * nessie.catalog.service.s3.trust-store.path}.
+   * Name of the key-secret containing the password for the custom SSL trust store specified in
+   * {@code nessie.catalog.service.s3.trust-store.path}.
    */
   @ConfigItem(section = "transport")
-  Optional<KeySecret> trustStorePassword();
+  Optional<String> trustStorePassword();
 
   /**
    * Override to set the file path to a custom SSL key store. {@code
@@ -117,11 +116,11 @@ public interface S3Config {
   Optional<String> keyStoreType();
 
   /**
-   * Override to set the password for the custom SSL key store specified in {@code
+   * Name of the secret containing the password for the custom SSL key store specified in {@code
    * nessie.catalog.service.s3.key-store.path}.
    */
   @ConfigItem(section = "transport")
-  Optional<KeySecret> keyStorePassword();
+  Optional<String> keyStorePassword();
 
   static Builder builder() {
     return ImmutableS3Config.builder();
@@ -160,7 +159,7 @@ public interface S3Config {
     Builder trustStoreType(String trustStoreType);
 
     @CanIgnoreReturnValue
-    Builder trustStorePassword(KeySecret trustStorePassword);
+    Builder trustStorePassword(String trustStorePassword);
 
     @CanIgnoreReturnValue
     Builder keyStorePath(Path keyStorePath);
@@ -169,7 +168,7 @@ public interface S3Config {
     Builder keyStoreType(String keyStoreType);
 
     @CanIgnoreReturnValue
-    Builder keyStorePassword(KeySecret keyStorePassword);
+    Builder keyStorePassword(String keyStorePassword);
 
     S3Config build();
   }

@@ -15,17 +15,10 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
-
-import com.google.common.collect.ImmutableList;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.secrets.SecretAttribute;
-import org.projectnessie.catalog.secrets.SecretType;
-import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
@@ -83,53 +76,31 @@ public interface S3Options {
   @ConfigPropertyName("bucket-name")
   Map<String, ? extends S3NamedBucketOptions> buckets();
 
-  List<SecretAttribute<S3BucketOptions, ImmutableS3NamedBucketOptions.Builder, ?>>
-      SECRET_ATTRIBUTES =
-          ImmutableList.of(
-              secretAttribute(
-                  "accessKey",
-                  SecretType.BASIC,
-                  S3BucketOptions::accessKey,
-                  ImmutableS3NamedBucketOptions.Builder::accessKey));
-
-  default S3BucketOptions resolveSecrets(
-      String filesystemName, S3BucketOptions specific, SecretsProvider secretsProvider) {
+  default S3BucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
     S3BucketOptions defaultOptions =
         defaultOptions().map(S3BucketOptions.class::cast).orElse(S3NamedBucketOptions.FALLBACK);
 
+    if (bucketName.isEmpty()) {
+      return defaultOptions;
+    }
+
+    S3BucketOptions specific = buckets().get(bucketName.orElse(null));
+    if (specific == null) {
+      return defaultOptions;
+    }
+
     ImmutableS3NamedBucketOptions.Builder builder =
-        ImmutableS3NamedBucketOptions.builder().from(defaultOptions);
+        ImmutableS3NamedBucketOptions.builder().from(defaultOptions).from(specific);
     ImmutableS3ServerIam.Builder serverIam = ImmutableS3ServerIam.builder();
     ImmutableS3ClientIam.Builder clientIam = ImmutableS3ClientIam.builder();
     defaultOptions.serverIam().ifPresent(serverIam::from);
     defaultOptions.clientIam().ifPresent(clientIam::from);
-    if (specific != null) {
-      builder.from(specific);
-      specific.serverIam().ifPresent(serverIam::from);
-      specific.clientIam().ifPresent(clientIam::from);
-    }
+    specific.serverIam().ifPresent(serverIam::from);
+    specific.clientIam().ifPresent(clientIam::from);
     builder.serverIam(serverIam.build());
     builder.clientIam(clientIam.build());
 
-    return secretsProvider
-        .applySecrets(
-            builder,
-            "object-stores.s3",
-            defaultOptions,
-            filesystemName,
-            specific,
-            SECRET_ATTRIBUTES)
-        .build();
-  }
-
-  default S3BucketOptions effectiveOptionsForBucket(
-      Optional<String> bucketName, SecretsProvider secretsProvider) {
-    if (bucketName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
-    }
-    String name = bucketName.get();
-    S3BucketOptions perBucket = buckets().get(name);
-    return resolveSecrets(name, perBucket, secretsProvider);
+    return builder.build();
   }
 
   default void validate() {

@@ -39,6 +39,11 @@ public interface BasicCredentials extends Secret {
   @Nonnull
   String secret();
 
+  @Override
+  default Map<String, String> asMap() {
+    return Map.of(JSON_NAME, name(), JSON_SECRET, secret());
+  }
+
   static BasicCredentials basicCredentials(@Nonnull String name, @Nonnull String secret) {
     return new BasicCredentials() {
       @Override

@@ -18,7 +18,6 @@ package org.projectnessie.catalog.files.s3;
 import java.net.URI;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.projectnessie.catalog.secrets.BasicCredentials;
 
 public interface S3BucketOptions {
 
@@ -94,15 +93,15 @@ public interface S3BucketOptions {
   }
 
   /**
-   * An access-key-id and secret-access-key must be configured using the {@code name} and {@code
-   * secret} fields, either per bucket or in the top-level S3 settings.
+   * Name of the basic-credentials secret containing the access-key-id and secret-access-key, either
+   * per bucket or in the top-level S3 settings.
    *
    * <p>Required when {@code auth-type} is {@code STATIC}.
    *
    * <p>For STS, this defines the Access Key ID and Secret Key ID to be used as a basic credential
    * for obtaining temporary session credentials.
    */
-  Optional<BasicCredentials> accessKey();
+  Optional<String> accessKey();
 
   /** Optional parameter to disable S3 request signing. Default is to enable S3 request signing. */
   Optional<Boolean> requestSigningEnabled();

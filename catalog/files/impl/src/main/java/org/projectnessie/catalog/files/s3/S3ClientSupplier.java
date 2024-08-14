@@ -45,18 +45,18 @@ public class S3ClientSupplier {
 
   private final SdkHttpClient sdkClient;
   private final S3Options s3options;
-  private final SecretsProvider secretsProvider;
   private final S3Sessions sessions;
+  private final SecretsProvider secretsProvider;
 
   public S3ClientSupplier(
       SdkHttpClient sdkClient,
       S3Options s3options,
-      SecretsProvider secretsProvider,
-      S3Sessions sessions) {
+      S3Sessions sessions,
+      SecretsProvider secretsProvider) {
     this.sdkClient = sdkClient;
     this.s3options = s3options;
-    this.secretsProvider = secretsProvider;
     this.sessions = sessions;
+    this.secretsProvider = secretsProvider;
   }
 
   S3Options s3options() {
@@ -82,13 +82,13 @@ public class S3ClientSupplier {
   }
 
   public S3Client getClient(String bucketName) {
-    S3BucketOptions bucketOptions =
-        s3options.effectiveOptionsForBucket(Optional.of(bucketName), secretsProvider);
+    S3BucketOptions bucketOptions = s3options.effectiveOptionsForBucket(Optional.of(bucketName));
 
     S3ClientBuilder builder =
         S3Client.builder()
             .httpClient(sdkClient)
-            .credentialsProvider(serverCredentialsProvider(bucketOptions, sessions))
+            .credentialsProvider(
+                serverCredentialsProvider(bucketOptions, sessions, secretsProvider))
             .overrideConfiguration(
                 override -> override.defaultProfileFileSupplier(() -> EMPTY_PROFILE_FILE))
             .serviceConfiguration(

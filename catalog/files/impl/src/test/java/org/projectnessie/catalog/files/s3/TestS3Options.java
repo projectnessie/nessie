@@ -17,7 +17,6 @@ package org.projectnessie.catalog.files.s3;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -27,7 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.secrets.SecretsProvider;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestS3Options {
@@ -40,9 +38,7 @@ public class TestS3Options {
       S3BucketOptions expected,
       S3Iam expectedClientIam,
       S3Iam expectedServerIam) {
-    S3BucketOptions actual =
-        options.effectiveOptionsForBucket(
-            Optional.of("bucket"), new SecretsProvider(names -> Map.of()));
+    S3BucketOptions actual = options.effectiveOptionsForBucket(Optional.of("bucket"));
     soft.assertThat(actual).isEqualTo(expected);
     soft.assertThat(actual.getEnabledClientIam()).isEqualTo(Optional.ofNullable(expectedClientIam));
     soft.assertThat(actual.getEnabledServerIam()).isEqualTo(Optional.ofNullable(expectedServerIam));
@@ -366,10 +362,7 @@ public class TestS3Options {
         arguments(
             ImmutableS3ProgrammaticOptions.builder().build(),
             // expected options
-            ImmutableS3NamedBucketOptions.builder()
-                .clientIam(noClientIam)
-                .serverIam(noServerIam)
-                .build(),
+            ImmutableS3NamedBucketOptions.builder().build(),
             // client IAM
             null,
             // server IAM

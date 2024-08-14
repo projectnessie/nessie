@@ -20,12 +20,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -64,24 +64,23 @@ public class AdlsClientResourceBench {
       AdlsConfig adlsConfig = AdlsConfig.builder().build();
       HttpClient httpClient = AdlsClients.buildSharedHttpClient(adlsConfig);
 
+      SecretsProvider secretsProvider =
+          unsafePlainTextSecretsProvider(
+              Map.of(
+                  "the-account", basicCredentials("foo", "foo").asMap(),
+                  "the-key", keySecret("foo").asMap()));
+
       AdlsProgrammaticOptions adlsOptions =
           ImmutableAdlsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableAdlsNamedFileSystemOptions.builder()
-                      .account(basicCredentials("foo", "foo"))
-                      .sasToken(keySecret("foo"))
+                      .account("the-account")
+                      .sasToken("the-key")
                       .endpoint(server.getAdlsGen2BaseUri().toString())
                       .build())
               .build();
 
-      clientSupplier =
-          new AdlsClientSupplier(
-              httpClient,
-              adlsOptions,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+      clientSupplier = new AdlsClientSupplier(httpClient, adlsOptions, secretsProvider);
     }
 
     @TearDown

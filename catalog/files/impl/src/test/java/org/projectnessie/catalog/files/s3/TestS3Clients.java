@@ -15,9 +15,9 @@
  */
 package org.projectnessie.catalog.files.s3;
 
-import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,7 +26,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,7 @@ public class TestS3Clients extends AbstractClients {
   @BeforeAll
   static void createHttpClient() {
     S3Config s3Config = S3Config.builder().build();
-    sdkHttpClient = S3Clients.apacheHttpClient(s3Config, new SecretsProvider(names -> Map.of()));
+    sdkHttpClient = S3Clients.apacheHttpClient(s3Config, unsafePlainTextSecretsProvider(Map.of()));
   }
 
   @AfterAll
@@ -60,6 +59,16 @@ public class TestS3Clients extends AbstractClients {
   protected ObjectIO buildObjectIO(
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
 
+    String s3accessKeyName1 = "s3-access-key1";
+    String s3accessKeyName2 = "s3-access-key2";
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
+            Map.of(
+                s3accessKeyName1,
+                basicCredentials("ak1", "sak1").asMap(),
+                s3accessKeyName2,
+                basicCredentials("ak2", "sak2").asMap()));
+
     ImmutableS3ProgrammaticOptions.Builder s3options =
         ImmutableS3ProgrammaticOptions.builder()
             .putBuckets(
@@ -67,7 +76,7 @@ public class TestS3Clients extends AbstractClients {
                 ImmutableS3NamedBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
                     .region("us-west-1")
-                    .accessKey(basicCredentials("ak1", "sak1"))
+                    .accessKey(s3accessKeyName1)
                     .accessPoint(BUCKET_1)
                     .build());
     if (server2 != null) {
@@ -76,17 +85,12 @@ public class TestS3Clients extends AbstractClients {
           ImmutableS3NamedBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
               .region("eu-central-2")
-              .accessKey(basicCredentials("ak2", "sak2"))
+              .accessKey(s3accessKeyName2)
               .build());
     }
 
-    SecretsProvider secretsProvider =
-        new SecretsProvider(
-            names ->
-                names.stream()
-                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
     S3ClientSupplier supplier =
-        new S3ClientSupplier(sdkHttpClient, s3options.build(), secretsProvider, null);
+        new S3ClientSupplier(sdkHttpClient, s3options.build(), null, secretsProvider);
     return new S3ObjectIO(supplier, null);
   }
 
@@ -114,12 +118,20 @@ public class TestS3Clients extends AbstractClients {
       ks.store(out, passwordChars);
     }
 
+    String correct = "correct-password";
+    String wrong = "wrong_password";
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
+            Map.of(
+                correct, keySecret(password).asMap(),
+                wrong, keySecret("wrong_password").asMap()));
+
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder().trustStorePath(file).build(),
-                        new SecretsProvider(names -> Map.of()))
+                        unsafePlainTextSecretsProvider(Map.of()))
                     .close())
         .withMessage("No trust store type");
     soft.assertThatThrownBy(
@@ -128,9 +140,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .trustStorePath(tempDir.resolve("not.there"))
                             .trustStoreType("jks")
-                            .trustStorePassword(keySecret(password))
+                            .trustStorePassword(correct)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -141,9 +153,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .trustStorePath(file)
                             .trustStoreType("jks")
-                            .trustStorePassword(keySecret("wrong_password"))
+                            .trustStorePassword(wrong)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -154,9 +166,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .trustStorePath(file)
                             .trustStoreType("jks")
-                            .trustStorePassword(keySecret(password))
+                            .trustStorePassword(correct)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .doesNotThrowAnyException();
   }
@@ -174,12 +186,19 @@ public class TestS3Clients extends AbstractClients {
       ks.store(out, passwordChars);
     }
 
+    String correct = "correct-password";
+    String wrong = "wrong_password";
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
+            Map.of(
+                correct, keySecret(password).asMap(),
+                wrong, keySecret("wrong_password").asMap()));
+
     soft.assertThatIllegalArgumentException()
         .isThrownBy(
             () ->
                 S3Clients.apacheHttpClient(
-                        S3Config.builder().keyStorePath(file).build(),
-                        new SecretsProvider(names -> Map.of()))
+                        S3Config.builder().keyStorePath(file).build(), secretsProvider)
                     .close())
         .withMessage("No key store type");
     soft.assertThatThrownBy(
@@ -188,9 +207,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .keyStorePath(tempDir.resolve("not.there"))
                             .keyStoreType("jks")
-                            .keyStorePassword(keySecret(password))
+                            .keyStorePassword(correct)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -201,9 +220,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .keyStorePath(file)
                             .keyStoreType("jks")
-                            .keyStorePassword(keySecret("wrong_password"))
+                            .keyStorePassword(wrong)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
@@ -214,9 +233,9 @@ public class TestS3Clients extends AbstractClients {
                         S3Config.builder()
                             .keyStorePath(file)
                             .keyStoreType("jks")
-                            .keyStorePassword(keySecret(password))
+                            .keyStorePassword(correct)
                             .build(),
-                        new SecretsProvider(names -> Map.of()))
+                        secretsProvider)
                     .close())
         .doesNotThrowAnyException();
   }

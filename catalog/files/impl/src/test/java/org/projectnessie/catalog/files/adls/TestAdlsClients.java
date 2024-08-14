@@ -15,12 +15,11 @@
  */
 package org.projectnessie.catalog.files.adls;
 
-import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -46,6 +45,11 @@ public class TestAdlsClients extends AbstractClients {
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
     HttpClient httpClient = AdlsClients.buildSharedHttpClient(AdlsConfig.builder().build());
 
+    String secretName = "account-key";
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
+            Map.of(secretName, basicCredentials("accountName", "accountKey").asMap()));
+
     ImmutableAdlsProgrammaticOptions.Builder adlsOptions =
         ImmutableAdlsProgrammaticOptions.builder()
             .putFileSystems(
@@ -53,7 +57,7 @@ public class TestAdlsClients extends AbstractClients {
                 ImmutableAdlsNamedFileSystemOptions.builder()
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
                     .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
-                    .account(basicCredentials("accountName", "accountKey"))
+                    .account(secretName)
                     .build());
     if (server2 != null) {
       adlsOptions.putFileSystems(
@@ -61,15 +65,9 @@ public class TestAdlsClients extends AbstractClients {
           ImmutableAdlsNamedFileSystemOptions.builder()
               .endpoint(server2.getAdlsGen2BaseUri().toString())
               .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
-              .account(basicCredentials("accountName", "accountKey"))
+              .account(secretName)
               .build());
     }
-
-    SecretsProvider secretsProvider =
-        new SecretsProvider(
-            names ->
-                names.stream()
-                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
 
     AdlsClientSupplier supplier =
         new AdlsClientSupplier(httpClient, adlsOptions.build(), secretsProvider);

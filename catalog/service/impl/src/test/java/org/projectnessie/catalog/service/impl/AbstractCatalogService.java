@@ -28,6 +28,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
@@ -40,7 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -205,28 +205,25 @@ public abstract class AbstractCatalogService {
   }
 
   private void setupObjectIO() {
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
+            Map.of("the-access-key", basicCredentials("foo", "bar").asMap()));
+
     S3Sessions sessions = new S3Sessions("foo", null);
     S3Config s3config = S3Config.builder().build();
-    httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+    httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
     S3ProgrammaticOptions s3options =
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
-                    .accessKey(basicCredentials("foo", "bar"))
+                    .accessKey("the-access-key")
                     .region("eu-central-1")
                     .endpoint(objectStorageServer.getS3BaseUri())
                     .pathStyleAccess(true)
                     .build())
             .build();
     S3ClientSupplier clientSupplier =
-        new S3ClientSupplier(
-            httpClient,
-            s3options,
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
-            sessions);
+        new S3ClientSupplier(httpClient, s3options, sessions, secretsProvider);
     objectIO = new S3ObjectIO(clientSupplier, null);
   }
 

@@ -30,6 +30,11 @@ public interface KeySecret extends Secret {
   @Nonnull
   String key();
 
+  @Override
+  default Map<String, String> asMap() {
+    return Map.of(JSON_KEY, key());
+  }
+
   static KeySecret keySecret(@Nonnull String key) {
     return new KeySecret() {
       @Override

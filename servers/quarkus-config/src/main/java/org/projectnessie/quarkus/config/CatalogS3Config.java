@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3Options;
-import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
@@ -93,7 +92,7 @@ public interface CatalogS3Config extends S3Config, S3Options {
 
   @WithName("trust-store.password")
   @Override
-  Optional<KeySecret> trustStorePassword();
+  Optional<String> trustStorePassword();
 
   @WithName("key-store.path")
   @Override
@@ -105,7 +104,7 @@ public interface CatalogS3Config extends S3Config, S3Options {
 
   @WithName("key-store.password")
   @Override
-  Optional<KeySecret> keyStorePassword();
+  Optional<String> keyStorePassword();
 
   @ConfigPropertyName("bucket-name")
   @Override

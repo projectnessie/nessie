@@ -51,6 +51,8 @@ import java.util.function.Consumer;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.AzureAuthType;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
@@ -94,7 +96,7 @@ public final class AdlsClientSupplier {
     Configuration clientConfig = buildClientConfiguration();
 
     AdlsFileSystemOptions fileSystemOptions =
-        adlsOptions.effectiveOptionsForFileSystem(location.container(), secretsProvider);
+        adlsOptions.effectiveOptionsForFileSystem(location.container());
 
     String endpoint = endpointForLocation(location, fileSystemOptions);
 
@@ -229,6 +231,12 @@ public final class AdlsClientSupplier {
         BasicCredentials account =
             fileSystemOptions
                 .account()
+                .map(
+                    secretName ->
+                        secretsProvider.getSecret(
+                            secretName, SecretType.BASIC, BasicCredentials.class))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .orElseThrow(() -> new IllegalStateException("storage shared key missing"));
 
         sharedKeyCredentialConsumer.accept(
@@ -238,6 +246,11 @@ public final class AdlsClientSupplier {
         sasTokenConsumer.accept(
             fileSystemOptions
                 .sasToken()
+                .map(
+                    secretName ->
+                        secretsProvider.getSecret(secretName, SecretType.KEY, KeySecret.class))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .orElseThrow(() -> new IllegalStateException("SAS token missing"))
                 .key());
         return true;

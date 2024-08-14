@@ -15,298 +15,100 @@
  */
 package org.projectnessie.catalog.secrets;
 
-import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
-import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
+import static org.projectnessie.catalog.secrets.BasicCredentials.JSON_NAME;
+import static org.projectnessie.catalog.secrets.BasicCredentials.JSON_SECRET;
+import static org.projectnessie.catalog.secrets.KeySecret.JSON_KEY;
+import static org.projectnessie.catalog.secrets.TokenSecret.JSON_EXPIRES_AT;
+import static org.projectnessie.catalog.secrets.TokenSecret.JSON_TOKEN;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.secrets.spi.SecretsSupplier;
-import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestSecretsProvider {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @ParameterizedTest
-  @MethodSource
-  public void secretsHelper(
-      Opts base, Opts spec, Opts expected, Map<String, Map<String, String>> secrets) {
-    List<SecretAttribute<Opts, Opts.Builder, ?>> attributes =
-        List.of(
-            secretAttribute("key", SecretType.KEY, Opts::key, Opts.Builder::key),
-            secretAttribute(
-                "expiringToken",
-                SecretType.EXPIRING_TOKEN,
-                Opts::expiringToken,
-                Opts.Builder::expiringToken),
-            secretAttribute("basic", SecretType.BASIC, Opts::basic, Opts.Builder::basic));
+  @Test
+  public void test() {
 
-    SecretsProvider provider = new SecretsProvider(mapSecretsSupplier(secrets));
+    String key1Value = "key1-value";
+    String nestedKey1Value = "nested-key1-value";
+    Instant t2expires = Instant.now().atZone(ZoneOffset.UTC).toInstant();
+    String t2expiresStr = t2expires.toString();
+    String t1value = "t1-value";
+    String t2value = "t2-value";
+    String bc1name = "bc1-name";
+    String bc2name = "bc2-name";
+    String bc1secret = "bc1-secret";
+    String bc2secret = "bc2-secret";
 
-    Opts.Builder builder = Opts.builder().from(base);
-    if (spec != null) {
-      builder.from(spec);
-    }
-
-    Opts opts = provider.applySecrets(builder, "base", base, "spec", spec, attributes).build();
-
-    soft.assertThat(opts.key().map(KeySecret::key)).isEqualTo(expected.key().map(KeySecret::key));
-    soft.assertThat(opts.basic().map(b -> tuple(b.name(), b.secret())))
-        .isEqualTo(expected.basic().map(b -> tuple(b.name(), b.secret())));
-    soft.assertThat(opts.expiringToken().map(e -> tuple(e.token(), e.expiresAt())))
-        .isEqualTo(expected.expiringToken().map(e -> tuple(e.token(), e.expiresAt())));
-  }
-
-  public static Stream<Arguments> secretsHelper() {
-    String instantStr = "2024-12-24T12:12:12Z";
-    Instant instant = Instant.parse(instantStr);
-    return Stream.of(
-        arguments(Opts.EMPTY, null, Opts.EMPTY, Map.of()),
-        arguments(Opts.EMPTY, Opts.EMPTY, Opts.EMPTY, Map.of()),
-        //
-        // invalid "name" + "token" fields
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.EMPTY,
+    SecretsProvider secretsProvider =
+        unsafePlainTextSecretsProvider(
             Map.of(
-                "base.spec.basic",
-                Map.of("namex", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("tokenx", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // invalid "expiresAt" + "secret"
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secretx", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "ewpfoijkewoipfjewijfo"))),
-        // invalid "expiresAt"
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secretx", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "42"))),
-        // all secrets via "spec" from secrets-supplier
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.key",
-                Map.of("value", "key"),
-                "base.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // key present
-        arguments(
-            Opts.EMPTY,
-            Opts.builder().key(keySecret("key")).build(),
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        arguments(
-            Opts.builder().key(keySecret("key")).build(),
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // basic present
-        arguments(
-            Opts.builder().basic(basicCredentials("basic-name", "basic-secret")).build(),
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        arguments(
-            Opts.EMPTY,
-            Opts.builder().basic(basicCredentials("basic-name", "basic-secret")).build(),
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // expiringToken present
-        arguments(
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"))),
-        arguments(
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", instant)).build(),
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"))),
-        // override in "base"
-        arguments(
-            Opts.builder()
-                .key(keySecret("nope"))
-                .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
-                .build(),
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("key"))
-                .basic(basicCredentials("basic-name", "basic-secret"))
-                .expiringToken(TokenSecret.tokenSecret("exp-token", instant))
-                .build(),
-            Map.of(
-                "base.spec.key",
-                Map.of("value", "key"),
-                "base.spec.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.spec.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        // NO override in "base"
-        arguments(
-            Opts.builder()
-                .key(keySecret("nope"))
-                .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
-                .build(),
-            Opts.EMPTY,
-            Opts.builder()
-                .key(keySecret("nope"))
-                .basic(basicCredentials("nope", "basic-nope"))
-                .expiringToken(TokenSecret.tokenSecret("nope", instant))
-                .build(),
-            Map.of(
-                "base.key",
-                Map.of("value", "key"),
-                "base.basic",
-                Map.of("name", "basic-name", "secret", "basic-secret"),
-                "base.expiringToken",
-                Map.of("token", "exp-token", "expiresAt", "2024-12-24T12:12:12Z"))),
-        //
-        arguments(
-            Opts.EMPTY,
-            Opts.EMPTY,
-            Opts.builder().expiringToken(TokenSecret.tokenSecret("exp-token", null)).build(),
-            Map.of("base.spec.expiringToken", Map.of("token", "exp-token")))
-        //
-        );
-  }
+                "key1", Map.of(JSON_KEY, key1Value),
+                "nested.key1", Map.of(JSON_KEY, nestedKey1Value),
+                "bc1", Map.of(JSON_NAME, bc1name, JSON_SECRET, bc1secret),
+                "nested.bc2", Map.of(JSON_NAME, bc2name, JSON_SECRET, bc2secret),
+                "t1", Map.of(JSON_TOKEN, t1value),
+                "nested.t1", Map.of(JSON_TOKEN, t1value),
+                "t2", Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr),
+                "nested.t2", Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr)));
 
-  @NessieImmutable
-  public interface Opts {
-    Opts EMPTY = Opts.builder().build();
+    soft.assertThat(secretsProvider.getSecret("key1", SecretType.KEY, KeySecret.class))
+        .get()
+        .extracting(KeySecret::key, KeySecret::asMap)
+        .containsExactly(key1Value, Map.of(JSON_KEY, key1Value));
 
-    Optional<BasicCredentials> basic();
+    soft.assertThat(secretsProvider.getSecret("nested.key1", SecretType.KEY, KeySecret.class))
+        .get()
+        .extracting(KeySecret::key, KeySecret::asMap)
+        .containsExactly(nestedKey1Value, Map.of(JSON_KEY, nestedKey1Value));
 
-    Optional<KeySecret> key();
+    soft.assertThat(secretsProvider.getSecret("bc1", SecretType.BASIC, BasicCredentials.class))
+        .get()
+        .extracting(BasicCredentials::name, BasicCredentials::secret, BasicCredentials::asMap)
+        .containsExactly(bc1name, bc1secret, Map.of(JSON_NAME, bc1name, JSON_SECRET, bc1secret));
 
-    Optional<TokenSecret> expiringToken();
+    soft.assertThat(
+            secretsProvider.getSecret("nested.bc2", SecretType.BASIC, BasicCredentials.class))
+        .get()
+        .extracting(BasicCredentials::name, BasicCredentials::secret, BasicCredentials::asMap)
+        .containsExactly(bc2name, bc2secret, Map.of(JSON_NAME, bc2name, JSON_SECRET, bc2secret));
 
-    static Builder builder() {
-      return ImmutableOpts.builder();
-    }
+    soft.assertThat(secretsProvider.getSecret("t1", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+        .get()
+        .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
+        .containsExactly(t1value, Optional.empty(), Map.of(JSON_TOKEN, t1value));
 
-    interface Builder {
-      Builder from(Opts opts);
+    soft.assertThat(
+            secretsProvider.getSecret("nested.t1", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+        .get()
+        .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
+        .containsExactly(t1value, Optional.empty(), Map.of(JSON_TOKEN, t1value));
 
-      Builder basic(BasicCredentials basic);
+    soft.assertThat(secretsProvider.getSecret("t2", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+        .get()
+        .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
+        .containsExactly(
+            t2value,
+            Optional.of(t2expires),
+            Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr));
 
-      Builder key(KeySecret key);
-
-      Builder expiringToken(TokenSecret expiringToken);
-
-      Opts build();
-    }
-  }
-
-  static SecretsSupplier mapSecretsSupplier(Map<String, Map<String, String>> secretsMap) {
-    return names -> {
-      Map<String, Map<String, String>> resolved = new HashMap<>();
-      for (String name : names) {
-        Map<String, String> r = secretsMap.get(name);
-        if (r != null) {
-          resolved.put(name, r);
-        }
-      }
-      return resolved;
-    };
+    soft.assertThat(
+            secretsProvider.getSecret("nested.t2", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+        .get()
+        .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
+        .containsExactly(
+            t2value,
+            Optional.of(t2expires),
+            Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr));
   }
 }

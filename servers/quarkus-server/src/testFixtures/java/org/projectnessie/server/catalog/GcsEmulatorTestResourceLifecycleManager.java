@@ -36,7 +36,8 @@ public class GcsEmulatorTestResourceLifecycleManager
         .put("nessie.catalog.service.gcs.default-options.host", gcs.baseUri())
         .put("nessie.catalog.service.gcs.default-options.project-id", gcs.projectId())
         .put("nessie.catalog.service.gcs.default-options.auth-type", "ACCESS_TOKEN")
-        .put("nessie.catalog.service.gcs.default-options.oauth2-token.token", gcs.oauth2token())
+        .put("nessie.catalog.service.gcs.default-options.oauth2-token", "my-gcs-token")
+        .put("my-gcs-token.token", gcs.oauth2token())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

@@ -27,12 +27,10 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.List;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.SecretAttribute;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -58,57 +56,43 @@ public class S3Clients {
         .trustStorePath()
         .ifPresent(
             p -> {
-              S3Config withPassword =
-                  secretsProvider
-                      .applySecrets(
-                          S3Config.builder().from(s3Config),
-                          "s3.trust-store",
-                          s3Config,
-                          null,
-                          null,
-                          List.of(
-                              SecretAttribute.secretAttribute(
-                                  "password",
-                                  KEY,
-                                  S3Config::trustStorePassword,
-                                  S3Config.Builder::trustStorePassword)))
-                      .build();
+              char[] password =
+                  s3Config
+                      .trustStorePassword()
+                      .flatMap(
+                          secretName -> secretsProvider.getSecret(secretName, KEY, KeySecret.class))
+                      .map(KeySecret::key)
+                      .map(String::toCharArray)
+                      .orElse(null);
 
               httpClient.tlsTrustManagersProvider(
                   new FileStoreTlsTrustManagersProvider(
                       p,
-                      withPassword
+                      s3Config
                           .trustStoreType()
                           .orElseThrow(() -> new IllegalArgumentException("No trust store type")),
-                      withPassword.trustStorePassword().orElse(null)));
+                      password));
             });
     s3Config
         .keyStorePath()
         .ifPresent(
             p -> {
-              S3Config withPassword =
-                  secretsProvider
-                      .applySecrets(
-                          S3Config.builder().from(s3Config),
-                          "s3.key-store",
-                          s3Config,
-                          null,
-                          null,
-                          List.of(
-                              SecretAttribute.secretAttribute(
-                                  "password",
-                                  KEY,
-                                  S3Config::keyStorePassword,
-                                  S3Config.Builder::keyStorePassword)))
-                      .build();
+              char[] password =
+                  s3Config
+                      .keyStorePassword()
+                      .flatMap(
+                          secretName -> secretsProvider.getSecret(secretName, KEY, KeySecret.class))
+                      .map(KeySecret::key)
+                      .map(String::toCharArray)
+                      .orElse(null);
 
               httpClient.tlsKeyManagersProvider(
                   new FileStoreTlsKeyManagersProvider(
                       p,
-                      withPassword
+                      s3Config
                           .keyStoreType()
                           .orElseThrow(() -> new IllegalArgumentException("No key store type")),
-                      withPassword.keyStorePassword().orElse(null)));
+                      password));
             });
     AttributeMap.Builder options = AttributeMap.builder();
     s3Config.trustAllCertificates().ifPresent(v -> options.put(TRUST_ALL_CERTIFICATES, v));
@@ -116,10 +100,10 @@ public class S3Clients {
   }
 
   public static AwsCredentialsProvider serverCredentialsProvider(
-      S3BucketOptions bucketOptions, S3Sessions sessions) {
+      S3BucketOptions bucketOptions, S3Sessions sessions, SecretsProvider secretsProvider) {
     return bucketOptions.getEnabledServerIam().isPresent()
         ? sessions.assumeRoleForServer(bucketOptions)
-        : bucketOptions.effectiveAuthType().newCredentialsProvider(bucketOptions);
+        : bucketOptions.effectiveAuthType().newCredentialsProvider(bucketOptions, secretsProvider);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {
@@ -127,10 +111,10 @@ public class S3Clients {
     private final String type;
     private final char[] password;
 
-    FileStoreTlsTrustManagersProvider(Path path, String type, KeySecret password) {
+    FileStoreTlsTrustManagersProvider(Path path, String type, char[] password) {
       this.path = path;
       this.type = type;
-      this.password = password != null ? password.key().toCharArray() : null;
+      this.password = password;
     }
 
     @Override
@@ -158,10 +142,10 @@ public class S3Clients {
     private final String storeType;
     private final char[] password;
 
-    FileStoreTlsKeyManagersProvider(Path storePath, String storeType, KeySecret password) {
+    FileStoreTlsKeyManagersProvider(Path storePath, String storeType, char[] password) {
       this.storePath = Validate.paramNotNull(storePath, "storePath");
       this.storeType = Validate.paramNotBlank(storeType, "storeType");
-      this.password = password != null ? password.key().toCharArray() : null;
+      this.password = password;
     }
 
     @Override

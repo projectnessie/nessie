@@ -44,8 +44,9 @@ public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLif
         .put("nessie.catalog.service.s3.default-options.path-style-access", "true")
         .put("nessie.catalog.service.s3.default-options.sts-endpoint", minio.s3endpoint())
         .put("nessie.catalog.service.s3.default-options.region", TEST_REGION)
-        .put("nessie.catalog.service.s3.default-options.access-key.name", minio.accessKey())
-        .put("nessie.catalog.service.s3.default-options.access-key.secret", minio.secretKey())
+        .put("nessie.catalog.service.s3.default-options.access-key", "minio-access-key")
+        .put("minio-access-key.name", minio.accessKey())
+        .put("minio-access-key.secret", minio.secretKey())
         .put("nessie.catalog.default-warehouse", "warehouse")
         .put("nessie.catalog.warehouses.warehouse.location", warehouseLocation.toString())
         .build();

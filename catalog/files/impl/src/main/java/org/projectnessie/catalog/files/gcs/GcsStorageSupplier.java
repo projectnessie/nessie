@@ -71,11 +71,12 @@ public final class GcsStorageSupplier {
   }
 
   public GcsBucketOptions bucketOptions(GcsLocation location) {
-    return gcsOptions.effectiveOptionsForBucket(Optional.of(location.bucket()), secretsProvider);
+    return gcsOptions.effectiveOptionsForBucket(Optional.of(location.bucket()));
   }
 
   public Storage forLocation(GcsBucketOptions bucketOptions) {
-    return GcsClients.buildStorage(gcsOptions, bucketOptions, httpTransportFactory);
+    return GcsClients.buildStorage(
+        gcsOptions, bucketOptions, httpTransportFactory, secretsProvider);
   }
 
   public Optional<TokenSecret> generateDelegationToken(
@@ -87,7 +88,8 @@ public final class GcsStorageSupplier {
 
     DownscopedCredentials.Builder downscopedCredentialsBuilder = DownscopedCredentials.newBuilder();
 
-    Credentials bucketCredentials = buildCredentials(gcsBucketOptions, httpTransportFactory);
+    Credentials bucketCredentials =
+        buildCredentials(gcsBucketOptions, httpTransportFactory, secretsProvider);
     if (bucketCredentials instanceof GoogleCredentials) {
       GoogleCredentials sourceCredentials = (GoogleCredentials) bucketCredentials;
       downscopedCredentialsBuilder.setSourceCredential(sourceCredentials);
