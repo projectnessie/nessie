@@ -187,8 +187,7 @@ public class AdlsObjectIO implements ObjectIO {
     String storageAccount = storageAccounts.iterator().next();
 
     AdlsOptions adlsOptions = clientSupplier.adlsOptions();
-    AdlsFileSystemOptions fileSystemOptions =
-        adlsOptions.effectiveOptionsForFileSystem(fileSystem, clientSupplier.secretsProvider());
+    AdlsFileSystemOptions fileSystemOptions = adlsOptions.effectiveOptionsForFileSystem(fileSystem);
     fileSystemOptions
         .endpoint()
         .ifPresent(e -> config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));

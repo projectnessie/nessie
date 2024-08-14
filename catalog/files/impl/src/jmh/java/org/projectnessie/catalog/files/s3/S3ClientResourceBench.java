@@ -19,11 +19,11 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -61,14 +61,18 @@ public class S3ClientResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
+      SecretsProvider secretsProvider =
+          unsafePlainTextSecretsProvider(
+              Map.of("the-access-key", basicCredentials("foo", "bar").asMap()));
+
       S3Config s3config = S3Config.builder().build();
-      httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+      httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
       S3ProgrammaticOptions s3options =
           ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
-                      .accessKey(basicCredentials("foo", "bar"))
+                      .accessKey("the-access-key")
                       .region("eu-central-1")
                       .endpoint(server.getS3BaseUri())
                       .pathStyleAccess(true)
@@ -77,15 +81,7 @@ public class S3ClientResourceBench {
 
       S3Sessions sessions = new S3Sessions("foo", null);
 
-      clientSupplier =
-          new S3ClientSupplier(
-              httpClient,
-              s3options,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
-              sessions);
+      clientSupplier = new S3ClientSupplier(httpClient, s3options, sessions, secretsProvider);
     }
 
     @TearDown

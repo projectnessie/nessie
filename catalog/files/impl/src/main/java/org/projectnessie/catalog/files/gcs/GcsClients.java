@@ -39,6 +39,9 @@ import java.util.Date;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions.GcsAuthType;
+import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.SecretType;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
 
 public final class GcsClients {
@@ -47,7 +50,8 @@ public final class GcsClients {
   public static Storage buildStorage(
       GcsOptions gcsOptions,
       GcsBucketOptions bucketOptions,
-      HttpTransportFactory transportFactory) {
+      HttpTransportFactory transportFactory,
+      SecretsProvider secretsProvider) {
     HttpTransportOptions.Builder transportOptions =
         HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory);
     gcsOptions
@@ -57,7 +61,7 @@ public final class GcsClients {
 
     StorageOptions.Builder builder =
         StorageOptions.http()
-            .setCredentials(buildCredentials(bucketOptions, transportFactory))
+            .setCredentials(buildCredentials(bucketOptions, transportFactory, secretsProvider))
             .setTransportOptions(transportOptions.build());
     bucketOptions.projectId().ifPresent(builder::setProjectId);
     bucketOptions.quotaProjectId().ifPresent(builder::setQuotaProjectId);
@@ -118,17 +122,24 @@ public final class GcsClients {
   }
 
   static Credentials buildCredentials(
-      GcsBucketOptions bucketOptions, HttpTransportFactory transportFactory) {
+      GcsBucketOptions bucketOptions,
+      HttpTransportFactory transportFactory,
+      SecretsProvider secretsProvider) {
     GcsAuthType authType = bucketOptions.effectiveAuthType();
     switch (authType) {
       case NONE:
         return NoCredentials.getInstance();
       case USER:
         try {
+          String secretName =
+              bucketOptions
+                  .authCredentialsJson()
+                  .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
+
           return UserCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions
-                      .authCredentialsJson()
+                  secretsProvider
+                      .getSecret(secretName, SecretType.KEY, KeySecret.class)
                       .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
                       .key()
                       .getBytes(UTF_8)),
@@ -138,10 +149,15 @@ public final class GcsClients {
         }
       case SERVICE_ACCOUNT:
         try {
+          String secretName =
+              bucketOptions
+                  .authCredentialsJson()
+                  .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
+
           return ServiceAccountCredentials.fromStream(
               new ByteArrayInputStream(
-                  bucketOptions
-                      .authCredentialsJson()
+                  secretsProvider
+                      .getSecret(secretName, SecretType.KEY, KeySecret.class)
                       .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
                       .key()
                       .getBytes(UTF_8)),
@@ -150,15 +166,22 @@ public final class GcsClients {
           throw new RuntimeException(e);
         }
       case ACCESS_TOKEN:
-        TokenSecret oauth2token =
-            bucketOptions
-                .oauth2Token()
-                .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
-        AccessToken accessToken =
-            new AccessToken(
-                oauth2token.token(),
-                oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
-        return OAuth2Credentials.create(accessToken);
+        {
+          String secretName =
+              bucketOptions
+                  .oauth2Token()
+                  .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
+
+          TokenSecret oauth2token =
+              secretsProvider
+                  .getSecret(secretName, SecretType.EXPIRING_TOKEN, TokenSecret.class)
+                  .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
+          AccessToken accessToken =
+              new AccessToken(
+                  oauth2token.token(),
+                  oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
+          return OAuth2Credentials.create(accessToken);
+        }
       case APPLICATION_DEFAULT:
         try {
           return GoogleCredentials.getApplicationDefault();

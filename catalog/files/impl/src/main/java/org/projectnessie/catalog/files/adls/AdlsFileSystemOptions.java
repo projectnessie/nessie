@@ -18,8 +18,6 @@ package org.projectnessie.catalog.files.adls;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import org.projectnessie.catalog.secrets.BasicCredentials;
-import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface AdlsFileSystemOptions {
 
@@ -30,14 +28,14 @@ public interface AdlsFileSystemOptions {
   Optional<AzureAuthType> authType();
 
   /**
-   * Fully-qualified account name, e.g. {@code "myaccount.dfs.core.windows.net"} and account key,
-   * configured using the {@code name} and {@code secret} fields. If not specified, it will be
-   * queried via the configured credentials provider.
+   * Name of the basic-credentials secret containing the fully-qualified account name, e.g. {@code
+   * "myaccount.dfs.core.windows.net"} and account key, configured using the {@code name} and {@code
+   * secret} fields. If not specified, it will be queried via the configured credentials provider.
    */
-  Optional<BasicCredentials> account();
+  Optional<String> account();
 
-  /** SAS token to access the ADLS file system. */
-  Optional<KeySecret> sasToken();
+  /** Name of the key-secret containing the SAS token to access the ADLS file system. */
+  Optional<String> sasToken();
 
   /**
    * Enable short-lived user-delegation SAS tokens per file-system.

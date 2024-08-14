@@ -198,9 +198,7 @@ public class S3ObjectIO implements ObjectIO {
       BiConsumer<String, String> properties) {
     String bucket = warehouse.requiredAuthority();
     S3BucketOptions s3BucketOptions =
-        s3clientSupplier
-            .s3options()
-            .effectiveOptionsForBucket(Optional.of(bucket), s3clientSupplier.secretsProvider());
+        s3clientSupplier.s3options().effectiveOptionsForBucket(Optional.of(bucket));
 
     properties.accept(
         "iceberg.rest-catalog.vended-credentials-enabled",
@@ -221,9 +219,7 @@ public class S3ObjectIO implements ObjectIO {
     String bucket = warehouse.requiredAuthority();
 
     S3BucketOptions bucketOptions =
-        s3clientSupplier
-            .s3options()
-            .effectiveOptionsForBucket(Optional.of(bucket), s3clientSupplier.secretsProvider());
+        s3clientSupplier.s3options().effectiveOptionsForBucket(Optional.of(bucket));
     bucketOptions.region().ifPresent(r -> config.accept(S3_CLIENT_REGION, r));
     if (bucketOptions.externalEndpoint().isPresent()) {
       config.accept(S3_ENDPOINT, bucketOptions.externalEndpoint().get().toString());
@@ -247,8 +243,7 @@ public class S3ObjectIO implements ObjectIO {
     S3BucketOptions bucketOptions =
         s3clientSupplier
             .s3options()
-            .effectiveOptionsForBucket(
-                Optional.ofNullable(warehouse.authority()), s3clientSupplier.secretsProvider());
+            .effectiveOptionsForBucket(Optional.ofNullable(warehouse.authority()));
     bucketOptions.region().ifPresent(x -> config.accept(S3_CLIENT_REGION, x));
     config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
   }

@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.secrets.KeySecret;
+import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.storage.uri.StorageUri;
 
 public class GcsObjectIO implements ObjectIO {
@@ -81,6 +82,13 @@ public class GcsObjectIO implements ObjectIO {
     List<BlobSourceOption> sourceOptions = new ArrayList<>();
     bucketOptions
         .decryptionKey()
+        .map(
+            secretName ->
+                storageSupplier
+                    .secretsProvider()
+                    .getSecret(secretName, SecretType.KEY, KeySecret.class))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .map(KeySecret::key)
         .map(BlobSourceOption::decryptionKey)
         .ifPresent(sourceOptions::add);
@@ -103,6 +111,13 @@ public class GcsObjectIO implements ObjectIO {
 
     bucketOptions
         .encryptionKey()
+        .map(
+            secretName ->
+                storageSupplier
+                    .secretsProvider()
+                    .getSecret(secretName, SecretType.KEY, KeySecret.class))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .map(KeySecret::key)
         .map(BlobWriteOption::encryptionKey)
         .ifPresent(writeOptions::add);
@@ -212,9 +227,7 @@ public class GcsObjectIO implements ObjectIO {
     String bucket = buckets.iterator().next();
 
     GcsBucketOptions bucketOptions =
-        storageSupplier
-            .gcsOptions()
-            .effectiveOptionsForBucket(Optional.of(bucket), storageSupplier.secretsProvider());
+        storageSupplier.gcsOptions().effectiveOptionsForBucket(Optional.of(bucket));
 
     bucketOptions.projectId().ifPresent(p -> config.accept(GCS_PROJECT_ID, p));
     bucketOptions.clientLibToken().ifPresent(t -> config.accept(GCS_CLIENT_LIB_TOKEN, t));

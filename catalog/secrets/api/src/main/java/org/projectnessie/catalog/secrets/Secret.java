@@ -15,5 +15,9 @@
  */
 package org.projectnessie.catalog.secrets;
 
+import java.util.Map;
+
 /** Base interface for all secrets. */
-public interface Secret {}
+public interface Secret {
+  Map<String, String> asMap();
+}

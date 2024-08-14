@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
@@ -42,11 +43,14 @@ public class StsCredentialsManager {
   private final StsCredentialsFetcher credentialsFetcher;
 
   public StsCredentialsManager(
-      S3Options options, StsClientsPool clients, MeterRegistry meterRegistry) {
+      S3Options options,
+      StsClientsPool clients,
+      SecretsProvider secretsProvider,
+      MeterRegistry meterRegistry) {
     this(
         options.effectiveSessionCredentialCacheMaxEntries(),
         options.effectiveSessionCredentialRefreshGracePeriod(),
-        new StsCredentialsFetcherImpl(clients),
+        new StsCredentialsFetcherImpl(clients, secretsProvider),
         System::currentTimeMillis,
         Optional.ofNullable(meterRegistry));
   }

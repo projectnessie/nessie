@@ -19,8 +19,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.secrets.KeySecret;
-import org.projectnessie.catalog.secrets.TokenSecret;
 
 public interface GcsBucketOptions {
 
@@ -62,16 +60,16 @@ public interface GcsBucketOptions {
   }
 
   /**
-   * Auth-credentials-JSON, this value is the name of the credential to use, the actual credential
-   * is defined via secrets.
+   * Name of the key-secret containing the auth-credentials-JSON, this value is the name of the
+   * credential to use, the actual credential is defined via secrets.
    */
-  Optional<KeySecret> authCredentialsJson();
+  Optional<String> authCredentialsJson();
 
   /**
-   * OAuth2 token, this value is the name of the credential to use, the actual credential is defined
-   * via secrets.
+   * Name of the token-secret containing the OAuth2 token, this value is the name of the credential
+   * to use, the actual credential is defined via secrets.
    */
-  Optional<TokenSecret> oauth2Token();
+  Optional<String> oauth2Token();
 
   /**
    * Flag to enable the currently experimental option to send short-lived and scoped-down
@@ -106,18 +104,20 @@ public interface GcsBucketOptions {
   OptionalInt deleteBatchSize();
 
   /**
-   * Customer-supplied AES256 key for blob encryption when writing.
+   * Name of the key-secret containing the customer-supplied AES256 key for blob encryption when
+   * writing.
    *
    * @implNote This is currently unsupported.
    */
-  Optional<KeySecret> encryptionKey();
+  Optional<String> encryptionKey();
 
   /**
-   * Customer-supplied AES256 key for blob decryption when reading.
+   * Name of the key-secret containing the customer-supplied AES256 key for blob decryption when
+   * reading.
    *
    * @implNote This is currently unsupported.
    */
-  Optional<KeySecret> decryptionKey();
+  Optional<String> decryptionKey();
 
   enum GcsAuthType {
     NONE,

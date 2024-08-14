@@ -15,19 +15,11 @@
  */
 package org.projectnessie.catalog.files.gcs;
 
-import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
-
-import com.google.common.collect.ImmutableList;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.gcs.ImmutableGcsNamedBucketOptions.Builder;
-import org.projectnessie.catalog.secrets.SecretAttribute;
-import org.projectnessie.catalog.secrets.SecretType;
-import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
@@ -92,59 +84,20 @@ public interface GcsOptions {
   @ConfigItem(section = "transport")
   OptionalDouble rpcTimeoutMultiplier();
 
-  List<SecretAttribute<GcsBucketOptions, Builder, ?>> SECRET_ATTRIBUTES =
-      ImmutableList.of(
-          secretAttribute(
-              "authCredentialsJson",
-              SecretType.KEY,
-              GcsBucketOptions::authCredentialsJson,
-              ImmutableGcsNamedBucketOptions.Builder::authCredentialsJson),
-          secretAttribute(
-              "oauth2Token",
-              SecretType.EXPIRING_TOKEN,
-              GcsBucketOptions::oauth2Token,
-              ImmutableGcsNamedBucketOptions.Builder::oauth2Token),
-          secretAttribute(
-              "encryptionKey",
-              SecretType.KEY,
-              GcsBucketOptions::encryptionKey,
-              ImmutableGcsNamedBucketOptions.Builder::encryptionKey),
-          secretAttribute(
-              "decryptionKey",
-              SecretType.KEY,
-              GcsBucketOptions::decryptionKey,
-              ImmutableGcsNamedBucketOptions.Builder::decryptionKey));
-
-  default GcsBucketOptions resolveSecrets(
-      String filesystemName, GcsBucketOptions specific, SecretsProvider secretsProvider) {
+  default GcsBucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
     GcsBucketOptions defaultOptions =
         defaultOptions().map(GcsBucketOptions.class::cast).orElse(GcsNamedBucketOptions.FALLBACK);
 
-    ImmutableGcsNamedBucketOptions.Builder builder =
-        ImmutableGcsNamedBucketOptions.builder().from(defaultOptions);
-    if (specific != null) {
-      builder.from(specific);
-    }
-
-    return secretsProvider
-        .applySecrets(
-            builder,
-            "object-stores.gcs",
-            defaultOptions,
-            filesystemName,
-            specific,
-            SECRET_ATTRIBUTES)
-        .build();
-  }
-
-  default GcsBucketOptions effectiveOptionsForBucket(
-      Optional<String> bucketName, SecretsProvider secretsProvider) {
     if (bucketName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
+      return defaultOptions;
     }
-    String name = bucketName.get();
-    GcsBucketOptions perBucket = buckets().get(name);
-    return resolveSecrets(name, perBucket, secretsProvider);
+
+    GcsBucketOptions specific = buckets().get(bucketName.get());
+    if (specific == null) {
+      return defaultOptions;
+    }
+
+    return ImmutableGcsNamedBucketOptions.builder().from(defaultOptions).from(specific).build();
   }
 
   default void validate() {
