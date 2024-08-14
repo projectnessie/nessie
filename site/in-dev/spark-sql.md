@@ -24,7 +24,7 @@ have the `IN <catalog-name>` clause, which is not needed in the Nessie CLI.
 
     Curly brackets `{` `}` mean that the contents can be repeated 0 or more times.
 
-### **`CREATE BANCH` / `TAG`**
+### **`CREATE BRANCH` / `TAG`**
 
 {% include './generated-docs/spark-sql-syntax-CreateReferenceStatement.md' %}
 

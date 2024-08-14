@@ -55,7 +55,7 @@ the clauses.
 
 {% include './generated-docs/cli-help-ConnectStatement.md' %}
 
-### **`CREATE BANCH` / `TAG`**
+### **`CREATE BRANCH` / `TAG`**
 
 {% include './generated-docs/cli-syntax-CreateReferenceStatement.md' %}
 
