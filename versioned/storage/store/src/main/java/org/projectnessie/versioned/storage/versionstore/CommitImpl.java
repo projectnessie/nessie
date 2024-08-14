@@ -256,6 +256,9 @@ class CommitImpl extends BaseCommitHelper {
       ContentKey key = operation.getKey();
       Operation previous = allKeys.put(key, operation);
       checkDuplicateKey(previous, operation);
+      if (key.getElementCount() == 0) {
+        throw new IllegalStateException("Content key must not be empty");
+      }
       StoreKey storeKey = keyToStoreKey(key);
       storeKeys.add(storeKey);
       if (storeKeysForHead != null && operation instanceof Unchanged) {

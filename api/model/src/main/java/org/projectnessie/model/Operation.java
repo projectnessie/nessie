@@ -156,4 +156,11 @@ public interface Operation {
       return ImmutableUnchanged.builder().key(key).build();
     }
   }
+
+  @Value.Check
+  default void check() {
+    if (getKey().getElementCount() == 0) {
+      throw new IllegalStateException("Content key must not be empty");
+    }
+  }
 }

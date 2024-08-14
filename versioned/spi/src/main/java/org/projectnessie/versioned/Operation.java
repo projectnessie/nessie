@@ -40,4 +40,11 @@ public interface Operation {
     DELETE,
     UNCHANGED
   }
+
+  @Value.Check
+  default void check() {
+    if (getKey().getElementCount() == 0) {
+      throw new IllegalStateException("Content key must not be empty");
+    }
+  }
 }
