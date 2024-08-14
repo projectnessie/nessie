@@ -185,7 +185,7 @@ public class IcebergConfigurer {
     configDefault.accept(METRICS_REPORTING_ENABLED, "false");
     configDefault.accept(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     uriInfo.icebergConfigDefaults(configDefault);
-    objectIO.icebergWarehouseConfig(
+    objectIO.configureIcebergWarehouse(
         StorageUri.of(warehouseConfig.location()), configDefault, configOverride);
     // allow users to override the 'rest-page-size' in the Nessie configuration
     configDefault.accept("rest-page-size", "200");
@@ -251,7 +251,7 @@ public class IcebergConfigurer {
     Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
 
     Map<String, String> config = new HashMap<>();
-    objectIO.icebergTableConfig(
+    objectIO.configureIcebergTable(
         locations,
         config::put,
         storageLocations -> {

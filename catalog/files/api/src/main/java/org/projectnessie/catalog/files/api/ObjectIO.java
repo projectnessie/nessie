@@ -25,6 +25,8 @@ import java.util.function.Predicate;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
+  String ICEBERG_FILE_IO_IMPL = "io-impl";
+
   void ping(StorageUri uri) throws IOException;
 
   InputStream readObject(StorageUri uri) throws IOException;
@@ -33,12 +35,12 @@ public interface ObjectIO {
 
   void deleteObjects(List<StorageUri> uris) throws IOException;
 
-  void icebergWarehouseConfig(
+  void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride);
 
-  void icebergTableConfig(
+  void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,
@@ -48,6 +50,4 @@ public interface ObjectIO {
       StorageUri warehouse,
       Map<String, String> icebergConfig,
       BiConsumer<String, String> properties);
-
-  String FILE_IO_IMPL = "io-impl";
 }

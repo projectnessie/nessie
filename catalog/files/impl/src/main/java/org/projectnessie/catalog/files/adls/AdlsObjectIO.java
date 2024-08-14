@@ -115,7 +115,7 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergWarehouseConfig(
+  public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride) {
@@ -123,7 +123,7 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergTableConfig(
+  public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,
@@ -133,7 +133,7 @@ public class AdlsObjectIO implements ObjectIO {
             storageLocations.readonlyLocations().stream())
         .map(StorageUri::scheme)
         .noneMatch(AdlsLocation::isAdlsScheme)) {
-      // If there's no GS location, no need to do any setup.
+      // If there's no ADLS location, no need to do any setup.
       return;
     }
 
@@ -207,6 +207,6 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {
-    config.accept(FILE_IO_IMPL, "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
+    config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
   }
 }

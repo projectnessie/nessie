@@ -44,21 +44,21 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergWarehouseConfig(
+  public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride) {
-    resolve(warehouse).icebergWarehouseConfig(warehouse, defaultConfig, configOverride);
+    resolve(warehouse).configureIcebergWarehouse(warehouse, defaultConfig, configOverride);
   }
 
   @Override
-  public void icebergTableConfig(
+  public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,
       boolean canDoCredentialsVending) {
     resolve(storageLocations.warehouseLocation())
-        .icebergTableConfig(storageLocations, config, signingPredicate, canDoCredentialsVending);
+        .configureIcebergTable(storageLocations, config, signingPredicate, canDoCredentialsVending);
   }
 
   @Override

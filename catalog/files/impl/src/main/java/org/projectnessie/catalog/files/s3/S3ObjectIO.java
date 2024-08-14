@@ -140,7 +140,7 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergWarehouseConfig(
+  public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride) {
@@ -149,7 +149,7 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergTableConfig(
+  public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,
@@ -248,6 +248,6 @@ public class S3ObjectIO implements ObjectIO {
             .effectiveOptionsForBucket(
                 Optional.ofNullable(warehouse.authority()), s3clientSupplier.secretsProvider());
     bucketOptions.region().ifPresent(x -> config.accept(S3_CLIENT_REGION, x));
-    config.accept(FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+    config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
   }
 }

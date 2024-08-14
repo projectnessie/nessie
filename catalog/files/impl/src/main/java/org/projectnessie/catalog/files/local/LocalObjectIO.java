@@ -79,13 +79,13 @@ public class LocalObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergWarehouseConfig(
+  public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride) {}
 
   @Override
-  public void icebergTableConfig(
+  public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,

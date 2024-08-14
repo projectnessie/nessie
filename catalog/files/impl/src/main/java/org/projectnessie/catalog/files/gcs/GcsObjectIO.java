@@ -142,7 +142,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergWarehouseConfig(
+  public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride) {
@@ -150,7 +150,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
-  public void icebergTableConfig(
+  public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
       Predicate<StorageLocations> signingPredicate,
@@ -236,6 +236,6 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {
-    config.accept(FILE_IO_IMPL, "org.apache.iceberg.gcp.gcs.GCSFileIO");
+    config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.gcp.gcs.GCSFileIO");
   }
 }
