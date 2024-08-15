@@ -17,16 +17,15 @@ package org.projectnessie.events.quarkus.fixtures;
 
 import io.quarkus.test.Mock;
 import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Named;
 import jakarta.inject.Singleton;
-import org.projectnessie.events.quarkus.collector.QuarkusResultCollectorFactory;
+import org.projectnessie.quarkus.providers.RepositoryId;
 
 @Mock
 public class MockRepositoryIdProducer {
 
   @Produces
   @Singleton
-  @Named(QuarkusResultCollectorFactory.REPOSITORY_ID_BEAN_NAME)
+  @RepositoryId
   public String produceRepositoryId() {
     return "repo1";
   }

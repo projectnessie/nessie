@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
   implementation(project(":nessie-events-service"))
+  implementation(project(":nessie-quarkus-config"))
 
   // Quarkus
   implementation(enforcedPlatform(libs.quarkus.bom))
