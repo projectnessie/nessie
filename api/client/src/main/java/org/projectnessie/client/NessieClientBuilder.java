@@ -19,7 +19,7 @@ import static java.util.Collections.singleton;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_AUTHOR;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_AUTHORS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_MESSAGE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_SIGNED_OFF_BY;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
@@ -414,7 +414,7 @@ public interface NessieClientBuilder {
       if (s != null) {
         withHttpHeader("Nessie-Commit-Message", s);
       }
-      s = configuration.apply(CONF_NESSIE_COMMIT_AUTHOR);
+      s = configuration.apply(CONF_NESSIE_COMMIT_AUTHORS);
       if (s != null) {
         withHttpHeader("Nessie-Commit-Authors", s);
       }
@@ -422,6 +422,8 @@ public interface NessieClientBuilder {
       if (s != null) {
         withHttpHeader("Nessie-Commit-SignedOffBy", s);
       }
+      // Note: applying arbitrary properties is not possible here with the single-key approach via
+      // `Function<String, String> configuration`.
 
       return this;
     }

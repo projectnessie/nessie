@@ -183,3 +183,14 @@ INSERT INTO nessie.my_namespace.`my_table@my_other_branch` ( id, val ) VALUES ( 
 ```sql
 CREATE TABLE nessie.my_namespace.`my_table@my_other_branch` ( id INT, val VARCHAR );
 ```
+
+## Customizing Nessie commit author et al
+
+It is possible to specify the author(s) and signed-off-by fields recorded in Nessie commits via
+Iceberg REST by using these Nessie specific REST/HTTP headers.
+
+| Header                      | Meaning                                                                                                                                                        |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Nessie-Commit-Authors`     | Comma separated list of authors to record and show in Nessie commit log. Example: `My Name <name@domain.internal>, Other user <other@company.internal>`.       |
+| `Nessie-Commit-SignedOffBy` | Comma separated list of signed-off-by to record and show in Nessie commit log. Example: `My Name <name@domain.internal>, Other user <other@company.internal>`. |
+| `Nessie-Commit-Message`     | Custom commit message, overrides all commit messages - use with care, because generated commit messages contain useful information.                            |

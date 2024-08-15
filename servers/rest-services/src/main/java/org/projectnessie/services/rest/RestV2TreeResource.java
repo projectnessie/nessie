@@ -25,6 +25,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.HttpHeaders;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -464,12 +465,14 @@ public class RestV2TreeResource implements HttpTreeApi {
                     break;
                   case "nessie-commit-authors":
                     v.stream()
+                        .flatMap(s -> Arrays.stream(s.split(",")))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .forEach(commitMeta::addAllAuthors);
                     break;
                   case "nessie-commit-signedoffby":
                     v.stream()
+                        .flatMap(s -> Arrays.stream(s.split(",")))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .forEach(commitMeta::addAllSignedOffBy);

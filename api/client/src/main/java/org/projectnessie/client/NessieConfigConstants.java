@@ -640,13 +640,13 @@ public final class NessieConfigConstants {
 
   /**
    * Set/override the author of all commits. The corresponding HTTP header is {@code
-   * Nessie-Commit-Authors}.
+   * Nessie-Commit-Authors}. Multiple authors can be specified, separated with {@code ,}.
    */
-  @ConfigItem public static final String CONF_NESSIE_COMMIT_AUTHOR = "nessie.commit-meta.author";
+  @ConfigItem public static final String CONF_NESSIE_COMMIT_AUTHORS = "nessie.commit-meta.authors";
 
   /**
    * Set/override the signed-off-by of all commits. The corresponding HTTP header is {@code
-   * Nessie-Commit-SignedOffBy}.
+   * Nessie-Commit-SignedOffBy}. Multiple signed-off-by can be specified, separated with {@code ,}.
    */
   @ConfigItem
   public static final String CONF_NESSIE_COMMIT_SIGNED_OFF_BY = "nessie.commit-meta.signed-off-by";

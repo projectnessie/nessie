@@ -19,6 +19,9 @@ as necessary. Empty sections will not end in the release notes.
 - Catalog/GCS: Added **experimental** support for short-lived and scoped down access tokens passed down
   to clients, providing a similar functionality as vended-credentials for S3, including object-storage
   file layout.
+- Client-configs: Commit authors, signed-off-by, message can be customized per REST/HTTP request. Those
+  can be configured for both the [Nessie client API](https://projectnessie.org/nessie-latest/client_config/)
+  and for [Iceberg REST catalog clients](https://projectnessie.org/guides/iceberg-rest/).
 
 ### Changes
 
