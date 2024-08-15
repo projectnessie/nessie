@@ -20,7 +20,6 @@ import org.projectnessie.client.api.ns.ClientSideDeleteNamespace;
 import org.projectnessie.client.api.ns.ClientSideGetMultipleNamespaces;
 import org.projectnessie.client.api.ns.ClientSideGetNamespace;
 import org.projectnessie.client.api.ns.ClientSideUpdateNamespace;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
 
 /**
@@ -32,8 +31,6 @@ import org.projectnessie.model.Reference;
  * <p>Most changes between v1 and v2 exist at the REST level (HTTP).
  */
 public interface NessieApiV2 extends NessieApiV1 {
-
-  String toPathString(ContentKey key);
 
   GetRepositoryConfigBuilder getRepositoryConfig();
 

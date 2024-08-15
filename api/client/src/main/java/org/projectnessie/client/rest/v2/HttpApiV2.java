@@ -62,8 +62,7 @@ public class HttpApiV2 implements NessieApiV2 {
     return isNessieSpec220;
   }
 
-  @Override
-  public String toPathString(ContentKey key) {
+  String toPathString(ContentKey key) {
     return isNessieSpec220() ? key.toPathStringEscaped() : key.toPathString();
   }
 
