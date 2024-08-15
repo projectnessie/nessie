@@ -17,9 +17,9 @@ package org.projectnessie.catalog.files.adls;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
-import static org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.DELEGATION_KEY_DEFAULT_EXPIRY;
-import static org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.DELEGATION_SAS_DEFAULT_EXPIRY;
 import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
+import static org.projectnessie.catalog.files.config.AdlsFileSystemOptions.DELEGATION_KEY_DEFAULT_EXPIRY;
+import static org.projectnessie.catalog.files.config.AdlsFileSystemOptions.DELEGATION_SAS_DEFAULT_EXPIRY;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
@@ -48,8 +48,11 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.AzureAuthType;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.AdlsConfig;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions.AzureAuthType;
+import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretType;
@@ -62,12 +65,17 @@ public final class AdlsClientSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdlsClientSupplier.class);
 
   private final HttpClient httpClient;
+  private final AdlsConfig adlsConfig;
   private final AdlsOptions adlsOptions;
   private final SecretsProvider secretsProvider;
 
   public AdlsClientSupplier(
-      HttpClient httpClient, AdlsOptions adlsOptions, SecretsProvider secretsProvider) {
+      HttpClient httpClient,
+      AdlsConfig adlsConfig,
+      AdlsOptions adlsOptions,
+      SecretsProvider secretsProvider) {
     this.httpClient = httpClient;
+    this.adlsConfig = adlsConfig;
     this.adlsOptions = adlsOptions;
     this.secretsProvider = secretsProvider;
   }
@@ -214,7 +222,7 @@ public final class AdlsClientSupplier {
 
   private Configuration buildClientConfiguration() {
     ConfigurationBuilder clientConfigBuilder = new ConfigurationBuilder();
-    adlsOptions.configurationOptions().forEach(clientConfigBuilder::putProperty);
+    adlsConfig.configurationOptions().forEach(clientConfigBuilder::putProperty);
     return clientConfigBuilder.build();
   }
 

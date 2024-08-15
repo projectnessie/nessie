@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 
 @ConfigMapping(prefix = "nessie.catalog")
 public interface QuarkusCatalogConfig extends CatalogConfig {
@@ -31,7 +32,7 @@ public interface QuarkusCatalogConfig extends CatalogConfig {
 
   @Override
   @WithName("warehouses")
-  Map<String, QuarkusWarehouseConfig> warehouses();
+  Map<String, WarehouseConfig> warehouses();
 
   /**
    * Nessie tries to verify the connectivity to the object stores configured for each warehouse and

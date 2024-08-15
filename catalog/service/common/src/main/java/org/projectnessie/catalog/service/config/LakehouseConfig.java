@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.service.config;
 
-import org.immutables.value.Value;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@SuppressWarnings(
-    "DefaultAnnotationParam") // MUST specify 'all Parameters = false' for some reason :shrug_
 @NessieImmutable
-@Value.Style(allParameters = false)
-public interface S3ServerIam extends S3Iam {}
+@JsonSerialize(as = ImmutableLakehouseConfig.class)
+@JsonDeserialize(as = ImmutableLakehouseConfig.class)
+public interface LakehouseConfig {}

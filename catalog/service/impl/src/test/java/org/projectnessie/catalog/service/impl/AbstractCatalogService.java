@@ -45,20 +45,19 @@ import java.util.function.Function;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.immutables.value.Value;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
-import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.s3.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.S3Config;
+import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
-import org.projectnessie.catalog.files.s3.S3Config;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
-import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
@@ -66,8 +65,8 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.CatalogCommit;
-import org.projectnessie.catalog.service.config.CatalogConfig;
-import org.projectnessie.catalog.service.config.WarehouseConfig;
+import org.projectnessie.catalog.service.config.ImmutableCatalogConfig;
+import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.ContentKey;
@@ -188,11 +187,11 @@ public abstract class AbstractCatalogService {
   private void setupCatalogService() {
     catalogService = new CatalogServiceImpl();
     catalogService.catalogConfig =
-        ImmutableCatalogConfigForTest.builder()
+        ImmutableCatalogConfig.builder()
             .defaultWarehouse(WAREHOUSE)
-            .putWarehouses(
+            .putWarehouse(
                 WAREHOUSE,
-                ImmutableWarehouseConfigForTest.builder()
+                ImmutableWarehouseConfig.builder()
                     .location("s3://" + BUCKET + "/foo/bar/baz/")
                     .build())
             .build();
@@ -298,20 +297,4 @@ public abstract class AbstractCatalogService {
       }
     }
   }
-
-  @Value.Immutable
-  @SuppressWarnings("immutables:from")
-  interface CatalogConfigForTest extends CatalogConfig {
-    @Override
-    Map<String, WarehouseConfigForTest> warehouses();
-
-    @Override
-    @Value.Check
-    default void validate() {
-      CatalogConfig.super.validate();
-    }
-  }
-
-  @Value.Immutable
-  interface WarehouseConfigForTest extends WarehouseConfig {}
 }

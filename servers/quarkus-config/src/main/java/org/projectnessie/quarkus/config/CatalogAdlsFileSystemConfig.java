@@ -19,7 +19,7 @@ import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
 
 public interface CatalogAdlsFileSystemConfig extends AdlsFileSystemOptions {
   @Override

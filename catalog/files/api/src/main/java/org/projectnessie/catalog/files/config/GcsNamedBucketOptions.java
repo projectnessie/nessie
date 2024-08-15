@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.gcs;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableGcsNamedBucketOptions.class)
+@JsonDeserialize(as = ImmutableGcsNamedBucketOptions.class)
 public interface GcsNamedBucketOptions extends GcsBucketOptions {
 
   GcsBucketOptions FALLBACK = ImmutableGcsNamedBucketOptions.builder().build();

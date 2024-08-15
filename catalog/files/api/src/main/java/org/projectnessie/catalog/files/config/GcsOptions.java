@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.gcs;
+package org.projectnessie.catalog.files.config;
 
 import java.time.Duration;
 import java.util.Map;

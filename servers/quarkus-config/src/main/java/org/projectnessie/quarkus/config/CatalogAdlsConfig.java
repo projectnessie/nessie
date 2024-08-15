@@ -19,8 +19,8 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.catalog.files.adls.AdlsConfig;
-import org.projectnessie.catalog.files.adls.AdlsOptions;
+import org.projectnessie.catalog.files.config.AdlsConfig;
+import org.projectnessie.catalog.files.config.AdlsOptions;
 
 /**
  * Configuration for ADLS Gen2 object stores.

@@ -27,6 +27,11 @@ dependencies {
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
+  compileOnly(project(":nessie-doc-generator-annotations"))
+
+  compileOnly(platform(libs.awssdk.bom))
+  compileOnly("software.amazon.awssdk:iam-policy-builder")
+
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -42,4 +47,7 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+
+  testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesApi("software.amazon.awssdk:iam-policy-builder")
 }

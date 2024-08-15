@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.adls;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Duration;
 import java.util.Map;
@@ -24,6 +26,8 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableAdlsConfig.class)
+@JsonDeserialize(as = ImmutableAdlsConfig.class)
 public interface AdlsConfig {
 
   /**
@@ -51,7 +55,7 @@ public interface AdlsConfig {
   @ConfigItem(section = "transport")
   Optional<Duration> readTimeout();
 
-  /** For configuration options, see {@link com.azure.core.util.Configuration}. */
+  /** For configuration options, see {@code com.azure.core.util.Configuration}. */
   Map<String, String> configurationOptions();
 
   static Builder builder() {

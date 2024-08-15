@@ -22,6 +22,15 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.projectnessie.catalog.files.config.S3AuthType;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.SecretType;
+import org.projectnessie.catalog.secrets.SecretsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 public final class S3Utils {
 
@@ -136,5 +145,32 @@ public final class S3Utils {
       }
     }
     return sb.toString();
+  }
+
+  public static AwsCredentialsProvider newCredentialsProvider(
+      S3AuthType authType, S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
+    switch (authType) {
+      case APPLICATION_GLOBAL:
+        return DefaultCredentialsProvider.create(); // actually a singleton
+      case STATIC:
+        URI secretName =
+            bucketOptions
+                .accessKey()
+                .orElseThrow(
+                    () ->
+                        new IllegalArgumentException(
+                            "Missing access key and secret for STATIC authentication mode"));
+
+        return secretsProvider
+            .getSecret(secretName, SecretType.BASIC, BasicCredentials.class)
+            .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
+            .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Missing access key and secret for STATIC authentication mode"));
+      default:
+        throw new IllegalArgumentException("Unsupported S3 auth type: " + authType);
+    }
   }
 }

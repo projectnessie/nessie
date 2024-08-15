@@ -18,8 +18,7 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.ConfigMapping;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.catalog.files.gcs.GcsConfig;
-import org.projectnessie.catalog.files.gcs.GcsOptions;
+import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**
@@ -32,7 +31,7 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  * client.
  */
 @ConfigMapping(prefix = "nessie.catalog.service.gcs")
-public interface CatalogGcsConfig extends GcsConfig, GcsOptions {
+public interface CatalogGcsConfig extends GcsOptions {
 
   @Override
   Optional<CatalogGcsBucketConfig> defaultOptions();

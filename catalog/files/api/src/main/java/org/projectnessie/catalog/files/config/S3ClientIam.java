@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.config;
 
+import static org.projectnessie.catalog.files.config.S3IamValidation.validateClientIam;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -24,6 +28,8 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
     "DefaultAnnotationParam") // MUST specify 'all Parameters = false' for some reason :shrug_
 @NessieImmutable
 @Value.Style(allParameters = false)
+@JsonSerialize(as = ImmutableS3ClientIam.class)
+@JsonDeserialize(as = ImmutableS3ClientIam.class)
 public interface S3ClientIam extends S3Iam {
 
   /**
@@ -49,6 +55,6 @@ public interface S3ClientIam extends S3Iam {
 
   @Override
   default void validate(String bucketName) {
-    S3IamPolicies.validateClientIam(this, bucketName);
+    validateClientIam(this, bucketName);
   }
 }

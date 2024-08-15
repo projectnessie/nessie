@@ -23,8 +23,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.projectnessie.catalog.files.s3.S3Config;
-import org.projectnessie.catalog.files.s3.S3Options;
+import org.projectnessie.catalog.files.config.S3Config;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 /**

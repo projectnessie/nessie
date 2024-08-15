@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.adls;
+package org.projectnessie.catalog.files.config;
 
 import java.util.List;
 import java.util.Map;
@@ -25,12 +25,6 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
 public interface AdlsOptions {
-
-  /**
-   * For custom ADLS configuration options, consult javadocs for {@code
-   * com.azure.core.util.Configuration}.
-   */
-  Map<String, String> configurationOptions();
 
   /** Override the default read block size used when writing to ADLS. */
   OptionalInt readBlockSize();

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.config;
 
-import org.projectnessie.catalog.files.gcs.GcsNamedBucketOptions;
+import org.projectnessie.catalog.files.config.GcsNamedBucketOptions;
 
 public interface CatalogGcsNamedBucketConfig
     extends GcsNamedBucketOptions, CatalogGcsBucketConfig {}

@@ -16,8 +16,8 @@
 package org.projectnessie.quarkus.config;
 
 import java.util.Optional;
-import org.projectnessie.catalog.files.s3.S3AuthType;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3AuthType;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
 
 public interface CatalogS3BucketConfig extends S3BucketOptions {
 

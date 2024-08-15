@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.adls;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableAdlsNamedFileSystemOptions.class)
+@JsonDeserialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
 
   AdlsFileSystemOptions FALLBACK = ImmutableAdlsNamedFileSystemOptions.builder().build();

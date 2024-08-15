@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
 import java.util.Map;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
@@ -31,6 +30,5 @@ public interface QuarkusWarehouseConfig extends WarehouseConfig {
 
   @Override
   @WithName("location")
-  @WithConverter(TrimTrailingSlash.class)
   String location();
 }

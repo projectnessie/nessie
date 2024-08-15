@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.gcs;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@Value.Immutable
-public interface GcsConfig {
-
-  static Builder builder() {
-    return ImmutableGcsConfig.builder();
-  }
-
-  interface Builder {
-    GcsConfig build();
-  }
-}
+@SuppressWarnings(
+    "DefaultAnnotationParam") // MUST specify 'all Parameters = false' for some reason :shrug_
+@NessieImmutable
+@Value.Style(allParameters = false)
+@JsonSerialize(as = ImmutableS3ServerIam.class)
+@JsonDeserialize(as = ImmutableS3ServerIam.class)
+public interface S3ServerIam extends S3Iam {}

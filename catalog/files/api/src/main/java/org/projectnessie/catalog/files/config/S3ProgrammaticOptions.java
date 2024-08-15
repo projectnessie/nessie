@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +24,8 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
+@JsonSerialize(as = ImmutableS3ProgrammaticOptions.class)
+@JsonDeserialize(as = ImmutableS3ProgrammaticOptions.class)
 @Value.Style(allParameters = false)
 @SuppressWarnings("immutables:from") // defaultOptions + buckets are not copied
 public abstract class S3ProgrammaticOptions implements S3Options {

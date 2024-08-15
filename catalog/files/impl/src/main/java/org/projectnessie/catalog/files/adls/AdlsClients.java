@@ -18,6 +18,7 @@ package org.projectnessie.catalog.files.adls;
 import com.azure.core.http.HttpClient;
 import com.azure.core.util.ConfigurationBuilder;
 import com.azure.core.util.HttpClientOptions;
+import org.projectnessie.catalog.files.config.AdlsConfig;
 
 public final class AdlsClients {
 

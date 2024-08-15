@@ -19,7 +19,7 @@ import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
-import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
+import org.projectnessie.catalog.files.config.GcsBucketOptions;
 
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 

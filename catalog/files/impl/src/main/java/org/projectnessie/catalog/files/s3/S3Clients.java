@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import static org.projectnessie.catalog.files.s3.S3Utils.newCredentialsProvider;
 import static org.projectnessie.catalog.secrets.SecretType.KEY;
 import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
@@ -30,6 +31,8 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -103,7 +106,7 @@ public class S3Clients {
       S3BucketOptions bucketOptions, S3Sessions sessions, SecretsProvider secretsProvider) {
     return bucketOptions.getEnabledServerIam().isPresent()
         ? sessions.assumeRoleForServer(bucketOptions)
-        : bucketOptions.effectiveAuthType().newCredentialsProvider(bucketOptions, secretsProvider);
+        : newCredentialsProvider(bucketOptions.effectiveAuthType(), bucketOptions, secretsProvider);
   }
 
   private static final class FileStoreTlsTrustManagersProvider implements TlsTrustManagersProvider {

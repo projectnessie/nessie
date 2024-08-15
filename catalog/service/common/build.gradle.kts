@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-catalog-service-transfer"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
+  compileOnly(libs.smallrye.config.core)
 
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))

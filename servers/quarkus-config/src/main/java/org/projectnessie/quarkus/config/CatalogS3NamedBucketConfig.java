@@ -15,6 +15,6 @@
  */
 package org.projectnessie.quarkus.config;
 
-import org.projectnessie.catalog.files.s3.S3NamedBucketOptions;
+import org.projectnessie.catalog.files.config.S3NamedBucketOptions;
 
 public interface CatalogS3NamedBucketConfig extends S3NamedBucketOptions, CatalogS3BucketConfig {}

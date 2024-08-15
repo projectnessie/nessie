@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.catalog.service.config;
 
 import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 

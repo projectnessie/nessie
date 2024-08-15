@@ -17,12 +17,18 @@ package org.projectnessie.catalog.service.config;
 
 import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
+@NessieImmutable
+@JsonSerialize(as = ImmutableCatalogConfig.class)
+@JsonDeserialize(as = ImmutableCatalogConfig.class)
 public interface CatalogConfig {
 
   /**
@@ -36,7 +42,7 @@ public interface CatalogConfig {
   /** Map of warehouse names to warehouse configurations. */
   @ConfigPropertyName("warehouse-name")
   @ConfigItem(section = "warehouses")
-  Map<String, ? extends WarehouseConfig> warehouses();
+  Map<String, WarehouseConfig> warehouses();
 
   /**
    * Iceberg config defaults applicable to all clients and warehouses. Any properties that are

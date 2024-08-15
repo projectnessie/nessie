@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.gcs;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +25,8 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @Value.Style(allParameters = false)
+@JsonSerialize(as = ImmutableGcsProgrammaticOptions.class)
+@JsonDeserialize(as = ImmutableGcsProgrammaticOptions.class)
 @SuppressWarnings("immutables:from") // defaultOptions + buckets are not copied
 public abstract class GcsProgrammaticOptions implements GcsOptions {
 

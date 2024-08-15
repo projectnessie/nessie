@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.catalog.files.config;
 
-import org.projectnessie.catalog.files.config.AdlsNamedFileSystemOptions;
-
-public interface CatalogAdlsNamedFileSystemConfig
-    extends AdlsNamedFileSystemOptions, CatalogAdlsFileSystemConfig {}
+/** Server authentication modes for S3. */
+public enum S3AuthType {
+  APPLICATION_GLOBAL,
+  STATIC,
+  ;
+}

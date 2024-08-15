@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.nio.file.Path;
@@ -25,6 +27,8 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableS3Config.class)
+@JsonDeserialize(as = ImmutableS3Config.class)
 public interface S3Config {
   /** Override the default maximum number of pooled connections. */
   @ConfigItem(section = "transport")

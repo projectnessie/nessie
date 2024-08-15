@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Optional;
 import java.util.function.Function;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;

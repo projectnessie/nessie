@@ -17,6 +17,9 @@ package org.projectnessie.catalog.files.s3;
 
 import java.util.Optional;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3ClientIam;
+import org.projectnessie.catalog.files.config.S3ServerIam;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
 interface StsCredentialsFetcher {

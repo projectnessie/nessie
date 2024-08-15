@@ -26,8 +26,6 @@ dependencies {
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-secrets-api"))
 
-  compileOnly(project(":nessie-doc-generator-annotations"))
-
   implementation(libs.guava)
   implementation(libs.caffeine)
   implementation(libs.micrometer.core)

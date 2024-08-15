@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.projectnessie.catalog.files.config.S3IamValidation.validateIam;
 
 import java.time.Duration;
 import java.util.Optional;
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 public interface S3Iam {
   /**
@@ -68,8 +68,6 @@ public interface S3Iam {
   /**
    * An identifier for the assumed role session. This parameter is most important in cases when the
    * same role is assumed by different principals in different use cases.
-   *
-   * @see AssumeRoleRequest#roleSessionName()
    */
   Optional<String> roleSessionName();
 
@@ -82,8 +80,6 @@ public interface S3Iam {
    * <p>This parameter is essential in preventing the <a
    * href="https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html">Confused
    * Deputy</a> problem.
-   *
-   * @see AssumeRoleRequest#externalId()
    */
   Optional<String> externalId();
 
@@ -105,7 +101,7 @@ public interface S3Iam {
   }
 
   default void validate(String bucketName) {
-    S3IamPolicies.validateIam(this, bucketName);
+    validateIam(this, bucketName);
     sessionDuration()
         .ifPresent(
             duration -> {

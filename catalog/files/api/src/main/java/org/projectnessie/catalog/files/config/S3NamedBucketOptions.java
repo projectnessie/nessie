@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.s3;
+package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableS3NamedBucketOptions.class)
+@JsonDeserialize(as = ImmutableS3NamedBucketOptions.class)
 public interface S3NamedBucketOptions extends S3BucketOptions {
 
   S3BucketOptions FALLBACK = ImmutableS3NamedBucketOptions.builder().build();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.files.gcs;
+package org.projectnessie.catalog.files.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.net.URI;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.catalog.files.gcs.GcsBucketOptions.GcsAuthType;
+import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
 
 class TestGcsProgrammaticOptions {
 
