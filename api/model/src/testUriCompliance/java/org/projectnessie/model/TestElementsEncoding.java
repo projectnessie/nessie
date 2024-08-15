@@ -546,4 +546,14 @@ public class TestElementsEncoding {
               return sb.toString();
             });
   }
+
+  @Test
+  public void allCharsInQuery() {
+    StringBuilder sb = new StringBuilder(65536);
+    for (int i = 0; i <= 65535; i++) {
+      sb.append((char) i);
+    }
+    HttpURI uri = HttpURI.from(format("http://hostname/foo?%s", sb));
+    soft.assertThat(uri.getViolations()).isEmpty();
+  }
 }
