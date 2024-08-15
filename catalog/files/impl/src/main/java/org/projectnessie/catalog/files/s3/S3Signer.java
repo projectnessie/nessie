@@ -24,6 +24,8 @@ import org.projectnessie.catalog.files.api.ImmutableSigningResponse;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.ContentStreamProvider;

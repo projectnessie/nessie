@@ -26,8 +26,9 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
-import org.projectnessie.quarkus.config.QuarkusWarehouseConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
@@ -40,7 +41,8 @@ public class ObjectStoresHealthCheck implements HealthCheck {
 
   public static final String NAME = "Warehouses Object Stores";
 
-  @Inject QuarkusCatalogConfig catalogConfig;
+  @Inject QuarkusCatalogConfig quarkusCatalogConfig;
+  @Inject CatalogConfig catalogConfig;
   @Inject ObjectIO objectIO;
   @Inject ServerConfig serverConfig;
 
@@ -48,11 +50,10 @@ public class ObjectStoresHealthCheck implements HealthCheck {
   public HealthCheckResponse call() {
     HealthCheckResponseBuilder healthCheckResponse = HealthCheckResponse.builder().name(NAME);
     boolean up = true;
-    if (catalogConfig.objectStoresHealthCheck()) {
-      for (Map.Entry<String, QuarkusWarehouseConfig> warehouse :
-          catalogConfig.warehouses().entrySet()) {
+    if (quarkusCatalogConfig.objectStoresHealthCheck()) {
+      for (Map.Entry<String, WarehouseConfig> warehouse : catalogConfig.warehouses().entrySet()) {
         String name = warehouse.getKey();
-        QuarkusWarehouseConfig warehouseConfig = warehouse.getValue();
+        WarehouseConfig warehouseConfig = warehouse.getValue();
 
         String warehouseLocation = warehouseConfig.location();
         try {

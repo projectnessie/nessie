@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
+import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.storage.uri.StorageUri;
 
 public class AdlsObjectIO implements ObjectIO {

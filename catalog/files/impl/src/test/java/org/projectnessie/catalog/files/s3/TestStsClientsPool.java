@@ -32,6 +32,8 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
 import software.amazon.awssdk.services.sts.StsClient;
 
 @ExtendWith(SoftAssertionsExtension.class)

@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
-import org.projectnessie.catalog.files.s3.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
