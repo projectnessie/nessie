@@ -15,15 +15,23 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
+@NessieImmutable
+@JsonSerialize(as = ImmutableS3Options.class)
+@JsonDeserialize(as = ImmutableS3Options.class)
 @ConfigMapping(prefix = "nessie.catalog.service.s3")
 public interface S3Options {
 
@@ -112,5 +120,41 @@ public interface S3Options {
   default void validate() {
     defaultOptions().ifPresent(options -> options.validate("<default>"));
     buckets().forEach((key, opts) -> opts.validate(opts.name().orElse(key)));
+  }
+
+  static S3Options normalize(S3Options s3Options) {
+    ImmutableS3Options.Builder builder = ImmutableS3Options.builder().from(s3Options);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(s3Options.defaultOptions());
+    builder.buckets(s3Options.buckets());
+    return builder.build();
+  }
+
+  @Value.Check
+  default S3Options normalizeBuckets() {
+    Map<String, S3NamedBucketOptions> buckets = new HashMap<>();
+    boolean changed = false;
+    for (String bucketName : buckets().keySet()) {
+      S3NamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        String explicitName = options.name().get();
+        changed |= !explicitName.equals(bucketName);
+        bucketName = options.name().get();
+      } else {
+        changed = true;
+        options = ImmutableS3NamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
+      }
+    }
+    return changed
+        ? ImmutableS3Options.builder()
+            .from(this)
+            .defaultOptions(defaultOptions())
+            .buckets(buckets)
+            .build()
+        : this;
   }
 }

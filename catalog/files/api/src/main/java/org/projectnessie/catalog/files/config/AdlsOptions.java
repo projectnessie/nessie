@@ -15,16 +15,24 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.ConfigMapping;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
+@NessieImmutable
+@JsonSerialize(as = ImmutableAdlsOptions.class)
+@JsonDeserialize(as = ImmutableAdlsOptions.class)
 @ConfigMapping(prefix = "nessie.catalog.service.adls")
 public interface AdlsOptions {
 
@@ -39,12 +47,12 @@ public interface AdlsOptions {
    * this one.
    */
   @ConfigItem(section = "default-options")
-  Optional<? extends AdlsFileSystemOptions> defaultOptions();
+  Optional<AdlsFileSystemOptions> defaultOptions();
 
   /** ADLS file-system specific options, per file system name. */
   @ConfigItem(section = "buckets")
   @ConfigPropertyName("filesystem-name")
-  Map<String, ? extends AdlsNamedFileSystemOptions> fileSystems();
+  Map<String, AdlsNamedFileSystemOptions> fileSystems();
 
   default void validate() {
     boolean hasDefaultEndpoint = defaultOptions().map(o -> o.endpoint().isPresent()).orElse(false);
@@ -86,6 +94,45 @@ public interface AdlsOptions {
     return ImmutableAdlsNamedFileSystemOptions.builder()
         .from(defaultOptions)
         .from(specific)
+        .build();
+  }
+
+  static AdlsOptions normalize(AdlsOptions adlsOptions) {
+    ImmutableAdlsOptions.Builder builder = ImmutableAdlsOptions.builder().from(adlsOptions);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(adlsOptions.defaultOptions());
+    builder.fileSystems(adlsOptions.fileSystems());
+    return builder.build();
+  }
+
+  @Value.Check
+  default AdlsOptions normalizeBuckets() {
+    Map<String, AdlsNamedFileSystemOptions> fileSystems = new HashMap<>();
+    for (String fileSystemName : fileSystems().keySet()) {
+      AdlsNamedFileSystemOptions options = fileSystems().get(fileSystemName);
+      if (options.name().isPresent()) {
+        fileSystemName = options.name().get();
+      } else {
+        options =
+            ImmutableAdlsNamedFileSystemOptions.builder()
+                .from(options)
+                .name(fileSystemName)
+                .build();
+      }
+      if (fileSystems.put(fileSystemName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate ADLS filesystem name '"
+                + fileSystemName
+                + "', check your ADLS file system configurations");
+      }
+    }
+    if (fileSystems.equals(fileSystems())) {
+      return this;
+    }
+    return ImmutableAdlsOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .fileSystems(fileSystems)
         .build();
   }
 }

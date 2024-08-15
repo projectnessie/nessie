@@ -15,13 +15,18 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -51,7 +56,7 @@ public class TestS3Options {
         //
         // #1 - enabled on default AND bucket
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
@@ -62,7 +67,7 @@ public class TestS3Options {
                                 .enabled(true)
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder().clientIam(noClientIam).build())
                 .build(),
@@ -90,7 +95,7 @@ public class TestS3Options {
         //
         // #2 - enabled on default
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
@@ -101,7 +106,7 @@ public class TestS3Options {
                                 .enabled(true)
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder().clientIam(noClientIam).build())
                 .build(),
@@ -129,7 +134,7 @@ public class TestS3Options {
         //
         // #3 - enabled on bucket
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
@@ -139,7 +144,7 @@ public class TestS3Options {
                                 .roleSessionName("default-rsn")
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(ImmutableS3ClientIam.builder().enabled(true).build())
@@ -170,7 +175,7 @@ public class TestS3Options {
         //
         // #4 - server enabled on default AND bucket
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
@@ -181,7 +186,7 @@ public class TestS3Options {
                                 .enabled(true)
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder().serverIam(noServerIam).build())
                 .build(),
@@ -209,7 +214,7 @@ public class TestS3Options {
         //
         // #5 - server enabled on default
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
@@ -220,7 +225,7 @@ public class TestS3Options {
                                 .enabled(true)
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder().serverIam(noServerIam).build())
                 .build(),
@@ -248,7 +253,7 @@ public class TestS3Options {
         //
         // #6 - server enabled on bucket
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(
@@ -258,7 +263,7 @@ public class TestS3Options {
                                 .roleSessionName("default-rsn")
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
                         .serverIam(ImmutableS3ServerIam.builder().enabled(true).build())
@@ -289,7 +294,7 @@ public class TestS3Options {
         //
         // #7 - client + server
         arguments(
-            ImmutableS3ProgrammaticOptions.builder()
+            ImmutableS3Options.builder()
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
@@ -305,7 +310,7 @@ public class TestS3Options {
                                 .roleSessionName("default-server-rsn")
                                 .build())
                         .build())
-                .putBuckets(
+                .putBucket(
                     "bucket",
                     ImmutableS3NamedBucketOptions.builder()
                         .clientIam(
@@ -360,7 +365,7 @@ public class TestS3Options {
         //
         // #8
         arguments(
-            ImmutableS3ProgrammaticOptions.builder().build(),
+            ImmutableS3Options.builder().build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder().build(),
             // client IAM
@@ -369,5 +374,262 @@ public class TestS3Options {
             null)
         //
         );
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void normalize(S3Options input, S3Options expected) {
+    S3Options actual = S3Options.normalize(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> normalize() {
+    return Stream.of(
+        //
+        arguments(
+            ImmutableS3Options.builder()
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
+                .defaultOptions(
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host"))
+                        .externalEndpoint(URI.create("https://externalHost"))
+                        .pathStyleAccess(true)
+                        .region("region")
+                        .accessPoint("accessPoint")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole")
+                                .sessionDuration(Duration.ofSeconds(4))
+                                .externalId("externalId")
+                                .roleSessionName("roleSessionName")
+                                .policy("sessionIamPolicy")
+                                .build())
+                        .build())
+                .putBucket(
+                    "bucket1",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host1"))
+                        .externalEndpoint(URI.create("https://externalHost1"))
+                        .pathStyleAccess(false)
+                        .region("region1")
+                        .accessPoint("accessPoint1")
+                        .allowCrossRegionAccessPoint(false)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
+                        .stsEndpoint(URI.create("https://stsEndpoint1"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole1")
+                                .sessionDuration(Duration.ofSeconds(5))
+                                .externalId("externalId1")
+                                .roleSessionName("roleSessionName1")
+                                .policy("sessionIamPolicy1")
+                                .build())
+                        .build())
+                .putBucket(
+                    "bucket2",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket-2")
+                        .endpoint(URI.create("https://host2"))
+                        .externalEndpoint(URI.create("https://externalHost2"))
+                        .pathStyleAccess(true)
+                        .region("region2")
+                        .accessPoint("accessPoint2")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint2"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole2")
+                                .sessionDuration(Duration.ofSeconds(6))
+                                .externalId("externalId2")
+                                .roleSessionName("roleSessionName2")
+                                .policy("sessionIamPolicy2")
+                                .build())
+                        .build())
+                .build(),
+            ImmutableS3Options.builder()
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
+                .defaultOptions(
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host"))
+                        .externalEndpoint(URI.create("https://externalHost"))
+                        .pathStyleAccess(true)
+                        .region("region")
+                        .accessPoint("accessPoint")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole")
+                                .sessionDuration(Duration.ofSeconds(4))
+                                .externalId("externalId")
+                                .roleSessionName("roleSessionName")
+                                .policy("sessionIamPolicy")
+                                .build())
+                        .build())
+                .putBucket(
+                    "bucket1",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("bucket1")
+                        .endpoint(URI.create("https://host1"))
+                        .externalEndpoint(URI.create("https://externalHost1"))
+                        .pathStyleAccess(false)
+                        .region("region1")
+                        .accessPoint("accessPoint1")
+                        .allowCrossRegionAccessPoint(false)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
+                        .stsEndpoint(URI.create("https://stsEndpoint1"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole1")
+                                .sessionDuration(Duration.ofSeconds(5))
+                                .externalId("externalId1")
+                                .roleSessionName("roleSessionName1")
+                                .policy("sessionIamPolicy1")
+                                .build())
+                        .build())
+                .putBucket(
+                    "my-bucket-2",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket-2")
+                        .endpoint(URI.create("https://host2"))
+                        .externalEndpoint(URI.create("https://externalHost2"))
+                        .pathStyleAccess(true)
+                        .region("region2")
+                        .accessPoint("accessPoint2")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint2"))
+                        .serverIam(
+                            ImmutableS3ServerIam.builder()
+                                .enabled(true)
+                                .assumeRole("assumeRole2")
+                                .sessionDuration(Duration.ofSeconds(6))
+                                .externalId("externalId2")
+                                .roleSessionName("roleSessionName2")
+                                .policy("sessionIamPolicy2")
+                                .build())
+                        .build())
+                .build()),
+        //
+        arguments(
+            ImmutableS3Options.builder()
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
+                .defaultOptions(
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host"))
+                        .externalEndpoint(URI.create("https://externalHost"))
+                        .pathStyleAccess(true)
+                        .region("region")
+                        .accessPoint("accessPoint")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint"))
+                        .build())
+                .putBucket(
+                    "bucket1",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host1"))
+                        .externalEndpoint(URI.create("https://externalHost1"))
+                        .pathStyleAccess(false)
+                        .region("region1")
+                        .accessPoint("accessPoint1")
+                        .allowCrossRegionAccessPoint(false)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
+                        .stsEndpoint(URI.create("https://stsEndpoint1"))
+                        .build())
+                .putBucket(
+                    "bucket2",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket-2")
+                        .endpoint(URI.create("https://host2"))
+                        .externalEndpoint(URI.create("https://externalHost2"))
+                        .pathStyleAccess(true)
+                        .region("region2")
+                        .accessPoint("accessPoint2")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint2"))
+                        .build())
+                .build(),
+            ImmutableS3Options.builder()
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
+                .defaultOptions(
+                    ImmutableS3NamedBucketOptions.builder()
+                        .endpoint(URI.create("https://host"))
+                        .externalEndpoint(URI.create("https://externalHost"))
+                        .pathStyleAccess(true)
+                        .region("region")
+                        .accessPoint("accessPoint")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint"))
+                        .build())
+                .putBucket(
+                    "bucket1",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("bucket1")
+                        .endpoint(URI.create("https://host1"))
+                        .externalEndpoint(URI.create("https://externalHost1"))
+                        .pathStyleAccess(false)
+                        .region("region1")
+                        .accessPoint("accessPoint1")
+                        .allowCrossRegionAccessPoint(false)
+                        .authType(S3AuthType.APPLICATION_GLOBAL)
+                        .stsEndpoint(URI.create("https://stsEndpoint1"))
+                        .build())
+                .putBucket(
+                    "my-bucket-2",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket-2")
+                        .endpoint(URI.create("https://host2"))
+                        .externalEndpoint(URI.create("https://externalHost2"))
+                        .pathStyleAccess(true)
+                        .region("region2")
+                        .accessPoint("accessPoint2")
+                        .allowCrossRegionAccessPoint(true)
+                        .authType(S3AuthType.STATIC)
+                        .stsEndpoint(URI.create("https://stsEndpoint2"))
+                        .build())
+                .build())
+        //
+        );
+  }
+
+  @Test
+  void normalizeBuckets() {
+    assertThat(
+            ImmutableS3Options.builder()
+                .putBucket("fs1", ImmutableS3NamedBucketOptions.builder().build())
+                .putBucket("fs2", ImmutableS3NamedBucketOptions.builder().name("my-bucket").build())
+                .build()
+                .buckets())
+        .containsOnlyKeys("fs1", "my-bucket");
+    assertThatThrownBy(
+            () ->
+                ImmutableS3Options.builder()
+                    .putBucket("bucket1", ImmutableS3NamedBucketOptions.builder().build())
+                    .putBucket(
+                        "bucket2", ImmutableS3NamedBucketOptions.builder().name("bucket1").build())
+                    .build())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Duplicate S3 bucket name 'bucket1', check your S3 bucket configurations");
   }
 }

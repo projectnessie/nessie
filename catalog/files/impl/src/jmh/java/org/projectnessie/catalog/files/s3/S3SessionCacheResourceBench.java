@@ -46,7 +46,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.ImmutableS3ServerIam;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3Config;
@@ -96,7 +96,7 @@ public class S3SessionCacheResourceBench {
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
       S3Options s3options =
-          ImmutableS3ProgrammaticOptions.builder()
+          ImmutableS3Options.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
                       .accessKey(URI.create("the-access-key"))

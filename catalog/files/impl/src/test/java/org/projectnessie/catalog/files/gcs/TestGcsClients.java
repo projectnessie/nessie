@@ -25,7 +25,7 @@ import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableGcsNamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableGcsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableGcsOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -49,16 +49,16 @@ public class TestGcsClients extends AbstractClients {
 
     HttpTransportFactory httpTransportFactory = buildSharedHttpTransportFactory();
 
-    ImmutableGcsProgrammaticOptions.Builder gcsOptions =
-        ImmutableGcsProgrammaticOptions.builder()
-            .putBuckets(
+    ImmutableGcsOptions.Builder gcsOptions =
+        ImmutableGcsOptions.builder()
+            .putBucket(
                 BUCKET_1,
                 ImmutableGcsNamedBucketOptions.builder()
                     .host(server1.getGcsBaseUri())
                     .authType(GcsBucketOptions.GcsAuthType.NONE)
                     .build());
     if (server2 != null) {
-      gcsOptions.putBuckets(
+      gcsOptions.putBucket(
           BUCKET_2,
           ImmutableGcsNamedBucketOptions.builder()
               .host(server2.getGcsBaseUri())

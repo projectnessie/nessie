@@ -41,9 +41,9 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
-import org.projectnessie.catalog.files.config.GcsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.files.config.ImmutableGcsNamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableGcsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableGcsOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -78,8 +78,8 @@ public class GcsClientResourceBench {
                       Map.of(theToken, tokenSecret("foo", null).asMap())))
               .build();
 
-      GcsProgrammaticOptions gcsOptions =
-          ImmutableGcsProgrammaticOptions.builder()
+      GcsOptions gcsOptions =
+          ImmutableGcsOptions.builder()
               .defaultOptions(
                   ImmutableGcsNamedBucketOptions.builder()
                       .oauth2Token(URI.create("urn:nessie-secret:plain:" + theToken))

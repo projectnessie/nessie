@@ -15,14 +15,18 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.time.Duration;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions.AdlsRetryStrategy;
 
 public class TestAdlsOptions {
   @ParameterizedTest
@@ -44,60 +48,165 @@ public class TestAdlsOptions {
   static Stream<Arguments> missingEndpoint() {
     return Stream.of(
         arguments(
-            ImmutableAdlsProgrammaticOptions.builder()
+            ImmutableAdlsOptions.builder()
                 .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems(
+                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem(
                     "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
                 .build(),
             "'fs1'"),
         arguments(
-            ImmutableAdlsProgrammaticOptions.builder()
+            ImmutableAdlsOptions.builder()
                 .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
                 .build(),
             "'fs1', 'fs2'"),
         arguments(
-            ImmutableAdlsProgrammaticOptions.builder()
-                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem(
                     "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
                 .build(),
             "'fs1'"),
         arguments(
-            ImmutableAdlsProgrammaticOptions.builder()
-                .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystems("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
+            ImmutableAdlsOptions.builder()
+                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem("fs2", ImmutableAdlsNamedFileSystemOptions.builder().build())
                 .build(),
             "'fs1', 'fs2'"));
   }
 
   static Stream<AdlsOptions> goodEndpoint() {
     return Stream.of(
-        ImmutableAdlsProgrammaticOptions.builder().build(),
-        ImmutableAdlsProgrammaticOptions.builder()
+        ImmutableAdlsOptions.builder().build(),
+        ImmutableAdlsOptions.builder()
             .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
             .build(),
-        ImmutableAdlsProgrammaticOptions.builder()
+        ImmutableAdlsOptions.builder()
             .defaultOptions(
                 ImmutableAdlsNamedFileSystemOptions.builder().endpoint("endpoint").build())
-            .putFileSystems("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-            .putFileSystems(
+            .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+            .putFileSystem(
                 "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep").build())
             .build(),
-        ImmutableAdlsProgrammaticOptions.builder()
+        ImmutableAdlsOptions.builder()
             .defaultOptions(ImmutableAdlsNamedFileSystemOptions.builder().build())
-            .putFileSystems(
+            .putFileSystem(
                 "fs1", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep1").build())
-            .putFileSystems(
+            .putFileSystem(
                 "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep2").build())
             .build(),
-        ImmutableAdlsProgrammaticOptions.builder()
-            .putFileSystems(
+        ImmutableAdlsOptions.builder()
+            .putFileSystem(
                 "fs1", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep1").build())
-            .putFileSystems(
+            .putFileSystem(
                 "fs2", ImmutableAdlsNamedFileSystemOptions.builder().endpoint("ep2").build())
             .build());
+  }
+
+  @Test
+  void normalize() {
+    AdlsOptions input =
+        ImmutableAdlsOptions.builder()
+            .readBlockSize(1)
+            .writeBlockSize(2)
+            .defaultOptions(
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .endpoint("endpoint")
+                    .externalEndpoint("externalEndpoint")
+                    .retryPolicy(AdlsRetryStrategy.EXPONENTIAL_BACKOFF)
+                    .maxRetries(3)
+                    .tryTimeout(Duration.ofSeconds(1))
+                    .retryDelay(Duration.ofSeconds(2))
+                    .maxRetryDelay(Duration.ofSeconds(3))
+                    .build())
+            .putFileSystem(
+                "fs1",
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .endpoint("endpoint1")
+                    .externalEndpoint("externalEndpoint1")
+                    .retryPolicy(AdlsRetryStrategy.FIXED_DELAY)
+                    .maxRetries(4)
+                    .tryTimeout(Duration.ofSeconds(4))
+                    .retryDelay(Duration.ofSeconds(5))
+                    .maxRetryDelay(Duration.ofSeconds(6))
+                    .build())
+            .putFileSystem(
+                "fs2",
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .name("my-bucket-2")
+                    .endpoint("endpoint2")
+                    .externalEndpoint("externalEndpoint2")
+                    .retryPolicy(AdlsRetryStrategy.NONE)
+                    .maxRetries(5)
+                    .tryTimeout(Duration.ofSeconds(7))
+                    .retryDelay(Duration.ofSeconds(8))
+                    .maxRetryDelay(Duration.ofSeconds(9))
+                    .build())
+            .build();
+    AdlsOptions expected =
+        ImmutableAdlsOptions.builder()
+            .readBlockSize(1)
+            .writeBlockSize(2)
+            .defaultOptions(
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .endpoint("endpoint")
+                    .externalEndpoint("externalEndpoint")
+                    .retryPolicy(AdlsRetryStrategy.EXPONENTIAL_BACKOFF)
+                    .maxRetries(3)
+                    .tryTimeout(Duration.ofSeconds(1))
+                    .retryDelay(Duration.ofSeconds(2))
+                    .maxRetryDelay(Duration.ofSeconds(3))
+                    .build())
+            .putFileSystem(
+                "fs1",
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .name("fs1")
+                    .endpoint("endpoint1")
+                    .externalEndpoint("externalEndpoint1")
+                    .retryPolicy(AdlsRetryStrategy.FIXED_DELAY)
+                    .maxRetries(4)
+                    .tryTimeout(Duration.ofSeconds(4))
+                    .retryDelay(Duration.ofSeconds(5))
+                    .maxRetryDelay(Duration.ofSeconds(6))
+                    .build())
+            .putFileSystem(
+                "my-bucket-2",
+                ImmutableAdlsNamedFileSystemOptions.builder()
+                    .name("my-bucket-2")
+                    .endpoint("endpoint2")
+                    .externalEndpoint("externalEndpoint2")
+                    .retryPolicy(AdlsRetryStrategy.NONE)
+                    .maxRetries(5)
+                    .tryTimeout(Duration.ofSeconds(7))
+                    .retryDelay(Duration.ofSeconds(8))
+                    .maxRetryDelay(Duration.ofSeconds(9))
+                    .build())
+            .build();
+    AdlsOptions actual = AdlsOptions.normalize(input);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  void normalizeBuckets() {
+    assertThat(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                .putFileSystem(
+                    "fs2", ImmutableAdlsNamedFileSystemOptions.builder().name("my-bucket").build())
+                .build()
+                .fileSystems())
+        .containsOnlyKeys("fs1", "my-bucket");
+    assertThatThrownBy(
+            () ->
+                ImmutableAdlsOptions.builder()
+                    .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
+                    .putFileSystem(
+                        "fs2", ImmutableAdlsNamedFileSystemOptions.builder().name("fs1").build())
+                    .build())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Duplicate ADLS filesystem name 'fs1', check your ADLS file system configurations");
   }
 }

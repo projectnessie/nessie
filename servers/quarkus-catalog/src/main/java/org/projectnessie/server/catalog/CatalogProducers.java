@@ -49,12 +49,9 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsOptions;
-import org.projectnessie.catalog.files.config.AdlsProgrammaticOptions;
 import org.projectnessie.catalog.files.config.GcsOptions;
-import org.projectnessie.catalog.files.config.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
-import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsClients;
 import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
@@ -122,21 +119,21 @@ public class CatalogProducers {
   @Singleton
   @NormalizedObjectStoreOptions
   public S3Options normalizedS3Options(S3Options s3Options) {
-    return S3ProgrammaticOptions.normalize(s3Options);
+    return S3Options.normalize(s3Options);
   }
 
   @Produces
   @Singleton
   @NormalizedObjectStoreOptions
   public GcsOptions normalizedGcsOptions(GcsOptions gcsOptions) {
-    return GcsProgrammaticOptions.normalize(gcsOptions);
+    return GcsOptions.normalize(gcsOptions);
   }
 
   @Produces
   @Singleton
   @NormalizedObjectStoreOptions
   public AdlsOptions normalizedAdlsOptions(AdlsOptions adlsOptions) {
-    return AdlsProgrammaticOptions.normalize(adlsOptions);
+    return AdlsOptions.normalize(adlsOptions);
   }
 
   @Produces

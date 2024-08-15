@@ -31,9 +31,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Config;
-import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
@@ -120,8 +120,8 @@ public abstract class WithNessie {
     S3Config s3config = S3Config.builder().build();
     SdkHttpClient httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
-    S3ProgrammaticOptions s3options =
-        ImmutableS3ProgrammaticOptions.builder()
+    S3Options s3options =
+        ImmutableS3Options.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
                     .accessKey(URI.create("urn:nessie-secret:plain:" + s3accessKeyName))

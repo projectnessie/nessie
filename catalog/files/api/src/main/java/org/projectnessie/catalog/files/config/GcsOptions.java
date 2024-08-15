@@ -15,14 +15,19 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.ConfigMapping;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /**
  * Configuration for Google Cloud Storage (GCS) object stores.
@@ -33,6 +38,9 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  * <p>All settings are optional. The defaults of these settings are defined by the Google Java SDK
  * client.
  */
+@NessieImmutable
+@JsonSerialize(as = ImmutableGcsOptions.class)
+@JsonDeserialize(as = ImmutableGcsOptions.class)
 @ConfigMapping(prefix = "nessie.catalog.service.gcs")
 public interface GcsOptions {
 
@@ -113,5 +121,38 @@ public interface GcsOptions {
 
   default void validate() {
     // nothing to validate
+  }
+
+  static GcsOptions normalize(GcsOptions gcsOptions) {
+    ImmutableGcsOptions.Builder builder = ImmutableGcsOptions.builder().from(gcsOptions);
+    // not copied by from() because of different type parameters in method return types
+    builder.defaultOptions(gcsOptions.defaultOptions());
+    builder.buckets(gcsOptions.buckets());
+    return builder.build();
+  }
+
+  @Value.Check
+  default GcsOptions normalizeBuckets() {
+    Map<String, GcsNamedBucketOptions> buckets = new HashMap<>();
+    for (String bucketName : buckets().keySet()) {
+      GcsNamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        bucketName = options.name().get();
+      } else {
+        options = ImmutableGcsNamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate GCS bucket name '" + bucketName + "', check your GCS bucket configurations");
+      }
+    }
+    if (buckets.equals(buckets())) {
+      return this;
+    }
+    return ImmutableGcsOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .buckets(buckets)
+        .build();
   }
 }

@@ -23,12 +23,12 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
 
-class TestGcsProgrammaticOptions {
+class TestGcsOptions {
 
   @Test
   void normalize() {
     GcsOptions input =
-        ImmutableGcsProgrammaticOptions.builder()
+        ImmutableGcsOptions.builder()
             .readTimeout(Duration.ofSeconds(1))
             .connectTimeout(Duration.ofSeconds(2))
             .maxAttempts(2)
@@ -53,7 +53,7 @@ class TestGcsProgrammaticOptions {
                     .writeChunkSize(2)
                     .deleteBatchSize(3)
                     .build())
-            .putBuckets(
+            .putBucket(
                 "bucket1",
                 ImmutableGcsNamedBucketOptions.builder()
                     .host(URI.create("https://host1"))
@@ -67,7 +67,7 @@ class TestGcsProgrammaticOptions {
                     .writeChunkSize(5)
                     .deleteBatchSize(6)
                     .build())
-            .putBuckets(
+            .putBucket(
                 "bucket2",
                 ImmutableGcsNamedBucketOptions.builder()
                     .name("my-bucket-2")
@@ -84,7 +84,7 @@ class TestGcsProgrammaticOptions {
                     .build())
             .build();
     GcsOptions expected =
-        ImmutableGcsProgrammaticOptions.builder()
+        ImmutableGcsOptions.builder()
             .readTimeout(Duration.ofSeconds(1))
             .connectTimeout(Duration.ofSeconds(2))
             .maxAttempts(2)
@@ -109,7 +109,7 @@ class TestGcsProgrammaticOptions {
                     .writeChunkSize(2)
                     .deleteBatchSize(3)
                     .build())
-            .putBuckets(
+            .putBucket(
                 "bucket1",
                 ImmutableGcsNamedBucketOptions.builder()
                     .name("bucket1")
@@ -124,7 +124,7 @@ class TestGcsProgrammaticOptions {
                     .writeChunkSize(5)
                     .deleteBatchSize(6)
                     .build())
-            .putBuckets(
+            .putBucket(
                 "my-bucket-2",
                 ImmutableGcsNamedBucketOptions.builder()
                     .name("my-bucket-2")
@@ -140,25 +140,25 @@ class TestGcsProgrammaticOptions {
                     .deleteBatchSize(9)
                     .build())
             .build();
-    GcsOptions actual = GcsProgrammaticOptions.normalize(input);
+    GcsOptions actual = GcsOptions.normalize(input);
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
   void normalizeBuckets() {
     assertThat(
-            ImmutableGcsProgrammaticOptions.builder()
-                .putBuckets("fs1", ImmutableGcsNamedBucketOptions.builder().build())
-                .putBuckets(
+            ImmutableGcsOptions.builder()
+                .putBucket("fs1", ImmutableGcsNamedBucketOptions.builder().build())
+                .putBucket(
                     "fs2", ImmutableGcsNamedBucketOptions.builder().name("my-bucket").build())
                 .build()
                 .buckets())
         .containsOnlyKeys("fs1", "my-bucket");
     assertThatThrownBy(
             () ->
-                ImmutableGcsProgrammaticOptions.builder()
-                    .putBuckets("bucket1", ImmutableGcsNamedBucketOptions.builder().build())
-                    .putBuckets(
+                ImmutableGcsOptions.builder()
+                    .putBucket("bucket1", ImmutableGcsNamedBucketOptions.builder().build())
+                    .putBucket(
                         "bucket2", ImmutableGcsNamedBucketOptions.builder().name("bucket1").build())
                     .build())
         .isInstanceOf(IllegalArgumentException.class)

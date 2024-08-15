@@ -35,7 +35,7 @@ import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -85,9 +85,9 @@ public class TestS3Clients extends AbstractClients {
                         basicCredentials("ak2", "sak2").asMap())))
             .build();
 
-    ImmutableS3ProgrammaticOptions.Builder s3options =
-        ImmutableS3ProgrammaticOptions.builder()
-            .putBuckets(
+    ImmutableS3Options.Builder s3options =
+        ImmutableS3Options.builder()
+            .putBucket(
                 BUCKET_1,
                 ImmutableS3NamedBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
@@ -96,7 +96,7 @@ public class TestS3Clients extends AbstractClients {
                     .accessPoint(BUCKET_1)
                     .build());
     if (server2 != null) {
-      s3options.putBuckets(
+      s3options.putBucket(
           BUCKET_2,
           ImmutableS3NamedBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
