@@ -18,6 +18,8 @@ package org.projectnessie.catalog.files.s3;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
+@SuppressWarnings(
+    "DefaultAnnotationParam") // MUST specify 'all Parameters = false' for some reason :shrug_
 @NessieImmutable
 @Value.Style(allParameters = false)
 public interface S3ServerIam extends S3Iam {}

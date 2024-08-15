@@ -20,6 +20,8 @@ import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
+@SuppressWarnings(
+    "DefaultAnnotationParam") // MUST specify 'all Parameters = false' for some reason :shrug_
 @NessieImmutable
 @Value.Style(allParameters = false)
 public interface S3ClientIam extends S3Iam {
