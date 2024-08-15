@@ -29,6 +29,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
 import java.time.Clock;
@@ -266,7 +267,8 @@ public abstract class AbstractCatalogService {
     DiffService diffService = new DiffApiImpl(config, versionStore, authorizer, accessContext);
 
     RestV2TreeResource treeResource =
-        new RestV2TreeResource(configService, treeService, contentService, diffService);
+        new RestV2TreeResource(
+            configService, treeService, contentService, diffService, emptyHttpHeaders());
     RestV2ConfigResource configResource =
         new RestV2ConfigResource(config, versionStore, authorizer, accessContext);
     api =

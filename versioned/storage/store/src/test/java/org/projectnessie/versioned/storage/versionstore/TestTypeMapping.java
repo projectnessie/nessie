@@ -49,6 +49,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -222,6 +223,23 @@ public class TestTypeMapping {
         arguments(cm.get().build(), EMPTY_COMMIT_HEADERS),
         arguments(
             cm.get().author("author").build(), newCommitHeaders().add(AUTHOR, "author").build()),
+        arguments(
+            cm.get()
+                .addAllAuthors("author1", "author2")
+                .addAllSignedOffBy("signoff1", "signoff2")
+                .putAllProperties("prop1", List.of("p1", "p2"))
+                .putAllProperties("prop2", List.of("x1", "x2"))
+                .build(),
+            newCommitHeaders()
+                .add(AUTHOR, "author1")
+                .add(AUTHOR, "author2")
+                .add(SIGNED_OFF_BY, "signoff1")
+                .add(SIGNED_OFF_BY, "signoff2")
+                .add("prop1", "p1")
+                .add("prop1", "p2")
+                .add("prop2", "x1")
+                .add("prop2", "x2")
+                .build()),
         arguments(
             cm.get().authorTime(timestamp).build(),
             newCommitHeaders().add(AUTHOR_TIME, instantToHeaderValue(timestamp)).build()),

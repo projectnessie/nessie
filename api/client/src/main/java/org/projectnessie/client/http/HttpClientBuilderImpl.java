@@ -72,6 +72,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   private String httpClientName;
   private int clientSpec = 2;
   private CompletionStage<?> cancellationFuture;
+  private final Map<String, List<String>> customHeaders = new HashMap<>();
 
   HttpClientBuilderImpl() {}
 
@@ -240,6 +241,12 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @Override
+  public HttpClient.Builder addCustomHeader(String header, String value) {
+    customHeaders.computeIfAbsent(header, h -> new ArrayList<>()).add(value);
+    return this;
+  }
+
+  @Override
   public HttpClient build() {
     checkArgument(
         mapper != null, "Cannot construct Http client. Must have a non-null object mapper");
@@ -300,6 +307,13 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
 
     if (authentication != null) {
       authentication.applyToHttpClient(this);
+    }
+
+    if (!customHeaders.isEmpty()) {
+      requestFilters.add(
+          context ->
+              customHeaders.forEach(
+                  (header, values) -> values.forEach(v -> context.putHeader(header, v))));
     }
 
     HttpRuntimeConfig config =

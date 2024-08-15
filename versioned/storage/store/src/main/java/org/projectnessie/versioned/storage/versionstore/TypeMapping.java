@@ -201,6 +201,7 @@ public final class TypeMapping {
   @Nonnull
   public static CommitHeaders headersFromCommitMeta(@Nonnull CommitMeta commitMeta) {
     CommitHeaders.Builder headers = newCommitHeaders();
+    commitMeta.getAllProperties().forEach((k, v) -> v.forEach(s -> headers.add(k, s)));
     if (commitMeta.getCommitTime() != null) {
       headers.add(COMMIT_TIME, instantToHeaderValue(commitMeta.getCommitTime()));
     }
@@ -210,38 +211,32 @@ public final class TypeMapping {
     if (commitMeta.getCommitter() != null) {
       headers.add(COMMITTER, commitMeta.getCommitter());
     }
-    if (commitMeta.getAuthor() != null) {
-      headers.add(AUTHOR, commitMeta.getAuthor());
-    }
-    if (commitMeta.getSignedOffBy() != null) {
-      headers.add(SIGNED_OFF_BY, commitMeta.getSignedOffBy());
-    }
-    commitMeta.getProperties().forEach(headers::add);
+    commitMeta.getAllAuthors().forEach(a -> headers.add(AUTHOR, a));
+    commitMeta.getAllSignedOffBy().forEach(a -> headers.add(SIGNED_OFF_BY, a));
     return headers.build();
   }
 
   public static ImmutableCommitMeta.Builder headersToCommitMeta(
       @Nonnull CommitHeaders headers, @Nonnull ImmutableCommitMeta.Builder commitMeta) {
     for (String header : headers.keySet()) {
-      String v = headers.getFirst(header);
       switch (header) {
         case AUTHOR:
-          commitMeta.author(v);
+          commitMeta.addAllAllAuthors(headers.getAll(header));
           break;
         case COMMITTER:
-          commitMeta.committer(v);
+          commitMeta.committer(headers.getFirst(header));
           break;
         case SIGNED_OFF_BY:
-          commitMeta.signedOffBy(v);
+          commitMeta.addAllAllSignedOffBy(headers.getAll(header));
           break;
         case COMMIT_TIME:
-          applyInstant(v, commitMeta::commitTime);
+          applyInstant(headers.getFirst(header), commitMeta::commitTime);
           break;
         case AUTHOR_TIME:
-          applyInstant(v, commitMeta::authorTime);
+          applyInstant(headers.getFirst(header), commitMeta::authorTime);
           break;
         default:
-          commitMeta.putProperties(header, v);
+          commitMeta.putAllProperties(header, headers.getAll(header));
           break;
       }
     }

@@ -19,6 +19,9 @@ import static java.util.Collections.singleton;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_AUTHORS;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_MESSAGE;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_COMMIT_SIGNED_OFF_BY;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_DISABLE_COMPRESSION;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_HOSTS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_SNI_MATCHER;
@@ -179,6 +182,15 @@ public interface NessieClientBuilder {
   /** Optionally configure specific {@link SSLParameters}. */
   @CanIgnoreReturnValue
   NessieClientBuilder withSSLParameters(SSLParameters sslParameters);
+
+  /**
+   * Optionally configure additional HTTP headers.
+   *
+   * @param header header name
+   * @param value header value
+   */
+  @CanIgnoreReturnValue
+  NessieClientBuilder withHttpHeader(String header, String value);
 
   /**
    * Registers a future to cancel an ongoing, blocking client setup.
@@ -398,6 +410,21 @@ public interface NessieClientBuilder {
         withApiCompatibilityCheck(Boolean.parseBoolean(s));
       }
 
+      s = configuration.apply(CONF_NESSIE_COMMIT_MESSAGE);
+      if (s != null) {
+        withHttpHeader("Nessie-Commit-Message", s);
+      }
+      s = configuration.apply(CONF_NESSIE_COMMIT_AUTHORS);
+      if (s != null) {
+        withHttpHeader("Nessie-Commit-Authors", s);
+      }
+      s = configuration.apply(CONF_NESSIE_COMMIT_SIGNED_OFF_BY);
+      if (s != null) {
+        withHttpHeader("Nessie-Commit-SignedOffBy", s);
+      }
+      // Note: applying arbitrary properties is not possible here with the single-key approach via
+      // `Function<String, String> configuration`.
+
       return this;
     }
 
@@ -466,6 +493,10 @@ public interface NessieClientBuilder {
 
     @Override
     public NessieClientBuilder withSSLParameters(SSLParameters sslParameters) {
+      return this;
+    }
+
+    public NessieClientBuilder withHttpHeader(String header, String value) {
       return this;
     }
 
