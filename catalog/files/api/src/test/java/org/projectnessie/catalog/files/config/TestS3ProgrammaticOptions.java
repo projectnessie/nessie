@@ -41,9 +41,9 @@ class TestS3ProgrammaticOptions {
         //
         arguments(
             ImmutableS3ProgrammaticOptions.builder()
-                .sessionCredentialRefreshGracePeriod(Duration.ofSeconds(1))
-                .sessionCredentialCacheMaxEntries(2)
-                .stsClientsCacheMaxEntries(3)
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -109,9 +109,9 @@ class TestS3ProgrammaticOptions {
                         .build())
                 .build(),
             ImmutableS3ProgrammaticOptions.builder()
-                .sessionCredentialRefreshGracePeriod(Duration.ofSeconds(1))
-                .sessionCredentialCacheMaxEntries(2)
-                .stsClientsCacheMaxEntries(3)
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -180,9 +180,9 @@ class TestS3ProgrammaticOptions {
         //
         arguments(
             ImmutableS3ProgrammaticOptions.builder()
-                .sessionCredentialRefreshGracePeriod(Duration.ofSeconds(1))
-                .sessionCredentialCacheMaxEntries(2)
-                .stsClientsCacheMaxEntries(3)
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -221,9 +221,9 @@ class TestS3ProgrammaticOptions {
                         .build())
                 .build(),
             ImmutableS3ProgrammaticOptions.builder()
-                .sessionCredentialRefreshGracePeriod(Duration.ofSeconds(1))
-                .sessionCredentialCacheMaxEntries(2)
-                .stsClientsCacheMaxEntries(3)
+                .sessionGracePeriod(Duration.ofSeconds(1))
+                .sessionCacheMaxSize(2)
+                .clientsCacheMaxSize(3)
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))

@@ -27,13 +27,13 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
 @ConfigMapping(prefix = "nessie.catalog.service.s3")
 public interface S3Options {
 
-  /** Default value for {@link #sessionCredentialCacheMaxEntries()}. */
+  /** Default value for {@link #sessionCacheMaxSize()}. */
   int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
 
-  /** Default value for {@link #stsClientsCacheMaxEntries()}. */
+  /** Default value for {@link #clientsCacheMaxSize()}. */
   int DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES = 50;
 
-  /** Default value for {@link #sessionCredentialRefreshGracePeriod()}. */
+  /** Default value for {@link #sessionGracePeriod()}. */
   Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
 
   /**
@@ -42,10 +42,10 @@ public interface S3Options {
    */
   @ConfigItem(section = "sts")
   @WithName("sts.session-grace-period")
-  Optional<Duration> sessionCredentialRefreshGracePeriod();
+  Optional<Duration> sessionGracePeriod();
 
-  default Duration effectiveSessionCredentialRefreshGracePeriod() {
-    return sessionCredentialRefreshGracePeriod().orElse(DEFAULT_SESSION_REFRESH_GRACE_PERIOD);
+  default Duration effectiveSessionGracePeriod() {
+    return sessionGracePeriod().orElse(DEFAULT_SESSION_REFRESH_GRACE_PERIOD);
   }
 
   /**
@@ -53,19 +53,19 @@ public interface S3Options {
    */
   @ConfigItem(section = "sts")
   @WithName("sts.session-cache-max-size")
-  OptionalInt sessionCredentialCacheMaxEntries();
+  OptionalInt sessionCacheMaxSize();
 
-  default int effectiveSessionCredentialCacheMaxEntries() {
-    return sessionCredentialCacheMaxEntries().orElse(DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES);
+  default int effectiveSessionCacheMaxSize() {
+    return sessionCacheMaxSize().orElse(DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES);
   }
 
   /** Maximum number of entries to keep in the STS clients cache. */
   @ConfigItem(section = "sts")
   @WithName("sts.clients-cache-max-size")
-  OptionalInt stsClientsCacheMaxEntries();
+  OptionalInt clientsCacheMaxSize();
 
-  default int effectiveStsClientsCacheMaxEntries() {
-    return stsClientsCacheMaxEntries().orElse(DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES);
+  default int effectiveClientsCacheMaxSize() {
+    return clientsCacheMaxSize().orElse(DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES);
   }
 
   /**

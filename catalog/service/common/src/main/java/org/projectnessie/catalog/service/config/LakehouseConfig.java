@@ -17,9 +17,22 @@ package org.projectnessie.catalog.service.config;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.projectnessie.catalog.files.config.AdlsOptions;
+import org.projectnessie.catalog.files.config.GcsOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableLakehouseConfig.class)
 @JsonDeserialize(as = ImmutableLakehouseConfig.class)
-public interface LakehouseConfig {}
+public interface LakehouseConfig {
+  CatalogConfig catalogConfig();
+
+  WarehouseConfig warehouseConfig();
+
+  S3Options s3();
+
+  GcsOptions gcs();
+
+  AdlsOptions adls();
+}
