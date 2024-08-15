@@ -24,7 +24,6 @@ import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -42,7 +41,6 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.jboss.resteasy.reactive.RestMulti;
 import org.projectnessie.api.v2.params.ParsedReference;
-import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
@@ -55,8 +53,6 @@ import org.projectnessie.model.Reference;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("catalog/v1")
 public class NessieCatalogResource extends AbstractCatalogResource {
-
-  @Inject RequestSigner signer;
 
   @GET
   @Path("trees/{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/snapshots")
