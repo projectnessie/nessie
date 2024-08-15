@@ -378,19 +378,22 @@ public class TestS3Options {
 
   @ParameterizedTest
   @MethodSource
-  void normalize(S3Options input, S3Options expected) {
-    S3Options actual = S3Options.normalize(input);
+  void deepClone(S3Options input, S3Options expected) {
+    S3Options actual = input.deepClone();
     assertThat(actual).isEqualTo(expected);
   }
 
-  static Stream<Arguments> normalize() {
+  static Stream<Arguments> deepClone() {
     return Stream.of(
         //
         arguments(
             ImmutableS3Options.builder()
-                .sessionGracePeriod(Duration.ofSeconds(1))
-                .sessionCacheMaxSize(2)
-                .clientsCacheMaxSize(3)
+                .sts(
+                    ImmutableS3Sts.builder()
+                        .sessionGracePeriod(Duration.ofSeconds(1))
+                        .sessionCacheMaxSize(2)
+                        .clientsCacheMaxSize(3)
+                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -456,9 +459,12 @@ public class TestS3Options {
                         .build())
                 .build(),
             ImmutableS3Options.builder()
-                .sessionGracePeriod(Duration.ofSeconds(1))
-                .sessionCacheMaxSize(2)
-                .clientsCacheMaxSize(3)
+                .sts(
+                    ImmutableS3Sts.builder()
+                        .sessionGracePeriod(Duration.ofSeconds(1))
+                        .sessionCacheMaxSize(2)
+                        .clientsCacheMaxSize(3)
+                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -527,9 +533,12 @@ public class TestS3Options {
         //
         arguments(
             ImmutableS3Options.builder()
-                .sessionGracePeriod(Duration.ofSeconds(1))
-                .sessionCacheMaxSize(2)
-                .clientsCacheMaxSize(3)
+                .sts(
+                    ImmutableS3Sts.builder()
+                        .sessionGracePeriod(Duration.ofSeconds(1))
+                        .sessionCacheMaxSize(2)
+                        .clientsCacheMaxSize(3)
+                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -568,9 +577,12 @@ public class TestS3Options {
                         .build())
                 .build(),
             ImmutableS3Options.builder()
-                .sessionGracePeriod(Duration.ofSeconds(1))
-                .sessionCacheMaxSize(2)
-                .clientsCacheMaxSize(3)
+                .sts(
+                    ImmutableS3Sts.builder()
+                        .sessionGracePeriod(Duration.ofSeconds(1))
+                        .sessionCacheMaxSize(2)
+                        .clientsCacheMaxSize(3)
+                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))

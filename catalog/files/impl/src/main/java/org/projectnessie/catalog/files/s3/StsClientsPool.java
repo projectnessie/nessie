@@ -45,7 +45,7 @@ public class StsClientsPool {
   public StsClientsPool(
       S3Options options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
     this(
-        options.effectiveClientsCacheMaxSize(),
+        options.effectiveSts().effectiveClientsCacheMaxSize(),
         key -> defaultStsClient(key, sdkHttpClient),
         Optional.ofNullable(meterRegistry));
   }

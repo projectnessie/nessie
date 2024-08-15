@@ -67,6 +67,7 @@ import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.ImmutableCatalogConfig;
+import org.projectnessie.catalog.service.config.ImmutableServiceConfig;
 import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -196,6 +197,8 @@ public abstract class AbstractCatalogService {
                     .location("s3://" + BUCKET + "/foo/bar/baz/")
                     .build())
             .build();
+    catalogService.serviceConfig =
+        ImmutableServiceConfig.builder().objectStoresHealthCheck(false).build();
     catalogService.tasksService = tasksService;
     catalogService.objectIO = objectIO;
     catalogService.persist = persist;

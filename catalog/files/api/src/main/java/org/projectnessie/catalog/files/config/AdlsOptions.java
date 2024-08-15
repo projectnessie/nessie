@@ -15,9 +15,9 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.smallrye.config.ConfigMapping;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableAdlsOptions.class)
 @JsonDeserialize(as = ImmutableAdlsOptions.class)
-@ConfigMapping(prefix = "nessie.catalog.service.adls")
 public interface AdlsOptions {
 
   /** Override the default read block size used when writing to ADLS. */
@@ -54,7 +53,7 @@ public interface AdlsOptions {
   @ConfigPropertyName("filesystem-name")
   Map<String, AdlsNamedFileSystemOptions> fileSystems();
 
-  default void validate() {
+  default AdlsOptions validate() {
     boolean hasDefaultEndpoint = defaultOptions().map(o -> o.endpoint().isPresent()).orElse(false);
     if (!hasDefaultEndpoint && !fileSystems().isEmpty()) {
       List<String> missing =
@@ -74,6 +73,7 @@ public interface AdlsOptions {
         throw new IllegalStateException(msg);
       }
     }
+    return this;
   }
 
   default AdlsFileSystemOptions effectiveOptionsForFileSystem(Optional<String> filesystemName) {
@@ -95,14 +95,6 @@ public interface AdlsOptions {
         .from(defaultOptions)
         .from(specific)
         .build();
-  }
-
-  static AdlsOptions normalize(AdlsOptions adlsOptions) {
-    ImmutableAdlsOptions.Builder builder = ImmutableAdlsOptions.builder().from(adlsOptions);
-    // not copied by from() because of different type parameters in method return types
-    builder.defaultOptions(adlsOptions.defaultOptions());
-    builder.fileSystems(adlsOptions.fileSystems());
-    return builder.build();
   }
 
   @Value.Check
@@ -134,5 +126,15 @@ public interface AdlsOptions {
         .defaultOptions(defaultOptions())
         .fileSystems(fileSystems)
         .build();
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default AdlsOptions deepClone() {
+    ImmutableAdlsOptions.Builder b =
+        ImmutableAdlsOptions.builder().from(this).fileSystems(Map.of());
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
+    fileSystems().forEach((n, v) -> b.putFileSystem(n, v.deepCopy()));
+    return b.build();
   }
 }

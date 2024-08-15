@@ -27,8 +27,8 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.ServiceConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
-import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class ObjectStoresHealthCheck implements HealthCheck {
 
   public static final String NAME = "Warehouses Object Stores";
 
-  @Inject QuarkusCatalogConfig quarkusCatalogConfig;
+  @Inject ServiceConfig quarkusCatalogConfig;
   @Inject CatalogConfig catalogConfig;
   @Inject ObjectIO objectIO;
   @Inject ServerConfig serverConfig;

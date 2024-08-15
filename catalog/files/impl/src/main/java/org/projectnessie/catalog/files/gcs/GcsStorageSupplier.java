@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
+import org.projectnessie.catalog.files.config.GcsDownscopedCredentials;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
@@ -84,7 +85,10 @@ public final class GcsStorageSupplier {
   public Optional<TokenSecret> generateDelegationToken(
       StorageLocations storageLocations, GcsBucketOptions gcsBucketOptions) {
 
-    if (!gcsBucketOptions.downscopedCredentialsEnable().orElse(false)) {
+    if (!gcsBucketOptions
+        .downscopedCredentials()
+        .flatMap(GcsDownscopedCredentials::enable)
+        .orElse(false)) {
       return Optional.empty();
     }
 
@@ -113,10 +117,12 @@ public final class GcsStorageSupplier {
         .setCredentialAccessBoundary(accessBoundary);
 
     gcsBucketOptions
-        .downscopedCredentialsExpirationMargin()
+        .downscopedCredentials()
+        .flatMap(GcsDownscopedCredentials::expirationMargin)
         .ifPresent(downscopedCredentialsBuilder::setExpirationMargin);
     gcsBucketOptions
-        .downscopedCredentialsRefreshMargin()
+        .downscopedCredentials()
+        .flatMap(GcsDownscopedCredentials::refreshMargin)
         .ifPresent(downscopedCredentialsBuilder::setRefreshMargin);
 
     DownscopedCredentials downscopedCredentials = downscopedCredentialsBuilder.build();

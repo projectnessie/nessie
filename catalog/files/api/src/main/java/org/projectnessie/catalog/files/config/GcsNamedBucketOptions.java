@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableGcsNamedBucketOptions.class)
 @JsonDeserialize(as = ImmutableGcsNamedBucketOptions.class)
+@SuppressWarnings("immutables:subtype")
 public interface GcsNamedBucketOptions extends GcsBucketOptions {
 
   GcsBucketOptions FALLBACK = ImmutableGcsNamedBucketOptions.builder().build();
@@ -36,4 +38,13 @@ public interface GcsNamedBucketOptions extends GcsBucketOptions {
    * dots or dashes.
    */
   Optional<String> name();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default GcsNamedBucketOptions deepCopy() {
+    return ImmutableGcsNamedBucketOptions.builder()
+        .from(GcsBucketOptions.super.deepCopy())
+        .name(name())
+        .build();
+  }
 }

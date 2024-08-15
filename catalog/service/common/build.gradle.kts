@@ -37,6 +37,8 @@ dependencies {
 
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
 
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")

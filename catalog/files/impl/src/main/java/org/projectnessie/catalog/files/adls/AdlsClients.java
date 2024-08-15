@@ -26,7 +26,7 @@ public final class AdlsClients {
 
   public static HttpClient buildSharedHttpClient(AdlsConfig adlsConfig) {
     ConfigurationBuilder httpConfig = new ConfigurationBuilder();
-    adlsConfig.configurationOptions().forEach(httpConfig::putProperty);
+    adlsConfig.configuration().forEach(httpConfig::putProperty);
 
     HttpClientOptions httpOptions = new HttpClientOptions().setConfiguration(httpConfig.build());
     adlsConfig.connectTimeout().ifPresent(httpOptions::setConnectTimeout);

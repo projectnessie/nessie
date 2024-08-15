@@ -48,54 +48,75 @@ public class S3Clients {
   /** Builds an SDK Http client based on the Apache Http client. */
   public static SdkHttpClient apacheHttpClient(S3Config s3Config, SecretsProvider secretsProvider) {
     ApacheHttpClient.Builder httpClient = ApacheHttpClient.builder();
-    s3Config.maxHttpConnections().ifPresent(httpClient::maxConnections);
-    s3Config.readTimeout().ifPresent(httpClient::socketTimeout);
-    s3Config.connectTimeout().ifPresent(httpClient::connectionTimeout);
-    s3Config.connectionAcquisitionTimeout().ifPresent(httpClient::connectionAcquisitionTimeout);
-    s3Config.connectionMaxIdleTime().ifPresent(httpClient::connectionMaxIdleTime);
-    s3Config.connectionTimeToLive().ifPresent(httpClient::connectionTimeToLive);
-    s3Config.expectContinueEnabled().ifPresent(httpClient::expectContinueEnabled);
     s3Config
-        .trustStorePath()
+        .http()
         .ifPresent(
-            p -> {
-              char[] password =
-                  s3Config
-                      .trustStorePassword()
-                      .flatMap(
-                          secretName -> secretsProvider.getSecret(secretName, KEY, KeySecret.class))
-                      .map(KeySecret::key)
-                      .map(String::toCharArray)
-                      .orElse(null);
-
-              httpClient.tlsTrustManagersProvider(
-                  new FileStoreTlsTrustManagersProvider(
-                      p,
-                      s3Config
-                          .trustStoreType()
-                          .orElseThrow(() -> new IllegalArgumentException("No trust store type")),
-                      password));
+            http -> {
+              http.maxHttpConnections().ifPresent(httpClient::maxConnections);
+              http.readTimeout().ifPresent(httpClient::socketTimeout);
+              http.connectTimeout().ifPresent(httpClient::connectionTimeout);
+              http.connectionAcquisitionTimeout()
+                  .ifPresent(httpClient::connectionAcquisitionTimeout);
+              http.connectionMaxIdleTime().ifPresent(httpClient::connectionMaxIdleTime);
+              http.connectionTimeToLive().ifPresent(httpClient::connectionTimeToLive);
+              http.expectContinueEnabled().ifPresent(httpClient::expectContinueEnabled);
             });
     s3Config
-        .keyStorePath()
+        .trustStore()
         .ifPresent(
-            p -> {
-              char[] password =
-                  s3Config
-                      .keyStorePassword()
-                      .flatMap(
-                          secretName -> secretsProvider.getSecret(secretName, KEY, KeySecret.class))
-                      .map(KeySecret::key)
-                      .map(String::toCharArray)
-                      .orElse(null);
+            trustStore ->
+                trustStore
+                    .path()
+                    .ifPresent(
+                        p -> {
+                          char[] password =
+                              trustStore
+                                  .password()
+                                  .flatMap(
+                                      secretName ->
+                                          secretsProvider.getSecret(
+                                              secretName, KEY, KeySecret.class))
+                                  .map(KeySecret::key)
+                                  .map(String::toCharArray)
+                                  .orElse(null);
 
-              httpClient.tlsKeyManagersProvider(
-                  new FileStoreTlsKeyManagersProvider(
-                      p,
-                      s3Config
-                          .keyStoreType()
-                          .orElseThrow(() -> new IllegalArgumentException("No key store type")),
-                      password));
+                          httpClient.tlsTrustManagersProvider(
+                              new FileStoreTlsTrustManagersProvider(
+                                  p,
+                                  trustStore
+                                      .type()
+                                      .orElseThrow(
+                                          () ->
+                                              new IllegalArgumentException("No trust store type")),
+                                  password));
+                        }));
+    s3Config
+        .keyStore()
+        .ifPresent(
+            keyStore -> {
+              keyStore
+                  .path()
+                  .ifPresent(
+                      p -> {
+                        char[] password =
+                            keyStore
+                                .password()
+                                .flatMap(
+                                    secretName ->
+                                        secretsProvider.getSecret(secretName, KEY, KeySecret.class))
+                                .map(KeySecret::key)
+                                .map(String::toCharArray)
+                                .orElse(null);
+
+                        httpClient.tlsKeyManagersProvider(
+                            new FileStoreTlsKeyManagersProvider(
+                                p,
+                                keyStore
+                                    .type()
+                                    .orElseThrow(
+                                        () -> new IllegalArgumentException("No key store type")),
+                                password));
+                      });
             });
     AttributeMap.Builder options = AttributeMap.builder();
     s3Config.trustAllCertificates().ifPresent(v -> options.put(TRUST_ALL_CERTIFICATES, v));

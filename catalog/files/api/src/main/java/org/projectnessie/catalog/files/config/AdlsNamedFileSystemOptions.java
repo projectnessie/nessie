@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 @JsonDeserialize(as = ImmutableAdlsNamedFileSystemOptions.class)
+@SuppressWarnings("immutables:subtype")
 public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
 
   AdlsFileSystemOptions FALLBACK = ImmutableAdlsNamedFileSystemOptions.builder().build();
@@ -37,4 +39,13 @@ public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
    * such as dots or dashes.
    */
   Optional<String> name();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default AdlsNamedFileSystemOptions deepCopy() {
+    return ImmutableAdlsNamedFileSystemOptions.builder()
+        .from(AdlsFileSystemOptions.super.deepCopy())
+        .name(name())
+        .build();
+  }
 }

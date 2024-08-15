@@ -15,9 +15,9 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.smallrye.config.ConfigMapping;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableGcsOptions.class)
 @JsonDeserialize(as = ImmutableGcsOptions.class)
-@ConfigMapping(prefix = "nessie.catalog.service.gcs")
 public interface GcsOptions {
 
   /**
@@ -119,16 +118,9 @@ public interface GcsOptions {
     return ImmutableGcsNamedBucketOptions.builder().from(defaultOptions).from(specific).build();
   }
 
-  default void validate() {
+  default GcsOptions validate() {
     // nothing to validate
-  }
-
-  static GcsOptions normalize(GcsOptions gcsOptions) {
-    ImmutableGcsOptions.Builder builder = ImmutableGcsOptions.builder().from(gcsOptions);
-    // not copied by from() because of different type parameters in method return types
-    builder.defaultOptions(gcsOptions.defaultOptions());
-    builder.buckets(gcsOptions.buckets());
-    return builder.build();
+    return this;
   }
 
   @Value.Check
@@ -154,5 +146,14 @@ public interface GcsOptions {
         .defaultOptions(defaultOptions())
         .buckets(buckets)
         .build();
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default GcsOptions deepClone() {
+    ImmutableGcsOptions.Builder b = ImmutableGcsOptions.builder().from(this).buckets(Map.of());
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepCopy()));
+    return b.build();
   }
 }

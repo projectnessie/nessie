@@ -52,8 +52,8 @@ public class StsCredentialsManager {
       SecretsProvider secretsProvider,
       MeterRegistry meterRegistry) {
     this(
-        options.effectiveSessionCacheMaxSize(),
-        options.effectiveSessionGracePeriod(),
+        options.effectiveSts().effectiveSessionCacheMaxSize(),
+        options.effectiveSts().effectiveSessionGracePeriod(),
         new StsCredentialsFetcherImpl(clients, secretsProvider),
         System::currentTimeMillis,
         Optional.ofNullable(meterRegistry));

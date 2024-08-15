@@ -15,24 +15,44 @@
  */
 package org.projectnessie.catalog.service.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
 import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
+/**
+ * Describes the configuration of the whole catalog, including all warehouses and object storage
+ * settings. System level settings, for example HTTP or service runtime behavior configurations, are
+ * not included.
+ */
 @NessieImmutable
 @JsonSerialize(as = ImmutableLakehouseConfig.class)
 @JsonDeserialize(as = ImmutableLakehouseConfig.class)
 public interface LakehouseConfig {
-  CatalogConfig catalogConfig();
+  // "nessie.catalog"
+  CatalogConfig catalog();
 
-  WarehouseConfig warehouseConfig();
-
+  // "nessie.catalog.service.s3"
   S3Options s3();
 
+  // "nessie.catalog.service.gcs"
   GcsOptions gcs();
 
+  // "nessie.catalog.service.adls"
   AdlsOptions adls();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default LakehouseConfig deepClone() {
+    return ImmutableLakehouseConfig.builder()
+        .catalog(catalog().deepClone())
+        .s3(s3().deepClone())
+        .gcs(gcs().deepClone())
+        .adls(adls().deepClone())
+        .build();
+  }
 }

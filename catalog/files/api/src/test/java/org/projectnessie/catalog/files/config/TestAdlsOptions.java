@@ -106,7 +106,7 @@ public class TestAdlsOptions {
   }
 
   @Test
-  void normalize() {
+  void deepClone() {
     AdlsOptions input =
         ImmutableAdlsOptions.builder()
             .readBlockSize(1)
@@ -184,7 +184,7 @@ public class TestAdlsOptions {
                     .maxRetryDelay(Duration.ofSeconds(9))
                     .build())
             .build();
-    AdlsOptions actual = AdlsOptions.normalize(input);
+    AdlsOptions actual = input.deepClone();
     assertThat(actual).isEqualTo(expected);
   }
 

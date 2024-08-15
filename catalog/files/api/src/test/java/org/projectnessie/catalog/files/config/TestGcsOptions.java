@@ -26,7 +26,7 @@ import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
 class TestGcsOptions {
 
   @Test
-  void normalize() {
+  void deepClone() {
     GcsOptions input =
         ImmutableGcsOptions.builder()
             .readTimeout(Duration.ofSeconds(1))
@@ -140,7 +140,7 @@ class TestGcsOptions {
                     .deleteBatchSize(9)
                     .build())
             .build();
-    GcsOptions actual = GcsOptions.normalize(input);
+    GcsOptions actual = input.deepClone();
     assertThat(actual).isEqualTo(expected);
   }
 

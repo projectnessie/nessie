@@ -15,15 +15,12 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithName;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
@@ -32,48 +29,15 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableS3Options.class)
 @JsonDeserialize(as = ImmutableS3Options.class)
-@ConfigMapping(prefix = "nessie.catalog.service.s3")
 public interface S3Options {
 
-  /** Default value for {@link #sessionCacheMaxSize()}. */
-  int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
-
-  /** Default value for {@link #clientsCacheMaxSize()}. */
-  int DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES = 50;
-
-  /** Default value for {@link #sessionGracePeriod()}. */
-  Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
-
-  /**
-   * The time period to subtract from the S3 session credentials (assumed role credentials) expiry
-   * time to define the time when those credentials become eligible for refreshing.
-   */
   @ConfigItem(section = "sts")
-  @WithName("sts.session-grace-period")
-  Optional<Duration> sessionGracePeriod();
+  Optional<S3Sts> sts();
 
-  default Duration effectiveSessionGracePeriod() {
-    return sessionGracePeriod().orElse(DEFAULT_SESSION_REFRESH_GRACE_PERIOD);
-  }
-
-  /**
-   * Maximum number of entries to keep in the session credentials cache (assumed role credentials).
-   */
-  @ConfigItem(section = "sts")
-  @WithName("sts.session-cache-max-size")
-  OptionalInt sessionCacheMaxSize();
-
-  default int effectiveSessionCacheMaxSize() {
-    return sessionCacheMaxSize().orElse(DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES);
-  }
-
-  /** Maximum number of entries to keep in the STS clients cache. */
-  @ConfigItem(section = "sts")
-  @WithName("sts.clients-cache-max-size")
-  OptionalInt clientsCacheMaxSize();
-
-  default int effectiveClientsCacheMaxSize() {
-    return clientsCacheMaxSize().orElse(DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES);
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3Sts effectiveSts() {
+    return sts().orElse(ImmutableS3Sts.builder().build());
   }
 
   /**
@@ -117,17 +81,10 @@ public interface S3Options {
     return builder.build();
   }
 
-  default void validate() {
+  default S3Options validate() {
     defaultOptions().ifPresent(options -> options.validate("<default>"));
     buckets().forEach((key, opts) -> opts.validate(opts.name().orElse(key)));
-  }
-
-  static S3Options normalize(S3Options s3Options) {
-    ImmutableS3Options.Builder builder = ImmutableS3Options.builder().from(s3Options);
-    // not copied by from() because of different type parameters in method return types
-    builder.defaultOptions(s3Options.defaultOptions());
-    builder.buckets(s3Options.buckets());
-    return builder.build();
+    return this;
   }
 
   @Value.Check
@@ -149,6 +106,7 @@ public interface S3Options {
             "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
       }
     }
+
     return changed
         ? ImmutableS3Options.builder()
             .from(this)
@@ -156,5 +114,15 @@ public interface S3Options {
             .buckets(buckets)
             .build()
         : this;
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3Options deepClone() {
+    ImmutableS3Options.Builder b = ImmutableS3Options.builder().from(this).buckets(Map.of());
+    sts().ifPresent(v -> b.sts(ImmutableS3Sts.copyOf(v)));
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepCopy()));
+    return b.build();
   }
 }

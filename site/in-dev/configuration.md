@@ -110,8 +110,6 @@ Related Quarkus settings:
 
 ### Catalog and Iceberg REST Settings
 
-{% include './generated-docs/smallrye-nessie_catalog.md' %}
-
 #### Warehouse defaults
 
 {% include './generated-docs/smallrye-nessie_catalog_warehouseDefaults.md' %}
@@ -122,23 +120,23 @@ Related Quarkus settings:
 
 #### S3 settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_s3.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_s3_config.md' %}
 
 ##### S3 transport
 
-{% include './generated-docs/smallrye-nessie_catalog_service_s3_transport.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_s3_config_transport.md' %}
 
 ##### S3 STS, assume-role global settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_s3_sts.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_s3_sts.md' %}
 
 ##### S3 default bucket settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_s3_default_options.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_s3_default_options.md' %}
 
 ##### S3 per bucket settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_s3_buckets.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_s3_buckets.md' %}
 
 #### Google Cloud Storage settings
 
@@ -147,40 +145,40 @@ Related Quarkus settings:
 
 ##### GCS transport
 
-{% include './generated-docs/smallrye-nessie_catalog_service_gcs_transport.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_gcs_transport.md' %}
 
 ##### GCS default bucket settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_gcs_default_options.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_gcs_default_options.md' %}
 
 ##### GCS per bucket settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_gcs_buckets.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_gcs_buckets.md' %}
 
 #### ADLS settings
 
 !!! note
     Support for ADLS is experimental.
 
-{% include './generated-docs/smallrye-nessie_catalog_service_adls.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_adls.md' %}
 
 ##### ADLS transport
 
-{% include './generated-docs/smallrye-nessie_catalog_service_adls_transport.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_adls_config_transport.md' %}
 
 ##### ADLS default file-system settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_adls_default_options.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_adls_default_options.md' %}
 
 ##### ADLS per file-system  settings
 
-{% include './generated-docs/smallrye-nessie_catalog_service_adls_buckets.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_adls_buckets.md' %}
 
 #### Advanced catalog settings
 
 ##### Error Handling
 
-{% include './generated-docs/smallrye-nessie_catalog_error_handling.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_service_config_error_handling.md' %}
 
 ##### Performance Tuning
 
