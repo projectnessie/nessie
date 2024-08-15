@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
@@ -88,7 +88,7 @@ public class LocalObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      Predicate<StorageLocations> signingPredicate,
+      BooleanSupplier enableRequestSigning,
       boolean canDoCredentialsVending) {}
 
   @Override

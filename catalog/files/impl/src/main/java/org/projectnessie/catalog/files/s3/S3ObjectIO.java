@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -152,7 +152,7 @@ public class S3ObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      Predicate<StorageLocations> signingPredicate,
+      BooleanSupplier enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
             storageLocations.writeableLocations().stream(),
@@ -171,11 +171,13 @@ public class S3ObjectIO implements ObjectIO {
 
     // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
     // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
-    config.accept(
-        S3_REMOTE_SIGNING_ENABLED,
-        Boolean.toString(
-            bucketOptions.effectiveRequestSigningEnabled()
-                && signingPredicate.test(storageLocations)));
+    boolean requestSigning = bucketOptions.effectiveRequestSigningEnabled();
+    if (requestSigning) {
+      // Calling `enableRequestSigning` must only happen, if `effectiveRequestSigningEnabled()` is
+      // true. Making this very clear with this `if`.
+      requestSigning = enableRequestSigning.getAsBoolean();
+    }
+    config.accept(S3_REMOTE_SIGNING_ENABLED, Boolean.toString(requestSigning));
 
     // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
     // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).

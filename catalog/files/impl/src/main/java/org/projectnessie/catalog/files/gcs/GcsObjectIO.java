@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -153,7 +153,7 @@ public class GcsObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      Predicate<StorageLocations> signingPredicate,
+      BooleanSupplier enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
             storageLocations.writeableLocations().stream(),

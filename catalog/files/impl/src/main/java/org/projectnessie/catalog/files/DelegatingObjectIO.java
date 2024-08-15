@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
@@ -55,10 +55,11 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      Predicate<StorageLocations> signingPredicate,
+      BooleanSupplier enableRequestSigning,
       boolean canDoCredentialsVending) {
     resolve(storageLocations.warehouseLocation())
-        .configureIcebergTable(storageLocations, config, signingPredicate, canDoCredentialsVending);
+        .configureIcebergTable(
+            storageLocations, config, enableRequestSigning, canDoCredentialsVending);
   }
 
   @Override

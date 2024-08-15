@@ -21,7 +21,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
@@ -35,15 +35,25 @@ public interface ObjectIO {
 
   void deleteObjects(List<StorageUri> uris) throws IOException;
 
+  /** Produces the Iceberg configuration options for "default config" and "config override". */
   void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,
       BiConsumer<String, String> configOverride);
 
+  /**
+   * Produces the Iceberg configuration for a table.
+   *
+   * @param storageLocations warehouse, readable and writeable locations
+   * @param config configuration consumer
+   * @param enableRequestSigning callback predicate that is called when request signing is possible
+   *     for the bucket, must return whether request signing is effective
+   * @param canDoCredentialsVending whether to configure credentials vending
+   */
   void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      Predicate<StorageLocations> signingPredicate,
+      BooleanSupplier enableRequestSigning,
       boolean canDoCredentialsVending);
 
   void trinoSampleConfig(

@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.s3.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
@@ -251,73 +252,90 @@ public class IcebergConfigurer {
     Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
 
     Map<String, String> config = new HashMap<>();
+
     objectIO.configureIcebergTable(
         locations,
         config::put,
-        storageLocations -> {
-          // Handling for S3 signing is very much integrated w/ request-URI/context, so that
-          // functionality stays here and is not handled in S3ObjectIO.
-
-          if (!accessDelegationPredicate.test(REMOTE_SIGNING)) {
-            return false;
-          }
-          if (!Stream.concat(
-                  storageLocations.writeableLocations().stream(),
-                  storageLocations.readonlyLocations().stream())
-              .map(StorageUri::scheme)
-              .allMatch(S3Utils::isS3scheme)) {
-            return false;
-          }
-
-          String normalizedWarehouseLocation = normalizeS3Scheme(warehouseLocation);
-
-          // Must use both 's3.signer.uri' and 's3.signer.endpoint', because Iceberg before 1.5.0
-          // does
-          // not handle full URIs passed via 's3.signer.endpoint'. This was changed via
-          // https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216,
-          // first released in Iceberg 1.5.0. It's unclear how other language implementations deal
-          // with this.
-          config.put(S3_SIGNER_URI, uriInfo.icebergBaseURI().toString());
-
-          List<String> normalizedWriteLocations = new ArrayList<>();
-          List<String> normalizedReadLocations = new ArrayList<>();
-          for (StorageUri loc : storageLocations.writeableLocations()) {
-            String locStr = normalizeS3Scheme(loc.toString());
-            if (locStr.startsWith(normalizedWarehouseLocation)) {
-              normalizedWriteLocations.add(locStr);
-            }
-          }
-          for (StorageUri loc : storageLocations.readonlyLocations()) {
-            String locStr = normalizeS3Scheme(loc.toString());
-            normalizedReadLocations.add(locStr);
-          }
-
-          SignerKey signerKey = signerKeysService.currentSignerKey();
-
-          long expirationTimestamp =
-              systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
-
-          String contentKeyPathString = contentKey.toPathStringEscaped();
-          String uriQuery =
-              SignerSignature.builder()
-                  .expirationTimestamp(expirationTimestamp)
-                  .prefix(prefix)
-                  .identifier(contentKeyPathString)
-                  .warehouseLocation(normalizedWarehouseLocation)
-                  .writeLocations(normalizedWriteLocations)
-                  .readLocations(normalizedReadLocations)
-                  .build()
-                  .uriQuery(signerKey);
-
-          config.put(
-              S3_SIGNER_ENDPOINT,
-              uriInfo.icebergS3SignerPath(prefix, contentKeyPathString, uriQuery));
-
-          return true;
-        },
+        () ->
+            configureS3RequestSigningForTable(
+                locations, accessDelegationPredicate, prefix, contentKey, config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
     return tableConfig.config(config).build();
+  }
+
+  /**
+   * Handle S3 request signing "specialties" here. This function is called only if the S3 bucket has
+   * {@linkplain S3BucketOptions#effectiveRequestSigningEnabled() request signing enabled} and
+   * returns whether request signing is possible and has been enabled.
+   *
+   * <p>Parameters that are needed to configure S3 request signing are specific to the current table
+   * and need URI related information from the current REST/HTTP request and the S3 signer service.
+   * Having this functionality and especially the dependencies in leak through {@link ObjectIO} is
+   * not worth the trouble.
+   */
+  private boolean configureS3RequestSigningForTable(
+      StorageLocations locations,
+      Predicate<AccessDelegation> accessDelegationPredicate,
+      String prefix,
+      ContentKey contentKey,
+      BiConsumer<String, String> config) {
+    if (!accessDelegationPredicate.test(REMOTE_SIGNING)) {
+      return false;
+    }
+    if (!Stream.concat(
+            locations.writeableLocations().stream(), locations.readonlyLocations().stream())
+        .map(StorageUri::scheme)
+        .allMatch(S3Utils::isS3scheme)) {
+      return false;
+    }
+
+    // Handling for S3 signing is very much integrated w/ request-URI/context, so that
+    // functionality stays here and is not handled in S3ObjectIO.
+
+    String normalizedWarehouseLocation =
+        normalizeS3Scheme(locations.warehouseLocation().toString());
+
+    // Must use both 's3.signer.uri' and 's3.signer.endpoint', because Iceberg before 1.5.0
+    // does not handle full URIs passed via 's3.signer.endpoint'. This was changed via
+    // https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216,
+    // first released in Iceberg 1.5.0. It's unclear how other language implementations deal
+    // with this.
+    config.accept(S3_SIGNER_URI, uriInfo.icebergBaseURI().toString());
+
+    List<String> normalizedWriteLocations = new ArrayList<>();
+    List<String> normalizedReadLocations = new ArrayList<>();
+    for (StorageUri loc : locations.writeableLocations()) {
+      String locStr = normalizeS3Scheme(loc.toString());
+      if (locStr.startsWith(normalizedWarehouseLocation)) {
+        normalizedWriteLocations.add(locStr);
+      }
+    }
+    for (StorageUri loc : locations.readonlyLocations()) {
+      String locStr = normalizeS3Scheme(loc.toString());
+      normalizedReadLocations.add(locStr);
+    }
+
+    SignerKey signerKey = signerKeysService.currentSignerKey();
+
+    long expirationTimestamp = systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
+
+    String contentKeyPathString = contentKey.toPathStringEscaped();
+    String uriQuery =
+        SignerSignature.builder()
+            .expirationTimestamp(expirationTimestamp)
+            .prefix(prefix)
+            .identifier(contentKeyPathString)
+            .warehouseLocation(normalizedWarehouseLocation)
+            .writeLocations(normalizedWriteLocations)
+            .readLocations(normalizedReadLocations)
+            .build()
+            .uriQuery(signerKey);
+
+    config.accept(
+        S3_SIGNER_ENDPOINT, uriInfo.icebergS3SignerPath(prefix, contentKeyPathString, uriQuery));
+
+    return true;
   }
 
   static boolean icebergWriteObjectStorage(
