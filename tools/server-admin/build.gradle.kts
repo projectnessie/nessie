@@ -69,7 +69,6 @@ dependencies {
   implementation(libs.guava)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkus:quarkus-core-deployment")
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-picocli")
 

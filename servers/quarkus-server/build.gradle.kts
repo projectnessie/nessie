@@ -61,12 +61,16 @@ dependencies {
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(libs.nessie.ui)
 
+  // Nessie internal Quarkus extension, currently only disables "non-indexed classes" (Jandex)
+  // warnings.
+  compileOnly(project(":nessie-quarkus-ext-deployment"))
+  implementation(project(":nessie-quarkus-ext"))
+
   implementation(enforcedPlatform(libs.quarkus.bom))
   implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-rest")
   implementation("io.quarkus:quarkus-rest-jackson")
   implementation("io.quarkus:quarkus-reactive-routes")
-  implementation("io.quarkus:quarkus-core-deployment")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-smallrye-context-propagation")
   implementation("io.quarkus:quarkus-smallrye-health")
@@ -102,7 +106,10 @@ dependencies {
   testFixturesApi(project(":nessie-jaxrs-tests"))
   testFixturesApi(project(":nessie-quarkus-auth"))
   testFixturesApi(project(":nessie-quarkus-common"))
-  testFixturesApi(project(":nessie-quarkus-tests"))
+  testFixturesApi(project(":nessie-quarkus-tests")) {
+    // Don't use resteasy-classic (and prevent the Quarkus warning)
+    exclude(group = "org.jboss.resteasy")
+  }
   testFixturesApi(project(":nessie-catalog-files-api"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-events-api"))
@@ -132,7 +139,10 @@ dependencies {
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
-  testFixturesApi(project(":nessie-keycloak-testcontainer"))
+  testFixturesApi(project(":nessie-keycloak-testcontainer")) {
+    // Don't use resteasy-classic (and prevent the Quarkus warning)
+    exclude(group = "org.jboss.resteasy")
+  }
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
   testFixturesApi(project(":nessie-minio-testcontainer"))
@@ -150,6 +160,12 @@ dependencies {
   testFixturesApi("org.apache.iceberg:iceberg-api:$versionIceberg:tests")
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg:tests")
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
+
+  // These two testFixturesRuntimeOnly are here to avoid the 'Failed to index javax...: Class does
+  // not exist
+  // in ClassLoader' warnings
+  testFixturesRuntimeOnly(libs.javax.validation.api)
+  testFixturesRuntimeOnly(libs.javax.ws.rs)
 
   testFixturesCompileOnly(libs.microprofile.openapi)
 

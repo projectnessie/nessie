@@ -55,6 +55,8 @@ dependencies {
     api(project(":nessie-quarkus-distcache"))
     api(project(":nessie-quarkus-common"))
     api(project(":nessie-quarkus-config"))
+    api(project(":nessie-quarkus-ext-deployment"))
+    api(project(":nessie-quarkus-ext"))
     api(project(":nessie-quarkus-rest"))
     api(project(":nessie-server-admin-tool"))
     api(project(":nessie-quarkus"))

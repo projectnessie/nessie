@@ -26,6 +26,7 @@ import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("unused")
 public class ConfigChecks {
   private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChecks.class);
 

@@ -44,8 +44,8 @@ dependencies {
   implementation(libs.smallrye.mutiny)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkus.resteasy.reactive:resteasy-reactive-common")
-  implementation("io.quarkus.resteasy.reactive:resteasy-reactive")
+  implementation("io.quarkus:quarkus-rest-common")
+  implementation("io.quarkus:quarkus-rest")
 
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
