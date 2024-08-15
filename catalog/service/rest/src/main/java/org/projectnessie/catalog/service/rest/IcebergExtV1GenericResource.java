@@ -25,6 +25,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 
@@ -46,6 +47,7 @@ public class IcebergExtV1GenericResource {
     return errorMapper.toResponse(ex, IcebergEntityKind.UNKNOWN);
   }
 
+  @Operation(operationId = "iceberg-ext.v1.trinoConfig")
   @GET
   @Path("/v1/client-template/trino")
   @Produces(MediaType.TEXT_PLAIN)
@@ -54,6 +56,7 @@ public class IcebergExtV1GenericResource {
     return getTrinoConfig(null, warehouse, format);
   }
 
+  @Operation(operationId = "iceberg-ext.v1.trinoConfig.reference")
   @GET
   @Path("{reference}/v1/client-template/trino")
   @Produces(MediaType.WILDCARD)

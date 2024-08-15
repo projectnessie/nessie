@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.ToIntFunction;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
@@ -101,7 +102,8 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.storage.uri.StorageUri;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with tables. */
@@ -119,6 +121,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.TABLE);
   }
 
+  @Operation(operationId = "iceberg.v1.loadTable")
   @GET
   @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}")
   @Blocking
@@ -250,6 +253,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     return fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table", forWrite);
   }
 
+  @Operation(operationId = "iceberg.v1.createTable")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/tables")
   @Blocking
@@ -342,6 +346,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     true));
   }
 
+  @Operation(operationId = "iceberg.v1.registerTable")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/register")
   @Blocking
@@ -389,7 +394,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                       format(
                           "Register Iceberg table '%s' from '%s'",
                           ctr.contentKey(), registerTableRequest.metadataLocation())))
-              .operation(Operation.Put.of(ctr.contentKey(), newContent))
+              .operation(Put.of(ctr.contentKey(), newContent))
               .commitWithResponse();
 
       return this.loadTable(
@@ -436,7 +441,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     format(
                         "Register Iceberg table '%s' from '%s'",
                         tableRef.contentKey(), registerTableRequest.metadataLocation())))
-            .operation(Operation.Put.of(tableRef.contentKey(), newContent))
+            .operation(Put.of(tableRef.contentKey(), newContent))
             .commitWithResponse();
 
     return this.loadTable(
@@ -452,6 +457,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         true);
   }
 
+  @Operation(operationId = "iceberg.v1.dropTable")
   @DELETE
   @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}")
   @Blocking
@@ -470,10 +476,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .commitMultipleOperations()
         .branch(ref)
         .commitMeta(fromMessage(format("Drop ICEBERG_TABLE %s", tableRef.contentKey())))
-        .operation(Operation.Delete.of(tableRef.contentKey()))
+        .operation(Delete.of(tableRef.contentKey()))
         .commitWithResponse();
   }
 
+  @Operation(operationId = "iceberg.v1.listTables")
   @GET
   @Path("/v1/{prefix}/namespaces/{namespace}/tables")
   @Blocking
@@ -509,6 +516,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     renameContent(prefix, renameTableRequest, ICEBERG_TABLE);
   }
 
+  @Operation(operationId = "iceberg.v1.tableExists")
   @HEAD
   @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}")
   @Blocking
@@ -522,6 +530,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     fetchIcebergTable(tableRef, false);
   }
 
+  @Operation(operationId = "iceberg.v1.tableMetrics")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics")
   @Blocking
@@ -544,6 +553,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     // TODO note that metrics for "staged tables" are also received, even if those do not yet exist
   }
 
+  @Operation(operationId = "iceberg.v1.updateTable")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}")
   @Blocking

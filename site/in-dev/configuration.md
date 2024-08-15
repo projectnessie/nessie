@@ -389,7 +389,7 @@ running and that the URL is correct.
 
 ### Swagger UI
 The Swagger UI allows for testing the REST API and reading the API docs. It is available 
-via [localhost:9000/q/swagger-ui](http://localhost:9000/q/swagger-ui/)
+at [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).
 
 ## Docker image options
 

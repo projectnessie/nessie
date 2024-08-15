@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace;
@@ -68,13 +69,13 @@ import org.projectnessie.storage.uri.StorageUri;
 public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergErrorMapper errorMapper;
-  @Inject IcebergConfigurer icebergConfigurer;
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {
     return errorMapper.toResponse(ex, IcebergEntityKind.NAMESPACE);
   }
 
+  @Operation(operationId = "iceberg.v1.createNamespace")
   @POST
   @Path("/v1/{prefix}/namespaces")
   @Blocking
@@ -101,6 +102,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
+  @Operation(operationId = "iceberg.v1.dropNamespace")
   @DELETE
   @Path("/v1/{prefix}/namespaces/{namespace}")
   @Blocking
@@ -117,6 +119,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         .delete();
   }
 
+  @Operation(operationId = "iceberg.v1.listNamespaces")
   @GET
   @Path("/v1/{prefix}/namespaces")
   @Blocking
@@ -148,6 +151,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
     return response.build();
   }
 
+  @Operation(operationId = "iceberg.v1.namespaceExists")
   @HEAD
   @Path("/v1/{prefix}/namespaces/{namespace}")
   @Blocking
@@ -164,6 +168,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         .get();
   }
 
+  @Operation(operationId = "iceberg.v1.loadNamespaceMetadata")
   @GET
   @Path("/v1/{prefix}/namespaces/{namespace}")
   @Blocking
@@ -235,6 +240,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
+  @Operation(operationId = "iceberg.v1.updateNamespaceProperties")
   @POST
   @Path("/v1/{prefix}/namespaces/{namespace}/properties")
   @Blocking

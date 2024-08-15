@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
@@ -63,6 +64,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   }
 
   /** Exposes the Iceberg REST configuration for the Nessie default branch. */
+  @Operation(operationId = "iceberg.v1.getConfig")
   @GET
   @Path("/v1/config")
   public IcebergConfigResponse getConfig(@QueryParam("warehouse") String warehouse) {
@@ -73,6 +75,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
    * Exposes the Iceberg REST configuration for the named Nessie {@code reference} in the
    * {@code @Path} parameter.
    */
+  @Operation(operationId = "iceberg.v1.getConfig.reference")
   @GET
   @Path("{reference}/v1/config")
   public IcebergConfigResponse getConfig(
@@ -83,6 +86,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
+  @Operation(operationId = "iceberg.v1.getToken")
   @POST
   @Path("/v1/oauth/tokens")
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -99,6 +103,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
         .build();
   }
 
+  @Operation(operationId = "iceberg.v1.getToken.reference")
   @POST
   @Path("/{reference}/v1/oauth/tokens")
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -107,6 +112,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     return getToken();
   }
 
+  @Operation(operationId = "iceberg.v1.commitTransaction")
   @POST
   @Path("/v1/{prefix}/transactions/commit")
   @Blocking
