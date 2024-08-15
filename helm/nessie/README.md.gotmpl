@@ -35,9 +35,9 @@ for more information.
 
 ### From Helm repo
 ```bash
-$ helm repo add nessie-helm https://charts.projectnessie.org
-$ helm repo update
-$ helm install --namespace nessie-ns nessie nessie-helm/nessie
+helm repo add nessie-helm https://charts.projectnessie.org
+helm repo update
+helm install --namespace nessie-ns nessie nessie-helm/nessie
 ```
 
 ### From local directory (for development purposes)
@@ -45,13 +45,27 @@ $ helm install --namespace nessie-ns nessie nessie-helm/nessie
 From Nessie repo root:
 
 ```bash
-$ helm install --namespace nessie-ns nessie helm/nessie
+helm install --namespace nessie-ns nessie helm/nessie
 ```
 
 ### Uninstalling the chart
 
 ```bash
-$ helm uninstall --namespace nessie-ns nessie
+helm uninstall --namespace nessie-ns nessie
+```
+
+### Linting
+
+From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) tool:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing ct lint --debug --charts /helm/nessie
+```
+
+And also `helm lint`:
+
+```bash
+podman run -v=$(realpath helm/nessie):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
 ```
 
 {{ template "chart.valuesSection" . }}
