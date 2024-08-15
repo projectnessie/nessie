@@ -22,6 +22,17 @@ as necessary. Empty sections will not end in the release notes.
 - Client-configs: Commit authors, signed-off-by, message can be customized per REST/HTTP request. Those
   can be configured for both the [Nessie client API](https://projectnessie.org/nessie-latest/client_config/)
   and for [Iceberg REST catalog clients](https://projectnessie.org/guides/iceberg-rest/).
+- Support for Servlet Spec v6 w/ strict URI path validation has been added and will be transparently
+  used by Nessie REST API v2 clients since this version. This steps is a preparation for when Quarkus
+  introduces that Servlet Spec. Content keys in URL paths may look different than before. More information
+  [here](https://github.com/projectnessie/nessie/blob/main/api/NESSIE-SPEC-2-0.md#content-key-and-namespace-string-representation-in-uri-paths).
+- The Swagger UI and OpenAPI generation by Quarkus has been disabled, because the contents/results were
+  wrong. Instead, refer to [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie). You can
+  also fetch the Nessie REST OpenAPI yaml from Nessie `/nessie-openapi/openapi.yaml` (for example via
+  `curl http://127.0.0.1:19120//nessie-openapi/openapi.yaml`)
+- Nessie commit author(s) and "signed off by" can now be configured for both Nessie clients and Iceberg
+  REST clients. More info on
+  [projectnessie.org](https://projectnessie.org/guides/iceberg-rest/#customizing-nessie-commit-author-et-al). 
 
 ### Changes
 
