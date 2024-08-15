@@ -226,7 +226,7 @@ public abstract class AbstractCatalogService {
                     names.stream()
                         .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
-    objectIO = new S3ObjectIO(clientSupplier);
+    objectIO = new S3ObjectIO(clientSupplier, null);
   }
 
   private void setupObjectStorage() {

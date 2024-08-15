@@ -42,6 +42,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.files.s3.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.s3.S3ClientSupplier;
+import org.projectnessie.catalog.files.s3.S3ObjectIO;
+import org.projectnessie.catalog.files.s3.S3Options;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.NessieTable;
 import org.projectnessie.catalog.model.id.NessieId;
@@ -60,12 +63,16 @@ public class TestIcebergConfigurer {
 
   @BeforeEach
   protected void setupIcebergConfigurer() {
+    SecretsProvider secretsProvider = mock(SecretsProvider.class);
+    when(secretsProvider.applySecrets(any(), any(), any(), any(), any(), any()))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    S3Options s3Options = ImmutableS3ProgrammaticOptions.builder().build();
+
     icebergConfigurer = new IcebergConfigurer();
     icebergConfigurer.uriInfo = () -> URI.create("http://foo:12434");
-    icebergConfigurer.s3Options = ImmutableS3ProgrammaticOptions.builder().build();
-    icebergConfigurer.secretsProvider = mock(SecretsProvider.class);
-    when(icebergConfigurer.secretsProvider.applySecrets(any(), any(), any(), any(), any(), any()))
-        .thenAnswer(inv -> inv.getArgument(0));
+    icebergConfigurer.objectIO =
+        new S3ObjectIO(new S3ClientSupplier(null, s3Options, secretsProvider, null), null);
     Instant now = Instant.now();
     signerKey =
         SignerKey.builder()

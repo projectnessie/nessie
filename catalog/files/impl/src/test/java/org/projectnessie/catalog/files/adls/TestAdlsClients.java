@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 
 import com.azure.core.http.HttpClient;
@@ -64,14 +65,14 @@ public class TestAdlsClients extends AbstractClients {
               .build());
     }
 
+    SecretsProvider secretsProvider =
+        new SecretsProvider(
+            names ->
+                names.stream()
+                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
+
     AdlsClientSupplier supplier =
-        new AdlsClientSupplier(
-            httpClient,
-            adlsOptions.build(),
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+        new AdlsClientSupplier(httpClient, adlsOptions.build(), secretsProvider);
 
     return new AdlsObjectIO(supplier);
   }

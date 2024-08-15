@@ -131,7 +131,7 @@ public abstract class WithNessie {
                         .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
             sessions);
 
-    ObjectIO objectIO = new S3ObjectIO(clientSupplier);
+    ObjectIO objectIO = new S3ObjectIO(clientSupplier, null);
 
     tableOneMetadataLocation =
         generateMetadataWithManifestList(

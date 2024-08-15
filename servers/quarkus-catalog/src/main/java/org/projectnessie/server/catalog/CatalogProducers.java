@@ -226,9 +226,11 @@ public class CatalogProducers {
   @Singleton
   public ObjectIO objectIO(
       S3ClientSupplier s3ClientSupplier,
+      S3CredentialsResolver s3CredentialsResolver,
       GcsStorageSupplier gcsStorageSupplier,
       AdlsClientSupplier adlsClientSupplier) {
-    return new ResolvingObjectIO(s3ClientSupplier, adlsClientSupplier, gcsStorageSupplier);
+    return new ResolvingObjectIO(
+        s3ClientSupplier, s3CredentialsResolver, adlsClientSupplier, gcsStorageSupplier);
   }
 
   @Produces

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.gcs;
 
+import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.files.gcs.GcsClients.buildSharedHttpTransportFactory;
 
 import com.google.auth.http.HttpTransportFactory;
@@ -63,14 +64,14 @@ public class TestGcsClients extends AbstractClients {
               .build());
     }
 
+    SecretsProvider secretsProvider =
+        new SecretsProvider(
+            names ->
+                names.stream()
+                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
+
     GcsStorageSupplier supplier =
-        new GcsStorageSupplier(
-            httpTransportFactory,
-            gcsOptions.build(),
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+        new GcsStorageSupplier(httpTransportFactory, gcsOptions.build(), secretsProvider);
 
     return new GcsObjectIO(supplier);
   }

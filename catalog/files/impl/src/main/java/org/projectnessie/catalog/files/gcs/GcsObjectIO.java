@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.gcs;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 
 import com.google.cloud.ReadChannel;
@@ -30,12 +31,31 @@ import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.storage.uri.StorageUri;
 
 public class GcsObjectIO implements ObjectIO {
+
+  static final String GCS_PROJECT_ID = "gcs.project-id";
+  static final String GCS_CLIENT_LIB_TOKEN = "gcs.client-lib-token";
+  static final String GCS_SERVICE_HOST = "gcs.service.host";
+  static final String GCS_DECRYPTION_KEY = "gcs.decryption-key";
+  static final String GCS_ENCRYPTION_KEY = "gcs.encryption-key";
+  static final String GCS_USER_PROJECT = "gcs.user-project";
+  static final String GCS_READ_CHUNK_SIZE = "gcs.channel.read.chunk-size-bytes";
+  static final String GCS_WRITE_CHUNK_SIZE = "gcs.channel.write.chunk-size-bytes";
+  static final String GCS_DELETE_BATCH_SIZE = "gcs.delete.batch-size";
+  static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+  static final String GCS_OAUTH2_TOKEN_EXPIRES_AT = "gcs.oauth2.token-expires-at";
+  static final String GCS_NO_AUTH = "gcs.no-auth";
 
   private final GcsStorageSupplier storageSupplier;
 
@@ -119,5 +139,103 @@ public class GcsObjectIO implements ObjectIO {
         client.delete(blobIds);
       }
     }
+  }
+
+  @Override
+  public void configureIcebergWarehouse(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride) {
+    icebergConfigDefaults(defaultConfig);
+  }
+
+  @Override
+  public void configureIcebergTable(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      BooleanSupplier enableRequestSigning,
+      boolean canDoCredentialsVending) {
+    if (Stream.concat(
+            storageLocations.writeableLocations().stream(),
+            storageLocations.readonlyLocations().stream())
+        .map(StorageUri::scheme)
+        .noneMatch(GcsLocation::isGcsScheme)) {
+      // If there's no GS location, no need to do any setup.
+      return;
+    }
+
+    icebergConfigDefaults(config);
+    GcsBucketOptions bucketOptions = icebergConfigOverrides(storageLocations, config);
+    if (bucketOptions.effectiveAuthType() != GcsBucketOptions.GcsAuthType.NONE) {
+      storageSupplier
+          .generateDelegationToken(storageLocations, bucketOptions)
+          .ifPresent(
+              t -> {
+                config.accept(GCS_OAUTH2_TOKEN, t.token());
+                t.expiresAt()
+                    .ifPresent(
+                        i ->
+                            config.accept(
+                                GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
+              });
+    }
+  }
+
+  @Override
+  public void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties) {
+    properties.accept("fs.native-gcs.enabled", "true");
+    properties.accept("gcs.project-id", icebergConfig.get(GCS_PROJECT_ID));
+    if (icebergConfig.containsKey(GCS_READ_CHUNK_SIZE)) {
+      properties.accept("gcs.read-block-size", icebergConfig.get(GCS_READ_CHUNK_SIZE));
+    }
+    if (icebergConfig.containsKey(GCS_WRITE_CHUNK_SIZE)) {
+      properties.accept("gcs.write-block-size", icebergConfig.get(GCS_WRITE_CHUNK_SIZE));
+    }
+  }
+
+  GcsBucketOptions icebergConfigOverrides(
+      StorageLocations storageLocations, BiConsumer<String, String> config) {
+    Set<String> buckets =
+        Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream())
+            .map(StorageUri::requiredAuthority)
+            .collect(Collectors.toSet());
+
+    checkState(
+        buckets.size() == 1,
+        "Only one GCS bucket supported for warehouse %s",
+        storageLocations.warehouseLocation());
+    String bucket = buckets.iterator().next();
+
+    GcsBucketOptions bucketOptions =
+        storageSupplier
+            .gcsOptions()
+            .effectiveOptionsForBucket(Optional.of(bucket), storageSupplier.secretsProvider());
+
+    bucketOptions.projectId().ifPresent(p -> config.accept(GCS_PROJECT_ID, p));
+    bucketOptions.clientLibToken().ifPresent(t -> config.accept(GCS_CLIENT_LIB_TOKEN, t));
+    bucketOptions.host().ifPresent(h -> config.accept(GCS_SERVICE_HOST, h.toString()));
+    bucketOptions.userProject().ifPresent(u -> config.accept(GCS_USER_PROJECT, u));
+    bucketOptions
+        .readChunkSize()
+        .ifPresent(rcs -> config.accept(GCS_READ_CHUNK_SIZE, Integer.toString(rcs)));
+    bucketOptions
+        .writeChunkSize()
+        .ifPresent(wcs -> config.accept(GCS_WRITE_CHUNK_SIZE, Integer.toString(wcs)));
+    bucketOptions
+        .deleteBatchSize()
+        .ifPresent(dbs -> config.accept(GCS_DELETE_BATCH_SIZE, Integer.toString(dbs)));
+    if (bucketOptions.effectiveAuthType() == GcsBucketOptions.GcsAuthType.NONE) {
+      config.accept(GCS_NO_AUTH, "true");
+    }
+    return bucketOptions;
+  }
+
+  void icebergConfigDefaults(BiConsumer<String, String> config) {
+    config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.gcp.gcs.GCSFileIO");
   }
 }

@@ -19,9 +19,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
+  String ICEBERG_FILE_IO_IMPL = "io-impl";
+
   void ping(StorageUri uri) throws IOException;
 
   InputStream readObject(StorageUri uri) throws IOException;
@@ -29,4 +34,30 @@ public interface ObjectIO {
   OutputStream writeObject(StorageUri uri) throws IOException;
 
   void deleteObjects(List<StorageUri> uris) throws IOException;
+
+  /** Produces the Iceberg configuration options for "default config" and "config override". */
+  void configureIcebergWarehouse(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride);
+
+  /**
+   * Produces the Iceberg configuration for a table.
+   *
+   * @param storageLocations warehouse, readable and writeable locations
+   * @param config configuration consumer
+   * @param enableRequestSigning callback predicate that is called when request signing is possible
+   *     for the bucket, must return whether request signing is effective
+   * @param canDoCredentialsVending whether to configure credentials vending
+   */
+  void configureIcebergTable(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      BooleanSupplier enableRequestSigning,
+      boolean canDoCredentialsVending);
+
+  void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties);
 }

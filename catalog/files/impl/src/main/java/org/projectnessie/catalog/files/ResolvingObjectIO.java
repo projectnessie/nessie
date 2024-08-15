@@ -26,6 +26,7 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
+import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -36,10 +37,11 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
 
   public ResolvingObjectIO(
       S3ClientSupplier s3ClientSupplier,
+      S3CredentialsResolver s3CredentialsResolver,
       AdlsClientSupplier adlsClientSupplier,
       GcsStorageSupplier gcsStorageSupplier) {
     this(
-        new S3ObjectIO(s3ClientSupplier),
+        new S3ObjectIO(s3ClientSupplier, s3CredentialsResolver),
         new GcsObjectIO(gcsStorageSupplier),
         new AdlsObjectIO(adlsClientSupplier));
   }

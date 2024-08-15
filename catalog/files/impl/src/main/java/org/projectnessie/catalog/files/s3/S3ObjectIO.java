@@ -24,9 +24,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,10 +43,23 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class S3ObjectIO implements ObjectIO {
 
-  private final S3ClientSupplier s3clientSupplier;
+  static final String S3_CLIENT_REGION = "client.region";
+  static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
+  static final String S3_SECRET_ACCESS_KEY = "s3.secret-access-key";
+  static final String S3_SESSION_TOKEN = "s3.session-token";
+  static final String S3_ENDPOINT = "s3.endpoint";
+  static final String S3_ACCESS_POINTS_PREFIX = "s3.access-points.";
+  static final String S3_PATH_STYLE_ACCESS = "s3.path-style-access";
+  static final String S3_USE_ARN_REGION_ENABLED = "s3.use-arn-region-enabled";
+  static final String S3_REMOTE_SIGNING_ENABLED = "s3.remote-signing-enabled";
 
-  public S3ObjectIO(S3ClientSupplier s3clientSupplier) {
+  private final S3ClientSupplier s3clientSupplier;
+  private final S3CredentialsResolver s3CredentialsResolver;
+
+  public S3ObjectIO(
+      S3ClientSupplier s3clientSupplier, S3CredentialsResolver s3CredentialsResolver) {
     this.s3clientSupplier = s3clientSupplier;
+    this.s3CredentialsResolver = s3CredentialsResolver;
   }
 
   @Override
@@ -119,5 +137,119 @@ public class S3ObjectIO implements ObjectIO {
   private static String withoutLeadingSlash(StorageUri uri) {
     String path = uri.requiredPath();
     return path.startsWith("/") ? path.substring(1) : path;
+  }
+
+  @Override
+  public void configureIcebergWarehouse(
+      StorageUri warehouse,
+      BiConsumer<String, String> defaultConfig,
+      BiConsumer<String, String> configOverride) {
+    icebergConfigDefaults(warehouse, defaultConfig);
+    icebergConfigOverrides(warehouse, configOverride);
+  }
+
+  @Override
+  public void configureIcebergTable(
+      StorageLocations storageLocations,
+      BiConsumer<String, String> config,
+      BooleanSupplier enableRequestSigning,
+      boolean canDoCredentialsVending) {
+    if (Stream.concat(
+            storageLocations.writeableLocations().stream(),
+            storageLocations.readonlyLocations().stream())
+        .map(StorageUri::scheme)
+        .noneMatch(S3Utils::isS3scheme)) {
+      // If there's no S3 location, no need to do any S3 setup.
+      // This is also for test-cases that do not have a "proper" table location, e.g. a hard-coded
+      // string `table-location`.
+      return;
+    }
+
+    icebergConfigDefaults(storageLocations.warehouseLocation(), config);
+    S3BucketOptions bucketOptions =
+        icebergConfigOverrides(storageLocations.warehouseLocation(), config);
+
+    // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
+    // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
+    boolean requestSigning = bucketOptions.effectiveRequestSigningEnabled();
+    if (requestSigning) {
+      // Calling `enableRequestSigning` must only happen, if `effectiveRequestSigningEnabled()` is
+      // true. Making this very clear with this `if`.
+      requestSigning = enableRequestSigning.getAsBoolean();
+    }
+    config.accept(S3_REMOTE_SIGNING_ENABLED, Boolean.toString(requestSigning));
+
+    // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
+    // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
+    if (bucketOptions.effectiveClientAssumeRoleEnabled() && canDoCredentialsVending) {
+      // TODO: expectedSessionDuration() should probably be declared by the client.
+      S3Credentials s3credentials =
+          s3CredentialsResolver.resolveSessionCredentials(bucketOptions, storageLocations);
+      config.accept(S3_ACCESS_KEY_ID, s3credentials.accessKeyId());
+      config.accept(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
+      s3credentials.sessionToken().ifPresent(t -> config.accept(S3_SESSION_TOKEN, t));
+    }
+  }
+
+  @Override
+  public void trinoSampleConfig(
+      StorageUri warehouse,
+      Map<String, String> icebergConfig,
+      BiConsumer<String, String> properties) {
+    String bucket = warehouse.requiredAuthority();
+    S3BucketOptions s3BucketOptions =
+        s3clientSupplier
+            .s3options()
+            .effectiveOptionsForBucket(Optional.of(bucket), s3clientSupplier.secretsProvider());
+
+    properties.accept(
+        "iceberg.rest-catalog.vended-credentials-enabled",
+        Boolean.toString(s3BucketOptions.effectiveClientAssumeRoleEnabled()));
+    properties.accept("fs.native-s3.enabled", "true");
+    if (icebergConfig.containsKey(S3_ENDPOINT)) {
+      properties.accept("s3.endpoint", icebergConfig.get(S3_ENDPOINT));
+    }
+    if (icebergConfig.containsKey(S3_CLIENT_REGION)) {
+      properties.accept("s3.region", icebergConfig.get(S3_CLIENT_REGION));
+    }
+    properties.accept(
+        "s3.path-style-access", icebergConfig.getOrDefault(S3_PATH_STYLE_ACCESS, "false"));
+  }
+
+  S3BucketOptions icebergConfigOverrides(StorageUri warehouse, BiConsumer<String, String> config) {
+
+    String bucket = warehouse.requiredAuthority();
+
+    S3BucketOptions bucketOptions =
+        s3clientSupplier
+            .s3options()
+            .effectiveOptionsForBucket(Optional.of(bucket), s3clientSupplier.secretsProvider());
+    bucketOptions.region().ifPresent(r -> config.accept(S3_CLIENT_REGION, r));
+    if (bucketOptions.externalEndpoint().isPresent()) {
+      config.accept(S3_ENDPOINT, bucketOptions.externalEndpoint().get().toString());
+    } else {
+      bucketOptions.endpoint().ifPresent(e -> config.accept(S3_ENDPOINT, e.toString()));
+    }
+    bucketOptions
+        .accessPoint()
+        .ifPresent(ap -> config.accept(S3_ACCESS_POINTS_PREFIX + bucket, ap));
+    bucketOptions
+        .allowCrossRegionAccessPoint()
+        .ifPresent(allow -> config.accept(S3_USE_ARN_REGION_ENABLED, allow ? "true" : "false"));
+    bucketOptions
+        .pathStyleAccess()
+        .ifPresent(psa -> config.accept(S3_PATH_STYLE_ACCESS, psa ? "true" : "false"));
+
+    return bucketOptions;
+  }
+
+  void icebergConfigDefaults(StorageUri warehouse, BiConsumer<String, String> config) {
+    S3BucketOptions bucketOptions =
+        s3clientSupplier
+            .s3options()
+            .effectiveOptionsForBucket(
+                Optional.ofNullable(warehouse.authority()), s3clientSupplier.secretsProvider());
+    bucketOptions.region().ifPresent(x -> config.accept(S3_CLIENT_REGION, x));
+    config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
   }
 }

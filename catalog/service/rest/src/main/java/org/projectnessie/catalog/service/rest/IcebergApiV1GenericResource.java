@@ -80,10 +80,10 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   @Path("{reference}/v1/config")
   public IcebergConfigResponse getConfig(
       @PathParam("reference") String reference, @QueryParam("warehouse") String warehouse) {
-    return IcebergConfigResponse.builder()
-        .defaults(icebergConfigurer.icebergConfigDefaults(reference, warehouse))
-        .overrides(icebergConfigurer.icebergConfigOverrides(reference, warehouse))
-        .build();
+    IcebergConfigResponse.Builder configResponse = IcebergConfigResponse.builder();
+    icebergConfigurer.icebergWarehouseConfig(
+        reference, warehouse, configResponse::putDefault, configResponse::putOverride);
+    return configResponse.build();
   }
 
   @Operation(operationId = "iceberg.v1.getToken")

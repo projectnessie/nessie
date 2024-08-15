@@ -49,7 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions.AzureAuthType;
-import org.projectnessie.catalog.files.s3.StorageLocations;
+import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
@@ -70,8 +70,12 @@ public final class AdlsClientSupplier {
     this.secretsProvider = secretsProvider;
   }
 
-  public AdlsOptions adlsOptions() {
+  AdlsOptions adlsOptions() {
     return adlsOptions;
+  }
+
+  SecretsProvider secretsProvider() {
+    return secretsProvider;
   }
 
   public DataLakeFileClient fileClientForLocation(StorageUri uri) {
