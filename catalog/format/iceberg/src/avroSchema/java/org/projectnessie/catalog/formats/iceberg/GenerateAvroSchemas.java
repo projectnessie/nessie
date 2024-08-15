@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.apache.avro.SchemaFormatter;
 import org.apache.iceberg.IcebergSchemas;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.avro.AvroSchemaUtil;
@@ -83,7 +84,7 @@ public class GenerateAvroSchemas {
 
   private org.apache.avro.Schema generateAvroSchema(String name, org.apache.avro.Schema avroSchema)
       throws IOException {
-    String schemaJson = avroSchema.toString(true);
+    String schemaJson = SchemaFormatter.getInstance("json/pretty").format(avroSchema);
 
     Files.write(
         targetDir.resolve(name + ".avro.json"), schemaJson.getBytes(StandardCharsets.UTF_8));
