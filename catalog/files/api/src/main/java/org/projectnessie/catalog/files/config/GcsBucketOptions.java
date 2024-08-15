@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
@@ -78,6 +79,7 @@ public interface GcsBucketOptions {
    * <p>The current default is to not enable short-lived and scoped-down credentials, but the
    * default may change to enable in the future.
    */
+  @WithName("downscoped-credentials.enable")
   Optional<Boolean> downscopedCredentialsEnable();
 
   /**
@@ -85,6 +87,7 @@ public interface GcsBucketOptions {
    *
    * <p>Defaults to the Google defaults.
    */
+  @WithName("downscoped-credentials.expiration-margin")
   Optional<Duration> downscopedCredentialsExpirationMargin();
 
   /**
@@ -92,6 +95,7 @@ public interface GcsBucketOptions {
    *
    * <p>Defaults to the Google defaults.
    */
+  @WithName("downscoped-credentials.refresh-margin")
   Optional<Duration> downscopedCredentialsRefreshMargin();
 
   /** The read chunk size in bytes. */

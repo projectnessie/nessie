@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import io.smallrye.config.ConfigMapping;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
+@ConfigMapping(prefix = "nessie.catalog.service.adls")
 public interface AdlsOptions {
 
   /** Override the default read block size used when writing to ADLS. */

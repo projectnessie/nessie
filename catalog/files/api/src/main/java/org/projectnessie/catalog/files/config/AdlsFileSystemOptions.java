@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import io.smallrye.config.WithName;
 import java.net.URI;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -44,6 +45,7 @@ public interface AdlsFileSystemOptions {
    * <p>The current default is to not enable short-lived and scoped-down credentials, but the
    * default may change to enable in the future.
    */
+  @WithName("user-delegation.enable")
   Optional<Boolean> userDelegationEnable();
 
   /**
@@ -52,6 +54,7 @@ public interface AdlsFileSystemOptions {
    *
    * <p>Defaults to 7 days minus 1 minute (the maximum), must be >= 1 second.
    */
+  @WithName("user-delegation.key-expiry")
   Optional<Duration> userDelegationKeyExpiry();
 
   /**
@@ -60,6 +63,7 @@ public interface AdlsFileSystemOptions {
    *
    * <p>Defaults to 3 hours, must be >= 1 second.
    */
+  @WithName("user-delegation.sas-expiry")
   Optional<Duration> userDelegationSasExpiry();
 
   /**

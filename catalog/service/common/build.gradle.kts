@@ -54,6 +54,7 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+  testFixturesApi(libs.smallrye.config.core)
 
   testCompileOnly(project(":nessie-immutables"))
   testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))

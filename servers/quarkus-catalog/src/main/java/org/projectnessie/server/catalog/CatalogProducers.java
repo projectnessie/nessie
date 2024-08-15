@@ -52,6 +52,7 @@ import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.catalog.files.config.AdlsProgrammaticOptions;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.files.config.GcsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsClients;
@@ -78,9 +79,6 @@ import org.projectnessie.nessie.tasks.async.pool.JavaPoolTasksAsync;
 import org.projectnessie.nessie.tasks.async.wrapping.ThreadContextTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.nessie.tasks.service.impl.TasksServiceExecutor;
-import org.projectnessie.quarkus.config.CatalogAdlsConfig;
-import org.projectnessie.quarkus.config.CatalogGcsConfig;
-import org.projectnessie.quarkus.config.CatalogS3Config;
 import org.projectnessie.quarkus.config.CatalogServiceConfig;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
@@ -100,19 +98,19 @@ public class CatalogProducers {
   void eagerCatalogConfigValidation(
       @Observes StartupEvent ev,
       CatalogConfig catalogConfig,
-      CatalogS3Config s3Config,
-      CatalogGcsConfig gcsConfig,
-      CatalogAdlsConfig adlsConfig) {
+      S3Options s3Options,
+      GcsOptions gcsConfig,
+      AdlsOptions adlsOptions) {
     catalogConfig.validate();
-    adlsConfig.validate();
+    adlsOptions.validate();
     gcsConfig.validate();
-    s3Config.validate();
+    s3Options.validate();
   }
 
   @Produces
   @Singleton
   @CatalogS3Client
-  public SdkHttpClient sdkHttpClient(CatalogS3Config s3config, SecretsProvider secretsProvider) {
+  public SdkHttpClient sdkHttpClient(S3Config s3config, SecretsProvider secretsProvider) {
     return S3Clients.apacheHttpClient(s3config, secretsProvider);
   }
 
@@ -123,22 +121,22 @@ public class CatalogProducers {
   @Produces
   @Singleton
   @NormalizedObjectStoreOptions
-  public S3Options normalizedS3Options(CatalogS3Config s3Config) {
-    return S3ProgrammaticOptions.normalize(s3Config);
+  public S3Options normalizedS3Options(S3Options s3Options) {
+    return S3ProgrammaticOptions.normalize(s3Options);
   }
 
   @Produces
   @Singleton
   @NormalizedObjectStoreOptions
-  public GcsOptions normalizedGcsOptions(CatalogGcsConfig gcsConfig) {
-    return GcsProgrammaticOptions.normalize(gcsConfig);
+  public GcsOptions normalizedGcsOptions(GcsOptions gcsOptions) {
+    return GcsProgrammaticOptions.normalize(gcsOptions);
   }
 
   @Produces
   @Singleton
   @NormalizedObjectStoreOptions
-  public AdlsOptions normalizedAdlsOptions(CatalogAdlsConfig adlsConfig) {
-    return AdlsProgrammaticOptions.normalize(adlsConfig);
+  public AdlsOptions normalizedAdlsOptions(AdlsOptions adlsOptions) {
+    return AdlsProgrammaticOptions.normalize(adlsOptions);
   }
 
   @Produces
@@ -186,7 +184,7 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  public HttpClient adlsHttpClient(CatalogAdlsConfig adlsConfig) {
+  public HttpClient adlsHttpClient(AdlsConfig adlsConfig) {
     return AdlsClients.buildSharedHttpClient(adlsConfig);
   }
 

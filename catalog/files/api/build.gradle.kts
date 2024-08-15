@@ -28,6 +28,7 @@ dependencies {
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
+  compileOnly(libs.smallrye.config.core)
 
   compileOnly(platform(libs.awssdk.bom))
   compileOnly("software.amazon.awssdk:iam-policy-builder")

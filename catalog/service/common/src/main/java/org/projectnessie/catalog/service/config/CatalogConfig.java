@@ -19,6 +19,9 @@ import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrail
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +32,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableCatalogConfig.class)
 @JsonDeserialize(as = ImmutableCatalogConfig.class)
+@ConfigMapping(prefix = "nessie.catalog")
 public interface CatalogConfig {
 
   /**
@@ -37,11 +41,13 @@ public interface CatalogConfig {
    * will fail.
    */
   @ConfigItem(section = "warehouseDefaults")
+  @WithName("default-warehouse")
   Optional<String> defaultWarehouse();
 
   /** Map of warehouse names to warehouse configurations. */
   @ConfigPropertyName("warehouse-name")
   @ConfigItem(section = "warehouses")
+  @WithName("warehouses")
   Map<String, WarehouseConfig> warehouses();
 
   /**
@@ -52,6 +58,7 @@ public interface CatalogConfig {
    */
   @ConfigPropertyName("iceberg-property")
   @ConfigItem(section = "warehouseDefaults")
+  @WithName("iceberg-config-defaults")
   Map<String, String> icebergConfigDefaults();
 
   /**
@@ -62,6 +69,7 @@ public interface CatalogConfig {
    */
   @ConfigPropertyName("iceberg-property")
   @ConfigItem(section = "warehouseDefaults")
+  @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
 
   /**
@@ -70,8 +78,12 @@ public interface CatalogConfig {
    */
   @ConfigPropertyName("throttled-retry-after")
   @ConfigItem(section = "error-handling")
-  default Duration retryAfterThrottled() {
-    return Duration.ofSeconds(10);
+  @WithName("error-handling.throttled-retry-after")
+  @WithDefault("PT10S")
+  Optional<Duration> retryAfterThrottled();
+
+  default Duration effectiveRetryAfterThrottled() {
+    return retryAfterThrottled().orElse(Duration.ofSeconds(10));
   }
 
   /**

@@ -130,7 +130,8 @@ public class CatalogServiceImpl implements CatalogService {
         objectIO,
         persist,
         tasksService,
-        new EntitySnapshotTaskBehavior(backendExceptionMapper, catalogConfig.retryAfterThrottled()),
+        new EntitySnapshotTaskBehavior(
+            backendExceptionMapper, catalogConfig.effectiveRetryAfterThrottled()),
         executor);
   }
 

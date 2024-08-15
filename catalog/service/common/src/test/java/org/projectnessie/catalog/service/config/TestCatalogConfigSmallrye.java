@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.catalog.service.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -28,7 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class TestQuarkusCatalogConfig {
+public class TestCatalogConfigSmallrye {
   @ParameterizedTest
   @MethodSource
   public void lookupWarehouse(
@@ -37,11 +37,11 @@ public class TestQuarkusCatalogConfig {
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
             .setAddDiscoveredSources(false)
-            .withMapping(QuarkusCatalogConfig.class)
+            .withMapping(CatalogConfig.class)
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 
-    QuarkusCatalogConfig catalogConfig = config.getConfigMapping(QuarkusCatalogConfig.class);
+    CatalogConfig catalogConfig = config.getConfigMapping(CatalogConfig.class);
 
     assertThat(catalogConfig.getWarehouse(lookup))
         .matches(c -> c.location().equals(expectedWarehouseLocation));

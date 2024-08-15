@@ -18,6 +18,8 @@ package org.projectnessie.catalog.files.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +27,19 @@ import java.util.OptionalInt;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
+/**
+ * Configuration for ADLS Gen2 object stores.
+ *
+ * <p>Default settings to be applied to all "file systems" (think: buckets) can be set in the {@code
+ * default-options} group. Specific settings for each file system can be specified via the {@code
+ * file-systems} map.
+ *
+ * <p>All settings are optional. The defaults of these settings are defined by the ADLS client
+ * supplied by Microsoft. See <a
+ * href="https://learn.microsoft.com/en-us/azure/developer/java/sdk/">Azure SDK for Java
+ * documentation</a>
+ */
+@ConfigMapping(prefix = "nessie.catalog.service.adls")
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsConfig.class)
 @JsonDeserialize(as = ImmutableAdlsConfig.class)
@@ -56,6 +71,7 @@ public interface AdlsConfig {
   Optional<Duration> readTimeout();
 
   /** For configuration options, see {@code com.azure.core.util.Configuration}. */
+  @WithName("configuration")
   Map<String, String> configurationOptions();
 
   static Builder builder() {

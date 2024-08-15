@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithName;
 import java.util.Map;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -33,6 +34,7 @@ public interface WarehouseConfig {
    * defaults</a>.
    */
   @ConfigPropertyName("iceberg-property")
+  @WithName("iceberg-config-defaults")
   Map<String, String> icebergConfigDefaults();
 
   /**
@@ -40,9 +42,11 @@ public interface WarehouseConfig {
    * {@code iceberg-config-overrides} in <a href="#warehouse-defaults">Warehouse defaults</a>.
    */
   @ConfigPropertyName("iceberg-property")
+  @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
 
   /** Location of the warehouse. Used to determine the base location of a table. */
   @WithConverter(TrimTrailingSlash.class)
+  @WithName("location")
   String location();
 }

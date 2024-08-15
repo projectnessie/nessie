@@ -15,6 +15,8 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithName;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +24,7 @@ import java.util.OptionalInt;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
+@ConfigMapping(prefix = "nessie.catalog.service.s3")
 public interface S3Options {
 
   /** Default value for {@link #sessionCredentialCacheMaxEntries()}. */
@@ -38,6 +41,7 @@ public interface S3Options {
    * time to define the time when those credentials become eligible for refreshing.
    */
   @ConfigItem(section = "sts")
+  @WithName("sts.session-grace-period")
   Optional<Duration> sessionCredentialRefreshGracePeriod();
 
   default Duration effectiveSessionCredentialRefreshGracePeriod() {
@@ -48,6 +52,7 @@ public interface S3Options {
    * Maximum number of entries to keep in the session credentials cache (assumed role credentials).
    */
   @ConfigItem(section = "sts")
+  @WithName("sts.session-cache-max-size")
   OptionalInt sessionCredentialCacheMaxEntries();
 
   default int effectiveSessionCredentialCacheMaxEntries() {
@@ -56,6 +61,7 @@ public interface S3Options {
 
   /** Maximum number of entries to keep in the STS clients cache. */
   @ConfigItem(section = "sts")
+  @WithName("sts.clients-cache-max-size")
   OptionalInt stsClientsCacheMaxEntries();
 
   default int effectiveStsClientsCacheMaxEntries() {
@@ -66,7 +72,7 @@ public interface S3Options {
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
   @ConfigItem(section = "default-options")
-  Optional<? extends S3BucketOptions> defaultOptions();
+  Optional<S3BucketOptions> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
@@ -74,7 +80,7 @@ public interface S3Options {
    */
   @ConfigItem(section = "buckets")
   @ConfigPropertyName("bucket-name")
-  Map<String, ? extends S3NamedBucketOptions> buckets();
+  Map<String, S3NamedBucketOptions> buckets();
 
   default S3BucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
     S3BucketOptions defaultOptions =

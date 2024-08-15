@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import io.smallrye.config.ConfigMapping;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -23,13 +24,23 @@ import java.util.OptionalInt;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
+/**
+ * Configuration for Google Cloud Storage (GCS) object stores.
+ *
+ * <p>Default settings to be applied to all buckets can be set in the {@code default-options} group.
+ * Specific settings for each bucket can be specified via the {@code buckets} map.
+ *
+ * <p>All settings are optional. The defaults of these settings are defined by the Google Java SDK
+ * client.
+ */
+@ConfigMapping(prefix = "nessie.catalog.service.gcs")
 public interface GcsOptions {
 
   /**
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
   @ConfigItem(section = "default-options")
-  Optional<? extends GcsBucketOptions> defaultOptions();
+  Optional<GcsBucketOptions> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
@@ -38,7 +49,7 @@ public interface GcsOptions {
    */
   @ConfigItem(section = "buckets")
   @ConfigPropertyName("bucket-name")
-  Map<String, ? extends GcsNamedBucketOptions> buckets();
+  Map<String, GcsNamedBucketOptions> buckets();
 
   /** Override the default read timeout. */
   @ConfigItem(section = "transport")
