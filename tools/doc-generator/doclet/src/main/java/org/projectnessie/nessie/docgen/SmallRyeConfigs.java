@@ -20,15 +20,11 @@ import static java.util.Arrays.asList;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.ConfigMappingInterface;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
@@ -40,7 +36,7 @@ import javax.lang.model.util.AbstractElementVisitor8;
 import javax.tools.StandardLocation;
 import jdk.javadoc.doclet.DocletEnvironment;
 
-public class SmallryeConfigs {
+public class SmallRyeConfigs {
   private final DocletEnvironment env;
 
   private final ClassLoader classLoader;
@@ -48,45 +44,29 @@ public class SmallryeConfigs {
   private final Map<String, SmallRyeConfigMappingInfo> configMappingInfos = new HashMap<>();
   private final Map<String, SmallRyeConfigMappingInfo> configMappingByType = new HashMap<>();
 
-  public SmallryeConfigs(DocletEnvironment env) {
+  public SmallRyeConfigs(DocletEnvironment env) {
     this.classLoader = env.getJavaFileManager().getClassLoader(StandardLocation.CLASS_PATH);
     this.env = env;
   }
 
-  public List<SmallRyeConfigSection> buildConfigSections(DocletEnvironment env) {
-    List<SmallRyeConfigSection> sections = new ArrayList<>();
-
-    for (SmallRyeConfigMappingInfo mapping : configMappingInfos.values()) {
-      Map<String, List<SmallRyeConfigPropertyInfo>> additionalPrefixes = new LinkedHashMap<>();
-      additionalPrefixes.put(mapping.prefix, new ArrayList<>());
-
-      mapping
-          .properties(env)
-          .forEach(
-              prop -> {
-                Optional<String> prefixOverride = prop.prefixOverride();
-                String prefix = prefixOverride.orElse(mapping.prefix);
-                additionalPrefixes.computeIfAbsent(prefix, k -> new ArrayList<>()).add(prop);
-              });
-
-      additionalPrefixes.forEach(
-          (k, v) -> {
-            if (k.equals(mapping.prefix)) {
-              sections.add(
-                  new SmallRyeConfigSection(k, k, v, mapping.element, mapping.typeComment));
-            } else {
-              sections.add(
-                  new SmallRyeConfigSection(
-                      mapping.prefix + '.' + k, mapping.prefix, v, null, null));
-            }
-          });
-    }
-
-    return sections;
+  Collection<SmallRyeConfigMappingInfo> configMappingInfos() {
+    return configMappingInfos.values();
   }
 
-  public Collection<SmallRyeConfigMappingInfo> getConfigMappingInfos() {
-    return configMappingInfos.values();
+  static String concatWithDot(String s1, String s2) {
+    StringBuilder sb = new StringBuilder();
+    boolean v1 = s1 != null && !s1.isEmpty();
+    boolean v2 = s2 != null && !s2.isEmpty();
+    if (v1) {
+      sb.append(s1);
+    }
+    if (v1 && v2) {
+      sb.append('.');
+    }
+    if (v2) {
+      sb.append(s2);
+    }
+    return sb.toString();
   }
 
   public SmallRyeConfigMappingInfo getConfigMappingInfo(Class<?> type) {
@@ -125,6 +105,7 @@ public class SmallryeConfigs {
 
             Class<?> clazz;
             if (configMapping != null) {
+
               mappingInfo =
                   configMappingInfos.computeIfAbsent(
                       configMapping.prefix(), SmallRyeConfigMappingInfo::new);

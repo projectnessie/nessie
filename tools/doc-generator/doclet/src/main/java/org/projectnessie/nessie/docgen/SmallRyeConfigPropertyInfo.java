@@ -65,16 +65,16 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
     ConfigItem item = element.getAnnotation(ConfigItem.class);
     if (item != null) {
       String section = item.section();
-      if (section != null) {
+      if (section != null && !section.isEmpty()) {
         return Optional.of(section);
       }
     }
     return Optional.empty();
   }
 
-  public boolean firstIsSectionDoc() {
+  public boolean sectionDocFromType() {
     ConfigItem item = element.getAnnotation(ConfigItem.class);
-    return item != null && item.firstIsSectionDoc();
+    return item != null && item.sectionDocFromType();
   }
 
   @Override
@@ -89,6 +89,10 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
   @Override
   public String simplifiedTypeName() {
     return simplifiedTypeName(property);
+  }
+
+  public boolean isSettableType() {
+    return isSettableType(property);
   }
 
   @Override
@@ -106,6 +110,33 @@ public class SmallRyeConfigPropertyInfo implements PropertyInfo {
     return p.isGroup()
         ? Optional.of(p.asGroup().getGroupType().getInterfaceType())
         : Optional.empty();
+  }
+
+  public static boolean isSettableType(Property property) {
+    if (property.isOptional()) {
+      MayBeOptionalProperty nested = property.asOptional().getNestedProperty();
+      return isSettableType(nested);
+    }
+    if (property.isCollection()) {
+      return true;
+    }
+    if (property.isMap()) {
+      MapProperty map = property.asMap();
+      Property value = map.getValueProperty();
+      return isSettableType(value);
+    }
+    if (property.isPrimitive()) {
+      return true;
+    }
+    if (property.isLeaf()) {
+      return true;
+    }
+    if (property.isGroup()) {
+      // Represents a type that consists of multiple fields/properties, which are documented
+      // underneath this property.
+      return false;
+    }
+    throw new UnsupportedOperationException("Don't know how to handle " + property);
   }
 
   public static String simplifiedTypeName(Property property) {

@@ -48,11 +48,11 @@ public interface AdlsOptions {
    * Default file-system configuration, default/fallback values for all file-systems are taken from
    * this one.
    */
-  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  @ConfigItem(section = "default-options")
   Optional<? extends AdlsFileSystemOptions> defaultOptions();
 
   /** ADLS file-system specific options, per file system name. */
-  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
+  @ConfigItem(section = "buckets")
   @ConfigPropertyName("filesystem-name")
   Map<String, ? extends AdlsNamedFileSystemOptions> fileSystems();
 

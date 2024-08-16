@@ -36,7 +36,7 @@ public interface GcsOptions {
   /**
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
-  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  @ConfigItem(section = "default-options")
   Optional<? extends GcsBucketOptions> defaultOptions();
 
   /**
@@ -44,7 +44,7 @@ public interface GcsOptions {
    * setting. If no per-bucket setting is present, uses the defaults from the top-level GCS
    * settings.
    */
-  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
+  @ConfigItem(section = "buckets")
   @ConfigPropertyName("bucket-name")
   Map<String, ? extends GcsNamedBucketOptions> buckets();
 
