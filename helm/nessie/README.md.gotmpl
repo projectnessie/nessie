@@ -56,7 +56,8 @@ helm uninstall --namespace nessie-ns nessie
 
 ### Linting
 
-From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) tool:
+From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) or `helm` tools
+via Podman/Docker if you don't have those installed locally (replace `podman` with `docker`, if you use Docker).
 
 ```bash
 podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing ct lint --debug --charts /helm/nessie
@@ -65,7 +66,19 @@ podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing
 And also `helm lint`:
 
 ```bash
-podman run -v=$(realpath helm/nessie):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
+```
+
+To debug the generated `helm lint`:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns .
+```
+
+To debug the generated `helm lint` other values:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns --values ci/catalog-secrets-values.yaml .
 ```
 
 {{ template "chart.valuesSection" . }}

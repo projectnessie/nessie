@@ -39,6 +39,7 @@ public abstract class AbstractMapBasedSecretsProvider implements SecretsProvider
     }
   }
 
+  @Override
   public <S extends Secret> Optional<S> getSecret(
       @Nonnull String name,
       @Nonnull SecretType secretType,

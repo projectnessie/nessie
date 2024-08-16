@@ -826,6 +826,15 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --debug --charts ./helm/nessie
 
+      - name: Run 'helm template' validation
+        run:
+          cd helm/nessie
+          for f in values.yaml ci/*.yaml ; do
+            echo "::group::helm template $f"
+            helm template --debug --namespace nessie-ns $f .
+            echo "::endgroup::"
+          done
+
       - name: Show pods
         run: kubectl get pods -A
 
