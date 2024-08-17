@@ -71,23 +71,9 @@ public abstract class Put implements Operation {
   /** Creates a lazily-evaluated put-operation for the given key, payload and ByteString value. */
   @Nonnull
   public static Put ofLazy(ContentKey key, int payload, ByteString value) {
-    return ofLazy(key, payload, value, () -> null);
-  }
-
-  /**
-   * Creates a lazily-evaluated put-operation for the given key, payload, ByteString value and
-   * global state supplier.
-   */
-  @SuppressWarnings("deprecation")
-  @Nonnull
-  public static Put ofLazy(
-      ContentKey key, int payload, ByteString value, Supplier<ByteString> globalStateSupplier) {
     return ImmutablePut.builder()
         .key(key)
-        .valueSupplier(
-            () ->
-                DefaultStoreWorker.instance()
-                    .valueFromStore((byte) payload, value, globalStateSupplier))
+        .valueSupplier(() -> DefaultStoreWorker.instance().valueFromStore((byte) payload, value))
         .build();
   }
 
