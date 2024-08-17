@@ -44,14 +44,13 @@ public abstract class AbstractMapBasedSecretsProvider implements SecretsProvider
       @Nonnull String name,
       @Nonnull SecretType secretType,
       // only used for type-safety at the call site
-      @SuppressWarnings("unused") @Nonnull Class<S> secretJavaType) {
+      @Nonnull Class<S> secretJavaType) {
     Map<String, String> secretData = resolveSecret(name);
     if (secretData == null) {
       return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
-    S secret = (S) secretType.fromValueMap(secretData);
+    S secret = secretJavaType.cast(secretType.fromValueMap(secretData));
     checkState(secret != null, "Invalid %s secret definition for %s", secretType.name(), name);
     return Optional.of(secret);
   }

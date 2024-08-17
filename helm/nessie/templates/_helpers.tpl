@@ -299,24 +299,24 @@ Define environkent variables for catalog storage options.
 {{- include "nessie.secretToEnv" (list $bucket.accessKeySecret "awsSecretAccessKey" (printf "s3.buckets.bucket%d.access-key" (add $i 1)) "secret" false . ) }}
 {{- end -}}
 {{- end -}}
-{{- include "nessie.secretToEnv" (list .Values.catalog.storage.gcs.defaultOptions.authCredentialsJsonSecret "key" "gcs.default-options" "auth-credentials-json" true . ) }}
+{{- include "nessie.secretToEnv" (list .Values.catalog.storage.gcs.defaultOptions.authCredentialsJsonSecret "key" "gcs.default-options.auth-credentials-json" "key" true . ) }}
 {{- include "nessie.secretToEnv" (list .Values.catalog.storage.gcs.defaultOptions.oauth2TokenSecret "token" "gcs.default-options.oauth-token" "token" true . ) }}
-{{- include "nessie.secretToEnv" (list .Values.catalog.storage.gcs.defaultOptions.oauth2TokenSecret "expiresAt" "gcs.default-options.oauth-token" "expires-at" false . ) }}
+{{- include "nessie.secretToEnv" (list .Values.catalog.storage.gcs.defaultOptions.oauth2TokenSecret "expiresAt" "gcs.default-options.oauth-token" "expiresAt" false . ) }}
 {{- range $i, $bucket := .Values.catalog.storage.gcs.buckets -}}
 {{- with $global }}
-{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "gcs.buckets.bucket%d" (add $i 1)) "auth-credentials-json" true . ) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "gcs.buckets.bucket%d.oauth-token" (add $i 1)) "oauth-token" true . ) }}
-{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "gcs.buckets.bucket%d.oauth-token" (add $i 1)) "expires-at" false . ) }}
+{{- include "nessie.secretToEnv" (list $bucket.authCredentialsJsonSecret "key" (printf "gcs.buckets.bucket%d.auth-credentials-json" (add $i 1)) "key" true . ) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "token" (printf "gcs.buckets.bucket%d.oauth-token" (add $i 1)) "token" true . ) }}
+{{- include "nessie.secretToEnv" (list $bucket.oauth2TokenSecret "expiresAt" (printf "gcs.buckets.bucket%d.oauth-token" (add $i 1)) "expiresAt" false . ) }}
 {{- end -}}
 {{- end -}}
 {{ include "nessie.secretToEnv" (list .Values.catalog.storage.adls.defaultOptions.accountSecret "accountName" "adls.default-options.account" "name" true . ) }}
 {{- include "nessie.secretToEnv" (list .Values.catalog.storage.adls.defaultOptions.accountSecret "accountKey" "adls.default-options.account" "secret" false . ) }}
-{{- include "nessie.secretToEnv" (list .Values.catalog.storage.adls.defaultOptions.sasTokenSecret "sasToken" "adls.default-options" "sas-token" true . ) }}
+{{- include "nessie.secretToEnv" (list .Values.catalog.storage.adls.defaultOptions.sasTokenSecret "sasToken" "adls.default-options.sas-token" "token" true . ) }}
 {{- range $i, $filesystem := .Values.catalog.storage.adls.filesystems -}}
 {{- with $global }}
 {{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountName" (printf "adls.file-systems.filesystem%d.account" (add $i 1)) "name" true . ) }}
 {{- include "nessie.secretToEnv" (list $filesystem.accountSecret "accountKey" (printf "adls.file-systems.filesystem%d.account" (add $i 1)) "secret" false . ) }}
-{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "adls.file-systems.filesystem%d.sas-token" (add $i 1)) "sas-token" true . ) }}
+{{- include "nessie.secretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "adls.file-systems.filesystem%d.sas-token" (add $i 1)) "token" true . ) }}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -348,13 +348,13 @@ config types know about that symbolic name and resolve it via a SecretsProvider,
 #
 - name: {{ (printf "nessie.catalog.service.%s" $midfix) | quote }}
   value: {{ (printf "nessie-catalog-secrets.%s" $midfix) | quote }}
-{{ end -}}
+{{- end }}
 - name: {{ (printf "nessie-catalog-secrets.%s.%s" $midfix $suffix) | quote }}
   valueFrom:
     secretKeyRef:
       name: {{ (tpl $secretName . ) | quote }}
       key: {{ (tpl $secretKey . ) | quote }}
-{{- end }}
+{{ end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
