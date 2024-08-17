@@ -48,6 +48,7 @@ dependencies {
   jmhRuntimeOnly(project(":nessie-versioned-storage-cassandra2"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-rocksdb"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-mongodb"))
+  jmhRuntimeOnly(project(":nessie-versioned-storage-mongodb2"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-dynamodb"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-dynamodb2"))
   jmhRuntimeOnly(project(":nessie-versioned-storage-jdbc"))

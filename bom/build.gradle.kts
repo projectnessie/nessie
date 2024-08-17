@@ -98,6 +98,8 @@ dependencies {
     api(project(":nessie-versioned-storage-jdbc2-tests"))
     api(project(":nessie-versioned-storage-mongodb"))
     api(project(":nessie-versioned-storage-mongodb-tests"))
+    api(project(":nessie-versioned-storage-mongodb2"))
+    api(project(":nessie-versioned-storage-mongodb2-tests"))
     api(project(":nessie-versioned-storage-rocksdb"))
     api(project(":nessie-versioned-storage-rocksdb-tests"))
     api(project(":nessie-versioned-storage-store"))

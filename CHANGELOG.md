@@ -51,6 +51,8 @@ as necessary. Empty sections will not end in the release notes.
   store type, but uses way less attributes, which reduces storage overhead.
 - Introduce new `DYNAMODB2` version store type, which is has the same functionality as the `DYNAMODB` version
   store type, but uses way less attributes, which reduces storage overhead.
+- Introduce new `MONGODB2` version store type, which is has the same functionality as the `MONGODB` version
+  store type, but uses way less attributes, which reduces storage overhead.
 
 ### Changes
 
@@ -62,6 +64,9 @@ as necessary. Empty sections will not end in the release notes.
 - The current version store type `CASSANDRA` is deprecated, please migrate to the new `CASSANDRA2` version store
   type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
   to migrate from the `CASSANDRA` version store type to `CASSANDRA2`.
+- The current version store type `MONGODB` is deprecated, please migrate to the new `MONGODB2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `MONGODB` version store type to `MONGODB2`.
 
 ### Fixes
 

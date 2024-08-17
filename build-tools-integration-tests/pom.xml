@@ -68,7 +68,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>
-      <artifactId>nessie-versioned-storage-mongodb</artifactId>
+      <artifactId>nessie-versioned-storage-mongodb2</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectnessie.nessie</groupId>

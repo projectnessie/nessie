@@ -100,7 +100,7 @@ public class TestPublishedPoms {
     "nessie-versioned-storage-common-serialize",
     "nessie-versioned-storage-common-tests",
     "nessie-versioned-storage-inmemory",
-    "nessie-versioned-storage-mongodb",
+    "nessie-versioned-storage-mongodb2",
     "nessie-versioned-storage-rocksdb",
     "nessie-versioned-storage-store",
     "nessie-versioned-storage-testextension",

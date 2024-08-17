@@ -29,6 +29,7 @@ import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackendConfig;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory;
 
+@SuppressWarnings("deprecation")
 @StoreType(MONGODB)
 @Dependent
 public class MongoDBBackendBuilder implements BackendBuilder {

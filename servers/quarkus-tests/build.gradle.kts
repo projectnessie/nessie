@@ -30,6 +30,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-jdbc-tests"))
   implementation(project(":nessie-versioned-storage-jdbc2-tests"))
   implementation(project(":nessie-versioned-storage-mongodb-tests"))
+  implementation(project(":nessie-versioned-storage-mongodb2-tests"))
   implementation(project(":nessie-versioned-storage-rocksdb-tests"))
   implementation(project(":nessie-versioned-storage-testextension"))
   implementation(project(":nessie-container-spec-helper"))

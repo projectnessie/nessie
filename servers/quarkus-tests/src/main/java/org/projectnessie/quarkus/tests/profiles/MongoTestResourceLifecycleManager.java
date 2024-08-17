@@ -19,12 +19,12 @@ import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests2.MongoDB2BackendTestFactory;
 
 public class MongoTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {
 
-  private MongoDBBackendTestFactory mongo;
+  private MongoDB2BackendTestFactory mongo;
 
   private Optional<String> containerNetworkId;
 
@@ -35,7 +35,7 @@ public class MongoTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    mongo = new MongoDBBackendTestFactory();
+    mongo = new MongoDB2BackendTestFactory();
 
     try {
       mongo.start(containerNetworkId);
