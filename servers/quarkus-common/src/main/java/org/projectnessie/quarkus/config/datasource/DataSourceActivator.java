@@ -58,7 +58,8 @@ public class DataSourceActivator implements ConfigSourceInterceptor {
   }
 
   static boolean isDataSourceActive(ConfigSourceInterceptorContext context, String name) {
-    return versionStoreType(context) == VersionStoreType.JDBC
+    VersionStoreType type = versionStoreType(context);
+    return (type == VersionStoreType.JDBC || type == VersionStoreType.JDBC2)
         && dataSourceName(name).equals(activeDataSourceName(context));
   }
 

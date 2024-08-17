@@ -26,6 +26,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-cassandra-tests"))
   implementation(project(":nessie-versioned-storage-dynamodb-tests"))
   implementation(project(":nessie-versioned-storage-jdbc-tests"))
+  implementation(project(":nessie-versioned-storage-jdbc2-tests"))
   implementation(project(":nessie-versioned-storage-mongodb-tests"))
   implementation(project(":nessie-versioned-storage-rocksdb-tests"))
   implementation(project(":nessie-versioned-storage-testextension"))

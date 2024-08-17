@@ -15,7 +15,9 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.versioned.storage.testextension.NessiePersistCache;
 
 @NessiePersistCache
+@Disabled("Disabled in favor of jdbc2")
 public class ITCockroachDBVersionStoreCaching extends ITCockroachDBVersionStore {}

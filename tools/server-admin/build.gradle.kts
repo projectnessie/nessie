@@ -52,6 +52,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-dynamodb"))
   implementation(project(":nessie-versioned-storage-inmemory"))
   implementation(project(":nessie-versioned-storage-jdbc"))
+  implementation(project(":nessie-versioned-storage-jdbc2"))
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
 
@@ -84,6 +85,7 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-jdbc-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-jdbc2-tests"))
   intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
   intTestImplementation(project(":nessie-versioned-storage-bigtable-tests"))
   intTestImplementation(project(":nessie-versioned-storage-dynamodb-tests"))

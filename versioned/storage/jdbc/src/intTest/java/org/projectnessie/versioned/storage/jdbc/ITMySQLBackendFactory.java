@@ -15,9 +15,11 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.versioned.storage.jdbctests.AbstractJdbcBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
 
+@Disabled("Disabled in favor of jdbc2")
 public class ITMySQLBackendFactory extends AbstractTestJdbcBackendFactory {
 
   @Override

@@ -19,7 +19,7 @@ import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.PostgreSQLBackendTestFactory;
 
 public class PostgresTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {

@@ -62,6 +62,7 @@ dependencies {
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(project(":nessie-versioned-storage-inmemory-tests"))
   testFixturesApi(project(":nessie-versioned-storage-jdbc-tests"))
+  testFixturesApi(project(":nessie-versioned-storage-jdbc2-tests"))
   testFixturesApi(project(":nessie-services-config"))
   testFixturesImplementation(libs.logback.classic)
   intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))

@@ -15,9 +15,11 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.versioned.storage.commontests.AbstractVersionStoreTests;
 import org.projectnessie.versioned.storage.jdbctests.CockroachBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(CockroachBackendTestFactory.class)
+@Disabled("Disabled in favor of jdbc2")
 public class ITCockroachDBVersionStore extends AbstractVersionStoreTests {}

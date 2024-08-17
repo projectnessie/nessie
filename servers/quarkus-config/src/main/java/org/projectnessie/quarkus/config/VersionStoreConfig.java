@@ -31,8 +31,11 @@ public interface VersionStoreConfig {
     DYNAMODB,
     MONGODB,
     CASSANDRA,
+    /** JDBC variant using many distinct columns. */
     JDBC,
-    BIGTABLE
+    /** JDBC variant using few columns, saves storage overhead for example in PostgreSQL. */
+    JDBC2,
+    BIGTABLE,
   }
 
   /** Sets which type of version store to use by Nessie. */

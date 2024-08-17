@@ -37,13 +37,15 @@ public class ConfigChecks {
   @Inject QuarkusJdbcConfig jdbcConfig;
 
   public void configCheck(@Observes StartupEvent event) {
-    if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.IN_MEMORY) {
+    VersionStoreConfig.VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
+    if (versionStoreType == VersionStoreConfig.VersionStoreType.IN_MEMORY) {
       LOGGER.warn(
           "Configured version store type IN_MEMORY is only for testing purposes and experimentation, not for production use. "
               + "Data will be lost when the process is shut down. "
               + "Recommended action: Use a supported database, see https://projectnessie.org/nessie-latest/configuration/");
     }
-    if (versionStoreConfig.getVersionStoreType() == VersionStoreConfig.VersionStoreType.JDBC) {
+    if (versionStoreType == VersionStoreConfig.VersionStoreType.JDBC
+        || versionStoreType == VersionStoreConfig.VersionStoreType.JDBC2) {
       if (jdbcConfig.datasourceName().isPresent()
           && jdbcConfig.datasourceName().get().equalsIgnoreCase("h2")) {
         LOGGER.warn(

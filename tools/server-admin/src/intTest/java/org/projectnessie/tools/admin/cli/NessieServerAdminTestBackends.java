@@ -20,9 +20,9 @@ import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.versioned.storage.bigtabletests.BigTableBackendContainerTestFactory;
 import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
-import org.projectnessie.versioned.storage.jdbctests.MariaDBBackendTestFactory;
-import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
-import org.projectnessie.versioned.storage.jdbctests.PostgreSQLBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.PostgreSQLBackendTestFactory;
 import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
@@ -85,7 +85,7 @@ public enum NessieServerAdminTestBackends {
     Map<String, String> quarkusConfig() {
       return Map.of(
           "nessie.version.store.type",
-          VersionStoreType.JDBC.name(),
+          VersionStoreType.JDBC2.name(),
           "nessie.version.store.persist.jdbc.datasource",
           "postgresql");
     }
@@ -101,7 +101,7 @@ public enum NessieServerAdminTestBackends {
     Map<String, String> quarkusConfig() {
       return Map.of(
           "nessie.version.store.type",
-          VersionStoreType.JDBC.name(),
+          VersionStoreType.JDBC2.name(),
           "nessie.version.store.persist.jdbc.datasource",
           "mariadb");
     }
@@ -117,7 +117,7 @@ public enum NessieServerAdminTestBackends {
     Map<String, String> quarkusConfig() {
       return Map.of(
           "nessie.version.store.type",
-          VersionStoreType.JDBC.name(),
+          VersionStoreType.JDBC2.name(),
           "nessie.version.store.persist.jdbc.datasource",
           "mysql");
     }

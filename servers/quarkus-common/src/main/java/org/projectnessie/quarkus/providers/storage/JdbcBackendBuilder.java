@@ -65,7 +65,11 @@ public class JdbcBackendBuilder implements BackendBuilder {
   @Override
   public Backend buildBackend() {
     DataSource dataSource = selectDataSource();
-    JdbcBackendConfig c = JdbcBackendConfig.builder().from(config).dataSource(dataSource).build();
+    JdbcBackendConfig c =
+        JdbcBackendConfig.builder()
+            .datasourceName(config.datasourceName())
+            .dataSource(dataSource)
+            .build();
     return new JdbcBackendFactory().buildBackend(c);
   }
 
