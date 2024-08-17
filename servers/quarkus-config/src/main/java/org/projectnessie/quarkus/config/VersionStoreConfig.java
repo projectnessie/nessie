@@ -30,7 +30,10 @@ public interface VersionStoreConfig {
     ROCKSDB,
     DYNAMODB,
     MONGODB,
+    /** Cassandra variant using many distinct columns. */
     CASSANDRA,
+    /** Cassandra variant using few columns, saves storage overhead. */
+    CASSANDRA2,
     /** JDBC variant using many distinct columns. */
     JDBC,
     /** JDBC variant using few columns, saves storage overhead for example in PostgreSQL. */
