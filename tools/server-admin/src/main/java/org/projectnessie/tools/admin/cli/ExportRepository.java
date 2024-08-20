@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.repository
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -198,7 +199,7 @@ public class ExportRepository extends BaseCommand {
       for (String resolver : genericObjectResolvers) {
         URL url;
         try {
-          url = new URL(resolver);
+          url = URI.create(resolver).toURL();
         } catch (MalformedURLException e) {
           url = Paths.get(resolver).toUri().toURL();
         }
