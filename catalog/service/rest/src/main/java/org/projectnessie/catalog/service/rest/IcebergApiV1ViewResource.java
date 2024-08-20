@@ -181,12 +181,8 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     IcebergListTablesResponse.Builder response = IcebergListTablesResponse.builder();
 
     NamespaceRef namespaceRef = decodeNamespaceRef(prefix, namespace);
-    String celFilter =
-        format(
-            "entry.contentType == 'ICEBERG_VIEW' && entry.encodedKey.startsWith('%s.')",
-            namespaceRef.namespace().toPathString());
 
-    listContent(namespaceRef, pageToken, pageSize, false, celFilter, response::nextPageToken)
+    listContent(namespaceRef, "ICEBERG_VIEW", pageToken, pageSize, false, response::nextPageToken)
         .map(e -> fromNessieContentKey(e.getName()))
         .forEach(response::addIdentifier);
 

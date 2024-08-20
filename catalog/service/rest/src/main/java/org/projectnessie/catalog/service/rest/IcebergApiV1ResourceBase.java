@@ -78,10 +78,10 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
   protected Stream<EntriesResponse.Entry> listContent(
       NamespaceRef namespaceRef,
+      String contentType,
       String pageToken,
       Integer pageSize,
       boolean withContent,
-      String celFilter,
       Consumer<String> responsePagingToken)
       throws NessieNotFoundException {
 
@@ -100,12 +100,20 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       }
     }
 
+    Namespace namespace = namespaceRef.namespace();
+    String celFilter =
+        format(
+            "entry.contentType == '%s' && size(entry.keyElements) == %d",
+            contentType,
+            namespace != null && !namespace.isEmpty() ? namespace.getElementCount() + 1 : 1);
+
     EntriesResponse entriesResponse =
         applyPaging(
                 nessieApi
                     .getEntries()
                     .refName(namespaceRef.referenceName())
                     .hashOnRef(namespaceRef.hashWithRelativeSpec())
+                    .prefixKey(namespace != null ? namespace.toContentKey() : null)
                     .filter(celFilter)
                     .withContent(withContent),
                 pageToken,
