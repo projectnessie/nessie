@@ -148,4 +148,4 @@ configurations.named("testUriComplianceImplementation").configure {
   extendsFrom(configurations.getByName("testImplementation"))
 }
 
-tasks.named<JavaCompile>("compileTestUriComplianceJava") { options.release = 17 }
+tasks.named<JavaCompile>("compileTestUriComplianceJava") { options.release = 21 }
