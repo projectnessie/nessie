@@ -16,10 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins {
-  id("nessie-conventions-server")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-server") }
 
 publishingHelper { mavenName = "Nessie - Import/Export" }
 

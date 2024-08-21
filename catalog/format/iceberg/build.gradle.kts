@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-client")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-client") }
 
 description = "Nessie - Catalog - Iceberg table format"
 

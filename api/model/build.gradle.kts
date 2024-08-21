@@ -21,7 +21,6 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
   id("nessie-conventions-client")
-  id("nessie-jacoco")
   alias(libs.plugins.smallrye.openapi)
 }
 

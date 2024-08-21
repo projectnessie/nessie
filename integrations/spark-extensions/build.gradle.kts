@@ -19,7 +19,6 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   id("nessie-conventions-spark")
   id("nessie-shadow-jar")
-  id("nessie-jacoco")
   id("nessie-license-report")
 }
 
