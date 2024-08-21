@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-// Java project using Quarkus, Java 11 (soon: Java 17)
+// Conventions for project being built for/with Quarkus.
 
-plugins {
-  `java-library`
-  `maven-publish`
-  signing
-  id("nessie-common-base")
-  id("nessie-common-src")
-  id("nessie-java")
-  id("nessie-testing")
-}
+plugins { id("nessie-common-java") }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 21 }

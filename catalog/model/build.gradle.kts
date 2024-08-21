@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-client")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 publishingHelper { mavenName = "Nessie - Catalog - Schema Model" }
@@ -57,11 +56,4 @@ dependencies {
   compileOnly(libs.jandex)
   protobufSchemaGen(libs.jandex)
   testFixturesApi(libs.jandex)
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }

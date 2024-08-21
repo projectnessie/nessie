@@ -21,15 +21,8 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
 
-// Need to use :nessie-model-quarkus instead of :nessie-model here, because Quarkus w/
-// resteasy-reactive does not work well with multi-release jars, but as long as we support Java 8
-// for clients, we have to live with :nessie-model producing an MR-jar. See
-// https://github.com/quarkusio/quarkus/issues/40236 and
-// https://github.com/projectnessie/nessie/issues/8390.
-configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessie-model") }
-
 dependencies {
-  implementation(project(":nessie-model-quarkus"))
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-services"))

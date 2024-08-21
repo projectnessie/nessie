@@ -19,7 +19,6 @@ import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
   id("nessie-conventions-client")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 publishingHelper { mavenName = "Nessie - Client" }
@@ -174,13 +173,6 @@ testing {
         extendsFrom(configurations.getByName("testAnnotationProcessor"))
       }
     }
-  }
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion = 11
   }
 }
 

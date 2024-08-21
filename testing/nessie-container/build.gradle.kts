@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-iceberg") }
+plugins { id("nessie-conventions-server") }
 
 publishingHelper { mavenName = "Nessie - Nessie testcontainer" }
 

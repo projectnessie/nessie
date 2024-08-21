@@ -17,7 +17,6 @@
 plugins {
   id("nessie-conventions-client")
   id("nessie-jacoco")
-  alias(libs.plugins.annotations.stripper)
 }
 
 description = "Nessie - Catalog - Iceberg table format"
@@ -68,13 +67,6 @@ dependencies {
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
-}
-
-annotationStripper {
-  registerDefault().configure {
-    annotationsToDrop("^jakarta[.].+".toRegex())
-    unmodifiedClassesForJavaVersion.set(11)
-  }
 }
 
 val generatedAvroSchemas =
