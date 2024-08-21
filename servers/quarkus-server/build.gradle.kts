@@ -155,8 +155,7 @@ dependencies {
   testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
 
   // These two testFixturesRuntimeOnly are here to avoid the 'Failed to index javax...: Class does
-  // not exist
-  // in ClassLoader' warnings
+  // not exist in ClassLoader' warnings
   testFixturesRuntimeOnly(libs.javax.validation.api)
   testFixturesRuntimeOnly(libs.javax.ws.rs)
 
