@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +55,11 @@ public abstract class AbstractTrino {
     Properties props = new Properties();
     try (InputStream in =
         tweakSetupConfigCall(
-                new URL(
+                URI.create(
                         format(
                             "http://localhost:%d/iceberg-ext/v1/client-template/trino",
                             quarkusPort))
+                    .toURL()
                     .openConnection())
             .getInputStream()) {
       props.load(in);

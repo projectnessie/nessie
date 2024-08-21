@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import java.net.URL;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,7 @@ public abstract class AbstractIcebergCatalogIntTests extends AbstractIcebergCata
   @Test
   public void objectStoreReadiness() throws Exception {
     int managementPort = Integer.getInteger("quarkus.management.port", 9000);
-    URL health = new URL(String.format("http://127.0.0.1:%d/q/health", managementPort));
+    URL health = URI.create(String.format("http://127.0.0.1:%d/q/health", managementPort)).toURL();
     JsonNode healthDoc = new ObjectMapper().readTree(health);
     JsonNode checks = healthDoc.get("checks");
     for (JsonNode check : checks) {

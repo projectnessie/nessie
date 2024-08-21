@@ -85,7 +85,7 @@ docker run -p 19120:19120 \
 
 ### Requirements
 
-- JDK 17 or higher: JDK17 or higher is needed to build Nessie (some artifacts are built 
+- JDK 21 or higher: JDK 21 or higher is needed to build Nessie (some artifacts are built 
   for Java 8 or 11)
 
 ### Installation

@@ -49,9 +49,13 @@ final class NessieProcess {
     }
 
     String execJar = getProperty("nessie.exec-jar");
+    String javaExec = getProperty("java-exec");
+    if (javaExec == null) {
+      javaExec = getProperty("java.home") + "/bin/java";
+    }
 
     List<String> command = new ArrayList<>();
-    command.add(format("%s/bin/java", getProperty("java.home")));
+    command.add(javaExec);
     command.add("-XX:SelfDestructTimer=30");
     command.add("-Dquarkus.http.port=0");
     command.add("-Dquarkus.management.port=0");

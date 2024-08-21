@@ -96,5 +96,10 @@ tasks.named<Test>("intTest").configure {
       val file = c.incoming.artifactView {}.files.first()
       listOf("-Dnessie.exec-jar=${file.absolutePath}")
     }
-  jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() })
+  val javaExec = javaToolchains.launcherFor {
+    this.languageVersion.set(JavaLanguageVersion.of(21))
+  }.map {
+    "-Djava-exec=${it.executablePath}"
+  }
+  jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() + listOf(javaExec.get()) })
 }
