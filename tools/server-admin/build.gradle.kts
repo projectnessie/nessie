@@ -20,7 +20,6 @@ import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
   id("nessie-license-report")
 }
 
@@ -163,6 +162,8 @@ listOf("javadoc", "sourcesJar").forEach { name ->
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
   tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
+
+tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }
 
 // Testcontainers is not supported on Windows :(
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {

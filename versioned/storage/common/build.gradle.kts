@@ -16,7 +16,6 @@
 
 plugins {
   id("nessie-conventions-server")
-  id("nessie-jacoco")
   alias(libs.plugins.jmh)
 }
 

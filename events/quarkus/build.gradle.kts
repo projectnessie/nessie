@@ -17,7 +17,6 @@
 plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
 }
 
 publishingHelper { mavenName = "Nessie - Events - Quarkus" }
@@ -60,9 +59,11 @@ dependencies {
 }
 
 listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn("compileQuarkusGeneratedSourcesJava") }
 }
 
 listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+  tasks.named(name).configure { dependsOn("compileQuarkusTestGeneratedSourcesJava") }
 }
+
+tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }

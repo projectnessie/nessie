@@ -43,7 +43,6 @@ val versionClientNessie: String =
 mapOf(
     "versionClientNessie" to versionClientNessie,
     "versionIceberg" to versionIceberg,
-    "versionJacoco" to libs.versions.jacoco.get(),
     "versionJandex" to libs.versions.jandex.get()
   )
   .plus(loadProperties(file("integrations/spark-scala.properties")))

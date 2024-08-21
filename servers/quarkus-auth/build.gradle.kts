@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-quarkus")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-quarkus") }
 
 publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
 

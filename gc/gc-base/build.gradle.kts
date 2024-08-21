@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-client")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-client") }
 
 publishingHelper { mavenName = "Nessie - GC - Base Implementation" }
 

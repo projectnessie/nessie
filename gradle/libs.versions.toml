@@ -10,7 +10,6 @@ googleJavaFormat = "1.23.0"
 hadoop = "3.4.0"
 iceberg = "1.6.0" # While bumping this version, 'nessieClientVersion' must also be updated.
 immutables = "2.10.1"
-jacoco = "0.8.12"
 jandex = "3.2.2"
 jmh = "1.37"
 junit = "5.11.0"

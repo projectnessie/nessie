@@ -19,7 +19,6 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   id("nessie-conventions-client")
-  id("nessie-jacoco")
   id("nessie-shadow-jar")
   id("nessie-license-report")
 }

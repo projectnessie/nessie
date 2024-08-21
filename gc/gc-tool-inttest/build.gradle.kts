@@ -16,7 +16,6 @@
 
 plugins {
   id("nessie-conventions-client")
-  id("nessie-jacoco")
   alias(libs.plugins.nessie.run)
 }
 

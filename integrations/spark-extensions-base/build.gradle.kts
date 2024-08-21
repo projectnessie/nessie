@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-spark")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-spark") }
 
 val sparkScala = getSparkScalaVersionsForProject()
 

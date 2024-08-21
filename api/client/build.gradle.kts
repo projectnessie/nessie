@@ -16,10 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins {
-  id("nessie-conventions-client")
-  id("nessie-jacoco")
-}
+plugins { id("nessie-conventions-client") }
 
 publishingHelper { mavenName = "Nessie - Client" }
 
