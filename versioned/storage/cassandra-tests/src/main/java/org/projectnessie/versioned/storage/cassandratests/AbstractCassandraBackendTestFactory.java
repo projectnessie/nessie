@@ -81,10 +81,14 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
             .map(dc -> format("'%s': %d", dc, replicationFactor))
             .collect(Collectors.joining(", "));
 
+    // Disable tablets in ScyllaDB, because those are not compatible with LWTs (yet?). See
+    // https://opensource.docs.scylladb.com/stable/architecture/tablets.html#limitations-and-unsupported-features
+    String scyllaClause = "scylladb".equals(dbName) ? " AND tablets = {'enabled': false}" : "";
+
     session.execute(
         format(
-            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s};",
-            KEYSPACE_FOR_TEST, datacenters));
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'NetworkTopologyStrategy', %s}%s;",
+            KEYSPACE_FOR_TEST, datacenters, scyllaClause));
     session.refreshSchema();
   }
 
