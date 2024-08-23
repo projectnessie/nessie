@@ -36,6 +36,7 @@ as necessary. Empty sections will not end in the release notes.
 - Nessie commit author(s) and "signed off by" can now be configured for both Nessie clients and Iceberg
   REST clients. More info on
   [projectnessie.org](https://projectnessie.org/guides/iceberg-rest/#customizing-nessie-commit-author-et-al). 
+- Enable authentication for the Nessie Web UI
 
 ### Changes
 

@@ -80,11 +80,15 @@ data:
 
     {{- if .Values.authentication.enabled -}}
     {{- $_ = set $map "nessie.server.authentication.enabled" .Values.authentication.enabled -}}
+    {{- $_ = set $map "quarkus.oidc.ui-app.application-type" "web-app" -}}
+    {{- $_ = set $map "quarkus.oidc.ui-app.tenant-paths" "/,/tree*,/content*,/notfound*,/commits*" -}}
     {{- if .Values.authentication.oidcAuthServerUrl -}}
     {{- $_ = set $map "quarkus.oidc.auth-server-url" .Values.authentication.oidcAuthServerUrl -}}
+    {{- $_ = set $map "quarkus.oidc.ui-app.auth-server-url" .Values.authentication.oidcAuthServerUrl -}}
     {{- end -}}
     {{- if .Values.authentication.oidcClientId -}}
     {{- $_ = set $map "quarkus.oidc.client-id" .Values.authentication.oidcClientId -}}
+    {{- $_ = set $map "quarkus.oidc.ui-app.client-id" .Values.authentication.oidcClientId -}}
     {{- end -}}
     {{- else -}}
     {{- $_ = set $map "quarkus.oidc.tenant-enabled" false -}}

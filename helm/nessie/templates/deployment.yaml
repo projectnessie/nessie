@@ -82,6 +82,7 @@ spec:
             {{- end -}}
             {{- if .Values.authentication.enabled -}}
             {{- include "nessie.secretToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.credentials.secret" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.ui-app.credentials.secret" . ) | trim | nindent 12 -}}
             {{- end -}}
             {{- if .Values.catalog.enabled -}}
             {{- include "nessie.catalogStorageEnv" . | trim | nindent 12 -}}

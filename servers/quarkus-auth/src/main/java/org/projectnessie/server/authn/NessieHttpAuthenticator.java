@@ -34,8 +34,10 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
 
@@ -98,13 +100,22 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
   static class BaseNessieHttpAuthenticator {
     private final boolean authEnabled;
     private final Set<String> anonymousPaths;
+    private final Set<String> anonymousPathPrefixes;
     private final Supplier<Uni<SecurityIdentity>> anonymousSupplier;
 
     BaseNessieHttpAuthenticator(
         QuarkusNessieAuthenticationConfig config,
         Supplier<Uni<SecurityIdentity>> anonymousSupplier) {
       this.authEnabled = config.enabled();
-      this.anonymousPaths = config.anonymousPaths().orElse(Set.of());
+      Set<String> paths = new HashSet<>();
+      config.anonymousPaths().ifPresent(paths::addAll);
+      config.anonymousPathPrefixes().ifPresent(paths::addAll);
+      this.anonymousPaths = paths;
+      this.anonymousPathPrefixes =
+          config
+              .anonymousPathPrefixes()
+              .map(prefixes -> prefixes.stream().map(p -> p + '/').collect(Collectors.toSet()))
+              .orElse(Set.of());
       this.anonymousSupplier = anonymousSupplier;
     }
 
@@ -114,10 +125,13 @@ public class NessieHttpAuthenticator extends HttpAuthenticator {
 
     Uni<SecurityIdentity> maybeTransform(SecurityIdentity securityIdentity, String path) {
       if (securityIdentity == null) {
-        // Allow certain preconfigured paths (e.g. health checks) to be serviced without
-        // authentication.
-        if (path != null && anonymousPaths.contains(path)) {
-          return anonymous();
+        if (path != null) {
+          // Allow certain preconfigured paths (e.g. health checks) to be serviced without
+          // authentication.
+          if (anonymousPaths.contains(path)
+              || anonymousPathPrefixes.stream().anyMatch(path::startsWith)) {
+            return anonymous();
+          }
         }
 
         // Disallow unauthenticated requests when requested by configuration.
