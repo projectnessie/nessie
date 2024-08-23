@@ -94,8 +94,11 @@ dependencies {
   intTestRuntimeOnly("software.amazon.awssdk:kms")
 
   intTestRuntimeOnly(platform(libs.google.cloud.storage.bom))
+  intTestRuntimeOnly(platform(libs.google.cloud.libraries.bom))
   intTestRuntimeOnly("com.google.cloud:google-cloud-storage")
-  intTestRuntimeOnly(libs.google.cloud.nio)
+  intTestRuntimeOnly("com.google.cloud:google-cloud-nio")
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio)
 
   intTestRuntimeOnly(platform(libs.azuresdk.bom))
   intTestRuntimeOnly("com.azure:azure-storage-file-datalake")

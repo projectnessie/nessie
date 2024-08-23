@@ -70,8 +70,9 @@ dependencies {
   testFixturesRuntimeOnly(libs.hadoop.aws)
 
   testFixturesRuntimeOnly(platform(libs.google.cloud.storage.bom))
+  testFixturesRuntimeOnly(platform(libs.google.cloud.libraries.bom))
   testFixturesRuntimeOnly("com.google.cloud:google-cloud-storage")
-  testFixturesRuntimeOnly(libs.google.cloud.nio)
+  testFixturesRuntimeOnly("com.google.cloud:google-cloud-nio")
 
   testFixturesApi(platform(libs.azuresdk.bom))
   testFixturesApi("com.azure:azure-storage-file-datalake")
