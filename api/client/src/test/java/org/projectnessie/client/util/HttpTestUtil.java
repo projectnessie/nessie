@@ -16,10 +16,10 @@
 package org.projectnessie.client.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import javax.servlet.http.HttpServletResponse;
 
 public class HttpTestUtil {
 
