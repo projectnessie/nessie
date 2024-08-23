@@ -439,4 +439,8 @@ public interface Persist {
    * can lead to a <em>very</em> long runtime of this method.
    */
   void erase();
+
+  default boolean isCaching() {
+    return false;
+  }
 }

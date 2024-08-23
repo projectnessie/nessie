@@ -271,7 +271,7 @@ class RocksDBPersist implements Persist {
       if (obj == null) {
         throw new ObjNotFoundException(id);
       }
-      Obj o = deserializeObj(id, obj, null);
+      Obj o = deserializeObj(id, 0L, obj, null);
       if (o == null || (type != null && !type.equals(o.type()))) {
         throw new ObjNotFoundException(id);
       }
@@ -310,7 +310,7 @@ class RocksDBPersist implements Persist {
           if (id != null) {
             byte[] obj = dbResult.get(ri++);
             if (obj != null) {
-              Obj o = deserializeObj(id, obj, null);
+              Obj o = deserializeObj(id, 0L, obj, null);
               if (type != null && !type.equals(o.type())) {
                 o = null;
               }
@@ -340,19 +340,28 @@ class RocksDBPersist implements Persist {
       ColumnFamilyHandle cf = b.objs();
       byte[] key = dbKey(obj.id());
 
+      long referenced = config.currentTimeMicros();
+      boolean r;
+
       byte[] existing = db.get(cf, key);
       if (existing != null) {
-        return false;
+        obj = deserializeObj(obj.id(), 0L, existing, null).withReferenced(referenced);
+        ignoreSoftSizeRestrictions = true;
+        r = false;
+      } else {
+        r = true;
       }
 
       int incrementalIndexSizeLimit =
           ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
       int indexSizeLimit =
           ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-      byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit, true);
+      byte[] serialized =
+          serializeObj(
+              obj.withReferenced(referenced), incrementalIndexSizeLimit, indexSizeLimit, true);
 
       db.put(cf, key, serialized);
-      return true;
+      return r;
     } catch (RocksDBException e) {
       throw rocksDbException(e);
     } finally {
@@ -411,6 +420,9 @@ class RocksDBPersist implements Persist {
       ColumnFamilyHandle cf = b.objs();
       byte[] key = dbKey(id);
 
+      long referenced = config.currentTimeMicros();
+      obj = obj.withReferenced(referenced);
+
       byte[] serialized =
           serializeObj(
               obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit(), true);
@@ -446,7 +458,7 @@ class RocksDBPersist implements Persist {
       if (bytes == null) {
         return false;
       }
-      Obj existing = deserializeObj(id, bytes, null);
+      Obj existing = deserializeObj(id, 0L, bytes, null);
       if (!existing.type().equals(obj.type())) {
         return false;
       }
@@ -483,7 +495,7 @@ class RocksDBPersist implements Persist {
       if (obj == null) {
         return false;
       }
-      Obj existing = deserializeObj(id, obj, null);
+      Obj existing = deserializeObj(id, 0L, obj, null);
       if (!existing.type().equals(expected.type())) {
         return false;
       }
@@ -492,9 +504,10 @@ class RocksDBPersist implements Persist {
         return false;
       }
 
+      long referenced = config.currentTimeMicros();
       byte[] serialized =
           serializeObj(
-              newValue,
+              newValue.withReferenced(referenced),
               effectiveIncrementalIndexSizeLimit(),
               effectiveIndexSegmentSizeLimit(),
               true);
@@ -577,7 +590,7 @@ class RocksDBPersist implements Persist {
         }
 
         ObjId id = deserializeObjId(key.substring(keyPrefix.size()));
-        Obj o = deserializeObj(id, obj, null);
+        Obj o = deserializeObj(id, 0L, obj, null);
 
         if (filter.test(o.type())) {
           return o;

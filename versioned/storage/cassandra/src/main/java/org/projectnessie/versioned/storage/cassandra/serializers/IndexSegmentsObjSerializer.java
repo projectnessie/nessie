@@ -72,7 +72,8 @@ public class IndexSegmentsObjSerializer extends ObjSerializer<IndexSegmentsObj> 
   }
 
   @Override
-  public IndexSegmentsObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public IndexSegmentsObj deserialize(
+      Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     try {
       Stripes stripes = Stripes.parseFrom(row.getByteBuffer(COL_SEGMENTS_STRIPES.name()));
       List<IndexStripe> stripeList =
@@ -84,7 +85,7 @@ public class IndexSegmentsObjSerializer extends ObjSerializer<IndexSegmentsObj> 
                           keyFromString(s.getLastKey()),
                           objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
               .collect(Collectors.toList());
-      return indexSegments(id, stripeList);
+      return indexSegments(id, referenced, stripeList);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

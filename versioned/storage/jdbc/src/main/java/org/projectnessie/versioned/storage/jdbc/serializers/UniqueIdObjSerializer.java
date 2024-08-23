@@ -64,8 +64,10 @@ public class UniqueIdObjSerializer implements ObjSerializer<UniqueIdObj> {
   }
 
   @Override
-  public UniqueIdObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+  public UniqueIdObj deserialize(
+      ResultSet rs, ObjType type, ObjId id, long referenced, String versionToken)
       throws SQLException {
-    return uniqueId(id, rs.getString(COL_UNIQUE_SPACE), deserializeBytes(rs, COL_UNIQUE_VALUE));
+    return uniqueId(
+        id, referenced, rs.getString(COL_UNIQUE_SPACE), deserializeBytes(rs, COL_UNIQUE_VALUE));
   }
 }

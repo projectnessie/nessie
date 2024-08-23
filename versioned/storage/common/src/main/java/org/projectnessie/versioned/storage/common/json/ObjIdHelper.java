@@ -35,18 +35,21 @@ public final class ObjIdHelper {
 
   public static final String OBJ_TYPE_KEY = "nessie.storage.ObjType";
 
+  public static final String OBJ_REFERENCED_KEY = "nessie.storage.ObjReferenced";
+
   /**
    * Returns an {@link ObjectReader} for the given target {@link ObjType}, with the given {@link
    * ObjId} injectable under the key {@value #OBJ_ID_KEY} and version token using the key {@value
    * #OBJ_VERS_KEY}.
    */
   public static ObjectReader readerWithObjIdAndVersionToken(
-      ObjectMapper mapper, ObjType objType, ObjId id, String objVersionToken) {
+      ObjectMapper mapper, ObjType objType, ObjId id, String objVersionToken, long objReferenced) {
     InjectableValues values =
         new InjectableValues.Std()
             .addValue(OBJ_ID_KEY, id)
             .addValue(OBJ_VERS_KEY, objVersionToken)
-            .addValue(OBJ_TYPE_KEY, objType);
+            .addValue(OBJ_TYPE_KEY, objType)
+            .addValue(OBJ_REFERENCED_KEY, objReferenced);
     return mapper.reader(values).forType(objType.targetClass());
   }
 

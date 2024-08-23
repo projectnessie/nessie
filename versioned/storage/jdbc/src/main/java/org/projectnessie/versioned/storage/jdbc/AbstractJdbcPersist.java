@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.jdbc.JdbcSerde.serializeObjId;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COLS_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
@@ -41,6 +42,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_CREATED
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDED_INFO_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_OBJS_REFERENCED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializePreviousPointers;
 
@@ -409,9 +411,10 @@ abstract class AbstractJdbcPersist implements Persist {
     ObjId id = deserializeObjId(rs, COL_OBJ_ID);
     String objType = rs.getString(COL_OBJ_TYPE);
     String versionToken = rs.getString(COL_OBJ_VERS);
+    long referenced = rs.getLong(COL_OBJ_REFERENCED);
     ObjType type = objTypeByName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
-    return serializer.deserialize(rs, type, id, versionToken);
+    return serializer.deserialize(rs, type, id, referenced, versionToken);
   }
 
   protected final boolean storeObj(
@@ -478,23 +481,46 @@ abstract class AbstractJdbcPersist implements Persist {
           conn, stream(objs).map(obj -> obj == null ? null : obj.id()).toArray(ObjId[]::new));
     }
 
-    try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(storeObjSql))) {
-      boolean[] r = new boolean[objs.length];
+    boolean[] r = new boolean[objs.length];
 
+    List<ObjId> updateReferenced = new ArrayList<>();
+
+    upsertObjsWrite(conn, objs, ignoreSoftSizeRestrictions, r, updateReferenced);
+
+    if (!updateReferenced.isEmpty()) {
+      upsertObjsReferenced(conn, updateReferenced);
+    }
+
+    return r;
+  }
+
+  private void upsertObjsWrite(
+      Connection conn,
+      Obj[] objs,
+      boolean ignoreSoftSizeRestrictions,
+      boolean[] r,
+      List<ObjId> updateReferenced)
+      throws ObjTooLargeException {
+    try (PreparedStatement ps = conn.prepareStatement(databaseSpecific.wrapInsert(storeObjSql))) {
       Int2IntHashMap batchIndexToObjIndex =
           new Int2IntHashMap(objs.length * 2, Hashing.DEFAULT_LOAD_FACTOR, -1);
 
       Consumer<int[]> batchResultHandler =
           updated -> {
             for (int i = 0; i < updated.length; i++) {
+              int objIndex = batchIndexToObjIndex.get(i);
               if (updated[i] == 1) {
-                r[batchIndexToObjIndex.get(i)] = true;
+                r[objIndex] = true;
               } else if (updated[i] != 0) {
                 throw new IllegalStateException(
                     "driver returned unexpected value for a batch update: " + updated[i]);
+              } else {
+                updateReferenced.add(objs[objIndex].id());
               }
             }
           };
+
+      long referenced = config.currentTimeMicros();
 
       int batchIndex = 0;
       for (int i = 0; i < objs.length; i++) {
@@ -522,6 +548,7 @@ abstract class AbstractJdbcPersist implements Persist {
         } else {
           ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
         }
+        ps.setLong(storeObjSqlParams.get(COL_OBJ_REFERENCED), referenced);
 
         ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
         serializer.serialize(
@@ -551,7 +578,6 @@ abstract class AbstractJdbcPersist implements Persist {
         batchResultHandler.accept(ps.executeBatch());
       }
 
-      return r;
     } catch (SQLException e) {
       if (databaseSpecific.isConstraintViolation(e)) {
         throw new UnsupportedOperationException(
@@ -559,6 +585,31 @@ abstract class AbstractJdbcPersist implements Persist {
                 + "'ON CONFLICT DO NOTHING' for INSERT statements. For H2, enable the "
                 + "PostgreSQL Compatibility Mode.");
       }
+      throw unhandledSQLException(e);
+    }
+  }
+
+  private void upsertObjsReferenced(Connection conn, List<ObjId> updateReferenced) {
+    try (PreparedStatement ps = conn.prepareStatement(UPDATE_OBJS_REFERENCED)) {
+      long referenced = config.currentTimeMicros();
+
+      int batchIndex = 0;
+      for (ObjId id : updateReferenced) {
+        ps.setLong(1, referenced);
+        ps.setString(2, config.repositoryId());
+        serializeObjId(ps, 3, id, databaseSpecific);
+        ps.addBatch();
+
+        if (batchIndex++ == MAX_BATCH_SIZE) {
+          batchIndex = 0;
+          ps.executeBatch();
+        }
+      }
+
+      if (batchIndex > 0) {
+        ps.executeBatch();
+      }
+    } catch (SQLException e) {
       throw unhandledSQLException(e);
     }
   }

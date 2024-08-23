@@ -78,5 +78,6 @@ public abstract class ObjSerializer<O extends Obj> {
       O obj, BoundStatementBuilder stmt, int incrementalIndexLimit, int maxSerializedIndexSize)
       throws ObjTooLargeException;
 
-  public abstract O deserialize(Row row, ObjType type, ObjId id, String versionToken);
+  public abstract O deserialize(
+      Row row, ObjType type, ObjId id, long referenced, String versionToken);
 }

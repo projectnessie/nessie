@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.storage.common.logic.ConflictHandler.C
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
@@ -39,6 +40,7 @@ import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.StoredObjResult;
 
 /** Logic to read commits and perform commits including conflict checks. */
 public interface CommitLogic {
@@ -80,8 +82,9 @@ public interface CommitLogic {
    *     ValueReplacement)
    * @see #updateCommit(CommitObj)
    */
-  @Nullable
-  CommitObj storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
+  @NotNull
+  StoredObjResult<CommitObj> storeCommit(
+      @Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects);
 
   /**
    * Updates an <em>existing</em> commit and handles storing the (external) {@link

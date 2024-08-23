@@ -58,9 +58,10 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
 
   @Override
   public ContentValueObj fromMap(
-      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
+      ObjId id, ObjType type, long referenced, Map<String, AttributeValue> i, String versionToken) {
     return contentValue(
         id,
+        referenced,
         attributeToString(i, COL_VALUE_CONTENT_ID),
         Integer.parseInt(requireNonNull(attributeToString(i, COL_VALUE_PAYLOAD))),
         attributeToBytes(i, COL_VALUE_DATA));

@@ -53,7 +53,7 @@ public class TestGenericObj {
     String json = mapper.writeValueAsString(realObj);
 
     Obj genericObj =
-        readerWithObjIdAndVersionToken(mapper, genericType, id, versionToken)
+        readerWithObjIdAndVersionToken(mapper, genericType, id, versionToken, realObj.referenced())
             .readValue(json, genericType.targetClass());
     soft.assertThat(genericObj)
         .isInstanceOf(GenericObj.class)
@@ -68,7 +68,7 @@ public class TestGenericObj {
 
     String jsonGeneric = mapper.writeValueAsString(genericObj);
     Obj deserRealObj =
-        readerWithObjIdAndVersionToken(mapper, realType, id, versionToken)
+        readerWithObjIdAndVersionToken(mapper, realType, id, versionToken, realObj.referenced())
             .readValue(jsonGeneric, realType.targetClass());
     soft.assertThat(deserRealObj).isEqualTo(realObj);
   }

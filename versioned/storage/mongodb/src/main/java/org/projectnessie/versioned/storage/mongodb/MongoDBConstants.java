@@ -33,6 +33,7 @@ final class MongoDBConstants {
   static final String COL_REPO = "r";
   static final String COL_OBJ_TYPE = "y";
   static final String COL_OBJ_VERS = "V";
+  static final String COL_OBJ_REFERENCED = "z";
 
   static final String ID_REPO_PATH = ID_PROPERTY_NAME + "." + COL_REPO;
   static final String ID_OBJ_ID_PATH = ID_PROPERTY_NAME + "." + COL_OBJ_ID;

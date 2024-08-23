@@ -58,9 +58,9 @@ public class CustomObjSerializer extends ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public Obj deserialize(Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     ByteBuffer buffer = Objects.requireNonNull(row.getByteBuffer(COL_CUSTOM_DATA.name()));
     return SmileSerialization.deserializeObj(
-        id, versionToken, buffer, type, row.getString(COL_CUSTOM_COMPRESSION.name()));
+        id, versionToken, buffer, type, referenced, row.getString(COL_CUSTOM_COMPRESSION.name()));
   }
 }

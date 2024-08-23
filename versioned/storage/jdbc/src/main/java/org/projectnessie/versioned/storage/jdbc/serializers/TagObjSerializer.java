@@ -78,7 +78,8 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+  public TagObj deserialize(
+      ResultSet rs, ObjType type, ObjId id, long referenced, String versionToken)
       throws SQLException {
     CommitHeaders tagHeaders = null;
     try {
@@ -97,6 +98,10 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
     }
 
     return tag(
-        id, rs.getString(COL_TAG_MESSAGE), tagHeaders, deserializeBytes(rs, COL_TAG_SIGNATURE));
+        id,
+        referenced,
+        rs.getString(COL_TAG_MESSAGE),
+        tagHeaders,
+        deserializeBytes(rs, COL_TAG_SIGNATURE));
   }
 }

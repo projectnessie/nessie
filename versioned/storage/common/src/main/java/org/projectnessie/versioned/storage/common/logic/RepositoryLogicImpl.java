@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import static java.time.OffsetDateTime.now;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
@@ -27,7 +28,6 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogi
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.stringLogic;
-import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
@@ -50,6 +50,7 @@ import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.CommitRetry.RetryException;
 import org.projectnessie.versioned.storage.common.logic.StringLogic.StringValue;
+import org.projectnessie.versioned.storage.common.objtypes.CommitHeaders;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
@@ -244,7 +245,11 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       CreateCommit.Builder c =
           newCommitBuilder()
               .parentCommitId(EMPTY_OBJ_ID)
-              .headers(EMPTY_COMMIT_HEADERS)
+              .headers(
+                  CommitHeaders.newCommitHeaders()
+                      .add("repo.id", persist.config().repositoryId())
+                      .add("timestamp", now())
+                      .build())
               .message("Initialize reference " + internalRef.name())
               .commitType(CommitType.INTERNAL);
 

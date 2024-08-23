@@ -64,9 +64,11 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
   }
 
   @Override
-  public StringObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
+  public StringObj docToObj(
+      ObjId id, ObjType type, long referenced, Document doc, String versionToken) {
     return stringData(
         id,
+        referenced,
         doc.getString(COL_STRING_CONTENT_TYPE),
         Compression.valueOf(doc.getString(COL_STRING_COMPRESSION)),
         doc.getString(COL_STRING_FILENAME),

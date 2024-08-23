@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Backend.unhandledException;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.COL_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.COL_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.COL_OBJ_VERS;
@@ -38,6 +39,7 @@ import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.SCAN_OBJS;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.STORE_OBJ;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.UPDATE_OBJ;
+import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.UPDATE_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Constants.UPSERT_OBJ;
 import static org.projectnessie.versioned.storage.cassandra2.Cassandra2Serde.deserializeObjId;
@@ -55,6 +57,7 @@ import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -285,9 +288,8 @@ public class Cassandra2Persist implements Persist {
           ObjId id = deserializeObjId(row.getByteBuffer(COL_OBJ_ID.name()));
           String versionToken = row.getString(COL_OBJ_VERS.name());
           ByteBuffer serialized = row.getByteBuffer(COL_OBJ_VALUE.name());
-          @SuppressWarnings("unchecked")
-          T typed = (T) deserializeObj(id, serialized, versionToken);
-          return typed;
+          long referenced = row.getLong(COL_OBJ_REFERENCED.name());
+          return typeClass.cast(deserializeObj(id, referenced, serialized, versionToken));
         };
 
     T[] r;
@@ -312,23 +314,31 @@ public class Cassandra2Persist implements Persist {
   @Override
   public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
+    long referenced = config.currentTimeMicros();
+    if (writeSingleObj(obj, referenced, false, ignoreSoftSizeRestrictions, backend::executeCas)) {
+      return true;
+    }
+    updateSingleReferenced(obj.id(), referenced, backend::execute);
+    return false;
   }
 
   @Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
-    return persistObjs(objs, false);
+    long referenced = config.currentTimeMicros();
+    return persistObjs(objs, referenced, false);
   }
 
   @Override
   public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, true, false, backend::execute);
+    long referenced = config.currentTimeMicros();
+    writeSingleObj(obj, referenced, true, false, backend::execute);
   }
 
   @Override
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
-    persistObjs(objs, true);
+    long referenced = config.currentTimeMicros();
+    persistObjs(objs, referenced, true);
   }
 
   @Override
@@ -363,6 +373,8 @@ public class Cassandra2Persist implements Persist {
             effectiveIndexSegmentSizeLimit(),
             false);
 
+    long referenced = config.currentTimeMicros();
+
     BoundStatementBuilder stmt =
         backend
             .newBoundStatementBuilder(UPDATE_OBJ, false)
@@ -371,15 +383,47 @@ public class Cassandra2Persist implements Persist {
             .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.shortName())
             .setString(COL_OBJ_VERS.name() + EXPECTED_SUFFIX, expectedVersion)
             .setString(COL_OBJ_VERS.name(), newVersion)
-            .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized));
+            .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized))
+            .setLong(COL_OBJ_REFERENCED.name(), referenced);
 
     return backend.executeCas(stmt.build());
   }
 
   @Nonnull
-  private boolean[] persistObjs(@Nonnull Obj[] objs, boolean upsert) throws ObjTooLargeException {
+  private boolean[] persistObjs(@Nonnull Obj[] objs, long referenced, boolean upsert)
+      throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
+    persistObjsWrite(objs, referenced, upsert, results);
+
+    int l = results.length();
+    boolean[] array = new boolean[l];
+    List<ObjId> updateReferenced = new ArrayList<>();
+    for (int i = 0; i < l; i++) {
+      switch (results.get(i)) {
+        case 0:
+          break;
+        case 1:
+          array[i] = true;
+          break;
+        case 2:
+          updateReferenced.add(objs[i].id());
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+    }
+
+    if (!updateReferenced.isEmpty()) {
+      persistObjsUpdateReferenced(referenced, updateReferenced);
+    }
+
+    return array;
+  }
+
+  private void persistObjsWrite(
+      Obj[] objs, long referenced, boolean upsert, AtomicIntegerArray results)
+      throws ObjTooLargeException {
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
       for (int i = 0; i < objs.length; i++) {
@@ -387,7 +431,7 @@ public class Cassandra2Persist implements Persist {
         if (o != null) {
           int idx = i;
           CompletionStage<?> cs =
-              writeSingleObj(o, upsert, false, backend::executeAsync)
+              writeSingleObj(o, referenced, upsert, false, backend::executeAsync)
                   .handle(
                       (resultSet, e) -> {
                         if (e != null) {
@@ -401,6 +445,8 @@ public class Cassandra2Persist implements Persist {
                         }
                         if (resultSet.wasApplied()) {
                           results.set(idx, 1);
+                        } else {
+                          results.set(idx, 2);
                         }
                         return null;
                       });
@@ -410,13 +456,42 @@ public class Cassandra2Persist implements Persist {
     } catch (DriverException e) {
       throw unhandledException(e);
     }
+  }
 
-    int l = results.length();
-    boolean[] array = new boolean[l];
-    for (int i = 0; i < l; i++) {
-      array[i] = results.get(i) == 1;
+  private void persistObjsUpdateReferenced(long referenced, List<ObjId> updateReferenced) {
+    try (LimitedConcurrentRequests requests =
+        new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
+      for (ObjId id : updateReferenced) {
+        CompletionStage<?> cs =
+            updateSingleReferenced(id, referenced, backend::executeAsync)
+                .handle(
+                    (resultSet, e) -> {
+                      if (e != null) {
+                        if (e instanceof DriverException) {
+                          throw unhandledException((DriverException) e);
+                        }
+                        if (e instanceof RuntimeException) {
+                          throw (RuntimeException) e;
+                        }
+                        throw new RuntimeException(e);
+                      }
+                      return null;
+                    });
+        requests.submitted(cs);
+      }
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
-    return array;
+  }
+
+  private <R> R updateSingleReferenced(ObjId id, long referenced, WriteSingleObj<R> consumer) {
+    BoundStatementBuilder stmt =
+        backend
+            .newBoundStatementBuilder(UPDATE_OBJ_REFERENCED, false)
+            .setString(COL_REPO_ID.name(), config.repositoryId())
+            .setByteBuffer(COL_OBJ_ID.name(), serializeObjId(id))
+            .setLong(COL_OBJ_REFERENCED.name(), referenced);
+    return consumer.apply(stmt.build());
   }
 
   @FunctionalInterface
@@ -426,6 +501,7 @@ public class Cassandra2Persist implements Persist {
 
   private <R> R writeSingleObj(
       @Nonnull Obj obj,
+      long referenced,
       boolean upsert,
       boolean ignoreSoftSizeRestrictions,
       WriteSingleObj<R> consumer)
@@ -448,6 +524,7 @@ public class Cassandra2Persist implements Persist {
             .newBoundStatementBuilder(upsert ? UPSERT_OBJ : STORE_OBJ, upsert)
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setByteBuffer(COL_OBJ_ID.name(), serializeObjId(id))
+            .setLong(COL_OBJ_REFERENCED.name(), referenced)
             .setString(COL_OBJ_TYPE.name(), type.shortName())
             .setString(COL_OBJ_VERS.name(), versionToken)
             .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized));
@@ -522,7 +599,8 @@ public class Cassandra2Persist implements Persist {
         ObjId id = deserializeObjId(row.getByteBuffer(COL_OBJ_ID.name()));
         String versionToken = row.getString(COL_OBJ_VERS.name());
         ByteBuffer serialized = row.getByteBuffer(COL_OBJ_VALUE.name());
-        return deserializeObj(id, serialized, versionToken);
+        long referenced = row.getLong(COL_OBJ_REFERENCED.name());
+        return deserializeObj(id, referenced, serialized, versionToken);
       }
     }
   }

@@ -46,6 +46,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Actio
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
+import static org.projectnessie.versioned.storage.common.persist.StoredObjResult.storedObjResult;
 import static org.projectnessie.versioned.storage.commontests.AbstractCommitLogicTests.stdCommit;
 
 import java.util.ArrayList;
@@ -478,7 +479,8 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, fooAddId)
         .containsEntry(barKey, barAddId);
 
-    soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList())).isEqualTo(firstCommit);
+    soft.assertThat(commitLogic.storeCommit(firstCommit, emptyList()))
+        .isEqualTo(storedObjResult(firstCommit, true));
     ObjId firstCommitId = firstCommit.id();
 
     // callback for a remove + update
@@ -502,7 +504,8 @@ public class TestCommitConflicts {
         .containsEntry(fooKey, null)
         .containsEntry(barKey, barUpdateId);
 
-    soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList())).isEqualTo(secondCommit);
+    soft.assertThat(commitLogic.storeCommit(secondCommit, emptyList()))
+        .isEqualTo(storedObjResult(secondCommit, true));
     ObjId secondCommitId = secondCommit.id();
     CommitObj secondCommitLoaded = requireNonNull(commitLogic.fetchCommit(secondCommitId));
     commitLogic.updateCommit(secondCommitLoaded);

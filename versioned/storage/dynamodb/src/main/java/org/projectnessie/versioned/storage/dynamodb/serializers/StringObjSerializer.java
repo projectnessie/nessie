@@ -72,11 +72,12 @@ public class StringObjSerializer implements ObjSerializer<StringObj> {
 
   @Override
   public StringObj fromMap(
-      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
+      ObjId id, ObjType type, long referenced, Map<String, AttributeValue> i, String versionToken) {
     List<ObjId> predecessors = new ArrayList<>();
     attributeToObjIds(i, COL_STRING_PREDECESSORS, predecessors::add);
     return stringData(
         id,
+        referenced,
         attributeToString(i, COL_STRING_CONTENT_TYPE),
         Compression.valueOf(attributeToString(i, COL_STRING_COMPRESSION)),
         attributeToString(i, COL_STRING_FILENAME),

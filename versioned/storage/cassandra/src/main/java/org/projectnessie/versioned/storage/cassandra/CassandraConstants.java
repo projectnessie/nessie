@@ -36,12 +36,23 @@ public final class CassandraConstants {
   static final CqlColumn COL_OBJ_ID = new CqlColumn("obj_id", CqlColumnType.OBJ_ID);
   static final CqlColumn COL_OBJ_TYPE = new CqlColumn("obj_type", CqlColumnType.NAME);
   static final CqlColumn COL_OBJ_VERS = new CqlColumn("obj_vers", CqlColumnType.VARCHAR);
+  static final CqlColumn COL_OBJ_REFERENCED = new CqlColumn("obj_ref", CqlColumnType.BIGINT);
 
   static final String DELETE_OBJ =
       "DELETE FROM %s." + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=? AND " + COL_OBJ_ID + "=?";
 
   public static final String UPDATE_COND_PREFIX =
-      "UPDATE %s." + TABLE_OBJS + " SET " + COL_OBJ_VERS + "=:" + COL_OBJ_VERS + ", ";
+      "UPDATE %s."
+          + TABLE_OBJS
+          + " SET "
+          + COL_OBJ_VERS
+          + "=:"
+          + COL_OBJ_VERS
+          + ", "
+          + COL_OBJ_REFERENCED
+          + "=:"
+          + COL_OBJ_REFERENCED
+          + ", ";
   public static final String UPDATE_COND_WHERE =
       COL_REPO_ID + "=:" + COL_REPO_ID + " AND " + COL_OBJ_ID + "=:" + COL_OBJ_ID;
   public static final String EXPECTED_SUFFIX = "_expected";
@@ -78,6 +89,8 @@ public final class CassandraConstants {
           + ", "
           + COL_OBJ_ID
           + ", "
+          + COL_OBJ_REFERENCED
+          + ", "
           + COL_OBJ_TYPE
           + ", "
           + COL_OBJ_VERS
@@ -89,15 +102,33 @@ public final class CassandraConstants {
           + ", :"
           + COL_OBJ_ID
           + ", :"
+          + COL_OBJ_REFERENCED
+          + ", :"
           + COL_OBJ_TYPE
           + ", :"
           + COL_OBJ_VERS
           + ", ";
   public static final String STORE_OBJ_SUFFIX = " IF NOT EXISTS";
 
+  public static final String UPDATE_OBJ_REFERENCED =
+      "UPDATE %s."
+          + TABLE_OBJS
+          + " SET "
+          + COL_OBJ_REFERENCED
+          + "=:"
+          + COL_OBJ_REFERENCED
+          + " WHERE "
+          + COL_REPO_ID
+          + "=:"
+          + COL_REPO_ID
+          + " AND "
+          + COL_OBJ_ID
+          + "=:"
+          + COL_OBJ_ID;
+
   static final Set<CqlColumn> COLS_OBJS_ALL =
       Stream.concat(
-              Stream.of(COL_OBJ_ID, COL_OBJ_TYPE, COL_OBJ_VERS),
+              Stream.of(COL_OBJ_ID, COL_OBJ_REFERENCED, COL_OBJ_TYPE, COL_OBJ_VERS),
               ObjSerializers.ALL_SERIALIZERS.stream()
                   .flatMap(serializer -> serializer.columns().stream())
                   .sorted(Comparator.comparing(CqlColumn::name)))

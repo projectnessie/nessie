@@ -140,11 +140,13 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+  public CommitObj deserialize(
+      ResultSet rs, ObjType type, ObjId id, long referenced, String versionToken)
       throws SQLException {
     CommitObj.Builder b =
         CommitObj.commitBuilder()
             .id(id)
+            .referenced(referenced)
             .created(rs.getLong(COL_COMMIT_CREATED))
             .seq(rs.getLong(COL_COMMIT_SEQ))
             .message(rs.getString(COL_COMMIT_MESSAGE))

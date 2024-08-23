@@ -49,9 +49,9 @@ public class CustomObjSerializer implements ObjSerializer<Obj> {
   }
 
   @Override
-  public Obj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
+  public Obj docToObj(ObjId id, ObjType type, long referenced, Document doc, String versionToken) {
     byte[] data = doc.get(COL_CUSTOM_DATA, Binary.class).getData();
     return SmileSerialization.deserializeObj(
-        id, versionToken, data, type, doc.getString(COL_CUSTOM_COMPRESSION));
+        id, versionToken, data, type, referenced, doc.getString(COL_CUSTOM_COMPRESSION));
   }
 }

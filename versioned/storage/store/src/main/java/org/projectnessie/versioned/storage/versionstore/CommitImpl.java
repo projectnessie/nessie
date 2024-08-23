@@ -94,6 +94,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.StoredObjResult;
 
 class CommitImpl extends BaseCommitHelper {
   private final StoreIndex<CommitOp> headIndex;
@@ -206,16 +207,14 @@ class CommitImpl extends BaseCommitHelper {
       // successfully persisted that commit. This can happen, if the `Persist` implementation raised
       // an `UnknownOperationResultException` in one of the following operations (reference bump for
       // example).
-      CommitObj stored = commitLogic.storeCommit(newHead, objectsToStore);
-      if (stored != null) {
-        newHead = stored;
+      StoredObjResult<CommitObj> stored = commitLogic.storeCommit(newHead, objectsToStore);
+      if (stored.obj().isPresent()) {
+        newHead = stored.obj().orElseThrow();
         commitRetryState.commitPersisted = newHead.id();
         commitRetryState.storedContents.addAll(toStore);
       }
-      boolean commitPersisted =
-          stored != null || newHead.id().equals(commitRetryState.commitPersisted);
       checkState(
-          commitPersisted,
+          stored.stored() || newHead.id().equals(commitRetryState.commitPersisted),
           "Hash collision detected, a commit with the same parent commit, commit message, "
               + "headers/commit-metadata and operations already exists");
 

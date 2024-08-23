@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.FAM
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.MAX_PARALLEL_READS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJS_OR_VERS;
+import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_OBJ_VERS;
 import static org.projectnessie.versioned.storage.bigtable.BigTableConstants.QUALIFIER_REFS;
@@ -38,6 +39,7 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.serializeReference;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.core.ApiFutures;
 import com.google.api.gax.batching.Batcher;
 import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.ApiException;
@@ -61,6 +63,7 @@ import com.google.protobuf.ByteString;
 import jakarta.annotation.Nonnull;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -382,7 +385,8 @@ public class BigTablePersist implements Persist {
     checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
     ByteString key = dbKey(obj.id());
 
-    Mutation mutation = objectWriteMutation(obj, ignoreSoftSizeRestrictions);
+    long referenced = config.currentTimeMicros();
+    Mutation mutation = objectWriteMutation(obj, referenced, ignoreSoftSizeRestrictions);
 
     Filter condition =
         FILTERS
@@ -392,7 +396,27 @@ public class BigTablePersist implements Persist {
             .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJS));
     return ConditionalRowMutation.create(backend.tableObjsId, key)
         .condition(condition)
+        // if the row already exists, just update the 'referenced' attribute
+        .then(
+            Mutation.create()
+                .setCell(
+                    FAMILY_OBJS,
+                    QUALIFIER_OBJ_REFERENCED,
+                    CELL_TIMESTAMP,
+                    copyFromUtf8(Long.toString(referenced))))
+        // otherwise store the entire row
         .otherwise(mutation);
+  }
+
+  @Nonnull
+  private RowMutation mutationForUpdateReferenced(@Nonnull ObjId id, long referenced) {
+    ByteString key = dbKey(id);
+    return RowMutation.create(backend.tableObjsId, key)
+        .setCell(
+            FAMILY_OBJS,
+            QUALIFIER_OBJ_REFERENCED,
+            CELL_TIMESTAMP,
+            copyFromUtf8(Long.toString(referenced)));
   }
 
   @Override
@@ -418,18 +442,41 @@ public class BigTablePersist implements Persist {
       }
     }
 
+    List<ObjId> updateReferenced = new ArrayList<>();
+
     boolean[] r = new boolean[objs.length];
     for (int i = 0; i < objs.length; i++) {
       Obj o = objs[i];
       if (o != null) {
         try {
           r[i] = !futures[i].get();
+          if (!r[i]) {
+            updateReferenced.add(o.id());
+          }
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
       }
     }
+
+    if (!updateReferenced.isEmpty()) {
+      updateReferenced(updateReferenced);
+    }
+
     return r;
+  }
+
+  private void updateReferenced(List<ObjId> updateReferenced) {
+    List<ApiFuture<?>> futures = new ArrayList<>(updateReferenced.size());
+    long referenced = config.currentTimeMicros();
+    for (ObjId id : updateReferenced) {
+      futures.add(backend.client().mutateRowAsync(mutationForUpdateReferenced(id, referenced)));
+    }
+    try {
+      ApiFutures.allAsList(futures).get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -477,9 +524,12 @@ public class BigTablePersist implements Persist {
           serializeObj(
               obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit(), false);
 
+      long referenced = config.currentTimeMicros();
       backend
           .client()
-          .mutateRow(objToMutation(obj, RowMutation.create(backend.tableObjsId, key), serialized));
+          .mutateRow(
+              objToMutation(
+                  obj, referenced, RowMutation.create(backend.tableObjsId, key), serialized));
     } catch (ApiException e) {
       throw apiException(e);
     }
@@ -493,6 +543,7 @@ public class BigTablePersist implements Persist {
 
     try (Batcher<RowMutationEntry, Void> batcher =
         backend.client().newBulkMutationBatcher(backend.tableObjsId)) {
+      long referenced = config.currentTimeMicros();
       for (Obj obj : objs) {
         if (obj == null) {
           continue;
@@ -506,7 +557,7 @@ public class BigTablePersist implements Persist {
             serializeObj(
                 obj, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit(), false);
 
-        batcher.add(objToMutation(obj, RowMutationEntry.create(key), serialized));
+        batcher.add(objToMutation(obj, referenced, RowMutationEntry.create(key), serialized));
       }
     } catch (ApiException e) {
       throw apiException(e);
@@ -531,7 +582,8 @@ public class BigTablePersist implements Persist {
     checkArgument(expected.type().equals(newValue.type()));
     checkArgument(!expected.versionToken().equals(newValue.versionToken()));
 
-    Mutation mutation = objectWriteMutation(newValue, false);
+    long referenced = config.currentTimeMicros();
+    Mutation mutation = objectWriteMutation(newValue, referenced, false);
 
     ConditionalRowMutation conditionalRowMutation = mutationForConditional(expected, mutation);
     return backend.client().checkAndMutateRow(conditionalRowMutation);
@@ -562,7 +614,8 @@ public class BigTablePersist implements Persist {
   }
 
   @Nonnull
-  private Mutation objectWriteMutation(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
+  private Mutation objectWriteMutation(
+      @Nonnull Obj obj, long referenced, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
@@ -570,17 +623,23 @@ public class BigTablePersist implements Persist {
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
     byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit, false);
 
-    return objToMutation(obj, Mutation.create(), serialized);
+    return objToMutation(obj, referenced, Mutation.create(), serialized);
   }
 
-  static <M extends MutationApi<M>> M objToMutation(Obj obj, M mutation, byte[] serialized) {
+  static <M extends MutationApi<M>> M objToMutation(
+      Obj obj, long referenced, M mutation, byte[] serialized) {
     ByteString objTypeValue = OBJ_TYPE_VALUES.get(obj.type());
     if (objTypeValue == null) {
       objTypeValue = copyFromUtf8(obj.type().name());
     }
     mutation
         .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized))
-        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue);
+        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue)
+        .setCell(
+            FAMILY_OBJS,
+            QUALIFIER_OBJ_REFERENCED,
+            CELL_TIMESTAMP,
+            copyFromUtf8(Long.toString(referenced)));
     UpdateableObj.extractVersionToken(obj)
         .map(ByteString::copyFromUtf8)
         .ifPresent(bs -> mutation.setCell(FAMILY_OBJS, QUALIFIER_OBJ_VERS, CELL_TIMESTAMP, bs));
@@ -673,12 +732,17 @@ public class BigTablePersist implements Persist {
   private Obj objFromRow(Row row) {
     ByteString key = row.getKey().substring(keyPrefix.size());
     ObjId id = objIdFromByteBuffer(key.asReadOnlyByteBuffer());
+    List<RowCell> objReferenced = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_REFERENCED);
+    long referenced =
+        objReferenced.isEmpty()
+            ? 0L
+            : Long.parseLong(objReferenced.get(0).getValue().toStringUtf8());
     List<RowCell> objCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJS);
     ByteBuffer obj = objCells.get(0).getValue().asReadOnlyByteBuffer();
     List<RowCell> objVersionCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_VERS);
     String versionToken =
         objVersionCells.isEmpty() ? null : objVersionCells.get(0).getValue().toStringUtf8();
-    return deserializeObj(id, obj, versionToken);
+    return deserializeObj(id, referenced, obj, versionToken);
   }
 
   private <ID, R> void bulkFetch(

@@ -304,4 +304,9 @@ public class ObservingPersist implements Persist {
   public void erase() {
     delegate.erase();
   }
+
+  @Override
+  public boolean isCaching() {
+    return delegate.isCaching();
+  }
 }

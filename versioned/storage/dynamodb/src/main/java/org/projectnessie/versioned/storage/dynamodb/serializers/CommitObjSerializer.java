@@ -114,10 +114,11 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
 
   @Override
   public CommitObj fromMap(
-      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
+      ObjId id, ObjType type, long referenced, Map<String, AttributeValue> i, String versionToken) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)
+            .referenced(referenced)
             .seq(Long.parseLong(requireNonNull(attributeToString(i, COL_COMMIT_SEQ))))
             .created(Long.parseLong(requireNonNull(attributeToString(i, COL_COMMIT_CREATED))))
             .message(attributeToString(i, COL_COMMIT_MESSAGE))

@@ -53,6 +53,11 @@ public interface CacheBackend {
         public ObjId id() {
           throw new UnsupportedOperationException();
         }
+
+        @Override
+        public Obj withReferenced(long referenced) {
+          throw new UnsupportedOperationException();
+        }
       };
 
   /**
