@@ -106,9 +106,11 @@ dependencies {
   intTestRuntimeOnly("software.amazon.awssdk:kms")
 
   intTestImplementation(platform(libs.google.cloud.storage.bom))
+  intTestRuntimeOnly(platform(libs.google.cloud.libraries.bom))
   intTestImplementation("com.google.cloud:google-cloud-storage")
-  intTestRuntimeOnly(libs.google.cloud.nio)
-  intTestRuntimeOnly(libs.google.cloud.gcs.connector)
+  intTestRuntimeOnly("com.google.cloud:google-cloud-nio")
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio)
 
   intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
   intTestImplementation(nessieProject("nessie-gcs-testcontainer"))

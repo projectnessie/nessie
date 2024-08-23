@@ -66,9 +66,11 @@ dependencies {
   runtimeOnly("software.amazon.awssdk:sts")
 
   implementation(platform(libs.google.cloud.storage.bom))
+  implementation(platform(libs.google.cloud.libraries.bom))
   runtimeOnly("com.google.cloud:google-cloud-storage")
-  runtimeOnly(libs.google.cloud.nio)
-  runtimeOnly(libs.google.cloud.gcs.connector)
+  runtimeOnly("com.google.cloud:google-cloud-nio")
+  runtimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
+  runtimeOnly(libs.google.cloud.bigdataoss.gcsio)
 
   implementation(platform(libs.azuresdk.bom))
   runtimeOnly("com.azure:azure-storage-file-datalake")
