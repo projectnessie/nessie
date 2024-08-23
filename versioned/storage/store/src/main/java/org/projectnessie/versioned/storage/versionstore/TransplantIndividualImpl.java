@@ -148,15 +148,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(sourceCommit)) {
-      StoreIndexElement<CommitOp> expected = sourceParentIndex.get(el.key());
-      ObjId expectedId = null;
-      if (expected != null) {
-        CommitOp expectedContent = expected.content();
-        if (expectedContent.action().exists()) {
-          expectedId = expectedContent.value();
-        }
-      }
-
+      ObjId expectedId = idForExpectedContent(el.key(), sourceParentIndex);
       CommitOp op = el.content();
       if (op.action().exists()) {
         createCommitBuilder.addAdds(
