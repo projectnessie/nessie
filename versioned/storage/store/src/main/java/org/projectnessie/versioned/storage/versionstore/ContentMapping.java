@@ -80,15 +80,8 @@ public final class ContentMapping {
 
     Map<ObjId, ContentKey> idsToKeys = newHashMapWithExpectedSize(keys.size());
     for (ContentKey key : keys) {
-      StoreKey storeKey = keyToStoreKey(key);
-      StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-      if (indexElement == null || !indexElement.content().action().exists()) {
-        continue;
-      }
-
-      ObjId valueObjId =
-          requireNonNull(indexElement.content().value(), "Required value pointer is null");
-      if (idsToKeys.putIfAbsent(valueObjId, key) != null) {
+      ObjId valueObjId = valueObjIdByKey(key, index);
+      if (valueObjId != null && idsToKeys.putIfAbsent(valueObjId, key) != null) {
         // There is a *very* low chance (only for old, migrated repositories) that the exact same
         // content object is used for multiple content-keys. If that situation happens, restart with
         // a special, slower and more expensive implementation.
@@ -117,15 +110,10 @@ public final class ContentMapping {
       StoreIndex<CommitOp> index, Collection<ContentKey> keys) throws ObjNotFoundException {
     Map<ObjId, List<ContentKey>> idsToKeys = newHashMapWithExpectedSize(keys.size());
     for (ContentKey key : keys) {
-      StoreKey storeKey = keyToStoreKey(key);
-      StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-      if (indexElement == null || !indexElement.content().action().exists()) {
-        continue;
+      ObjId valueObjId = valueObjIdByKey(key, index);
+      if (valueObjId != null) {
+        idsToKeys.computeIfAbsent(valueObjId, x -> new ArrayList<>()).add(key);
       }
-
-      ObjId valueObjId =
-          requireNonNull(indexElement.content().value(), "Required value pointer is null");
-      idsToKeys.computeIfAbsent(valueObjId, x -> new ArrayList<>()).add(key);
     }
 
     ObjId[] ids = idsToKeys.keySet().toArray(new ObjId[0]);
@@ -142,6 +130,16 @@ public final class ContentMapping {
       }
     }
     return r;
+  }
+
+  private static ObjId valueObjIdByKey(ContentKey key, StoreIndex<CommitOp> index) {
+    StoreKey storeKey = keyToStoreKey(key);
+    StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
+    if (indexElement == null || !indexElement.content().action().exists()) {
+      return null;
+    }
+
+    return requireNonNull(indexElement.content().value(), "Required value pointer is null");
   }
 
   private static Content valueToContent(ContentValueObj contentValue) {

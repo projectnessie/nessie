@@ -387,6 +387,17 @@ class BaseCommitHelper {
     }
   }
 
+  static ObjId idForExpectedContent(StoreKey key, StoreIndex<CommitOp> headIndex) {
+    StoreIndexElement<CommitOp> expected = headIndex.get(key);
+    if (expected != null) {
+      CommitOp expectedContent = expected.content();
+      if (expectedContent.action().exists()) {
+        return expectedContent.value();
+      }
+    }
+    return null;
+  }
+
   void verifyMergeTransplantCommitPolicies(
       StoreIndex<CommitOp> headIndex, CommitObj inspectedCommit) throws ReferenceConflictException {
 
@@ -395,15 +406,7 @@ class BaseCommitHelper {
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     for (StoreIndexElement<CommitOp> el : indexesLogic.commitOperations(inspectedCommit)) {
-      StoreIndexElement<CommitOp> expected = headIndex.get(el.key());
-      ObjId expectedId = null;
-      if (expected != null) {
-        CommitOp expectedContent = expected.content();
-        if (expectedContent.action().exists()) {
-          expectedId = expectedContent.value();
-        }
-      }
-
+      ObjId expectedId = idForExpectedContent(el.key(), headIndex);
       CommitOp op = el.content();
       if (op.action().exists()) {
         ObjId value = requireNonNull(op.value());

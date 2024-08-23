@@ -547,7 +547,7 @@ class CommitImpl extends BaseCommitHelper {
   }
 
   private String contentIdFromContent(@Nonnull ObjId contentValueId) throws ObjNotFoundException {
-    // Ideally this should pre-load all required objects, so they are bulk-loaded and in turn
+    // Ideally this should preload all required objects, so they are bulk-loaded and in turn
     // available via the cache. But the probability of this function being called is effectively 0,
     // so it is not worth the effort.
     return contentMapping.fetchContent(contentValueId).getId();
