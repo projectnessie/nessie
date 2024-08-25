@@ -258,8 +258,8 @@ public final class Validation {
   }
 
   /**
-   * Validate default cutoff policy.Policies can be one of: - number of commits as an integer value,
-   * - a duration (see java.time.Duration), - an ISO instant, - 'NONE,' means everything's
+   * Validate default cutoff policy. Policies can be one of: - number of commits as an integer
+   * value, - a duration (see java.time.Duration), - an ISO instant, - 'NONE,' means everything's
    * considered as live
    */
   public static void validateDefaultCutOffPolicy(String value) {
