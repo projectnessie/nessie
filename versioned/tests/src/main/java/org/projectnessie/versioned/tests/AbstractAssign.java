@@ -101,7 +101,7 @@ public abstract class AbstractAssign extends AbstractNestedVersionStore {
             commit(commit, "Some commit", initialHash));
   }
 
-  /** Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
+  /* Assigning a branch/tag to a fresh main without any commits didn't work in 0.9.2 */
   @Test
   public void assignReferenceToFreshMain()
       throws ReferenceNotFoundException,
