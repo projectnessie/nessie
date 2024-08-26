@@ -87,24 +87,21 @@ public interface ImpersonationConfig {
   Optional<String> getClientId();
 
   /**
-   * An alternate client secret to use for impersonations only. Required if the alternate client
-   * obtained from {@link #getClientId()} is confidential.
-   *
-   * @deprecated Use {@link #getClientSecretSupplier()} instead.
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  @Value.Derived
-  default Optional<Secret> getClientSecret() {
-    return getClientSecretSupplier().map(Supplier::get).map(Secret::new);
-  }
-
-  /**
-   * An alternate client secret to use for impersonations only. Required if the alternate client
-   * obtained from {@link #getClientId()} is confidential.
+   * An alternate, static client secret to use for impersonations only. If the alternate client
+   * obtained from {@link #getClientId()} is confidential, either this attribute or {@link
+   * #getClientSecretSupplier()} must be set.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET
    */
+  @Value.Redacted
+  Optional<Secret> getClientSecret();
+
+  /**
+   * An alternate client secret supplier to use for impersonations only. If the alternate client
+   * obtained from {@link #getClientId()} is confidential, either this attribute or {@link
+   * #getClientSecret()} must be set.
+   */
+  @Value.Redacted
   Optional<Supplier<String>> getClientSecretSupplier();
 
   /**
@@ -160,18 +157,15 @@ public interface ImpersonationConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecretSupplier(Supplier<String> clientSecret);
-
-    @CanIgnoreReturnValue
-    @SuppressWarnings("deprecation")
-    default Builder clientSecret(Secret clientSecret) {
-      return clientSecretSupplier(clientSecret::getString);
-    }
+    Builder clientSecret(Secret clientSecret);
 
     @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      return clientSecretSupplier(() -> clientSecret);
+      return clientSecret(new Secret(clientSecret));
     }
+
+    @CanIgnoreReturnValue
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
 
     @CanIgnoreReturnValue
     Builder issuerUrl(URI issuerUrl);

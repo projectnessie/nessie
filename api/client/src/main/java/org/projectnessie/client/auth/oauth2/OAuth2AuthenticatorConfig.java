@@ -201,22 +201,19 @@ public interface OAuth2AuthenticatorConfig {
   String getClientId();
 
   /**
-   * The OAuth2 client secret. Must be set, if required by the IdP.
-   *
-   * @deprecated Use {@link #getClientSecretSupplier()} instead.
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  @Value.Derived
-  default Optional<Secret> getClientSecret() {
-    return getClientSecretSupplier().map(Supplier::get).map(Secret::new);
-  }
-
-  /**
-   * The OAuth2 client secret supplier. Must be set, if required by the IdP.
+   * The OAuth2 static client secret. Either this attribute or {@link #getClientSecretSupplier()}
+   * must be set, if a client secret is required by the IdP.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SECRET
    */
+  @Value.Redacted
+  Optional<Secret> getClientSecret();
+
+  /**
+   * The OAuth2 client secret supplier. Either this attribute or {@link #getClientSecret()} must be
+   * set, if a client secret is required by the IdP.
+   */
+  @Value.Redacted
   Optional<Supplier<String>> getClientSecretSupplier();
 
   /**
@@ -227,22 +224,19 @@ public interface OAuth2AuthenticatorConfig {
   Optional<String> getUsername();
 
   /**
-   * The OAuth2 password. Only relevant for {@link GrantType#PASSWORD} grant type.
-   *
-   * @deprecated Use {@link #getPasswordSupplier()} instead.
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
-  @Value.Derived
-  default Optional<Secret> getPassword() {
-    return getPasswordSupplier().map(Supplier::get).map(Secret::new);
-  }
-
-  /**
-   * The OAuth2 password supplier. Only relevant for {@link GrantType#PASSWORD} grant type.
+   * The OAuth2 static password. Only relevant for {@link GrantType#PASSWORD} grant type. Either
+   * this attribute or {@link #getPasswordSupplier()} must be set if a password is required.
    *
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_PASSWORD
    */
+  @Value.Redacted
+  Optional<Secret> getPassword();
+
+  /**
+   * The OAuth2 password supplier. Only relevant for {@link GrantType#PASSWORD} grant type. Either
+   * this attribute or {@link #getPassword()} must be set if a password is required.
+   */
+  @Value.Redacted
   Optional<Supplier<String>> getPasswordSupplier();
 
   @Value.Derived
@@ -436,37 +430,29 @@ public interface OAuth2AuthenticatorConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecretSupplier(Supplier<String> clientSecret);
-
-    @CanIgnoreReturnValue
-    @Deprecated
-    default Builder clientSecret(Secret clientSecret) {
-      return clientSecretSupplier(clientSecret::getString);
-    }
+    Builder clientSecret(Secret clientSecret);
 
     @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
-      char[] chars = clientSecret.toCharArray();
-      return clientSecretSupplier(() -> new String(chars));
+      return clientSecret(new Secret(clientSecret));
     }
+
+    @CanIgnoreReturnValue
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
 
     @CanIgnoreReturnValue
     Builder username(String username);
 
     @CanIgnoreReturnValue
-    Builder passwordSupplier(Supplier<String> password);
-
-    @CanIgnoreReturnValue
-    @Deprecated
-    default Builder password(Secret password) {
-      return passwordSupplier(password::getString);
-    }
+    Builder password(Secret password);
 
     @CanIgnoreReturnValue
     default Builder password(String password) {
-      char[] chars = password.toCharArray();
-      return passwordSupplier(() -> new String(chars));
+      return password(new Secret(password));
     }
+
+    @CanIgnoreReturnValue
+    Builder passwordSupplier(Supplier<String> password);
 
     @CanIgnoreReturnValue
     @Deprecated

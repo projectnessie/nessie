@@ -130,7 +130,14 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
   @Value.Derived
   boolean isPublicClient() {
-    return !getClientSecretSupplier().isPresent();
+    return getClientSecret().isEmpty() && getClientSecretSupplier().isEmpty();
+  }
+
+  @Value.Derived
+  Optional<Boolean> isImpersonationPublicClient() {
+    return getImpersonationConfig()
+        .getClientId()
+        .map(id -> getClientSecret().isEmpty() && getClientSecretSupplier().isEmpty());
   }
 
   @Value.Lazy
@@ -140,12 +147,10 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   @Value.Lazy
-  JsonNode getImpersonationOpenIdProviderMetadata() {
-    URI issuerUrl =
-        getImpersonationConfig()
-            .getIssuerUrl()
-            .orElseThrow(() -> new IllegalStateException("No issuer-URL"));
-    return OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), issuerUrl);
+  Optional<JsonNode> getImpersonationOpenIdProviderMetadata() {
+    return getImpersonationConfig()
+        .getIssuerUrl()
+        .map(url -> OAuth2Utils.fetchOpenIdProviderMetadata(getHttpClient(), url));
   }
 
   @Value.Lazy
@@ -187,15 +192,20 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   }
 
   @Value.Lazy
-  URI getResolvedImpersonationTokenEndpoint() {
-    if (getImpersonationConfig().getTokenEndpoint().isPresent()) {
-      return getImpersonationConfig().getTokenEndpoint().get();
-    }
-    JsonNode json = getImpersonationOpenIdProviderMetadata();
-    if (json.has("token_endpoint")) {
-      return URI.create(json.get("token_endpoint").asText());
-    }
-    throw new IllegalStateException("OpenID provider metadata does not contain a token endpoint");
+  Optional<URI> getResolvedImpersonationTokenEndpoint() {
+    return getImpersonationConfig()
+        .getTokenEndpoint()
+        .or(
+            () ->
+                getImpersonationOpenIdProviderMetadata()
+                    .map(
+                        json -> {
+                          if (json.has("token_endpoint")) {
+                            return URI.create(json.get("token_endpoint").asText());
+                          }
+                          throw new IllegalStateException(
+                              "OpenID provider metadata does not contain a token endpoint");
+                        }));
   }
 
   /**
@@ -204,8 +214,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
    */
   @Value.Lazy
   Optional<HttpAuthentication> getBasicAuthentication() {
-    return getClientSecretSupplier()
-        .map(secretSupplier -> BasicAuthenticationProvider.create(getClientId(), secretSupplier));
+    return getClientSecret()
+        .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()))
+        .or(
+            () ->
+                getClientSecretSupplier()
+                    .map(s -> BasicAuthenticationProvider.create(getClientId(), s)));
   }
 
   /**
@@ -218,11 +232,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .getClientId()
         .flatMap(
             clientId ->
-                getImpersonationConfig()
-                    .getClientSecretSupplier()
-                    .map(
-                        secretSupplier ->
-                            BasicAuthenticationProvider.create(clientId, secretSupplier)));
+                getClientSecret()
+                    .map(s -> BasicAuthenticationProvider.create(clientId, s.getString()))
+                    .or(
+                        () ->
+                            getClientSecretSupplier()
+                                .map(s -> BasicAuthenticationProvider.create(clientId, s))));
   }
 
   /**
@@ -265,7 +280,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     check(
         violations,
         CONF_NESSIE_OAUTH2_GRANT_TYPE + " / " + CONF_NESSIE_OAUTH2_CLIENT_SECRET,
-        getClientSecretSupplier().isPresent() || getGrantType() != GrantType.CLIENT_CREDENTIALS,
+        getClientSecret().isPresent()
+            || getClientSecretSupplier().isPresent()
+            || getGrantType() != GrantType.CLIENT_CREDENTIALS,
         "client secret must not be empty when grant type is '%s'",
         CONF_NESSIE_OAUTH2_GRANT_TYPE_CLIENT_CREDENTIALS);
     check(
@@ -318,7 +335,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
       check(
           violations,
           CONF_NESSIE_OAUTH2_PASSWORD,
-          getPasswordSupplier().isPresent(),
+          getPassword().isPresent() || getPasswordSupplier().isPresent(),
           "password must be set if grant type is '%s'",
           CONF_NESSIE_OAUTH2_GRANT_TYPE_PASSWORD);
     }
@@ -448,35 +465,29 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
-    Builder clientSecretSupplier(Supplier<String> clientSecret);
-
-    @CanIgnoreReturnValue
-    @SuppressWarnings("deprecation")
-    default Builder clientSecret(Secret clientSecret) {
-      return clientSecretSupplier(clientSecret::getString);
-    }
+    Builder clientSecret(Secret clientSecret);
 
     @CanIgnoreReturnValue
     default Builder clientSecret(String clientSecret) {
       return clientSecretSupplier(() -> clientSecret);
     }
 
+    @CanIgnoreReturnValue
+    Builder clientSecretSupplier(Supplier<String> clientSecret);
+
     @Override
     Builder username(String username);
 
     @CanIgnoreReturnValue
-    Builder passwordSupplier(Supplier<String> password);
-
-    @CanIgnoreReturnValue
-    @SuppressWarnings("deprecation")
-    default Builder password(Secret password) {
-      return passwordSupplier(password::getString);
-    }
+    Builder password(Secret password);
 
     @CanIgnoreReturnValue
     default Builder password(String password) {
       return passwordSupplier(() -> password);
     }
+
+    @CanIgnoreReturnValue
+    Builder passwordSupplier(Supplier<String> password);
 
     @Override
     Builder addScope(String scope);
