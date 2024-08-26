@@ -90,6 +90,14 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                   )
                   description.set(project.description)
                   if (project != rootProject) {
+                    // Add the license to every pom to make it easier for downstream project to
+                    // retrieve the license.
+                    licenses {
+                      license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                      }
+                    }
                     withXml {
                       val projectNode = asNode()
 
