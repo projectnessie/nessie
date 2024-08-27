@@ -43,6 +43,8 @@ as necessary. Empty sections will not end in the release notes.
   store type, but uses way less columns, which reduces storage overhead for example in PostgreSQL a lot.
 - Introduce new `CASSANDRA2` version store type, which is has the same functionality as the `CASSANDRA` version
   store type, but uses way less attributes, which reduces storage overhead.
+- Introduce new `DYNAMODB2` version store type, which is has the same functionality as the `DYNAMODB` version
+  store type, but uses way less attributes, which reduces storage overhead.
 
 ### Changes
 

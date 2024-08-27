@@ -19,7 +19,7 @@ import java.util.Map;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.versioned.storage.bigtabletests.BigTableBackendContainerTestFactory;
 import org.projectnessie.versioned.storage.cassandra2tests.CassandraBackendTestFactory;
-import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.dynamodbtests2.DynamoDB2BackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.PostgreSQLBackendTestFactory;
@@ -54,12 +54,12 @@ public enum NessieServerAdminTestBackends {
   dynamo {
     @Override
     BackendTestFactory backendFactory() {
-      return new DynamoDBBackendTestFactory();
+      return new DynamoDB2BackendTestFactory();
     }
 
     @Override
     Map<String, String> quarkusConfig() {
-      return Map.of("nessie.version.store.type", VersionStoreType.DYNAMODB.name());
+      return Map.of("nessie.version.store.type", VersionStoreType.DYNAMODB2.name());
     }
   },
 

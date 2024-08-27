@@ -26,6 +26,7 @@ import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
+@SuppressWarnings("deprecation")
 @StoreType(DYNAMODB)
 @Dependent
 public class DynamoDBBackendBuilder implements BackendBuilder {

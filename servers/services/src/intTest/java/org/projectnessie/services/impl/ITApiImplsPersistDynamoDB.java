@@ -18,11 +18,11 @@ package org.projectnessie.services.impl;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.dynamodbtests2.DynamoDB2BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 @ExtendWith(PersistExtension.class)
-@NessieBackend(DynamoDBBackendTestFactory.class)
+@NessieBackend(DynamoDB2BackendTestFactory.class)
 @DisabledOnOs(OS.WINDOWS) // testcontainers does not support Windows
 public class ITApiImplsPersistDynamoDB extends BaseTestApis {}
