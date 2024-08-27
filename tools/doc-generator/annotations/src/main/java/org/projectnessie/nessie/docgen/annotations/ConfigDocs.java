@@ -49,11 +49,8 @@ public interface ConfigDocs {
      */
     String section() default "";
 
-    /**
-     * For smallrye-configs only, the section docs are taken from docs of the very first property
-     * and that is omitted in the properties table.
-     */
-    boolean firstIsSectionDoc() default false;
+    /** For smallrye-configs only: the section docs are taken from property type's javadoc. */
+    boolean sectionDocFromType() default false;
   }
 
   /**

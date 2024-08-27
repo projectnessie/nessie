@@ -18,21 +18,22 @@ package org.projectnessie.nessie.docgen;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static org.projectnessie.nessie.docgen.SmallRyeConfigs.concatWithDot;
 
+import com.sun.source.doctree.DocCommentTree;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -81,7 +82,7 @@ public class DocGenDoclet implements Doclet {
   @Override
   public boolean run(DocletEnvironment environment) {
     PropertiesConfigs propertiesConfigs = new PropertiesConfigs(environment);
-    SmallryeConfigs smallryeConfigs = new SmallryeConfigs(environment);
+    SmallRyeConfigs smallryeConfigs = new SmallRyeConfigs(environment);
 
     for (Element includedElement : environment.getIncludedElements()) {
       try {
@@ -92,6 +93,14 @@ public class DocGenDoclet implements Doclet {
       }
     }
 
+    propertiesConfigPages(propertiesConfigs);
+
+    smallryeConfigPages(environment, smallryeConfigs);
+
+    return true;
+  }
+
+  private void propertiesConfigPages(PropertiesConfigs propertiesConfigs) {
     for (PropertiesConfigPageGroup page : propertiesConfigs.pages()) {
       System.out.println("Generating properties config pages for " + page.name());
       for (Map.Entry<String, Iterable<PropertiesConfigItem>> e : page.sectionItems().entrySet()) {
@@ -123,92 +132,153 @@ public class DocGenDoclet implements Doclet {
         }
       }
     }
-
-    for (SmallRyeConfigSection configSection : smallryeConfigs.buildConfigSections(environment)) {
-      Path file =
-          outputDirectory.resolve("smallrye-" + safeFileName(configSection.fileName()) + ".md");
-      try (BufferedWriter fw = Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING);
-          PrintWriter writer = new PrintWriter(fw)) {
-
-        TypeElement typeElem = configSection.element();
-        if (typeElem != null) {
-          MarkdownTypeFormatter typeFormatter =
-              new MarkdownTypeFormatter(configSection.element(), configSection.typeComment());
-          writer.println(typeFormatter.description().trim());
-          writer.println();
-        }
-
-        List<SmallRyeConfigPropertyInfo> properties = configSection.properties();
-        SmallRyeConfigPropertyInfo first = properties.isEmpty() ? null : properties.get(0);
-        if (first != null && first.firstIsSectionDoc()) {
-          MarkdownTypeFormatter typeFormatter =
-              new MarkdownTypeFormatter(first.propertyElement(), first.doc());
-          writer.println(typeFormatter.description().trim());
-          writer.println();
-        }
-
-        if (!properties.isEmpty()) {
-          writer.println("| Property | Default Value | Type | Description |");
-          writer.println("|----------|---------------|------|-------------|");
-          properties.forEach(
-              prop ->
-                  writeProperty(
-                      prop, writer, configSection.prefix() + '.', smallryeConfigs, environment));
-        }
-      } catch (IOException ex) {
-        throw new RuntimeException(ex);
-      }
-    }
-
-    return true;
   }
 
-  private void writeProperty(
-      SmallRyeConfigPropertyInfo prop,
-      PrintWriter writer,
-      String propertyNamePrefix,
-      SmallryeConfigs smallryeConfigs,
-      DocletEnvironment environment) {
-    MarkdownPropertyFormatter md = new MarkdownPropertyFormatter(prop);
-    if (!md.isHidden()) {
-      Optional<Class<?>> groupType = prop.groupType();
-      String propertyName = md.propertyName();
-      String suffix = md.propertySuffix();
-      if (!suffix.isEmpty()) {
-        propertyName += ".`_`<" + suffix + ">`_`";
-      }
-      String fullName = propertyNamePrefix + propertyName;
+  private void smallryeConfigPages(DocletEnvironment environment, SmallRyeConfigs smallryeConfigs) {
+    Map<String, SmallRyeConfigSectionPage> sectionPages = new HashMap<>();
 
-      if (!prop.firstIsSectionDoc()) {
-        writer.print("| ");
-        String fullNameCode = ('`' + fullName + '`').replaceAll("``", "");
-        writer.print(fullNameCode);
-        writer.print(" | ");
-        String dv = prop.defaultValue();
-        if (dv != null) {
-          if (dv.isEmpty()) {
-            writer.print("(empty)");
-          } else {
-            writer.print('`');
-            writer.print(dv);
-            writer.print('`');
-          }
-        }
-        writer.print(" | ");
-        writer.print(md.propertyType());
-        writer.print(" | ");
-        writer.print(md.description().replaceAll("\n", "<br>"));
-        writer.println(" |");
-      }
-
-      if (groupType.isPresent()) {
-        String pre = fullName + '.';
-        smallryeConfigs
-            .getConfigMappingInfo(groupType.get())
-            .properties(environment)
-            .forEach(p -> writeProperty(p, writer, pre, smallryeConfigs, environment));
-      }
+    for (SmallRyeConfigMappingInfo mappingInfo : smallryeConfigs.configMappingInfos()) {
+      smallryeProcessRootMappingInfo(environment, smallryeConfigs, mappingInfo, sectionPages);
     }
+
+    sectionPages.values().stream()
+        .filter(p -> !p.isEmpty())
+        .forEach(
+            page -> {
+              System.out.printf(
+                  "... generating smallrye config page for section %s%n", page.section);
+              Path file = outputDirectory.resolve("smallrye-" + safeFileName(page.section) + ".md");
+              try (PrintWriter pw =
+                  new PrintWriter(
+                      Files.newBufferedWriter(file, UTF_8, CREATE, TRUNCATE_EXISTING))) {
+                page.writeTo(pw);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  private void smallryeProcessRootMappingInfo(
+      DocletEnvironment environment,
+      SmallRyeConfigs smallryeConfigs,
+      SmallRyeConfigMappingInfo mappingInfo,
+      Map<String, SmallRyeConfigSectionPage> sectionPages) {
+    String effectiveSection = mappingInfo.prefix();
+    String propertyNamePrefix = mappingInfo.prefix();
+    smallryeProcessMappingInfo(
+        "",
+        environment,
+        smallryeConfigs,
+        effectiveSection,
+        mappingInfo,
+        propertyNamePrefix,
+        sectionPages);
+  }
+
+  private void smallryeProcessPropertyMappingInfo(
+      String logIndent,
+      DocletEnvironment environment,
+      SmallRyeConfigs smallryeConfigs,
+      String section,
+      SmallRyeConfigMappingInfo mappingInfo,
+      String propertyNamePrefix,
+      Map<String, SmallRyeConfigSectionPage> sectionPages) {
+    smallryeProcessMappingInfo(
+        logIndent + "  ",
+        environment,
+        smallryeConfigs,
+        section,
+        mappingInfo,
+        propertyNamePrefix,
+        sectionPages);
+  }
+
+  private void smallryeProcessMappingInfo(
+      String logIndent,
+      DocletEnvironment environment,
+      SmallRyeConfigs smallryeConfigs,
+      String effectiveSection,
+      SmallRyeConfigMappingInfo mappingInfo,
+      String propertyNamePrefix,
+      Map<String, SmallRyeConfigSectionPage> sectionPages) {
+
+    // Eagerly create page, so we have the comment from the type.
+    sectionPages.computeIfAbsent(
+        effectiveSection,
+        s -> new SmallRyeConfigSectionPage(s, mappingInfo.element(), mappingInfo.typeComment()));
+
+    mappingInfo
+        .properties(environment)
+        .forEach(
+            prop ->
+                smallryeProcessProperty(
+                    logIndent,
+                    environment,
+                    smallryeConfigs,
+                    mappingInfo,
+                    effectiveSection,
+                    prop,
+                    propertyNamePrefix,
+                    sectionPages));
+  }
+
+  private void smallryeProcessProperty(
+      String logIndent,
+      DocletEnvironment environment,
+      SmallRyeConfigs smallryeConfigs,
+      SmallRyeConfigMappingInfo mappingInfo,
+      String section,
+      SmallRyeConfigPropertyInfo propertyInfo,
+      String propertyNamePrefix,
+      Map<String, SmallRyeConfigSectionPage> sectionPages) {
+
+    String effectiveSection =
+        propertyInfo.prefixOverride().map(o -> concatWithDot(section, o)).orElse(section);
+
+    MarkdownPropertyFormatter md = new MarkdownPropertyFormatter(propertyInfo);
+    if (md.isHidden()) {
+      return;
+    }
+    String fullName =
+        formatPropertyName(propertyNamePrefix, md.propertyName(), md.propertySuffix());
+
+    SmallRyeConfigSectionPage page =
+        sectionPages.computeIfAbsent(
+            effectiveSection,
+            s -> {
+              DocCommentTree doc =
+                  propertyInfo.sectionDocFromType()
+                      ? propertyInfo
+                          .groupType()
+                          .map(smallryeConfigs::getConfigMappingInfo)
+                          .map(SmallRyeConfigMappingInfo::typeComment)
+                          .orElse(null)
+                      : propertyInfo.doc();
+              return new SmallRyeConfigSectionPage(s, mappingInfo.element(), doc);
+            });
+    propertyInfo.prefixOverride().ifPresent(o -> page.incrementSectionRef());
+    if (propertyInfo.isSettableType()) {
+      page.addProperty(fullName, propertyInfo, md);
+    }
+
+    propertyInfo
+        .groupType()
+        .ifPresent(
+            groupType ->
+                smallryeProcessPropertyMappingInfo(
+                    logIndent + "  ",
+                    environment,
+                    smallryeConfigs,
+                    effectiveSection,
+                    smallryeConfigs.getConfigMappingInfo(groupType),
+                    fullName,
+                    sectionPages));
+  }
+
+  private String formatPropertyName(
+      String propertyNamePrefix, String propertyName, String propertySuffix) {
+    String r = concatWithDot(propertyNamePrefix, propertyName);
+    return propertySuffix.isEmpty() ? r : concatWithDot(r, "`_`<" + propertySuffix + ">`_`");
   }
 
   private String safeFileName(String str) {

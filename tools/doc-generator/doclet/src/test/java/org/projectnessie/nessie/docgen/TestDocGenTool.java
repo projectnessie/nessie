@@ -94,7 +94,6 @@ public class TestDocGenTool {
                 + "|----------|---------------|------|-------------|\n"
                 + "| `my.prefix.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
                 + "| `my.prefix.some-duration` |  | `duration` | A duration of something.  |\n"
-                + "| `my.prefix.nested` |  | `` |  |\n"
                 + "| `my.prefix.nested.other-int` |  | `int` |  |\n"
                 + "| `my.prefix.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
                 + "| `my.prefix.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
@@ -139,26 +138,20 @@ public class TestDocGenTool {
                 + "| `my.types.list-of-enum` |  | `list of ONE, TWO, THREE` |  |\n"
                 + "| `my.types.map-to-enum.`_`<name>`_ |  | `ONE, TWO, THREE` |  |\n"
                 + "| `my.types.optional-bool` |  | `boolean` |  |\n"
-                + "| `my.types.mapped-a` |  | `` | My `MappedA`.  |\n"
                 + "| `my.types.mapped-a.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
                 + "| `my.types.mapped-a.some-duration` |  | `duration` | A duration of something.  |\n"
-                + "| `my.types.mapped-a.nested` |  | `` |  |\n"
                 + "| `my.types.mapped-a.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.mapped-a.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
                 + "| `my.types.mapped-a.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.mapped-a.some-int-thing` |  | `int` | Something int-ish.  |\n"
-                + "| `my.types.optional-mapped-a` |  | `` | Optional `MappedA`.  |\n"
                 + "| `my.types.optional-mapped-a.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
                 + "| `my.types.optional-mapped-a.some-duration` |  | `duration` | A duration of something.  |\n"
-                + "| `my.types.optional-mapped-a.nested` |  | `` |  |\n"
                 + "| `my.types.optional-mapped-a.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.optional-mapped-a.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
                 + "| `my.types.optional-mapped-a.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.optional-mapped-a.some-int-thing` |  | `int` | Something int-ish.  |\n"
-                + "| `my.types.map-string-mapped-a.`_`<mappy>`_ |  | `` | Map of string to `MappedA`.  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.some-duration` |  | `duration` | A duration of something.  |\n"
-                + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested` |  | `` |  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
                 + "| `my.types.map-string-mapped-a.`_`<mappy>`_`.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
@@ -196,15 +189,55 @@ public class TestDocGenTool {
         .isRegularFile()
         .content()
         .isEqualTo(
-            "| Property | Default Value | Type | Description |\n"
+            "Another map of string to `MappedA`, in its own section.\n"
+                + "\n"
+                + "| Property | Default Value | Type | Description |\n"
                 + "|----------|---------------|------|-------------|\n"
-                + "| `my.types.map.py.`_`<name>`_ |  | `` | Another map of string to `MappedA`, in its own section.  |\n"
                 + "| `my.types.map.py.`_`<name>`_`.some-weird-name` | `some-default` | `string` | Something that configures something.  |\n"
                 + "| `my.types.map.py.`_`<name>`_`.some-duration` |  | `duration` | A duration of something.  |\n"
-                + "| `my.types.map.py.`_`<name>`_`.nested` |  | `` |  |\n"
                 + "| `my.types.map.py.`_`<name>`_`.nested.other-int` |  | `int` |  |\n"
                 + "| `my.types.map.py.`_`<name>`_`.nested.boxed-double` |  | `double` | <br><br>_Deprecated_  |\n"
                 + "| `my.types.map.py.`_`<name>`_`.list-of-strings` |  | `list of string` | Example & < > \"   € ® ©. <br><br> * ` session-iam-statements[0]= {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/alwaysAllowed/*\"}        ` <br> * ` session-iam-statements[1]= {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blocked/*\"}        ` <br><br> |\n"
                 + "| `my.types.map.py.`_`<name>`_`.some-int-thing` |  | `int` | Something int-ish.  |\n");
+
+    // Nested sections
+    Path fileNestedRoot = dir.resolve("smallrye-nested_root.md");
+    soft.assertThat(fileNestedRoot)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "Doc for NestedSectionsRoot.\n"
+                + "\n"
+                + "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `nested.root.nested-c.int-not-in-c` |  | `int` |  |\n");
+
+    Path fileNestedA = dir.resolve("smallrye-nested_root_section_a.md");
+    soft.assertThat(fileNestedA)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `nested.root.nested-a.section-a.string-in-a` |  | `string` |  |\n");
+
+    Path fileNestedB = dir.resolve("smallrye-nested_root_section_b.md");
+    soft.assertThat(fileNestedB)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `nested.root.nested-b.section-b.string-in-b` |  | `string` |  |\n");
+
+    Path fileNestedC = dir.resolve("smallrye-nested_root_section_c.md");
+    soft.assertThat(fileNestedC)
+        .isRegularFile()
+        .content()
+        .isEqualTo(
+            "| Property | Default Value | Type | Description |\n"
+                + "|----------|---------------|------|-------------|\n"
+                + "| `nested.root.nested-c.string-in-c` |  | `string` |  |\n"
+                + "| `nested.root.nested-c.int-in-c` |  | `int` |  |\n");
   }
 }

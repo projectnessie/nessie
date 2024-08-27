@@ -72,14 +72,14 @@ public interface S3Options {
   /**
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
-  @ConfigItem(section = "default-options", firstIsSectionDoc = true)
+  @ConfigItem(section = "default-options")
   Optional<? extends S3BucketOptions> defaultOptions();
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
    * setting. If no per-bucket setting is present, uses the values from top-level S3 settings.
    */
-  @ConfigItem(section = "buckets", firstIsSectionDoc = true)
+  @ConfigItem(section = "buckets")
   @ConfigPropertyName("bucket-name")
   Map<String, ? extends S3NamedBucketOptions> buckets();
 

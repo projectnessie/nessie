@@ -42,13 +42,14 @@ import javax.lang.model.util.AbstractElementVisitor8;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 public final class SmallRyeConfigMappingInfo {
-  final String prefix;
-  final List<ConfigMappingInterface> configMappingInterfaces = new ArrayList<>();
-  final Map<String, List<ExecutableElement>> methodExecutables = new HashMap<>();
-  final Set<String> propertiesMethodNameOrder = new LinkedHashSet<>();
-  final Map<String, ConfigMappingInterface.Property> methodNameToProperty = new LinkedHashMap<>();
-  DocCommentTree typeComment;
-  TypeElement element;
+  private final String prefix;
+  private final List<ConfigMappingInterface> configMappingInterfaces = new ArrayList<>();
+  private final Map<String, List<ExecutableElement>> methodExecutables = new HashMap<>();
+  private final Set<String> propertiesMethodNameOrder = new LinkedHashSet<>();
+  private final Map<String, ConfigMappingInterface.Property> methodNameToProperty =
+      new LinkedHashMap<>();
+  private DocCommentTree typeComment;
+  private TypeElement element;
 
   SmallRyeConfigMappingInfo(String prefix) {
     this.prefix = prefix;
@@ -65,6 +66,18 @@ public final class SmallRyeConfigMappingInfo {
     return propertiesMethodNameOrder.stream()
         .map(name -> buildPropertyInfo(env, name))
         .filter(Objects::nonNull);
+  }
+
+  String prefix() {
+    return prefix;
+  }
+
+  TypeElement element() {
+    return element;
+  }
+
+  DocCommentTree typeComment() {
+    return typeComment;
   }
 
   private SmallRyeConfigPropertyInfo buildPropertyInfo(DocletEnvironment env, String methodName) {

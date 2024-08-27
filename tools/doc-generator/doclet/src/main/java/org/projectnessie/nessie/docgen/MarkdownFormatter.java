@@ -59,7 +59,7 @@ public abstract class MarkdownFormatter {
   private String javadocBody;
 
   public MarkdownFormatter(Element element, DocCommentTree commentTree) {
-    this.element = requireNonNull(element);
+    this.element = element;
 
     if (commentTree != null) {
 
@@ -136,7 +136,7 @@ public abstract class MarkdownFormatter {
     }
     if (javadocDeprecated != null) {
       sb.append("\n\n_Deprecated_ ").append(javadocDeprecated);
-    } else {
+    } else if (element != null) {
       boolean deprecated = element.getAnnotation(Deprecated.class) != null;
       if (deprecated) {
         sb.append("\n\n_Deprecated_ ");
@@ -568,7 +568,7 @@ public abstract class MarkdownFormatter {
       // TODO resolve reference properly
       ReferenceTree reference = valueTree.getReference();
       String signature = reference.getSignature().trim();
-      if (signature.startsWith("#")) {
+      if (signature.startsWith("#") && element != null) {
         Optional<? extends Element> referenced =
             element.getEnclosingElement().getEnclosedElements().stream()
                 .filter(enc -> enc.getSimpleName().toString().equals(signature.substring(1)))
@@ -607,7 +607,7 @@ public abstract class MarkdownFormatter {
       if (codeValue) {
         target.text.append('`');
       }
-      if (signature.startsWith("#")) {
+      if (signature.startsWith("#") && element != null) {
         Optional<? extends Element> referenced =
             element.getEnclosingElement().getEnclosedElements().stream()
                 .filter(enc -> enc.getSimpleName().toString().equals(signature.substring(1)))
