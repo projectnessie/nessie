@@ -15,10 +15,8 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.Namespace;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 public final class NamespaceSerializer extends BaseSerializer<Namespace> {
@@ -43,8 +41,7 @@ public final class NamespaceSerializer extends BaseSerializer<Namespace> {
   }
 
   @Override
-  protected Namespace valueFromStore(
-      ObjectTypes.Content content, Supplier<ByteString> globalState) {
+  protected Namespace valueFromStore(ObjectTypes.Content content) {
     return valueFromStoreNamespace(content);
   }
 }

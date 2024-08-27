@@ -15,10 +15,8 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 public final class IcebergTableSerializer extends BaseSerializer<IcebergTable> {
@@ -47,14 +45,7 @@ public final class IcebergTableSerializer extends BaseSerializer<IcebergTable> {
   }
 
   @Override
-  public boolean requiresGlobalState(ByteString content) {
-    ObjectTypes.Content parsed = parse(content);
-    return !parsed.getIcebergRefState().hasMetadataLocation();
-  }
-
-  @Override
-  protected IcebergTable valueFromStore(
-      ObjectTypes.Content content, Supplier<ByteString> globalState) {
-    return valueFromStoreIcebergTable(content, new IcebergMetadataPointerSupplier(globalState));
+  protected IcebergTable valueFromStore(ObjectTypes.Content content) {
+    return valueFromStoreIcebergTable(content);
   }
 }

@@ -15,9 +15,7 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 /**
@@ -42,49 +40,16 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
   }
 
   @Override
-  public Content.Type getType(ByteString onReferenceValue) {
-    ObjectTypes.Content parsed = parse(onReferenceValue);
-
-    if (parsed.hasIcebergRefState()) {
-      return Content.Type.ICEBERG_TABLE;
-    }
-    if (parsed.hasIcebergViewState()) {
-      return Content.Type.ICEBERG_VIEW;
-    }
-    if (parsed.hasDeltaLakeTable()) {
-      return Content.Type.DELTA_LAKE_TABLE;
-    }
-    if (parsed.hasNamespace()) {
-      return Content.Type.NAMESPACE;
-    }
-
-    throw new IllegalArgumentException("Unsupported on-ref content " + parsed);
-  }
-
-  @Override
-  public boolean requiresGlobalState(ByteString content) {
-    ObjectTypes.Content parsed = parse(content);
-    switch (parsed.getObjectTypeCase()) {
-      case ICEBERG_REF_STATE:
-        return !parsed.getIcebergRefState().hasMetadataLocation();
-      case ICEBERG_VIEW_STATE:
-        return !parsed.getIcebergViewState().hasMetadataLocation();
-      default:
-        return false;
-    }
-  }
-
-  @Override
-  protected Content valueFromStore(ObjectTypes.Content content, Supplier<ByteString> globalState) {
+  protected Content valueFromStore(ObjectTypes.Content content) {
     switch (content.getObjectTypeCase()) {
       case DELTA_LAKE_TABLE:
         return valueFromStoreDeltaLakeTable(content);
 
       case ICEBERG_REF_STATE:
-        return valueFromStoreIcebergTable(content, new IcebergMetadataPointerSupplier(globalState));
+        return valueFromStoreIcebergTable(content);
 
       case ICEBERG_VIEW_STATE:
-        return valueFromStoreIcebergView(content, new IcebergMetadataPointerSupplier(globalState));
+        return valueFromStoreIcebergView(content);
 
       case NAMESPACE:
         return valueFromStoreNamespace(content);

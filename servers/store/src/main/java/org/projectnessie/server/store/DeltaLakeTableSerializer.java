@@ -15,10 +15,8 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.DeltaLakeTable;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTable> {
@@ -47,8 +45,7 @@ public final class DeltaLakeTableSerializer extends BaseSerializer<DeltaLakeTabl
   }
 
   @Override
-  protected DeltaLakeTable valueFromStore(
-      ObjectTypes.Content content, Supplier<ByteString> globalState) {
+  protected DeltaLakeTable valueFromStore(ObjectTypes.Content content) {
     return valueFromStoreDeltaLakeTable(content);
   }
 }

@@ -15,10 +15,8 @@
  */
 package org.projectnessie.server.store;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.UDF;
-import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.server.store.proto.ObjectTypes;
 
 public final class UDFSerializer extends BaseSerializer<UDF> {
@@ -64,7 +62,7 @@ public final class UDFSerializer extends BaseSerializer<UDF> {
   }
 
   @Override
-  protected UDF valueFromStore(ObjectTypes.Content content, Supplier<ByteString> globalState) {
+  protected UDF valueFromStore(ObjectTypes.Content content) {
     return valueFromStoreUDF(content);
   }
 }

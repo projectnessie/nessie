@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.StoreWorker;
@@ -133,39 +132,5 @@ public class DefaultStoreWorker implements StoreWorker {
   public Content valueFromStore(int payload, ByteString onReferenceValue) {
     ContentSerializer<Content> serializer = serializer(payload);
     return serializer.valueFromStore(onReferenceValue);
-  }
-
-  @Override
-  @Deprecated
-  public Content valueFromStore(
-      int payload, ByteString onReferenceValue, Supplier<ByteString> globalState) {
-    ContentSerializer<Content> serializer = serializer(payload);
-    if (!(serializer instanceof LegacyContentSerializer)) {
-      return serializer.valueFromStore(onReferenceValue);
-    }
-    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
-    return legacy.valueFromStore(payload, onReferenceValue, globalState);
-  }
-
-  @Override
-  @Deprecated
-  public boolean requiresGlobalState(int payload, ByteString onReferenceValue) {
-    ContentSerializer<Content> serializer = serializer(payload);
-    if (!(serializer instanceof LegacyContentSerializer)) {
-      return false;
-    }
-    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
-    return legacy.requiresGlobalState(onReferenceValue);
-  }
-
-  @Override
-  @Deprecated
-  public Content.Type getType(int payload, ByteString onReferenceValue) {
-    ContentSerializer<Content> serializer = serializer(payload);
-    if (!(serializer instanceof LegacyContentSerializer)) {
-      return serializer.contentType();
-    }
-    LegacyContentSerializer<Content> legacy = (LegacyContentSerializer<Content>) serializer;
-    return legacy.getType(onReferenceValue);
   }
 }

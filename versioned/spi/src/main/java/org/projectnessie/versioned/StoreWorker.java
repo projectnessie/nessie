@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.function.Supplier;
 import org.projectnessie.model.Content;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 
@@ -26,28 +25,4 @@ public interface StoreWorker {
   ByteString toStoreOnReferenceState(Content content);
 
   Content valueFromStore(int payload, ByteString onReferenceValue);
-
-  @Deprecated // for removal
-  Content valueFromStore(
-      int payload, ByteString onReferenceValue, Supplier<ByteString> globalState);
-
-  /**
-   * Checks whether the given persisted content has been persisted using global state.
-   *
-   * <p>This function can be entirely removed once all content objects are guaranteed to have no
-   * global state.
-   */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated // for removal
-  boolean requiresGlobalState(int payload, ByteString content);
-
-  /**
-   * Retrieve the {@link Content.Type} for the given persisted representation.
-   *
-   * <p>Needs both {@code payload} and {@code onRefContent} for backwards compatibility, because old
-   * persisted content objects can have fixed {@code payload == 0}, therefore the implementation for
-   * the default types (Iceberg, DL, Namespace) needs this.
-   */
-  @Deprecated // for removal
-  Content.Type getType(int payload, ByteString onRefContent);
 }
