@@ -48,34 +48,23 @@ class ImpersonationFlow extends TokenExchangeFlow {
 
   @Override
   URI getResolvedTokenEndpoint() {
-    if (impersonationConfig.getIssuerUrl().isPresent()
-        || impersonationConfig.getTokenEndpoint().isPresent()) {
-      return config.getResolvedImpersonationTokenEndpoint();
-    }
-    return super.getResolvedTokenEndpoint();
+    return config
+        .getResolvedImpersonationTokenEndpoint()
+        .orElseGet(super::getResolvedTokenEndpoint);
   }
 
   @Override
   String getClientId() {
-    if (impersonationConfig.getClientId().isPresent()) {
-      return impersonationConfig.getClientId().get();
-    }
-    return super.getClientId();
+    return impersonationConfig.getClientId().orElseGet(super::getClientId);
   }
 
   @Override
   boolean isPublicClient() {
-    if (impersonationConfig.getClientId().isPresent()) {
-      return !impersonationConfig.getClientSecret().isPresent();
-    }
-    return super.isPublicClient();
+    return config.isImpersonationPublicClient().orElseGet(super::isPublicClient);
   }
 
   @Override
   Optional<HttpAuthentication> getBasicAuthentication() {
-    if (impersonationConfig.getClientId().isPresent()) {
-      return config.getImpersonationBasicAuthentication();
-    }
-    return super.getBasicAuthentication();
+    return config.getImpersonationBasicAuthentication().or(super::getBasicAuthentication);
   }
 }

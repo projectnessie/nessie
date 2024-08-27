@@ -494,4 +494,31 @@ class TestOAuth2ClientConfig {
                 RefreshToken.of("dynamic-refresh", null));
     assertThat(actorToken).isNull();
   }
+
+  @Test
+  void testSecretSuppliers() {
+    OAuth2ClientConfig config =
+        OAuth2ClientConfig.builder()
+            .grantType(GrantType.PASSWORD)
+            .issuerUrl(URI.create("https://example.com/"))
+            .clientId("Client")
+            .username("Alice")
+            .clientSecretSupplier(() -> "w00t")
+            .passwordSupplier(() -> "s3cr3t")
+            .impersonationConfig(
+                ImpersonationConfig.builder()
+                    .clientId("Client2")
+                    .clientSecretSupplier(() -> "w00t2")
+                    .build())
+            .build();
+    assertThat(config.getClientSecretSupplier()).isPresent();
+    assertThat(config.getClientSecretSupplier().get().get()).isEqualTo("w00t");
+    assertThat(config.getBasicAuthentication()).isPresent();
+    assertThat(config.getPasswordSupplier()).isPresent();
+    assertThat(config.getPasswordSupplier().get().get()).isEqualTo("s3cr3t");
+    assertThat(config.getImpersonationConfig().getClientSecretSupplier()).isPresent();
+    assertThat(config.getImpersonationConfig().getClientSecretSupplier().get().get())
+        .isEqualTo("w00t2");
+    assertThat(config.getImpersonationBasicAuthentication()).isPresent();
+  }
 }
