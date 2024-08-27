@@ -323,10 +323,7 @@ abstract class AbstractJdbc2Persist implements Persist {
 
   @Nonnull
   protected final <T extends Obj> T[] fetchTypedObjsIfExist(
-      @Nonnull Connection conn,
-      @Nonnull ObjId[] ids,
-      ObjType type,
-      @SuppressWarnings("unused") Class<T> typeClass) {
+      @Nonnull Connection conn, @Nonnull ObjId[] ids, ObjType type, Class<T> typeClass) {
     Object2IntHashMap<ObjId> idToIndex =
         new Object2IntHashMap<>(200, Hashing.DEFAULT_LOAD_FACTOR, -1);
     @SuppressWarnings("unchecked")
@@ -362,9 +359,7 @@ abstract class AbstractJdbc2Persist implements Persist {
           Obj obj = deserializeObj(rs);
           int i = idToIndex.getValue(obj.id());
           if (i != -1) {
-            @SuppressWarnings("unchecked")
-            T typed = (T) obj;
-            r[i] = typed;
+            r[i] = typeClass.cast(obj);
           }
         }
 
