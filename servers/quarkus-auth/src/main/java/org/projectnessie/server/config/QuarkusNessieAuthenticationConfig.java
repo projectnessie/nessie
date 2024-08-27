@@ -34,8 +34,7 @@ public interface QuarkusNessieAuthenticationConfig {
 
   /**
    * Returns the set of HTTP URL paths that are permitted to be serviced without authentication.
-   * Anonymous access is granted, if the URI path is equal to any of the elements or if the path
-   * starts with any of the elements, when each element is appended with a {@code /}.
+   * Anonymous access is granted, if the URI path is equal to any of the elements}.
    *
    * @hidden Not present in docs on web-site.
    */
