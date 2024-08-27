@@ -118,8 +118,8 @@ public abstract class AbstractTestJdbc2BackendFactory {
               .jdbcPass(testFactory.jdbcPass())
               .build()
               .createNewDataSource();
-      try (Connection keepAliveForH2 = dataSource.getConnection()) {
-
+      try (@SuppressWarnings("unused")
+          Connection keepAliveForH2 = dataSource.getConnection()) {
         RepositoryDescription repoDesc;
 
         try (Backend backend = testFactory.createNewBackend()) {

@@ -44,11 +44,6 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @FunctionalInterface
-  interface SQLRunnable<R> {
-    R run(Connection conn) throws SQLException;
-  }
-
-  @FunctionalInterface
   interface SQLRunnableException<R, E extends Exception> {
     R run(Connection conn) throws E;
   }
@@ -64,34 +59,12 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   private void withConnectionVoid(SQLRunnableVoid runnable) {
-    withConnection(
+    withConnectionException(
         false,
         conn -> {
           runnable.run(conn);
           return null;
         });
-  }
-
-  private <R> R withConnection(boolean readOnly, SQLRunnable<R> runnable) {
-    try (Connection conn = backend.borrowConnection()) {
-      boolean ok = false;
-      R r;
-      try {
-        r = runnable.run(conn);
-        ok = true;
-      } finally {
-        if (!readOnly) {
-          if (ok) {
-            conn.commit();
-          } else {
-            conn.rollback();
-          }
-        }
-      }
-      return r;
-    } catch (SQLException e) {
-      throw unhandledSQLException(e);
-    }
   }
 
   private <R, E extends Exception> R withConnectionException(
@@ -140,13 +113,13 @@ class JdbcPersist extends AbstractJdbcPersist {
 
   @Override
   public Reference fetchReference(@Nonnull String name) {
-    return withConnection(true, conn -> super.findReference(conn, name));
+    return withConnectionException(true, conn -> super.findReference(conn, name));
   }
 
   @Override
   @Nonnull
   public Reference[] fetchReferences(@Nonnull String[] names) {
-    return withConnection(true, conn -> super.findReferences(conn, names));
+    return withConnectionException(true, conn -> super.findReferences(conn, names));
   }
 
   @Override
