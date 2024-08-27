@@ -15,6 +15,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The deprecated JDBC configuration properties for `catalog` and `schema` have been removed.
+
 ### New Features
 
 - Catalog/ADLS: Added **experimental** support for short-lived SAS tokens passed down to clients. Those
