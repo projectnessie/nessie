@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import static java.lang.String.format;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 
 import io.smallrye.common.annotation.Blocking;
@@ -133,16 +132,8 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
     IcebergListNamespacesResponse.Builder response = IcebergListNamespacesResponse.builder();
 
     NamespaceRef namespaceRef = decodeNamespaceRef(prefix, parent);
-    Namespace namespace = namespaceRef.namespace();
-    String celFilter =
-        "entry.contentType == 'NAMESPACE'"
-            + ((namespace != null && !namespace.isEmpty())
-                ? format(
-                    " && size(entry.keyElements) == %d && entry.encodedKey.startsWith('%s.')",
-                    namespace.getElementCount() + 1, namespace.toPathString())
-                : " && size(entry.keyElements) == 1");
 
-    listContent(namespaceRef, pageToken, pageSize, true, celFilter, response::nextPageToken)
+    listContent(namespaceRef, "NAMESPACE", pageToken, pageSize, true, response::nextPageToken)
         .map(EntriesResponse.Entry::getContent)
         .map(Namespace.class::cast)
         .map(IcebergNamespace::fromNessieNamespace)
