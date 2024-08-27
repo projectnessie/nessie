@@ -53,6 +53,11 @@ public class TestNessieHttpAuthenticator {
               public Optional<Set<String>> anonymousPaths() {
                 return Optional.empty();
               }
+
+              @Override
+              public Optional<Set<String>> anonymousPathPrefixes() {
+                return Optional.empty();
+              }
             },
             () -> Uni.createFrom().item(ANONYMOUS_IDENTITY));
 
@@ -66,7 +71,7 @@ public class TestNessieHttpAuthenticator {
         .isInstanceOf(AuthenticationFailedException.class)
         .hasMessage("Missing or unrecognized credentials");
 
-    NessieHttpAuthenticator.BaseNessieHttpAuthenticator baseAuthWithPathFoo =
+    NessieHttpAuthenticator.BaseNessieHttpAuthenticator baseAuthWithPaths =
         new NessieHttpAuthenticator.BaseNessieHttpAuthenticator(
             new QuarkusNessieAuthenticationConfig() {
               @Override
@@ -78,12 +83,20 @@ public class TestNessieHttpAuthenticator {
               public Optional<Set<String>> anonymousPaths() {
                 return Optional.of(singleton("/foo"));
               }
+
+              @Override
+              public Optional<Set<String>> anonymousPathPrefixes() {
+                return Optional.of(singleton("/bar"));
+              }
             },
             () -> Uni.createFrom().item(ANONYMOUS_IDENTITY));
 
-    soft.assertThat(auth(baseAuthWithPathFoo, null, "/foo")).isSameAs(ANONYMOUS_IDENTITY);
+    soft.assertThat(auth(baseAuthWithPaths, null, "/foo")).isSameAs(ANONYMOUS_IDENTITY);
+    soft.assertThat(auth(baseAuthWithPaths, null, "/bar")).isSameAs(ANONYMOUS_IDENTITY);
+    soft.assertThat(auth(baseAuthWithPaths, null, "/bar/")).isSameAs(ANONYMOUS_IDENTITY);
+    soft.assertThat(auth(baseAuthWithPaths, null, "/bar/meep")).isSameAs(ANONYMOUS_IDENTITY);
 
-    soft.assertThatThrownBy(() -> auth(baseAuthWithPathFoo, null, "/bar"))
+    soft.assertThatThrownBy(() -> auth(baseAuthWithPaths, null, "/fail"))
         .isInstanceOf(AuthenticationFailedException.class)
         .hasMessage("Missing or unrecognized credentials");
   }

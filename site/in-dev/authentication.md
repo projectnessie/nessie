@@ -32,6 +32,14 @@ for the Nessie Server process:
 * `quarkus.oidc.auth-server-url=<OpenID Server URL>`
 * `quarkus.oidc.client-id=<Client ID>`
 
+If you also want to use authentication for the Nessie Web UI, the following properties need to
+be set as well:
+
+* `quarkus.oidc.ui-app.auth-server-url=<OpenID Server URL>`
+* `quarkus.oidc.ui-app.client-id=<Client ID>`
+* `quarkus.oidc.ui-app.application-type=web-app`
+* `quarkus.oidc.ui-app.tenant-paths=/,/tree*,/content*,/notfound*,/commits*`
+
 When using Nessie [Docker](../guides/docker.md) images, the authentication options can be specified on
 the `docker` command line as environment variables, for example:
 
