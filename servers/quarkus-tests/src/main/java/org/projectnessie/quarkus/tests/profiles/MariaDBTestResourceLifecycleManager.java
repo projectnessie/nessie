@@ -19,7 +19,7 @@ import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.jdbctests.MariaDBBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory;
 
 public class MariaDBTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {

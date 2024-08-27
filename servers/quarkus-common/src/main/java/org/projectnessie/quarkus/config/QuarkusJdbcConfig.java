@@ -19,10 +19,10 @@ import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
+import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendBaseConfig;
 
 /**
- * Setting {@code nessie.version.store.type=JDBC} enables transactional/RDBMS as the version store
+ * Setting {@code nessie.version.store.type=JDBC2} enables transactional/RDBMS as the version store
  * used by the Nessie server.
  *
  * <p>Configuration of the datastore will be done by Quarkus and depends on many factors, such as
@@ -34,7 +34,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  * <p>For example, to configure a PostgresQL connection, the following configuration should be used:
  *
  * <ul>
- *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.type=JDBC2}
  *   <li>{@code nessie.version.store.persist.jdbc.datasource=postgresql}
  *   <li>{@code quarkus.datasource.postgresql.jdbc.url=jdbc:postgresql://localhost:5432/my_database}
  *   <li>{@code quarkus.datasource.postgresql.username=<your username>}
@@ -46,7 +46,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  * <p>To connect to a MariaDB database instead, the following configuration should be used:
  *
  * <ul>
- *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.type=JDBC2}
  *   <li>{@code nessie.version.store.persist.jdbc.datasource=mariadb}
  *   <li>{@code quarkus.datasource.mariadb.jdbc.url=jdbc:mariadb://localhost:3306/my_database}
  *   <li>{@code quarkus.datasource.mariadb.username=<your username>}
@@ -57,7 +57,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  * <p>To connect to a MySQL database instead, the following configuration should be used:
  *
  * <ul>
- *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.type=JDBC2}
  *   <li>{@code nessie.version.store.persist.jdbc.datasource=mysql}
  *   <li>{@code quarkus.datasource.mysql.jdbc.url=jdbc:mysql://localhost:3306/my_database}
  *   <li>{@code quarkus.datasource.mysql.username=<your username>}
@@ -69,7 +69,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  * H2 is not recommended for production):
  *
  * <ul>
- *   <li>{@code nessie.version.store.type=JDBC}
+ *   <li>{@code nessie.version.store.type=JDBC2}
  *   <li>{@code nessie.version.store.persist.jdbc.datasource=h2}
  * </ul>
  *
@@ -81,7 +81,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendBaseConfig;
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.jdbc")
-public interface QuarkusJdbcConfig extends JdbcBackendBaseConfig {
+public interface QuarkusJdbcConfig extends Jdbc2BackendBaseConfig {
 
   /**
    * The name of the datasource to use. Must correspond to a configured datasource under {@code

@@ -40,6 +40,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-dynamodb"))
   implementation(project(":nessie-versioned-storage-inmemory"))
   implementation(project(":nessie-versioned-storage-jdbc"))
+  implementation(project(":nessie-versioned-storage-jdbc2"))
   implementation(project(":nessie-versioned-storage-mongodb"))
   implementation(project(":nessie-versioned-storage-rocksdb"))
   implementation(project(":nessie-versioned-storage-store"))

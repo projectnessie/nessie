@@ -76,7 +76,8 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
 @ExtendWith({NessieServerAdminTestExtension.class, SoftAssertionsExtension.class})
 public class ITExportImport {
 
-  private static final String VERSION_STORES = "(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA|JDBC|BIGTABLE)";
+  private static final String VERSION_STORES =
+      "(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA|JDBC2|BIGTABLE)";
 
   @InjectSoftAssertions private SoftAssertions soft;
 

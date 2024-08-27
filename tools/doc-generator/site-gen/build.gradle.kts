@@ -42,6 +42,7 @@ val genProjectPaths = listOf(
   ":nessie-versioned-storage-dynamodb",
   ":nessie-versioned-storage-inmemory",
   ":nessie-versioned-storage-jdbc",
+  ":nessie-versioned-storage-jdbc2",
   ":nessie-versioned-storage-mongodb",
   ":nessie-versioned-storage-rocksdb",
   ":nessie-catalog-files-impl",

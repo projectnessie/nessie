@@ -83,18 +83,6 @@ public final class JdbcBackend implements Backend {
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
     createTableObjsSql = buildCreateTableObjsSql(databaseSpecific);
-    if (config.catalog().isPresent()) {
-      LOGGER.warn(
-          "Configuration 'nessie.version.store.persist.jdbc.catalog' is now obsolete, please remove it. "
-              + "The catalog must be specified directly in the JDBC URL using the option 'quarkus.datasource.{}.jdbc.url'",
-          config.datasourceName().orElse("postgresql"));
-    }
-    if (config.schema().isPresent()) {
-      LOGGER.warn(
-          "Configuration 'nessie.version.store.persist.jdbc.schema' is now obsolete, please remove it. "
-              + "The schema must be specified directly in the JDBC URL using the option 'quarkus.datasource.{}.jdbc.url'",
-          config.datasourceName().orElse("postgresql"));
-    }
   }
 
   private String buildCreateTableRefsSql(DatabaseSpecific databaseSpecific) {

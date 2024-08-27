@@ -52,6 +52,7 @@ dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-notice"))
   implementation(project(":nessie-versioned-storage-jdbc"))
+  implementation(project(":nessie-versioned-storage-jdbc2"))
   implementation(libs.nessie.ui)
 
   // Nessie internal Quarkus extension, currently only disables "non-indexed classes" (Jandex)

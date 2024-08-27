@@ -15,9 +15,11 @@
  */
 package org.projectnessie.versioned.storage.jdbc;
 
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.versioned.storage.commontests.AbstractPersistTests;
 import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 
 @NessieBackend(MySQLBackendTestFactory.class)
+@Disabled("Disabled in favor of jdbc2")
 public class ITMySQLPersist extends AbstractPersistTests {}

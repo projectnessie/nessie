@@ -20,7 +20,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.versioned.storage.jdbctests.MySQLBackendTestFactory;
+import org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory;
 
 public class MySQLTestResourceLifecycleManager
     implements QuarkusTestResourceLifecycleManager, DevServicesContext.ContextAware {

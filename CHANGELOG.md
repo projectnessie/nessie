@@ -15,6 +15,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The deprecated JDBC configuration properties for `catalog` and `schema` have been removed.
+
 ### New Features
 
 - Catalog/ADLS: Added **experimental** support for short-lived SAS tokens passed down to clients. Those
@@ -37,10 +39,16 @@ as necessary. Empty sections will not end in the release notes.
   REST clients. More info on
   [projectnessie.org](https://projectnessie.org/guides/iceberg-rest/#customizing-nessie-commit-author-et-al). 
 - Enable authentication for the Nessie Web UI
+- Introduce new `JDBC2` version store type, which is has the same functionality as the `JDBC` version
+  store type, but uses way less columns, which reduces storage overhead for example in PostgreSQL a lot.
 
 ### Changes
 
 ### Deprecations
+
+- The current version store type `JDBC` is deprecated, please migrate to the new `JDBC2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `JDBC` version store type to `JDBC2`.
 
 ### Fixes
 
