@@ -39,6 +39,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-cassandra2"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-dynamodb"))
+  implementation(project(":nessie-versioned-storage-dynamodb2"))
   implementation(project(":nessie-versioned-storage-inmemory"))
   implementation(project(":nessie-versioned-storage-jdbc"))
   implementation(project(":nessie-versioned-storage-jdbc2"))

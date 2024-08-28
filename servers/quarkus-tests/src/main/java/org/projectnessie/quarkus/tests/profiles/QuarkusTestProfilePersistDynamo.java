@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.DYNAMODB;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.DYNAMODB2;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -28,7 +28,7 @@ public class QuarkusTestProfilePersistDynamo extends BaseConfigProfile {
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
-        .put("nessie.version.store.type", DYNAMODB.name())
+        .put("nessie.version.store.type", DYNAMODB2.name())
         .build();
   }
 

@@ -69,6 +69,7 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-cassandra"))
   intTestImplementation(project(":nessie-versioned-storage-cassandra2"))
   intTestImplementation(project(":nessie-versioned-storage-dynamodb"))
+  intTestImplementation(project(":nessie-versioned-storage-dynamodb2"))
   intTestImplementation(project(":nessie-versioned-storage-jdbc"))
   intTestImplementation(project(":nessie-versioned-storage-jdbc2"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb"))

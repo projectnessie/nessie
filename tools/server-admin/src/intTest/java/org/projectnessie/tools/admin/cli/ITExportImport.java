@@ -77,7 +77,7 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
 public class ITExportImport {
 
   private static final String VERSION_STORES =
-      "(ROCKSDB|DYNAMODB|MONGODB|CASSANDRA2|JDBC2|BIGTABLE)";
+      "(ROCKSDB|DYNAMODB2|MONGODB|CASSANDRA2|JDBC2|BIGTABLE)";
 
   @InjectSoftAssertions private SoftAssertions soft;
 

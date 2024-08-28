@@ -69,7 +69,7 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-cassandra2-tests"))
   intTestImplementation(project(":nessie-versioned-storage-rocksdb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
-  intTestImplementation(project(":nessie-versioned-storage-dynamodb-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-dynamodb2-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly("org.testcontainers:testcontainers")
   intTestRuntimeOnly("org.testcontainers:cassandra")
