@@ -36,6 +36,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-bigtable"))
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-cassandra"))
+  implementation(project(":nessie-versioned-storage-cassandra2"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-dynamodb"))
   implementation(project(":nessie-versioned-storage-inmemory"))

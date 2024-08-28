@@ -66,6 +66,7 @@ dependencies {
   testFixturesApi(project(":nessie-services-config"))
   testFixturesImplementation(libs.logback.classic)
   intTestImplementation(project(":nessie-versioned-storage-cassandra-tests"))
+  intTestImplementation(project(":nessie-versioned-storage-cassandra2-tests"))
   intTestImplementation(project(":nessie-versioned-storage-rocksdb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-dynamodb-tests"))

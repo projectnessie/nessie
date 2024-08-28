@@ -41,6 +41,8 @@ as necessary. Empty sections will not end in the release notes.
 - Enable authentication for the Nessie Web UI
 - Introduce new `JDBC2` version store type, which is has the same functionality as the `JDBC` version
   store type, but uses way less columns, which reduces storage overhead for example in PostgreSQL a lot.
+- Introduce new `CASSANDRA2` version store type, which is has the same functionality as the `CASSANDRA` version
+  store type, but uses way less attributes, which reduces storage overhead.
 
 ### Changes
 
@@ -49,6 +51,9 @@ as necessary. Empty sections will not end in the release notes.
 - The current version store type `JDBC` is deprecated, please migrate to the new `JDBC2` version store
   type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
   to migrate from the `JDBC` version store type to `JDBC2`.
+- The current version store type `CASSANDRA` is deprecated, please migrate to the new `CASSANDRA2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `CASSANDRA` version store type to `CASSANDRA2`.
 
 ### Fixes
 

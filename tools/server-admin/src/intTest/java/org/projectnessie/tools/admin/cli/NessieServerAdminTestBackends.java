@@ -18,7 +18,7 @@ package org.projectnessie.tools.admin.cli;
 import java.util.Map;
 import org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType;
 import org.projectnessie.versioned.storage.bigtabletests.BigTableBackendContainerTestFactory;
-import org.projectnessie.versioned.storage.cassandratests.CassandraBackendTestFactory;
+import org.projectnessie.versioned.storage.cassandra2tests.CassandraBackendTestFactory;
 import org.projectnessie.versioned.storage.dynamodbtests.DynamoDBBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory;
@@ -71,7 +71,7 @@ public enum NessieServerAdminTestBackends {
 
     @Override
     Map<String, String> quarkusConfig() {
-      return Map.of("nessie.version.store.type", VersionStoreType.CASSANDRA.name());
+      return Map.of("nessie.version.store.type", VersionStoreType.CASSANDRA2.name());
     }
   },
 

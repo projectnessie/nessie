@@ -36,6 +36,7 @@ public class ConfigChecks {
   @Inject QuarkusServerConfig serverConfig;
   @Inject QuarkusJdbcConfig jdbcConfig;
 
+  @SuppressWarnings("deprecation")
   public void configCheck(@Observes StartupEvent event) {
     VersionStoreConfig.VersionStoreType versionStoreType = versionStoreConfig.getVersionStoreType();
     if (versionStoreType == VersionStoreConfig.VersionStoreType.IN_MEMORY) {

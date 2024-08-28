@@ -30,6 +30,7 @@ val genProjectPaths =
     ":nessie-quarkus-auth",
     ":nessie-versioned-storage-bigtable",
     ":nessie-versioned-storage-cassandra",
+    ":nessie-versioned-storage-cassandra2",
     ":nessie-versioned-storage-common",
     ":nessie-versioned-storage-dynamodb",
     ":nessie-versioned-storage-inmemory",

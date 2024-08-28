@@ -29,6 +29,7 @@ import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.cassandra.CassandraBackendFactory;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 
+@SuppressWarnings("deprecation")
 @StoreType(CASSANDRA)
 @Dependent
 public class CassandraBackendBuilder implements BackendBuilder {

@@ -19,7 +19,7 @@ import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import java.time.Duration;
-import org.projectnessie.versioned.storage.cassandra.CassandraConfig;
+import org.projectnessie.versioned.storage.cassandra2.Cassandra2Config;
 
 /**
  * When setting {@code nessie.version.store.type=CASSANDRA} which enables Apache Cassandra or
@@ -28,7 +28,7 @@ import org.projectnessie.versioned.storage.cassandra.CassandraConfig;
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.cassandra")
-public interface QuarkusCassandraConfig extends CassandraConfig {
+public interface QuarkusCassandraConfig extends Cassandra2Config {
   @Override
   @WithDefault(DEFAULT_DML_TIMEOUT)
   Duration dmlTimeout();

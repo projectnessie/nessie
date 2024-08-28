@@ -201,8 +201,15 @@ Related Quarkus settings:
 | MariaDB          | experimental, feedback welcome                   | `JDBC2` & `JDBC` (deprecated)                       |                                                                                                                                                                                                                                                                                                            |
 | MySQL            | experimental, feedback welcome                   | `JDBC2` & `JDBC` (deprecated)                       | Works by connecting the MariaDB driver to a MySQL server.                                                                                                                                                                                                                                                  |
 | CockroachDB      | experimental, known issues                       | `JDBC2` & `JDBC` (deprecated)                       | Known to raise user-facing "write too old" errors under contention.                                                                                                                                                                                                                                        |
-| Apache Cassandra | experimental, known issues                       | `CASSANDRA`                                         | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                                                                                                |
-| ScyllaDB         | experimental, known issues                       | `CASSANDRA`                                         | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. With Scylla version 6, you need to use a keyspace with "tablets" disabled. |
+| Apache Cassandra | experimental, known issues                       | `CASSANDRA2` & `CASSANDRA` (deprecated)             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts.                                                                                                                                                                                |
+| ScyllaDB         | experimental, known issues                       | `CASSANDRA2` & `CASSANDRA` (deprecated)             | Known to raise user-facing errors due to Cassandra's concept of letting the driver timeout too early, or database timeouts. Known to be slow in container based testing. Unclear how good Scylla's LWT implementation performs. With Scylla version 6, you need to use a keyspace with "tablets" disabled. |
+
+!!! warn
+
+!!! warn
+    Prefer the `CASSANDRA2` version store type over the `CASSANDRA` version store type, because it has way less storage overhead.
+    The `CASSANDRA` version store type is _deprecated for removal_, please use the
+    [Nessie Server Admin Tool](export_import.md) to migrate from the `CASSANDRA` version store type to `CASSANDRA2`.
 
 !!! warn
     Prefer the `JDBC2` version store type over the `JDBC` version store type, because it has way less storage overhead.
