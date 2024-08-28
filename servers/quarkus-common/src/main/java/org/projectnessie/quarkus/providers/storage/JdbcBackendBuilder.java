@@ -36,6 +36,7 @@ import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("deprecation")
 @StoreType(JDBC)
 @Dependent
 public class JdbcBackendBuilder implements BackendBuilder {

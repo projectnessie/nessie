@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.CASSANDRA2;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -28,7 +28,7 @@ public class QuarkusTestProfilePersistCassandra extends BaseConfigProfile {
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
-        .put("nessie.version.store.type", CASSANDRA.name())
+        .put("nessie.version.store.type", CASSANDRA2.name())
         .build();
   }
 

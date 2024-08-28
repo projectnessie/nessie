@@ -20,7 +20,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class Cassandra2BackendFactory implements BackendFactory<Cassandra2BackendConfig> {
 
-  public static final String NAME = "Cassandra";
+  public static final String NAME = "Cassandra2";
 
   @Override
   @Nonnull
