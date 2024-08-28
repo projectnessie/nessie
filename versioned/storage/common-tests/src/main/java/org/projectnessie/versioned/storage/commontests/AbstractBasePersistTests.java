@@ -1473,7 +1473,7 @@ public class AbstractBasePersistTests {
   }
 
   private void cassandraDeleteTombstoneSleep(long t) throws InterruptedException {
-    if ("Cassandra".equals(persist.name())) {
+    if (persist.name().startsWith("Cassandra")) {
       // MUST sleep here, otherwise the tombstone's timestamp might be equal to the INSERT's
       // timestamp of the storeObj() below, which would wrongly shadow the write's timestamp.
       long sleepMillis = t + 2 - System.currentTimeMillis();
