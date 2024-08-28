@@ -73,7 +73,6 @@ public final class JdbcBackend implements Backend {
   private final String createTableRefsSql;
   private final String createTableObjsSql;
 
-  @SuppressWarnings("removal")
   public JdbcBackend(
       @Nonnull JdbcBackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,

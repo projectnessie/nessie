@@ -75,7 +75,6 @@ public final class Jdbc2Backend implements Backend {
   private final String createTableRefsSql;
   private final String createTableObjsSql;
 
-  @SuppressWarnings("removal")
   public Jdbc2Backend(
       @Nonnull Jdbc2BackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,
