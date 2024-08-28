@@ -20,7 +20,7 @@ import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 
 public class DynamoDBBackendFactory implements BackendFactory<DynamoDBBackendConfig> {
 
-  public static final String NAME = "DynamoDB";
+  public static final String NAME = "DynamoDB2";
 
   @Override
   @Nonnull
