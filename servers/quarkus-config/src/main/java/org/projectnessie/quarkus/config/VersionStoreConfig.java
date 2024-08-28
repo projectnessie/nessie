@@ -27,23 +27,31 @@ public interface VersionStoreConfig {
 
   enum VersionStoreType {
     IN_MEMORY,
+
     ROCKSDB,
-    /** JDBC variant using many distinct attributes. */
+
+    /** DynamoDB variant using many distinct attributes. */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     DYNAMODB,
-    /** JDBC variant using many distinct attributes. */
+    /** DynamoDB variant using few attributes, saves storage overhead. */
     DYNAMODB2,
     MONGODB,
+
     /** Cassandra variant using many distinct columns. */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     CASSANDRA,
     /** Cassandra variant using few columns, saves storage overhead. */
     CASSANDRA2,
+
     /** JDBC variant using many distinct columns. */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     JDBC,
     /** JDBC variant using few columns, saves storage overhead for example in PostgreSQL. */
     JDBC2,
+
     BIGTABLE,
   }
 
