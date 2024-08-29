@@ -192,6 +192,14 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
         writer.printf("v%s%n%n", NessieVersion.NESSIE_VERSION);
         writer.print(readResource("welcome.txt"));
 
+        if (history) {
+          writer.println(
+              String.format(
+                  "History file in %s will record all statements.\n"
+                      + "Tip: lines that start with a space (' ') are not recorded in the history.\n\n",
+                  historyFile));
+        }
+
         checkVersion();
 
         RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
@@ -563,6 +571,8 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
 
         readerBuilder.variable(LineReader.HISTORY_FILE, f);
       }
+    } else {
+      readerBuilder.variable(LineReader.DISABLE_HISTORY, true);
     }
 
     LineReader reader = readerBuilder.build();

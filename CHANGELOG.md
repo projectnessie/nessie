@@ -59,6 +59,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- CLI: fixed a bug that was preventing the tool from running properly when history is disabled.
+
 ### Commits
 
 ## [0.95.0] Release (2024-08-07)
