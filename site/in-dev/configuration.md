@@ -433,11 +433,10 @@ Nessie publishes a Java based multiplatform (for amd64, arm64, ppc64le, s390x) i
 ### Advanced Docker image tuning (Java images only)
 
 There are many environment variables available to configure the Docker image. If in doubt, leave
-everything at its default. You can configure the behavior using the following environment
-variables. They come from the base image used by Nessie,
-[ubi9/openjdk-21-runtime](https://catalog.redhat.com/software/containers/ubi9/openjdk-21-runtime/6501ce769a0d86945c422d5f?architecture=amd64&image=66315a8390b0479a656a2f97).
-The extensive list of supported environment variables can be found 
-[here](https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html/red_hat_java_s2i_for_openshift/reference#configuration_environment_variables).
+everything at its default. You can configure the behavior using the environment variables listed
+below, which come from the base image used by Nessie, [ubi9/openjdk-21-runtime].
+
+[ubi9/openjdk-21-runtime]: https://catalog.redhat.com/software/containers/ubi9/openjdk-21-runtime/6501ce769a0d86945c422d5f
 
 #### Examples
 
