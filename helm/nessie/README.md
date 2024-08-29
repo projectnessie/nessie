@@ -33,9 +33,9 @@ for more information.
 
 ### From Helm repo
 ```bash
-$ helm repo add nessie-helm https://charts.projectnessie.org
-$ helm repo update
-$ helm install --namespace nessie-ns nessie nessie-helm/nessie
+helm repo add nessie-helm https://charts.projectnessie.org
+helm repo update
+helm install --namespace nessie-ns nessie nessie-helm/nessie
 ```
 
 ### From local directory (for development purposes)
@@ -43,13 +43,27 @@ $ helm install --namespace nessie-ns nessie nessie-helm/nessie
 From Nessie repo root:
 
 ```bash
-$ helm install --namespace nessie-ns nessie helm/nessie
+helm install --namespace nessie-ns nessie helm/nessie
 ```
 
 ### Uninstalling the chart
 
 ```bash
-$ helm uninstall --namespace nessie-ns nessie
+helm uninstall --namespace nessie-ns nessie
+```
+
+### Linting
+
+From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) tool:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing ct lint --debug --charts /helm/nessie
+```
+
+And also `helm lint`:
+
+```bash
+podman run -v=$(realpath helm/nessie):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
 ```
 
 ## Values
@@ -192,6 +206,8 @@ $ helm uninstall --namespace nessie-ns nessie
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
 | dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
+| extraVolumeMounts | list | `[]` | Extra volume mounts to add to the nessie container. See https://kubernetes.io/docs/concepts/storage/volumes/. |
+| extraVolumes | list | `[]` | Extra volumes to add to the nessie pod. See https://kubernetes.io/docs/concepts/storage/volumes/. |
 | image.configDir | string | `"/deployments/config"` | The path to the directory where the application.properties file should be mounted. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
@@ -200,8 +216,8 @@ $ helm uninstall --namespace nessie-ns nessie
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
 | ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
-| ingress.pathType | string | `ImplementationSpecific` | Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific" |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
+| ingress.pathType | string | `"ImplementationSpecific"` | Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific" |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
 | jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation for the correct URL format. |
 | jdbc.secret.name | string | `"datasource-creds"` | The secret name to pull datasource credentials from. |
@@ -225,7 +241,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | nodeSelector | object | `{}` | Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector. |
 | podAnnotations | object | `{}` | Annotations to apply to nessie pods. |
 | podLabels | object | `{}` | Additional Labels to apply to nessie pods. |
-| podSecurityContext | object | `{}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
+| podSecurityContext | object | `{"fsGroup":10001,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | readinessProbe | object | `{"failureThreshold":3,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}` | Configures the readiness probe for nessie pods. |
 | readinessProbe.failureThreshold | int | `3` | Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1. |
 | readinessProbe.initialDelaySeconds | int | `5` | Number of seconds after the container has started before readiness probes are initiated. Minimum value is 0. |
@@ -237,7 +253,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | rocksdb.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
 | rocksdb.storageSize | string | `"1Gi"` | The size of the persistent volume claim to create. |
-| securityContext | object | `{}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10000}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | service.annotations | object | `{}` | Annotations to add to the service. |
 | service.ports | object | `{"nessie-mgmt":9000,"nessie-server":19120}` | The ports the service will listen on. Two ports are required: one for the Nessie server and one for the management API. Other ports can be declared as needed. The management port is handled differently from other ports as a dedicated headless service is created for it. Note: port names must be unique and no more than 15 characters long. |
 | service.sessionAffinity | string | `"None"` | The session affinity for the service. Valid values are: None, ClientIP. ClientIP enables sticky sessions based on the client's IP address. This is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Also, this setting affects only internal clients, not external ones. If Ingress is enabled, it is recommended to set sessionAffinity to None. |
@@ -253,4 +269,4 @@ $ helm uninstall --namespace nessie-ns nessie
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.sample | string | `"1.0d"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled. |
-| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB, MONGODB, CASSANDRA, JDBC, BIGTABLE. (Legacy version store types are: INMEMORY, ROCKS, DYNAMO, MONGO, TRANSACTIONAL. If you are using one of these legacy version store types, migrate your existing repositories to the new version store types using the nessie-server-admin-tool's export/import functionality; support for these legacy version store types has been removed in Nessie 0.75.0.) |
+| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB, CASSANDRA2, JDBC2, BIGTABLE. Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2. Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2. Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2. |

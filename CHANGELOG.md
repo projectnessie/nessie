@@ -18,6 +18,9 @@ as necessary. Empty sections will not end in the release notes.
   (root). If you have any custom configurations, especially Kubernetes manifests containing security
   contexts, that rely on the previous user `default` (UID 185 and GID 0), you will need to adjust
   them to reference the new user `nessie` (UID 10000 and GID 10001) from now on.
+- Helm chart: the chart now comes with sane defaults for both pod and container security contexts.
+  If you have customized these settings, you don't need to do anything. If you have not customized these
+  settings, you may need to check if the new defaults are compatible with your environment.
 
 ### Breaking changes
 
