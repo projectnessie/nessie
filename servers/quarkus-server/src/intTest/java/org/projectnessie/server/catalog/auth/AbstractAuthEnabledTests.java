@@ -24,7 +24,6 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -140,7 +139,7 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTes
 
     @Override
     public List<TestResourceEntry> testResources() {
-      return Collections.singletonList(
+      return List.of(
           new TestResourceEntry(
               ObjectStorageMockTestResourceLifecycleManager.class,
               ImmutableMap.of(INIT_ADDRESS, "localhost"),

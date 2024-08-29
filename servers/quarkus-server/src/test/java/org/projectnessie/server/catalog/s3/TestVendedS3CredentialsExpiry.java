@@ -39,11 +39,13 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.objectstoragemock.sts.ImmutableAssumeRoleResult;
 import org.projectnessie.objectstoragemock.sts.ImmutableCredentials;
 import org.projectnessie.objectstoragemock.sts.ImmutableRoleUser;
+import org.projectnessie.server.catalog.IcebergResourceLifecycleManager;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AssumeRoleHandlerHolder;
 import org.projectnessie.server.catalog.S3UnitTestProfiles;
 
 @WithTestResource(ObjectStorageMockTestResourceLifecycleManager.class)
+@WithTestResource(IcebergResourceLifecycleManager.class)
 @QuarkusTest
 @TestProfile(TestVendedS3CredentialsExpiry.Profile.class)
 public class TestVendedS3CredentialsExpiry {

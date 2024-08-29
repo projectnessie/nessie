@@ -21,7 +21,6 @@ import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLife
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -50,10 +49,11 @@ public abstract class S3UnitTestProfiles implements QuarkusTestProfile {
 
   @Override
   public List<TestResourceEntry> testResources() {
-    return Collections.singletonList(
+    return List.of(
         new TestResourceEntry(
             ObjectStorageMockTestResourceLifecycleManager.class,
-            ImmutableMap.of(INIT_ADDRESS, "localhost")));
+            ImmutableMap.of(INIT_ADDRESS, "localhost")),
+        new TestResourceEntry(IcebergResourceLifecycleManager.class));
   }
 
   @Override

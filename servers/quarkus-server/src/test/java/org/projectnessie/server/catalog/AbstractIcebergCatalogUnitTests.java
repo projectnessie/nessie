@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.ArrayType;
+import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AccessCheckHandlerHolder;
 
+@WithTestResource(IcebergResourceLifecycleManager.class)
 public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCatalogTests {
 
   HeapStorageBucket heapStorageBucket;
