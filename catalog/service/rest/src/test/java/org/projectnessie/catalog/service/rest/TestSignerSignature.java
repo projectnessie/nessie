@@ -63,6 +63,12 @@ public class TestSignerSignature {
     String signature = signerSignature.sign(key);
     soft.assertThat(signerSignature.verify(key, signature, now)).isEmpty();
 
+    String pathParam = signerSignature.toPathParam(key);
+    SignerParams signerParams = SignerParams.fromPathParam(pathParam);
+    soft.assertThat(signerParams)
+        .extracting(SignerParams::keyName, SignerParams::signature, SignerParams::signerSignature)
+        .containsExactly(key.name(), signature, signerSignature);
+
     soft.assertThat(signerSignature.verify(null, signature, now))
         .contains("Could not find signingKey");
     soft.assertThat(signerSignature.verify(key, "tampered-signature", now))
