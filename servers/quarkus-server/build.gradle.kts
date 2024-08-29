@@ -184,6 +184,16 @@ sourceSets.named("main") { resources.srcDir(pullOpenApiSpec) }
 
 tasks.named("processResources") { dependsOn(pullOpenApiSpec) }
 
+tasks.withType(Test::class.java).configureEach {
+  // Needed by org.projectnessie.server.catalog.IcebergResourceLifecycleManager to "clean up"
+  // the shutdown hooks. See there for more information.
+  jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+  // Don't use Netty's epoll/iouring/kqueue mechanisms, because some libraryies, especially
+  // the Azure SDK, do never clean up resources (threads), which lead to OOMs in Quarkus tests
+  // (Quarkus uses a separate class loader for every test class).
+  systemProperty("io.netty.transport.noNative", "true")
+}
+
 quarkus {
   quarkusBuildProperties.put("quarkus.package.type", quarkusPackageType())
   // Pull manifest attributes from the "main" `jar` task to get the
