@@ -16,6 +16,7 @@
 package org.projectnessie.client;
 
 import static java.util.Collections.singleton;
+import static java.util.Locale.ROOT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_CONNECT_TIMEOUT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_ENABLE_API_COMPATIBILITY_CHECK;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
@@ -270,10 +271,15 @@ public interface NessieClientBuilder {
     ServiceLoader<NessieClientBuilder> implementations =
         ServiceLoader.load(NessieClientBuilder.class);
 
+    String clientNameLower = clientName != null ? clientName.toLowerCase(ROOT) : null;
+
     List<NessieClientBuilder> builders = new ArrayList<>();
     for (NessieClientBuilder clientBuilder : implementations) {
       builders.add(clientBuilder);
-      if (clientBuilder.names().contains(clientName)) {
+      if (clientNameLower != null
+          && clientBuilder.names().stream()
+              .map(n -> n.toLowerCase(ROOT))
+              .anyMatch(clientNameLower::equals)) {
         if (clientBuilderImpl != null
             && !clientBuilderImpl.isEmpty()
             && !clientBuilder.getClass().getName().equals(clientBuilderImpl)) {
@@ -286,7 +292,7 @@ public interface NessieClientBuilder {
         return clientBuilder;
       }
       if (clientBuilder.getClass().getName().equals(clientBuilderImpl)) {
-        if (clientName != null && !clientName.isEmpty()) {
+        if (clientNameLower != null && !clientNameLower.isEmpty()) {
           throw new IllegalArgumentException(
               "Requested client builder implementation "
                   + clientBuilderImpl
