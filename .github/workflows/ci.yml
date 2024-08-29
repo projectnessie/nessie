@@ -638,6 +638,18 @@ jobs:
 
       - name: Setup Docker registry
         run: |
+          echo "::group::registries.conf"
+          cat /etc/containers/registries.conf || true
+          echo "::endgroup::"
+
+          echo "::group::containers.conf"
+          cat /etc/containers/containers.conf || true
+          echo "::endgroup::"
+
+          echo "::group::Show minikube config"
+          minikube config view
+          echo "::endgroup::"
+
           echo "::group::Get registry IP"
           DOCKER_REGISTRY="$(minikube ip)"
           echo "Registry IP is ${DOCKER_REGISTRY}"
@@ -676,6 +688,10 @@ jobs:
           echo "::endgroup::"
           echo "::group::Start minikube"
           minikube start --insecure-registry="${DOCKER_REGISTRY}:5000" --addons=registry
+          echo "::endgroup::"
+
+          echo "::group::Show minikube config"
+          minikube config view
           echo "::endgroup::"
 
           echo "BUILDX_CONFIG=--config ${buildkitd_conf}" >> ${GITHUB_ENV}
