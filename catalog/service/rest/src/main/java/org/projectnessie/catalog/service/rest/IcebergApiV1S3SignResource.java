@@ -70,7 +70,7 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
 
   @Operation(operationId = "iceberg.v1.s3sign.blob")
   @POST
-  @Path("/v1/{prefix}/s3-sign2/{signedParams}")
+  @Path("/v1/{prefix}/s3sign/{signedParams}")
   @Blocking
   public Uni<IcebergS3SignResponse> s3signWIthOpaqueParams(
       IcebergS3SignRequest request,

@@ -99,31 +99,9 @@ public interface ExternalBaseUri {
    * deal with this.
    *
    * @param prefix the prefix of the request (warehouse and reference)
-   * @param contentKeyPathString the content key to sign the request for
    * @param signerParam the signer params path parameter (URL safe representation)
    */
   default String icebergS3SignerPathWithPath(String prefix, String signerParam) {
-    return format("v1/%s/s3-sign2/%s", encode(prefix, UTF_8), signerParam);
-  }
-
-  /**
-   * The path, without a leading slash, of the URI to sign a request to S3 for a specific content
-   * key.
-   *
-   * <p>Must use both {@code s3.signer.uri} and {@code s3.signer.endpoint}, because Iceberg before
-   * 1.5.0 does not handle full URIs passed via {@code s3.signer.endpoint}. This was changed via <a
-   * href="https://github.com/apache/iceberg/pull/8976/files#diff-1f7498b6989fffc169f7791292ed2ccb35b305f6a547fd832f6724057c8aca8bR213-R216">this
-   * Iceberg PR</a> first released in Iceberg 1.5.0. It's unclear how other language implementations
-   * deal with this.
-   *
-   * @param prefix the prefix of the request (warehouse and reference)
-   * @param contentKeyPathString the content key to sign the request for
-   * @param uriQuery the query string for the URL
-   */
-  default String icebergS3SignerPathWithQuery(
-      String prefix, String contentKeyPathString, String uriQuery) {
-    return format(
-        "v1/%s/s3-sign/%s?%s",
-        encode(prefix, UTF_8), encode(contentKeyPathString, UTF_8), uriQuery);
+    return format("v1/%s/s3sign/%s", encode(prefix, UTF_8), signerParam);
   }
 }
