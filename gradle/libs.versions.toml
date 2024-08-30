@@ -2,7 +2,7 @@
 
 [versions]
 bouncycastle = "1.70"
-checkstyle = "10.18.0"
+checkstyle = "10.18.1"
 errorprone = "2.31.0"
 errorproneSlf4j = "0.1.25"
 gatling = "3.11.5"
