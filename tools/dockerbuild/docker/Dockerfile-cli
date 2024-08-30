@@ -8,8 +8,18 @@ ARG VERSION
 
 ENV LANGUAGE='en_US:en'
 
-COPY --chown=185 build/libs/nessie-cli-$VERSION.jar /nessie-cli.jar
+USER root
+RUN groupadd --gid 1001 nessie \
+      && useradd --uid 1001 --gid nessie nessie \
+      && chown -R nessie:nessie /opt/jboss/container \
+      && chown -R nessie:nessie /deployments
 
-USER 185
+USER 1001
+WORKDIR /home/nessie
+ENV USER=nessie
+ENV UID=1001
+ENV HOME=/home/nessie
+
+COPY --chown=1001:1001 build/libs/nessie-cli-$VERSION.jar /nessie-cli.jar
 
 ENTRYPOINT [ "java", "-jar", "/nessie-cli.jar" ]
