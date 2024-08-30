@@ -21,7 +21,6 @@ import static java.util.UUID.randomUUID;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -92,11 +91,10 @@ public class SignerKeysServiceImpl implements SignerKeysService {
     Instant expires = now.plus(NEW_KEY_EXPIRE_AFTER);
 
     byte[] secretBytes = new byte[32]; // 256 bits for SHA256
-    try {
-      SecureRandom.getInstanceStrong().nextBytes(secretBytes);
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
+    // Use `/dev/urandom`, which does not block.
+    // SecureRandom.getInstanceStrong() would use `/dev/random`, which can block, with is especially
+    // an issue in containerized environments.
+    new SecureRandom().nextBytes(secretBytes);
 
     ImmutableSignerKeysObj.Builder keys = ImmutableSignerKeysObj.builder();
     if (current != null) {
