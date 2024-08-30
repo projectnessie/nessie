@@ -27,10 +27,9 @@ import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
@@ -182,17 +181,20 @@ public class TestIcebergConfigurer {
     }
     if (signPath != null) {
       URI endpoint = URI.create(tableConfig.config().get(S3_SIGNER_ENDPOINT));
-      soft.assertThat(endpoint.getRawPath()).isEqualTo(signPath);
-      Map<String, String> query =
-          Arrays.stream(endpoint.getRawQuery().split("&"))
-              .collect(
-                  Collectors.toMap(
-                      p -> p.substring(0, p.indexOf('=')), p -> p.substring(p.indexOf('=') + 1)));
-      soft.assertThat(query)
-          .containsKeys("e", "s")
-          .containsEntry("b", encode(warehouseLocation, UTF_8))
-          .containsEntry("k", signerKey.name())
-          .containsEntry("w", encode(loc, UTF_8));
+      soft.assertThat(endpoint.getRawPath()).startsWith(signPath);
+      soft.assertThat(endpoint.getRawQuery()).isNull();
+
+      SignerParams signerParams =
+          SignerParams.fromPathParam(
+              endpoint.getRawPath().substring(endpoint.getRawPath().lastIndexOf('/') + 1));
+      soft.assertThat(signerParams)
+          .extracting(
+              SignerParams::keyName,
+              p -> p.signerSignature().writeLocations(),
+              p -> p.signerSignature().warehouseLocation(),
+              p -> p.signerSignature().identifier())
+          .containsExactly(
+              signerKey.name(), List.of(loc), warehouseLocation, key.toPathStringEscaped());
       soft.assertThat(signPath).doesNotStartWith("/");
       soft.assertThat(signUri).isNotNull();
     } else {
@@ -213,21 +215,21 @@ public class TestIcebergConfigurer {
             "main",
             key,
             "http://foo:12434/iceberg/",
-            "v1/main/s3-sign/" + key.toPathString()),
+            "v1/main/s3sign/"),
         arguments(
             URI.create("http://foo:12434/some/long/prefix/"),
             s3,
             complexPrefix,
             key,
             "http://foo:12434/some/long/prefix/iceberg/",
-            "v1/" + encode(complexPrefix, UTF_8) + "/s3-sign/" + key.toPathString()),
+            "v1/" + encode(complexPrefix, UTF_8) + "/s3sign/"),
         arguments(
             URI.create("https://foo/some/long/prefix/"),
             s3,
             complexPrefix,
             key,
             "https://foo/some/long/prefix/iceberg/",
-            "v1/" + encode(complexPrefix, UTF_8) + "/s3-sign/" + key.toPathString()),
+            "v1/" + encode(complexPrefix, UTF_8) + "/s3sign/"),
         arguments(
             URI.create("http://foo:12434/some/long/prefix/"), gcs, complexPrefix, key, null, null));
   }

@@ -68,6 +68,40 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.UNKNOWN);
   }
 
+  @Operation(operationId = "iceberg.v1.s3sign.blob")
+  @POST
+  @Path("/v1/{prefix}/s3sign/{signedParams}")
+  @Blocking
+  public Uni<IcebergS3SignResponse> s3signWIthOpaqueParams(
+      IcebergS3SignRequest request,
+      @PathParam("prefix") String prefix,
+      @PathParam("signedParams") String signedParams) {
+
+    SignerParams signerParams = SignerParams.fromPathParam(signedParams);
+    SignerKey signerKey = signerKeysService.getSignerKey(signerParams.keyName());
+
+    SignerSignature signerSignature = signerParams.signerSignature();
+    Optional<String> verifyError =
+        signerSignature.verify(signerKey, signerParams.signature(), clock.instant());
+
+    if (verifyError.isPresent()) {
+      LOGGER.warn("{} for request {}", verifyError.get(), uriInfo.getRequestUri());
+      throw new IllegalArgumentException("Invalid signature");
+    }
+
+    return ImmutableIcebergS3SignParams.builder()
+        .request(request)
+        .ref(decodePrefix(prefix).parsedReference())
+        .key(ContentKey.fromPathString(signerSignature.identifier()))
+        .warehouseLocation(signerSignature.warehouseLocation())
+        .writeLocations(signerSignature.writeLocations())
+        .readLocations(signerSignature.readLocations())
+        .catalogService(catalogService)
+        .signer(signer)
+        .build()
+        .verifyAndSign();
+  }
+
   @Operation(operationId = "iceberg.v1.s3sign")
   @POST
   @Path("/v1/{prefix}/s3-sign/{identifier}")

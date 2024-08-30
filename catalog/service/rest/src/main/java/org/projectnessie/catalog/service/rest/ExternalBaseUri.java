@@ -99,12 +99,9 @@ public interface ExternalBaseUri {
    * deal with this.
    *
    * @param prefix the prefix of the request (warehouse and reference)
-   * @param contentKeyPathString the content key to sign the request for
-   * @param uriQuery the query string for the URL
+   * @param signerParam the signer params path parameter (URL safe representation)
    */
-  default String icebergS3SignerPath(String prefix, String contentKeyPathString, String uriQuery) {
-    return format(
-        "v1/%s/s3-sign/%s?%s",
-        encode(prefix, UTF_8), encode(contentKeyPathString, UTF_8), uriQuery);
+  default String icebergS3SignerPathWithPath(String prefix, String signerParam) {
+    return format("v1/%s/s3sign/%s", encode(prefix, UTF_8), signerParam);
   }
 }

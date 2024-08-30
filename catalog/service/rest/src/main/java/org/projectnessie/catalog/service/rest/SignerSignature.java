@@ -19,6 +19,8 @@ import static com.google.common.hash.Hashing.hmacSha256;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.hash.Hasher;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -28,6 +30,8 @@ import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
+@JsonSerialize(as = ImmutableSignerSignature.class)
+@JsonDeserialize(as = ImmutableSignerSignature.class)
 public abstract class SignerSignature {
 
   public abstract String prefix();
@@ -56,6 +60,16 @@ public abstract class SignerSignature {
       hasher.putString("r=" + readLocation, UTF_8);
     }
     return hasher.hash().toString();
+  }
+
+  public String toPathParam(SignerKey signerKey) {
+    String signature = sign(signerKey);
+    return SignerParams.builder()
+        .keyName(signerKey.name())
+        .signature(signature)
+        .signerSignature(this)
+        .build()
+        .toPathParam();
   }
 
   public String uriQuery(SignerKey signerKey) {

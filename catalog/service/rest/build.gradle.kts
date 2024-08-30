@@ -46,6 +46,7 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
 
   implementation(libs.slf4j.api)
   implementation(libs.guava)

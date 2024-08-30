@@ -321,7 +321,7 @@ public class IcebergConfigurer {
     long expirationTimestamp = systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
 
     String contentKeyPathString = contentKey.toPathStringEscaped();
-    String uriQuery =
+    String pathParam =
         SignerSignature.builder()
             .expirationTimestamp(expirationTimestamp)
             .prefix(prefix)
@@ -330,10 +330,9 @@ public class IcebergConfigurer {
             .writeLocations(normalizedWriteLocations)
             .readLocations(normalizedReadLocations)
             .build()
-            .uriQuery(signerKey);
+            .toPathParam(signerKey);
 
-    config.accept(
-        S3_SIGNER_ENDPOINT, uriInfo.icebergS3SignerPath(prefix, contentKeyPathString, uriQuery));
+    config.accept(S3_SIGNER_ENDPOINT, uriInfo.icebergS3SignerPathWithPath(prefix, pathParam));
 
     return true;
   }
