@@ -26,6 +26,7 @@ import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
 import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
+import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
@@ -51,7 +52,8 @@ public class MultiEnvTestEngine implements TestEngine {
 
   private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
 
-  private final JupiterTestEngine delegate = new JupiterTestEngine();
+  private final ThreadPerTestClassExecutionTestEngine delegate =
+      new ThreadPerTestClassExecutionTestEngine();
 
   static MultiEnvExtensionRegistry registry() {
     return registry;
@@ -76,36 +78,36 @@ public class MultiEnvTestEngine implements TestEngine {
       preliminaryResult.accept(
           descriptor -> {
             if (descriptor instanceof ClassBasedTestDescriptor) {
-              Class<?> testClass = ((ClassBasedTestDescriptor) descriptor).getTestClass();
-              registry.registerExtensions(testClass);
+              registry.registerExtensions(((ClassBasedTestDescriptor) descriptor));
             }
           });
 
+      ConfigurationParameters configurationParameters =
+          discoveryRequest.getConfigurationParameters();
+
       // JupiterEngineDescriptor must be the root, that's what the JUnit Jupiter engine
       // implementation expects.
-      JupiterEngineDescriptor multiEnvDescriptor =
+      JupiterEngineDescriptor multiEnvRootDescriptor =
           new JupiterEngineDescriptor(
-              uniqueId,
-              new DefaultJupiterConfiguration(discoveryRequest.getConfigurationParameters()));
+              uniqueId, new DefaultJupiterConfiguration(configurationParameters));
 
+      // Handle the "multi-env" tests.
       List<String> extensions = new ArrayList<>();
-      AtomicBoolean envDiscovered = new AtomicBoolean();
+      AtomicBoolean multiEnvDiscovered = new AtomicBoolean();
       registry.stream()
           .forEach(
               ext -> {
                 extensions.add(ext.getClass().getSimpleName());
-                for (String envId :
-                    ext.allEnvironmentIds(discoveryRequest.getConfigurationParameters())) {
-                  envDiscovered.set(true);
+                for (String envId : ext.allEnvironmentIds(configurationParameters)) {
+                  multiEnvDiscovered.set(true);
                   UniqueId segment = uniqueId.append(ext.segmentType(), envId);
 
                   MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
-                  multiEnvDescriptor.addChild(envRoot);
+                  multiEnvRootDescriptor.addChild(envRoot);
 
                   JupiterConfiguration envRootConfiguration =
                       new CachingJupiterConfiguration(
-                          new MultiEnvJupiterConfiguration(
-                              discoveryRequest.getConfigurationParameters(), envId));
+                          new MultiEnvJupiterConfiguration(configurationParameters, envId));
                   JupiterEngineDescriptor discoverResult =
                       new JupiterEngineDescriptor(segment, envRootConfiguration);
                   new DiscoverySelectorResolver()
@@ -116,18 +118,53 @@ public class MultiEnvTestEngine implements TestEngine {
                   for (TestDescriptor child : children) {
                     // Note: this also removes the reference to parent from the child
                     discoverResult.removeChild(child);
-                    envRoot.addChild(child);
+
+                    // Must check whether the test class is a multi-env test, because discovery
+                    // returns all test classes.
+                    ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
+                    boolean multi = registry().isMultiEnvClass(classBased);
+                    if (multi) {
+                      envRoot.addChild(child);
+                    }
                   }
                 }
               });
 
-      if (!extensions.isEmpty() && !envDiscovered.get() && FAIL_ON_MISSING_ENVIRONMENTS) {
+      // Also execute all other tests via the MultiEnv test engine to get the "thread per
+      // test-class" behavior.
+      registry()
+          .probablyNotMultiEnv()
+          .forEach(
+              clazz -> {
+                JupiterConfiguration jupiterConfiguration =
+                    new CachingJupiterConfiguration(
+                        new DefaultJupiterConfiguration(configurationParameters));
+
+                JupiterEngineDescriptor discoverResult =
+                    new JupiterEngineDescriptor(uniqueId, jupiterConfiguration);
+                new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, discoverResult);
+
+                List<? extends TestDescriptor> children =
+                    new ArrayList<>(discoverResult.getChildren());
+                for (TestDescriptor child : children) {
+                  // Must check whether the test class is not a multi-env test here, as the
+                  // `multiEnvNotDetected` contains some actual multi-env tests.
+                  ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
+                  boolean multi = registry().isMultiEnvClass(classBased);
+                  if (!multi) {
+                    discoverResult.removeChild(child);
+                    multiEnvRootDescriptor.addChild(child);
+                  }
+                }
+              });
+
+      if (!extensions.isEmpty() && !multiEnvDiscovered.get() && FAIL_ON_MISSING_ENVIRONMENTS) {
         throw new IllegalStateException(
             String.format(
                 "%s was enabled, but test extensions did not discover any environment IDs: %s",
                 getClass().getSimpleName(), extensions));
       }
-      return multiEnvDescriptor;
+      return multiEnvRootDescriptor;
     } catch (Exception e) {
       LOGGER.error("Failed to discover tests", e);
       throw new RuntimeException(e);
