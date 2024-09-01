@@ -28,7 +28,7 @@ quarkusPlatform = "3.14.1"
 quarkusPlugin = "3.14.1"
 slf4j = "2.0.16"
 smallryeConfig = "3.9.1"
-undertow = "2.3.16.Final"
+undertow = "2.3.17.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
 logback_compat = "1.3.14" # For Java 8
