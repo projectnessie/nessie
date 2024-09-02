@@ -12,6 +12,12 @@ as necessary. Empty sections will not end in the release notes.
 
 - Support for Java 8 has been removed, even for Nessie clients. Minimum runtime requirement for clients
   is Java 11.
+- Nessie Docker images now all execute as user `nessie` (UID 10000 and GID 10001). They would
+  previously execute as user `default` (UID 185 and GID 0). This is a security improvement, as the
+  Nessie images no longer run with a UID within the privileged range, and the GID is no longer 0
+  (root). If you have any custom configurations, especially Kubernetes manifests containing security
+  contexts, that rely on the previous user `default` (UID 185 and GID 0), you will need to adjust
+  them to reference the new user `nessie` (UID 10000 and GID 10001) from now on.
 
 ### Breaking changes
 
