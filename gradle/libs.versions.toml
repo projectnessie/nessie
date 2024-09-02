@@ -43,7 +43,7 @@ agrona = { module = "org.agrona:agrona", version = "1.22.0" }
 assertj-core = { module = "org.assertj:assertj-core", version = "3.26.3" }
 avro = { module = "org.apache.avro:avro", version = "1.12.0" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.2" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.27.12" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.27.17" }
 azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.27" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
