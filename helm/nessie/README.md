@@ -200,6 +200,7 @@ $ helm uninstall --namespace nessie-ns nessie
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
 | ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
+| ingress.pathType | string | `ImplementationSpecific` | Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific" |
 | ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
 | jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation for the correct URL format. |

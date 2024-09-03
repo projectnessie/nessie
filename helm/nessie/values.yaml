@@ -686,6 +686,8 @@ ingress:
   annotations: {
     # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
   }
+  # -- Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific"
+  pathType: ImplementationSpecific
   # -- A list of host paths used to configure the ingress.
   hosts:
     - host: chart-example.local
