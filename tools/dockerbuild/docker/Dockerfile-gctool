@@ -6,8 +6,18 @@ LABEL org.opencontainers.image.licenses=Apache-2.0
 
 ENV LANGUAGE='en_US:en'
 
-COPY --chown=185 build/executable/nessie-gc.jar /
+USER root
+RUN groupadd --gid 10001 nessie \
+      && useradd --uid 10000 --gid nessie nessie \
+      && chown -R nessie:nessie /opt/jboss/container \
+      && chown -R nessie:nessie /deployments
 
-USER 185
+USER nessie
+WORKDIR /home/nessie
+ENV USER=nessie
+ENV UID=10000
+ENV HOME=/home/nessie
+
+COPY --chown=nessie:nessie build/executable/nessie-gc.jar /
 
 ENTRYPOINT [ "java", "-jar", "/nessie-gc.jar" ]
