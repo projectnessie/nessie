@@ -21,9 +21,17 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface StoredObjResult<T> {
+  /**
+   * Either contains the newly persisted or already existing object or is empty, if the object was
+   * not persisted due to a {@link ObjId} collision.
+   */
   @Value.Parameter
   Optional<T> obj();
 
+  /**
+   * Flag whether the object was persisted as a new object, {@link #obj()} will have a value if
+   * {@code stored} is {@code true}.
+   */
   @Value.Parameter
   boolean stored();
 

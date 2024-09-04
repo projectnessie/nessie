@@ -62,8 +62,9 @@ public interface CommitLogic {
    * @param createCommit parameters for {@link #buildCommitObj(CreateCommit, ConflictHandler,
    *     CommitOpHandler, ValueReplacement, ValueReplacement)}
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return the non-null commit, if the commit was stored as a new record, or {@code null} if an
-   *     object with the same ID already exists.
+   * @return the non-{@code null} commit, if it was stored as a new record or already existed with
+   *     the same values. Returns {@code null} if an object with the same ID already exists
+   *     (collision).
    */
   @Nullable
   CommitObj doCommit(@Nonnull CreateCommit createCommit, @Nonnull List<Obj> additionalObjects)
@@ -76,7 +77,9 @@ public interface CommitLogic {
    *
    * @param commit commit to store
    * @param additionalObjects additional {@link Obj}s to store, for example {@link ContentValueObj}
-   * @return the persisted {@link CommitObj} if successful
+   * @return container holding the information whether the {@link CommitObj} was persisted as a new
+   *     commit object, existed with the same values or was not persisted due to a commit-ID/hash
+   *     collision.
    * @see #doCommit(CreateCommit, List)
    * @see #buildCommitObj(CreateCommit, ConflictHandler, CommitOpHandler, ValueReplacement,
    *     ValueReplacement)
