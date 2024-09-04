@@ -106,6 +106,7 @@ public interface JsonObj extends Obj {
   static JsonObj json(ObjId id, long referenced, String type, @Nullable Object bean) {
     return ImmutableJsonObj.builder()
         .id(id)
+        .referenced(referenced)
         .bean(ImmutableJsonBean.builder().object(bean).type(type).build())
         .build();
   }
