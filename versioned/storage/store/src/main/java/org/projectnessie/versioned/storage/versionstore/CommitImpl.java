@@ -209,7 +209,7 @@ class CommitImpl extends BaseCommitHelper {
       // example).
       StoredObjResult<CommitObj> stored = commitLogic.storeCommit(newHead, objectsToStore);
       if (stored.obj().isPresent()) {
-        newHead = stored.obj().orElseThrow();
+        newHead = stored.obj().get();
         commitRetryState.commitPersisted = newHead.id();
         commitRetryState.storedContents.addAll(toStore);
       }
