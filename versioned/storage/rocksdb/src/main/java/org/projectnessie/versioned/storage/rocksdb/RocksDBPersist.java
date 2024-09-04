@@ -345,10 +345,11 @@ class RocksDBPersist implements Persist {
 
       byte[] existing = db.get(cf, key);
       if (existing != null) {
-        obj = deserializeObj(obj.id(), 0L, existing, null).withReferenced(referenced);
+        obj = deserializeObj(obj.id(), referenced, existing, null);
         ignoreSoftSizeRestrictions = true;
         r = false;
       } else {
+        obj = obj.withReferenced(referenced);
         r = true;
       }
 
@@ -356,9 +357,7 @@ class RocksDBPersist implements Persist {
           ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
       int indexSizeLimit =
           ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIndexSegmentSizeLimit();
-      byte[] serialized =
-          serializeObj(
-              obj.withReferenced(referenced), incrementalIndexSizeLimit, indexSizeLimit, true);
+      byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit, true);
 
       db.put(cf, key, serialized);
       return r;
