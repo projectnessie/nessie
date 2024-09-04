@@ -66,6 +66,32 @@ if (
         target("build-logic/src/**/kotlin/**")
         targetExclude("build-logic/build/**")
       }
+      yaml {
+        // delimiter can be:
+        // - a comment sign not followed by another comment sign (reserved for the license header)
+        // - a YAML document separator
+        // - the beginning of a YAML document (key-value pair)
+        licenseHeaderFile(
+          rootProject.file("codestyle/copyright-header-yaml.txt"),
+          " *(#(?!#)|---|[^:#\\s\\{/]+\\s*:)"
+        )
+        target("helm/nessie/**/*.yaml", "helm/nessie/**/*.yml")
+        targetExclude("helm/nessie/templates/**", "helm/nessie/ci/**")
+      }
+      format("helm-template") {
+        // delimiter can be:
+        // - the beginning of a template not followed by /** (reserved for the license header)
+        // - a comment sign
+        // - a YAML document separator
+        // - the beginning of a YAML document (key-value pair)
+        // - The sentence "To connect to Nessie" (NOTES.txt)
+        licenseHeaderFile(
+          rootProject.file("codestyle/copyright-header-helm-template.txt"),
+          "( *\\{\\{(?!/\\*\\*)| *#|---|[^:#\\s\\{/]+\\s*:|To connect to Nessie)"
+        )
+        target("helm/nessie/templates/**")
+        targetExclude("helm/nessie/templates/tests/**")
+      }
     }
 
     if (project.plugins.hasPlugin("antlr")) {
