@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.persist.Reference.refer
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Backend.condition;
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Backend.keyPrefix;
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Constants.BATCH_GET_LIMIT;
+import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Constants.COL_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Constants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Constants.COL_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.dynamodb2.DynamoDB2Constants.COL_OBJ_VERS;
@@ -439,18 +440,34 @@ public class DynamoDB2Persist implements Persist {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, ignoreSoftSizeRestrictions);
+    long referenced = config.currentTimeMicros();
+
+    Map<String, AttributeValue> item = objToItem(obj, referenced, id, ignoreSoftSizeRestrictions);
 
     try {
-      backend
-          .client()
-          .putItem(
-              b ->
-                  b.tableName(backend.tableObjs)
-                      .conditionExpression(CONDITION_STORE_OBJ)
-                      .item(item));
-    } catch (ConditionalCheckFailedException e) {
-      return false;
+      try {
+        backend
+            .client()
+            .putItem(
+                b ->
+                    b.tableName(backend.tableObjs)
+                        .conditionExpression(CONDITION_STORE_OBJ)
+                        .item(item));
+      } catch (ConditionalCheckFailedException e) {
+        backend
+            .client()
+            .updateItem(
+                b ->
+                    b.tableName(backend.tableObjs)
+                        .key(objKeyMap(id))
+                        .attributeUpdates(
+                            Map.of(
+                                COL_OBJ_REFERENCED,
+                                AttributeValueUpdate.builder()
+                                    .value(fromS(Long.toString(referenced)))
+                                    .build())));
+        return false;
+      }
     } catch (DynamoDbException e) {
       // Best effort to detect whether an object exceeded DynamoDB's hard item size limit of 400k.
       AwsErrorDetails errorDetails = e.awsErrorDetails();
@@ -488,7 +505,10 @@ public class DynamoDB2Persist implements Persist {
     ObjId id = obj.id();
     checkArgument(id != null, "Obj to store must have a non-null ID");
 
-    Map<String, AttributeValue> item = objToItem(obj, id, false);
+    long referenced = config.currentTimeMicros();
+    obj = obj.withReferenced(referenced);
+
+    Map<String, AttributeValue> item = objToItem(obj, config.currentTimeMicros(), id, false);
 
     try {
       backend.client().putItem(b -> b.tableName(backend.tableObjs).item(item));
@@ -508,12 +528,15 @@ public class DynamoDB2Persist implements Persist {
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     // DynamoDB does not support "PUT IF NOT EXISTS" in a BatchWriteItemRequest/PutItem
     try (BatchWrite batchWrite = new BatchWrite(backend, backend.tableObjs)) {
+      long referenced = config.currentTimeMicros();
       for (Obj obj : objs) {
         if (obj != null) {
           ObjId id = obj.id();
           checkArgument(id != null, "Obj to store must have a non-null ID");
 
-          Map<String, AttributeValue> item = objToItem(obj, id, false);
+          obj = obj.withReferenced(referenced);
+
+          Map<String, AttributeValue> item = objToItem(obj, config.currentTimeMicros(), id, false);
 
           batchWrite.addPut(item);
         }
@@ -553,8 +576,11 @@ public class DynamoDB2Persist implements Persist {
 
     Map<String, ExpectedAttributeValue> expectedValues = conditionalUpdateExpectedValues(expected);
 
+    long referenced = config.currentTimeMicros();
     Map<String, AttributeValueUpdate> updates =
-        objToItem(newValue, id, false).entrySet().stream()
+        objToItem(newValue.withReferenced(referenced), config.currentTimeMicros(), id, false)
+            .entrySet()
+            .stream()
             .filter(e -> !COL_OBJ_TYPE.equals(e.getKey()) && !KEY_NAME.equals(e.getKey()))
             .collect(
                 Collectors.toMap(
@@ -614,18 +640,22 @@ public class DynamoDB2Persist implements Persist {
     }
     ByteBuffer bin = item.get(COL_OBJ_VALUE).b().asByteBuffer();
     String versionToken = attributeToString(item, COL_OBJ_VERS);
-    Obj obj = deserializeObj(id, bin, versionToken);
+    String referencedString = attributeToString(item, COL_OBJ_REFERENCED);
+    long referenced = referencedString != null ? Long.parseLong(referencedString) : 0L;
+    Obj obj = deserializeObj(id, referenced, bin, versionToken);
     return typeClass.cast(obj);
   }
 
   @Nonnull
   private Map<String, AttributeValue> objToItem(
-      @Nonnull Obj obj, ObjId id, boolean ignoreSoftSizeRestrictions) throws ObjTooLargeException {
+      @Nonnull Obj obj, long referenced, ObjId id, boolean ignoreSoftSizeRestrictions)
+      throws ObjTooLargeException {
     ObjType type = obj.type();
 
     Map<String, AttributeValue> item = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
+    item.put(COL_OBJ_REFERENCED, fromS(Long.toString(referenced)));
     UpdateableObj.extractVersionToken(obj).ifPresent(token -> item.put(COL_OBJ_VERS, fromS(token)));
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();
