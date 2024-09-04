@@ -39,10 +39,10 @@ public final class ObjIdHelper {
 
   /**
    * Returns an {@link ObjectReader} for the given target {@link ObjType}, with the given {@link
-   * ObjId} injectable under the key {@value #OBJ_ID_KEY} and version token using the key {@value
-   * #OBJ_VERS_KEY}.
+   * ObjId} injectable under the key {@value #OBJ_ID_KEY}, version token using the key {@value
+   * #OBJ_VERS_KEY} and referenced timestamp using the key {@value #OBJ_REFERENCED_KEY}.
    */
-  public static ObjectReader readerWithObjIdAndVersionToken(
+  public static ObjectReader contextualReader(
       ObjectMapper mapper, ObjType objType, ObjId id, String objVersionToken, long objReferenced) {
     InjectableValues values =
         new InjectableValues.Std()

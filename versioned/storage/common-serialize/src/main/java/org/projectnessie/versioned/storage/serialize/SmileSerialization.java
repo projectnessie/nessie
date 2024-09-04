@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.serialize;
 
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.contextualReader;
 import static org.projectnessie.versioned.storage.common.util.Compressions.compressDefault;
 import static org.projectnessie.versioned.storage.common.util.Compressions.uncompress;
 
@@ -48,8 +48,7 @@ public final class SmileSerialization {
       long referenced,
       Compression compression) {
     try {
-      ObjectReader reader =
-          readerWithObjIdAndVersionToken(SMILE_MAPPER, type, id, versionToken, referenced);
+      ObjectReader reader = contextualReader(SMILE_MAPPER, type, id, versionToken, referenced);
       data = uncompress(compression, data);
       return reader.readValue(data, type.targetClass());
     } catch (IOException e) {

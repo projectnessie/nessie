@@ -35,7 +35,7 @@ import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONF
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreIndexes.newStoreIndex;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.contextualReader;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.EMPTY_COMMIT_HEADERS;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitObj.commitBuilder;
@@ -160,7 +160,7 @@ public class AbstractBasePersistTests {
     long referenced = 42L;
 
     Obj genericObj =
-        readerWithObjIdAndVersionToken(mapper, genericType, idGeneric, versionToken, referenced)
+        contextualReader(mapper, genericType, idGeneric, versionToken, referenced)
             .readValue(json, genericType.targetClass());
     soft.assertThat(persist.storeObj(genericObj)).isTrue();
 

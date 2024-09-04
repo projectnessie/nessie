@@ -16,7 +16,7 @@
 package org.projectnessie.versioned.storage.common.objtypes;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.readerWithObjIdAndVersionToken;
+import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.contextualReader;
 import static org.projectnessie.versioned.storage.common.objtypes.GenericObj.VERSION_TOKEN_ATTRIBUTE;
 import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.newGenericObjType;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
@@ -53,7 +53,7 @@ public class TestGenericObj {
     String json = mapper.writeValueAsString(realObj);
 
     Obj genericObj =
-        readerWithObjIdAndVersionToken(mapper, genericType, id, versionToken, realObj.referenced())
+        contextualReader(mapper, genericType, id, versionToken, realObj.referenced())
             .readValue(json, genericType.targetClass());
     soft.assertThat(genericObj)
         .isInstanceOf(GenericObj.class)
@@ -68,7 +68,7 @@ public class TestGenericObj {
 
     String jsonGeneric = mapper.writeValueAsString(genericObj);
     Obj deserRealObj =
-        readerWithObjIdAndVersionToken(mapper, realType, id, versionToken, realObj.referenced())
+        contextualReader(mapper, realType, id, versionToken, realObj.referenced())
             .readValue(jsonGeneric, realType.targetClass());
     soft.assertThat(deserRealObj).isEqualTo(realObj);
   }
