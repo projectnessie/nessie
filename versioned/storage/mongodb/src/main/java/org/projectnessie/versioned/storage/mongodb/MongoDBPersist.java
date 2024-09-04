@@ -643,12 +643,9 @@ public class MongoDBPersist implements Persist {
     for (Obj obj : objs) {
       if (obj != null) {
         ObjId id = obj.id();
-        obj = obj.withReferenced(referenced);
         docs.add(
             new ReplaceOneModel<>(
-                eq(ID_PROPERTY_NAME, idObjDoc(id)),
-                objToDoc(obj, config.currentTimeMicros(), false),
-                options));
+                eq(ID_PROPERTY_NAME, idObjDoc(id)), objToDoc(obj, referenced, false), options));
       }
     }
 
