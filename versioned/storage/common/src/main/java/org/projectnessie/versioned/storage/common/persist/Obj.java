@@ -36,6 +36,8 @@ public interface Obj {
    * Contains the timestamp in microseconds since epoch when the object was last written, only
    * intended for repository cleanup mechanisms.
    *
+   * <p>The value of this attribute is generated exclusively by the {@link Persist} implementations.
+   *
    * <p>This attribute is <em>not</em> consistent when using a caching {@link Persist}.
    */
   @JsonIgnore
