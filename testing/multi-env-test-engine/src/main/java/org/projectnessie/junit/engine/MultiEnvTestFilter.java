@@ -15,7 +15,7 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvTestEngine.registry;
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findNestedMultiEnvTestExtensionsOn;
 
 import java.util.Optional;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
@@ -47,27 +47,21 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
   }
 
   private FilterResult filter(Class<?> testClass, UniqueId id) {
-    // Use the static extension data collected during the discovery phase.
-    // It is possible to reload extensions based of class objects from test descriptors,
-    // however that would add unnecessary overhead.
-    MultiEnvExtensionRegistry registry = registry();
+    boolean isJunitEngine = id.getEngineId().map("junit-jupiter"::equals).orElse(false);
+    boolean isMultiEnvTest =
+        findNestedMultiEnvTestExtensionsOn(testClass)
+            .map(MultiEnvAnnotationUtils::segmentTypeOf)
+            .findAny()
+            .isPresent();
 
-    if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
-      if (registry.stream(testClass).findAny().isPresent()) {
+    if (isJunitEngine) {
+      if (isMultiEnvTest) {
         return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
       } else {
         return FilterResult.included(null);
       }
     } else {
-      // check whether any of the extensions declared by the test recognize the version segment
-      boolean matched =
-          registry.stream(testClass)
-              .anyMatch(
-                  ext ->
-                      id.getSegments().stream()
-                          .anyMatch(s -> ext.segmentType().equals(s.getType())));
-
-      if (matched) {
+      if (isMultiEnvTest) {
         return FilterResult.included(null);
       } else {
         return FilterResult.excluded("Excluding unmatched multi-env test: " + id);

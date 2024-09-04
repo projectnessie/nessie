@@ -23,11 +23,11 @@ import org.junit.platform.engine.ConfigurationParameters;
  * Interface for JUnit5 test extensions that require running the same suite of tests in multiple
  * executions environments. For example, running the same tests for multiple versions of a Nessie
  * Client.
+ *
+ * <p>Implementations must declare a {@link MultiEnvSegmentType} with the name of the type of their
+ * Junit UniqueID segment.
  */
 public interface MultiEnvTestExtension extends Extension {
-
-  /** Segment type for JUnit5 Unique IDs that represents a particular test execution environment. */
-  String segmentType();
 
   /**
    * Returns a list of IDs for test environments where the related suite of tests needs to be
@@ -37,4 +37,13 @@ public interface MultiEnvTestExtension extends Extension {
    * invocations of this method to ensure a stable test case creation order.
    */
   List<String> allEnvironmentIds(ConfigurationParameters configuration);
+
+  /**
+   * Allows {@link MultiEnvTestExtension}s to define their relative ordering within a JUnit
+   * UniqueID's segments. Higher numbers will appear earlier in the JUnit UniqueId. Extensions with
+   * the same segment priority will be sorted alphabetically by segmentType.
+   */
+  default int segmentPriority() {
+    return 0;
+  }
 }

@@ -33,6 +33,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.UniqueId;
+import org.projectnessie.junit.engine.MultiEnvSegmentType;
 import org.projectnessie.junit.engine.MultiEnvTestExtension;
 import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.versioned.storage.common.config.StoreConfig.Adjustable;
@@ -48,6 +49,7 @@ import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
  *
  * <p>The test Nessie repository is erased and re-created for each test case.
  */
+@MultiEnvSegmentType(NessieServerAdminTestExtension.BACKEND)
 public class NessieServerAdminTestExtension
     implements BeforeAllCallback,
         BeforeEachCallback,
@@ -56,8 +58,9 @@ public class NessieServerAdminTestExtension
         MultiEnvTestExtension {
 
   private static final Namespace NAMESPACE = Namespace.create(NessieServerAdminTestExtension.class);
-  private static final String BACKEND = "backend";
   private static final String BACKENDS_SYSTEM_PROPERTY = "backends";
+
+  static final String BACKEND = "backend";
 
   @Override
   public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
@@ -66,11 +69,6 @@ public class NessieServerAdminTestExtension
       return Arrays.asList(backends.split(","));
     }
     return Arrays.stream(NessieServerAdminTestBackends.values()).map(Enum::name).toList();
-  }
-
-  @Override
-  public String segmentType() {
-    return BACKEND;
   }
 
   static NessieServerAdminTestBackends environment(ExtensionContext context) {

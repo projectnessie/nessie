@@ -25,6 +25,10 @@ dependencies {
   api("org.junit.jupiter:junit-jupiter-api")
   compileOnly("org.junit.jupiter:junit-jupiter-engine")
   implementation("org.junit.platform:junit-platform-launcher")
+  implementation(libs.guava)
+
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   testImplementation("org.junit.platform:junit-platform-testkit")
   testCompileOnly("org.junit.jupiter:junit-jupiter-engine")

@@ -15,14 +15,11 @@
  */
 package org.projectnessie.junit.engine;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import static org.projectnessie.junit.engine.MultiEnvAnnotationUtils.findNestedMultiEnvTestExtensionsOn;
+
 import java.util.stream.Stream;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 /**
  * A helper class for collecting instances of {@link MultiEnvTestExtension}.
@@ -34,36 +31,16 @@ public class MultiEnvExtensionRegistry {
   private final MutableExtensionRegistry registry;
 
   public MultiEnvExtensionRegistry() {
-    this.registry =
+    registry =
         MutableExtensionRegistry.createRegistryWithDefaultExtensions(
             new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
   }
 
   public void registerExtensions(Class<?> testClass) {
-    AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
-        .flatMap(e -> Arrays.stream(e.value()))
-        .filter(MultiEnvTestExtension.class::isAssignableFrom)
-        .forEach(registry::registerExtension);
-  }
-
-  public Stream<MultiEnvTestExtension> stream() {
-    return registry.stream(MultiEnvTestExtension.class);
+    findNestedMultiEnvTestExtensionsOn(testClass).forEach(registry::registerExtension);
   }
 
   public Stream<? extends MultiEnvTestExtension> stream(Class<?> testClass) {
-    Set<ExtendWith> annotations = new HashSet<>();
-    // Find annotations following the class nesting chain
-    for (Class<?> cl = testClass; cl != null; cl = cl.getDeclaringClass()) {
-      annotations.addAll(AnnotationUtils.findRepeatableAnnotations(cl, ExtendWith.class));
-    }
-
-    @SuppressWarnings("unchecked")
-    Stream<? extends MultiEnvTestExtension> r =
-        (Stream<? extends MultiEnvTestExtension>)
-            annotations.stream()
-                .flatMap(e -> Arrays.stream(e.value()))
-                .filter(MultiEnvTestExtension.class::isAssignableFrom)
-                .flatMap(registry::stream);
-    return r;
+    return findNestedMultiEnvTestExtensionsOn(testClass).flatMap(registry::stream);
   }
 }

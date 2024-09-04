@@ -76,8 +76,7 @@ class TestNessieCompatibilityExtensions {
         .hasMessageContaining("TestEngine with ID 'nessie-multi-env' failed to discover tests")
         .cause()
         .hasMessageContaining(
-            "MultiEnvTestEngine was enabled, but test extensions did not discover any environment IDs")
-        .hasMessageContaining("OlderNessieClientsExtension");
+            "MultiEnvTestEngine was enabled, but test extensions [OlderNessieClientsExtension] did not discover any environment IDs.");
   }
 
   @Test

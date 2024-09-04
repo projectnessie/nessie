@@ -24,22 +24,19 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.UniqueId;
+import org.projectnessie.junit.engine.MultiEnvSegmentType;
 import org.projectnessie.junit.engine.MultiEnvTestExtension;
 
 /**
  * Runs the related suite of tests for several Nessie API versions as specified by the {@link
  * NessieApiVersions} annotation.
  */
+@MultiEnvSegmentType(MultiVersionApiTest.API_VERSION_SEGMENT_TYPE)
 public class MultiVersionApiTest implements MultiEnvTestExtension, ExecutionCondition {
   public static final String API_VERSION_SEGMENT_TYPE = "nessie-api";
 
   // API version to be used for tests not annotated with `@ForNessieApiVersions`
   private static final NessieApiVersion DEFAULT_API_VERSION = NessieApiVersion.V2;
-
-  @Override
-  public String segmentType() {
-    return API_VERSION_SEGMENT_TYPE;
-  }
 
   @Override
   public List<String> allEnvironmentIds(ConfigurationParameters configuration) {
