@@ -76,7 +76,7 @@ dependencies {
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
-  implementation("io.micrometer:micrometer-registry-prometheus")
+  implementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
 
   implementation(platform(libs.cel.bom))
   implementation("org.projectnessie.cel:cel-standalone")
