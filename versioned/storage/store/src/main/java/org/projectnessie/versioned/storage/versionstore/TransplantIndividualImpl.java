@@ -61,6 +61,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.StoredObjResult;
 
 final class TransplantIndividualImpl extends BaseCommitHelper implements Transplant {
 
@@ -115,13 +116,13 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
       empty = false;
       if (!transplantOp.dryRun()) {
         newHead = newCommit.id();
-        CommitObj committed = commitLogic.storeCommit(newCommit, objsToStore);
+        StoredObjResult<CommitObj> committed = commitLogic.storeCommit(newCommit, objsToStore);
         // Here we have to know whether "our" 'newCommit' object has been persisted or not.
         // If not equal, we have to assume that the commit already existed - aka a "fast-forward
         // transplant". This is only to maintain compatibility with (pre-)existing behavior.
         // (This .equals has been introduced with https://github.com/projectnessie/nessie/pull/8533)
-        if (newCommit.equals(committed)) {
-          newCommit = committed;
+        if (committed.stored()) {
+          newCommit = committed.obj().orElseThrow();
           mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
         }
       }

@@ -229,8 +229,21 @@ class InmemoryPersist implements ValidatingPersist {
       verifySoftRestrictions(obj);
     }
 
-    Obj ex = inmemory.objects.putIfAbsent(compositeKey(obj.id()), obj);
-    return ex == null;
+    long referenced = config.currentTimeMicros();
+    Obj withReferenced = obj.withReferenced(referenced);
+
+    AtomicBoolean r = new AtomicBoolean(false);
+    inmemory.objects.compute(
+        compositeKey(obj.id()),
+        (key, oldValue) -> {
+          if (oldValue == null) {
+            return withReferenced;
+          }
+          r.set(true);
+          return withReferenced;
+        });
+
+    return !r.get();
   }
 
   @Override
@@ -262,7 +275,7 @@ class InmemoryPersist implements ValidatingPersist {
   @Override
   public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
     verifySoftRestrictions(obj);
-    inmemory.objects.put(compositeKey(obj.id()), obj);
+    inmemory.objects.put(compositeKey(obj.id()), obj.withReferenced(config.currentTimeMicros()));
   }
 
   @Override
@@ -310,9 +323,9 @@ class InmemoryPersist implements ValidatingPersist {
               return v;
             }
 
-            // same version-token --> remove
+            // same version-token --> update
             result.set(true);
-            return newValue;
+            return newValue != null ? newValue.withReferenced(config.currentTimeMicros()) : null;
           }
         });
     return result.get();

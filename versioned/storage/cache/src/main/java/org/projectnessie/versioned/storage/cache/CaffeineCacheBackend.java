@@ -137,7 +137,7 @@ class CaffeineCacheBackend implements CacheBackend {
     if (value == NON_EXISTING_SENTINEL) {
       return NOT_FOUND_OBJ_SENTINEL;
     }
-    return ProtoSerialization.deserializeObj(id, value, null);
+    return ProtoSerialization.deserializeObj(id, 0L, value, null);
   }
 
   @Override

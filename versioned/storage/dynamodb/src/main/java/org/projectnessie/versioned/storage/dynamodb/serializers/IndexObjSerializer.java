@@ -58,7 +58,7 @@ public class IndexObjSerializer implements ObjSerializer<IndexObj> {
 
   @Override
   public IndexObj fromMap(
-      ObjId id, ObjType type, Map<String, AttributeValue> i, String versionToken) {
-    return index(id, requireNonNull(attributeToBytes(i, COL_INDEX_INDEX)));
+      ObjId id, ObjType type, long referenced, Map<String, AttributeValue> i, String versionToken) {
+    return index(id, referenced, requireNonNull(attributeToBytes(i, COL_INDEX_INDEX)));
   }
 }

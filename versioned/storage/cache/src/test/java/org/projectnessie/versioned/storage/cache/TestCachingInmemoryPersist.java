@@ -45,7 +45,8 @@ public class TestCachingInmemoryPersist extends AbstractPersistTests {
 
     @Test
     public void getImmediate() throws Exception {
-      Obj obj = contentValue(randomObjId(), randomContentId(), 1, ByteString.copyFromUtf8("hello"));
+      Obj obj =
+          contentValue(randomObjId(), 420L, randomContentId(), 1, ByteString.copyFromUtf8("hello"));
       soft.assertThat(persist.getImmediate(obj.id())).isNull();
       persist.storeObj(obj);
       soft.assertThat(persist.getImmediate(obj.id())).isEqualTo(obj);

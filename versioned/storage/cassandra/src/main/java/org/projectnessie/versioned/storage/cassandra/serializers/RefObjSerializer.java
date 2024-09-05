@@ -64,9 +64,10 @@ public class RefObjSerializer extends ObjSerializer<RefObj> {
   }
 
   @Override
-  public RefObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public RefObj deserialize(Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     return ref(
         id,
+        referenced,
         row.getString(COL_REF_NAME.name()),
         CassandraSerde.deserializeObjId(row.getString(COL_REF_INITIAL_POINTER.name())),
         row.getLong(COL_REF_CREATED_AT.name()),

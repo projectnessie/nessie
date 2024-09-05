@@ -75,7 +75,7 @@ public class TestStandardObjTypes {
 
   static Stream<Arguments> standardObjTypes() {
     return Stream.of(
-        arguments(ref(randomObjId(), "hello", randomObjId(), 42L, randomObjId()), REF),
+        arguments(ref(randomObjId(), 420L, "hello", randomObjId(), 42L, randomObjId()), REF),
         arguments(
             CommitObj.commitBuilder()
                 .id(randomObjId())
@@ -89,24 +89,28 @@ public class TestStandardObjTypes {
         arguments(
             tag(
                 randomObjId(),
+                420L,
                 "tab-msg",
                 newCommitHeaders().add("Foo", "bar").build(),
                 ByteString.copyFrom(new byte[1])),
             TAG),
-        arguments(contentValue(randomObjId(), "cid", 0, ByteString.copyFrom(new byte[1])), VALUE),
+        arguments(
+            contentValue(randomObjId(), 420L, "cid", 0, ByteString.copyFrom(new byte[1])), VALUE),
         arguments(
             stringData(
                 randomObjId(),
+                420L,
                 "foo",
                 Compression.NONE,
                 "foo",
                 emptyList(),
                 ByteString.copyFrom(new byte[1])),
             STRING),
-        arguments(indexSegments(randomObjId(), emptyList()), INDEX_SEGMENTS),
+        arguments(indexSegments(randomObjId(), 420L, emptyList()), INDEX_SEGMENTS),
         arguments(
-            index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()), INDEX),
-        arguments(uniqueId(randomObjId(), "space", uuidToBytes(UUID.randomUUID())), UNIQUE));
+            index(randomObjId(), 420L, emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
+            INDEX),
+        arguments(uniqueId(randomObjId(), 420L, "space", uuidToBytes(UUID.randomUUID())), UNIQUE));
   }
 
   @ParameterizedTest

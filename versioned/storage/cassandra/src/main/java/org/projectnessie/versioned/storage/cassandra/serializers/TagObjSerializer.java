@@ -74,7 +74,7 @@ public class TagObjSerializer extends ObjSerializer<TagObj> {
   }
 
   @Override
-  public TagObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public TagObj deserialize(Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     CommitHeaders tagHeaders = null;
     try {
       Headers headers = Headers.parseFrom(row.getByteBuffer(COL_TAG_HEADERS.name()));
@@ -93,6 +93,7 @@ public class TagObjSerializer extends ObjSerializer<TagObj> {
 
     return tag(
         id,
+        referenced,
         row.getString(COL_TAG_MESSAGE.name()),
         tagHeaders,
         CassandraSerde.deserializeBytes(row, COL_TAG_SIGNATURE.name()));

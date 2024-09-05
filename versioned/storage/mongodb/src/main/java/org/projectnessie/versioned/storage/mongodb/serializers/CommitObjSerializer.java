@@ -102,10 +102,12 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
+  public CommitObj docToObj(
+      ObjId id, ObjType type, long referenced, Document doc, String versionToken) {
     CommitObj.Builder b =
         commitBuilder()
             .id(id)
+            .referenced(referenced)
             .seq(doc.getLong(COL_COMMIT_SEQ))
             .created(doc.getLong(COL_COMMIT_CREATED))
             .message(doc.getString(COL_COMMIT_MESSAGE))

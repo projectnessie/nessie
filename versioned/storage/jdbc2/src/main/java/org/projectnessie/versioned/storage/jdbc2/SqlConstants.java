@@ -27,6 +27,7 @@ final class SqlConstants {
   static final String COL_OBJ_ID = "obj_id";
   static final String COL_OBJ_VERS = "obj_vers";
   static final String COL_OBJ_VALUE = "obj_value";
+  static final String COL_OBJ_REFERENCED = "obj_ref";
 
   static final String ERASE_OBJS =
       "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + " IN (?)";
@@ -45,6 +46,16 @@ final class SqlConstants {
           + COL_OBJ_TYPE
           + "=? AND "
           + COL_OBJ_VERS
+          + "=?";
+  static final String UPDATE_OBJS_REFERENCED =
+      "UPDATE "
+          + TABLE_OBJS
+          + " SET "
+          + COL_OBJ_REFERENCED
+          + "=? WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
           + "=?";
 
   static final String COL_REFS_NAME = "ref_name";
@@ -152,7 +163,15 @@ final class SqlConstants {
           + " IN (?)";
 
   static final String COLS_OBJS_ALL_NAMES =
-      COL_OBJ_ID + ", " + COL_OBJ_TYPE + ", " + COL_OBJ_VERS + ", " + COL_OBJ_VALUE;
+      COL_OBJ_ID
+          + ", "
+          + COL_OBJ_TYPE
+          + ", "
+          + COL_OBJ_VERS
+          + ", "
+          + COL_OBJ_VALUE
+          + ", "
+          + COL_OBJ_REFERENCED;
 
   static final String FETCH_OBJ_TYPE =
       "SELECT "
@@ -183,7 +202,7 @@ final class SqlConstants {
           + COL_REPO_ID
           + ", "
           + COLS_OBJS_ALL_NAMES
-          + ") VALUES (?, ?, ?, ?, ?)";
+          + ") VALUES (?, ?, ?, ?, ?, ?)";
 
   static final String FIND_OBJS_TYPED = FIND_OBJS + " AND " + COL_OBJ_TYPE + "=?";
 

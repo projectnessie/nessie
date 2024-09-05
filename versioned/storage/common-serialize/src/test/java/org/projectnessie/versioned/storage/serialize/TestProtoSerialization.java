@@ -110,11 +110,11 @@ public class TestProtoSerialization {
   @MethodSource("objs")
   void objs(Obj obj) throws Exception {
     byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
-    Obj deserialized = deserializeObj(obj.id(), serialized, null);
-    Obj deserializedByteBuffer = deserializeObj(obj.id(), ByteBuffer.wrap(serialized), null);
+    Obj deserialized = deserializeObj(obj.id(), 0L, serialized, null);
+    Obj deserializedByteBuffer = deserializeObj(obj.id(), 0L, ByteBuffer.wrap(serialized), null);
     byte[] reserialized = serializeObj(deserialized, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
     soft.assertThat(deserialized).isEqualTo(obj).isEqualTo(deserializedByteBuffer);
-    Obj deserialized2 = deserializeObj(obj.id(), reserialized, null);
+    Obj deserialized2 = deserializeObj(obj.id(), 0L, reserialized, null);
     soft.assertThat(deserialized2).isEqualTo(obj);
     soft.assertThat(serialized).isEqualTo(reserialized);
 
@@ -132,7 +132,8 @@ public class TestProtoSerialization {
           .isEmpty();
 
       UpdateableObj deserializedWithoutVersionToken =
-          (UpdateableObj) deserializeObj(obj.id(), serializedWithoutVersionToken, "my-foo-bar-baz");
+          (UpdateableObj)
+              deserializeObj(obj.id(), 420L, serializedWithoutVersionToken, "my-foo-bar-baz");
       soft.assertThat(deserializedWithoutVersionToken.versionToken())
           .isEqualTo("my-foo-bar-baz")
           .isNotEqualTo(((UpdateableObj) obj).versionToken());
@@ -159,8 +160,8 @@ public class TestProtoSerialization {
     soft.assertThat(serializePreviousPointers(null)).isNull();
 
     soft.assertThat(serializeObj(null, Integer.MAX_VALUE, Integer.MAX_VALUE, true)).isNull();
-    soft.assertThat(deserializeObj(randomObjId(), (byte[]) null, null)).isNull();
-    soft.assertThat(deserializeObj(randomObjId(), (ByteBuffer) null, null)).isNull();
+    soft.assertThat(deserializeObj(randomObjId(), 420L, (byte[]) null, null)).isNull();
+    soft.assertThat(deserializeObj(randomObjId(), 420L, (ByteBuffer) null, null)).isNull();
   }
 
   static Stream<List<Reference.PreviousPointer>> previousPointers() {
@@ -192,11 +193,12 @@ public class TestProtoSerialization {
 
   static Stream<Obj> objs() {
     return Stream.of(
-        ref(randomObjId(), "hello", randomObjId(), 42L, randomObjId()),
+        ref(randomObjId(), 420L, "hello", randomObjId(), 42L, randomObjId()),
         CommitObj.commitBuilder()
             .id(randomObjId())
             .seq(1L)
             .created(42L)
+            .referenced(1234L)
             .message("msg")
             .headers(EMPTY_COMMIT_HEADERS)
             .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
@@ -219,26 +221,30 @@ public class TestProtoSerialization {
             .build(),
         tag(
             randomObjId(),
+            420L,
             "tab-msg",
             newCommitHeaders().add("Foo", "bar").build(),
             ByteString.copyFrom(new byte[1])),
-        contentValue(randomObjId(), "cid", 0, ByteString.copyFrom(new byte[1])),
+        contentValue(randomObjId(), 420L, "cid", 0, ByteString.copyFrom(new byte[1])),
         stringData(
             randomObjId(),
+            420L,
             "foo",
             Compression.NONE,
             "foo",
             emptyList(),
             ByteString.copyFrom(new byte[1])),
-        indexSegments(randomObjId(), emptyList()),
+        indexSegments(randomObjId(), 420L, emptyList()),
         indexSegments(
             randomObjId(),
+            420L,
             asList(
                 indexStripe(key("a"), key("b"), randomObjId()),
                 indexStripe(key("c"), key("d"), randomObjId()))),
-        index(randomObjId(), emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
+        index(randomObjId(), 420L, emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize()),
         JsonObj.json(
             randomObjId(),
+            420L,
             ImmutableJsonTestModel.builder()
                 .parent(randomObjId())
                 .text("foo")

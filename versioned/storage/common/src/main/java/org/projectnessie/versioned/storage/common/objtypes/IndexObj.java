@@ -39,16 +39,21 @@ public interface IndexObj extends Obj {
   @Nullable
   ObjId id();
 
+  @Override
+  @Value.Parameter(order = 1)
+  @Value.Auxiliary
+  long referenced();
+
   @Value.Parameter(order = 1)
   ByteString index();
 
   @Nonnull
-  static IndexObj index(@Nullable ObjId id, @Nonnull ByteString index) {
-    return ImmutableIndexObj.of(id, index);
+  static IndexObj index(@Nullable ObjId id, long referenced, @Nonnull ByteString index) {
+    return ImmutableIndexObj.of(id, referenced, index);
   }
 
   @Nonnull
   static IndexObj index(@Nonnull ByteString index) {
-    return index(objIdHasher(INDEX).hash(index.asReadOnlyByteBuffer()).generate(), index);
+    return index(objIdHasher(INDEX).hash(index.asReadOnlyByteBuffer()).generate(), 0L, index);
   }
 }

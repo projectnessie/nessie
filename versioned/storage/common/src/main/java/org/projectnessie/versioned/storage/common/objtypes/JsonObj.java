@@ -77,23 +77,24 @@ public interface JsonObj extends Obj {
   /**
    * Creates a {@link JsonObj} for the given bean.
    *
-   * <p>This method is NOT suitable for null beans: use either {@link #json(ObjId, Class, Object)}
-   * or {@link #json(ObjId, String, Object)} in order to properly capture the type of the object.
+   * <p>This method is NOT suitable for null beans: use either {@link #json(ObjId, long, Class,
+   * Object)} or {@link #json(ObjId, long, String, Object)} in order to properly capture the type of
+   * the object.
    *
    * <p>This method is NOT suitable either for generic bean types such as {@code MyBean<String>} :
-   * use {@link #json(ObjId, String, Object)} instead.
+   * use {@link #json(ObjId, long, String, Object)} instead.
    */
-  static JsonObj json(ObjId id, @Nonnull Object bean) {
-    return json(id, bean.getClass(), bean);
+  static JsonObj json(ObjId id, long referenced, @Nonnull Object bean) {
+    return json(id, referenced, bean.getClass(), bean);
   }
 
   /**
    * Creates a {@link JsonObj} for the given bean and raw type.
    *
-   * <p>For generic types, use {@link #json(ObjId, String, Object)} instead.
+   * <p>For generic types, use {@link #json(ObjId, long, String, Object)} instead.
    */
-  static JsonObj json(ObjId id, Class<?> type, @Nullable Object bean) {
-    return json(id, type.getName(), bean);
+  static JsonObj json(ObjId id, long referenced, Class<?> type, @Nullable Object bean) {
+    return json(id, referenced, type.getName(), bean);
   }
 
   /**
@@ -102,9 +103,10 @@ public interface JsonObj extends Obj {
    * <p>The type must be parseable by Jackson's TypeParser. For generic types, use the following
    * general format: {@code "com.example.MyType<com.example.OtherType>"}.
    */
-  static JsonObj json(ObjId id, String type, @Nullable Object bean) {
+  static JsonObj json(ObjId id, long referenced, String type, @Nullable Object bean) {
     return ImmutableJsonObj.builder()
         .id(id)
+        .referenced(referenced)
         .bean(ImmutableJsonBean.builder().object(bean).type(type).build())
         .build();
   }

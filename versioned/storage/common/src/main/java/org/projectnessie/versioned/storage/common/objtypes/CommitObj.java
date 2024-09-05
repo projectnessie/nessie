@@ -92,6 +92,9 @@ public interface CommitObj extends Obj {
     Builder id(@Nullable ObjId id);
 
     @CanIgnoreReturnValue
+    Builder referenced(long referenced);
+
+    @CanIgnoreReturnValue
     Builder created(long created);
 
     @CanIgnoreReturnValue
@@ -138,6 +141,7 @@ public interface CommitObj extends Obj {
   }
 
   /** Creation timestamp in microseconds since epoch. */
+  @Value.Auxiliary
   long created();
 
   /**

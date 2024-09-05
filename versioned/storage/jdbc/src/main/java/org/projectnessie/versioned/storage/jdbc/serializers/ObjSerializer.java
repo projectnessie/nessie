@@ -41,7 +41,8 @@ public interface ObjSerializer<O extends Obj> {
       DatabaseSpecific databaseSpecific)
       throws SQLException, ObjTooLargeException;
 
-  O deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken) throws SQLException;
+  O deserialize(ResultSet rs, ObjType type, ObjId id, long referenced, String versionToken)
+      throws SQLException;
 
   default void setNull(
       PreparedStatement ps, Function<String, Integer> nameToIdx, DatabaseSpecific databaseSpecific)

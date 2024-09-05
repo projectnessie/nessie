@@ -448,4 +448,9 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
       @Nonnull @javax.annotation.Nonnull Set<ObjType> returnedObjTypes) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public boolean isCaching() {
+    return delegate().isCaching();
+  }
 }

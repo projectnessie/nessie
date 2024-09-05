@@ -58,11 +58,13 @@ public class ContentValueObjSerializer extends ObjSerializer<ContentValueObj> {
   }
 
   @Override
-  public ContentValueObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public ContentValueObj deserialize(
+      Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     ByteString value = CassandraSerde.deserializeBytes(row, COL_VALUE_DATA.name());
     if (value != null) {
       return contentValue(
           id,
+          referenced,
           row.getString(COL_VALUE_CONTENT_ID.name()),
           row.getInt(COL_VALUE_PAYLOAD.name()),
           value);

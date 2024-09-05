@@ -39,6 +39,7 @@ final class DynamoDB2Constants {
   static final String COL_OBJ_TYPE = "y";
   static final String COL_OBJ_VERS = "V";
   static final String COL_OBJ_VALUE = "v";
+  static final String COL_OBJ_REFERENCED = "z";
 
   static final String CONDITION_STORE_REF = "attribute_not_exists(" + COL_REFERENCES_POINTER + ")";
   static final String CONDITION_STORE_OBJ = "attribute_not_exists(" + COL_OBJ_TYPE + ")";

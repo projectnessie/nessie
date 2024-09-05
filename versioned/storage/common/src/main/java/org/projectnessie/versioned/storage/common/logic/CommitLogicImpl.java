@@ -47,10 +47,12 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commi
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
+import static org.projectnessie.versioned.storage.common.persist.StoredObjResult.storedObjResult;
 
 import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,6 +90,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjIdHasher;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.StoredObjResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -272,12 +275,13 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull CreateCommit createCommit, @Nonnull List<Obj> additionalObjects)
       throws CommitConflictException, ObjNotFoundException {
     CommitObj commit = buildCommitObj(createCommit);
-    return storeCommit(commit, additionalObjects);
+    return storeCommit(commit, additionalObjects).obj().orElse(null);
   }
 
-  @Nullable
+  @NotNull
   @Override
-  public CommitObj storeCommit(@Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects) {
+  public StoredObjResult<CommitObj> storeCommit(
+      @Nonnull CommitObj commit, @Nonnull List<Obj> additionalObjects) {
     int numAdditional = additionalObjects.size();
     try {
       Obj[] allObjs = additionalObjects.toArray(new Obj[numAdditional + 1]);
@@ -313,9 +317,10 @@ final class CommitLogicImpl implements CommitLogic {
    * mitigates the risk of false-positive hash-collision errors in case the backend database runs
    * into timeout situations with an undefined outcome.
    */
-  private CommitObj mitigateHashCollision(boolean storeResult, CommitObj commit) {
+  @NotNull
+  private StoredObjResult<CommitObj> mitigateHashCollision(boolean storeResult, CommitObj commit) {
     if (storeResult) {
-      return commit;
+      return storedObjResult(commit, true);
     }
 
     // Check whether the existing object is the same commit (w/o considering the internal "created"
@@ -324,7 +329,8 @@ final class CommitLogicImpl implements CommitLogic {
       CommitObj existing = persist.fetchTypedObj(commit.id(), COMMIT, CommitObj.class);
       CommitObj commitWithNewCreatedTimestamp =
           CommitObj.commitBuilder().from(commit).created(existing.created()).build();
-      return commitWithNewCreatedTimestamp.equals(existing) ? existing : null;
+      return storedObjResult(
+          commitWithNewCreatedTimestamp.equals(existing) ? existing : null, false);
     } catch (ObjNotFoundException e) {
       return null;
     }

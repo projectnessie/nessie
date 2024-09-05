@@ -51,9 +51,11 @@ public class ContentValueObjSerializer implements ObjSerializer<ContentValueObj>
   }
 
   @Override
-  public ContentValueObj docToObj(ObjId id, ObjType type, Document doc, String versionToken) {
+  public ContentValueObj docToObj(
+      ObjId id, ObjType type, long referenced, Document doc, String versionToken) {
     return contentValue(
         id,
+        referenced,
         doc.getString(COL_VALUE_CONTENT_ID),
         doc.getInteger(COL_VALUE_PAYLOAD),
         binaryToBytes(doc.get(COL_VALUE_DATA, Binary.class)));

@@ -33,6 +33,7 @@ final class SqlConstants {
   static final String COL_OBJ_TYPE = "obj_type";
   static final String COL_OBJ_ID = "obj_id";
   static final String COL_OBJ_VERS = "obj_vers";
+  static final String COL_OBJ_REFERENCED = "obj_ref";
 
   static final String ERASE_OBJS =
       "DELETE FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + " IN (?)";
@@ -51,6 +52,16 @@ final class SqlConstants {
           + COL_OBJ_TYPE
           + "=? AND "
           + COL_OBJ_VERS
+          + "=?";
+  static final String UPDATE_OBJS_REFERENCED =
+      "UPDATE "
+          + TABLE_OBJS
+          + " SET "
+          + COL_OBJ_REFERENCED
+          + "=? WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
           + "=?";
 
   static final String COL_REFS_NAME = "ref_name";
@@ -162,7 +173,8 @@ final class SqlConstants {
               Stream.of(
                   entry(COL_OBJ_ID, JdbcColumnType.OBJ_ID),
                   entry(COL_OBJ_TYPE, JdbcColumnType.NAME),
-                  entry(COL_OBJ_VERS, JdbcColumnType.VARCHAR)),
+                  entry(COL_OBJ_VERS, JdbcColumnType.VARCHAR),
+                  entry(COL_OBJ_REFERENCED, JdbcColumnType.BIGINT)),
               ObjSerializers.ALL_SERIALIZERS.stream()
                   .flatMap(serializer -> serializer.columns().entrySet().stream())
                   .sorted(Map.Entry.comparingByKey()))

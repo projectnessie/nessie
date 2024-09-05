@@ -40,6 +40,11 @@ public interface StringObj extends Obj {
   @Nullable
   ObjId id();
 
+  @Override
+  @Value.Parameter(order = 1)
+  @Value.Auxiliary
+  long referenced();
+
   @Value.Parameter(order = 2)
   String contentType();
 
@@ -71,12 +76,14 @@ public interface StringObj extends Obj {
 
   static StringObj stringData(
       ObjId id,
+      long referenced,
       String contentType,
       Compression compression,
       @Nullable String filename,
       List<ObjId> predecessors,
       ByteString text) {
-    return ImmutableStringObj.of(id, contentType, compression, filename, predecessors, text);
+    return ImmutableStringObj.of(
+        id, referenced, contentType, compression, filename, predecessors, text);
   }
 
   static StringObj stringData(
@@ -90,6 +97,7 @@ public interface StringObj extends Obj {
     predecessors.forEach(id -> hasher.hash(id.asByteArray()));
     hasher.hash(text.asReadOnlyByteBuffer());
 
-    return stringData(hasher.generate(), contentType, compression, filename, predecessors, text);
+    return stringData(
+        hasher.generate(), 0L, contentType, compression, filename, predecessors, text);
   }
 }

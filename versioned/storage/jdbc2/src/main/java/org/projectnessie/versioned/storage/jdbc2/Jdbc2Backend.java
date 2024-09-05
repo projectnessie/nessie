@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.storage.jdbc2.Jdbc2ColumnType.OBJ_ID;
 import static org.projectnessie.versioned.storage.jdbc2.Jdbc2ColumnType.VARBINARY;
 import static org.projectnessie.versioned.storage.jdbc2.Jdbc2ColumnType.VARCHAR;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_VALUE;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_VERS;
@@ -151,6 +152,10 @@ public final class Jdbc2Backend implements Backend {
         + COL_OBJ_VALUE
         + " "
         + columnTypes.get(VARBINARY)
+        + ",\n    "
+        + COL_OBJ_REFERENCED
+        + " "
+        + columnTypes.get(BIGINT)
         + ",\n    PRIMARY KEY ("
         + COL_REPO_ID
         + ", "

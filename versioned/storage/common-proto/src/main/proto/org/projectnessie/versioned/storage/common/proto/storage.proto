@@ -115,6 +115,7 @@ message ObjProto {
     CustomProto custom = 9;
     UniqueIdProto uniqueId = 10;
   }
+  optional int64 referenced = 11;
 }
 
 message Headers {

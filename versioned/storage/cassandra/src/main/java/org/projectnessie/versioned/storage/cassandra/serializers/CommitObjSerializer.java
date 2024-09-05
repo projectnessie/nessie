@@ -135,10 +135,12 @@ public class CommitObjSerializer extends ObjSerializer<CommitObj> {
   }
 
   @Override
-  public CommitObj deserialize(Row row, ObjType type, ObjId id, String versionToken) {
+  public CommitObj deserialize(
+      Row row, ObjType type, ObjId id, long referenced, String versionToken) {
     CommitObj.Builder b =
         CommitObj.commitBuilder()
             .id(id)
+            .referenced(referenced)
             .created(row.getLong(COL_COMMIT_CREATED.name()))
             .seq(row.getLong(COL_COMMIT_SEQ.name()))
             .message(row.getString(COL_COMMIT_MESSAGE.name()))

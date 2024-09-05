@@ -45,6 +45,11 @@ public interface RefObj extends Obj {
   @Nullable
   ObjId id();
 
+  @Override
+  @Value.Parameter(order = 1)
+  @Value.Auxiliary
+  long referenced();
+
   /**
    * The tip/HEAD of the reference at reference creation. This value does <em>not</em> track the
    * <em>current</em> tip/HEAD of the reference. This value is used to implement create-reference
@@ -62,8 +67,14 @@ public interface RefObj extends Obj {
   ObjId extendedInfoObj();
 
   static RefObj ref(
-      ObjId id, String name, ObjId initialPointer, long createdAtMicros, ObjId extendedInfoObj) {
-    return ImmutableRefObj.of(name, id, initialPointer, createdAtMicros, extendedInfoObj);
+      ObjId id,
+      long referenced,
+      String name,
+      ObjId initialPointer,
+      long createdAtMicros,
+      ObjId extendedInfoObj) {
+    return ImmutableRefObj.of(
+        name, id, referenced, initialPointer, createdAtMicros, extendedInfoObj);
   }
 
   static RefObj ref(
@@ -74,6 +85,7 @@ public interface RefObj extends Obj {
             .hash(initialPointer.asByteArray())
             .hash(createdAtMicros)
             .generate(),
+        0L,
         name,
         initialPointer,
         createdAtMicros,

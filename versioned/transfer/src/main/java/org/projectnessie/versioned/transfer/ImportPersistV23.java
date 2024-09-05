@@ -160,7 +160,7 @@ final class ImportPersistV23 extends ImportPersistCommon {
 
     Obj obj;
     if (type.equals(StandardObjType.UNIQUE)) {
-      obj = UniqueIdObj.uniqueId(id, genericObj.getSpace(), genericObj.getData());
+      obj = UniqueIdObj.uniqueId(id, 0L, genericObj.getSpace(), genericObj.getData());
     } else {
       ByteBuffer data = genericObj.getData().asReadOnlyByteBuffer();
       String versionToken = genericObj.hasVersionToken() ? genericObj.getVersionToken() : null;
@@ -172,7 +172,7 @@ final class ImportPersistV23 extends ImportPersistCommon {
 
       obj =
           SmileSerialization.deserializeObj(
-              id, versionToken, data, type, Compression.fromValue(genericObj.getCompression()));
+              id, versionToken, data, type, 0L, Compression.fromValue(genericObj.getCompression()));
     }
 
     persist.storeObj(obj);

@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.cassandra.CassandraBackend.unhandledException;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.ADD_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_ID;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
@@ -35,6 +36,7 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.M
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.MAX_CONCURRENT_STORES;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.PURGE_REFERENCE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.SCAN_OBJS;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.UPDATE_REFERENCE_POINTER;
 import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.deserializeObjId;
 import static org.projectnessie.versioned.storage.cassandra.CassandraSerde.serializeObjId;
@@ -50,6 +52,7 @@ import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -280,8 +283,12 @@ public class CassandraPersist implements Persist {
           }
           ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
           String versionToken = row.getString(COL_OBJ_VERS.name());
+          long referenced = row.getLong(COL_OBJ_REFERENCED.name());
           @SuppressWarnings("unchecked")
-          T typed = (T) ObjSerializers.forType(objType).deserialize(row, objType, id, versionToken);
+          T typed =
+              (T)
+                  ObjSerializers.forType(objType)
+                      .deserialize(row, objType, id, referenced, versionToken);
           return typed;
         };
 
@@ -307,23 +314,31 @@ public class CassandraPersist implements Persist {
   @Override
   public boolean storeObj(@Nonnull Obj obj, boolean ignoreSoftSizeRestrictions)
       throws ObjTooLargeException {
-    return writeSingleObj(obj, false, ignoreSoftSizeRestrictions, backend::executeCas);
+    long referenced = config.currentTimeMicros();
+    if (writeSingleObj(obj, referenced, false, ignoreSoftSizeRestrictions, backend::executeCas)) {
+      return true;
+    }
+    updateSingleReferenced(obj.id(), referenced, backend::execute);
+    return false;
   }
 
   @Nonnull
   @Override
   public boolean[] storeObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
-    return persistObjs(objs, false);
+    long referenced = config.currentTimeMicros();
+    return persistObjs(objs, referenced, false);
   }
 
   @Override
   public void upsertObj(@Nonnull Obj obj) throws ObjTooLargeException {
-    writeSingleObj(obj, true, false, backend::execute);
+    long referenced = config.currentTimeMicros();
+    writeSingleObj(obj, referenced, true, false, backend::execute);
   }
 
   @Override
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
-    persistObjs(objs, true);
+    long referenced = config.currentTimeMicros();
+    persistObjs(objs, referenced, true);
   }
 
   @Override
@@ -353,6 +368,8 @@ public class CassandraPersist implements Persist {
 
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
 
+    long referenced = config.currentTimeMicros();
+
     BoundStatementBuilder stmt =
         backend
             .newBoundStatementBuilder(serializer.updateConditionalCql(), false)
@@ -360,18 +377,53 @@ public class CassandraPersist implements Persist {
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
             .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.name())
             .setString(COL_OBJ_VERS.name() + EXPECTED_SUFFIX, expectedVersion)
-            .setString(COL_OBJ_VERS.name(), newVersion);
+            .setString(COL_OBJ_VERS.name(), newVersion)
+            .setLong(COL_OBJ_REFERENCED.name(), referenced);
 
     serializer.serialize(
-        newValue, stmt, effectiveIncrementalIndexSizeLimit(), effectiveIndexSegmentSizeLimit());
+        newValue.withReferenced(referenced),
+        stmt,
+        effectiveIncrementalIndexSizeLimit(),
+        effectiveIndexSegmentSizeLimit());
 
     return backend.executeCas(stmt.build());
   }
 
   @Nonnull
-  private boolean[] persistObjs(@Nonnull Obj[] objs, boolean upsert) throws ObjTooLargeException {
+  private boolean[] persistObjs(@Nonnull Obj[] objs, long referenced, boolean upsert)
+      throws ObjTooLargeException {
     AtomicIntegerArray results = new AtomicIntegerArray(objs.length);
 
+    persistObjsWrite(objs, referenced, upsert, results);
+
+    int l = results.length();
+    boolean[] array = new boolean[l];
+    List<ObjId> updateReferenced = new ArrayList<>();
+    for (int i = 0; i < l; i++) {
+      switch (results.get(i)) {
+        case 0:
+          break;
+        case 1:
+          array[i] = true;
+          break;
+        case 2:
+          updateReferenced.add(objs[i].id());
+          break;
+        default:
+          throw new IllegalStateException();
+      }
+    }
+
+    if (!updateReferenced.isEmpty()) {
+      persistObjsUpdateReferenced(referenced, updateReferenced);
+    }
+
+    return array;
+  }
+
+  private void persistObjsWrite(
+      Obj[] objs, long referenced, boolean upsert, AtomicIntegerArray results)
+      throws ObjTooLargeException {
     try (LimitedConcurrentRequests requests =
         new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
       for (int i = 0; i < objs.length; i++) {
@@ -379,7 +431,7 @@ public class CassandraPersist implements Persist {
         if (o != null) {
           int idx = i;
           CompletionStage<?> cs =
-              writeSingleObj(o, upsert, false, backend::executeAsync)
+              writeSingleObj(o, referenced, upsert, false, backend::executeAsync)
                   .handle(
                       (resultSet, e) -> {
                         if (e != null) {
@@ -393,6 +445,8 @@ public class CassandraPersist implements Persist {
                         }
                         if (resultSet.wasApplied()) {
                           results.set(idx, 1);
+                        } else {
+                          results.set(idx, 2);
                         }
                         return null;
                       });
@@ -402,13 +456,32 @@ public class CassandraPersist implements Persist {
     } catch (DriverException e) {
       throw unhandledException(e);
     }
+  }
 
-    int l = results.length();
-    boolean[] array = new boolean[l];
-    for (int i = 0; i < l; i++) {
-      array[i] = results.get(i) == 1;
+  private void persistObjsUpdateReferenced(long referenced, List<ObjId> updateReferenced) {
+    try (LimitedConcurrentRequests requests =
+        new LimitedConcurrentRequests(MAX_CONCURRENT_STORES)) {
+      for (ObjId id : updateReferenced) {
+        CompletionStage<?> cs =
+            updateSingleReferenced(id, referenced, backend::executeAsync)
+                .handle(
+                    (resultSet, e) -> {
+                      if (e != null) {
+                        if (e instanceof DriverException) {
+                          throw unhandledException((DriverException) e);
+                        }
+                        if (e instanceof RuntimeException) {
+                          throw (RuntimeException) e;
+                        }
+                        throw new RuntimeException(e);
+                      }
+                      return null;
+                    });
+        requests.submitted(cs);
+      }
+    } catch (DriverException e) {
+      throw unhandledException(e);
     }
-    return array;
   }
 
   @FunctionalInterface
@@ -416,8 +489,19 @@ public class CassandraPersist implements Persist {
     R apply(BoundStatement stmt);
   }
 
+  private <R> R updateSingleReferenced(ObjId id, long referenced, WriteSingleObj<R> consumer) {
+    BoundStatementBuilder stmt =
+        backend
+            .newBoundStatementBuilder(UPDATE_OBJ_REFERENCED, false)
+            .setString(COL_REPO_ID.name(), config.repositoryId())
+            .setString(COL_OBJ_ID.name(), serializeObjId(id))
+            .setLong(COL_OBJ_REFERENCED.name(), referenced);
+    return consumer.apply(stmt.build());
+  }
+
   private <R> R writeSingleObj(
       @Nonnull Obj obj,
+      long referenced,
       boolean upsert,
       boolean ignoreSoftSizeRestrictions,
       WriteSingleObj<R> consumer)
@@ -433,6 +517,7 @@ public class CassandraPersist implements Persist {
             .newBoundStatementBuilder(serializer.insertCql(upsert), upsert)
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setString(COL_OBJ_ID.name(), serializeObjId(id))
+            .setLong(COL_OBJ_REFERENCED.name(), referenced)
             .setString(COL_OBJ_TYPE.name(), type.name())
             .setString(COL_OBJ_VERS.name(), versionToken);
 
@@ -504,14 +589,15 @@ public class CassandraPersist implements Persist {
         }
 
         Row row = rs.next();
-        ObjType type = objTypeByName(requireNonNull(row.getString(1)));
+        ObjType type = objTypeByName(requireNonNull(row.getString(COL_OBJ_TYPE.name())));
         if (!returnedObjTypes.contains(type)) {
           continue;
         }
 
         ObjId id = deserializeObjId(row.getString(COL_OBJ_ID.name()));
         String versionToken = row.getString(COL_OBJ_VERS.name());
-        return ObjSerializers.forType(type).deserialize(row, type, id, versionToken);
+        long referenced = row.getLong(COL_OBJ_REFERENCED.name());
+        return ObjSerializers.forType(type).deserialize(row, type, id, referenced, versionToken);
       }
     }
   }

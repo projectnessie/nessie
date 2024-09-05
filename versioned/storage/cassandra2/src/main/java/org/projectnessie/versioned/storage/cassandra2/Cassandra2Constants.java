@@ -30,6 +30,7 @@ public final class Cassandra2Constants {
   static final CqlColumn COL_OBJ_TYPE = new CqlColumn("obj_type", CqlColumnType.NAME);
   static final CqlColumn COL_OBJ_VERS = new CqlColumn("obj_vers", CqlColumnType.VARCHAR);
   static final CqlColumn COL_OBJ_VALUE = new CqlColumn("obj_value", CqlColumnType.VARBINARY);
+  static final CqlColumn COL_OBJ_REFERENCED = new CqlColumn("obj_ref", CqlColumnType.BIGINT);
 
   static final String DELETE_OBJ =
       "DELETE FROM %s." + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=? AND " + COL_OBJ_ID + "=?";
@@ -49,6 +50,8 @@ public final class Cassandra2Constants {
           + COL_OBJ_VERS
           + ", "
           + COL_OBJ_VALUE
+          + ", "
+          + COL_OBJ_REFERENCED
           + ") VALUES (:"
           + COL_REPO_ID
           + ", :"
@@ -59,6 +62,8 @@ public final class Cassandra2Constants {
           + COL_OBJ_VERS
           + ", :"
           + COL_OBJ_VALUE
+          + ", :"
+          + COL_OBJ_REFERENCED
           + ")";
 
   static final String STORE_OBJ = UPSERT_OBJ + " IF NOT EXISTS";
@@ -74,6 +79,10 @@ public final class Cassandra2Constants {
           + COL_OBJ_VALUE
           + "=:"
           + COL_OBJ_VALUE
+          + ", "
+          + COL_OBJ_REFERENCED
+          + "=:"
+          + COL_OBJ_REFERENCED
           + " WHERE "
           + COL_REPO_ID
           + "=:"
@@ -129,6 +138,10 @@ public final class Cassandra2Constants {
           + COL_OBJ_VALUE
           + " "
           + COL_OBJ_VALUE.type().cqlName()
+          + ",\n    "
+          + COL_OBJ_REFERENCED
+          + " "
+          + COL_OBJ_REFERENCED.type().cqlName()
           + ",\n    PRIMARY KEY (("
           + COL_REPO_ID
           + ", "
@@ -291,6 +304,8 @@ public final class Cassandra2Constants {
           + COL_OBJ_VERS
           + ", "
           + COL_OBJ_VALUE
+          + ", "
+          + COL_OBJ_REFERENCED
           + " FROM %s."
           + TABLE_OBJS
           + " WHERE "
@@ -308,6 +323,8 @@ public final class Cassandra2Constants {
           + COL_OBJ_VERS
           + ", "
           + COL_OBJ_VALUE
+          + ", "
+          + COL_OBJ_REFERENCED
           + " FROM %s."
           + TABLE_OBJS
           + " WHERE "
@@ -344,6 +361,22 @@ public final class Cassandra2Constants {
           + " = ? AND "
           + COL_REFS_NAME
           + " = ?";
+
+  public static final String UPDATE_OBJ_REFERENCED =
+      "UPDATE %s."
+          + TABLE_OBJS
+          + " SET "
+          + COL_OBJ_REFERENCED
+          + "=:"
+          + COL_OBJ_REFERENCED
+          + " WHERE "
+          + COL_REPO_ID
+          + "=:"
+          + COL_REPO_ID
+          + " AND "
+          + COL_OBJ_ID
+          + "=:"
+          + COL_OBJ_ID;
 
   private Cassandra2Constants() {}
 }

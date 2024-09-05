@@ -78,7 +78,8 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
   }
 
   @Override
-  public IndexSegmentsObj deserialize(ResultSet rs, ObjType type, ObjId id, String versionToken)
+  public IndexSegmentsObj deserialize(
+      ResultSet rs, ObjType type, ObjId id, long referenced, String versionToken)
       throws SQLException {
     try {
       Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_SEGMENTS_STRIPES));
@@ -91,7 +92,7 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
                           keyFromString(s.getLastKey()),
                           objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
               .collect(Collectors.toList());
-      return indexSegments(id, stripeList);
+      return indexSegments(id, referenced, stripeList);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

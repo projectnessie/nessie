@@ -58,6 +58,7 @@ import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import org.projectnessie.versioned.storage.common.persist.StoredObjResult;
 
 class BaseMergeTransplantSquash extends BaseCommitHelper {
 
@@ -119,9 +120,9 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     } else {
       CommitLogic commitLogic = commitLogic(persist);
       newHead = mergeCommit.id();
-      CommitObj committed = commitLogic.storeCommit(mergeCommit, objsToStore);
-      if (committed != null) {
-        mergeCommit = committed;
+      StoredObjResult<CommitObj> committed = commitLogic.storeCommit(mergeCommit, objsToStore);
+      if (committed.stored()) {
+        mergeCommit = committed.obj().orElseThrow();
         mergeResult.addCreatedCommits(commitObjToCommit(mergeCommit));
       }
     }

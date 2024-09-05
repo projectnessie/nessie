@@ -511,4 +511,9 @@ class CachingPersistImpl implements Persist {
 
     return r;
   }
+
+  @Override
+  public boolean isCaching() {
+    return true;
+  }
 }
