@@ -36,7 +36,13 @@ public interface VersionStoreConfig {
     DYNAMODB,
     /** DynamoDB variant using few attributes, saves storage overhead. */
     DYNAMODB2,
+
+    /** MongoDB variant using many distinct attributes. */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
     MONGODB,
+    /** MongoDB variant using few attributes, saves storage overhead. */
+    MONGODB2,
 
     /** Cassandra variant using many distinct columns. */
     @SuppressWarnings("DeprecatedIsStillUsed")

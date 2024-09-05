@@ -194,7 +194,7 @@ Related Quarkus settings:
 | "in memory"      | only for development and local testing           | `IN_MEMORY`                                         | Do not use for any serious use case.                                                                                                                                                                                                                                                                       |
 | RocksDB          | production, single node only                     | `ROCKSDB`                                           |                                                                                                                                                                                                                                                                                                            |
 | Google BigTable  | production                                       | `BIGTABLE`                                          |                                                                                                                                                                                                                                                                                                            |
-| MongoDB          | production                                       | `MONGODB`                                           |                                                                                                                                                                                                                                                                                                            |
+| MongoDB          | production                                       | `MONGODB2` & `MONGODB` (deprecated)                 |                                                                                                                                                                                                                                                                                                            |
 | Amazon DynamoDB  | beta, only tested against the simulator          | `DYNAMODB`                                          | Not recommended for use with Nessie Catalog (Iceberg REST) due to its restrictive row-size limit.                                                                                                                                                                                                          |
 | PostgreSQL       | production                                       | `JDBC2` & `JDBC` (deprecated)                       |                                                                                                                                                                                                                                                                                                            |
 | H2               | only for development and local testing           | `JDBC2` & `JDBC` (deprecated)                       | Do not use for any serious use case.                                                                                                                                                                                                                                                                       |
@@ -210,6 +210,11 @@ Related Quarkus settings:
     Prefer the `CASSANDRA2` version store type over the `CASSANDRA` version store type, because it has way less storage overhead.
     The `CASSANDRA` version store type is _deprecated for removal_, please use the
     [Nessie Server Admin Tool](export_import.md) to migrate from the `CASSANDRA` version store type to `CASSANDRA2`.
+
+!!! warn
+    Prefer the `MONGODB2` version store type over the `MONGODB` version store type, because it has way less storage overhead.
+    The `MONGODB` version store type is _deprecated for removal_, please use the
+    [Nessie Server Admin Tool](export_import.md) to migrate from the `MONGODB` version store type to `MONGODB2`.
 
 !!! warn
     Prefer the `JDBC2` version store type over the `JDBC` version store type, because it has way less storage overhead.
@@ -280,7 +285,7 @@ Related Quarkus settings:
 
 #### MongoDB Version Store Settings
 
-When setting `nessie.version.store.type=MONGODB` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`.
+When setting `nessie.version.store.type=MONGODB2` which enables MongoDB as the version store used by the Nessie server, the following configurations are applicable in combination with `nessie.version.store.type`.
 
 Related Quarkus settings:
 

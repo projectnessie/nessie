@@ -18,11 +18,11 @@ package org.projectnessie.services.impl;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests2.MongoDB2BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.NessieBackend;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 @ExtendWith(PersistExtension.class)
-@NessieBackend(MongoDBBackendTestFactory.class)
+@NessieBackend(MongoDB2BackendTestFactory.class)
 @DisabledOnOs(OS.WINDOWS) // testcontainers does not support Windows
 public class ITApiImplsPersistMongoDB extends BaseTestApis {}

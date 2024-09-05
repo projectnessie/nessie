@@ -44,10 +44,11 @@ imagePullSecrets: []
 # `quarkus.log.category."io.smallrye.config".level: DEBUG`
 logLevel: INFO
 
-# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB, CASSANDRA2, JDBC2, BIGTABLE.
+# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2, BIGTABLE.
 # Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2.
 # Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2.
 # Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2.
+# Note: the version store type MONGODB is deprecated, please use the Nessie Server Admin Tool to migrate to MONGODB2.
 versionStoreType: IN_MEMORY
 
 # Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.

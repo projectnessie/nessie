@@ -23,19 +23,19 @@ import org.projectnessie.versioned.storage.dynamodbtests2.DynamoDB2BackendTestFa
 import org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory;
 import org.projectnessie.versioned.storage.jdbc2tests.PostgreSQLBackendTestFactory;
-import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
+import org.projectnessie.versioned.storage.mongodbtests2.MongoDB2BackendTestFactory;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
 public enum NessieServerAdminTestBackends {
   mongo {
     @Override
     BackendTestFactory backendFactory() {
-      return new MongoDBBackendTestFactory();
+      return new MongoDB2BackendTestFactory();
     }
 
     @Override
     Map<String, String> quarkusConfig() {
-      return Map.of("nessie.version.store.type", VersionStoreType.MONGODB.name());
+      return Map.of("nessie.version.store.type", VersionStoreType.MONGODB2.name());
     }
   },
 

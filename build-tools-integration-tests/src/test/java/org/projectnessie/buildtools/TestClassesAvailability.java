@@ -34,8 +34,8 @@ public class TestClassesAvailability {
     "org.projectnessie.versioned.storage.inmemorytests.InmemoryBackendTestFactory",
     // from nessie-versioned-storage-rocksdb-tests
     "org.projectnessie.versioned.storage.rocksdbtests.RocksDBBackendTestFactory",
-    // from nessie-versioned-storage-mongodb
-    "org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory",
+    // from nessie-versioned-storage-mongodb2
+    "org.projectnessie.versioned.storage.mongodb2.MongoDB2BackendFactory",
     // from nessie-versioned-storage-cache
     "org.projectnessie.versioned.storage.cache.PersistCaches",
     // from nessie-versioned-storage-testextension

@@ -15,7 +15,7 @@
  */
 package org.projectnessie.quarkus.tests.profiles;
 
-import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.MONGODB;
+import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.MONGODB2;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +28,7 @@ public class QuarkusTestProfilePersistMongo extends BaseConfigProfile {
   public Map<String, String> getConfigOverrides() {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
-        .put("nessie.version.store.type", MONGODB.name())
+        .put("nessie.version.store.type", MONGODB2.name())
         .put("quarkus.mongodb.write-concern.journal", "false")
         .build();
   }
