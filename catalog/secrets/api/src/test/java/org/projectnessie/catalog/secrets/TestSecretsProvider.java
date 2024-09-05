@@ -22,6 +22,7 @@ import static org.projectnessie.catalog.secrets.TokenSecret.JSON_EXPIRES_AT;
 import static org.projectnessie.catalog.secrets.TokenSecret.JSON_TOKEN;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Map;
@@ -50,51 +51,58 @@ public class TestSecretsProvider {
     String bc1secret = "bc1-secret";
     String bc2secret = "bc2-secret";
 
+    URI key1 = URI.create("key1");
+    URI nestedKey1 = URI.create("nested.key1");
+    URI bc1 = URI.create("bc1");
+    URI nestedBc2 = URI.create("nested.bc2");
+    URI t1 = URI.create("t1");
+    URI nestedT1 = URI.create("nested.t1");
+    URI t2 = URI.create("t2");
+    URI nestedT2 = URI.create("nested.t2");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(
-                "key1", Map.of(JSON_KEY, key1Value),
-                "nested.key1", Map.of(JSON_KEY, nestedKey1Value),
-                "bc1", Map.of(JSON_NAME, bc1name, JSON_SECRET, bc1secret),
-                "nested.bc2", Map.of(JSON_NAME, bc2name, JSON_SECRET, bc2secret),
-                "t1", Map.of(JSON_TOKEN, t1value),
-                "nested.t1", Map.of(JSON_TOKEN, t1value),
-                "t2", Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr),
-                "nested.t2", Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr)));
+                key1, Map.of(JSON_KEY, key1Value),
+                nestedKey1, Map.of(JSON_KEY, nestedKey1Value),
+                bc1, Map.of(JSON_NAME, bc1name, JSON_SECRET, bc1secret),
+                nestedBc2, Map.of(JSON_NAME, bc2name, JSON_SECRET, bc2secret),
+                t1, Map.of(JSON_TOKEN, t1value),
+                nestedT1, Map.of(JSON_TOKEN, t1value),
+                t2, Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr),
+                nestedT2, Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr)));
 
-    soft.assertThat(secretsProvider.getSecret("key1", SecretType.KEY, KeySecret.class))
+    soft.assertThat(secretsProvider.getSecret(key1, SecretType.KEY, KeySecret.class))
         .get()
         .extracting(KeySecret::key, KeySecret::asMap)
         .containsExactly(key1Value, Map.of(JSON_KEY, key1Value));
 
-    soft.assertThat(secretsProvider.getSecret("nested.key1", SecretType.KEY, KeySecret.class))
+    soft.assertThat(secretsProvider.getSecret(nestedKey1, SecretType.KEY, KeySecret.class))
         .get()
         .extracting(KeySecret::key, KeySecret::asMap)
         .containsExactly(nestedKey1Value, Map.of(JSON_KEY, nestedKey1Value));
 
-    soft.assertThat(secretsProvider.getSecret("bc1", SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(secretsProvider.getSecret(bc1, SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret, BasicCredentials::asMap)
         .containsExactly(bc1name, bc1secret, Map.of(JSON_NAME, bc1name, JSON_SECRET, bc1secret));
 
-    soft.assertThat(
-            secretsProvider.getSecret("nested.bc2", SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(secretsProvider.getSecret(nestedBc2, SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret, BasicCredentials::asMap)
         .containsExactly(bc2name, bc2secret, Map.of(JSON_NAME, bc2name, JSON_SECRET, bc2secret));
 
-    soft.assertThat(secretsProvider.getSecret("t1", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+    soft.assertThat(secretsProvider.getSecret(t1, SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
         .containsExactly(t1value, Optional.empty(), Map.of(JSON_TOKEN, t1value));
 
     soft.assertThat(
-            secretsProvider.getSecret("nested.t1", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+            secretsProvider.getSecret(nestedT1, SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
         .containsExactly(t1value, Optional.empty(), Map.of(JSON_TOKEN, t1value));
 
-    soft.assertThat(secretsProvider.getSecret("t2", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+    soft.assertThat(secretsProvider.getSecret(t2, SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
         .containsExactly(
@@ -103,7 +111,7 @@ public class TestSecretsProvider {
             Map.of(JSON_TOKEN, t2value, JSON_EXPIRES_AT, t2expiresStr));
 
     soft.assertThat(
-            secretsProvider.getSecret("nested.t2", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+            secretsProvider.getSecret(nestedT2, SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token, TokenSecret::expiresAt, TokenSecret::asMap)
         .containsExactly(

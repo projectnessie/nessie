@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.files.s3;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -91,7 +92,7 @@ public interface S3Config {
    * {@code nessie.catalog.service.s3.trust-store.path}.
    */
   @ConfigItem(section = "transport")
-  Optional<String> trustStorePassword();
+  Optional<URI> trustStorePassword();
 
   /**
    * Override to set the file path to a custom SSL key store. {@code
@@ -120,7 +121,7 @@ public interface S3Config {
    * nessie.catalog.service.s3.key-store.path}.
    */
   @ConfigItem(section = "transport")
-  Optional<String> keyStorePassword();
+  Optional<URI> keyStorePassword();
 
   static Builder builder() {
     return ImmutableS3Config.builder();
@@ -159,7 +160,7 @@ public interface S3Config {
     Builder trustStoreType(String trustStoreType);
 
     @CanIgnoreReturnValue
-    Builder trustStorePassword(String trustStorePassword);
+    Builder trustStorePassword(URI trustStorePassword);
 
     @CanIgnoreReturnValue
     Builder keyStorePath(Path keyStorePath);
@@ -168,7 +169,7 @@ public interface S3Config {
     Builder keyStoreType(String keyStoreType);
 
     @CanIgnoreReturnValue
-    Builder keyStorePassword(String keyStorePassword);
+    Builder keyStorePassword(URI keyStorePassword);
 
     S3Config build();
   }

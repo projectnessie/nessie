@@ -101,7 +101,7 @@ public interface S3BucketOptions {
    * <p>For STS, this defines the Access Key ID and Secret Key ID to be used as a basic credential
    * for obtaining temporary session credentials.
    */
-  Optional<String> accessKey();
+  Optional<URI> accessKey();
 
   /** Optional parameter to disable S3 request signing. Default is to enable S3 request signing. */
   Optional<Boolean> requestSigningEnabled();

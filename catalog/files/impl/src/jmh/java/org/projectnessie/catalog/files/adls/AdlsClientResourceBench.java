@@ -25,6 +25,7 @@ import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.u
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -64,18 +65,20 @@ public class AdlsClientResourceBench {
       AdlsConfig adlsConfig = AdlsConfig.builder().build();
       HttpClient httpClient = AdlsClients.buildSharedHttpClient(adlsConfig);
 
+      URI theAccount = URI.create("the-account");
+      URI theKey = URI.create("the-key");
       SecretsProvider secretsProvider =
           unsafePlainTextSecretsProvider(
               Map.of(
-                  "the-account", basicCredentials("foo", "foo").asMap(),
-                  "the-key", keySecret("foo").asMap()));
+                  theAccount, basicCredentials("foo", "foo").asMap(),
+                  theKey, keySecret("foo").asMap()));
 
       AdlsProgrammaticOptions adlsOptions =
           ImmutableAdlsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableAdlsNamedFileSystemOptions.builder()
-                      .account("the-account")
-                      .sasToken("the-key")
+                      .account(theAccount)
+                      .sasToken(theKey)
                       .endpoint(server.getAdlsGen2BaseUri().toString())
                       .build())
               .build();

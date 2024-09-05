@@ -131,7 +131,7 @@ public final class GcsClients {
         return NoCredentials.getInstance();
       case USER:
         try {
-          String secretName =
+          URI secretName =
               bucketOptions
                   .authCredentialsJson()
                   .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
@@ -149,7 +149,7 @@ public final class GcsClients {
         }
       case SERVICE_ACCOUNT:
         try {
-          String secretName =
+          URI secretName =
               bucketOptions
                   .authCredentialsJson()
                   .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
@@ -167,7 +167,7 @@ public final class GcsClients {
         }
       case ACCESS_TOKEN:
         {
-          String secretName =
+          URI secretName =
               bucketOptions
                   .oauth2Token()
                   .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));

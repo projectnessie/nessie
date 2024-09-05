@@ -19,6 +19,7 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
+import java.net.URI;
 import java.util.Map;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
@@ -45,7 +46,7 @@ public class TestAdlsClients extends AbstractClients {
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
     HttpClient httpClient = AdlsClients.buildSharedHttpClient(AdlsConfig.builder().build());
 
-    String secretName = "account-key";
+    URI secretName = URI.create("account-key");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(secretName, basicCredentials("accountName", "accountKey").asMap()));

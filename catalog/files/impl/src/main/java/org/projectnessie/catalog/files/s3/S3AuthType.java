@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import java.net.URI;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -37,7 +38,7 @@ public enum S3AuthType {
     @Override
     public AwsCredentialsProvider newCredentialsProvider(
         S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
-      String secretName =
+      URI secretName =
           bucketOptions
               .accessKey()
               .orElseThrow(

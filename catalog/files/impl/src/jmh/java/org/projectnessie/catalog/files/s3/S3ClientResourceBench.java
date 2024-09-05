@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.u
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -61,9 +62,10 @@ public class S3ClientResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
+      URI theAccessKey = URI.create("the-access-key");
       SecretsProvider secretsProvider =
           unsafePlainTextSecretsProvider(
-              Map.of("the-access-key", basicCredentials("foo", "bar").asMap()));
+              Map.of(theAccessKey, basicCredentials("foo", "bar").asMap()));
 
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
@@ -72,7 +74,7 @@ public class S3ClientResourceBench {
           ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
-                      .accessKey("the-access-key")
+                      .accessKey(theAccessKey)
                       .region("eu-central-1")
                       .endpoint(server.getS3BaseUri())
                       .pathStyleAccess(true)

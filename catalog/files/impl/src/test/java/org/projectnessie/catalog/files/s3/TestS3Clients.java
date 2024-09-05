@@ -21,6 +21,7 @@ import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.u
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -59,8 +60,8 @@ public class TestS3Clients extends AbstractClients {
   protected ObjectIO buildObjectIO(
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
 
-    String s3accessKeyName1 = "s3-access-key1";
-    String s3accessKeyName2 = "s3-access-key2";
+    URI s3accessKeyName1 = URI.create("s3-access-key1");
+    URI s3accessKeyName2 = URI.create("s3-access-key2");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(
@@ -118,8 +119,8 @@ public class TestS3Clients extends AbstractClients {
       ks.store(out, passwordChars);
     }
 
-    String correct = "correct-password";
-    String wrong = "wrong_password";
+    URI correct = URI.create("correct-password");
+    URI wrong = URI.create("wrong_password");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(
@@ -186,8 +187,8 @@ public class TestS3Clients extends AbstractClients {
       ks.store(out, passwordChars);
     }
 
-    String correct = "correct-password";
-    String wrong = "wrong_password";
+    URI correct = URI.create("correct-password");
+    URI wrong = URI.create("wrong_password");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(

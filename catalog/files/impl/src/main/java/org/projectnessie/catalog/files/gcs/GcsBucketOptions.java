@@ -63,13 +63,13 @@ public interface GcsBucketOptions {
    * Name of the key-secret containing the auth-credentials-JSON, this value is the name of the
    * credential to use, the actual credential is defined via secrets.
    */
-  Optional<String> authCredentialsJson();
+  Optional<URI> authCredentialsJson();
 
   /**
    * Name of the token-secret containing the OAuth2 token, this value is the name of the credential
    * to use, the actual credential is defined via secrets.
    */
-  Optional<String> oauth2Token();
+  Optional<URI> oauth2Token();
 
   /**
    * Flag to enable the currently experimental option to send short-lived and scoped-down
@@ -109,7 +109,7 @@ public interface GcsBucketOptions {
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> encryptionKey();
+  Optional<URI> encryptionKey();
 
   /**
    * Name of the key-secret containing the customer-supplied AES256 key for blob decryption when
@@ -117,7 +117,7 @@ public interface GcsBucketOptions {
    *
    * @implNote This is currently unsupported.
    */
-  Optional<String> decryptionKey();
+  Optional<URI> decryptionKey();
 
   enum GcsAuthType {
     NONE,
