@@ -62,13 +62,21 @@ spec:
             - name: nessie-config
               mountPath: {{ trimSuffix "/" .Values.image.configDir }}/application.properties
               subPath: application.properties
+              readOnly: true
+            - name: temp-dir
+              mountPath: /tmp
           {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
             - name: rocks-storage
               mountPath: /rocks-nessie
+              readOnly: false
           {{- end }}
           {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
             - name: bigtable-creds
               mountPath: /bigtable-nessie
+              readOnly: true
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+          {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
           {{- end }}
           env:
             {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
@@ -142,6 +150,8 @@ spec:
         - name: nessie-config
           configMap:
             name: {{ include "nessie.fullname" . }}
+        - name: temp-dir
+          emptyDir: {}
       {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
         - name: rocks-storage
           persistentVolumeClaim:
@@ -154,6 +164,9 @@ spec:
             items:
               - key: {{ .Values.bigtable.secret.key }}
                 path: sa_credentials.json
+      {{- end }}
+      {{- if .Values.extraVolumes }}
+      {{- tpl (toYaml .Values.extraVolumes) . | nindent 8 }}
       {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:

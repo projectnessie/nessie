@@ -33,6 +33,6 @@ To connect to Nessie, please execute the following commands:
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "nessie.fullname" . }} -o jsonpath="{ .status.loadBalancer.ingress[0].ip }")
   echo http://$SERVICE_IP:{{ index .Values.service.ports "nessie-server" }}
 {{- else if contains "ClusterIP" .Values.service.type }}
-  nohup kubectl --namespace {{ .Release.Namespace }} port-forward svc/nessie 19120:{{ index .Values.service.ports "nessie-server" }} &
+  nohup kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "nessie.fullname" . }} 19120:{{ index .Values.service.ports "nessie-server" }} &
   echo "Visit http://127.0.0.1:19120 to use your application"
 {{- end }}
