@@ -21,8 +21,5 @@ import java.util.Optional;
 
 public interface SecretsProvider {
   <S extends Secret> Optional<S> getSecret(
-      @Nonnull URI name,
-      @Nonnull SecretType secretType,
-      // only used for type-safety at the call site
-      @SuppressWarnings("unused") @Nonnull Class<S> secretJavaType);
+      @Nonnull URI name, @Nonnull SecretType secretType, @Nonnull Class<S> secretJavaType);
 }
