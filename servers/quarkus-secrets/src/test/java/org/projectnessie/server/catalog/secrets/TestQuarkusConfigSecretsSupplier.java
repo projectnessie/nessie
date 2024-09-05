@@ -18,6 +18,7 @@ package org.projectnessie.server.catalog.secrets;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
+import java.net.URI;
 import java.util.Map;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -53,9 +54,9 @@ public class TestQuarkusConfigSecretsSupplier {
             .build();
 
     SmallryeConfigSecretsProvider secretsSupplier = new SmallryeConfigSecretsProvider(config);
-    soft.assertThat(secretsSupplier.resolveSecret("foo"))
+    soft.assertThat(secretsSupplier.resolveSecret(URI.create("foo")))
         .containsExactlyInAnyOrderEntriesOf(Map.of("a", "b", "c", "d"));
-    soft.assertThat(secretsSupplier.resolveSecret("bar"))
+    soft.assertThat(secretsSupplier.resolveSecret(URI.create("bar")))
         .containsExactlyInAnyOrderEntriesOf(Map.of("a", "b", "c", "d"));
   }
 
@@ -84,23 +85,26 @@ public class TestQuarkusConfigSecretsSupplier {
 
     SecretsProvider secretsProvider = new SmallryeConfigSecretsProvider(config);
 
-    soft.assertThat(secretsProvider.getSecret("foo", SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(
+            secretsProvider.getSecret(URI.create("foo"), SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret)
         .containsExactly("foo-name", "foo-secret");
 
-    soft.assertThat(secretsProvider.getSecret("bar", SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(
+            secretsProvider.getSecret(URI.create("bar"), SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret)
         .containsExactly("bar-name", "bar-secret");
 
     soft.assertThat(
-            secretsProvider.getSecret("token", SecretType.EXPIRING_TOKEN, TokenSecret.class))
+            secretsProvider.getSecret(
+                URI.create("token"), SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token)
         .isEqualTo("my-token");
 
-    soft.assertThat(secretsProvider.getSecret("key", SecretType.KEY, KeySecret.class))
+    soft.assertThat(secretsProvider.getSecret(URI.create("key"), SecretType.KEY, KeySecret.class))
         .get()
         .extracting(KeySecret::key)
         .isEqualTo("my-secret-key");

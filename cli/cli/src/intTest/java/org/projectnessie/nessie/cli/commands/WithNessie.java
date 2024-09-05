@@ -24,6 +24,7 @@ import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStora
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -105,7 +106,7 @@ public abstract class WithNessie {
     nessieApiUri = NessieProcess.baseUri + "api/v2";
     icebergUri = NessieProcess.baseUri + "iceberg";
 
-    String s3accessKeyName = "s3-access-key";
+    URI s3accessKeyName = URI.create("s3-access-key");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
             Map.of(s3accessKeyName, basicCredentials("foo", "bar").asMap()));

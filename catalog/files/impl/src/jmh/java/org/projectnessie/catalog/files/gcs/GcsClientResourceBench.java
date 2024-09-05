@@ -25,6 +25,7 @@ import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.u
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -63,14 +64,15 @@ public class GcsClientResourceBench {
 
       HttpTransportFactory httpTransportFactory = GcsClients.buildSharedHttpTransportFactory();
 
+      URI theToken = URI.create("the-token");
       SecretsProvider secretsProvider =
-          unsafePlainTextSecretsProvider(Map.of("the-token", tokenSecret("foo", null).asMap()));
+          unsafePlainTextSecretsProvider(Map.of(theToken, tokenSecret("foo", null).asMap()));
 
       GcsProgrammaticOptions gcsOptions =
           ImmutableGcsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableGcsNamedBucketOptions.builder()
-                      .oauth2Token("the-token")
+                      .oauth2Token(theToken)
                       .host(server.getGcsBaseUri())
                       .build())
               .build();

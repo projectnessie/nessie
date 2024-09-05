@@ -17,6 +17,7 @@ package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
@@ -92,7 +93,7 @@ public interface CatalogS3Config extends S3Config, S3Options {
 
   @WithName("trust-store.password")
   @Override
-  Optional<String> trustStorePassword();
+  Optional<URI> trustStorePassword();
 
   @WithName("key-store.path")
   @Override
@@ -104,7 +105,7 @@ public interface CatalogS3Config extends S3Config, S3Options {
 
   @WithName("key-store.password")
   @Override
-  Optional<String> keyStorePassword();
+  Optional<URI> keyStorePassword();
 
   @ConfigPropertyName("bucket-name")
   @Override

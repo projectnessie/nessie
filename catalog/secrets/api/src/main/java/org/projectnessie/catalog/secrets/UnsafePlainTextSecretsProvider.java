@@ -16,22 +16,23 @@
 package org.projectnessie.catalog.secrets;
 
 import jakarta.annotation.Nonnull;
+import java.net.URI;
 import java.util.Map;
 
 public class UnsafePlainTextSecretsProvider extends AbstractMapBasedSecretsProvider {
-  private final Map<String, Map<String, String>> unsafeSecrets;
+  private final Map<URI, Map<String, String>> unsafeSecrets;
 
-  private UnsafePlainTextSecretsProvider(Map<String, Map<String, String>> unsafeSecrets) {
+  private UnsafePlainTextSecretsProvider(Map<URI, Map<String, String>> unsafeSecrets) {
     this.unsafeSecrets = unsafeSecrets;
   }
 
   public static SecretsProvider unsafePlainTextSecretsProvider(
-      Map<String, Map<String, String>> unsafeSecrets) {
+      Map<URI, Map<String, String>> unsafeSecrets) {
     return new UnsafePlainTextSecretsProvider(unsafeSecrets);
   }
 
   @Override
-  protected Map<String, String> resolveSecret(@Nonnull String name) {
+  protected Map<String, String> resolveSecret(@Nonnull URI name) {
     return unsafeSecrets.get(name);
   }
 }

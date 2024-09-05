@@ -74,11 +74,12 @@ public class S3SessionCacheResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
-      Map<String, Map<String, String>> secretsMap = new HashMap<>();
+      Map<URI, Map<String, String>> secretsMap = new HashMap<>();
       for (int i = 0; i < numBucketOptions; i++) {
-        secretsMap.put("access-key-" + i, basicCredentials("foo" + i, "bar" + 1).asMap());
+        secretsMap.put(
+            URI.create("access-key-" + i), basicCredentials("foo" + i, "bar" + 1).asMap());
       }
-      secretsMap.put("the-access-key", basicCredentials("foo", "bar").asMap());
+      secretsMap.put(URI.create("the-access-key"), basicCredentials("foo", "bar").asMap());
       SecretsProvider secretsProvider = unsafePlainTextSecretsProvider(secretsMap);
 
       S3Config s3config = S3Config.builder().build();
@@ -88,7 +89,7 @@ public class S3SessionCacheResourceBench {
           ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
-                      .accessKey("the-access-key")
+                      .accessKey(URI.create("the-access-key"))
                       .region("eu-central-1")
                       .pathStyleAccess(true)
                       .build())
@@ -110,7 +111,7 @@ public class S3SessionCacheResourceBench {
               .mapToObj(
                   i ->
                       ImmutableS3NamedBucketOptions.builder()
-                          .accessKey("access-key-" + 1)
+                          .accessKey(URI.create("access-key-" + 1))
                           .region(regions.get(i % regions.size()))
                           .stsEndpoint(stsEndpoint)
                           .clientIam(

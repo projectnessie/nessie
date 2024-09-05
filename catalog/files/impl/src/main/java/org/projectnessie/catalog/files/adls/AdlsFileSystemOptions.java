@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.adls;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -32,10 +33,10 @@ public interface AdlsFileSystemOptions {
    * "myaccount.dfs.core.windows.net"} and account key, configured using the {@code name} and {@code
    * secret} fields. If not specified, it will be queried via the configured credentials provider.
    */
-  Optional<String> account();
+  Optional<URI> account();
 
   /** Name of the key-secret containing the SAS token to access the ADLS file system. */
-  Optional<String> sasToken();
+  Optional<URI> sasToken();
 
   /**
    * Enable short-lived user-delegation SAS tokens per file-system.

@@ -33,6 +33,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
+import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;
@@ -205,9 +206,10 @@ public abstract class AbstractCatalogService {
   }
 
   private void setupObjectIO() {
+    URI theAccessKey = URI.create("the-access-key");
     SecretsProvider secretsProvider =
         unsafePlainTextSecretsProvider(
-            Map.of("the-access-key", basicCredentials("foo", "bar").asMap()));
+            Map.of(theAccessKey, basicCredentials("foo", "bar").asMap()));
 
     S3Sessions sessions = new S3Sessions("foo", null);
     S3Config s3config = S3Config.builder().build();
@@ -216,7 +218,7 @@ public abstract class AbstractCatalogService {
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
-                    .accessKey("the-access-key")
+                    .accessKey(theAccessKey)
                     .region("eu-central-1")
                     .endpoint(objectStorageServer.getS3BaseUri())
                     .pathStyleAccess(true)
