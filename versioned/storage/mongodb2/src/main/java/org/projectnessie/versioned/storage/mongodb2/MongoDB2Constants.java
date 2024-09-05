@@ -34,6 +34,7 @@ final class MongoDB2Constants {
   static final String COL_OBJ_TYPE = "y";
   static final String COL_OBJ_VERS = "V";
   static final String COL_OBJ_VALUE = "v";
+  static final String COL_OBJ_REFERENCED = "z";
 
   static final String ID_REPO_PATH = ID_PROPERTY_NAME + "." + COL_REPO;
 
