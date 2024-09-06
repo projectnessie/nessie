@@ -36,25 +36,25 @@ public abstract class ResolvingSecretsProvider implements SecretsProvider {
         "urn".equals(scheme) && next != null,
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
 
-    int iNessieSecret = next.indexOf(':');
+    int idxNessieSecret = next.indexOf(':');
     checkArgument(
-        iNessieSecret > 0 && iNessieSecret != next.length() - 1,
+        idxNessieSecret > 0 && idxNessieSecret != next.length() - 1,
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
-    scheme = next.substring(0, iNessieSecret);
+    scheme = next.substring(0, idxNessieSecret);
     checkArgument(
         "nessie-secret".equals(scheme),
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
 
-    int iProvider = next.indexOf(':', iNessieSecret + 1);
+    int idxProvider = next.indexOf(':', idxNessieSecret + 1);
     checkArgument(
-        iProvider > 0 && iProvider != next.length() - 1,
+        idxProvider > 0 && idxProvider != next.length() - 1,
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
-    String provider = next.substring(iNessieSecret + 1, iProvider);
+    String provider = next.substring(idxNessieSecret + 1, idxProvider);
     checkArgument(
         !provider.isBlank(),
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
 
-    next = next.substring(iProvider + 1);
+    next = next.substring(idxProvider + 1);
     checkArgument(
         !next.isBlank() && next.charAt(0) != ':',
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
