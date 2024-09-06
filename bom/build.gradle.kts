@@ -121,6 +121,7 @@ dependencies {
     api(project(":nessie-catalog-service-impl"))
     api(project(":nessie-catalog-service-transfer"))
     api(project(":nessie-catalog-secrets-api"))
+    api(project(":nessie-catalog-secrets-smallrye"))
 
     if (!isIncludedInNesQuEIT()) {
       api(project(":nessie-gc-iceberg"))

@@ -347,7 +347,7 @@ config types know about that symbolic name and resolve it via a SecretsProvider,
 # {{ $midfix }}
 #
 - name: {{ (printf "nessie.catalog.service.%s" $midfix) | quote }}
-  value: {{ (printf "nessie-catalog-secrets.%s" $midfix) | quote }}
+  value: {{ (printf "urn:nessie-secret:quarkus:nessie-catalog-secrets.%s" $midfix) | quote }}
 {{- end }}
 - name: {{ (printf "nessie-catalog-secrets.%s.%s" $midfix $suffix) | quote }}
   valueFrom:

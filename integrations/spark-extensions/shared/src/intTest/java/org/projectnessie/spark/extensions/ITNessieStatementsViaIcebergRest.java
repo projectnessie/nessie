@@ -42,7 +42,7 @@ public class ITNessieStatementsViaIcebergRest extends AbstractNessieSparkSqlExte
             + objectStorage.getS3BaseUri().toString(),
         "-Dnessie.catalog.service.s3.default-options.path-style-access=true",
         "-Dnessie.catalog.service.s3.default-options.region=eu-central-1",
-        "-Dnessie.catalog.service.s3.default-options.access-key=nessie-catalog-secrets.s3-access-key",
+        "-Dnessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:nessie-catalog-secrets.s3-access-key",
         "-Dnessie-catalog-secrets.s3-access-key.name=accessKey",
         "-Dnessie-catalog-secrets.s3-access-key.secret=secretKey");
   }

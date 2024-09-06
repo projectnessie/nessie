@@ -18,13 +18,18 @@ package org.projectnessie.server.catalog.secrets;
 import io.smallrye.config.SmallRyeConfig;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.smallrye.SmallryeConfigSecretsProvider;
 
 public class SecretsProducers {
 
   @Produces
   @Singleton
   public SecretsProvider secretsProvider(SmallRyeConfig smallRyeConfig) {
-    return new SmallryeConfigSecretsProvider(smallRyeConfig);
+    // Reference secrets via `urn:nessie-secret:quarkus:<secret-name>
+    return ResolvingSecretsProvider.builder()
+        .putSecretsProvider("quarkus", new SmallryeConfigSecretsProvider(smallRyeConfig))
+        .build();
   }
 }

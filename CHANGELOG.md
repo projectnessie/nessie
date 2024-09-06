@@ -25,6 +25,16 @@ as necessary. Empty sections will not end in the release notes.
 ### Breaking changes
 
 - The deprecated JDBC configuration properties for `catalog` and `schema` have been removed.
+- Catalog/Object store secrets: Secrets are now referenced via a URN as requirement to introduce support
+  for secret managers like Vault or those offered by cloud vendors. All secret reference URNs use the
+  pattern `urn:nessie-secret:<provider>:<secret-name>`.
+  The currently supported provider is `quarkus`, the `<secret-name>` is the name of the Quarkus
+  configuration entry, which can also be an environment variable name.
+  Make sure to use the new helm chart.
+  See [Nessie Docs](https://projectnessie.org/nessie-latest/configuration/#secrets-manager-settings).
+- Catalog/Object store secrets: secrets are now handled as immutable composites, which is important
+  to support secrets rotation with external secrets managers.
+  See [Nessie Docs](https://projectnessie.org/nessie-latest/configuration/#secrets-manager-settings).
 
 ### New Features
 

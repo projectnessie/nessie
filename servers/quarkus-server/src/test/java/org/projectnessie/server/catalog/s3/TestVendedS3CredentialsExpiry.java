@@ -124,7 +124,9 @@ public class TestVendedS3CredentialsExpiry {
           .putAll(super.getConfigOverrides())
           .put("nessie.catalog.default-warehouse", WAREHOUSE_NAME)
           .put("nessie.catalog.service.s3.default-options.region", "us-west-2")
-          .put("nessie.catalog.service.s3.default-options.access-key", "test-access-key-secret")
+          .put(
+              "nessie.catalog.service.s3.default-options.access-key",
+              "urn:nessie-secret:quarkus:test-access-key-secret")
           .put("test-access-key-secret.name", "test-secret-key")
           .put("test-access-key-secret.secret", "test-secret-key")
           .put("nessie.catalog.service.s3.default-options.request-signing-enabled", "false")
