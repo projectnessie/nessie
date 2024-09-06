@@ -40,7 +40,9 @@ public class AzuriteTestResourceLifecycleManager implements QuarkusTestResourceL
                 + azurite.storageContainer());
     return ImmutableMap.<String, String>builder()
         .put("nessie.catalog.service.adls.default-options.auth-type", "STORAGE_SHARED_KEY")
-        .put("nessie.catalog.service.adls.default-options.account", "my-azurite-account")
+        .put(
+            "nessie.catalog.service.adls.default-options.account",
+            "urn:nessie-secret:quarkus:my-azurite-account")
         .put("my-azurite-account.name", azurite.account())
         .put("my-azurite-account.secret", azurite.secretBase64())
         .put("nessie.catalog.service.adls.default-options.endpoint", azurite.endpoint())

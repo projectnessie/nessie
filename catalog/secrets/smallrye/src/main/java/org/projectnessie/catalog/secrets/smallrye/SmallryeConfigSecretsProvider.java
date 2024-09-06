@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.catalog.secrets;
+package org.projectnessie.catalog.secrets.smallrye;
 
 import io.smallrye.config.SmallRyeConfig;
 import jakarta.annotation.Nonnull;

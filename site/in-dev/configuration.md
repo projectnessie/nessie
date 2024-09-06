@@ -183,6 +183,50 @@ Related Quarkus settings:
 
 {% include './generated-docs/smallrye-nessie_catalog_service.md' %}
 
+#### Secrets manager settings
+
+Secrets for object stores are strictly separated from the actual configuration entries. This enables
+the use of external secrets managers. Secrets are referenced using a URN notation.
+
+The URN notation for Nessie secrets is `urn:nessie-secret:<provider>:<secret-name>`. `<provider>`
+references the name of the provider, for example `quarkus` to resolve secrets via the
+[Quarkus configuration](#quarkus-configuration-incl-environment-variables). `<secret-name>` is the
+secrets manager specific name for the secret to resolve.
+
+##### Types of Secrets
+
+* **Basic credentials** are composites of a `name` attribute and a `secret` attribute.
+  AWS credentials are managed as basic credentials, where the `name` represents the access key ID and
+  the `secret` represents the secret access key.
+* **Tokens** are composites of a `token` attribute and an optional `expiresAt` attribute, latter
+  represented as an instant.
+* **Keys** consist of a single `key` attribute.
+
+##### Quarkus configuration (incl environment variables)
+
+Object store secrets managed via Quarkus' configuration mechanism (SmallRye Config) resolve components of
+the secret types (basic credentials, tokens, keys) via individual configuration keys.
+
+The Quarkus configuration key prefix (or environment variable name) is specified for the secret using the
+URN notation `urn:nessie-secret:quarkus:<quarkus-configuration-key-prefix>.<secret-part>`.
+
+The following example illustrates the Quarkus configuration entries to define the default S3 access-key and
+secret-access-key:
+```properties
+# 
+#                   Prefix of the Quarkus configuration keys for this secret ---+
+#                                                                               |
+#                     The URN for Quarkus secrets ---+                          |
+#                                                    |                          |
+#                                                    |------------------------- |--------------------
+nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:my-secrets.s3-default
+# The AWS access-key and secret-access-key are referenced via the "secret-part" name,
+# see 'Types of Secrets' above.
+# `my-secrets.s3-default` is the `secret-part` as in the last part of the above property
+my-secrets.s3-default.name=awsAccessKeyId
+my-secrets.s3-default.secret=awsSecretAccessKey
+```
+
 ### Version Store Settings
 
 {% include './generated-docs/smallrye-nessie_version_store.md' %}

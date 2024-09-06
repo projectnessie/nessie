@@ -77,7 +77,9 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put("nessie.catalog.service.s3.buckets.mock-bucket.endpoint", s3Endpoint)
         .put("nessie.catalog.service.s3.buckets.mock-bucket.region", "us-east-1")
         .put("nessie.catalog.service.s3.buckets.mock-bucket.path-style-access", "true")
-        .put("nessie.catalog.service.s3.buckets.mock-bucket.access-key", "mock-bucket-access-key")
+        .put(
+            "nessie.catalog.service.s3.buckets.mock-bucket.access-key",
+            "urn:nessie-secret:quarkus:mock-bucket-access-key")
         .put("mock-bucket-access-key.name", "accessKey")
         .put("mock-bucket-access-key.secret", "secretKey")
         // GCS
@@ -88,7 +90,9 @@ public class ObjectStorageMockTestResourceLifecycleManager
         // ADLS
         .put("nessie.catalog.service.adls.file-systems.mock-fs.name", BUCKET)
         .put("nessie.catalog.service.adls.file-systems.mock-fs.endpoint", adlsEndpoint)
-        .put("nessie.catalog.service.adls.file-systems.mock-fs.sas-token", "sas-token")
+        .put(
+            "nessie.catalog.service.adls.file-systems.mock-fs.sas-token",
+            "urn:nessie-secret:quarkus:sas-token")
         .put("sas-token.key", "sas-token")
         .put("nessie.catalog.service.adls.file-systems.mock-fs.auth-type", "SAS_TOKEN")
         .build();

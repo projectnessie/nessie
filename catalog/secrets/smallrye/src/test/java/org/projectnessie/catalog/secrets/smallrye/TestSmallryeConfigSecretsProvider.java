@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.catalog.secrets;
+package org.projectnessie.catalog.secrets.smallrye;
 
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
@@ -30,14 +30,13 @@ import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
-import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
 
 @ExtendWith(SoftAssertionsExtension.class)
-public class TestQuarkusConfigSecretsSupplier {
+public class TestSmallryeConfigSecretsProvider {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @Test
-  public void smallryeConfigSecretsSupplier() {
+  public void resolveSecrets() {
     Map<String, String> configs =
         Map.of(
             "foo.a", "b",
@@ -49,7 +48,6 @@ public class TestQuarkusConfigSecretsSupplier {
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
             .setAddDiscoveredSources(false)
-            .withMapping(QuarkusCatalogConfig.class)
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 
@@ -61,7 +59,7 @@ public class TestQuarkusConfigSecretsSupplier {
   }
 
   @Test
-  public void smallryeConfigSecretsProvider() {
+  public void getSecrets() {
     Map<String, String> configs =
         Map.of(
             "foo.name",
@@ -79,7 +77,6 @@ public class TestQuarkusConfigSecretsSupplier {
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
             .setAddDiscoveredSources(false)
-            .withMapping(QuarkusCatalogConfig.class)
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 

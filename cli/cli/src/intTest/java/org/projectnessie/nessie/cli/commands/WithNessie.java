@@ -93,7 +93,8 @@ public abstract class WithNessie {
     nessieProperties.put("nessie.catalog.service.s3.default-options.path-style-access", "true");
     nessieProperties.put("nessie.catalog.service.s3.default-options.region", "eu-central-1");
     nessieProperties.put(
-        "nessie.catalog.service.s3.default-options.access-key", "with-nessie-access-key");
+        "nessie.catalog.service.s3.default-options.access-key",
+        "urn:nessie-secret:quarkus:with-nessie-access-key");
     nessieProperties.put("with-nessie-access-key.name", "accessKey");
     nessieProperties.put("with-nessie-access-key.secret", "secretKey");
     nessieProperties.putAll(serverConfig);

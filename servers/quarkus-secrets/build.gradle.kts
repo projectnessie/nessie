@@ -27,6 +27,7 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 
 dependencies {
   implementation(project(":nessie-catalog-secrets-api"))
+  implementation(project(":nessie-catalog-secrets-smallrye"))
   implementation(project(":nessie-quarkus-config"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
