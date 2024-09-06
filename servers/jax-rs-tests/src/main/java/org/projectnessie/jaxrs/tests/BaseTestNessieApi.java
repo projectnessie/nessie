@@ -1861,7 +1861,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void createAndUpdateRepositoryConfig() throws Exception {
+  public void createAndUpdateRepositoryConfig() throws Exception {
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
 
@@ -1909,7 +1909,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void genericRepositoryConfigForbidden() {
+  public void genericRepositoryConfigForbidden() {
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
 
@@ -1940,7 +1940,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void invalidCreateRepositoryConfig() {
+  public void invalidCreateRepositoryConfig() {
     @SuppressWarnings("resource")
     NessieApiV2 api = apiV2();
 
@@ -1961,7 +1961,7 @@ public abstract class BaseTestNessieApi {
   }
 
   @Test
-  void invalidParameters() {
+  public void invalidParameters() {
     soft.assertThatThrownBy(() -> api().getEntries().refName("..invalid..").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining(Validation.REF_NAME_MESSAGE);
@@ -1969,7 +1969,7 @@ public abstract class BaseTestNessieApi {
 
   @Test
   @NessieApiVersions(versions = NessieApiVersion.V2)
-  void renameTwice() throws Exception {
+  public void renameTwice() throws Exception {
     Branch main = api().getDefaultBranch();
     soft.assertThat(api().getAllReferences().get().getReferences()).containsExactly(main);
 
