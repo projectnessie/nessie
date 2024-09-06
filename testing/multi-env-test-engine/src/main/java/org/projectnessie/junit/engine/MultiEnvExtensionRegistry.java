@@ -17,10 +17,14 @@ package org.projectnessie.junit.engine;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
+import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
 import org.junit.platform.commons.util.AnnotationUtils;
 
@@ -33,17 +37,40 @@ import org.junit.platform.commons.util.AnnotationUtils;
 public class MultiEnvExtensionRegistry {
   private final MutableExtensionRegistry registry;
 
+  private final Set<ClassBasedTestDescriptor> probablyNotMultiEnv = new LinkedHashSet<>();
+
   public MultiEnvExtensionRegistry() {
     this.registry =
         MutableExtensionRegistry.createRegistryWithDefaultExtensions(
             new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
   }
 
-  public void registerExtensions(Class<?> testClass) {
-    AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
-        .flatMap(e -> Arrays.stream(e.value()))
-        .filter(MultiEnvTestExtension.class::isAssignableFrom)
+  public void registerExtensions(ClassBasedTestDescriptor descriptor) {
+    AtomicBoolean multiEnv = new AtomicBoolean(false);
+
+    findMultiEnvExtensions(descriptor)
+        .peek(x -> multiEnv.set(true))
         .forEach(registry::registerExtension);
+
+    if (!multiEnv.get()) {
+      probablyNotMultiEnv.add(descriptor);
+    }
+  }
+
+  public boolean isMultiEnvClass(ClassBasedTestDescriptor descriptor) {
+    return findMultiEnvExtensions(descriptor).findFirst().isPresent();
+  }
+
+  private Stream<Class<? extends Extension>> findMultiEnvExtensions(
+      ClassBasedTestDescriptor descriptor) {
+    Class<?> testClass = descriptor.getTestClass();
+    return AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
+        .flatMap(e -> Arrays.stream(e.value()))
+        .filter(MultiEnvTestExtension.class::isAssignableFrom);
+  }
+
+  public Stream<ClassBasedTestDescriptor> probablyNotMultiEnv() {
+    return probablyNotMultiEnv.stream();
   }
 
   public Stream<MultiEnvTestExtension> stream() {

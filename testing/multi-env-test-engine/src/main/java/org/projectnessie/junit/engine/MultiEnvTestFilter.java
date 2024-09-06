@@ -15,8 +15,6 @@
  */
 package org.projectnessie.junit.engine;
 
-import static org.projectnessie.junit.engine.MultiEnvTestEngine.registry;
-
 import java.util.Optional;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.platform.engine.FilterResult;
@@ -36,7 +34,7 @@ import org.junit.platform.launcher.PostDiscoveryFilter;
  */
 public class MultiEnvTestFilter implements PostDiscoveryFilter {
 
-  private Optional<Class<?>> classFor(TestDescriptor object) {
+  static Optional<Class<?>> classFor(TestDescriptor object) {
     for (TestDescriptor d = object; d != null; d = d.getParent().orElse(null)) {
       if (d instanceof ClassBasedTestDescriptor) {
         return Optional.of(((ClassBasedTestDescriptor) d).getTestClass());
@@ -46,39 +44,27 @@ public class MultiEnvTestFilter implements PostDiscoveryFilter {
     return Optional.empty();
   }
 
-  private FilterResult filter(Class<?> testClass, UniqueId id) {
-    // Use the static extension data collected during the discovery phase.
-    // It is possible to reload extensions based of class objects from test descriptors,
-    // however that would add unnecessary overhead.
-    MultiEnvExtensionRegistry registry = registry();
-
+  /**
+   * This filter effectively routes all tests via the {@link MultiEnvTestEngine}, both actual
+   * multi-env tests but also non-multi-env tests to achieve the needed thread-per-test-class
+   * behavior.
+   *
+   * <p>"Thread-per-test-class behavior" is needed to prevent the class/class-loader leak via {@link
+   * ThreadLocal}s as described in <a
+   * href="https://github.com/projectnessie/nessie/issues/9441">#9441</a>.
+   */
+  private FilterResult filter(UniqueId id) {
     if (id.getEngineId().map("junit-jupiter"::equals).orElse(false)) {
-      if (registry.stream(testClass).findAny().isPresent()) {
-        return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
-      } else {
-        return FilterResult.included(null);
-      }
+      return FilterResult.excluded("Excluding multi-env test from Jupiter Engine: " + id);
     } else {
-      // check whether any of the extensions declared by the test recognize the version segment
-      boolean matched =
-          registry.stream(testClass)
-              .anyMatch(
-                  ext ->
-                      id.getSegments().stream()
-                          .anyMatch(s -> ext.segmentType().equals(s.getType())));
-
-      if (matched) {
-        return FilterResult.included(null);
-      } else {
-        return FilterResult.excluded("Excluding unmatched multi-env test: " + id);
-      }
+      return FilterResult.included(null);
     }
   }
 
   @Override
   public FilterResult apply(TestDescriptor test) {
     return classFor(test)
-        .map(testClass -> filter(testClass, test.getUniqueId()))
+        .map(testClass -> filter(test.getUniqueId()))
         .orElseGet(() -> FilterResult.included(null)); // fallback for non-class descriptors
   }
 }

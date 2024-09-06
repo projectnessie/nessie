@@ -46,8 +46,7 @@ class TestMultiEnvTestEngine {
                 .list()
                 .stream()
                 .map(e -> e.getTestDescriptor().getUniqueId()))
-        .isNotEmpty()
-        .allSatisfy(id -> assertThat(id.getEngineId()).hasValue(JupiterEngineDescriptor.ENGINE_ID));
+        .isEmpty();
   }
 
   @Test
@@ -58,8 +57,12 @@ class TestMultiEnvTestEngine {
                 .filters(new MultiEnvTestFilter())
                 .execute()
                 .testEvents()
-                .list())
-        .isEmpty(); // plain tests are excluded
+                .list()
+                .stream()
+                .map(e -> e.getTestDescriptor().getUniqueId()))
+        .isNotEmpty()
+        .noneSatisfy(
+            id -> assertThat(id.getEngineId()).hasValue(JupiterEngineDescriptor.ENGINE_ID));
   }
 
   @Test
