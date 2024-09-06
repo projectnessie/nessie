@@ -17,7 +17,14 @@ package org.projectnessie.catalog.secrets;
 
 import java.util.Map;
 
-/** Base interface for all secrets. */
+/**
+ * Base interface for all secrets.
+ *
+ * <p>Secrets must not implement (override) any of these functions in a way: {@link
+ * Object#toString()}, {@link Object#hashCode()} or {@link Object#equals(Object)} that would
+ * directly (for example return a secret value from {@code toString()}) or indirectly (compare the
+ * instance itself against another instance) expose the values of a secret.
+ */
 public interface Secret {
   Map<String, String> asMap();
 }
