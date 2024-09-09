@@ -228,8 +228,6 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
     testInjector.injectIntoFields(
         VAULT_MOUNT, new AnnotatedAndMatchesType(VaultMountPath.class, String.class));
     testInjector.injectIntoFields(
-        NESSIE_SECRETS_PATH, new AnnotatedAndMatchesType(SecretsPath.class, String.class));
-    testInjector.injectIntoFields(
         (SecretsUpdateHandler) this::updateSecrets,
         new AnnotatedAndMatchesType(SecretsUpdater.class, SecretsUpdateHandler.class));
   }
