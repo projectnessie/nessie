@@ -62,6 +62,7 @@ gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-hig
 google-cloud-bigdataoss-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version.ref = "googleCloudBigdataoss" }
 google-cloud-bigdataoss-gcsio = { module = "com.google.cloud.bigdataoss:gcsio", version.ref = "googleCloudBigdataoss" }
 google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.43.0" }
+google-cloud-secretmanager-bom = { module = "com.google.cloud:google-cloud-secretmanager-bom", version = "2.48.0" }
 google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.42.0" }
 google-cloud-libraries-bom = { module = "com.google.cloud:libraries-bom", version = "26.45.0" }
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
@@ -99,6 +100,7 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+lowkey-vault-testcontainers = { module = "com.github.nagyesta.lowkey-vault:lowkey-vault-testcontainers", version = "2.4.66" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.4.1" }
 maven-resolver-supplier = { module = "org.apache.maven.resolver:maven-resolver-supplier", version.ref = "mavenResolver" }
@@ -120,6 +122,7 @@ picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "pico
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkusPlatform" }
+quarkus-azure-services-bom = { module = "io.quarkiverse.azureservices:quarkus-azure-services-bom", version = "1.0.5" }
 quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkusPlatform" }
 quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkusPlatform" }
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }

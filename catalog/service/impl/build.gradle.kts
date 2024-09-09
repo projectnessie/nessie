@@ -72,6 +72,7 @@ dependencies {
   testFixturesApi(libs.threeten.extra)
   testFixturesApi(libs.jakarta.ws.rs.api)
 
+  testImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
   testImplementation(platform(libs.awssdk.bom))
   testImplementation("software.amazon.awssdk:s3")
   testImplementation("software.amazon.awssdk:url-connection-client")

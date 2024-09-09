@@ -17,6 +17,7 @@ package org.projectnessie.catalog.secrets;
 
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.SecretJsonParser.parseOrSingle;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
 import java.util.Map;
@@ -33,6 +34,16 @@ public enum SecretType {
     public Secret fromValueMap(Map<String, String> value) {
       return keySecret(value);
     }
+
+    @Override
+    public Secret parse(String string) {
+      return keySecret(string);
+    }
+
+    @Override
+    public boolean singleValued() {
+      return true;
+    }
   },
   EXPIRING_TOKEN() {
     @Override
@@ -44,4 +55,12 @@ public enum SecretType {
 
   /** Construct a {@link Secret} instance from its map representation. */
   public abstract Secret fromValueMap(Map<String, String> value);
+
+  public boolean singleValued() {
+    return false;
+  }
+
+  public Secret parse(String string) {
+    return fromValueMap(parseOrSingle(string));
+  }
 }
