@@ -32,7 +32,7 @@ import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -107,7 +107,7 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
           .put(
               "quarkus.secretsmanager.aws.credentials.static-provider.secret-access-key",
               localstack.getSecretKey())
-          .put("nessie.secrets.type", SecretsSupplierType.AMAZON.name())
+          .put("nessie.secrets.type", ExternalSecretsManagerType.AMAZON.name())
           .put("nessie.secrets.path", NESSIE_SECRETS_PATH)
           .build();
     } catch (Exception e) {

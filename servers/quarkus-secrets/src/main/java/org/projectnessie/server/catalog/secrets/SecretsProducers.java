@@ -46,7 +46,7 @@ public class SecretsProducers {
       @Any Instance<SecretsManagerBuilder> secretsSupplierBuilders,
       Instance<MeterRegistry> meterRegistry,
       @RepositoryId String repositoryId) {
-    QuarkusSecretsConfig.SecretsSupplierType type = config.type();
+    QuarkusSecretsConfig.ExternalSecretsManagerType type = config.type();
 
     SecretsProvider resolving =
         buildResolvingSecretsProvider(smallRyeConfig, secretsSupplierBuilders, type);
@@ -57,7 +57,7 @@ public class SecretsProducers {
   private SecretsProvider buildResolvingSecretsProvider(
       SmallRyeConfig smallRyeConfig,
       Instance<SecretsManagerBuilder> secretsSupplierBuilders,
-      QuarkusSecretsConfig.SecretsSupplierType type) {
+      QuarkusSecretsConfig.ExternalSecretsManagerType type) {
 
     // Reference secrets via `urn:nessie-secret:quarkus:<secret-name>
     ImmutableResolvingSecretsProvider.Builder providers =
@@ -69,7 +69,7 @@ public class SecretsProducers {
     }
 
     Instance<SecretsManagerBuilder> selected =
-        secretsSupplierBuilders.select(new SecretsType.Literal(type));
+        secretsSupplierBuilders.select(new SecretsManagerType.Literal(type));
 
     if (selected.isUnsatisfied()) {
       return providers.build();

@@ -26,28 +26,28 @@ import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 
-/** Store type qualifier for {@code VersionStoreFactory} classes. */
+/** Secrets manager type qualifier. */
 @Target({TYPE, METHOD, PARAMETER, FIELD})
 @Retention(RUNTIME)
 @Documented
 @Qualifier
-public @interface SecretsType {
+public @interface SecretsManagerType {
   /** Gets the secrets supplier type. */
-  SecretsSupplierType value();
+  ExternalSecretsManagerType value();
 
-  /** Supports inline instantiation of the {@link SecretsType} qualifier. */
-  final class Literal extends AnnotationLiteral<SecretsType> implements SecretsType {
+  /** Supports inline instantiation of the {@link SecretsManagerType} qualifier. */
+  final class Literal extends AnnotationLiteral<SecretsManagerType> implements SecretsManagerType {
 
-    private final SecretsSupplierType value;
+    private final ExternalSecretsManagerType value;
 
-    public Literal(SecretsSupplierType value) {
+    public Literal(ExternalSecretsManagerType value) {
       this.value = value;
     }
 
     @Override
-    public SecretsSupplierType value() {
+    public ExternalSecretsManagerType value() {
       return value;
     }
   }

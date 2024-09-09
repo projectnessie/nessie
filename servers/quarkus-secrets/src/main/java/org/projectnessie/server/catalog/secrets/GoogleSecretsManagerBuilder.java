@@ -21,10 +21,10 @@ import jakarta.inject.Inject;
 import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.gcs.GcsSecretsManager;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 
 @Dependent
-@SecretsType(SecretsSupplierType.GOOGLE)
+@SecretsManagerType(ExternalSecretsManagerType.GOOGLE)
 public class GoogleSecretsManagerBuilder implements SecretsManagerBuilder {
 
   @Inject SecretManagerServiceClient client;

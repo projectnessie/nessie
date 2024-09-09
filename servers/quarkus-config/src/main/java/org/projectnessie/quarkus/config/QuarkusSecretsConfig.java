@@ -45,7 +45,7 @@ import java.time.Duration;
 public interface QuarkusSecretsConfig {
   /** Choose the secrets manager to use, defaults to no secrets manager. */
   @WithDefault("NONE")
-  SecretsSupplierType type();
+  ExternalSecretsManagerType type();
 
   /** The path/prefix used when accessing secrets from the secrets manager. */
   @WithDefault("nessie-secrets")
@@ -57,7 +57,7 @@ public interface QuarkusSecretsConfig {
   @WithDefault("PT2S")
   Duration getSecretTimeout();
 
-  enum SecretsSupplierType {
+  enum ExternalSecretsManagerType {
     NONE,
     VAULT,
     GOOGLE,

@@ -20,11 +20,11 @@ import jakarta.inject.Inject;
 import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.aws.AwsSecretsManager;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @Dependent
-@SecretsType(SecretsSupplierType.AMAZON)
+@SecretsManagerType(ExternalSecretsManagerType.AMAZON)
 public class AmazonSecretsManagerBuilder implements SecretsManagerBuilder {
   @Inject SecretsManagerClient client;
 

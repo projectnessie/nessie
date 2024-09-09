@@ -16,7 +16,7 @@
 package org.projectnessie.server.secrets;
 
 import static java.util.Locale.ROOT;
-import static org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType.VAULT;
+import static org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType.VAULT;
 
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;

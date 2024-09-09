@@ -21,10 +21,10 @@ import jakarta.inject.Inject;
 import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.vault.VaultSecretsManager;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 
 @Dependent
-@SecretsType(SecretsSupplierType.VAULT)
+@SecretsManagerType(ExternalSecretsManagerType.VAULT)
 public class VaultSecretsManagerBuilder implements SecretsManagerBuilder {
   @Inject VaultKVSecretReactiveEngine engine;
 

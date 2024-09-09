@@ -21,10 +21,10 @@ import jakarta.inject.Inject;
 import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.azure.AzureSecretsManager;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 
 @Dependent
-@SecretsType(SecretsSupplierType.AZURE)
+@SecretsManagerType(ExternalSecretsManagerType.AZURE)
 public class AzureSecretsManagerBuilder implements SecretsManagerBuilder {
   @Inject SecretAsyncClient client;
 

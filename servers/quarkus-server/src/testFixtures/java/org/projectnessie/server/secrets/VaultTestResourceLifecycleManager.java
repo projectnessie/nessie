@@ -46,7 +46,7 @@ import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
-import org.projectnessie.quarkus.config.QuarkusSecretsConfig.SecretsSupplierType;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
@@ -152,7 +152,7 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
           .put("quarkus.vault.authentication.userpass.auth-mount-path", VAULT_USERPASS_AUTH_MOUNT)
           .put("quarkus.vault.kv-secret-engine-mount-path", VAULT_MOUNT)
           .put("quarkus.vault.secret-config-kv-path", NESSIE_SECRETS_CONFIG)
-          .put("nessie.secrets.type", SecretsSupplierType.VAULT.name())
+          .put("nessie.secrets.type", ExternalSecretsManagerType.VAULT.name())
           .put("nessie.secrets.path", NESSIE_SECRETS_PATH)
           .build();
     } catch (Exception e) {
