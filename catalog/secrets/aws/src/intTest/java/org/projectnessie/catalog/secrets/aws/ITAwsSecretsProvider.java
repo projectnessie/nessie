@@ -22,7 +22,6 @@ import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 
 import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -101,7 +100,7 @@ public class ITAwsSecretsProvider {
               .secretString("{\"token\": \"the-token\", \"expiresAt\": \"" + instantStr + "\"}")
               .build());
 
-      AwsSecretsManager secretsProvider = new AwsSecretsManager(client, "", Duration.ofMinutes(1));
+      AwsSecretsManager secretsProvider = new AwsSecretsManager(client, "");
 
       soft.assertThat(secretsProvider.getSecret(key, SecretType.KEY, KeySecret.class))
           .get()

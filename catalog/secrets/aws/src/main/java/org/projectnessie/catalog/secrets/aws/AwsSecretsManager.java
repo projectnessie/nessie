@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.secrets.aws;
 
-import java.time.Duration;
 import org.projectnessie.catalog.secrets.AbstractStringBasedSecretsManager;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
@@ -25,8 +24,7 @@ public class AwsSecretsManager extends AbstractStringBasedSecretsManager {
   private final SecretsManagerClient secretsManagerClient;
   private final String prefix;
 
-  public AwsSecretsManager(
-      SecretsManagerClient secretsManagerClient, String prefix, Duration getSecretTimeout) {
+  public AwsSecretsManager(SecretsManagerClient secretsManagerClient, String prefix) {
     this.secretsManagerClient = secretsManagerClient;
     this.prefix = prefix;
   }
