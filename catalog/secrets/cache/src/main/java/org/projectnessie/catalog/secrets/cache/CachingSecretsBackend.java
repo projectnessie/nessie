@@ -71,7 +71,7 @@ public class CachingSecretsBackend {
                       Secret value,
                       long currentTimeNanos,
                       @NonNegative long currentDurationNanos) {
-                    return expireAfterCreate(key, value, currentTimeNanos);
+                    return currentDurationNanos;
                   }
 
                   @Override
