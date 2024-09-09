@@ -32,7 +32,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -82,7 +81,6 @@ import org.projectnessie.quarkus.config.CatalogAdlsConfig;
 import org.projectnessie.quarkus.config.CatalogGcsConfig;
 import org.projectnessie.quarkus.config.CatalogS3Config;
 import org.projectnessie.quarkus.config.CatalogServiceConfig;
-import org.projectnessie.quarkus.config.QuarkusCatalogConfig;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -157,9 +155,13 @@ public class CatalogProducers {
   public StsCredentialsManager s3SessionsManager(
       @NormalizedObjectStoreOptions S3Options s3options,
       StsClientsPool clientsPool,
+      SecretsProvider secretsProvider,
       @Any Instance<MeterRegistry> meterRegistry) {
     return new StsCredentialsManager(
-        s3options, clientsPool, meterRegistry.isResolvable() ? meterRegistry.get() : null);
+        s3options,
+        clientsPool,
+        secretsProvider,
+        meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces
@@ -173,12 +175,6 @@ public class CatalogProducers {
   @Singleton
   public S3CredentialsResolver s3CredentialsResolver(S3Sessions sessions) {
     return new S3CredentialsResolver(Clock.systemUTC(), sessions);
-  }
-
-  @Produces
-  @Singleton
-  public SecretsProvider secretsProvider(QuarkusCatalogConfig config) {
-    return new SecretsProvider(names -> Map.of());
   }
 
   @Produces
@@ -200,8 +196,7 @@ public class CatalogProducers {
       @CatalogS3Client SdkHttpClient sdkClient,
       S3Sessions sessions,
       SecretsProvider secretsProvider) {
-
-    return new S3ClientSupplier(sdkClient, s3Options, secretsProvider, sessions);
+    return new S3ClientSupplier(sdkClient, s3Options, sessions, secretsProvider);
   }
 
   @Produces

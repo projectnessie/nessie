@@ -19,9 +19,9 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
 
@@ -48,6 +48,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.NessieTable;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.SignerKeysService;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
@@ -62,16 +63,16 @@ public class TestIcebergConfigurer {
 
   @BeforeEach
   protected void setupIcebergConfigurer() {
-    SecretsProvider secretsProvider = mock(SecretsProvider.class);
-    when(secretsProvider.applySecrets(any(), any(), any(), any(), any(), any()))
-        .thenAnswer(inv -> inv.getArgument(0));
-
+    SecretsProvider secretsProvider =
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
+            .build();
     S3Options s3Options = ImmutableS3ProgrammaticOptions.builder().build();
 
     icebergConfigurer = new IcebergConfigurer();
     icebergConfigurer.uriInfo = () -> URI.create("http://foo:12434");
     icebergConfigurer.objectIO =
-        new S3ObjectIO(new S3ClientSupplier(null, s3Options, secretsProvider, null), null);
+        new S3ObjectIO(new S3ClientSupplier(null, s3Options, null, secretsProvider), null);
     Instant now = Instant.now();
     signerKey =
         SignerKey.builder()

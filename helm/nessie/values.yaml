@@ -391,9 +391,9 @@ catalog:
       # - name: bucket1
       #   authType: ACCESS_TOKEN
       #   oauth2TokenSecret:
-      #     - name: gcs-creds
-      #       key: token
-      #       expiresAt: expiresAt
+      #     name: gcs-creds
+      #     key: token
+      #     expiresAt: expiresAt
 
       # -- GCS transport settings. Not overridable on a per-bucket basis.
       transport:

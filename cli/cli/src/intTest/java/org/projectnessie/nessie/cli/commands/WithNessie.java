@@ -17,16 +17,17 @@ package org.projectnessie.nessie.cli.commands;
 
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateMetadataWithManifestList;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.s3.ImmutableS3NamedBucketOptions;
@@ -39,6 +40,7 @@ import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
@@ -91,9 +93,11 @@ public abstract class WithNessie {
         objectStorage.getS3BaseUri().toString());
     nessieProperties.put("nessie.catalog.service.s3.default-options.path-style-access", "true");
     nessieProperties.put("nessie.catalog.service.s3.default-options.region", "eu-central-1");
-    nessieProperties.put("nessie.catalog.service.s3.default-options.access-key.name", "accessKey");
     nessieProperties.put(
-        "nessie.catalog.service.s3.default-options.access-key.secret", "secretKey");
+        "nessie.catalog.service.s3.default-options.access-key",
+        "urn:nessie-secret:quarkus:with-nessie-access-key");
+    nessieProperties.put("with-nessie-access-key.name", "accessKey");
+    nessieProperties.put("with-nessie-access-key.secret", "secretKey");
     nessieProperties.putAll(serverConfig);
 
     NessieProcess.start(nessieProperties);
@@ -104,15 +108,23 @@ public abstract class WithNessie {
     nessieApiUri = NessieProcess.baseUri + "api/v2";
     icebergUri = NessieProcess.baseUri + "iceberg";
 
+    String s3accessKeyName = "s3-access-key";
+    SecretsProvider secretsProvider =
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager(
+                "plain",
+                unsafePlainTextSecretsProvider(
+                    Map.of(s3accessKeyName, basicCredentials("foo", "bar").asMap())))
+            .build();
+
     S3Config s3config = S3Config.builder().build();
-    SdkHttpClient httpClient =
-        S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+    SdkHttpClient httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
     S3ProgrammaticOptions s3options =
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
-                    .accessKey(basicCredentials("foo", "bar"))
+                    .accessKey(URI.create("urn:nessie-secret:plain:" + s3accessKeyName))
                     .region("eu-central-1")
                     .endpoint(objectStorage.getS3BaseUri())
                     .pathStyleAccess(true)
@@ -122,14 +134,7 @@ public abstract class WithNessie {
     S3Sessions sessions = new S3Sessions("foo", null);
 
     S3ClientSupplier clientSupplier =
-        new S3ClientSupplier(
-            httpClient,
-            s3options,
-            new SecretsProvider(
-                (names) ->
-                    names.stream()
-                        .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))),
-            sessions);
+        new S3ClientSupplier(httpClient, s3options, sessions, secretsProvider);
 
     ObjectIO objectIO = new S3ObjectIO(clientSupplier, null);
 

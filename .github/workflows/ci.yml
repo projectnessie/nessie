@@ -823,18 +823,33 @@ jobs:
         run: |
           ct list-changed --target-branch ${{ github.event.repository.default_branch }}
 
+      - name: Run 'helm template' validation
+        run: |
+          cd helm/nessie
+          for f in values.yaml ci/*.yaml; do
+            echo "::group::helm template $f"
+            helm template --debug --namespace nessie-ns --values $f .
+            echo "::endgroup::"
+          done
+
       - name: Run chart-testing (lint)
         run: ct lint --debug --charts ./helm/nessie
 
       - name: Show pods
         run: kubectl get pods -A
 
+      - name: Install secrets
+        run: |
+          kubectl create namespace nessie-ns
+          kubectl apply --namespace nessie-ns $(find helm/nessie/ci/secrets -name "*.yaml" -printf '-f %p ')
+
       - name: Run chart-testing (install)
         run: |
           echo "Using image: ${DOCKER_IMAGE}"
           echo "        tag: ${DOCKER_VERSION}"
-      
+
           ct install \
+            --namespace nessie-ns \
             --helm-extra-set-args "--set=image.repository=${DOCKER_IMAGE} --set=image.tag=${DOCKER_VERSION}" \
             --debug --charts ./helm/nessie
 

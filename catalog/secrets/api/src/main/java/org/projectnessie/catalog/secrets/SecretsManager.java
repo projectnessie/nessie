@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.quarkus.config;
+package org.projectnessie.catalog.secrets;
 
-import org.eclipse.microprofile.config.spi.Converter;
-import org.projectnessie.catalog.secrets.KeySecret;
+import jakarta.annotation.Nonnull;
+import java.util.Optional;
 
-public class KeySecretConverter implements Converter<KeySecret> {
-  @Override
-  public KeySecret convert(String value) throws IllegalArgumentException, NullPointerException {
-    return value != null && !value.isEmpty() ? KeySecret.keySecret(value) : null;
-  }
+public interface SecretsManager {
+  <S extends Secret> Optional<S> getSecret(
+      @Nonnull String name, @Nonnull SecretType secretType, @Nonnull Class<S> secretJavaType);
 }

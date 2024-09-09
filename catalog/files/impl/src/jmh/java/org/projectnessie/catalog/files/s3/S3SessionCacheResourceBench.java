@@ -20,8 +20,10 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -42,6 +44,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -72,21 +75,32 @@ public class S3SessionCacheResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
+      Map<String, Map<String, String>> secretsMap = new HashMap<>();
+      for (int i = 0; i < numBucketOptions; i++) {
+        secretsMap.put("access-key-" + i, basicCredentials("foo" + i, "bar" + 1).asMap());
+      }
+      secretsMap.put("the-access-key", basicCredentials("foo", "bar").asMap());
+      SecretsProvider secretsProvider =
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager("plain", unsafePlainTextSecretsProvider(secretsMap))
+              .build();
+
       S3Config s3config = S3Config.builder().build();
-      httpClient = S3Clients.apacheHttpClient(s3config, new SecretsProvider(names -> Map.of()));
+      httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
       S3Options s3options =
           ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
-                      .accessKey(basicCredentials("foo", "bar"))
+                      .accessKey(URI.create("the-access-key"))
                       .region("eu-central-1")
                       .pathStyleAccess(true)
                       .build())
               .build();
 
       StsClientsPool stsClientsPool = new StsClientsPool(s3options, httpClient, null);
-      stsCredentialsManager = new StsCredentialsManager(s3options, stsClientsPool, null);
+      stsCredentialsManager =
+          new StsCredentialsManager(s3options, stsClientsPool, secretsProvider, null);
 
       List<String> regions =
           Region.regions().stream()
@@ -100,7 +114,7 @@ public class S3SessionCacheResourceBench {
               .mapToObj(
                   i ->
                       ImmutableS3NamedBucketOptions.builder()
-                          .accessKey(basicCredentials("foo" + i, "bar" + 1))
+                          .accessKey(URI.create("access-key-" + 1))
                           .region(regions.get(i % regions.size()))
                           .stsEndpoint(stsEndpoint)
                           .clientIam(

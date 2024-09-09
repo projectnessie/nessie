@@ -20,12 +20,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -39,6 +40,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -64,24 +66,29 @@ public class AdlsClientResourceBench {
       AdlsConfig adlsConfig = AdlsConfig.builder().build();
       HttpClient httpClient = AdlsClients.buildSharedHttpClient(adlsConfig);
 
+      String theAccount = "the-account";
+      String theKey = "the-key";
+      SecretsProvider secretsProvider =
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager(
+                  "plain",
+                  unsafePlainTextSecretsProvider(
+                      Map.of(
+                          theAccount, basicCredentials("foo", "foo").asMap(),
+                          theKey, keySecret("foo").asMap())))
+              .build();
+
       AdlsProgrammaticOptions adlsOptions =
           ImmutableAdlsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableAdlsNamedFileSystemOptions.builder()
-                      .account(basicCredentials("foo", "foo"))
-                      .sasToken(keySecret("foo"))
+                      .account(URI.create("urn:nessie-secret:plain:" + theAccount))
+                      .sasToken(URI.create("urn:nessie-secret:plain:" + theKey))
                       .endpoint(server.getAdlsGen2BaseUri().toString())
                       .build())
               .build();
 
-      clientSupplier =
-          new AdlsClientSupplier(
-              httpClient,
-              adlsOptions,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+      clientSupplier = new AdlsClientSupplier(httpClient, adlsOptions, secretsProvider);
     }
 
     @TearDown

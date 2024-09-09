@@ -17,15 +17,17 @@ example using the following configuration example snippet:
 ```properties
 # Default/global S3 configuration settings
 nessie.catalog.service.s3.default-options.region=us-west-2
-nessie.catalog.service.s3.default-options.access-key.name=awsAccessKeyId
-nessie.catalog.service.s3.default-options.access-key.secret=awsSecretAccessKey
+nessie.catalog.service.s3.default-options.access-key=my-secrets-default
+my-secrets-default.name=awsAccessKeyId
+my-secrets-default.secret=awsSecretAccessKey
 # For non-AWS S3 you need to specify the endpoint and possibly enable path-style-access
 nessie.catalog.service.s3.default-options.endpoint=http://localhost:9000
 nessie.catalog.service.s3.default-options.path-style-access=true
 
 # S3 configuration settings that are different for "bucket1"
-nessie.catalog.service.s3.buckets.bucket1.access-key.name=awsAccessKeyId1
-nessie.catalog.service.s3.buckets.bucket1.access-key.secret=awsSecretAccessKey1
+nessie.catalog.service.s3.buckets.bucket1.access-key=my-secrets-for-bucket1
+my-secrets-for-bucket1.name=awsAccessKeyId1
+my-secrets-for-bucket1.secret=awsSecretAccessKey1
 nessie.catalog.service.s3.buckets.bucket1.region=us-east-1
 ```
 

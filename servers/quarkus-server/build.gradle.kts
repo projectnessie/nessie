@@ -45,6 +45,7 @@ dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-quarkus-distcache"))
+  implementation(project(":nessie-quarkus-secrets"))
   implementation(project(":nessie-quarkus-rest"))
   implementation(project(":nessie-events-quarkus"))
   implementation(project(":nessie-rest-common"))

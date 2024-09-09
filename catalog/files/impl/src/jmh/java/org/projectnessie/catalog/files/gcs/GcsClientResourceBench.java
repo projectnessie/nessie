@@ -19,12 +19,14 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
+import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import com.google.auth.http.HttpTransportFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,8 +40,8 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
-import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -63,23 +65,25 @@ public class GcsClientResourceBench {
 
       HttpTransportFactory httpTransportFactory = GcsClients.buildSharedHttpTransportFactory();
 
+      String theToken = "the-token";
+      SecretsProvider secretsProvider =
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager(
+                  "plain",
+                  unsafePlainTextSecretsProvider(
+                      Map.of(theToken, tokenSecret("foo", null).asMap())))
+              .build();
+
       GcsProgrammaticOptions gcsOptions =
           ImmutableGcsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableGcsNamedBucketOptions.builder()
-                      .oauth2Token(TokenSecret.tokenSecret("foo", null))
+                      .oauth2Token(URI.create("urn:nessie-secret:plain:" + theToken))
                       .host(server.getGcsBaseUri())
                       .build())
               .build();
 
-      storageSupplier =
-          new GcsStorageSupplier(
-              httpTransportFactory,
-              gcsOptions,
-              new SecretsProvider(
-                  (names) ->
-                      names.stream()
-                          .collect(Collectors.toMap(k -> k, k -> Map.of("secret", "secret")))));
+      storageSupplier = new GcsStorageSupplier(httpTransportFactory, gcsOptions, secretsProvider);
     }
 
     @TearDown

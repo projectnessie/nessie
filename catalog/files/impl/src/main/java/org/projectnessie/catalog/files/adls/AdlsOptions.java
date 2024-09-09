@@ -15,18 +15,12 @@
  */
 package org.projectnessie.catalog.files.adls;
 
-import static org.projectnessie.catalog.secrets.SecretAttribute.secretAttribute;
-
-import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
-import org.projectnessie.catalog.secrets.SecretAttribute;
-import org.projectnessie.catalog.secrets.SecretType;
-import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 
@@ -56,44 +50,6 @@ public interface AdlsOptions {
   @ConfigPropertyName("filesystem-name")
   Map<String, ? extends AdlsNamedFileSystemOptions> fileSystems();
 
-  List<SecretAttribute<AdlsFileSystemOptions, ImmutableAdlsNamedFileSystemOptions.Builder, ?>>
-      SECRET_ATTRIBUTES =
-          ImmutableList.of(
-              secretAttribute(
-                  "account",
-                  SecretType.BASIC,
-                  AdlsFileSystemOptions::account,
-                  ImmutableAdlsNamedFileSystemOptions.Builder::account),
-              secretAttribute(
-                  "sasToken",
-                  SecretType.KEY,
-                  AdlsFileSystemOptions::sasToken,
-                  ImmutableAdlsNamedFileSystemOptions.Builder::sasToken));
-
-  default AdlsFileSystemOptions resolveSecrets(
-      String filesystemName, AdlsFileSystemOptions specific, SecretsProvider secretsProvider) {
-    AdlsFileSystemOptions defaultOptions =
-        defaultOptions()
-            .map(AdlsFileSystemOptions.class::cast)
-            .orElse(AdlsNamedFileSystemOptions.FALLBACK);
-
-    ImmutableAdlsNamedFileSystemOptions.Builder builder =
-        ImmutableAdlsNamedFileSystemOptions.builder().from(defaultOptions);
-    if (specific != null) {
-      builder.from(specific);
-    }
-
-    return secretsProvider
-        .applySecrets(
-            builder,
-            "object-stores.adls",
-            defaultOptions,
-            filesystemName,
-            specific,
-            SECRET_ATTRIBUTES)
-        .build();
-  }
-
   default void validate() {
     boolean hasDefaultEndpoint = defaultOptions().map(o -> o.endpoint().isPresent()).orElse(false);
     if (!hasDefaultEndpoint && !fileSystems().isEmpty()) {
@@ -116,13 +72,24 @@ public interface AdlsOptions {
     }
   }
 
-  default AdlsFileSystemOptions effectiveOptionsForFileSystem(
-      Optional<String> filesystemName, SecretsProvider secretsProvider) {
+  default AdlsFileSystemOptions effectiveOptionsForFileSystem(Optional<String> filesystemName) {
+    AdlsFileSystemOptions defaultOptions =
+        defaultOptions()
+            .map(AdlsFileSystemOptions.class::cast)
+            .orElse(AdlsNamedFileSystemOptions.FALLBACK);
     if (filesystemName.isEmpty()) {
-      return resolveSecrets(null, null, secretsProvider);
+      return defaultOptions;
     }
-    String name = filesystemName.get();
-    AdlsFileSystemOptions fileSystem = fileSystems().get(name);
-    return resolveSecrets(name, fileSystem, secretsProvider);
+
+    AdlsFileSystemOptions specific = fileSystems().get(filesystemName.get());
+
+    if (specific == null) {
+      return defaultOptions;
+    }
+
+    return ImmutableAdlsNamedFileSystemOptions.builder()
+        .from(defaultOptions)
+        .from(specific)
+        .build();
   }
 }

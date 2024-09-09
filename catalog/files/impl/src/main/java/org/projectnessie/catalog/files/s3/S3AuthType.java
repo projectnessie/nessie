@@ -15,6 +15,10 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import java.net.URI;
+import org.projectnessie.catalog.secrets.BasicCredentials;
+import org.projectnessie.catalog.secrets.SecretType;
+import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -24,16 +28,26 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 public enum S3AuthType {
   APPLICATION_GLOBAL {
     @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
+    public AwsCredentialsProvider newCredentialsProvider(
+        S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
       return DefaultCredentialsProvider.create(); // actually a singleton
     }
   },
 
   STATIC {
     @Override
-    public AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions) {
-      return bucketOptions
-          .accessKey()
+    public AwsCredentialsProvider newCredentialsProvider(
+        S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
+      URI secretName =
+          bucketOptions
+              .accessKey()
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          "Missing access key and secret for STATIC authentication mode"));
+
+      return secretsProvider
+          .getSecret(secretName, SecretType.BASIC, BasicCredentials.class)
           .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
           .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
           .orElseThrow(
@@ -44,5 +58,6 @@ public enum S3AuthType {
   },
   ;
 
-  public abstract AwsCredentialsProvider newCredentialsProvider(S3BucketOptions bucketOptions);
+  public abstract AwsCredentialsProvider newCredentialsProvider(
+      S3BucketOptions bucketOptions, SecretsProvider secretsProvider);
 }

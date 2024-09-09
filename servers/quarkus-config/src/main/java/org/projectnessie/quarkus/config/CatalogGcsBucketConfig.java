@@ -15,12 +15,11 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.gcs.GcsBucketOptions;
-import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface CatalogGcsBucketConfig extends GcsBucketOptions {
 
@@ -28,16 +27,13 @@ public interface CatalogGcsBucketConfig extends GcsBucketOptions {
   Optional<GcsAuthType> authType();
 
   @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> authCredentialsJson();
+  Optional<URI> authCredentialsJson();
 
   @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> encryptionKey();
+  Optional<URI> encryptionKey();
 
   @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> decryptionKey();
+  Optional<URI> decryptionKey();
 
   @Override
   @WithName("downscoped-credentials.enable")

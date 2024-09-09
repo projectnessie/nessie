@@ -15,17 +15,15 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import org.projectnessie.catalog.files.adls.AdlsFileSystemOptions;
-import org.projectnessie.catalog.secrets.KeySecret;
 
 public interface CatalogAdlsFileSystemConfig extends AdlsFileSystemOptions {
   @Override
-  @WithConverter(KeySecretConverter.class)
-  Optional<KeySecret> sasToken();
+  Optional<URI> sasToken();
 
   @Override
   @WithName("user-delegation.enable")

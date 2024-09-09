@@ -15,15 +15,16 @@
  */
 package org.projectnessie.catalog.files.adls;
 
-import static java.util.function.Function.identity;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
+import java.net.URI;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -46,6 +47,16 @@ public class TestAdlsClients extends AbstractClients {
       ObjectStorageMock.MockServer server1, ObjectStorageMock.MockServer server2) {
     HttpClient httpClient = AdlsClients.buildSharedHttpClient(AdlsConfig.builder().build());
 
+    String secretName = "account-key";
+    URI secretUri = URI.create("urn:nessie-secret:plain:account-key");
+    SecretsProvider secretsProvider =
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager(
+                "plain",
+                unsafePlainTextSecretsProvider(
+                    Map.of(secretName, basicCredentials("accountName", "accountKey").asMap())))
+            .build();
+
     ImmutableAdlsProgrammaticOptions.Builder adlsOptions =
         ImmutableAdlsProgrammaticOptions.builder()
             .putFileSystems(
@@ -53,7 +64,7 @@ public class TestAdlsClients extends AbstractClients {
                 ImmutableAdlsNamedFileSystemOptions.builder()
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
                     .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
-                    .account(basicCredentials("accountName", "accountKey"))
+                    .account(secretUri)
                     .build());
     if (server2 != null) {
       adlsOptions.putFileSystems(
@@ -61,15 +72,9 @@ public class TestAdlsClients extends AbstractClients {
           ImmutableAdlsNamedFileSystemOptions.builder()
               .endpoint(server2.getAdlsGen2BaseUri().toString())
               .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
-              .account(basicCredentials("accountName", "accountKey"))
+              .account(secretUri)
               .build());
     }
-
-    SecretsProvider secretsProvider =
-        new SecretsProvider(
-            names ->
-                names.stream()
-                    .collect(Collectors.toMap(identity(), k -> Map.of("secret", "secret"))));
 
     AdlsClientSupplier supplier =
         new AdlsClientSupplier(httpClient, adlsOptions.build(), secretsProvider);
