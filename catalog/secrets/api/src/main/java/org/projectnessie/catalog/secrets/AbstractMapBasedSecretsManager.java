@@ -20,11 +20,10 @@ import static com.google.common.base.Preconditions.checkState;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
-import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class AbstractMapBasedSecretsProvider implements SecretsProvider {
+public abstract class AbstractMapBasedSecretsManager implements SecretsManager {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -42,7 +41,7 @@ public abstract class AbstractMapBasedSecretsProvider implements SecretsProvider
 
   @Override
   public <S extends Secret> Optional<S> getSecret(
-      @Nonnull URI name,
+      @Nonnull String name,
       @Nonnull SecretType secretType,
       // only used for type-safety at the call site
       @Nonnull Class<S> secretJavaType) {
@@ -56,5 +55,5 @@ public abstract class AbstractMapBasedSecretsProvider implements SecretsProvider
     return Optional.of(secret);
   }
 
-  protected abstract Map<String, String> resolveSecret(@Nonnull URI name);
+  protected abstract Map<String, String> resolveSecret(@Nonnull String name);
 }

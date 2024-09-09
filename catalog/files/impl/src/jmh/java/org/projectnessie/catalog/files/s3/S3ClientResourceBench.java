@@ -19,7 +19,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +38,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -62,10 +63,14 @@ public class S3ClientResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
-      URI theAccessKey = URI.create("the-access-key");
+      String theAccessKey = "the-access-key";
       SecretsProvider secretsProvider =
-          unsafePlainTextSecretsProvider(
-              Map.of(theAccessKey, basicCredentials("foo", "bar").asMap()));
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager(
+                  "plain",
+                  unsafePlainTextSecretsProvider(
+                      Map.of(theAccessKey, basicCredentials("foo", "bar").asMap())))
+              .build();
 
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
@@ -74,7 +79,7 @@ public class S3ClientResourceBench {
           ImmutableS3ProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
-                      .accessKey(theAccessKey)
+                      .accessKey(URI.create("urn:nessie-secret:plain:" + theAccessKey))
                       .region("eu-central-1")
                       .endpoint(server.getS3BaseUri())
                       .pathStyleAccess(true)

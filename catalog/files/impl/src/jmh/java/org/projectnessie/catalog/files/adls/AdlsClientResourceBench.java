@@ -20,7 +20,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import com.azure.core.http.HttpClient;
 import java.io.IOException;
@@ -40,6 +40,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -65,20 +66,24 @@ public class AdlsClientResourceBench {
       AdlsConfig adlsConfig = AdlsConfig.builder().build();
       HttpClient httpClient = AdlsClients.buildSharedHttpClient(adlsConfig);
 
-      URI theAccount = URI.create("the-account");
-      URI theKey = URI.create("the-key");
+      String theAccount = "the-account";
+      String theKey = "the-key";
       SecretsProvider secretsProvider =
-          unsafePlainTextSecretsProvider(
-              Map.of(
-                  theAccount, basicCredentials("foo", "foo").asMap(),
-                  theKey, keySecret("foo").asMap()));
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager(
+                  "plain",
+                  unsafePlainTextSecretsProvider(
+                      Map.of(
+                          theAccount, basicCredentials("foo", "foo").asMap(),
+                          theKey, keySecret("foo").asMap())))
+              .build();
 
       AdlsProgrammaticOptions adlsOptions =
           ImmutableAdlsProgrammaticOptions.builder()
               .defaultOptions(
                   ImmutableAdlsNamedFileSystemOptions.builder()
-                      .account(theAccount)
-                      .sasToken(theKey)
+                      .account(URI.create("urn:nessie-secret:plain:" + theAccount))
+                      .sasToken(URI.create("urn:nessie-secret:plain:" + theKey))
                       .endpoint(server.getAdlsGen2BaseUri().toString())
                       .build())
               .build();

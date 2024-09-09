@@ -17,7 +17,7 @@ package org.projectnessie.catalog.secrets;
 
 import static org.projectnessie.catalog.secrets.SecretType.BASIC;
 import static org.projectnessie.catalog.secrets.SecretType.KEY;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import java.net.URI;
 import java.util.Map;
@@ -37,15 +37,12 @@ public class TestResolvingSecretsProvider {
   public void multipleProviders() {
     SecretsProvider secretsProvider =
         ResolvingSecretsProvider.builder()
-            .putSecretsProvider(
+            .putSecretsManager(
                 "one",
                 unsafePlainTextSecretsProvider(
-                    Map.of(
-                        URI.create("basic"), Map.of("name", "the-name", "secret", "the-secret"))))
-            .putSecretsProvider(
-                "two",
-                unsafePlainTextSecretsProvider(
-                    Map.of(URI.create("key"), Map.of("key", "key-value"))))
+                    Map.of("basic", Map.of("name", "the-name", "secret", "the-secret"))))
+            .putSecretsManager(
+                "two", unsafePlainTextSecretsProvider(Map.of("key", Map.of("key", "key-value"))))
             .build();
 
     soft.assertThat(

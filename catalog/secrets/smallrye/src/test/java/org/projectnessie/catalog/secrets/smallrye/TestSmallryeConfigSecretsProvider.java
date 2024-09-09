@@ -18,7 +18,6 @@ package org.projectnessie.catalog.secrets.smallrye;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
-import java.net.URI;
 import java.util.Map;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -28,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretType;
-import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.TokenSecret;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -51,10 +50,10 @@ public class TestSmallryeConfigSecretsProvider {
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 
-    SmallryeConfigSecretsProvider secretsSupplier = new SmallryeConfigSecretsProvider(config);
-    soft.assertThat(secretsSupplier.resolveSecret(URI.create("foo")))
+    SmallryeConfigSecretsManager secretsSupplier = new SmallryeConfigSecretsManager(config);
+    soft.assertThat(secretsSupplier.resolveSecret("foo"))
         .containsExactlyInAnyOrderEntriesOf(Map.of("a", "b", "c", "d"));
-    soft.assertThat(secretsSupplier.resolveSecret(URI.create("bar")))
+    soft.assertThat(secretsSupplier.resolveSecret("bar"))
         .containsExactlyInAnyOrderEntriesOf(Map.of("a", "b", "c", "d"));
   }
 
@@ -80,28 +79,24 @@ public class TestSmallryeConfigSecretsProvider {
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 
-    SecretsProvider secretsProvider = new SmallryeConfigSecretsProvider(config);
+    SecretsManager secretsManager = new SmallryeConfigSecretsManager(config);
 
-    soft.assertThat(
-            secretsProvider.getSecret(URI.create("foo"), SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(secretsManager.getSecret("foo", SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret)
         .containsExactly("foo-name", "foo-secret");
 
-    soft.assertThat(
-            secretsProvider.getSecret(URI.create("bar"), SecretType.BASIC, BasicCredentials.class))
+    soft.assertThat(secretsManager.getSecret("bar", SecretType.BASIC, BasicCredentials.class))
         .get()
         .extracting(BasicCredentials::name, BasicCredentials::secret)
         .containsExactly("bar-name", "bar-secret");
 
-    soft.assertThat(
-            secretsProvider.getSecret(
-                URI.create("token"), SecretType.EXPIRING_TOKEN, TokenSecret.class))
+    soft.assertThat(secretsManager.getSecret("token", SecretType.EXPIRING_TOKEN, TokenSecret.class))
         .get()
         .extracting(TokenSecret::token)
         .isEqualTo("my-token");
 
-    soft.assertThat(secretsProvider.getSecret(URI.create("key"), SecretType.KEY, KeySecret.class))
+    soft.assertThat(secretsManager.getSecret("key", SecretType.KEY, KeySecret.class))
         .get()
         .extracting(KeySecret::key)
         .isEqualTo("my-secret-key");

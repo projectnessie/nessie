@@ -20,7 +20,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
-import org.projectnessie.catalog.secrets.smallrye.SmallryeConfigSecretsProvider;
+import org.projectnessie.catalog.secrets.smallrye.SmallryeConfigSecretsManager;
 
 public class SecretsProducers {
 
@@ -29,7 +29,7 @@ public class SecretsProducers {
   public SecretsProvider secretsProvider(SmallRyeConfig smallRyeConfig) {
     // Reference secrets via `urn:nessie-secret:quarkus:<secret-name>
     return ResolvingSecretsProvider.builder()
-        .putSecretsProvider("quarkus", new SmallryeConfigSecretsProvider(smallRyeConfig))
+        .putSecretsManager("quarkus", new SmallryeConfigSecretsManager(smallRyeConfig))
         .build();
   }
 }

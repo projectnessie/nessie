@@ -28,7 +28,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
 import static org.projectnessie.services.authz.AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
@@ -64,6 +64,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.CatalogConfig;
@@ -206,10 +207,14 @@ public abstract class AbstractCatalogService {
   }
 
   private void setupObjectIO() {
-    URI theAccessKey = URI.create("the-access-key");
+    String theAccessKey = "the-access-key";
     SecretsProvider secretsProvider =
-        unsafePlainTextSecretsProvider(
-            Map.of(theAccessKey, basicCredentials("foo", "bar").asMap()));
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager(
+                "plain",
+                unsafePlainTextSecretsProvider(
+                    Map.of(theAccessKey, basicCredentials("foo", "bar").asMap())))
+            .build();
 
     S3Sessions sessions = new S3Sessions("foo", null);
     S3Config s3config = S3Config.builder().build();
@@ -218,7 +223,7 @@ public abstract class AbstractCatalogService {
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
-                    .accessKey(theAccessKey)
+                    .accessKey(URI.create("urn:nessie-secret:plain:" + theAccessKey))
                     .region("eu-central-1")
                     .endpoint(objectStorageServer.getS3BaseUri())
                     .pathStyleAccess(true)

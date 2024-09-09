@@ -20,7 +20,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -44,6 +44,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
@@ -74,13 +75,15 @@ public class S3SessionCacheResourceBench {
     public void init() {
       server = mockServer(mock -> {});
 
-      Map<URI, Map<String, String>> secretsMap = new HashMap<>();
+      Map<String, Map<String, String>> secretsMap = new HashMap<>();
       for (int i = 0; i < numBucketOptions; i++) {
-        secretsMap.put(
-            URI.create("access-key-" + i), basicCredentials("foo" + i, "bar" + 1).asMap());
+        secretsMap.put("access-key-" + i, basicCredentials("foo" + i, "bar" + 1).asMap());
       }
-      secretsMap.put(URI.create("the-access-key"), basicCredentials("foo", "bar").asMap());
-      SecretsProvider secretsProvider = unsafePlainTextSecretsProvider(secretsMap);
+      secretsMap.put("the-access-key", basicCredentials("foo", "bar").asMap());
+      SecretsProvider secretsProvider =
+          ResolvingSecretsProvider.builder()
+              .putSecretsManager("plain", unsafePlainTextSecretsProvider(secretsMap))
+              .build();
 
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);

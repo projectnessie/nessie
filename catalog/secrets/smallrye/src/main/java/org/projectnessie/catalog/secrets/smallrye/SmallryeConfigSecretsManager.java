@@ -17,27 +17,25 @@ package org.projectnessie.catalog.secrets.smallrye;
 
 import io.smallrye.config.SmallRyeConfig;
 import jakarta.annotation.Nonnull;
-import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
-import org.projectnessie.catalog.secrets.AbstractMapBasedSecretsProvider;
+import org.projectnessie.catalog.secrets.AbstractMapBasedSecretsManager;
 
-public class SmallryeConfigSecretsProvider extends AbstractMapBasedSecretsProvider {
+public class SmallryeConfigSecretsManager extends AbstractMapBasedSecretsManager {
   private final SmallRyeConfig config;
 
-  public SmallryeConfigSecretsProvider(SmallRyeConfig config) {
+  public SmallryeConfigSecretsManager(SmallRyeConfig config) {
     this.config = config;
   }
 
   @Override
-  protected Map<String, String> resolveSecret(@Nonnull URI name) {
-    Optional<String> singleValue = config.getOptionalValue(name.toString(), String.class);
+  protected Map<String, String> resolveSecret(@Nonnull String name) {
+    Optional<String> singleValue = config.getOptionalValue(name, String.class);
     if (singleValue.isPresent()) {
       return parseOrSingle(singleValue.get());
     }
 
-    Optional<Map<String, String>> map =
-        config.getOptionalValues(name.toString(), String.class, String.class);
+    Optional<Map<String, String>> map = config.getOptionalValues(name, String.class, String.class);
     return map.orElse(null);
   }
 }

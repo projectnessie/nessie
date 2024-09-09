@@ -25,7 +25,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 public abstract class ResolvingSecretsProvider implements SecretsProvider {
-  abstract Map<String, SecretsProvider> secretsProviders();
+  abstract Map<String, SecretsManager> secretsManagers();
 
   @Override
   public <S extends Secret> Optional<S> getSecret(
@@ -49,22 +49,21 @@ public abstract class ResolvingSecretsProvider implements SecretsProvider {
     checkArgument(
         idxProvider > 0 && idxProvider != next.length() - 1,
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
-    String provider = next.substring(idxNessieSecret + 1, idxProvider);
+    String manager = next.substring(idxNessieSecret + 1, idxProvider);
     checkArgument(
-        !provider.isBlank(),
+        !manager.isBlank(),
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
 
     next = next.substring(idxProvider + 1);
     checkArgument(
         !next.isBlank() && next.charAt(0) != ':',
         "Invalid secret URI, must be in the form 'urn:nessie-secret:<provider>:<secret-name>'");
-    name = URI.create(next);
 
-    SecretsProvider secretsProvider = secretsProviders().get(provider);
+    SecretsManager secretsProvider = secretsManagers().get(manager);
     if (secretsProvider == null) {
       return Optional.empty();
     }
-    return secretsProvider.getSecret(name, secretType, secretJavaType);
+    return secretsProvider.getSecret(next, secretType, secretJavaType);
   }
 
   public static ImmutableResolvingSecretsProvider.Builder builder() {

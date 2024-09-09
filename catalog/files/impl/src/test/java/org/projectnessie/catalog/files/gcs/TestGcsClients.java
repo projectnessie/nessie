@@ -16,13 +16,14 @@
 package org.projectnessie.catalog.files.gcs;
 
 import static org.projectnessie.catalog.files.gcs.GcsClients.buildSharedHttpTransportFactory;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
 import com.google.auth.http.HttpTransportFactory;
 import java.util.Map;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -64,7 +65,11 @@ public class TestGcsClients extends AbstractClients {
 
     GcsStorageSupplier supplier =
         new GcsStorageSupplier(
-            httpTransportFactory, gcsOptions.build(), unsafePlainTextSecretsProvider(Map.of()));
+            httpTransportFactory,
+            gcsOptions.build(),
+            ResolvingSecretsProvider.builder()
+                .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
+                .build());
 
     return new GcsObjectIO(supplier);
   }

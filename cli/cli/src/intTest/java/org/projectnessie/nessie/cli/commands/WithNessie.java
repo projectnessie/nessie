@@ -17,7 +17,7 @@ package org.projectnessie.nessie.cli.commands;
 
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateMetadataWithManifestList;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
-import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsProvider.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.client.NessieClientBuilder.createClientBuilderFromSystemSettings;
 import static org.projectnessie.client.config.NessieClientConfigSources.mapConfigSource;
 import static org.projectnessie.objectstoragemock.HeapStorageBucket.newHeapStorageBucket;
@@ -40,6 +40,7 @@ import org.projectnessie.catalog.files.s3.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.s3.S3Sessions;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
@@ -107,10 +108,14 @@ public abstract class WithNessie {
     nessieApiUri = NessieProcess.baseUri + "api/v2";
     icebergUri = NessieProcess.baseUri + "iceberg";
 
-    URI s3accessKeyName = URI.create("s3-access-key");
+    String s3accessKeyName = "s3-access-key";
     SecretsProvider secretsProvider =
-        unsafePlainTextSecretsProvider(
-            Map.of(s3accessKeyName, basicCredentials("foo", "bar").asMap()));
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager(
+                "plain",
+                unsafePlainTextSecretsProvider(
+                    Map.of(s3accessKeyName, basicCredentials("foo", "bar").asMap())))
+            .build();
 
     S3Config s3config = S3Config.builder().build();
     SdkHttpClient httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
@@ -119,7 +124,7 @@ public abstract class WithNessie {
         ImmutableS3ProgrammaticOptions.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
-                    .accessKey(s3accessKeyName)
+                    .accessKey(URI.create("urn:nessie-secret:plain:" + s3accessKeyName))
                     .region("eu-central-1")
                     .endpoint(objectStorage.getS3BaseUri())
                     .pathStyleAccess(true)
