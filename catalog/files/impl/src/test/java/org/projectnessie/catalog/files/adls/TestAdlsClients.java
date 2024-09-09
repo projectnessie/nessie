@@ -24,6 +24,11 @@ import java.util.Map;
 import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.config.AdlsConfig;
+import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
+import org.projectnessie.catalog.files.config.ImmutableAdlsConfig;
+import org.projectnessie.catalog.files.config.ImmutableAdlsNamedFileSystemOptions;
+import org.projectnessie.catalog.files.config.ImmutableAdlsProgrammaticOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -76,8 +81,10 @@ public class TestAdlsClients extends AbstractClients {
               .build());
     }
 
+    AdlsConfig adlsConfig = ImmutableAdlsConfig.builder().build();
+
     AdlsClientSupplier supplier =
-        new AdlsClientSupplier(httpClient, adlsOptions.build(), secretsProvider);
+        new AdlsClientSupplier(httpClient, adlsConfig, adlsOptions.build(), secretsProvider);
 
     return new AdlsObjectIO(supplier);
   }

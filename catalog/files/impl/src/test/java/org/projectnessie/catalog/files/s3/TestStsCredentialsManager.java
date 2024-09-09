@@ -35,6 +35,12 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
+import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3ServerIam;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3ClientIam;
+import org.projectnessie.catalog.files.config.S3ServerIam;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.services.sts.model.Credentials;
 

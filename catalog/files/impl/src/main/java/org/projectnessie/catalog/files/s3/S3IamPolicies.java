@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.S3ClientIam;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 
@@ -126,37 +127,6 @@ final class S3IamPolicies {
                 stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
 
     return policy.toString();
-  }
-
-  static void validateIam(S3Iam iam, String bucketName) {
-    String root = iam instanceof S3ClientIam ? "client-iam" : "server-iam";
-    if (iam.policy().isPresent()) {
-      try {
-        IAM_POLICY_READER.read(iam.policy().get());
-      } catch (Exception e) {
-        throw new IllegalStateException(
-            "The "
-                + root
-                + ".policy"
-                + " option for the "
-                + bucketName
-                + " bucket contains an invalid policy",
-            e);
-      }
-    }
-  }
-
-  static void validateClientIam(S3ClientIam iam, String bucketName) {
-    validateIam(iam, bucketName);
-    try {
-      iam.statements().ifPresent(stmts -> stmts.forEach(ParsedIamStatements.STATEMENTS::get));
-    } catch (Exception e) {
-      throw new IllegalStateException(
-          "The dynamically constructed iam-policy for the "
-              + bucketName
-              + " bucket results in an invalid policy, check the client-iam.statements option",
-          e);
-    }
   }
 
   private static class ParsedIamStatements {

@@ -40,6 +40,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.GcsBucketOptions;
+import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.slf4j.Logger;

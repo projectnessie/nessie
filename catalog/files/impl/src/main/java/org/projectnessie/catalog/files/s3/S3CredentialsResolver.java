@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3Iam;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 public class S3CredentialsResolver {

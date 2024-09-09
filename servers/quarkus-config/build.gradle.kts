@@ -21,10 +21,6 @@ publishingHelper { mavenName = "Nessie - Quarkus Config Types" }
 dependencies {
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(":nessie-catalog-files-api"))
-  implementation(project(":nessie-catalog-files-impl"))
-  implementation(project(":nessie-catalog-service-common"))
-  implementation(project(":nessie-catalog-secrets-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 

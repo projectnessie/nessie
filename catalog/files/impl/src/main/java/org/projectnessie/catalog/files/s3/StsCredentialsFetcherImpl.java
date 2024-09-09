@@ -16,9 +16,15 @@
 package org.projectnessie.catalog.files.s3;
 
 import static org.projectnessie.catalog.files.s3.S3IamPolicies.locationDependentPolicy;
+import static org.projectnessie.catalog.files.s3.S3Utils.newCredentialsProvider;
 
 import java.util.Optional;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.S3AuthType;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3ClientIam;
+import org.projectnessie.catalog.files.config.S3Iam;
+import org.projectnessie.catalog.files.config.S3ServerIam;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
@@ -61,7 +67,7 @@ class StsCredentialsFetcherImpl implements StsCredentialsFetcher {
         builder -> {
           S3AuthType authType = bucketOptions.effectiveAuthType();
           builder.credentialsProvider(
-              authType.newCredentialsProvider(bucketOptions, secretsProvider));
+              newCredentialsProvider(authType, bucketOptions, secretsProvider));
         });
 
     AssumeRoleRequest req = request.build();

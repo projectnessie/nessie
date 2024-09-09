@@ -27,6 +27,7 @@ dependencies {
   implementation(project(":nessie-catalog-service-transfer"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
+  compileOnly(libs.smallrye.config.core)
 
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))
@@ -53,6 +54,7 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+  testFixturesApi(libs.smallrye.config.core)
 
   testCompileOnly(project(":nessie-immutables"))
   testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))

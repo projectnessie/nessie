@@ -17,6 +17,7 @@ package org.projectnessie.catalog.files.s3;
 
 import java.util.function.Supplier;
 import org.projectnessie.catalog.files.api.StorageLocations;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.services.sts.model.Credentials;

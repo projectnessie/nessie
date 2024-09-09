@@ -40,6 +40,10 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.files.config.AdlsConfig;
+import org.projectnessie.catalog.files.config.AdlsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableAdlsNamedFileSystemOptions;
+import org.projectnessie.catalog.files.config.ImmutableAdlsProgrammaticOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -88,7 +92,7 @@ public class AdlsClientResourceBench {
                       .build())
               .build();
 
-      clientSupplier = new AdlsClientSupplier(httpClient, adlsOptions, secretsProvider);
+      clientSupplier = new AdlsClientSupplier(httpClient, adlsConfig, adlsOptions, secretsProvider);
     }
 
     @TearDown
