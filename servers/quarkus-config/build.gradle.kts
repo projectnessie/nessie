@@ -28,6 +28,10 @@ dependencies {
   compileOnly("io.quarkus:quarkus-core")
   compileOnly("io.smallrye.config:smallrye-config-core")
 
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
+
   implementation(libs.guava)
 
   testFixturesApi(platform(libs.junit.bom))

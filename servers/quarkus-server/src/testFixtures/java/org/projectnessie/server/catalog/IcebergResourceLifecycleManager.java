@@ -64,6 +64,7 @@ public class IcebergResourceLifecycleManager implements QuarkusTestResourceLifec
       Class<?> c = Class.forName("java.lang.ApplicationShutdownHooks");
       Field hooksField = c.getDeclaredField("hooks");
       hooksField.setAccessible(true);
+      @SuppressWarnings({"unchecked", "rawtypes"})
       Map<Object, Object> hooks = (Map) hooksField.get(null);
       List<Thread> guavaDelayedShutdownHooks =
           hooks.keySet().stream()

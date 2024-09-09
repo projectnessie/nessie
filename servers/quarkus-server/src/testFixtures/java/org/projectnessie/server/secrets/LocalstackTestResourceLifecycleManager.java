@@ -107,7 +107,7 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
           .put(
               "quarkus.secretsmanager.aws.credentials.static-provider.secret-access-key",
               localstack.getSecretKey())
-          .put("nessie.secrets.type", ExternalSecretsManagerType.AMAZON.name())
+          .put("nessie.secrets.type", ExternalSecretsManagerType.AMAZON)
           .put("nessie.secrets.path", NESSIE_SECRETS_PATH)
           .build();
     } catch (Exception e) {

@@ -26,6 +26,6 @@ import io.quarkus.test.junit.QuarkusTest;
 public class ITSecretsVault extends AbstractSecretsSuppliers {
   @Override
   protected String providerName() {
-    return VAULT.name().toLowerCase(ROOT);
+    return VAULT.toLowerCase(ROOT);
   }
 }

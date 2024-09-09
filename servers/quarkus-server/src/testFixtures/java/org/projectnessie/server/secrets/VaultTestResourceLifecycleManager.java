@@ -152,7 +152,7 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
           .put("quarkus.vault.authentication.userpass.auth-mount-path", VAULT_USERPASS_AUTH_MOUNT)
           .put("quarkus.vault.kv-secret-engine-mount-path", VAULT_MOUNT)
           .put("quarkus.vault.secret-config-kv-path", NESSIE_SECRETS_CONFIG)
-          .put("nessie.secrets.type", ExternalSecretsManagerType.VAULT.name())
+          .put("nessie.secrets.type", ExternalSecretsManagerType.VAULT)
           .put("nessie.secrets.path", NESSIE_SECRETS_PATH)
           .build();
     } catch (Exception e) {

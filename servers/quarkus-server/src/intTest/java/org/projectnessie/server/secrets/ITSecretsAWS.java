@@ -26,6 +26,6 @@ import io.quarkus.test.junit.QuarkusTest;
 public class ITSecretsAWS extends AbstractSecretsSuppliers {
   @Override
   protected String providerName() {
-    return AMAZON.name().toLowerCase(ROOT);
+    return AMAZON.toLowerCase(ROOT);
   }
 }

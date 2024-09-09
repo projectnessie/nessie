@@ -18,6 +18,8 @@ package org.projectnessie.quarkus.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import java.time.Duration;
+import java.util.Locale;
+import org.immutables.value.Value;
 
 /**
  * Secrets manager and mapping configuration.
@@ -57,11 +59,24 @@ public interface QuarkusSecretsConfig {
   @WithDefault("PT2S")
   Duration getSecretTimeout();
 
-  enum ExternalSecretsManagerType {
-    NONE,
-    VAULT,
-    GOOGLE,
-    AMAZON,
-    AZURE
+  @Value.Immutable
+  abstract class ExternalSecretsManagerType {
+    public static final String NONE = "NONE";
+    public static final ExternalSecretsManagerType NONE_TYPE = valueOf(NONE);
+    public static final String VAULT = "VAULT";
+    public static final ExternalSecretsManagerType VAULT_TYPE = valueOf(VAULT);
+    public static final String GOOGLE = "GOOGLE";
+    public static final ExternalSecretsManagerType GOOGLE_TYPE = valueOf(GOOGLE);
+    public static final String AMAZON = "AMAZON";
+    public static final ExternalSecretsManagerType AMAZON_TYPE = valueOf(AMAZON);
+    public static final String AZURE = "AZURE";
+    public static final ExternalSecretsManagerType AZURE_TYPE = valueOf(AZURE);
+
+    @Value.Parameter
+    public abstract String name();
+
+    public static ExternalSecretsManagerType valueOf(String name) {
+      return ImmutableExternalSecretsManagerType.of(name.toUpperCase(Locale.ROOT));
+    }
   }
 }

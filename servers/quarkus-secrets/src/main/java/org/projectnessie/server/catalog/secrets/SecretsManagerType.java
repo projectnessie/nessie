@@ -20,6 +20,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.Objects.requireNonNull;
 
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
@@ -35,20 +36,25 @@ import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsMana
 @Qualifier
 public @interface SecretsManagerType {
   /** Gets the secrets supplier type. */
-  ExternalSecretsManagerType value();
+  String value();
 
   /** Supports inline instantiation of the {@link SecretsManagerType} qualifier. */
+  @SuppressWarnings("ClassExplicitlyAnnotation")
   final class Literal extends AnnotationLiteral<SecretsManagerType> implements SecretsManagerType {
 
     private final ExternalSecretsManagerType value;
 
+    public Literal(String value) {
+      this(ExternalSecretsManagerType.valueOf(value));
+    }
+
     public Literal(ExternalSecretsManagerType value) {
-      this.value = value;
+      this.value = requireNonNull(value);
     }
 
     @Override
-    public ExternalSecretsManagerType value() {
-      return value;
+    public String value() {
+      return value.name();
     }
   }
 }
