@@ -25,6 +25,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-tasks-api"))
   implementation(project(":nessie-catalog-service-transfer"))
+  implementation(project(":nessie-catalog-secrets-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
   compileOnly(libs.smallrye.config.core)

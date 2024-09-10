@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.service.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import io.smallrye.config.WithParentName;
 import org.projectnessie.catalog.files.config.AdlsConfig;
@@ -24,6 +25,7 @@ import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /* (This is not a javadoc to let it not appear in the generated markdown on the website!)
  *
@@ -36,6 +38,7 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
  * the "base" types doesn't work for some reason.
  */
 @ConfigMapping(prefix = "nessie.catalog")
+@NessieImmutable
 public interface SmallryeConfigs {
   @WithName("service.s3")
   @ConfigItem(section = "s3", sectionDocFromType = true)
@@ -63,4 +66,8 @@ public interface SmallryeConfigs {
   @WithName("service.adls")
   @ConfigItem(section = "adls_config", sectionDocFromType = true)
   AdlsConfig adlsconfig();
+
+  @WithName("validate-secrets")
+  @WithDefault("false")
+  boolean validateSecrets();
 }
