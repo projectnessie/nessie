@@ -196,6 +196,13 @@ references the name of the provider, for example `quarkus` to resolve secrets vi
 [Quarkus configuration](#quarkus-configuration-incl-environment-variables). `<secret-name>` is the
 secrets manager specific name for the secret to resolve.
 
+Retrieving secrets from external secrets managers like Hashicorp Vault and the Amazon, Google and Azure
+secrets managers can take some time. Nessie mitigates this cost by caching retrieved secrets for some time,
+by default 15 minutes (see config reference below). The default allows you to regularly rotate the object
+store secrets by updating those in the external secrets manager, Nessie will pick those up within the
+configured cache TTL. If you do not intent to rotate your secrets, you can bump the TTL to a very high value
+to prevent cached secrets from being expired and hence perform unneeded requests to secrets managers.
+
 {% include './generated-docs/smallrye-nessie_secrets.md' %}
 
 ##### Types of Secrets
@@ -234,6 +241,12 @@ my-secrets.s3-default.secret=awsSecretAccessKey
 
 ##### Storing Secrets in Hashicorp Vault
 
+Secrets in Hashicorp Vault are referenced using the URN prefix `urn:nessie-secret:vault:` followed by the
+name/path of the secrets in Hashicorp Vault.
+
+When using Hashicorp Vault make sure to configure the connection settings described in the
+[Quarkus docs](https://docs.quarkiverse.io/quarkus-vault/dev/index.html#configuration-reference).
+
 In Hashicorp Vault, secrets are stored as a map of strings to strings, where the map keys
 are defined by the type of the secret as mentioned above.
 
@@ -261,19 +274,22 @@ vault kv put secret/nessie-secrets/... key=value_of_the_secret_key
 ```
 
 The paths mentioned above (`secret/nessie-secrets/...`) contain the path within Hashicorp Vault.
-`secret` is the default for the `quarkus.vault.kv-secret-engine-mount-path` setting,
-`nessie-secrets` is the default for the `nessie.secrets.path` setting.
-`...` represents the (remaining) path to the secret.
-
-For object stores, the path for the default S3 _basic credentials_ is: `secret/nessie-secrets/object-stores/s3/access-key`.
-The path for a specific S3 bucket _basic credentials_ is: `secret/nessie-secrets/object-stores/s3/<bucket-name>/access-key`.
+Those need to be specified in the Nessie secrets URN notation starting with `urn:nessie-secret:vault:`.
 
 
-##### Soring Secrets in Google Cloud and Amazon Services Secrets Managers and Azure Key Vault
+##### Storing Secrets in Google Cloud and Amazon Services Secrets Managers and Azure Key Vault
 
 !!! warn
     Google Secrets Manager and Azure Key Vault are both not yet supported and considered experimental!
     The reason is that there is no good way to test those locally and in CI.
+
+Secrets Store specifics:
+
+| Secrets Manager                 | Nessie URN prefix           | Configuration Details                                                                                                                            |
+|---------------------------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Google Cloud Secrets Manager    | `urn:nessie-secret:google:` | [Quarkus Reference Docs](https://docs.quarkiverse.io/quarkus-google-cloud-services/main/index.html#_configuration_reference)                     |
+| Amazon Services Secrets Manager | `urn:nessie-secret:amazon:` | [Quarkus Reference Docs](https://docs.quarkiverse.io/quarkus-amazon-services/dev/amazon-secretsmanager.html#_configuration_reference)            | 
+| Azure Key Vault                 | `urn:nessie-secret:azure:`  | [Quarkus Reference Docs](https://docs.quarkiverse.io/quarkus-azure-services/dev/quarkus-azure-key-vault.html#_extension_configuration_reference) |
 
 In Google Cloud and Amazon Services Secrets Managers and Azure Key Vault all secrets are stored as a
 single string.

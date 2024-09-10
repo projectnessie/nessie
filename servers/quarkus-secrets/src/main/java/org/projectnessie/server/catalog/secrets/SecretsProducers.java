@@ -17,6 +17,7 @@ package org.projectnessie.server.catalog.secrets;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.configuration.ConfigurationException;
 import io.smallrye.config.SmallRyeConfig;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
@@ -24,6 +25,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import java.util.Locale;
+import java.util.Optional;
 import org.projectnessie.catalog.secrets.ImmutableResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsManager;
@@ -34,9 +36,13 @@ import org.projectnessie.catalog.secrets.cache.SecretsCacheConfig;
 import org.projectnessie.catalog.secrets.smallrye.SmallryeConfigSecretsManager;
 import org.projectnessie.quarkus.config.QuarkusSecretsCacheConfig;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.projectnessie.quarkus.providers.RepositoryId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SecretsProducers {
+  private static final Logger LOGGER = LoggerFactory.getLogger(SecretsProducers.class);
 
   @Produces
   @Singleton
@@ -46,7 +52,7 @@ public class SecretsProducers {
       @Any Instance<SecretsManagerBuilder> secretsSupplierBuilders,
       Instance<MeterRegistry> meterRegistry,
       @RepositoryId String repositoryId) {
-    QuarkusSecretsConfig.ExternalSecretsManagerType type = config.type();
+    var type = config.type();
 
     SecretsProvider resolving =
         buildResolvingSecretsProvider(smallRyeConfig, secretsSupplierBuilders, type);
@@ -57,27 +63,35 @@ public class SecretsProducers {
   private SecretsProvider buildResolvingSecretsProvider(
       SmallRyeConfig smallRyeConfig,
       Instance<SecretsManagerBuilder> secretsSupplierBuilders,
-      QuarkusSecretsConfig.ExternalSecretsManagerType type) {
+      Optional<ExternalSecretsManagerType> type) {
 
     // Reference secrets via `urn:nessie-secret:quarkus:<secret-name>
     ImmutableResolvingSecretsProvider.Builder providers =
         ResolvingSecretsProvider.builder()
             .putSecretsManager("quarkus", new SmallryeConfigSecretsManager(smallRyeConfig));
 
-    if (secretsSupplierBuilders.isUnsatisfied()) {
+    if (type.isEmpty()) {
+      LOGGER.info(
+          "No external secrets manager has been configured, secrets are retrieved only from the Quarkus configuration.");
       return providers.build();
     }
 
     Instance<SecretsManagerBuilder> selected =
-        secretsSupplierBuilders.select(new SecretsManagerType.Literal(type));
+        secretsSupplierBuilders.select(new SecretsManagerType.Literal(type.get()));
 
     if (selected.isUnsatisfied()) {
-      return providers.build();
+      throw new ConfigurationException(
+          "External secrets manager '"
+              + type.get().name()
+              + "' configured via 'nessie.secrets.type' could not be resolved. Check and fix the configuration.");
     }
 
     SecretsManager externalManager = selected.get().buildManager();
-    providers.putSecretsManager(type.name().toLowerCase(Locale.ROOT), externalManager);
+    providers.putSecretsManager(type.get().name().toLowerCase(Locale.ROOT), externalManager);
 
+    LOGGER.info(
+        "External secrets manager '{}' has been configured, secrets can also be retrieved from the Quarkus configuration.",
+        type.get().name());
     return providers.build();
   }
 

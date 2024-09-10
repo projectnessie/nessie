@@ -33,10 +33,8 @@ public class GoogleSecretsManagerBuilder implements SecretsManagerBuilder {
 
   @Override
   public SecretsManager buildManager() {
-    String prefix = secretsConfig.path();
-    if (!prefix.isEmpty()) {
-      prefix += ".";
-    }
+    String prefix =
+        secretsConfig.path().map(String::trim).map(p -> p.endsWith(".") ? p : p + ".").orElse("");
     return new GcsSecretsManager(client, prefix, secretsConfig.getSecretTimeout());
   }
 }

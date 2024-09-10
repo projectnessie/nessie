@@ -19,6 +19,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -26,9 +27,10 @@ import org.immutables.value.Value;
  *
  * <p>Currently the following secrets managers are supported:
  *
+ * <p>Secrets can always be provided using <a href="#providing-secrets">Quarkus' built-in
+ * mechanisms</a>. Additionally, the following external secrets managers can be enabled:
+ *
  * <ul>
- *   <li>{@code NONE} (default) means no secrets manager will be used. Secrets can only be provided
- *       using <a href="#providing-secrets">Quarkus' built-in mechanisms</a>.
  *   <li>{@code VAULT} Hashicorp Vault. See the <a
  *       href="https://docs.quarkiverse.io/quarkus-vault/dev/index.html#configuration-reference">Quarkus
  *       docs for Hashicorp Vault</a> for specific information.
@@ -46,31 +48,29 @@ import org.immutables.value.Value;
 @ConfigMapping(prefix = "nessie.secrets")
 public interface QuarkusSecretsConfig {
   /** Choose the secrets manager to use, defaults to no secrets manager. */
-  @WithDefault("NONE")
-  ExternalSecretsManagerType type();
+  Optional<ExternalSecretsManagerType> type();
 
-  /** The path/prefix used when accessing secrets from the secrets manager. */
-  @WithDefault("nessie-secrets")
-  String path();
+  /**
+   * The path/prefix used when accessing secrets from the secrets manager.
+   *
+   * <p>This setting can be useful, if all Nessie related secrets have the same prefix in your
+   * external secrets manager.
+   */
+  Optional<String> path();
 
   /** Whether and how to cache retrieved secrets. */
   QuarkusSecretsCacheConfig cache();
 
+  /** Timeout when retrieving a secret from the external secret manager, not supported for AWS. */
   @WithDefault("PT2S")
   Duration getSecretTimeout();
 
   @Value.Immutable
   abstract class ExternalSecretsManagerType {
-    public static final String NONE = "NONE";
-    public static final ExternalSecretsManagerType NONE_TYPE = valueOf(NONE);
     public static final String VAULT = "VAULT";
-    public static final ExternalSecretsManagerType VAULT_TYPE = valueOf(VAULT);
     public static final String GOOGLE = "GOOGLE";
-    public static final ExternalSecretsManagerType GOOGLE_TYPE = valueOf(GOOGLE);
     public static final String AMAZON = "AMAZON";
-    public static final ExternalSecretsManagerType AMAZON_TYPE = valueOf(AMAZON);
     public static final String AZURE = "AZURE";
-    public static final ExternalSecretsManagerType AZURE_TYPE = valueOf(AZURE);
 
     @Value.Parameter
     public abstract String name();

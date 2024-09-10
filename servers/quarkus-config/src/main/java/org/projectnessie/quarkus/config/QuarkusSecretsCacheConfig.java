@@ -24,7 +24,7 @@ public interface QuarkusSecretsCacheConfig {
   @WithDefault("true")
   boolean enabled();
 
-  /** Optionally restrict the number of cached secrets. */
+  /** Maximum number of cached secrets. */
   @WithDefault("1000")
   long maxElements();
 
