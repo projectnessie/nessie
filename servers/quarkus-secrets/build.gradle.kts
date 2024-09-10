@@ -28,10 +28,39 @@ configurations.all { exclude(group = "org.projectnessie.nessie", module = "nessi
 dependencies {
   implementation(project(":nessie-catalog-secrets-api"))
   implementation(project(":nessie-catalog-secrets-smallrye"))
+  implementation(project(":nessie-catalog-secrets-cache"))
+  implementation(project(":nessie-catalog-secrets-aws"))
+  implementation(project(":nessie-catalog-secrets-gcs"))
+  implementation(project(":nessie-catalog-secrets-azure"))
+  implementation(project(":nessie-catalog-secrets-vault"))
   implementation(project(":nessie-quarkus-config"))
 
   implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
   implementation("io.quarkus:quarkus-core")
+  implementation("io.quarkus:quarkus-jackson")
+  implementation("io.micrometer:micrometer-core")
+
+  implementation(platform(libs.awssdk.bom))
+  implementation("software.amazon.awssdk:s3")
+  implementation("software.amazon.awssdk:sts")
+  implementation("software.amazon.awssdk:apache-client") {
+    exclude("commons-logging", "commons-logging")
+  }
+
+  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation("io.quarkiverse.amazonservices:quarkus-amazon-secretsmanager")
+
+  implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-secret-manager")
+
+  implementation("io.quarkiverse.vault:quarkus-vault")
+
+  implementation(enforcedPlatform(libs.quarkus.azure.services.bom))
+  implementation("io.quarkiverse.azureservices:quarkus-azure-keyvault")
+
+  implementation(platform(libs.azuresdk.bom))
+  implementation("com.azure:azure-identity")
 
   implementation(libs.guava)
 

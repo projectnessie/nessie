@@ -15,21 +15,96 @@
  */
 package org.projectnessie.server.catalog.secrets;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.config.SmallRyeConfig;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
+import java.util.Locale;
+import org.projectnessie.catalog.secrets.ImmutableResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
+import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.secrets.cache.CachingSecrets;
+import org.projectnessie.catalog.secrets.cache.CachingSecretsBackend;
+import org.projectnessie.catalog.secrets.cache.SecretsCacheConfig;
 import org.projectnessie.catalog.secrets.smallrye.SmallryeConfigSecretsManager;
+import org.projectnessie.quarkus.config.QuarkusSecretsCacheConfig;
+import org.projectnessie.quarkus.config.QuarkusSecretsConfig;
+import org.projectnessie.quarkus.providers.RepositoryId;
 
 public class SecretsProducers {
 
   @Produces
   @Singleton
-  public SecretsProvider secretsProvider(SmallRyeConfig smallRyeConfig) {
+  public SecretsProvider secretsProvider(
+      QuarkusSecretsConfig config,
+      SmallRyeConfig smallRyeConfig,
+      @Any Instance<SecretsManagerBuilder> secretsSupplierBuilders,
+      Instance<MeterRegistry> meterRegistry,
+      @RepositoryId String repositoryId) {
+    QuarkusSecretsConfig.ExternalSecretsManagerType type = config.type();
+
+    SecretsProvider resolving =
+        buildResolvingSecretsProvider(smallRyeConfig, secretsSupplierBuilders, type);
+
+    return maybeCache(config, meterRegistry, repositoryId, resolving);
+  }
+
+  private SecretsProvider buildResolvingSecretsProvider(
+      SmallRyeConfig smallRyeConfig,
+      Instance<SecretsManagerBuilder> secretsSupplierBuilders,
+      QuarkusSecretsConfig.ExternalSecretsManagerType type) {
+
     // Reference secrets via `urn:nessie-secret:quarkus:<secret-name>
-    return ResolvingSecretsProvider.builder()
-        .putSecretsManager("quarkus", new SmallryeConfigSecretsManager(smallRyeConfig))
-        .build();
+    ImmutableResolvingSecretsProvider.Builder providers =
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager("quarkus", new SmallryeConfigSecretsManager(smallRyeConfig));
+
+    if (secretsSupplierBuilders.isUnsatisfied()) {
+      return providers.build();
+    }
+
+    Instance<SecretsManagerBuilder> selected =
+        secretsSupplierBuilders.select(new SecretsManagerType.Literal(type));
+
+    if (selected.isUnsatisfied()) {
+      return providers.build();
+    }
+
+    SecretsManager externalManager = selected.get().buildManager();
+    providers.putSecretsManager(type.name().toLowerCase(Locale.ROOT), externalManager);
+
+    return providers.build();
+  }
+
+  private static SecretsProvider maybeCache(
+      QuarkusSecretsConfig config,
+      Instance<MeterRegistry> meterRegistry,
+      String repositoryId,
+      SecretsProvider uncachedProvider) {
+    QuarkusSecretsCacheConfig secretsCacheConfig = config.cache();
+    if (secretsCacheConfig == null || !secretsCacheConfig.enabled()) {
+      return uncachedProvider;
+    }
+
+    SecretsCacheConfig.Builder cacheConfig =
+        SecretsCacheConfig.builder()
+            .maxElements(secretsCacheConfig.maxElements())
+            .ttlMillis(secretsCacheConfig.ttl().toMillis());
+    if (meterRegistry.isResolvable()) {
+      cacheConfig.meterRegistry(meterRegistry.get());
+    }
+    CachingSecretsBackend cacheBackend = new CachingSecretsBackend(cacheConfig.build());
+
+    return new CachingSecrets(cacheBackend).forRepository(repositoryId, uncachedProvider);
+  }
+
+  public void eagerPersistInitialization(
+      @Observes StartupEvent event, @SuppressWarnings("unused") SecretsProvider secretsProvider) {
+    // no-op
   }
 }
