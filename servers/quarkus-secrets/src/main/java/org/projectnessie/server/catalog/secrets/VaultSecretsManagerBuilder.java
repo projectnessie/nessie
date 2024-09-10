@@ -32,7 +32,8 @@ public class VaultSecretsManagerBuilder implements SecretsManagerBuilder {
 
   @Override
   public SecretsManager buildManager() {
-    return new VaultSecretsManager(
-        engine, secretsConfig.path() + "/", secretsConfig.getSecretTimeout());
+    String prefix =
+        secretsConfig.path().map(String::trim).map(p -> p.endsWith("/") ? p : p + "/").orElse("");
+    return new VaultSecretsManager(engine, prefix, secretsConfig.getSecretTimeout());
   }
 }
