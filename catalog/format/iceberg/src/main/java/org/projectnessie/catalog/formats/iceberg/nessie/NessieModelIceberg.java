@@ -47,6 +47,7 @@ import static org.projectnessie.model.Content.Type.NAMESPACE;
 
 import com.google.common.base.Preconditions;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1360,7 +1361,6 @@ public class NessieModelIceberg {
 
   public static void addPartitionSpec(AddPartitionSpec u, IcebergTableMetadataUpdateState state) {
     IcebergPartitionSpec spec = u.spec();
-    checkArgument(spec.specId() >= 0, "Invalid spec-ID %s", spec.specId());
     NessieTableSnapshot snapshot = state.snapshot();
 
     // TODO re-check this ID-re-assignment block
@@ -1417,6 +1417,24 @@ public class NessieModelIceberg {
         u.spec().specId());
     state.builder().addPartitionDefinition(def).icebergLastPartitionId(lastNewFieldId);
     state.specAdded(u.spec().specId());
+  }
+
+  public static void removePartitionSpecs(
+      IcebergMetadataUpdate.RemovePartitionSpecs removePartitionSpecs,
+      IcebergTableMetadataUpdateState state) {
+    NessieTableSnapshot snapshot = state.snapshot();
+
+    var removeIds = new HashSet<>(removePartitionSpecs.specIds());
+    var partitionDefs = new ArrayList<NessiePartitionDefinition>();
+
+    for (NessiePartitionDefinition partitionDefinition : snapshot.partitionDefinitions()) {
+      var icebergId = partitionDefinition.icebergId();
+      if (!removeIds.contains(icebergId)) {
+        partitionDefs.add(partitionDefinition);
+      }
+    }
+
+    state.builder().partitionDefinitions(partitionDefs);
   }
 
   private static ReuseOrCreate<IcebergPartitionSpec> reuseOrCreateNewSpecId(

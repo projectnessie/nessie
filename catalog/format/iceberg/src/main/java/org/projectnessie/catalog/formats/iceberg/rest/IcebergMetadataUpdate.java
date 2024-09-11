@@ -67,6 +67,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
   @JsonSubTypes.Type(
       value = IcebergMetadataUpdate.SetDefaultPartitionSpec.class,
       name = "set-default-spec"),
+  @JsonSubTypes.Type(
+      value = IcebergMetadataUpdate.RemovePartitionSpecs.class,
+      name = "remove-partition-specs"),
   @JsonSubTypes.Type(value = IcebergMetadataUpdate.AddSortOrder.class, name = "add-sort-order"),
   @JsonSubTypes.Type(
       value = IcebergMetadataUpdate.SetDefaultSortOrder.class,
@@ -386,6 +389,30 @@ public interface IcebergMetadataUpdate {
 
     static AddPartitionSpec addPartitionSpec(IcebergPartitionSpec spec) {
       return ImmutableAddPartitionSpec.of(spec);
+    }
+  }
+
+  @NessieImmutable
+  @JsonTypeName("remove-partition-specs")
+  @JsonSerialize(as = ImmutableRemovePartitionSpecs.class)
+  @JsonDeserialize(as = ImmutableRemovePartitionSpecs.class)
+  interface RemovePartitionSpecs extends IcebergMetadataUpdate {
+    List<Integer> specIds();
+
+    @Override
+    default void applyToTable(IcebergTableMetadataUpdateState state) {
+      NessieModelIceberg.removePartitionSpecs(this, state);
+    }
+
+    @Value.Check
+    default void check() {
+      for (Integer specId : specIds()) {
+        checkState(specId != null && specId >= 0, "Illegal spec-ID %s for %s", specId);
+      }
+    }
+
+    static RemovePartitionSpecs removePartitionSpecs(List<Integer> specIds) {
+      return ImmutableRemovePartitionSpecs.of(specIds);
     }
   }
 
