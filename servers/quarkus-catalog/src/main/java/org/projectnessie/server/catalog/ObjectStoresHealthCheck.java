@@ -41,7 +41,7 @@ public class ObjectStoresHealthCheck implements HealthCheck {
 
   public static final String NAME = "Warehouses Object Stores";
 
-  @Inject ServiceConfig quarkusCatalogConfig;
+  @Inject ServiceConfig serviceConfig;
   @Inject CatalogConfig catalogConfig;
   @Inject ObjectIO objectIO;
   @Inject ServerConfig serverConfig;
@@ -50,7 +50,7 @@ public class ObjectStoresHealthCheck implements HealthCheck {
   public HealthCheckResponse call() {
     HealthCheckResponseBuilder healthCheckResponse = HealthCheckResponse.builder().name(NAME);
     boolean up = true;
-    if (quarkusCatalogConfig.objectStoresHealthCheck()) {
+    if (serviceConfig.objectStoresHealthCheck()) {
       for (Map.Entry<String, WarehouseConfig> warehouse : catalogConfig.warehouses().entrySet()) {
         String name = warehouse.getKey();
         WarehouseConfig warehouseConfig = warehouse.getValue();
