@@ -163,8 +163,6 @@ public class CatalogProducers {
       @CatalogS3Client SdkHttpClient sdkClient,
       S3Sessions sessions,
       SecretsProvider secretsProvider) {
-    System.err.println("s3ClientSupplier " + s3Options.getClass());
-
     return new S3ClientSupplier(sdkClient, s3Options, sessions, secretsProvider);
   }
 

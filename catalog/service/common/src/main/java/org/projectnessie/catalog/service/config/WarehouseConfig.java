@@ -54,7 +54,7 @@ public interface WarehouseConfig {
   String location();
 
   @Value.Check
-  default WarehouseConfig check() {
+  default WarehouseConfig normalize() {
     String removed = removeTrailingSlash(location());
     return removed.equals(location())
         ? this

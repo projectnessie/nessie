@@ -25,7 +25,7 @@ import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 
-/* (This is ot a javadoc to let it not appear in the generated markdown on the website!)
+/* (This is not a javadoc to let it not appear in the generated markdown on the website!)
  *
  * Container for all options/config types retrieved via smallrye-config.
  *
