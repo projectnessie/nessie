@@ -21,6 +21,7 @@ import com.azure.core.http.HttpClient;
 import com.google.auth.http.HttpTransportFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
+import io.quarkus.runtime.configuration.ConfigurationException;
 import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
 import jakarta.enterprise.context.RequestScoped;
@@ -32,6 +33,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -64,6 +66,8 @@ import org.projectnessie.catalog.files.s3.StsClientsPool;
 import org.projectnessie.catalog.files.s3.StsCredentialsManager;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
+import org.projectnessie.catalog.service.config.SecretsValidation;
+import org.projectnessie.catalog.service.config.SmallryeConfigs;
 import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
 import org.projectnessie.catalog.service.impl.IllegalArgumentExceptionMapper;
 import org.projectnessie.catalog.service.impl.NessieExceptionMapper;
@@ -92,8 +96,40 @@ public class CatalogProducers {
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogProducers.class);
 
   void eagerCatalogConfigValidation(
-      @Observes StartupEvent ev, @SuppressWarnings("unused") LakehouseConfig lakehouseConfig) {
-    // noop
+      @Observes StartupEvent ev,
+      LakehouseConfig lakehouseConfig,
+      SmallryeConfigs smallryeConfigs,
+      SecretsProvider secretsProvider) {
+    SecretsValidation validation =
+        SecretsValidation.builder().secretsProvider(secretsProvider).build();
+
+    if (smallryeConfigs.validateSecrets()) {
+      var failures = new ArrayList<SecretsValidation.SecretValidationFailure>();
+      failures.addAll(validation.validateLakehouseConfig(lakehouseConfig));
+      failures.addAll(validation.validateSmallryeConfigs(smallryeConfigs));
+
+      if (!failures.isEmpty()) {
+        for (SecretsValidation.SecretValidationFailure failure : failures) {
+          if (failure.failure().isPresent()) {
+            LOGGER.error(
+                "The secret for '{}' referenced as '{}' could not be validated: {}",
+                String.join(".", failure.propertyPath()),
+                failure.uri(),
+                failure.message(),
+                failure.failure().get());
+          } else {
+            LOGGER.error(
+                "The secret for '{}' referenced as '{}' could not be validated: {}",
+                String.join(".", failure.propertyPath()),
+                failure.uri(),
+                failure.message());
+          }
+        }
+
+        throw new ConfigurationException(
+            "One or more secrets could not be validated. Please inspect the log messages above.");
+      }
+    }
   }
 
   @Produces

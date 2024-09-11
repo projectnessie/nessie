@@ -66,6 +66,7 @@ as necessary. Empty sections will not end in the release notes.
   store type, but uses way less attributes, which reduces storage overhead.
 - Introduce new `MONGODB2` version store type, which is has the same functionality as the `MONGODB` version
   store type, but uses way less attributes, which reduces storage overhead.
+- Added functionality to optionally validate that referenced secrets can be resolved, opt-in.
 
 ### Changes
 
