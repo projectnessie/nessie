@@ -15,57 +15,29 @@
  */
 package org.projectnessie.catalog.files.config;
 
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithName;
-import java.time.Duration;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-@ConfigMapping(prefix = "nessie.catalog.service.s3")
+@NessieImmutable
+@JsonSerialize(as = ImmutableS3Options.class)
+@JsonDeserialize(as = ImmutableS3Options.class)
 public interface S3Options {
 
-  /** Default value for {@link #sessionCredentialCacheMaxEntries()}. */
-  int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
-
-  /** Default value for {@link #stsClientsCacheMaxEntries()}. */
-  int DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES = 50;
-
-  /** Default value for {@link #sessionCredentialRefreshGracePeriod()}. */
-  Duration DEFAULT_SESSION_REFRESH_GRACE_PERIOD = Duration.ofMinutes(5);
-
-  /**
-   * The time period to subtract from the S3 session credentials (assumed role credentials) expiry
-   * time to define the time when those credentials become eligible for refreshing.
-   */
   @ConfigItem(section = "sts")
-  @WithName("sts.session-grace-period")
-  Optional<Duration> sessionCredentialRefreshGracePeriod();
+  Optional<S3Sts> sts();
 
-  default Duration effectiveSessionCredentialRefreshGracePeriod() {
-    return sessionCredentialRefreshGracePeriod().orElse(DEFAULT_SESSION_REFRESH_GRACE_PERIOD);
-  }
-
-  /**
-   * Maximum number of entries to keep in the session credentials cache (assumed role credentials).
-   */
-  @ConfigItem(section = "sts")
-  @WithName("sts.session-cache-max-size")
-  OptionalInt sessionCredentialCacheMaxEntries();
-
-  default int effectiveSessionCredentialCacheMaxEntries() {
-    return sessionCredentialCacheMaxEntries().orElse(DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES);
-  }
-
-  /** Maximum number of entries to keep in the STS clients cache. */
-  @ConfigItem(section = "sts")
-  @WithName("sts.clients-cache-max-size")
-  OptionalInt stsClientsCacheMaxEntries();
-
-  default int effectiveStsClientsCacheMaxEntries() {
-    return stsClientsCacheMaxEntries().orElse(DEFAULT_MAX_STS_CLIENT_CACHE_ENTRIES);
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3Sts effectiveSts() {
+    return sts().orElse(ImmutableS3Sts.builder().build());
   }
 
   /**
@@ -109,8 +81,48 @@ public interface S3Options {
     return builder.build();
   }
 
-  default void validate() {
+  default S3Options validate() {
     defaultOptions().ifPresent(options -> options.validate("<default>"));
     buckets().forEach((key, opts) -> opts.validate(opts.name().orElse(key)));
+    return this;
+  }
+
+  @Value.Check
+  default S3Options normalizeBuckets() {
+    Map<String, S3NamedBucketOptions> buckets = new HashMap<>();
+    boolean changed = false;
+    for (String bucketName : buckets().keySet()) {
+      S3NamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        String explicitName = options.name().get();
+        changed |= !explicitName.equals(bucketName);
+        bucketName = options.name().get();
+      } else {
+        changed = true;
+        options = ImmutableS3NamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
+      }
+    }
+
+    return changed
+        ? ImmutableS3Options.builder()
+            .from(this)
+            .defaultOptions(defaultOptions())
+            .buckets(buckets)
+            .build()
+        : this;
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3Options deepClone() {
+    ImmutableS3Options.Builder b = ImmutableS3Options.builder().from(this).buckets(Map.of());
+    sts().ifPresent(v -> b.sts(ImmutableS3Sts.copyOf(v)));
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepClone()));
+    return b.build();
   }
 }

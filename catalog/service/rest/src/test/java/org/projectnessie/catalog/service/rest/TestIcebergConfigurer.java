@@ -40,7 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
@@ -67,7 +67,7 @@ public class TestIcebergConfigurer {
         ResolvingSecretsProvider.builder()
             .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
             .build();
-    S3Options s3Options = ImmutableS3ProgrammaticOptions.builder().build();
+    S3Options s3Options = ImmutableS3Options.builder().build();
 
     icebergConfigurer = new IcebergConfigurer();
     icebergConfigurer.uriInfo = () -> URI.create("http://foo:12434");

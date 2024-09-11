@@ -28,7 +28,7 @@ import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.config.ImmutableAdlsConfig;
 import org.projectnessie.catalog.files.config.ImmutableAdlsNamedFileSystemOptions;
-import org.projectnessie.catalog.files.config.ImmutableAdlsProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableAdlsOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -62,9 +62,9 @@ public class TestAdlsClients extends AbstractClients {
                     Map.of(secretName, basicCredentials("accountName", "accountKey").asMap())))
             .build();
 
-    ImmutableAdlsProgrammaticOptions.Builder adlsOptions =
-        ImmutableAdlsProgrammaticOptions.builder()
-            .putFileSystems(
+    ImmutableAdlsOptions.Builder adlsOptions =
+        ImmutableAdlsOptions.builder()
+            .putFileSystem(
                 BUCKET_1,
                 ImmutableAdlsNamedFileSystemOptions.builder()
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
@@ -72,7 +72,7 @@ public class TestAdlsClients extends AbstractClients {
                     .account(secretUri)
                     .build());
     if (server2 != null) {
-      adlsOptions.putFileSystems(
+      adlsOptions.putFileSystem(
           BUCKET_2,
           ImmutableAdlsNamedFileSystemOptions.builder()
               .endpoint(server2.getAdlsGen2BaseUri().toString())

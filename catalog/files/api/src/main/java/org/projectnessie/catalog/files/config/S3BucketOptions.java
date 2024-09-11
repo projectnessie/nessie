@@ -15,10 +15,16 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
 import java.util.Optional;
 import org.immutables.value.Value;
 
+@Value.Immutable
+@JsonSerialize(as = ImmutableS3BucketOptions.class)
+@JsonDeserialize(as = ImmutableS3BucketOptions.class)
 public interface S3BucketOptions {
 
   /** Default value for {@link #authType()}, being {@link S3AuthType#STATIC}. */
@@ -88,6 +94,8 @@ public interface S3BucketOptions {
    */
   Optional<S3AuthType> authType();
 
+  @Value.NonAttribute
+  @JsonIgnore
   default S3AuthType effectiveAuthType() {
     return authType().orElse(DEFAULT_SERVER_AUTH_TYPE);
   }
@@ -122,21 +130,25 @@ public interface S3BucketOptions {
   Optional<S3ClientIam> clientIam();
 
   @Value.NonAttribute
+  @JsonIgnore
   default Optional<S3ServerIam> getEnabledServerIam() {
     return serverIam().filter(iam -> iam.enabled().orElse(false));
   }
 
   @Value.NonAttribute
+  @JsonIgnore
   default Optional<S3ClientIam> getEnabledClientIam() {
     return clientIam().filter(iam -> iam.enabled().orElse(false));
   }
 
   @Value.NonAttribute
+  @JsonIgnore
   default boolean effectiveRequestSigningEnabled() {
     return requestSigningEnabled().orElse(true);
   }
 
   @Value.NonAttribute
+  @JsonIgnore
   default boolean effectiveClientAssumeRoleEnabled() {
     if (clientIam().isEmpty() || region().isEmpty()) {
       return false;
@@ -153,5 +165,14 @@ public interface S3BucketOptions {
   default void validate(String bucketName) {
     getEnabledClientIam().ifPresent(clientIam -> clientIam.validate(bucketName));
     getEnabledServerIam().ifPresent(serverIam -> serverIam.validate(bucketName));
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3BucketOptions deepClone() {
+    ImmutableS3BucketOptions.Builder b = ImmutableS3BucketOptions.builder().from(this);
+    clientIam().ifPresent(v -> b.clientIam(ImmutableS3ClientIam.copyOf(v)));
+    serverIam().ifPresent(v -> b.serverIam(ImmutableS3ServerIam.copyOf(v)));
+    return b.build();
   }
 }

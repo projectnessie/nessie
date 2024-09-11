@@ -85,6 +85,7 @@ import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.ServiceConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.impl.MultiTableUpdate.SingleTableUpdate;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
@@ -120,6 +121,7 @@ public class CatalogServiceImpl implements CatalogService {
   @Inject TasksService tasksService;
   @Inject BackendExceptionMapper backendExceptionMapper;
   @Inject CatalogConfig catalogConfig;
+  @Inject ServiceConfig serviceConfig;
 
   @Inject
   @Named("import-jobs")
@@ -131,7 +133,7 @@ public class CatalogServiceImpl implements CatalogService {
         persist,
         tasksService,
         new EntitySnapshotTaskBehavior(
-            backendExceptionMapper, catalogConfig.effectiveRetryAfterThrottled()),
+            backendExceptionMapper, serviceConfig.effectiveRetryAfterThrottled()),
         executor);
   }
 

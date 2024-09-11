@@ -15,11 +15,14 @@
  */
 package org.projectnessie.catalog.service.config;
 
+import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithName;
 import java.util.Map;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -49,4 +52,12 @@ public interface WarehouseConfig {
   @WithConverter(TrimTrailingSlash.class)
   @WithName("location")
   String location();
+
+  @Value.Check
+  default WarehouseConfig normalize() {
+    String removed = removeTrailingSlash(location());
+    return removed.equals(location())
+        ? this
+        : ImmutableWarehouseConfig.builder().from(this).location(removed).build();
+  }
 }

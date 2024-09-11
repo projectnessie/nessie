@@ -35,7 +35,8 @@ import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
+import org.projectnessie.catalog.files.config.ImmutableSecretStore;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -85,9 +86,9 @@ public class TestS3Clients extends AbstractClients {
                         basicCredentials("ak2", "sak2").asMap())))
             .build();
 
-    ImmutableS3ProgrammaticOptions.Builder s3options =
-        ImmutableS3ProgrammaticOptions.builder()
-            .putBuckets(
+    ImmutableS3Options.Builder s3options =
+        ImmutableS3Options.builder()
+            .putBucket(
                 BUCKET_1,
                 ImmutableS3NamedBucketOptions.builder()
                     .endpoint(server1.getS3BaseUri())
@@ -96,7 +97,7 @@ public class TestS3Clients extends AbstractClients {
                     .accessPoint(BUCKET_1)
                     .build());
     if (server2 != null) {
-      s3options.putBuckets(
+      s3options.putBucket(
           BUCKET_2,
           ImmutableS3NamedBucketOptions.builder()
               .endpoint(server2.getS3BaseUri())
@@ -152,7 +153,9 @@ public class TestS3Clients extends AbstractClients {
         .isThrownBy(
             () ->
                 S3Clients.apacheHttpClient(
-                        S3Config.builder().trustStorePath(file).build(),
+                        S3Config.builder()
+                            .trustStore(ImmutableSecretStore.builder().path(file).build())
+                            .build(),
                         ResolvingSecretsProvider.builder()
                             .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
                             .build())
@@ -162,9 +165,12 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .trustStorePath(tempDir.resolve("not.there"))
-                            .trustStoreType("jks")
-                            .trustStorePassword(correctUri)
+                            .trustStore(
+                                ImmutableSecretStore.builder()
+                                    .path(tempDir.resolve("not.there"))
+                                    .type("jks")
+                                    .password(correctUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())
@@ -175,9 +181,12 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .trustStorePath(file)
-                            .trustStoreType("jks")
-                            .trustStorePassword(wrongUri)
+                            .trustStore(
+                                ImmutableSecretStore.builder()
+                                    .path(file)
+                                    .type("jks")
+                                    .password(wrongUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())
@@ -188,9 +197,12 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .trustStorePath(file)
-                            .trustStoreType("jks")
-                            .trustStorePassword(correctUri)
+                            .trustStore(
+                                ImmutableSecretStore.builder()
+                                    .path(file)
+                                    .type("jks")
+                                    .password(correctUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())
@@ -228,16 +240,22 @@ public class TestS3Clients extends AbstractClients {
         .isThrownBy(
             () ->
                 S3Clients.apacheHttpClient(
-                        S3Config.builder().keyStorePath(file).build(), secretsProvider)
+                        S3Config.builder()
+                            .keyStore(ImmutableSecretStore.builder().path(file).build())
+                            .build(),
+                        secretsProvider)
                     .close())
         .withMessage("No key store type");
     soft.assertThatThrownBy(
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .keyStorePath(tempDir.resolve("not.there"))
-                            .keyStoreType("jks")
-                            .keyStorePassword(correctUri)
+                            .keyStore(
+                                ImmutableSecretStore.builder()
+                                    .path(tempDir.resolve("not.there"))
+                                    .type("jks")
+                                    .password(correctUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())
@@ -248,9 +266,12 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .keyStorePath(file)
-                            .keyStoreType("jks")
-                            .keyStorePassword(wrongUri)
+                            .keyStore(
+                                ImmutableSecretStore.builder()
+                                    .path(file)
+                                    .type("jks")
+                                    .password(wrongUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())
@@ -261,9 +282,12 @@ public class TestS3Clients extends AbstractClients {
             () ->
                 S3Clients.apacheHttpClient(
                         S3Config.builder()
-                            .keyStorePath(file)
-                            .keyStoreType("jks")
-                            .keyStorePassword(correctUri)
+                            .keyStore(
+                                ImmutableSecretStore.builder()
+                                    .path(file)
+                                    .type("jks")
+                                    .password(correctUri)
+                                    .build())
                             .build(),
                         secretsProvider)
                     .close())

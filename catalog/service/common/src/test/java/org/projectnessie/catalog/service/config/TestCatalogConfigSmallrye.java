@@ -37,11 +37,11 @@ public class TestCatalogConfigSmallrye {
         new SmallRyeConfigBuilder()
             .setAddDefaultSources(false)
             .setAddDiscoveredSources(false)
-            .withMapping(CatalogConfig.class)
+            .withMapping(SmallryeConfigs.class)
             .withSources(new PropertiesConfigSource(configs, "configSource", 100))
             .build();
 
-    CatalogConfig catalogConfig = config.getConfigMapping(CatalogConfig.class);
+    CatalogConfig catalogConfig = config.getConfigMapping(SmallryeConfigs.class).catalog();
 
     assertThat(catalogConfig.getWarehouse(lookup))
         .matches(c -> c.location().equals(expectedWarehouseLocation));

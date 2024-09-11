@@ -39,7 +39,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.microprofile.context.ThreadContext;
-import org.projectnessie.catalog.files.NormalizedObjectStoreOptions;
 import org.projectnessie.catalog.files.ResolvingObjectIO;
 import org.projectnessie.catalog.files.adls.AdlsClientSupplier;
 import org.projectnessie.catalog.files.adls.AdlsClients;
@@ -49,12 +48,9 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsOptions;
-import org.projectnessie.catalog.files.config.AdlsProgrammaticOptions;
 import org.projectnessie.catalog.files.config.GcsOptions;
-import org.projectnessie.catalog.files.config.GcsProgrammaticOptions;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
-import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
 import org.projectnessie.catalog.files.gcs.GcsClients;
 import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
@@ -67,7 +63,7 @@ import org.projectnessie.catalog.files.s3.S3Signer;
 import org.projectnessie.catalog.files.s3.StsClientsPool;
 import org.projectnessie.catalog.files.s3.StsCredentialsManager;
 import org.projectnessie.catalog.secrets.SecretsProvider;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
 import org.projectnessie.catalog.service.impl.IllegalArgumentExceptionMapper;
 import org.projectnessie.catalog.service.impl.NessieExceptionMapper;
@@ -96,15 +92,8 @@ public class CatalogProducers {
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogProducers.class);
 
   void eagerCatalogConfigValidation(
-      @Observes StartupEvent ev,
-      CatalogConfig catalogConfig,
-      S3Options s3Options,
-      GcsOptions gcsConfig,
-      AdlsOptions adlsOptions) {
-    catalogConfig.validate();
-    adlsOptions.validate();
-    gcsConfig.validate();
-    s3Options.validate();
+      @Observes StartupEvent ev, @SuppressWarnings("unused") LakehouseConfig lakehouseConfig) {
+    // noop
   }
 
   @Produces
@@ -120,29 +109,8 @@ public class CatalogProducers {
 
   @Produces
   @Singleton
-  @NormalizedObjectStoreOptions
-  public S3Options normalizedS3Options(S3Options s3Options) {
-    return S3ProgrammaticOptions.normalize(s3Options);
-  }
-
-  @Produces
-  @Singleton
-  @NormalizedObjectStoreOptions
-  public GcsOptions normalizedGcsOptions(GcsOptions gcsOptions) {
-    return GcsProgrammaticOptions.normalize(gcsOptions);
-  }
-
-  @Produces
-  @Singleton
-  @NormalizedObjectStoreOptions
-  public AdlsOptions normalizedAdlsOptions(AdlsOptions adlsOptions) {
-    return AdlsProgrammaticOptions.normalize(adlsOptions);
-  }
-
-  @Produces
-  @Singleton
   public StsClientsPool stsClientsPool(
-      @NormalizedObjectStoreOptions S3Options s3options,
+      S3Options s3options,
       @CatalogS3Client SdkHttpClient sdkClient,
       @Any Instance<MeterRegistry> meterRegistry) {
     return new StsClientsPool(
@@ -152,7 +120,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public StsCredentialsManager s3SessionsManager(
-      @NormalizedObjectStoreOptions S3Options s3options,
+      S3Options s3options,
       StsClientsPool clientsPool,
       SecretsProvider secretsProvider,
       @Any Instance<MeterRegistry> meterRegistry) {
@@ -191,7 +159,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public S3ClientSupplier s3ClientSupplier(
-      @NormalizedObjectStoreOptions S3Options s3Options,
+      S3Options s3Options,
       @CatalogS3Client SdkHttpClient sdkClient,
       S3Sessions sessions,
       SecretsProvider secretsProvider) {
@@ -202,7 +170,7 @@ public class CatalogProducers {
   @Singleton
   public AdlsClientSupplier adlsClientSupplier(
       AdlsConfig adlsConfig,
-      @NormalizedObjectStoreOptions AdlsOptions adlsOptions,
+      AdlsOptions adlsOptions,
       HttpClient adlsHttpClient,
       SecretsProvider secretsProvider) {
     return new AdlsClientSupplier(adlsHttpClient, adlsConfig, adlsOptions, secretsProvider);
@@ -211,7 +179,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public GcsStorageSupplier gcsStorageSupplier(
-      @NormalizedObjectStoreOptions GcsOptions gcsOptions,
+      GcsOptions gcsOptions,
       HttpTransportFactory gcsHttpTransportFactory,
       SecretsProvider secretsProvider) {
     return new GcsStorageSupplier(gcsHttpTransportFactory, gcsOptions, secretsProvider);
@@ -231,9 +199,7 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public RequestSigner signer(
-      @NormalizedObjectStoreOptions S3Options s3Options,
-      SecretsProvider secretsProvider,
-      S3Sessions s3sessions) {
+      S3Options s3Options, SecretsProvider secretsProvider, S3Sessions s3sessions) {
     return new S3Signer(s3Options, secretsProvider, s3sessions);
   }
 

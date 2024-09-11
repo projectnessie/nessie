@@ -52,9 +52,9 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Config;
-import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3Clients;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
@@ -67,6 +67,7 @@ import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.ImmutableCatalogConfig;
+import org.projectnessie.catalog.service.config.ImmutableServiceConfig;
 import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -196,6 +197,8 @@ public abstract class AbstractCatalogService {
                     .location("s3://" + BUCKET + "/foo/bar/baz/")
                     .build())
             .build();
+    catalogService.serviceConfig =
+        ImmutableServiceConfig.builder().objectStoresHealthCheck(false).build();
     catalogService.tasksService = tasksService;
     catalogService.objectIO = objectIO;
     catalogService.persist = persist;
@@ -218,8 +221,8 @@ public abstract class AbstractCatalogService {
     S3Sessions sessions = new S3Sessions("foo", null);
     S3Config s3config = S3Config.builder().build();
     httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
-    S3ProgrammaticOptions s3options =
-        ImmutableS3ProgrammaticOptions.builder()
+    S3Options s3options =
+        ImmutableS3Options.builder()
             .defaultOptions(
                 ImmutableS3NamedBucketOptions.builder()
                     .accessKey(URI.create("urn:nessie-secret:plain:" + theAccessKey))

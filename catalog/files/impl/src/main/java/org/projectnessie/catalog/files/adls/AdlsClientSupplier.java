@@ -115,7 +115,7 @@ public final class AdlsClientSupplier {
       StorageLocations storageLocations, AdlsFileSystemOptions fileSystemOptions) {
     AdlsLocation location = adlsLocation(storageLocations.warehouseLocation());
 
-    if (!fileSystemOptions.userDelegationEnable().orElse(false)) {
+    if (!fileSystemOptions.effectiveUserDelegation().enable().orElse(false)) {
       return Optional.empty();
     }
 
@@ -146,9 +146,15 @@ public final class AdlsClientSupplier {
             dataLakeServiceClientBuilder::credential));
 
     Duration keyValidity =
-        fileSystemOptions.userDelegationKeyExpiry().orElse(DELEGATION_KEY_DEFAULT_EXPIRY);
+        fileSystemOptions
+            .effectiveUserDelegation()
+            .keyExpiry()
+            .orElse(DELEGATION_KEY_DEFAULT_EXPIRY);
     Duration sasValidity =
-        fileSystemOptions.userDelegationSasExpiry().orElse(DELEGATION_SAS_DEFAULT_EXPIRY);
+        fileSystemOptions
+            .effectiveUserDelegation()
+            .sasExpiry()
+            .orElse(DELEGATION_SAS_DEFAULT_EXPIRY);
 
     Instant start = Instant.now();
     OffsetDateTime startTime = start.truncatedTo(ChronoUnit.SECONDS).atOffset(ZoneOffset.UTC);
@@ -222,7 +228,7 @@ public final class AdlsClientSupplier {
 
   private Configuration buildClientConfiguration() {
     ConfigurationBuilder clientConfigBuilder = new ConfigurationBuilder();
-    adlsConfig.configurationOptions().forEach(clientConfigBuilder::putProperty);
+    adlsConfig.configuration().forEach(clientConfigBuilder::putProperty);
     return clientConfigBuilder.build();
   }
 

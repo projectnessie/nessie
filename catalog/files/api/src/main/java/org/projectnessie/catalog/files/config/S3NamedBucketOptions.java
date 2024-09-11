@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableS3NamedBucketOptions.class)
 @JsonDeserialize(as = ImmutableS3NamedBucketOptions.class)
+@SuppressWarnings("immutables:subtype")
 public interface S3NamedBucketOptions extends S3BucketOptions {
 
   S3BucketOptions FALLBACK = ImmutableS3NamedBucketOptions.builder().build();
@@ -36,4 +38,13 @@ public interface S3NamedBucketOptions extends S3BucketOptions {
    * dots or dashes.
    */
   Optional<String> name();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3NamedBucketOptions deepClone() {
+    return ImmutableS3NamedBucketOptions.builder()
+        .from(S3BucketOptions.super.deepClone())
+        .name(name())
+        .build();
+  }
 }

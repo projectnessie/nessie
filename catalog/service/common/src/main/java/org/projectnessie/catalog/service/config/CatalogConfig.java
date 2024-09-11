@@ -17,14 +17,13 @@ package org.projectnessie.catalog.service.config;
 
 import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrailingSlash;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 import org.projectnessie.nessie.immutables.NessieImmutable;
@@ -32,7 +31,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(as = ImmutableCatalogConfig.class)
 @JsonDeserialize(as = ImmutableCatalogConfig.class)
-@ConfigMapping(prefix = "nessie.catalog")
 public interface CatalogConfig {
 
   /**
@@ -72,18 +70,13 @@ public interface CatalogConfig {
   @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
 
-  /**
-   * Advanced property. The time interval after which a request is retried when storage I/O responds
-   * with some "retry later" response.
-   */
-  @ConfigPropertyName("throttled-retry-after")
-  @ConfigItem(section = "error-handling")
-  @WithName("error-handling.throttled-retry-after")
-  @WithDefault("PT10S")
-  Optional<Duration> retryAfterThrottled();
-
-  default Duration effectiveRetryAfterThrottled() {
-    return retryAfterThrottled().orElse(Duration.ofSeconds(10));
+  @Value.NonAttribute
+  @JsonIgnore
+  default CatalogConfig deepClone() {
+    ImmutableCatalogConfig.Builder b =
+        ImmutableCatalogConfig.builder().from(this).warehouses(Map.of());
+    warehouses().forEach((n, w) -> b.putWarehouse(n, ImmutableWarehouseConfig.copyOf(w)));
+    return b.build();
   }
 
   /**
@@ -130,7 +123,7 @@ public interface CatalogConfig {
     throw new IllegalStateException("Warehouse '" + warehouse + "' is not known");
   }
 
-  default void validate() {
+  default CatalogConfig validate() {
     defaultWarehouse()
         .ifPresent(
             name -> {
@@ -138,6 +131,7 @@ public interface CatalogConfig {
                 throw new IllegalStateException("Default warehouse '" + name + "' is not defined.");
               }
             });
+    return this;
   }
 
   static String removeTrailingSlash(String s) {

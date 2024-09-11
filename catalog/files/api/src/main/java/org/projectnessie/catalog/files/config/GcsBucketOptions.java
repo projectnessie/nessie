@@ -15,12 +15,17 @@
  */
 package org.projectnessie.catalog.files.config;
 
-import io.smallrye.config.WithName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.immutables.value.Value;
 
+@Value.Immutable
+@JsonSerialize(as = ImmutableGcsBucketOptions.class)
+@JsonDeserialize(as = ImmutableGcsBucketOptions.class)
 public interface GcsBucketOptions {
 
   /** Default value for {@link #authType()}, being {@link GcsAuthType#NONE}. */
@@ -72,31 +77,13 @@ public interface GcsBucketOptions {
    */
   Optional<URI> oauth2Token();
 
-  /**
-   * Flag to enable the currently experimental option to send short-lived and scoped-down
-   * credentials to clients.
-   *
-   * <p>The current default is to not enable short-lived and scoped-down credentials, but the
-   * default may change to enable in the future.
-   */
-  @WithName("downscoped-credentials.enable")
-  Optional<Boolean> downscopedCredentialsEnable();
+  Optional<GcsDownscopedCredentials> downscopedCredentials();
 
-  /**
-   * The expiration margin for the scoped down OAuth2 token.
-   *
-   * <p>Defaults to the Google defaults.
-   */
-  @WithName("downscoped-credentials.expiration-margin")
-  Optional<Duration> downscopedCredentialsExpirationMargin();
-
-  /**
-   * The refresh margin for the scoped down OAuth2 token.
-   *
-   * <p>Defaults to the Google defaults.
-   */
-  @WithName("downscoped-credentials.refresh-margin")
-  Optional<Duration> downscopedCredentialsRefreshMargin();
+  @Value.NonAttribute
+  @JsonIgnore
+  default GcsDownscopedCredentials effectiveDownscopedCredentials() {
+    return downscopedCredentials().orElse(ImmutableGcsDownscopedCredentials.builder().build());
+  }
 
   /** The read chunk size in bytes. */
   OptionalInt readChunkSize();
@@ -129,5 +116,14 @@ public interface GcsBucketOptions {
     SERVICE_ACCOUNT,
     ACCESS_TOKEN,
     APPLICATION_DEFAULT
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default GcsBucketOptions deepClone() {
+    ImmutableGcsBucketOptions.Builder b = ImmutableGcsBucketOptions.builder().from(this);
+    downscopedCredentials()
+        .ifPresent(v -> b.downscopedCredentials(ImmutableGcsDownscopedCredentials.copyOf(v)));
+    return b.build();
   }
 }

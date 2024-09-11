@@ -15,12 +15,18 @@
  */
 package org.projectnessie.catalog.files.config;
 
-import io.smallrye.config.WithName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import org.immutables.value.Value;
 
+@Value.Immutable
+@JsonSerialize(as = ImmutableAdlsFileSystemOptions.class)
+@JsonDeserialize(as = ImmutableAdlsFileSystemOptions.class)
 public interface AdlsFileSystemOptions {
 
   Duration DELEGATION_KEY_DEFAULT_EXPIRY = Duration.ofDays(7).minus(1, ChronoUnit.SECONDS);
@@ -39,32 +45,13 @@ public interface AdlsFileSystemOptions {
   /** Name of the key-secret containing the SAS token to access the ADLS file system. */
   Optional<URI> sasToken();
 
-  /**
-   * Enable short-lived user-delegation SAS tokens per file-system.
-   *
-   * <p>The current default is to not enable short-lived and scoped-down credentials, but the
-   * default may change to enable in the future.
-   */
-  @WithName("user-delegation.enable")
-  Optional<Boolean> userDelegationEnable();
+  Optional<AdlsUserDelegation> userDelegation();
 
-  /**
-   * Expiration time / validity duration of the user-delegation <em>key</em>, this key is
-   * <em>not</em> passed to the client.
-   *
-   * <p>Defaults to 7 days minus 1 minute (the maximum), must be >= 1 second.
-   */
-  @WithName("user-delegation.key-expiry")
-  Optional<Duration> userDelegationKeyExpiry();
-
-  /**
-   * Expiration time / validity duration of the user-delegation <em>SAS token</em>, which
-   * <em>is</em> sent to the client.
-   *
-   * <p>Defaults to 3 hours, must be >= 1 second.
-   */
-  @WithName("user-delegation.sas-expiry")
-  Optional<Duration> userDelegationSasExpiry();
+  @Value.NonAttribute
+  @JsonIgnore
+  default AdlsUserDelegation effectiveUserDelegation() {
+    return userDelegation().orElse(ImmutableAdlsUserDelegation.builder().build());
+  }
 
   /**
    * Define a custom HTTP endpoint. In case clients need to use a different URI, use the {@code
@@ -102,5 +89,13 @@ public interface AdlsFileSystemOptions {
     STORAGE_SHARED_KEY,
     SAS_TOKEN,
     APPLICATION_DEFAULT
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default AdlsFileSystemOptions deepClone() {
+    ImmutableAdlsFileSystemOptions.Builder b = ImmutableAdlsFileSystemOptions.builder().from(this);
+    userDelegation().ifPresent(v -> b.userDelegation(ImmutableAdlsUserDelegation.copyOf(v)));
+    return b.build();
   }
 }

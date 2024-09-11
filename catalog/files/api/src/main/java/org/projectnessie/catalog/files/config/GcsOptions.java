@@ -15,14 +15,19 @@
  */
 package org.projectnessie.catalog.files.config;
 
-import io.smallrye.config.ConfigMapping;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /**
  * Configuration for Google Cloud Storage (GCS) object stores.
@@ -33,7 +38,9 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName
  * <p>All settings are optional. The defaults of these settings are defined by the Google Java SDK
  * client.
  */
-@ConfigMapping(prefix = "nessie.catalog.service.gcs")
+@NessieImmutable
+@JsonSerialize(as = ImmutableGcsOptions.class)
+@JsonDeserialize(as = ImmutableGcsOptions.class)
 public interface GcsOptions {
 
   /**
@@ -111,7 +118,42 @@ public interface GcsOptions {
     return ImmutableGcsNamedBucketOptions.builder().from(defaultOptions).from(specific).build();
   }
 
-  default void validate() {
+  default GcsOptions validate() {
     // nothing to validate
+    return this;
+  }
+
+  @Value.Check
+  default GcsOptions normalizeBuckets() {
+    Map<String, GcsNamedBucketOptions> buckets = new HashMap<>();
+    for (String bucketName : buckets().keySet()) {
+      GcsNamedBucketOptions options = buckets().get(bucketName);
+      if (options.name().isPresent()) {
+        bucketName = options.name().get();
+      } else {
+        options = ImmutableGcsNamedBucketOptions.builder().from(options).name(bucketName).build();
+      }
+      if (buckets.put(bucketName, options) != null) {
+        throw new IllegalArgumentException(
+            "Duplicate GCS bucket name '" + bucketName + "', check your GCS bucket configurations");
+      }
+    }
+    if (buckets.equals(buckets())) {
+      return this;
+    }
+    return ImmutableGcsOptions.builder()
+        .from(this)
+        .defaultOptions(defaultOptions())
+        .buckets(buckets)
+        .build();
+  }
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default GcsOptions deepClone() {
+    ImmutableGcsOptions.Builder b = ImmutableGcsOptions.builder().from(this).buckets(Map.of());
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepClone()));
+    return b.build();
   }
 }

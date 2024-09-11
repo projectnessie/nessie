@@ -39,9 +39,9 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Config;
-import org.projectnessie.catalog.files.config.S3ProgrammaticOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -79,8 +79,8 @@ public class S3ClientResourceBench {
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
 
-      S3ProgrammaticOptions s3options =
-          ImmutableS3ProgrammaticOptions.builder()
+      S3Options s3options =
+          ImmutableS3Options.builder()
               .defaultOptions(
                   ImmutableS3NamedBucketOptions.builder()
                       .accessKey(URI.create("urn:nessie-secret:plain:" + theAccessKey))

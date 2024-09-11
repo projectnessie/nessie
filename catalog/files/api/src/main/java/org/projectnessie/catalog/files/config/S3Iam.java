@@ -18,8 +18,10 @@ package org.projectnessie.catalog.files.config;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.catalog.files.config.S3IamValidation.validateIam;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Duration;
 import java.util.Optional;
+import org.immutables.value.Value;
 
 public interface S3Iam {
   /**
@@ -96,6 +98,8 @@ public interface S3Iam {
    * client-session-duration} is used if set, otherwise the default ({@code
    * DEFAULT_SESSION_DURATION}) session duration is assumed.
    */
+  @Value.NonAttribute
+  @JsonIgnore
   default Duration minSessionCredentialValidityPeriod() {
     return sessionDuration().orElse(DEFAULT_SESSION_DURATION);
   }
