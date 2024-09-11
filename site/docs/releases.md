@@ -2,6 +2,154 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.96.0 Release (September 11, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.96.0).
+
+### Upgrade notes
+
+- Support for Java 8 has been removed, even for Nessie clients. Minimum runtime requirement for clients
+  is Java 11.
+- Nessie Docker images now all execute as user `nessie` (UID 10000 and GID 10001). They would
+  previously execute as user `default` (UID 185 and GID 0). This is a security improvement, as the
+  Nessie images no longer run with a UID within the privileged range, and the GID is no longer 0
+  (root). If you have any custom configurations, especially Kubernetes manifests containing security
+  contexts, that rely on the previous user `default` (UID 185 and GID 0), you will need to adjust
+  them to reference the new user `nessie` (UID 10000 and GID 10001) from now on.
+- Helm chart: the chart now comes with sane defaults for both pod and container security contexts.
+  If you have customized these settings, you don't need to do anything. If you have not customized these
+  settings, you may need to check if the new defaults are compatible with your environment.
+
+### Breaking changes
+
+- The deprecated JDBC configuration properties for `catalog` and `schema` have been removed.
+- Catalog/Object store secrets: Secrets are now referenced via a URN as requirement to introduce support
+  for secret managers like Vault or those offered by cloud vendors. All secret reference URNs use the
+  pattern `urn:nessie-secret:<provider>:<secret-name>`.
+  The currently supported provider is `quarkus`, the `<secret-name>` is the name of the Quarkus
+  configuration entry, which can also be an environment variable name.
+  Make sure to use the new helm chart.
+  See [Nessie Docs](https://projectnessie.org/nessie-latest/configuration/#secrets-manager-settings).
+- Catalog/Object store secrets: secrets are now handled as immutable composites, which is important
+  to support secrets rotation with external secrets managers.
+  See [Nessie Docs](https://projectnessie.org/nessie-latest/configuration/#secrets-manager-settings).
+
+### New Features
+
+- Catalog/ADLS: Added **experimental** support for short-lived SAS tokens passed down to clients. Those
+  tokens still have read/write access to the whole file system and are **not** scoped down.
+- Catalog/GCS: Added **experimental** support for short-lived and scoped down access tokens passed down
+  to clients, providing a similar functionality as vended-credentials for S3, including object-storage
+  file layout.
+- Client-configs: Commit authors, signed-off-by, message can be customized per REST/HTTP request. Those
+  can be configured for both the [Nessie client API](https://projectnessie.org/nessie-latest/client_config/)
+  and for [Iceberg REST catalog clients](https://projectnessie.org/guides/iceberg-rest/).
+- Support for Servlet Spec v6 w/ strict URI path validation has been added and will be transparently
+  used by Nessie REST API v2 clients since this version. This steps is a preparation for when Quarkus
+  introduces that Servlet Spec. Content keys in URL paths may look different than before. More information
+  [here](https://github.com/projectnessie/nessie/blob/main/api/NESSIE-SPEC-2-0.md#content-key-and-namespace-string-representation-in-uri-paths).
+- The Swagger UI and OpenAPI generation by Quarkus has been disabled, because the contents/results were
+  wrong. Instead, refer to [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie). You can
+  also fetch the Nessie REST OpenAPI yaml from Nessie `/nessie-openapi/openapi.yaml` (for example via
+  `curl http://127.0.0.1:19120//nessie-openapi/openapi.yaml`)
+- Nessie commit author(s) and "signed off by" can now be configured for both Nessie clients and Iceberg
+  REST clients. More info on
+  [projectnessie.org](https://projectnessie.org/guides/iceberg-rest/#customizing-nessie-commit-author-et-al). 
+- Enable authentication for the Nessie Web UI
+- Introduce new `JDBC2` version store type, which is has the same functionality as the `JDBC` version
+  store type, but uses way less columns, which reduces storage overhead for example in PostgreSQL a lot.
+- Introduce new `CASSANDRA2` version store type, which is has the same functionality as the `CASSANDRA` version
+  store type, but uses way less attributes, which reduces storage overhead.
+- Introduce new `DYNAMODB2` version store type, which is has the same functionality as the `DYNAMODB` version
+  store type, but uses way less attributes, which reduces storage overhead.
+- Introduce new `MONGODB2` version store type, which is has the same functionality as the `MONGODB` version
+  store type, but uses way less attributes, which reduces storage overhead.
+- Added functionality to optionally validate that referenced secrets can be resolved, opt-in.
+
+### Deprecations
+
+- The current version store type `JDBC` is deprecated, please migrate to the new `JDBC2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `JDBC` version store type to `JDBC2`.
+- The current version store type `CASSANDRA` is deprecated, please migrate to the new `CASSANDRA2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `CASSANDRA` version store type to `CASSANDRA2`.
+- The current version store type `MONGODB` is deprecated, please migrate to the new `MONGODB2` version store
+  type. Please use the [Nessie Server Admin Tool](https://projectnessie.org/nessie-latest/export_import)
+  to migrate from the `MONGODB` version store type to `MONGODB2`.
+
+### Fixes
+
+- CLI: fixed a bug that was preventing the tool from running properly when history is disabled.
+
+### Commits
+* Secrets validation (#9509)
+* Introduce functional `LakehouseConfig` (#9353)
+* External secrets managers follow-up (#9497)
+* Wire `SecretsProvider`s up to Quarkus (#8708)
+* Add `SecretsProvider` implementations for AWS, GCP, Vault (#8707)
+* Move object-store configuration types to `:nessie-catalog-files-api` (#9350)
+* Reference secrets by name, do not inject (#9345)
+* "Thread per test class" via `MultiEnvTestEngine` (#9453)
+* public test methods in `BaseTestNessieApi` (#9472)
+* Introduce `MONGODB2` version store type, deprecate `MONGODB` version store type (#9367)
+* Helm chart: strengthen default security context (#9448)
+* Add `referenced` attribute to persisted `Obj`s (#9401)
+* Helm chart: add license headers and LICENSE file (#9466)
+* Switch Nessie Docker images to use UID 10000 (#9456)
+* Add ability to change pathType of ingress (#9462)
+* CLI: make tool runnable without history (#9449)
+* Use non-blocking random (#9445)
+* Switch to new s3-sign endpoint using an opaque path parameter (#9447)
+* Docs: fix broken link (#9446)
+* Choose the Nessie client by name, case-insensitive (#9439)
+* Cleanup resources held by Iceberg that accumulate JVM resources (#9440)
+* Introduce `DYNAMODB2` version store type, deprecate `DYNAMODB` version store type (#9418)
+* Adopt tests for C*2 (#9426)
+* Introduce `CASSANDRA2` version store type, deprecate `CASSANDRA` version store type (#9368)
+* Minor cleanups in JDBC(2) (#9422)
+* Introduce `JDBC2` version store type, deprecate `JDBC` version store type (#9366)
+* Allow Nessie Web UI to authenticate (#9398)
+* [DocTool] Allow nested config sections (#9370)
+* Catalog: use `prefixKey` in "list" operations (#9383)
+* OAuth client: avoid recomputing HTTP headers for static secrets (#9411)
+* Remove no longer used "global state" code (#9365)
+* GC: always look into all keys of the last commit (#9400)
+* Add license element to every pom (#9407)
+* Minor cleanup in `:nessie-versioned-storage-store` + commit-logic-impl (#9399)
+* Ninja: format comment
+* Mitigate OOM during `:nessie-server-admin-tool:intTest` (#9371)
+* Build: remove unneeded references to jacoco (#9384)
+* Drop support for Java 8 (#9253)
+* Require Java 21 for Nessie build (#9382)
+* Remove a couple unused dependency declaration (#9376)
+* Nit: remove unused field (#9359)
+* Fix use of deprecated API (#9357)
+* Add notes about running `ct lint` and `helm lint` locally (#9354)
+* Ninja: changelog
+* Eliminate more Quarkus test warnings (#9341)
+* Use `@RepositoryId` qualifier instead of named bean (#9348)
+* Allow tweaking `CommitMeta` via HTTP headers (#9335)
+* Move object-storage specific code from `IcebergConfigurer` into `ObjectIO` implementations (#9327)
+* Nit: suppress warning in `S3*Iam` types (#9349)
+* Adopt Nessie REST API + client (#9289)
+* Disable Swagger-UI + eliminate "duplicate operation ID" warnings in Quarkus tests (#9340)
+* Explicitly prevent empty content keys (#9338)
+* Fix typos in docs (#9339)
+* Catalog: Implementation for down-scoped GCP/GCS access tokens (#9302)
+* Add java client-based test for `getEntries` with a UDF (#9336)
+* Add some "paranoid" tests for new URL encoding algorithm + forbid 0x7f (#9333)
+* Fix javadoc after #9282 (#9332)
+* Catalog: Implementation for short-lived user-delegation SAS tokens (#9301)
+* BasicAuthenticationProvider: ability to dynamically provide a password (#9319)
+* Prepare for Jakarta Servlet Spec 6 (#9282)
+* OAuth2 client: introduce secret suppliers (#9315)
+* Prepare downscoped credentials for ADLS + GCS (#9299)
+* Doc generator: fix incorrect prefix when property has custom section (#9303)
+* Site: `migration.md` overhaul + add server-admin-tool command references (#9291)
+* Catalog: more producers (#9300)
+* Release: Fix openapi publishing idempotency (#9294)
+
 ## 0.95.0 Release (August 07, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.95.0).

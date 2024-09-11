@@ -10,6 +10,22 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.96.0] Release (2024-09-11)
+
+### Upgrade notes
+
 - Support for Java 8 has been removed, even for Nessie clients. Minimum runtime requirement for clients
   is Java 11.
 - Nessie Docker images now all execute as user `nessie` (UID 10000 and GID 10001). They would
@@ -68,8 +84,6 @@ as necessary. Empty sections will not end in the release notes.
   store type, but uses way less attributes, which reduces storage overhead.
 - Added functionality to optionally validate that referenced secrets can be resolved, opt-in.
 
-### Changes
-
 ### Deprecations
 
 - The current version store type `JDBC` is deprecated, please migrate to the new `JDBC2` version store
@@ -85,8 +99,6 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 - CLI: fixed a bug that was preventing the tool from running properly when history is disabled.
-
-### Commits
 
 ## [0.95.0] Release (2024-08-07)
 
@@ -806,7 +818,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.95.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.96.0...HEAD
+[0.96.0]: https://github.com/projectnessie/nessie/compare/nessie-0.95.0...nessie-0.96.0
 [0.95.0]: https://github.com/projectnessie/nessie/compare/nessie-0.94.3...nessie-0.95.0
 [0.94.3]: https://github.com/projectnessie/nessie/compare/nessie-0.94.2...nessie-0.94.3
 [0.94.2]: https://github.com/projectnessie/nessie/compare/nessie-0.94.1...nessie-0.94.2

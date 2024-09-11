@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.95.0](https://img.shields.io/badge/Version-0.95.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.96.0](https://img.shields.io/badge/Version-0.96.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -54,7 +54,8 @@ helm uninstall --namespace nessie-ns nessie
 
 ### Linting
 
-From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) tool:
+From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) or `helm` tools
+via Podman/Docker if you don't have those installed locally (replace `podman` with `docker`, if you use Docker).
 
 ```bash
 podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing ct lint --debug --charts /helm/nessie
@@ -63,7 +64,19 @@ podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing
 And also `helm lint`:
 
 ```bash
-podman run -v=$(realpath helm/nessie):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
+```
+
+To debug the generated `helm lint`:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns .
+```
+
+To debug the generated `helm lint` other values:
+
+```bash
+podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns --values ci/catalog-secrets-values.yaml .
 ```
 
 ## Values
@@ -269,4 +282,4 @@ podman run -v=$(realpath helm/nessie):/helm/nessie --rm -ti quay.io/helmpack/cha
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
 | tracing.endpoint | string | `"http://otlp-collector:4317"` | The collector endpoint URL to connect to (required). The endpoint URL must have either the http:// or the https:// scheme. The collector must talk the OpenTelemetry protocol (OTLP) and the port must be its gRPC port (by default 4317). See https://quarkus.io/guides/opentelemetry for more information. |
 | tracing.sample | string | `"1.0d"` | Which requests should be sampled. Valid values are: "all", "none", or a ratio between 0.0 and "1.0d" (inclusive). E.g. "0.5d" means that 50% of the requests will be sampled. |
-| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB, CASSANDRA2, JDBC2, BIGTABLE. Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2. Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2. Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2. |
+| versionStoreType | string | `"IN_MEMORY"` | Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2, BIGTABLE. Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2. Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2. Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2. Note: the version store type MONGODB is deprecated, please use the Nessie Server Admin Tool to migrate to MONGODB2. |
