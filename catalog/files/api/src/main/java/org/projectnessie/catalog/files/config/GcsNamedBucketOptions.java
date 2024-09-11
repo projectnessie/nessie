@@ -41,9 +41,9 @@ public interface GcsNamedBucketOptions extends GcsBucketOptions {
 
   @Value.NonAttribute
   @JsonIgnore
-  default GcsNamedBucketOptions deepCopy() {
+  default GcsNamedBucketOptions deepClone() {
     return ImmutableGcsNamedBucketOptions.builder()
-        .from(GcsBucketOptions.super.deepCopy())
+        .from(GcsBucketOptions.super.deepClone())
         .name(name())
         .build();
   }

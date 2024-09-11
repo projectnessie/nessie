@@ -42,9 +42,9 @@ public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
 
   @Value.NonAttribute
   @JsonIgnore
-  default AdlsNamedFileSystemOptions deepCopy() {
+  default AdlsNamedFileSystemOptions deepClone() {
     return ImmutableAdlsNamedFileSystemOptions.builder()
-        .from(AdlsFileSystemOptions.super.deepCopy())
+        .from(AdlsFileSystemOptions.super.deepClone())
         .name(name())
         .build();
   }

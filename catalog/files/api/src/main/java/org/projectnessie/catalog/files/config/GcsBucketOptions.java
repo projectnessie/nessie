@@ -120,7 +120,7 @@ public interface GcsBucketOptions {
 
   @Value.NonAttribute
   @JsonIgnore
-  default GcsBucketOptions deepCopy() {
+  default GcsBucketOptions deepClone() {
     ImmutableGcsBucketOptions.Builder b = ImmutableGcsBucketOptions.builder().from(this);
     downscopedCredentials()
         .ifPresent(v -> b.downscopedCredentials(ImmutableGcsDownscopedCredentials.copyOf(v)));

@@ -133,8 +133,8 @@ public interface AdlsOptions {
   default AdlsOptions deepClone() {
     ImmutableAdlsOptions.Builder b =
         ImmutableAdlsOptions.builder().from(this).fileSystems(Map.of());
-    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
-    fileSystems().forEach((n, v) -> b.putFileSystem(n, v.deepCopy()));
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
+    fileSystems().forEach((n, v) -> b.putFileSystem(n, v.deepClone()));
     return b.build();
   }
 }

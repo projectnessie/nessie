@@ -93,7 +93,7 @@ public interface AdlsFileSystemOptions {
 
   @Value.NonAttribute
   @JsonIgnore
-  default AdlsFileSystemOptions deepCopy() {
+  default AdlsFileSystemOptions deepClone() {
     ImmutableAdlsFileSystemOptions.Builder b = ImmutableAdlsFileSystemOptions.builder().from(this);
     userDelegation().ifPresent(v -> b.userDelegation(ImmutableAdlsUserDelegation.copyOf(v)));
     return b.build();

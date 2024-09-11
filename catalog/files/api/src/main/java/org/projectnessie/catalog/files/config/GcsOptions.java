@@ -152,8 +152,8 @@ public interface GcsOptions {
   @JsonIgnore
   default GcsOptions deepClone() {
     ImmutableGcsOptions.Builder b = ImmutableGcsOptions.builder().from(this).buckets(Map.of());
-    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
-    buckets().forEach((n, v) -> b.putBucket(n, v.deepCopy()));
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepClone()));
     return b.build();
   }
 }

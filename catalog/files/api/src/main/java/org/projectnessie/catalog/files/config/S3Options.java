@@ -121,8 +121,8 @@ public interface S3Options {
   default S3Options deepClone() {
     ImmutableS3Options.Builder b = ImmutableS3Options.builder().from(this).buckets(Map.of());
     sts().ifPresent(v -> b.sts(ImmutableS3Sts.copyOf(v)));
-    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepCopy()));
-    buckets().forEach((n, v) -> b.putBucket(n, v.deepCopy()));
+    defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
+    buckets().forEach((n, v) -> b.putBucket(n, v.deepClone()));
     return b.build();
   }
 }

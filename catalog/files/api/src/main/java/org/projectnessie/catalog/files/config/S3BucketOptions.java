@@ -169,7 +169,7 @@ public interface S3BucketOptions {
 
   @Value.NonAttribute
   @JsonIgnore
-  default S3BucketOptions deepCopy() {
+  default S3BucketOptions deepClone() {
     ImmutableS3BucketOptions.Builder b = ImmutableS3BucketOptions.builder().from(this);
     clientIam().ifPresent(v -> b.clientIam(ImmutableS3ClientIam.copyOf(v)));
     serverIam().ifPresent(v -> b.serverIam(ImmutableS3ServerIam.copyOf(v)));
