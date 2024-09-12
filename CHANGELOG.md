@@ -14,6 +14,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Helm chart: support has been added for the `DYNAMODB2`, `MONGODB2`, `CASSANDRA2`, and `JDBC2`
+  version store types, introduced in Nessie 0.96.0. Also, support for legacy version store types
+  based on the old "database adapter" code, which were removed in Nessie 0.75.0, has also been
+  removed from the Helm chart.
+
 ### Changes
 
 ### Deprecations

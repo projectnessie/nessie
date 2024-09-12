@@ -65,12 +65,12 @@ spec:
               readOnly: true
             - name: temp-dir
               mountPath: /tmp
-          {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
+          {{- if hasPrefix "ROCKSDB" .Values.versionStoreType }}
             - name: rocks-storage
               mountPath: /rocks-nessie
               readOnly: false
           {{- end }}
-          {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
+          {{- if and (hasPrefix "BIGTABLE" .Values.versionStoreType) (.Values.bigtable.secret) }}
             - name: bigtable-creds
               mountPath: /bigtable-nessie
               readOnly: true
@@ -79,19 +79,19 @@ spec:
           {{- tpl (toYaml .Values.extraVolumeMounts) . | nindent 12 }}
           {{- end }}
           env:
-            {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
+            {{- if hasPrefix "DYNAMODB" .Values.versionStoreType -}}
             {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsAccessKeyId" "AWS_ACCESS_KEY_ID" . ) | trim | nindent 12 -}}
             {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsSecretAccessKey" "AWS_SECRET_ACCESS_KEY" . ) | trim | nindent 12 -}}
             {{- end -}}
-            {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") }}
+            {{- if hasPrefix "MONGODB" .Values.versionStoreType }}
             {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "username" "quarkus.mongodb.credentials.username" . ) | trim | nindent 12 -}}
             {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "password" "quarkus.mongodb.credentials.password" . ) | trim | nindent 12 -}}
             {{- end -}}
-            {{- if eq .Values.versionStoreType "CASSANDRA" }}
+            {{- if hasPrefix "CASSANDRA" .Values.versionStoreType }}
             {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "username" "quarkus.cassandra.auth.username" . ) | trim | nindent 12 -}}
             {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "password" "quarkus.cassandra.auth.password" . ) | trim | nindent 12 -}}
             {{- end -}}
-            {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
+            {{- if hasPrefix "JDBC" .Values.versionStoreType }}
             {{- $oldConfig := .Values.postgres | default dict }}
             {{- $newConfig := .Values.jdbc | default dict }}
             {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl }}
@@ -100,7 +100,7 @@ spec:
             {{- include "nessie.secretToEnv" (list $secret "username" (printf "quarkus.datasource.%s.username" $dbKind) . ) | trim | nindent 12 }}
             {{- include "nessie.secretToEnv" (list $secret "password" (printf "quarkus.datasource.%s.password" $dbKind) . ) | trim | nindent 12 }}
             {{- end -}}
-            {{- if eq .Values.versionStoreType "BIGTABLE" }}
+            {{- if hasPrefix "BIGTABLE" .Values.versionStoreType }}
             {{- if .Values.bigtable.secret }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /bigtable-nessie/sa_credentials.json
@@ -152,12 +152,12 @@ spec:
             name: {{ include "nessie.fullname" . }}
         - name: temp-dir
           emptyDir: {}
-      {{- if or (eq .Values.versionStoreType "ROCKSDB") (eq .Values.versionStoreType "ROCKS") }}
+      {{- if hasPrefix "ROCKSDB" .Values.versionStoreType }}
         - name: rocks-storage
           persistentVolumeClaim:
             claimName: {{ include "nessie.fullname" . }}
       {{- end }}
-      {{- if and (eq .Values.versionStoreType "BIGTABLE") (.Values.bigtable.secret) }}
+      {{- if and (hasPrefix "BIGTABLE" .Values.versionStoreType) (.Values.bigtable.secret) }}
         - name: bigtable-creds
           secret:
             secretName: {{ .Values.bigtable.secret.name }}
