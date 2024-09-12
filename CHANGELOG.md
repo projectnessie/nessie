@@ -14,21 +14,27 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Helm chart: support has been added for the `DYNAMODB2`, `MONGODB2`, `CASSANDRA2`, and `JDBC2`
-  version store types, introduced in Nessie 0.96.0. Also, support for legacy version store types
-  based on the old "database adapter" code, which were removed in Nessie 0.75.0, has also been
-  removed from the Helm chart.
-
 ### Changes
 
 ### Deprecations
 
 ### Fixes
 
+### Commits
+
+## [0.96.1] Release (2024-09-12)
+
+### New Features
+
+- Helm chart: support has been added for the `DYNAMODB2`, `MONGODB2`, `CASSANDRA2`, and `JDBC2`
+  version store types, introduced in Nessie 0.96.0. Also, support for legacy version store types
+  based on the old "database adapter" code, which were removed in Nessie 0.75.0, has also been
+  removed from the Helm chart.
+
+### Fixes
+
 - Helm chart: fixed a regression where a datasource secret would result in a failure to deploy the
   chart.
-
-### Commits
 
 ## [0.96.0] Release (2024-09-11)
 
@@ -826,7 +832,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.96.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.96.1...HEAD
+[0.96.1]: https://github.com/projectnessie/nessie/compare/nessie-0.96.0...nessie-0.96.1
 [0.96.0]: https://github.com/projectnessie/nessie/compare/nessie-0.95.0...nessie-0.96.0
 [0.95.0]: https://github.com/projectnessie/nessie/compare/nessie-0.94.3...nessie-0.95.0
 [0.94.3]: https://github.com/projectnessie/nessie/compare/nessie-0.94.2...nessie-0.94.3

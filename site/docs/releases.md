@@ -2,6 +2,28 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.96.1 Release (September 12, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.96.1).
+
+### New Features
+
+- Helm chart: support has been added for the `DYNAMODB2`, `MONGODB2`, `CASSANDRA2`, and `JDBC2`
+  version store types, introduced in Nessie 0.96.0. Also, support for legacy version store types
+  based on the old "database adapter" code, which were removed in Nessie 0.75.0, has also been
+  removed from the Helm chart.
+
+### Fixes
+
+- Helm chart: fixed a regression where a datasource secret would result in a failure to deploy the
+  chart.
+
+### Commits
+* Helm chart: add support for DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2 (#9520)
+* Postgres tests: use alpine-based Docker images (#9521)
+* Helm chart: redesign CI fixtures + minor fixes to docs (#9519)
+* [Bug]: Helm Chart does not render in version 0.96 (#9517)
+
 ## 0.96.0 Release (September 11, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.96.0).
