@@ -30,6 +30,7 @@ catalog:
       override2: value2
     warehouses:
     - name: warehouse1
+      location: "s3://bucket1.prod-us/warehouse-{{ .Release.Namespace }}"
       configDefaults:
         default1: value11
         default2: value22
