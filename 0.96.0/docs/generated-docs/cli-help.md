@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-cli.jar [-hHqV] [--no-up-to-date-check] [--non-ansi] [-j=<historyFile>] [[-K] [-E]
                       [-s=<scriptFile> | -c[=<commands>...] [-c[=<commands>...]]...]] [-u=<uri>
