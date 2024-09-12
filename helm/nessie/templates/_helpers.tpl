@@ -358,3 +358,27 @@ config types know about that symbolic name and resolve it via a SecretsProvider,
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Define an env var from secret key.
+*/}}
+{{- define "nessie.secretKeyToEnv" -}}
+{{- $secret := index . 0 -}}
+{{- $key := index . 1 -}}
+{{- $envVarName := index . 2 -}}
+{{- $global := index . 3 -}}
+{{- if $secret -}}
+{{- $secretName := get $secret "name" -}}
+{{- $secretKey := get $secret $key -}}
+{{- with $global -}}
+{{- if (and $secretName $secretKey) -}}
+- name: {{ $envVarName | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ (tpl $secretName . ) | quote }}
+      key: {{ (tpl $secretKey . ) | quote }}
+{{ end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

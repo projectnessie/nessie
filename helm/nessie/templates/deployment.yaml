@@ -80,16 +80,16 @@ spec:
           {{- end }}
           env:
             {{- if or (eq .Values.versionStoreType "DYNAMODB") (eq .Values.versionStoreType "DYNAMO") -}}
-            {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsAccessKeyId" "AWS_ACCESS_KEY_ID" . ) | trim | nindent 12 -}}
-            {{- include "nessie.secretToEnv" (list .Values.dynamodb.secret "awsSecretAccessKey" "AWS_SECRET_ACCESS_KEY" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.dynamodb.secret "awsAccessKeyId" "AWS_ACCESS_KEY_ID" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.dynamodb.secret "awsSecretAccessKey" "AWS_SECRET_ACCESS_KEY" . ) | trim | nindent 12 -}}
             {{- end -}}
             {{- if or (eq .Values.versionStoreType "MONGODB") (eq .Values.versionStoreType "MONGO") }}
-            {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "username" "quarkus.mongodb.credentials.username" . ) | trim | nindent 12 -}}
-            {{- include "nessie.secretToEnv" (list .Values.mongodb.secret "password" "quarkus.mongodb.credentials.password" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.mongodb.secret "username" "quarkus.mongodb.credentials.username" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.mongodb.secret "password" "quarkus.mongodb.credentials.password" . ) | trim | nindent 12 -}}
             {{- end -}}
             {{- if eq .Values.versionStoreType "CASSANDRA" }}
-            {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "username" "quarkus.cassandra.auth.username" . ) | trim | nindent 12 -}}
-            {{- include "nessie.secretToEnv" (list .Values.cassandra.secret "password" "quarkus.cassandra.auth.password" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.cassandra.secret "username" "quarkus.cassandra.auth.username" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.cassandra.secret "password" "quarkus.cassandra.auth.password" . ) | trim | nindent 12 -}}
             {{- end -}}
             {{- if or (eq .Values.versionStoreType "JDBC") (eq .Values.versionStoreType "TRANSACTIONAL") }}
             {{- $oldConfig := .Values.postgres | default dict }}
@@ -97,8 +97,8 @@ spec:
             {{- $jdbcUrl := coalesce $oldConfig.jdbcUrl $newConfig.jdbcUrl }}
             {{- $secret := coalesce $oldConfig.secret $newConfig.secret }}
             {{- $dbKind := include "nessie.dbKind" $jdbcUrl }}
-            {{- include "nessie.secretToEnv" (list $secret "username" (printf "quarkus.datasource.%s.username" $dbKind) . ) | trim | nindent 12 }}
-            {{- include "nessie.secretToEnv" (list $secret "password" (printf "quarkus.datasource.%s.password" $dbKind) . ) | trim | nindent 12 }}
+            {{- include "nessie.secretKeyToEnv" (list $secret "username" (printf "quarkus.datasource.%s.username" $dbKind) . ) | trim | nindent 12 }}
+            {{- include "nessie.secretKeyToEnv" (list $secret "password" (printf "quarkus.datasource.%s.password" $dbKind) . ) | trim | nindent 12 }}
             {{- end -}}
             {{- if eq .Values.versionStoreType "BIGTABLE" }}
             {{- if .Values.bigtable.secret }}
@@ -107,8 +107,8 @@ spec:
             {{- end }}
             {{- end -}}
             {{- if .Values.authentication.enabled -}}
-            {{- include "nessie.secretToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.credentials.secret" . ) | trim | nindent 12 -}}
-            {{- include "nessie.secretToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.ui-app.credentials.secret" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.credentials.secret" . ) | trim | nindent 12 -}}
+            {{- include "nessie.secretKeyToEnv" (list .Values.authentication.oidcClientSecret "key" "quarkus.oidc.ui-app.credentials.secret" . ) | trim | nindent 12 -}}
             {{- end -}}
             {{- if .Values.catalog.enabled -}}
             {{- include "nessie.catalogStorageEnv" . | trim | nindent 12 -}}
