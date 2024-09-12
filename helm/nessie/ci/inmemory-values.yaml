@@ -30,7 +30,6 @@ catalog:
       override2: value2
     warehouses:
     - name: warehouse1
-      location: "s3://bucket1.prod-us/warehouse-{{ .Release.Namespace }}"
       configDefaults:
         default1: value11
         default2: value22
@@ -44,10 +43,6 @@ catalog:
       defaultOptions:
         region: us-west-2
         endpoint: s3.amazonaws.com
-#        accessKeySecret:
-#          name: s3-access-key
-#          awsAccessKeyId: access-key-id
-#          awsSecretAccessKey: secret-access-key
       buckets:
         - name: bucket1.{{ .Release.Namespace }}
           endpoint: prod-us.s3.amazonaws.com
@@ -55,26 +50,16 @@ catalog:
         - name: bucket2.{{ .Release.Namespace }}
           endpoint: prod-us2.s3.amazonaws.com
           region: us-east-2
-#          accessKeySecret:
-#            name: s3-access-key
-#            awsAccessKeyId: access-key-id
-#            awsSecretAccessKey: secret-access-key
     gcs:
       transport:
         readTimeout: PT1M
       defaultOptions:
         host: https://storage.googleapis.com
-#        authCredentialsJsonSecret:
-#          name: gcs-credentials
-#          key: credentials.json
       buckets:
       - name: bucket1.{{ .Release.Namespace }}
         projectId: project-id
       - name: bucket2.{{ .Release.Namespace }}
         projectId: project-id
-#        authCredentialsJsonSecret:
-#          name: gcs-credentials
-#          key: credentials.json
 
     adls:
       transport:
@@ -93,10 +78,6 @@ catalog:
         retryPolicy: EXPONENTIAL_BACKOFF
         retryDelay: PT1S
         authType: NONE
-#        accountSecret:
-#          name: adls-account-secret
-#          accountName: account-name
-#          accountKey: account-key
       filesystems:
       - name: filesystem1-{{ .Release.Namespace }}
         endpoint: https://account1.azuredatalakestore.net
@@ -110,10 +91,6 @@ catalog:
         retryInterval: PT5S
         retryPolicy: EXPONENTIAL_BACKOFF
         retryDelay: PT1S
-#        accountSecret:
-#          name: adls-account-secret
-#          accountName: account-name
-#          accountKey: account-key
 
 livenessProbe:
   initialDelaySeconds: 2

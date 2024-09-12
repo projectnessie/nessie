@@ -28,8 +28,18 @@ helm-docs --chart-search-root=helm
 
 ## Documentation
 
-See [Nessie on Kubernetes](https://projectnessie.org/try/kubernetes/)
+For users: see [Nessie on Kubernetes](https://projectnessie.org/try/kubernetes/)
 for more information.
+
+For developers: to update this README file, e.g. when the chart is updated or when the template file
+`README.md.gotmpl` is updated, install the [helm-docs](https://github.com/norwoodj/helm-docs) tool,
+then run:
+
+```bash
+helm-docs --chart-search-root=helm
+```
+
+Note: don't modify the README.md file directly, please modify `README.md.gotmpl` instead.
 
 ## Installation
 
@@ -40,7 +50,7 @@ helm repo update
 helm install --namespace nessie-ns nessie nessie-helm/nessie
 ```
 
-### From local directory (for development purposes)
+### From local directory (for development purposes ONLY!)
 
 From Nessie repo root:
 
@@ -48,37 +58,48 @@ From Nessie repo root:
 helm install --namespace nessie-ns nessie helm/nessie
 ```
 
+Beware that the local chart may contain changes that are not yet released.
+
 ### Uninstalling the chart
 
 ```bash
 helm uninstall --namespace nessie-ns nessie
 ```
 
-### Linting
+## Debugging, linting & testing locally
 
-From the `helm/nessie` directory, you can run these commands to run the chart-testing (`ct`) or `helm` tools
-via Podman/Docker if you don't have those installed locally (replace `podman` with `docker`, if you use Docker).
+To debug the rendering of Helm templates:
 
 ```bash
-podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing ct lint --debug --charts /helm/nessie
+helm template nessie -n nessie-ns helm/nessie --debug
 ```
 
-And also `helm lint`:
+You can also provide a values file:
 
 ```bash
-podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm lint /helm/nessie --values /helm/nessie/ci/inmemory-values.yaml
+helm template nessie -n nessie-ns helm/nessie --values helm/nessie/ci/inmemory-values.yaml --debug
 ```
 
-To debug the generated `helm lint`:
+For linting and testing, the [chart-testing](https://github.com/helm/chart-testing) tool (`ct`) must
+be installed.
+
+To lint the Helm chart, use `ct lint`:
 
 ```bash
-podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns .
+ct lint --charts helm/nessie
 ```
 
-To debug the generated `helm lint` other values:
+To test the charts against a local running minikube cluster, first create the namespace and apply the fixtures:
 
 ```bash
-podman run -v=$(realpath .):/helm/nessie --rm -ti quay.io/helmpack/chart-testing helm template --debug --namespace nessie-ns --values ci/catalog-secrets-values.yaml .
+kubectl create namespace nessie-ns
+kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
+```
+
+Then run the tests with `ct install`:
+
+```bash
+ct install --charts ./helm/nessie --namespace nessie-ns --debug
 ```
 
 {{ template "chart.valuesSection" . }}

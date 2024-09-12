@@ -841,7 +841,7 @@ jobs:
       - name: Install secrets
         run: |
           kubectl create namespace nessie-ns
-          kubectl apply --namespace nessie-ns $(find helm/nessie/ci/secrets -name "*.yaml" -printf '-f %p ')
+          kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;) 
 
       - name: Run chart-testing (install)
         run: |
