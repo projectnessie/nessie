@@ -20,6 +20,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Helm chart: fixed a regression where a datasource secret would result in a failure to deploy the
+  chart.
+
 ### Commits
 
 ## [0.96.0] Release (2024-09-11)
