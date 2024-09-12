@@ -30,7 +30,6 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.config.NessieClientConfigSource;
 
@@ -76,22 +75,20 @@ public final class CatalogUtils {
     }
   }
 
-  static NessieApiV1 buildApi(NessieClientConfigSource nessieClientConfigMapper) {
+  static NessieApiV2 buildApi(NessieClientConfigSource nessieClientConfigMapper) {
     NessieClientBuilder nessieClientBuilder =
         NessieClientBuilder.createClientBuilderFromSystemSettings(nessieClientConfigMapper);
     String clientApiVer = nessieClientConfigMapper.getValue("nessie.client-api-version");
     if (clientApiVer == null) {
-      clientApiVer = "1";
+      clientApiVer = "2";
     }
     switch (clientApiVer) {
-      case "1":
-        return nessieClientBuilder.build(NessieApiV1.class);
       case "2":
         return nessieClientBuilder.build(NessieApiV2.class);
       default:
         throw new IllegalArgumentException(
             String.format(
-                "Unsupported client-api-version value: %s. Can only be 1 or 2", clientApiVer));
+                "Unsupported client-api-version value: %s. Can only be '2'", clientApiVer));
     }
   }
 
