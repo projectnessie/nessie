@@ -29,7 +29,7 @@ runs:
         fi
 
     - name: Gradle / Setup
-      uses: gradle/actions/setup-gradle@16bf8bc8fe830fa669c3c9f914d3eb147c629707 # v4
+      uses: gradle/actions/setup-gradle@d156388eb19639ec20ade50009f3d199ce1e2808 # v4
       with:
         cache-read-only: ${{ inputs.cache-read-only }}
         validate-wrappers: false
