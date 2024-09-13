@@ -12,6 +12,7 @@ Download options for this Nessie {{ versions.nessie }} release:
 * [Nessie Server](#nessie-server)
 * [CLI & REPL](#nessie-cli--repl)
 * [GC Tool](#nessie-gc-tool)
+* [Server Admin Tool](#nessie-server-admin-tool)
 * [REST OpenAPI](#nessie-rest-api)
 * [Maven Central](#nessie-artifacts-on-maven-central)
 * [License Reports](#license-reports)
