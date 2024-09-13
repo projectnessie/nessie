@@ -54,6 +54,12 @@ dependencyResolutionManagement {
         mavenPom()
       }
     }
+    // Only used for nessie-events-ri
+    maven {
+      name = "Confluent"
+      url = URI("https://packages.confluent.io/maven/")
+      mavenContent { releasesOnly() }
+    }
   }
 }
 
