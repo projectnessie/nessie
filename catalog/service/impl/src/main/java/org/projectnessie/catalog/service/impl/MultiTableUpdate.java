@@ -20,6 +20,9 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
+import org.projectnessie.catalog.model.ops.CatalogOperation;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
@@ -87,7 +90,7 @@ final class MultiTableUpdate {
     checkState(!committed, "Already committed");
     synchronized (this) {
       tableUpdates.add(singleTableUpdate);
-      nessieCommit.operation(Operation.Put.of(key, singleTableUpdate.content));
+      nessieCommit.operation(Operation.Put.of(key, singleTableUpdate.contentAfter));
     }
   }
 
@@ -98,15 +101,45 @@ final class MultiTableUpdate {
     }
   }
 
-  static final class SingleTableUpdate {
+  final class SingleTableUpdate implements CatalogOperationResult {
     final NessieEntitySnapshot<?> snapshot;
-    final Content content;
-    final ContentKey key;
+    final Content contentBefore;
+    final Content contentAfter;
+    final CatalogOperation<?> op;
 
-    SingleTableUpdate(NessieEntitySnapshot<?> snapshot, Content content, ContentKey key) {
+    SingleTableUpdate(
+        NessieEntitySnapshot<?> snapshot,
+        Content contentBefore,
+        Content contentAfter,
+        CatalogOperation<?> op) {
       this.snapshot = snapshot;
-      this.content = content;
-      this.key = key;
+      this.contentBefore = contentBefore;
+      this.contentAfter = contentAfter;
+      this.op = op;
+    }
+
+    @Override
+    public CatalogOperation<?> getOperation() {
+      return op;
+    }
+
+    @Nullable
+    @jakarta.annotation.Nullable
+    @Override
+    public Content getContentBefore() {
+      return contentBefore;
+    }
+
+    @Nullable
+    @jakarta.annotation.Nullable
+    @Override
+    public Content getContentAfter() {
+      return contentAfter;
+    }
+
+    @Override
+    public Branch getEffectiveBranch() {
+      return targetBranch;
     }
   }
 }

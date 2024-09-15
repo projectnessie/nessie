@@ -15,21 +15,26 @@
  */
 package org.projectnessie.catalog.model.ops;
 
-import java.util.List;
+import javax.annotation.Nullable;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
+/** The result of successful a catalog operation. */
+@NessieImmutable
+public interface CatalogOperationResult {
 
-  CatalogOperationType getOperationType();
+  /** The requested operation. */
+  CatalogOperation<?> getOperation();
 
-  ContentKey getContentKey();
+  @Nullable
+  @jakarta.annotation.Nullable
+  Content getContentBefore();
 
-  Content.Type getContentType();
+  @Nullable
+  @jakarta.annotation.Nullable
+  Content getContentAfter();
 
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
+  /** The effective branch HEAD after the operation. */
+  Branch getEffectiveBranch();
 }

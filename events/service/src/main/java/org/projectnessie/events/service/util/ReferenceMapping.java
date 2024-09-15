@@ -18,6 +18,7 @@ package org.projectnessie.events.service.util;
 import java.util.Optional;
 import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.Reference;
+import org.projectnessie.model.Branch;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.NamedRef;
@@ -32,6 +33,14 @@ public final class ReferenceMapping {
         .type(getReferenceType(refName))
         .fullName(getFullReferenceName(refName))
         .simpleName(refName.getName())
+        .build();
+  }
+
+  public static Reference map(Branch branch) {
+    return ImmutableReference.builder()
+        .type(Reference.BRANCH)
+        .fullName("refs/heads/" + branch.getName())
+        .simpleName(branch.getName())
         .build();
   }
 

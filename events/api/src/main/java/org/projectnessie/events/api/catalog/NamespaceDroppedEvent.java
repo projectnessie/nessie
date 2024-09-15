@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.model.ops;
+package org.projectnessie.events.api.catalog;
 
-import java.util.List;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+import org.immutables.value.Value;
+import org.projectnessie.events.api.EventType;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
+@Value.Immutable
+public interface NamespaceDroppedEvent extends NamespaceEvent, WithContentBeforeEvent {
 
-  CatalogOperationType getOperationType();
-
-  ContentKey getContentKey();
-
-  Content.Type getContentType();
-
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
+  @Override
+  @Value.Default
+  default EventType getType() {
+    return EventType.NAMESPACE_DROPPED;
+  }
 }

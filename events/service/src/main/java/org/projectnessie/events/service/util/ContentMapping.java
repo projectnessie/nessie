@@ -18,10 +18,14 @@ package org.projectnessie.events.service.util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Map;
+import org.projectnessie.catalog.model.ops.CatalogOperation;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.ImmutableContent;
+import org.projectnessie.events.api.catalog.ImmutableCatalogOperation;
+import org.projectnessie.events.api.catalog.ImmutableCatalogUpdate;
 
 public final class ContentMapping {
 
@@ -43,5 +47,23 @@ public final class ContentMapping {
 
   public static ContentKey map(org.projectnessie.model.ContentKey key) {
     return ContentKey.of(key.getElements());
+  }
+
+  public static ImmutableCatalogOperation map(CatalogOperation<?> operation) {
+    Map<String, ?> operationMap = MAPPER.convertValue(operation, MAP_TYPE);
+    operationMap.remove("operationType");
+    operationMap.remove("contentKey");
+    operationMap.remove("contentType");
+    List<?> updates = (List<?>) operationMap.remove("updates");
+    ImmutableCatalogOperation.Builder builder =
+        ImmutableCatalogOperation.builder().properties(operationMap);
+    for (Object update : updates) {
+      @SuppressWarnings("unchecked")
+      Map<String, ?> updateMap = (Map<String, ?>) update;
+      String action = (String) updateMap.remove("action");
+      builder.addUpdate(
+          ImmutableCatalogUpdate.builder().action(action).properties(updateMap).build());
+    }
+    return builder.build();
   }
 }

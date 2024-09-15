@@ -25,6 +25,15 @@ import org.projectnessie.events.api.ReferenceCreatedEvent;
 import org.projectnessie.events.api.ReferenceDeletedEvent;
 import org.projectnessie.events.api.ReferenceUpdatedEvent;
 import org.projectnessie.events.api.TransplantEvent;
+import org.projectnessie.events.api.catalog.NamespaceAlteredEvent;
+import org.projectnessie.events.api.catalog.NamespaceCreatedEvent;
+import org.projectnessie.events.api.catalog.NamespaceDroppedEvent;
+import org.projectnessie.events.api.catalog.TableAlteredEvent;
+import org.projectnessie.events.api.catalog.TableCreatedEvent;
+import org.projectnessie.events.api.catalog.TableDroppedEvent;
+import org.projectnessie.events.api.catalog.ViewAlteredEvent;
+import org.projectnessie.events.api.catalog.ViewCreatedEvent;
+import org.projectnessie.events.api.catalog.ViewDroppedEvent;
 
 /**
  * A subscriber for events.
@@ -126,6 +135,33 @@ public interface EventSubscriber extends AutoCloseable {
   /** Called when a content is removed (DELETE operation). */
   default void onContentRemoved(ContentRemovedEvent event) {}
 
+  /** Called when a table is created. */
+  default void onTableCreated(TableCreatedEvent event) {}
+
+  /** Called when a table is updated. */
+  default void onTableUpdated(TableAlteredEvent event) {}
+
+  /** Called when a table is dropped. */
+  default void onTableDropped(TableDroppedEvent event) {}
+
+  /** Called when a view is created. */
+  default void onViewCreated(ViewCreatedEvent event) {}
+
+  /** Called when a view is updated. */
+  default void onViewUpdated(ViewAlteredEvent event) {}
+
+  /** Called when a view is dropped. */
+  default void onViewDropped(ViewDroppedEvent event) {}
+
+  /** Called when a namespace is created. */
+  default void onNamespaceCreated(NamespaceCreatedEvent event) {}
+
+  /** Called when a namespace is updated. */
+  default void onNamespaceUpdated(NamespaceAlteredEvent event) {}
+
+  /** Called when a namespace is dropped. */
+  default void onNamespaceDropped(NamespaceDroppedEvent event) {}
+
   /**
    * Called when any event is received from Nessie. The default implementation simply dispatches to
    * the more specific methods.
@@ -155,6 +191,41 @@ public interface EventSubscriber extends AutoCloseable {
         break;
       case CONTENT_REMOVED:
         onContentRemoved((ContentRemovedEvent) event);
+        break;
+      case TABLE_CREATED:
+        onTableCreated((TableCreatedEvent) event);
+        break;
+      case TABLE_ALTERED:
+        onTableUpdated((TableAlteredEvent) event);
+        break;
+      case TABLE_DROPPED:
+        onTableDropped((TableDroppedEvent) event);
+        break;
+      case VIEW_CREATED:
+        onViewCreated((ViewCreatedEvent) event);
+        break;
+      case VIEW_ALTERED:
+        onViewUpdated((ViewAlteredEvent) event);
+        break;
+      case VIEW_DROPPED:
+        onViewDropped((ViewDroppedEvent) event);
+        break;
+      case NAMESPACE_CREATED:
+        onNamespaceCreated((NamespaceCreatedEvent) event);
+        break;
+      case NAMESPACE_ALTERED:
+        onNamespaceUpdated((NamespaceAlteredEvent) event);
+        break;
+      case NAMESPACE_DROPPED:
+        onNamespaceDropped((NamespaceDroppedEvent) event);
+        break;
+      case UDF_CREATED:
+      case UDF_ALTERED:
+      case UDF_DROPPED:
+      case GENERIC_CONTENT_CREATED:
+      case GENERIC_CONTENT_ALTERED:
+      case GENERIC_CONTENT_DROPPED:
+        // TODO: implement
         break;
       default:
         throw new IllegalArgumentException("Unknown event type: " + event.getType());

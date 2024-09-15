@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +31,8 @@ import java.util.stream.StreamSupport;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.versioned.ResultType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +64,7 @@ public class EventSubscribers implements AutoCloseable {
 
   private final EnumSet<EventType> acceptedEventTypes;
   private final EnumSet<ResultType> acceptedResultTypes;
+  private final Set<Content.Type> acceptedContentTypes;
 
   // guarded by this
   private boolean started;
@@ -83,8 +87,12 @@ public class EventSubscribers implements AutoCloseable {
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(EventType.class)));
     acceptedResultTypes =
         acceptedEventTypes.stream()
-            .flatMap(EventSubscribers::map)
+            .flatMap(EventSubscribers::mapToResultType)
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResultType.class)));
+    acceptedContentTypes =
+        acceptedEventTypes.stream()
+            .flatMap(EventSubscribers::mapToContentType)
+            .collect(Collectors.toUnmodifiableSet());
   }
 
   /**
@@ -156,17 +164,25 @@ public class EventSubscribers implements AutoCloseable {
     return acceptedEventTypes.contains(type);
   }
 
-  /** Returns {@code true} if there are any subscribers for the given {@link ResultType}. */
+  /**
+   * Returns {@code true} if there are any subscribers for the given {@link ResultType}. This is
+   * used to filter version store events.
+   */
   public boolean hasSubscribersFor(ResultType resultType) {
     return acceptedResultTypes.contains(resultType);
   }
 
   /**
-   * Maps a {@link ResultType} to all {@link EventType}s that could be emitted for a result of that
-   * type.
+   * Returns {@code true} if there are any subscribers for the given {@link Content.Type}. This is
+   * used to filter catalog events.
    */
-  private static Stream<ResultType> map(EventType resultType) {
-    switch (resultType) {
+  public boolean hasSubscribersFor(Content.Type contentType) {
+    return acceptedContentTypes.contains(contentType);
+  }
+
+  /** Maps an {@link EventType} to all corresponding {@link ResultType}s. */
+  private static Stream<ResultType> mapToResultType(EventType eventType) {
+    switch (eventType) {
       case COMMIT:
       case CONTENT_STORED:
       case CONTENT_REMOVED:
@@ -181,8 +197,61 @@ public class EventSubscribers implements AutoCloseable {
         return Stream.of(ResultType.REFERENCE_ASSIGNED);
       case REFERENCE_DELETED:
         return Stream.of(ResultType.REFERENCE_DELETED);
+      case TABLE_CREATED:
+      case TABLE_ALTERED:
+      case TABLE_DROPPED:
+      case VIEW_CREATED:
+      case VIEW_ALTERED:
+      case VIEW_DROPPED:
+      case NAMESPACE_CREATED:
+      case NAMESPACE_ALTERED:
+      case NAMESPACE_DROPPED:
+      case UDF_CREATED:
+      case UDF_ALTERED:
+      case UDF_DROPPED:
+      case GENERIC_CONTENT_CREATED:
+      case GENERIC_CONTENT_ALTERED:
+      case GENERIC_CONTENT_DROPPED:
+        return Stream.of();
       default:
-        throw new IllegalArgumentException("Unknown result type: " + resultType);
+        throw new IllegalArgumentException("Unknown event type: " + eventType);
+    }
+  }
+
+  /** Maps an {@link EventType} to all corresponding {@link Content.Type}s. */
+  private static Stream<Content.Type> mapToContentType(EventType eventType) {
+    switch (eventType) {
+      case TABLE_CREATED:
+      case TABLE_ALTERED:
+      case TABLE_DROPPED:
+        return Stream.of(Type.ICEBERG_TABLE, Type.DELTA_LAKE_TABLE);
+      case VIEW_CREATED:
+      case VIEW_ALTERED:
+      case VIEW_DROPPED:
+        return Stream.of(Type.ICEBERG_VIEW);
+      case NAMESPACE_CREATED:
+      case NAMESPACE_ALTERED:
+      case NAMESPACE_DROPPED:
+        return Stream.of(Type.NAMESPACE);
+      case UDF_CREATED:
+      case UDF_ALTERED:
+      case UDF_DROPPED:
+        return Stream.of(Type.UDF);
+      case GENERIC_CONTENT_CREATED:
+      case GENERIC_CONTENT_ALTERED:
+      case GENERIC_CONTENT_DROPPED:
+        return Stream.of(Type.UNKNOWN);
+      case COMMIT:
+      case CONTENT_STORED:
+      case CONTENT_REMOVED:
+      case MERGE:
+      case TRANSPLANT:
+      case REFERENCE_CREATED:
+      case REFERENCE_UPDATED:
+      case REFERENCE_DELETED:
+        return Stream.of();
+      default:
+        throw new IllegalArgumentException("Unknown event type: " + eventType);
     }
   }
 }

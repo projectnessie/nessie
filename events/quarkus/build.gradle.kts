@@ -22,11 +22,17 @@ plugins {
 publishingHelper { mavenName = "Nessie - Events - Quarkus" }
 
 dependencies {
+  implementation(project(":nessie-model"))
+  implementation(project(":nessie-catalog-model"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
   implementation(project(":nessie-events-service"))
   implementation(project(":nessie-quarkus-config"))
+
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // Quarkus
   implementation(enforcedPlatform(libs.quarkus.bom))

@@ -15,21 +15,12 @@
  */
 package org.projectnessie.catalog.model.ops;
 
-import java.util.List;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+import org.projectnessie.nessie.immutables.NessieImmutable;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
+/** Common interface for an update applied to a content. */
+@NessieImmutable
+public interface CatalogUpdate {
 
-  CatalogOperationType getOperationType();
-
-  ContentKey getContentKey();
-
-  Content.Type getContentType();
-
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
+  /** The logical name of the action that was performed. */
+  String getAction();
 }

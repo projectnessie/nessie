@@ -20,6 +20,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
@@ -33,6 +34,16 @@ import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
 import org.projectnessie.events.api.ImmutableReferenceDeletedEvent;
 import org.projectnessie.events.api.ImmutableReferenceUpdatedEvent;
 import org.projectnessie.events.api.ImmutableTransplantEvent;
+import org.projectnessie.events.api.catalog.ImmutableNamespaceAlteredEvent;
+import org.projectnessie.events.api.catalog.ImmutableNamespaceCreatedEvent;
+import org.projectnessie.events.api.catalog.ImmutableNamespaceDroppedEvent;
+import org.projectnessie.events.api.catalog.ImmutableTableAlteredEvent;
+import org.projectnessie.events.api.catalog.ImmutableTableCreatedEvent;
+import org.projectnessie.events.api.catalog.ImmutableTableDroppedEvent;
+import org.projectnessie.events.api.catalog.ImmutableViewAlteredEvent;
+import org.projectnessie.events.api.catalog.ImmutableViewCreatedEvent;
+import org.projectnessie.events.api.catalog.ImmutableViewDroppedEvent;
+import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.service.util.ReferenceMapping;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -197,6 +208,144 @@ public class EventFactory {
         .hash(hash.asString())
         .contentKey(contentKey)
         .commitCreationTimestamp(commitTimestamp)
+        .build();
+  }
+
+  protected Event newTableCreatedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableTableCreatedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  protected Event newTableDroppedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableTableDroppedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  protected Event newTableAlteredEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableTableAlteredEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  protected Event newViewCreatedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableViewCreatedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  protected Event newViewDroppedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableViewDroppedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  protected Event newViewAlteredEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableViewAlteredEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  public Event newNamespaceCreatedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableNamespaceCreatedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  public Event newNamespaceDroppedEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableNamespaceDroppedEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .operation(ContentMapping.map(result.getOperation()))
+        .build();
+  }
+
+  public Event newNamespaceAlteredEvent(
+      CatalogOperationResult result, String repositoryId, @Nullable Principal user) {
+    return ImmutableNamespaceAlteredEvent.builder()
+        .id(config.getIdGenerator().get())
+        .eventCreationTimestamp(config.getClock().instant())
+        .eventInitiator(extractName(user))
+        .repositoryId(repositoryId)
+        .properties(config.getStaticProperties())
+        .reference(ReferenceMapping.map(result.getEffectiveBranch()))
+        .hash(result.getEffectiveBranch().getHash())
+        .contentBefore(ContentMapping.map(result.getContentBefore()))
+        .contentAfter(ContentMapping.map(result.getContentAfter()))
+        .operation(ContentMapping.map(result.getOperation()))
         .build();
   }
 
