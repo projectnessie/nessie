@@ -1103,13 +1103,13 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               op -> {
                 switch (op.operationType()) {
                   case CREATE:
-                    check.canCreateEntity(branchName, op.identifiedKey());
+                    check.canCreateEntity(branchName, op.identifiedKey(), null);
                     break;
                   case UPDATE:
-                    check.canUpdateEntity(branchName, op.identifiedKey());
+                    check.canUpdateEntity(branchName, op.identifiedKey(), null);
                     break;
                   case DELETE:
-                    check.canDeleteEntity(branchName, op.identifiedKey());
+                    check.canDeleteEntity(branchName, op.identifiedKey(), null);
                     break;
                   default:
                     throw new UnsupportedOperationException(

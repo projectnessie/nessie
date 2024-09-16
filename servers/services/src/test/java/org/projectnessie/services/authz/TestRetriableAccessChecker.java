@@ -103,15 +103,19 @@ class TestRetriableAccessChecker {
 
     RetriableAccessChecker checker = new RetriableAccessChecker(validator);
     BranchName ref = BranchName.of("test");
-    assertThat(checker.newAttempt().canCreateEntity(ref, t1).check()).isEmpty();
+    assertThat(checker.newAttempt().canCreateEntity(ref, t1, Check.Component.ALL_SET).check())
+        .isEmpty();
     assertThat(checked)
-        .containsExactly(Check.canViewReference(ref), Check.canCreateEntity(ref, t1));
+        .containsExactly(
+            Check.canViewReference(ref), Check.canCreateEntity(ref, t1, Check.Component.ALL_SET));
     assertThat(checkCount).isEqualTo(1);
 
     // repeating the attempt with different checks' data results in re-validation
-    assertThat(checker.newAttempt().canCreateEntity(ref, t2).check()).isEmpty();
+    assertThat(checker.newAttempt().canCreateEntity(ref, t2, Check.Component.ALL_SET).check())
+        .isEmpty();
     assertThat(checked)
-        .containsExactly(Check.canViewReference(ref), Check.canCreateEntity(ref, t2));
+        .containsExactly(
+            Check.canViewReference(ref), Check.canCreateEntity(ref, t2, Check.Component.ALL_SET));
     assertThat(checkCount).isEqualTo(2);
   }
 }

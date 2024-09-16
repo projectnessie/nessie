@@ -21,6 +21,7 @@ plugins { id("nessie-conventions-server") }
 publishingHelper { mavenName = "Nessie - Services" }
 
 dependencies {
+  implementation(project(":nessie-authz-spi"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
@@ -46,6 +47,7 @@ dependencies {
 
   testFixturesImplementation(libs.guava)
 
+  testFixturesApi(project(":nessie-authz-spi"))
   testFixturesApi(project(":nessie-model"))
   testFixturesApi(project(":nessie-versioned-spi"))
 

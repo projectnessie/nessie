@@ -25,10 +25,10 @@ import org.projectnessie.services.authz.BatchAccessChecker;
 @AuthorizerType("CEL")
 @Dependent
 public class CelAuthorizer implements Authorizer {
-  private final CompiledAuthorizationRules compiledRules;
+  private final QuarkusCompiledAuthorizationRules compiledRules;
 
   @Inject
-  public CelAuthorizer(CompiledAuthorizationRules compiledRules) {
+  public CelAuthorizer(QuarkusCompiledAuthorizationRules compiledRules) {
     this.compiledRules = compiledRules;
   }
 

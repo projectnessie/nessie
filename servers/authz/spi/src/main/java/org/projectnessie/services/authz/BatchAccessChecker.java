@@ -17,6 +17,7 @@ package org.projectnessie.services.authz;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Map;
+import java.util.Set;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Detached;
@@ -166,7 +167,8 @@ public interface BatchAccessChecker {
    * @param identifiedKey content key / ID / type to check
    */
   @CanIgnoreReturnValue
-  BatchAccessChecker canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey);
+  BatchAccessChecker canReadEntityValue(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components);
 
   /**
    * Checks whether the given role/principal is allowed to create a new entity value as defined by
@@ -179,7 +181,8 @@ public interface BatchAccessChecker {
    * @param identifiedKey content key / ID / type to check
    */
   @CanIgnoreReturnValue
-  BatchAccessChecker canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
+  BatchAccessChecker canCreateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components);
 
   /**
    * Checks whether the given role/principal is allowed to update an existing entity value as
@@ -192,7 +195,8 @@ public interface BatchAccessChecker {
    * @param identifiedKey content key / ID / type to check
    */
   @CanIgnoreReturnValue
-  BatchAccessChecker canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
+  BatchAccessChecker canUpdateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components);
 
   /**
    * Checks whether the given role/principal is allowed to delete an entity value as defined by the
@@ -205,7 +209,8 @@ public interface BatchAccessChecker {
    * @param identifiedKey content key / ID / type to check
    */
   @CanIgnoreReturnValue
-  BatchAccessChecker canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey);
+  BatchAccessChecker canDeleteEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components);
 
   @CanIgnoreReturnValue
   BatchAccessChecker canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType);

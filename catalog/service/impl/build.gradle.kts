@@ -63,6 +63,7 @@ dependencies {
   testFixturesApi(project(":nessie-catalog-secrets-api"))
   testFixturesApi(project(":nessie-object-storage-mock"))
   testFixturesApi(project(":nessie-combined-cs"))
+  testFixturesApi(project(":nessie-authz-spi"))
   testFixturesApi(project(":nessie-services"))
   testFixturesApi(project(":nessie-services-config"))
   testFixturesApi(project(":nessie-versioned-spi"))

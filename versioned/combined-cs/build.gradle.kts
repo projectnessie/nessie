@@ -22,6 +22,7 @@ dependencies {
   api(project(":nessie-client"))
   api(project(":nessie-model"))
   implementation(project(":nessie-rest-services"))
+  implementation(project(":nessie-authz-spi"))
   implementation(project(":nessie-services"))
   implementation(project(":nessie-services-config"))
   implementation(project(":nessie-server-store"))

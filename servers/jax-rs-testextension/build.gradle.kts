@@ -27,6 +27,7 @@ dependencies {
   api(project(":nessie-rest-common"))
   api(project(":nessie-rest-services"))
   runtimeOnly(project(":nessie-server-store"))
+  api(project(":nessie-authz-spi"))
   api(project(":nessie-services"))
   api(project(":nessie-services-config"))
   api(project(":nessie-versioned-spi"))

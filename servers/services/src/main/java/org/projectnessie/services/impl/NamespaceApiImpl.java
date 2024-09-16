@@ -373,13 +373,13 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                       op -> {
                         switch (op.operationType()) {
                           case CREATE:
-                            check.canCreateEntity(branch, op.identifiedKey());
+                            check.canCreateEntity(branch, op.identifiedKey(), null);
                             break;
                           case UPDATE:
-                            check.canUpdateEntity(branch, op.identifiedKey());
+                            check.canUpdateEntity(branch, op.identifiedKey(), null);
                             break;
                           case DELETE:
-                            check.canDeleteEntity(branch, op.identifiedKey());
+                            check.canDeleteEntity(branch, op.identifiedKey(), null);
                             break;
                           default:
                             throw new UnsupportedOperationException(

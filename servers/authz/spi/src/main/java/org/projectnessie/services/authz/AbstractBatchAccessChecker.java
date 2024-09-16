@@ -20,6 +20,7 @@ import static java.util.Collections.emptyMap;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.NamedRef;
@@ -97,29 +98,33 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
-  public BatchAccessChecker canReadEntityValue(NamedRef ref, IdentifiedContentKey identifiedKey) {
+  public BatchAccessChecker canReadEntityValue(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components) {
     canViewReference(ref);
-    return can(Check.canReadEntityValue(ref, identifiedKey));
+    return can(Check.canReadEntityValue(ref, identifiedKey, components));
   }
 
   @Override
   @Deprecated
-  public BatchAccessChecker canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+  public BatchAccessChecker canCreateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components) {
     canViewReference(ref);
-    return can(Check.canCreateEntity(ref, identifiedKey));
+    return can(Check.canCreateEntity(ref, identifiedKey, components));
   }
 
   @Override
   @Deprecated
-  public BatchAccessChecker canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+  public BatchAccessChecker canUpdateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components) {
     canViewReference(ref);
-    return can(Check.canUpdateEntity(ref, identifiedKey));
+    return can(Check.canUpdateEntity(ref, identifiedKey, components));
   }
 
   @Override
-  public BatchAccessChecker canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
+  public BatchAccessChecker canDeleteEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<Check.Component> components) {
     canViewReference(ref);
-    return can(Check.canDeleteEntity(ref, identifiedKey));
+    return can(Check.canDeleteEntity(ref, identifiedKey, components));
   }
 
   @Override

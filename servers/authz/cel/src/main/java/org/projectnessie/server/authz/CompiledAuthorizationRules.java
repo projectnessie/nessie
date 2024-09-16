@@ -17,34 +17,51 @@ package org.projectnessie.server.authz;
 
 import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.quarkus.runtime.Startup;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.projectnessie.cel.checker.Decls;
+import org.projectnessie.cel.relocated.com.google.api.expr.v1alpha1.Decl;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
-import org.projectnessie.services.cel.CELUtil;
+import org.projectnessie.cel.tools.ScriptHost;
+import org.projectnessie.cel.types.jackson.JacksonRegistry;
 
 /**
- * Compiles the authorization rules from {@link QuarkusNessieAuthorizationConfig} at startup and
- * provides access to them via {@link CompiledAuthorizationRules#getRules()}.
+ * Compiles the CEL authorization rules and provides access to them via {@link
+ * CompiledAuthorizationRules#getRules()}.
  */
-@Singleton
-@Startup
 public class CompiledAuthorizationRules {
-  private final QuarkusNessieAuthorizationConfig config;
-  private final Map<String, Script> compiledRules;
   private static final String ALLOW_VIEWING_ALL_REFS_ID = "__ALLOW_VIEWING_REF_ID";
   private static final String ALLOW_VIEWING_ALL_REFS =
       String.format("op=='%s' && ref.matches('.*')", VIEW_REFERENCE);
 
-  @Inject
-  public CompiledAuthorizationRules(QuarkusNessieAuthorizationConfig config) {
-    this.config = config;
-    this.compiledRules = compileAuthorizationRules();
+  private final Map<String, Script> compiledRules;
+
+  public static final String CONTAINER = "org.projectnessie.model";
+  public static final String VAR_REF = "ref";
+  public static final String VAR_PATH = "path";
+  public static final String VAR_ROLE = "role";
+  public static final String VAR_ROLES = "roles";
+  public static final String VAR_OP = "op";
+  public static final String VAR_CONTENT_TYPE = "contentType";
+
+  public static final List<Decl> AUTHORIZATION_RULE_DECLARATIONS =
+      ImmutableList.of(
+          Decls.newVar(VAR_REF, Decls.String),
+          Decls.newVar(VAR_PATH, Decls.String),
+          Decls.newVar(VAR_CONTENT_TYPE, Decls.String),
+          Decls.newVar(VAR_ROLE, Decls.String),
+          Decls.newVar(VAR_ROLES, Decls.newListType(Decls.String)),
+          Decls.newVar(VAR_OP, Decls.String));
+
+  private final ScriptHost scriptHost =
+      ScriptHost.newBuilder().registry(JacksonRegistry.newRegistry()).build();
+
+  public CompiledAuthorizationRules(Map<String, String> rules) {
+    this.compiledRules = compileAuthorizationRules(rules);
   }
 
   /**
@@ -52,8 +69,8 @@ public class CompiledAuthorizationRules {
    *
    * @return A map of compiled authorization rules
    */
-  private Map<String, Script> compileAuthorizationRules() {
-    Map<String, String> rules = new HashMap<>(config.rules());
+  private Map<String, Script> compileAuthorizationRules(Map<String, String> rules) {
+    rules = new HashMap<>(rules);
     // by default we allow viewing all references until there's a user-defined VIEW_REFERENCE rule
     if (rules.entrySet().stream().noneMatch(r -> r.getValue().contains(VIEW_REFERENCE.name()))) {
       rules.put(ALLOW_VIEWING_ALL_REFS_ID, ALLOW_VIEWING_ALL_REFS);
@@ -65,10 +82,10 @@ public class CompiledAuthorizationRules {
                 key,
                 (k) -> {
                   try {
-                    return CELUtil.SCRIPT_HOST
+                    return scriptHost
                         .buildScript(value)
-                        .withContainer(CELUtil.CONTAINER)
-                        .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
+                        .withContainer(CONTAINER)
+                        .withDeclarations(AUTHORIZATION_RULE_DECLARATIONS)
                         .build();
                   } catch (ScriptException e) {
                     throw new RuntimeException(

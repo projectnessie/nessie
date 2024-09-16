@@ -19,6 +19,7 @@ plugins { id("nessie-conventions-quarkus") }
 publishingHelper { mavenName = "Nessie - Quarkus Common" }
 
 dependencies {
+  implementation(project(":nessie-authz-spi"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-server-store"))

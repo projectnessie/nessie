@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,31 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-quarkus") }
+plugins { id("nessie-conventions-server") }
 
-publishingHelper { mavenName = "Nessie - Auth for Quarkus based servers" }
+publishingHelper { mavenName = "Nessie - AuthZ SPI" }
 
 dependencies {
-  implementation(project(":nessie-authz-spi"))
-  implementation(project(":nessie-authz-cel"))
   implementation(project(":nessie-model"))
-  implementation(project(":nessie-model"))
-  implementation(project(":nessie-quarkus-common"))
-  implementation(project(":nessie-quarkus-config"))
-  implementation(project(":nessie-services"))
+  implementation(project(":nessie-services-config"))
   implementation(project(":nessie-versioned-spi"))
+
+  compileOnly(libs.immutables.builder)
+  compileOnly(libs.immutables.value.annotations)
+  annotationProcessor(libs.immutables.value.processor)
 
   implementation(libs.guava)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkus:quarkus-security")
-  implementation("io.quarkus:quarkus-vertx-http")
+  compileOnly(libs.jakarta.validation.api)
+  compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.jakarta.enterprise.cdi.api)
 
-  implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-standalone")
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  testFixturesImplementation(libs.guava)
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)

@@ -19,6 +19,7 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.services.authz.Check.Component.ALL_SET;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -151,16 +152,16 @@ public class TestBatchAccessChecker {
         checker.canCommitChangeAgainstReference(c.ref());
         break;
       case READ_ENTITY_VALUE:
-        checker.canReadEntityValue(c.ref(), c.identifiedKey());
+        checker.canReadEntityValue(c.ref(), c.identifiedKey(), ALL_SET);
         break;
       case CREATE_ENTITY:
-        checker.canCreateEntity(c.ref(), c.identifiedKey());
+        checker.canCreateEntity(c.ref(), c.identifiedKey(), ALL_SET);
         break;
       case UPDATE_ENTITY:
-        checker.canUpdateEntity(c.ref(), c.identifiedKey());
+        checker.canUpdateEntity(c.ref(), c.identifiedKey(), ALL_SET);
         break;
       case DELETE_ENTITY:
-        checker.canDeleteEntity(c.ref(), c.identifiedKey());
+        checker.canDeleteEntity(c.ref(), c.identifiedKey(), ALL_SET);
         break;
       case READ_REPOSITORY_CONFIG:
         checker.canReadRepositoryConfig(c.repositoryConfigType());
@@ -184,7 +185,7 @@ public class TestBatchAccessChecker {
               if (t.isContent()) {
                 b.key(ContentKey.of("hello", "my", "table")).contentId("cid-foo");
               }
-              return b.build();
+              return b.components(ALL_SET).build();
             })
         .collect(Collectors.toList());
   }

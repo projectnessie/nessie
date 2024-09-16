@@ -15,12 +15,6 @@
  */
 package org.projectnessie.server.authz;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.projectnessie.services.authz.Check.CheckType.CREATE_REFERENCE;
-import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
-
-import jakarta.enterprise.inject.Instance;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
@@ -34,12 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
-import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessCheckException;
 import org.projectnessie.services.authz.AccessContext;
-import org.projectnessie.services.authz.Authorizer;
-import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.versioned.BranchName;
@@ -50,7 +40,7 @@ public class TestCELAuthZ {
 
   @Test
   public void addsViewAllRefsRule() throws ScriptException {
-    CompiledAuthorizationRules rules = new CompiledAuthorizationRules(buildConfig(true));
+    CompiledAuthorizationRules rules = new CompiledAuthorizationRules(buildConfig());
     soft.assertThat(rules.getRules().keySet())
         .containsExactlyInAnyOrder("foo", "bar", "baz", "contentType", "__ALLOW_VIEWING_REF_ID");
 
@@ -58,23 +48,24 @@ public class TestCELAuthZ {
             rules
                 .getRules()
                 .get("foo")
-                .execute(Boolean.class, Map.of("op", VIEW_REFERENCE.name(), "ref", "main")))
+                .execute(
+                    Boolean.class, Map.of("op", CheckType.VIEW_REFERENCE.name(), "ref", "main")))
         .isFalse();
 
     Script allowRefScript = rules.getRules().get("__ALLOW_VIEWING_REF_ID");
     soft.assertThat(
             allowRefScript.execute(
-                Boolean.class, Map.of("op", VIEW_REFERENCE.name(), "ref", "main")))
+                Boolean.class, Map.of("op", CheckType.VIEW_REFERENCE.name(), "ref", "main")))
         .isTrue();
     soft.assertThat(
             allowRefScript.execute(
-                Boolean.class, Map.of("op", CREATE_REFERENCE.name(), "ref", "main")))
+                Boolean.class, Map.of("op", CheckType.CREATE_REFERENCE.name(), "ref", "main")))
         .isFalse();
   }
 
   @Test
   void celBatchAccessChecker() {
-    QuarkusNessieAuthorizationConfig config = buildConfig(true);
+    Map<String, String> config = buildConfig();
 
     AtomicReference<String> user = new AtomicReference<>("some-user");
     AtomicReference<Set<String>> roles = new AtomicReference<>(Set.of("some-user"));
@@ -125,7 +116,7 @@ public class TestCELAuthZ {
   @ParameterizedTest
   @EnumSource(CheckType.class)
   void celBatchAccessCheckerEmptyChecks(CheckType type) {
-    QuarkusNessieAuthorizationConfig config = buildConfig(true);
+    Map<String, String> config = buildConfig();
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
     CelBatchAccessChecker batchAccessChecker = new CelBatchAccessChecker(rules, () -> () -> null);
     Check check = Check.builder(type).build();
@@ -138,59 +129,16 @@ public class TestCELAuthZ {
     }
   }
 
-  @Test
-  void celAuthorizer() {
-    QuarkusNessieAuthorizationConfig configEnabled = buildConfig(true);
-    QuarkusNessieAuthorizationConfig configDisabled = buildConfig(false);
-
-    CompiledAuthorizationRules rules = new CompiledAuthorizationRules(configEnabled);
-    CelAuthorizer celAuthorizer = new CelAuthorizer(rules);
-
-    @SuppressWarnings("unchecked")
-    Instance<Authorizer> authorizers = mock(Instance.class);
-    @SuppressWarnings("unchecked")
-    Instance<Authorizer> celAuthorizerInstance = mock(Instance.class);
-
-    when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);
-    when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
-    soft.assertThat(
-            new QuarkusAuthorizer(configEnabled, authorizers)
-                .startAccessCheck(() -> () -> "some-user"))
-        .isInstanceOf(CelBatchAccessChecker.class);
-
-    when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);
-    when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
-    soft.assertThat(
-            new QuarkusAuthorizer(configDisabled, authorizers)
-                .startAccessCheck(() -> () -> "some-user"))
-        .isSameAs(AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER);
-  }
-
-  private static QuarkusNessieAuthorizationConfig buildConfig(boolean enabled) {
-    return new QuarkusNessieAuthorizationConfig() {
-      @Override
-      public String authorizationType() {
-        return "CEL";
-      }
-
-      @Override
-      public boolean enabled() {
-        return enabled;
-      }
-
-      @Override
-      public Map<String, String> rules() {
-        return Map.of(
-            "foo",
-            "false",
-            "bar",
-            "'bar' in roles",
-            "baz",
-            "role=='baz'",
-            "contentType",
-            "op in ['READ_CONTENT_KEY', 'READ_ENTITY_VALUE', 'CREATE_ENTITY', 'UPDATE_ENTITY', 'DELETE_ENTITY'] "
-                + "&& contentType=='foo'");
-      }
-    };
+  private static Map<String, String> buildConfig() {
+    return Map.of(
+        "foo",
+        "false",
+        "bar",
+        "'bar' in roles",
+        "baz",
+        "role=='baz'",
+        "contentType",
+        "op in ['READ_CONTENT_KEY', 'READ_ENTITY_VALUE', 'CREATE_ENTITY', 'UPDATE_ENTITY', 'DELETE_ENTITY'] "
+            + "&& contentType=='foo'");
   }
 }

@@ -19,6 +19,7 @@ plugins { id("nessie-conventions-server") }
 publishingHelper { mavenName = "Nessie - REST Services" }
 
 dependencies {
+  implementation(project(":nessie-authz-spi"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-common"))
   implementation(project(":nessie-services"))

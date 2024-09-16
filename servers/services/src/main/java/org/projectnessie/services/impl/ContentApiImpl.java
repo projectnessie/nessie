@@ -77,9 +77,9 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       }
 
       if (obj != null && obj.content() != null) {
-        accessCheck.canReadEntityValue(r, obj.identifiedKey());
+        accessCheck.canReadEntityValue(r, obj.identifiedKey(), null);
         if (forWrite) {
-          accessCheck.canUpdateEntity(r, obj.identifiedKey());
+          accessCheck.canUpdateEntity(r, obj.identifiedKey(), null);
         }
 
         accessCheck.checkAndThrow();
@@ -89,8 +89,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
       if (forWrite) {
         accessCheck
-            .canReadEntityValue(r, requireNonNull(obj, "obj is null").identifiedKey())
-            .canCreateEntity(r, obj.identifiedKey());
+            .canReadEntityValue(r, requireNonNull(obj, "obj is null").identifiedKey(), null)
+            .canCreateEntity(r, obj.identifiedKey(), null);
       }
       accessCheck.checkAndThrow();
 
@@ -126,15 +126,15 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
                   e -> {
                     ContentResult contentResult = e.getValue();
                     IdentifiedContentKey identifiedKey = contentResult.identifiedKey();
-                    check.canReadEntityValue(r, identifiedKey);
+                    check.canReadEntityValue(r, identifiedKey, null);
                     if (contentResult.content() != null) {
                       if (forWrite) {
-                        check.canUpdateEntity(r, identifiedKey);
+                        check.canUpdateEntity(r, identifiedKey, null);
                       }
                       return true;
                     } else {
                       if (forWrite) {
-                        check.canCreateEntity(r, identifiedKey);
+                        check.canCreateEntity(r, identifiedKey, null);
                       }
                       return false;
                     }

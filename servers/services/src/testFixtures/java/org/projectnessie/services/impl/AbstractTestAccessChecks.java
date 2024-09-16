@@ -27,6 +27,7 @@ import static org.projectnessie.model.FetchOption.ALL;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
+import static org.projectnessie.services.authz.Check.Component.ALL_SET;
 import static org.projectnessie.services.authz.Check.canCommitChangeAgainstReference;
 import static org.projectnessie.services.authz.Check.canCreateEntity;
 import static org.projectnessie.services.authz.Check.canDeleteEntity;
@@ -157,20 +158,20 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     soft.assertThat(checks)
         .containsExactlyInAnyOrder(
             canViewReference(branch),
-            canReadEntityValue(branch, identifiedKeyNamespace),
-            canReadEntityValue(branch, identifiedKeyTable));
+            canReadEntityValue(branch, identifiedKeyNamespace, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyTable, ALL_SET));
 
     checks = recordAccessChecks();
     content(commit, false, keyNamespace);
     soft.assertThat(checks)
         .containsExactlyInAnyOrder(
-            canViewReference(branch), canReadEntityValue(branch, identifiedKeyNamespace));
+            canViewReference(branch), canReadEntityValue(branch, identifiedKeyNamespace, ALL_SET));
 
     checks = recordAccessChecks();
     content(commit, false, keyTable);
     soft.assertThat(checks)
         .containsExactlyInAnyOrder(
-            canViewReference(branch), canReadEntityValue(branch, identifiedKeyTable));
+            canViewReference(branch), canReadEntityValue(branch, identifiedKeyTable, ALL_SET));
 
     checks = recordAccessChecks();
     // Note: in practice the access-check throws before the content-not-found exception
@@ -186,12 +187,12 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .containsExactlyInAnyOrder(
             canCommitChangeAgainstReference(branch),
             canViewReference(branch),
-            canUpdateEntity(branch, identifiedKeyNamespace),
-            canUpdateEntity(branch, identifiedKeyTable),
-            canCreateEntity(branch, identifiedKeyNonExisting),
-            canReadEntityValue(branch, identifiedKeyNamespace),
-            canReadEntityValue(branch, identifiedKeyTable),
-            canReadEntityValue(branch, identifiedKeyNonExisting));
+            canUpdateEntity(branch, identifiedKeyNamespace, ALL_SET),
+            canUpdateEntity(branch, identifiedKeyTable, ALL_SET),
+            canCreateEntity(branch, identifiedKeyNonExisting, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyNamespace, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyTable, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyNonExisting, ALL_SET));
 
     checks = recordAccessChecks();
     content(commit, true, keyNamespace);
@@ -199,8 +200,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .containsExactlyInAnyOrder(
             canCommitChangeAgainstReference(branch),
             canViewReference(branch),
-            canUpdateEntity(branch, identifiedKeyNamespace),
-            canReadEntityValue(branch, identifiedKeyNamespace));
+            canUpdateEntity(branch, identifiedKeyNamespace, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyNamespace, ALL_SET));
 
     checks = recordAccessChecks();
     content(commit, true, keyTable);
@@ -208,8 +209,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .containsExactlyInAnyOrder(
             canCommitChangeAgainstReference(branch),
             canViewReference(branch),
-            canUpdateEntity(branch, identifiedKeyTable),
-            canReadEntityValue(branch, identifiedKeyTable));
+            canUpdateEntity(branch, identifiedKeyTable, ALL_SET),
+            canReadEntityValue(branch, identifiedKeyTable, ALL_SET));
 
     checks = recordAccessChecks();
     // Note: in practice the access-check throws before the content-not-found exception
@@ -219,8 +220,8 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .containsExactlyInAnyOrder(
             canCommitChangeAgainstReference(branch),
             canViewReference(branch),
-            canReadEntityValue(branch, identifiedKeyNonExisting),
-            canCreateEntity(branch, identifiedKeyNonExisting));
+            canReadEntityValue(branch, identifiedKeyNonExisting, ALL_SET),
+            canCreateEntity(branch, identifiedKeyNonExisting, ALL_SET));
   }
 
   @Test
@@ -304,10 +305,10 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     soft.assertThat(checks)
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
-        .contains(canCreateEntity(ref, identifiedKeyTable))
-        .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyTable, ALL_SET))
+        .contains(canDeleteEntity(ref, identifiedKeyUnrelated, ALL_SET));
 
     // Update entity on source branch
 
@@ -318,7 +319,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     soft.assertThat(checks)
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
-        .contains(canUpdateEntity(ref, identifiedKeyTable));
+        .contains(canUpdateEntity(ref, identifiedKeyTable, ALL_SET));
 
     // Merge
 
@@ -341,10 +342,10 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
         .contains(canViewReference(BranchName.of(source.getName())))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
-        .contains(canCreateEntity(ref, identifiedKeyTable))
-        .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyTable, ALL_SET))
+        .contains(canDeleteEntity(ref, identifiedKeyUnrelated, ALL_SET));
 
     // Transplant
 
@@ -367,11 +368,11 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         .contains(canCommitChangeAgainstReference(ref))
         .contains(canViewReference(ref))
         .contains(canViewReference(BranchName.of(source.getName())))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace1))
-        .contains(canCreateEntity(ref, identifiedKeyNamespace2))
-        .contains(canCreateEntity(ref, identifiedKeyTable))
-        .contains(canUpdateEntity(ref, identifiedKeyTable))
-        .contains(canDeleteEntity(ref, identifiedKeyUnrelated));
+        .contains(canCreateEntity(ref, identifiedKeyNamespace1, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyNamespace2, ALL_SET))
+        .contains(canCreateEntity(ref, identifiedKeyTable, ALL_SET))
+        .contains(canUpdateEntity(ref, identifiedKeyTable, ALL_SET))
+        .contains(canDeleteEntity(ref, identifiedKeyUnrelated, ALL_SET));
   }
 
   /**
