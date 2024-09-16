@@ -110,6 +110,8 @@ Related Quarkus settings:
 
 ### Catalog and Iceberg REST Settings
 
+{% include './generated-docs/smallrye-nessie_catalog.md' %}
+
 #### Warehouse defaults
 
 {% include './generated-docs/smallrye-nessie_catalog_warehouseDefaults.md' %}
