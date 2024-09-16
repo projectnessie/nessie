@@ -57,6 +57,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
@@ -88,9 +89,6 @@ import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.ServiceConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.impl.MultiTableUpdate.SingleTableUpdate;
-import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
-import org.projectnessie.client.api.GetContentBuilder;
-import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -104,6 +102,8 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
+import org.projectnessie.services.spi.ContentService;
+import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -116,7 +116,8 @@ public class CatalogServiceImpl implements CatalogService {
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogServiceImpl.class);
 
   @Inject ObjectIO objectIO;
-  @Inject NessieApiV2 nessieApi;
+  @Inject TreeService treeService;
+  @Inject ContentService contentService;
   @Inject Persist persist;
   @Inject TasksService tasksService;
   @Inject BackendExceptionMapper backendExceptionMapper;
@@ -152,12 +153,8 @@ public class CatalogServiceImpl implements CatalogService {
         keys);
 
     GetMultipleContentsResponse contentResponse =
-        nessieApi
-            .getContent()
-            .refName(reference.name())
-            .hashOnRef(reference.hashWithRelativeSpec())
-            .keys(keys)
-            .getWithResponse();
+        contentService.getMultipleContents(
+            reference.name(), reference.hashWithRelativeSpec(), keys, false, false);
 
     IcebergStuff icebergStuff = icebergStuff();
 
@@ -212,12 +209,8 @@ public class CatalogServiceImpl implements CatalogService {
         key);
 
     ContentResponse contentResponse =
-        nessieApi
-            .getContent()
-            .refName(reference.name())
-            .hashOnRef(reference.hashWithRelativeSpec())
-            .forWrite(forWrite)
-            .getSingle(key);
+        contentService.getContent(
+            key, reference.name(), reference.hashWithRelativeSpec(), false, forWrite);
     Content content = contentResponse.getContent();
     if (expectedType != null && !content.getType().equals(expectedType)) {
       throw new NessieContentNotFoundException(key, reference.name());
@@ -342,17 +335,19 @@ public class CatalogServiceImpl implements CatalogService {
         effectiveReference, result, fileName, "application/json", key, content, snapshot);
   }
 
-  CompletionStage<MultiTableUpdate> commit(ParsedReference reference, CatalogCommit commit)
+  CompletionStage<MultiTableUpdate> commit(
+      ParsedReference reference,
+      CatalogCommit commit,
+      Function<String, CommitMeta> commitMetaBuilder)
       throws BaseNessieClientServerException {
 
-    GetContentBuilder contentRequest =
-        nessieApi
-            .getContent()
-            .refName(reference.name())
-            .hashOnRef(reference.hashWithRelativeSpec())
-            .forWrite(true);
-    commit.getOperations().forEach(op -> contentRequest.key(op.getKey()));
-    GetMultipleContentsResponse contentsResponse = contentRequest.getWithResponse();
+    GetMultipleContentsResponse contentsResponse =
+        contentService.getMultipleContents(
+            reference.name(),
+            reference.hashWithRelativeSpec(),
+            commit.getOperations().stream().map(CatalogOperation::getKey).collect(toList()),
+            false,
+            true);
 
     checkArgument(
         requireNonNull(contentsResponse.getEffectiveReference()) instanceof Branch,
@@ -371,10 +366,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     IcebergStuff icebergStuff = icebergStuff();
 
-    CommitMultipleOperationsBuilder nessieCommit =
-        nessieApi.commitMultipleOperations().branch(target);
-
-    MultiTableUpdate multiTableUpdate = new MultiTableUpdate(nessieCommit, target);
+    MultiTableUpdate multiTableUpdate = new MultiTableUpdate(treeService, target);
 
     LOGGER.trace(
         "Executing commit containing {} operations against '{}@{}'",
@@ -414,7 +406,7 @@ public class CatalogServiceImpl implements CatalogService {
       }
     }
 
-    nessieCommit.commitMeta(CommitMeta.fromMessage(message.toString()));
+    multiTableUpdate.operations().commitMeta(commitMetaBuilder.apply(message.toString()));
 
     return commitBuilderStage
         // Perform the Nessie commit. At this point, all metadata files have been written.
@@ -479,9 +471,12 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Override
   public CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+      ParsedReference reference,
+      CatalogCommit commit,
+      SnapshotReqParams reqParams,
+      Function<String, CommitMeta> commitMetaBuilder)
       throws BaseNessieClientServerException {
-    return commit(reference, commit)
+    return commit(reference, commit, commitMetaBuilder)
         // Finally, transform each MultiTableUpdate.SingleTableUpdate to a SnapshotResponse
         .thenApply(
             updates ->

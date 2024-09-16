@@ -19,7 +19,6 @@ plugins { id("nessie-conventions-quarkus") }
 publishingHelper { mavenName = "Nessie - Quarkus Catalog" }
 
 dependencies {
-  implementation(project(":nessie-combined-cs"))
   implementation(project(":nessie-rest-services"))
   implementation(project(":nessie-quarkus-config"))
   implementation(project(":nessie-catalog-files-api"))

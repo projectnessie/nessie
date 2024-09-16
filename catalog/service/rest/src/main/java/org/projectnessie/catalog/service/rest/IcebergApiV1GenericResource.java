@@ -140,7 +140,8 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     // Although we don't return anything, need to make sure that the commit operation starts and all
     // results are consumed.
     return Uni.createFrom()
-        .completionStage(catalogService.commit(ref, commit.build(), reqParams))
+        .completionStage(
+            catalogService.commit(ref, commit.build(), reqParams, this::updateCommitMeta))
         .map(stream -> stream.reduce(null, (ident, snap) -> ident, (i1, i2) -> i1));
   }
 }

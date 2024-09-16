@@ -24,7 +24,6 @@ import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Disposes;
@@ -72,16 +71,12 @@ import org.projectnessie.catalog.service.impl.IcebergExceptionMapper;
 import org.projectnessie.catalog.service.impl.IllegalArgumentExceptionMapper;
 import org.projectnessie.catalog.service.impl.NessieExceptionMapper;
 import org.projectnessie.catalog.service.impl.PreviousTaskExceptionMapper;
-import org.projectnessie.client.api.NessieApiV2;
-import org.projectnessie.nessie.combined.CombinedClientBuilder;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
 import org.projectnessie.nessie.tasks.async.pool.JavaPoolTasksAsync;
 import org.projectnessie.nessie.tasks.async.wrapping.ThreadContextTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.nessie.tasks.service.impl.TasksServiceExecutor;
 import org.projectnessie.quarkus.config.CatalogServiceConfig;
-import org.projectnessie.services.rest.RestV2ConfigResource;
-import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -328,15 +323,5 @@ public class CatalogProducers {
         (SmallRyeThreadContext) threadContext,
         executor,
         "import-jobs");
-  }
-
-  @Produces
-  @RequestScoped
-  public NessieApiV2 nessieApiV2(
-      RestV2ConfigResource configResource, RestV2TreeResource treeResource) {
-    return new CombinedClientBuilder()
-        .withConfigResource(configResource)
-        .withTreeResource(treeResource)
-        .build(NessieApiV2.class);
   }
 }

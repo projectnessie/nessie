@@ -21,34 +21,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
-import org.projectnessie.client.api.CommitMultipleOperationsBuilder;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
+import org.projectnessie.services.spi.TreeService;
 
 /** Maintains state across all individual updates of a commit. */
 final class MultiTableUpdate {
-  private final CommitMultipleOperationsBuilder nessieCommit;
+  private final TreeService treeService;
+  private final ImmutableOperations.Builder operations;
   private final List<SingleTableUpdate> tableUpdates = new ArrayList<>();
   private final List<String> storedLocations = new ArrayList<>();
   private Map<ContentKey, String> addedContentsMap;
   private Branch targetBranch;
   private boolean committed;
 
-  MultiTableUpdate(CommitMultipleOperationsBuilder nessieCommit, Branch target) {
-    this.nessieCommit = nessieCommit;
+  MultiTableUpdate(TreeService treeService, Branch target) {
+    this.treeService = treeService;
+    this.operations = ImmutableOperations.builder();
     this.targetBranch = target;
+  }
+
+  ImmutableOperations.Builder operations() {
+    return operations;
   }
 
   MultiTableUpdate commit() throws NessieConflictException, NessieNotFoundException {
     synchronized (this) {
       committed = true;
       if (!tableUpdates.isEmpty()) {
-        CommitResponse commitResponse = nessieCommit.commitWithResponse();
+        CommitResponse commitResponse =
+            treeService.commitMultipleOperations(
+                targetBranch().getName(), targetBranch.getHash(), operations.build());
+
         addedContentsMap =
             commitResponse.getAddedContents() != null
                 ? commitResponse.toAddedContentsMap()
@@ -87,7 +97,7 @@ final class MultiTableUpdate {
     checkState(!committed, "Already committed");
     synchronized (this) {
       tableUpdates.add(singleTableUpdate);
-      nessieCommit.operation(Operation.Put.of(key, singleTableUpdate.content));
+      operations.addOperations(Operation.Put.of(key, singleTableUpdate.content));
     }
   }
 

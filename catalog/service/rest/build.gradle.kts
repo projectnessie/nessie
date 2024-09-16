@@ -30,8 +30,9 @@ dependencies {
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-secrets-api"))
   implementation(project(":nessie-model"))
-  implementation(project(":nessie-client"))
   implementation(project(":nessie-services-config"))
+  implementation(project(":nessie-services"))
+  implementation(project(":nessie-versioned-spi"))
   compileOnly(libs.smallrye.config.core)
 
   compileOnly(project(":nessie-immutables"))

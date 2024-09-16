@@ -124,7 +124,8 @@ public class NessieCatalogResource extends AbstractCatalogResource {
     SnapshotReqParams reqParams = forSnapshotHttpReq(reference, format, specVersion);
 
     return Uni.createFrom()
-        .completionStage(catalogService.commit(reference, commit, reqParams))
+        .completionStage(
+            catalogService.commit(reference, commit, reqParams, this::updateCommitMeta))
         .map(v -> Response.ok().build());
   }
 }
