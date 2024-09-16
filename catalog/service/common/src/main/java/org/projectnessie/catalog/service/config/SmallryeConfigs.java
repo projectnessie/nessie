@@ -67,6 +67,10 @@ public interface SmallryeConfigs {
   @ConfigItem(section = "adls_config", sectionDocFromType = true)
   AdlsConfig adlsconfig();
 
+  /**
+   * Optional: validate at server startup that all referenced secrets can be resolved. Startup will
+   * fail, it one or more secrets cannot be resolved at startup time, hence the default is `false`.
+   */
   @WithName("validate-secrets")
   @WithDefault("false")
   boolean validateSecrets();
