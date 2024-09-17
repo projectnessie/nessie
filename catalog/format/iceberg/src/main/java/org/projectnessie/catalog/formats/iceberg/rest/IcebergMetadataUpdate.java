@@ -514,7 +514,7 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetProperties.class)
   @JsonDeserialize(as = ImmutableSetProperties.class)
   interface SetProperties extends IcebergMetadataUpdate {
-    @JsonAlias({"updated", "updated"})
+    @JsonAlias({"updates", "updated"})
     Map<String, String> updates();
 
     @Override
