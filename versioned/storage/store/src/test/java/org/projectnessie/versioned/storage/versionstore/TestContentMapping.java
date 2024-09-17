@@ -53,11 +53,11 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.UDF;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
@@ -67,6 +67,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
+import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
@@ -261,7 +262,10 @@ public class TestContentMapping {
             .commitMeta(referenceCommitMeta)
             .addOperations(
                 Delete.of(ContentKey.of("bar")),
-                Put.ofLazy(ContentKey.of("foo"), tableObj.payload(), tableObj.data()))
+                Put.of(
+                    ContentKey.of("foo"),
+                    DefaultStoreWorker.instance()
+                        .valueFromStore(tableObj.payload(), tableObj.data())))
             .build();
 
     Commit c = contentMapping.commitObjToCommit(true, commitObj);

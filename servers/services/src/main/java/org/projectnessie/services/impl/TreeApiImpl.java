@@ -43,7 +43,6 @@ import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
@@ -89,6 +88,8 @@ import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.MergeResponse;
 import org.projectnessie.model.MergeResponse.ContentKeyConflict;
 import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
@@ -111,7 +112,6 @@ import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
@@ -119,14 +119,12 @@ import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.NamedRef;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
-import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStore.MergeOp;
@@ -567,7 +565,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                 op -> {
                   ContentKey key = op.getKey();
                   if (op instanceof Put) {
-                    Content content = ((Put) op).getValue();
+                    Content content = ((Put) op).getContent();
                     logEntry.addOperations(Operation.Put.of(key, content));
                   }
                   if (op instanceof Delete) {
@@ -1050,11 +1048,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     CommitMeta commitMeta = operations.getCommitMeta();
     validateCommitMeta(commitMeta);
 
-    List<org.projectnessie.versioned.Operation> ops =
-        operations.getOperations().stream()
-            .map(TreeApiImpl::toOp)
-            .collect(ImmutableList.toImmutableList());
-
     try {
       ImmutableCommitResponse.Builder commitResponse = ImmutableCommitResponse.builder();
 
@@ -1073,7 +1066,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   (BranchName) toRef.getNamedRef(),
                   Optional.of(toRef.getHash()),
                   commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
-                  ops,
+                  operations.getOperations(),
                   createCommitValidator((BranchName) toRef.getNamedRef()),
                   (key, cid) -> commitResponse.addAddedContents(addedContent(key, cid)))
               .getCommitHash();
@@ -1163,19 +1156,5 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       return null;
     }
     return builder.build();
-  }
-
-  protected static org.projectnessie.versioned.Operation toOp(Operation o) {
-    ContentKey key = o.getKey();
-    if (o instanceof Operation.Delete) {
-      return Delete.of(key);
-    } else if (o instanceof Operation.Put) {
-      Operation.Put put = (Operation.Put) o;
-      return Put.of(key, put.getContent());
-    } else if (o instanceof Operation.Unchanged) {
-      return Unchanged.of(key);
-    } else {
-      throw new IllegalStateException("Unknown operation " + o);
-    }
   }
 }

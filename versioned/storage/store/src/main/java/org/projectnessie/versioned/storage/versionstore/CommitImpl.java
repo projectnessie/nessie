@@ -61,19 +61,19 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.CommitValidation;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommitResult;
 import org.projectnessie.versioned.ImmutableCommitValidation;
-import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
@@ -323,7 +323,7 @@ class CommitImpl extends BaseCommitHelper {
       boolean reAdd =
           previous instanceof Delete
               && current instanceof Put
-              && ((Put) current).getValue().getId() == null;
+              && ((Put) current).getContent().getId() == null;
       if (!reAdd) {
         throw new IllegalArgumentException(
             "Duplicate key in commit operations: " + current.getKey());
@@ -430,7 +430,7 @@ class CommitImpl extends BaseCommitHelper {
       Map<ContentKey, Content> newContent,
       ImmutableCommitValidation.Builder commitValidation)
       throws ObjNotFoundException {
-    Content putValue = put.getValue();
+    Content putValue = put.getContent();
     ContentKey putKey = put.getKey();
     String putValueId = putValue.getId();
 

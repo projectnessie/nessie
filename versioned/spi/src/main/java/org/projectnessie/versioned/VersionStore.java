@@ -35,6 +35,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.Operation;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.paging.PaginationIterator;
 

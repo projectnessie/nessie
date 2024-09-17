@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IdentifiedContentKey;
+import org.projectnessie.model.Operation;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.paging.PaginationIterator;
 

@@ -31,13 +31,14 @@ import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSubscription;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
@@ -216,14 +217,14 @@ public class EventService implements AutoCloseable {
     if (operations != null && !operations.isEmpty()) {
       Hash hash = Objects.requireNonNull(commit.getHash());
       Instant commitTime = Objects.requireNonNull(commit.getCommitMeta().getCommitTime());
-      for (org.projectnessie.versioned.Operation operation : operations) {
-        if (operation instanceof org.projectnessie.versioned.Put) {
+      for (Operation operation : operations) {
+        if (operation instanceof Put) {
           ContentKey contentKey = ContentMapping.map(operation.getKey());
-          Content content = ContentMapping.map(((Put) operation).getValue());
+          Content content = ContentMapping.map(((Put) operation).getContent());
           fireEvent(
               factory.newContentStoredEvent(
                   targetBranch, hash, commitTime, contentKey, content, repositoryId, user));
-        } else if (operation instanceof org.projectnessie.versioned.Delete) {
+        } else if (operation instanceof Delete) {
           ContentKey contentKey = ContentMapping.map(operation.getKey());
           fireEvent(
               factory.newContentRemovedEvent(
