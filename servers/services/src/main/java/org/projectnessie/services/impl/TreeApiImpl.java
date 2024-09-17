@@ -41,6 +41,7 @@ import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -99,6 +100,7 @@ import org.projectnessie.model.ReferenceMetadata;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -124,6 +126,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
@@ -135,8 +138,12 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   public TreeApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    super(config, store, authorizer, accessContext);
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext,
+      ApiContext apiContext) {
+    super(config, store, authorizer, accessContext, apiContext);
   }
 
   @Override
@@ -695,7 +702,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
-                      .validator(createCommitValidator((BranchName) toRef.getNamedRef()))
+                      .validator(createCommitValidator((BranchName) toRef.getNamedRef(), API_WRITE))
                       .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
@@ -771,7 +778,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .defaultMergeBehavior(defaultMergeBehavior(defaultMergeBehavior))
                       .dryRun(Boolean.TRUE.equals(dryRun))
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
-                      .validator(createCommitValidator((BranchName) toRef.getNamedRef()))
+                      .validator(createCommitValidator((BranchName) toRef.getNamedRef(), API_WRITE))
                       .build());
       return createResponse(fetchAdditionalInfo, result);
     } catch (ReferenceNotFoundException e) {
@@ -1042,7 +1049,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
   @Override
   public CommitResponse commitMultipleOperations(
-      String branch, String expectedHash, Operations operations)
+      String branch, String expectedHash, Operations operations, RequestMeta requestMeta)
       throws NessieNotFoundException, NessieConflictException {
 
     CommitMeta commitMeta = operations.getCommitMeta();
@@ -1067,7 +1074,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   Optional.of(toRef.getHash()),
                   commitMetaUpdate(null, numCommits -> null).rewriteSingle(commitMeta),
                   operations.getOperations(),
-                  createCommitValidator((BranchName) toRef.getNamedRef()),
+                  createCommitValidator((BranchName) toRef.getNamedRef(), requestMeta),
                   (key, cid) -> commitResponse.addAddedContents(addedContent(key, cid)))
               .getCommitHash();
 
@@ -1079,14 +1086,15 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     }
   }
 
-  private CommitValidator createCommitValidator(BranchName branchName) {
+  private CommitValidator createCommitValidator(BranchName branchName, RequestMeta requestMeta) {
     // Commits routinely run retries due to collisions on updating the HEAD of the branch.
     // Authorization is not dependent on the commit history, only on the collection of access
     // checks, which reflect the current commit. On retries, the commit data relevant to access
     // checks almost never changes. Therefore, we use RetriableAccessChecker to avoid re-validating
     // access checks (which could be a time-consuming operation) on subsequent retries, unless
     // authorization input data changes.
-    RetriableAccessChecker accessChecker = new RetriableAccessChecker(this::startAccessCheck);
+    RetriableAccessChecker accessChecker =
+        new RetriableAccessChecker(this::startAccessCheck, getApiContext());
     return validation -> {
       BatchAccessChecker check = accessChecker.newAttempt();
       check.canCommitChangeAgainstReference(branchName);
@@ -1094,15 +1102,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .operations()
           .forEach(
               op -> {
+                Set<String> keyActions = requestMeta.keyActions(op.identifiedKey().contentKey());
                 switch (op.operationType()) {
                   case CREATE:
-                    check.canCreateEntity(branchName, op.identifiedKey());
+                    check.canCreateEntity(branchName, op.identifiedKey(), keyActions);
                     break;
                   case UPDATE:
-                    check.canUpdateEntity(branchName, op.identifiedKey());
+                    check.canUpdateEntity(branchName, op.identifiedKey(), keyActions);
                     break;
                   case DELETE:
-                    check.canDeleteEntity(branchName, op.identifiedKey());
+                    check.canDeleteEntity(branchName, op.identifiedKey(), keyActions);
                     break;
                   default:
                     throw new UnsupportedOperationException(

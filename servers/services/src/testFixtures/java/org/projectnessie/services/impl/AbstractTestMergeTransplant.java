@@ -28,6 +28,8 @@ import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.MergeBehavior.DROP;
 import static org.projectnessie.model.MergeBehavior.FORCE;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
@@ -159,7 +161,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     table1 =
         (IcebergTable)
             contentApi()
-                .getContent(key1, committed1.getName(), committed1.getHash(), false, false)
+                .getContent(key1, committed1.getName(), committed1.getHash(), false, API_READ)
                 .getContent();
 
     Branch committed2 =
@@ -478,8 +480,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     Namespace ns = Namespace.parse("a.b.c");
     base = ensureNamespacesForKeysExist(base, ns.toContentKey());
     branch = ensureNamespacesForKeysExist(branch, ns.toContentKey());
-    namespaceApi().createNamespace(base.getName(), ns);
-    namespaceApi().createNamespace(branch.getName(), ns);
+    namespaceApi().createNamespace(base.getName(), ns, API_WRITE);
+    namespaceApi().createNamespace(branch.getName(), ns, API_WRITE);
 
     base = (Branch) getReference(base.getName());
     branch = (Branch) getReference(branch.getName());
@@ -496,7 +498,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     table1 =
         (IcebergTable)
             contentApi()
-                .getContent(key1, committed1.getName(), committed1.getHash(), false, false)
+                .getContent(key1, committed1.getName(), committed1.getHash(), false, API_READ)
                 .getContent();
 
     Branch committed2 =
@@ -664,7 +666,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     ContentResponse tableOnRootAfterMerge =
         contentApi()
             .getContent(
-                setup.key, rootAfterMerge.getName(), rootAfterMerge.getHash(), false, false);
+                setup.key, rootAfterMerge.getName(), rootAfterMerge.getHash(), false, API_READ);
 
     soft.assertThat(setup.tableOnWork.getContent().getId())
         .isEqualTo(tableOnRootAfterMerge.getContent().getId());
@@ -729,7 +731,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(root).isNotEqualTo(lastRoot);
 
     ContentResponse tableOnRoot =
-        contentApi().getContent(key, root.getName(), root.getHash(), false, false);
+        contentApi().getContent(key, root.getName(), root.getHash(), false, API_READ);
     soft.assertThat(tableOnRoot.getEffectiveReference()).isEqualTo(root);
 
     Branch work = createBranch("recreateBranch", root);
@@ -749,7 +751,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(work).isNotEqualTo(lastWork);
 
     ContentResponse tableOnWork =
-        contentApi().getContent(key, work.getName(), work.getHash(), false, false);
+        contentApi().getContent(key, work.getName(), work.getHash(), false, API_READ);
     soft.assertThat(tableOnWork.getEffectiveReference()).isEqualTo(work);
 
     soft.assertThat(tableOnWork.getContent().getId())

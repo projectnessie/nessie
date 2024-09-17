@@ -16,12 +16,14 @@
 package org.projectnessie.nessie.combined;
 
 import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.rest.RestV2ConfigResource;
@@ -38,6 +40,7 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
   private Persist persist;
   private RestV2ConfigResource configResource;
   private RestV2TreeResource treeResource;
+  private ApiContext apiContext = apiContext("Nessie", 2);
 
   public CombinedClientBuilder() {}
 
@@ -63,6 +66,11 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
 
   public CombinedClientBuilder withPersist(Persist persist) {
     this.persist = persist;
+    return this;
+  }
+
+  public CombinedClientBuilder withApiContext(ApiContext apiContext) {
+    this.apiContext = apiContext;
     return this;
   }
 
@@ -97,7 +105,7 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
         };
 
     VersionStore versionStore = new VersionStoreImpl(persist);
-    Authorizer authorizer = c -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
+    Authorizer authorizer = (c, apiContext) -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
     AccessContext accessContext = () -> null;
 

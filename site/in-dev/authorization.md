@@ -88,6 +88,80 @@ Certain variables are available within the `<rule_expression>` depending on cont
 * **path** - refers to the URI path representation (`ContentKey.toPathString()`) of the [content key](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/ContentKey.java) for the object related to the authorization check.
 * **contentType** - refers to a (possibly empty) string representing the name of the object's [`Content.Type`](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/Content.java).
 * **type** - refers to the repository config type to be retrieved or updated.
+* **api** - contains information about the receiving API. This is a composite object with two properties:
+  * **apiName** the name of the API, can be `Nessie` or `Iceberg`
+  * **apiVersion** the version of the API - for `Nessie` it can be 1 or 2, for `Iceberg` currently 1
+* **actions** a list of actions (strings), available for some Iceberg endpoints.
+
+#### Actions
+
+The list of `actions` (strings) is available for some Iceberg endpoints that perform changes against
+an entity (table, view, namespace). The list of actions is empty for the Nessie REST API.
+
+**Catalog operations**
+
+Available for all updating Iceberg endpoints
+for the `Check` types `CREATE_ENTITY`, `UPDATE_ENTITY` and `DELETE_ENTITY`.
+
+* `CATALOG_CREATE_ENTITY` - create a table/view/namespace
+* `CATALOG_UPDATE_ENTITY` - update a table/view/namespace
+* `CATALOG_DROP_ENTITY` - dropping a table/view/namespace
+* `CATALOG_RENAME_ENTITY_FROM` - renaming a table (from)
+* `CATALOG_RENAME_ENTITY_TO` - renaming a table (to)
+* `CATALOG_REGISTER_ENTITY` - registering a table (from)
+* `CATALOG_UPDATE_MULTIPLE` - update multiple tables
+* `CATALOG_S3_SIGN` - S3 request signing
+
+**Iceberg metadata updates**
+
+Available for Iceberg endpoints that update entities, represents the kinds of metadata updates,
+for the `Check` types `CREATE_ENTITY`, `UPDATE_ENTITY`.
+
+* `META_ADD_VIEW_VERSION`
+* `META_SET_CURRENT_VIEW_VERSION`
+* `META_SET_STATISTICS`
+* `META_REMOVE_STATISTICS`
+* `META_SET_PARTITION_STATISTICS`
+* `META_REMOVE_PARTITION_STATISTICS`
+* `META_ASSIGN_UUID`
+* `META_ADD_SCHEMA`
+* `META_SET_CURRENT_SCHEMA`
+* `META_ADD_PARTITION_SPEC`
+* `META_SET_DEFAULT_PARTITION_SPEC`
+* `META_ADD_SNAPSHOT`
+* `META_ADD_SORT_ORDER`
+* `META_SET_DEFAULT_SORT_ORDER`
+* `META_SET_LOCATION`
+* `META_SET_PROPERTIES`
+* `META_REMOVE_PROPERTIES`
+* `META_REMOVE_LOCATION_PROPERTY`
+* `META_SET_SNAPSHOT_REF`
+* `META_REMOVE_SNAPSHOT_REF`
+* `META_UPGRADE_FORMAT_VERSION`
+
+**from Iceberg's snapshot summary**
+
+Available for Iceberg updates that add a snapshot, for the `Check` types `CREATE_ENTITY`, `UPDATE_ENTITY`.
+
+* `SNAP_ADD_DATA_FILES`
+* `SNAP_DELETE_DATA_FILES`
+* `SNAP_ADD_DELETE_FILES`
+* `SNAP_ADD_EQUALITY_DELETE_FILES`
+* `SNAP_ADD_POSITION_DELETE_FILES`
+* `SNAP_REMOVE_DELETE_FILES`
+* `SNAP_REMOVE_EQUALITY_DELETE_FILES`
+* `SNAP_REMOVE_POSITION_DELETE_FILES`
+* `SNAP_ADDED_RECORDS`
+* `SNAP_DELETED_RECORDS`
+* `SNAP_ADDED_POSITION_DELETES`
+* `SNAP_DELETED_POSITION_DELETES`
+* `SNAP_ADDED_EQUALITY_DELETES`
+* `SNAP_DELETED_EQUALITY_DELETES`
+* `SNAP_REPLACE_PARTITIONS`
+* `SNAP_OP_APPEND`
+* `SNAP_OP_REPLACE`
+* `SNAP_OP_OVERWRITE`
+* `SNAP_OP_DELETE`
 
 #### Checks for Reference operations
 
@@ -100,12 +174,15 @@ Applicable `op` types:
 * `DELETE_REFERENCE`
 * `READ_ENTRIES`
 * `LIST_COMMIT_LOG`
+* `COMMIT_CHANGE_AGAINST_REFERENCE`
 
 Available variables:
 
 * `role`
 * `roles`
 * `ref`
+* `ref`
+* `api`
 
 #### Checks for Content operations
 
@@ -124,6 +201,8 @@ Available variables:
 * `ref`
 * `path`
 * `contentType`
+* `api`
+* `actions` (for `CREATE_ENTITY`, `UPDATE_ENTITY`, `DELETE_ENTITY` against Iceberg REST)
 
 #### Checks for Repository Config operations
 
@@ -137,6 +216,7 @@ Available variables:
 * `role`
 * `roles`
 * `type`
+* `api`
 
 #### Relevant CEL features
 

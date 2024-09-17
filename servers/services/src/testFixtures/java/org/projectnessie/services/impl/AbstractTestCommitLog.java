@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
 import static org.projectnessie.model.FetchOption.MINIMAL;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
@@ -392,7 +393,9 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
       Put op;
       try {
         Content existing =
-            contentApi().getContent(key, branch.getName(), currentHash, false, false).getContent();
+            contentApi()
+                .getContent(key, branch.getName(), currentHash, false, API_READ)
+                .getContent();
         op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
       } catch (NessieNotFoundException notFound) {
         op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42));

@@ -18,6 +18,7 @@ package org.projectnessie.server.authz;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -33,7 +34,7 @@ public class CelAuthorizer implements Authorizer {
   }
 
   @Override
-  public BatchAccessChecker startAccessCheck(AccessContext context) {
-    return new CelBatchAccessChecker(compiledRules, context);
+  public BatchAccessChecker startAccessCheck(AccessContext context, ApiContext apiContext) {
+    return new CelBatchAccessChecker(compiledRules, context, apiContext);
   }
 }

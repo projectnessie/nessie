@@ -34,6 +34,7 @@ import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -47,14 +48,20 @@ public abstract class BaseApiImpl {
   private final VersionStore store;
   private final Authorizer authorizer;
   private final AccessContext accessContext;
+  private final ApiContext apiContext;
   private HashResolver hashResolver;
 
   protected BaseApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext,
+      ApiContext apiContext) {
     this.config = config;
     this.store = store;
     this.authorizer = authorizer;
     this.accessContext = accessContext;
+    this.apiContext = apiContext;
   }
 
   /**
@@ -104,6 +111,10 @@ public abstract class BaseApiImpl {
     return authorizer;
   }
 
+  protected ApiContext getApiContext() {
+    return apiContext;
+  }
+
   protected HashResolver getHashResolver() {
     if (hashResolver == null) {
       this.hashResolver = new HashResolver(config, store);
@@ -112,7 +123,7 @@ public abstract class BaseApiImpl {
   }
 
   protected BatchAccessChecker startAccessCheck() {
-    return getAuthorizer().startAccessCheck(accessContext);
+    return getAuthorizer().startAccessCheck(accessContext, apiContext);
   }
 
   protected MetadataRewriter<CommitMeta> commitMetaUpdate(

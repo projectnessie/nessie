@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V2;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -54,7 +56,7 @@ public class RestV2ConfigResource implements HttpConfigApi {
   @Inject
   public RestV2ConfigResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    this.config = new ConfigApiImpl(config, store, authorizer, accessContext, 2);
+    this.config = new ConfigApiImpl(config, store, authorizer, accessContext, NESSIE_V2);
   }
 
   @Override

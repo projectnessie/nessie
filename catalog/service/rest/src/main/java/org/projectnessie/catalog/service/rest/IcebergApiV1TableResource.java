@@ -23,6 +23,9 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpe
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.unsorted;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.GC_ENABLED;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
@@ -39,6 +42,8 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
+import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
 import com.google.common.collect.Lists;
 import io.smallrye.common.annotation.Blocking;
@@ -74,6 +79,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.metrics.IcebergMetricsReport;
+import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergTableMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTableResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateTableRequest;
@@ -111,6 +117,7 @@ import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.projectnessie.versioned.VersionStore;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with tables. */
@@ -169,7 +176,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     return snapshotResponse(
             key,
             SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null),
-            ICEBERG_TABLE)
+            ICEBERG_TABLE,
+            ICEBERG_V1)
         .map(
             snap ->
                 loadTableResultFromSnapshotResponse(
@@ -213,7 +221,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             snap.effectiveReference().getName(),
             snap.effectiveReference().getHash(),
             false,
-            true);
+            API_WRITE);
         writeAccessValidated = true;
       } catch (Exception ignore) {
       }
@@ -354,7 +362,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             .addRequirement(IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist())
             .build();
 
-    return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_TABLE)
+    return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_TABLE, CATALOG_CREATE_ENTITY)
         .map(
             snap ->
                 this.loadTableResultFromSnapshotResponse(
@@ -391,6 +399,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     ParsedReference reference = requireNonNull(tableRef.reference());
     Branch ref = checkBranch(treeService.getReferenceByName(reference.name(), FetchOption.MINIMAL));
 
+    RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(tableRef.contentKey(), CatalogOps.CATALOG_REGISTER_ENTITY.name());
+
     Optional<TableRef> catalogTableRef =
         uriInfo.resolveTableFromUri(registerTableRequest.metadataLocation());
     boolean nessieCatalogUri = uriInfo.isNessieCatalogUri(registerTableRequest.metadataLocation());
@@ -416,7 +427,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                           ctr.contentKey(), registerTableRequest.metadataLocation())))
               .build();
       CommitResponse committed =
-          treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+          treeService.commitMultipleOperations(
+              ref.getName(), ref.getHash(), ops, requestMeta.build());
 
       return this.loadTable(
           TableRef.tableRef(
@@ -463,7 +475,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                         tableRef.contentKey(), registerTableRequest.metadataLocation())))
             .build();
     CommitResponse committed =
-        treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+        treeService.commitMultipleOperations(
+            ref.getName(), ref.getHash(), ops, requestMeta.build());
 
     return this.loadTable(
         tableRef(
@@ -499,7 +512,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             .commitMeta(updateCommitMeta(format("Drop ICEBERG_TABLE %s", tableRef.contentKey())))
             .build();
 
-    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+    RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(tableRef.contentKey(), CATALOG_DROP_ENTITY.name());
+    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());
   }
 
   @Operation(operationId = "iceberg.v1.listTables")
@@ -583,7 +598,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return createOrUpdateEntity(tableRef, commitTableRequest, ICEBERG_TABLE)
+    return createOrUpdateEntity(tableRef, commitTableRequest, ICEBERG_TABLE, CATALOG_UPDATE_ENTITY)
         .map(
             snap -> {
               IcebergTableMetadata tableMetadata =

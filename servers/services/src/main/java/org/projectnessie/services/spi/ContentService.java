@@ -31,6 +31,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.services.authz.AccessCheckException;
+import org.projectnessie.versioned.RequestMeta;
 
 /**
  * Server-side interface to services managing the loading of content objects.
@@ -47,7 +48,7 @@ public interface ContentService {
    * @param namedRef name of the reference
    * @param hashOnRef optional, ID of the commit or a commit specification
    * @param withDocumentation unused, pass {@code false}
-   * @param forWrite if {@code false}, "natural" read access checks will be performed. If {@code
+   * @param requestMeta if {@code false}, "natural" read access checks will be performed. If {@code
    *     true}, update/create access checks will be performed in addition to the read access checks.
    * @return the content response, if the content object exists
    * @throws NessieNotFoundException if the content object or the reference does not exist
@@ -66,7 +67,7 @@ public interface ContentService {
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
       boolean withDocumentation,
-      boolean forWrite)
+      RequestMeta requestMeta)
       throws NessieNotFoundException;
 
   /**
@@ -76,7 +77,7 @@ public interface ContentService {
    * @param hashOnRef optional, ID of the commit or a commit specification
    * @param keys the keys of the content objects to retrieve
    * @param withDocumentation unused, pass {@code false}
-   * @param forWrite if {@code false}, "natural" read access checks will be performed. If {@code
+   * @param requestMeta if {@code false}, "natural" read access checks will be performed. If {@code
    *     true}, update/create access checks will be performed in addition to the read access checks.
    * @return the existing content objects
    * @throws NessieNotFoundException if the reference does not exist
@@ -92,8 +93,8 @@ public interface ContentService {
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
-      @Valid @Size @jakarta.validation.constraints.Size(min = 1) List<ContentKey> keys,
+      @Valid @Size @Size(min = 1) List<ContentKey> keys,
       boolean withDocumentation,
-      boolean forWrite)
+      RequestMeta requestMeta)
       throws NessieNotFoundException;
 }

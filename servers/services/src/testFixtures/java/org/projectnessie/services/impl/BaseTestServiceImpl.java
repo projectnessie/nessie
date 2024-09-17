@@ -20,7 +20,10 @@ import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.model.Reference.ReferenceType.TAG;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import com.google.common.collect.ImmutableMap;
@@ -95,7 +98,7 @@ public abstract class BaseTestServiceImpl {
       };
 
   protected static final Authorizer NOOP_AUTHORIZER =
-      context -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
+      (context, apiContext) -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
 
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -103,23 +106,28 @@ public abstract class BaseTestServiceImpl {
   private Principal principal;
 
   protected final ConfigApiImpl configApi() {
-    return new ConfigApiImpl(config(), versionStore(), authorizer(), this::principal, 2);
+    return new ConfigApiImpl(
+        config(), versionStore(), authorizer(), this::principal, apiContext("Nessie", 2));
   }
 
   protected final TreeApiImpl treeApi() {
-    return new TreeApiImpl(config(), versionStore(), authorizer(), this::principal);
+    return new TreeApiImpl(
+        config(), versionStore(), authorizer(), this::principal, apiContext("Nessie", 2));
   }
 
   protected final ContentApiImpl contentApi() {
-    return new ContentApiImpl(config(), versionStore(), authorizer(), this::principal);
+    return new ContentApiImpl(
+        config(), versionStore(), authorizer(), this::principal, apiContext("Nessie", 2));
   }
 
   protected final DiffApiImpl diffApi() {
-    return new DiffApiImpl(config(), versionStore(), authorizer(), this::principal);
+    return new DiffApiImpl(
+        config(), versionStore(), authorizer(), this::principal, apiContext("Nessie", 2));
   }
 
   protected final NamespaceApiImpl namespaceApi() {
-    return new NamespaceApiImpl(config(), versionStore(), authorizer(), this::principal);
+    return new NamespaceApiImpl(
+        config(), versionStore(), authorizer(), this::principal, apiContext("Nessie", 2));
   }
 
   protected Principal principal() {
@@ -140,7 +148,7 @@ public abstract class BaseTestServiceImpl {
 
   protected void setBatchAccessChecker(
       Function<AccessContext, BatchAccessChecker> batchAccessChecker) {
-    this.authorizer = batchAccessChecker::apply;
+    this.authorizer = (t, apiContext) -> batchAccessChecker.apply(t);
   }
 
   protected VersionStore versionStore() {
@@ -451,7 +459,7 @@ public abstract class BaseTestServiceImpl {
       throws NessieConflictException, NessieNotFoundException {
     Operations ops =
         ImmutableOperations.builder().addOperations(operations).commitMeta(meta).build();
-    return treeApi().commitMultipleOperations(branch, expectedHash, ops);
+    return treeApi().commitMultipleOperations(branch, expectedHash, ops, API_WRITE);
   }
 
   protected Map<ContentKey, Content> contents(Reference reference, ContentKey... keys)
@@ -473,7 +481,8 @@ public abstract class BaseTestServiceImpl {
       String refName, String hashOnRef, boolean forWrite, ContentKey... keys)
       throws NessieNotFoundException {
     return contentApi()
-        .getMultipleContents(refName, hashOnRef, Arrays.asList(keys), false, forWrite)
+        .getMultipleContents(
+            refName, hashOnRef, Arrays.asList(keys), false, forWrite ? API_WRITE : API_READ)
         .getContents()
         .stream()
         .collect(Collectors.toMap(ContentWithKey::getKey, ContentWithKey::getContent));
@@ -487,7 +496,7 @@ public abstract class BaseTestServiceImpl {
   protected ContentResponse content(
       String refName, String hashOnRef, boolean forWrite, ContentKey key)
       throws NessieNotFoundException {
-    return contentApi().getContent(key, refName, hashOnRef, false, forWrite);
+    return contentApi().getContent(key, refName, hashOnRef, false, forWrite ? API_WRITE : API_READ);
   }
 
   protected String createCommits(
@@ -502,7 +511,7 @@ public abstract class BaseTestServiceImpl {
         try {
           Content existing =
               contentApi()
-                  .getContent(key, branch.getName(), currentHash, false, false)
+                  .getContent(key, branch.getName(), currentHash, false, API_READ)
                   .getContent();
           op = Put.of(key, IcebergTable.of("some-file-" + i, 42, 42, 42, 42, existing.getId()));
         } catch (NessieContentNotFoundException notFound) {

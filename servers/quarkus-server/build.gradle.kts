@@ -178,6 +178,8 @@ dependencies {
   testFixturesCompileOnly(libs.microprofile.openapi)
 
   testFixturesCompileOnly(project(":nessie-immutables"))
+  testCompileOnly(project(":nessie-immutables"))
+  testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
   intTestCompileOnly(project(":nessie-immutables"))
   intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 

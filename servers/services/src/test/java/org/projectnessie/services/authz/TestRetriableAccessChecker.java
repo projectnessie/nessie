@@ -18,6 +18,7 @@ package org.projectnessie.services.authz;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ class TestRetriableAccessChecker {
 
   private final Supplier<BatchAccessChecker> validator =
       () ->
-          new AbstractBatchAccessChecker() {
+          new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
             @Override
             public Map<Check, String> check() {
               checkCount++;
@@ -50,7 +51,7 @@ class TestRetriableAccessChecker {
 
   @Test
   void checkAndThrow() {
-    RetriableAccessChecker checker = new RetriableAccessChecker(validator);
+    RetriableAccessChecker checker = new RetriableAccessChecker(validator, apiContext("Nessie", 1));
     Check check = Check.check(Check.CheckType.CREATE_ENTITY);
     result.put(check, "test123");
     assertThatThrownBy(() -> checker.newAttempt().can(check).checkAndThrow())
@@ -62,7 +63,7 @@ class TestRetriableAccessChecker {
 
   @Test
   void repeatedCheck() {
-    RetriableAccessChecker checker = new RetriableAccessChecker(validator);
+    RetriableAccessChecker checker = new RetriableAccessChecker(validator, apiContext("Nessie", 1));
     Check c1 = Check.check(Check.CheckType.CREATE_ENTITY);
     Check c2 = Check.check(Check.CheckType.CREATE_REFERENCE);
     assertThat(checker.newAttempt().can(c1).can(c2).check()).isEmpty();
@@ -101,7 +102,7 @@ class TestRetriableAccessChecker {
             .addElements(ns2, tableElement)
             .build();
 
-    RetriableAccessChecker checker = new RetriableAccessChecker(validator);
+    RetriableAccessChecker checker = new RetriableAccessChecker(validator, apiContext("Nessie", 1));
     BranchName ref = BranchName.of("test");
     assertThat(checker.newAttempt().canCreateEntity(ref, t1).check()).isEmpty();
     assertThat(checked)

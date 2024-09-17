@@ -19,9 +19,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.catalog.files.s3.S3Utils.extractBucketName;
 import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_S3_SIGN;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse.icebergS3SignResponse;
+import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.ICEBERG_V1;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.icebergWriteLocation;
+import static org.projectnessie.versioned.RequestMeta.apiRead;
+import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -52,6 +56,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergContent;
+import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,13 +149,16 @@ abstract class IcebergS3SignParams {
 
   private Uni<SnapshotResponse> fetchSnapshot() {
     try {
+      RequestMetaBuilder requestMeta = write() ? apiWrite() : apiRead();
+      requestMeta.addKeyAction(key(), CATALOG_S3_SIGN.name());
       CompletionStage<SnapshotResponse> stage =
           catalogService()
               .retrieveSnapshot(
                   SnapshotReqParams.forSnapshotHttpReq(ref(), "iceberg", null),
                   key(),
                   null,
-                  write());
+                  requestMeta.build(),
+                  ICEBERG_V1);
       // consider an import failure as a non-existing content:
       // signing will be authorized for the future location only.
       return Uni.createFrom().completionStage(stage).onFailure().recoverWithNull();

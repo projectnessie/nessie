@@ -17,7 +17,9 @@ package org.projectnessie.services.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V1;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
@@ -73,7 +75,7 @@ public class RestTreeResource implements HttpTreeApi {
   @Inject
   public RestTreeResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext);
+    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext, NESSIE_V1);
   }
 
   private TreeService resource() {
@@ -278,7 +280,7 @@ public class RestTreeResource implements HttpTreeApi {
       String branchName, String expectedHash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     return resource()
-        .commitMultipleOperations(branchName, expectedHash, operations)
+        .commitMultipleOperations(branchName, expectedHash, operations, API_WRITE)
         .getTargetBranch();
   }
 }

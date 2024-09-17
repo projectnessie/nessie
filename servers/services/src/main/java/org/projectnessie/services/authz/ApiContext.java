@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,16 @@
  */
 package org.projectnessie.services.authz;
 
-/**
- * Authorizers are used to bulk-check permissions.
- *
- * <p>Authorizers produce {@link BatchAccessChecker} instances, which collect all access checks
- * required for a certain version store operation and perform all access checks in a batch.
- */
-public interface Authorizer {
+import org.immutables.value.Value;
 
-  /**
-   * Start an access-check batch/bulk operation.
-   *
-   * @param context The context carrying the principal information.
-   * @param apiContext API contextual information
-   * @return access checker
-   */
-  BatchAccessChecker startAccessCheck(AccessContext context, ApiContext apiContext);
+@Value.Immutable
+@Value.Style(allParameters = true)
+public interface ApiContext {
+  String getApiName();
+
+  int getApiVersion();
+
+  static ApiContext apiContext(String apiName, int apiVersion) {
+    return ImmutableApiContext.of(apiName, apiVersion);
+  }
 }

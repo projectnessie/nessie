@@ -26,6 +26,7 @@ import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.model.types.GenericRepositoryConfig;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -36,16 +37,13 @@ import org.projectnessie.versioned.VersionStore;
 
 public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
 
-  private final int actualApiVersion;
-
   public ConfigApiImpl(
       ServerConfig config,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext,
-      int actualApiVersion) {
-    super(config, store, authorizer, accessContext);
-    this.actualApiVersion = actualApiVersion;
+      ApiContext apiContext) {
+    super(config, store, authorizer, accessContext, apiContext);
   }
 
   @Override
@@ -58,7 +56,7 @@ public class ConfigApiImpl extends BaseApiImpl implements ConfigService {
     return ImmutableNessieConfiguration.builder()
         .from(NessieConfiguration.getBuiltInConfig())
         .defaultBranch(defaultBranch)
-        .actualApiVersion(actualApiVersion)
+        .actualApiVersion(getApiContext().getApiVersion())
         .noAncestorHash(info.getNoAncestorHash())
         .repositoryCreationTimestamp(info.getRepositoryCreationTimestamp())
         .oldestPossibleCommitTimestamp(info.getOldestPossibleCommitTimestamp())

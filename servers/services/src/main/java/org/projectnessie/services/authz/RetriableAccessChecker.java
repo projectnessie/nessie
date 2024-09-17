@@ -29,19 +29,33 @@ import java.util.function.Supplier;
  */
 public final class RetriableAccessChecker {
   private final Supplier<BatchAccessChecker> validator;
+  private final ApiContext apiContext;
   private Collection<Check> validatedChecks;
   private Map<Check, String> result;
 
-  public RetriableAccessChecker(Supplier<BatchAccessChecker> validator) {
+  public RetriableAccessChecker(Supplier<BatchAccessChecker> validator, ApiContext apiContext) {
     Preconditions.checkNotNull(validator);
     this.validator = validator;
+    this.apiContext = apiContext;
   }
 
   public BatchAccessChecker newAttempt() {
-    return new Attempt();
+    return new Attempt(apiContext);
   }
 
   private class Attempt extends AbstractBatchAccessChecker {
+    private final ApiContext apiContext;
+
+    Attempt(ApiContext apiContext) {
+      super(apiContext);
+      this.apiContext = apiContext;
+    }
+
+    @Override
+    public ApiContext getApiContext() {
+      return apiContext;
+    }
+
     @Override
     public Map<Check, String> check() {
       // Shallow collection copy to ensure that we use what was current at the time of check

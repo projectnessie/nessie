@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.service.rest;
 
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_MULTIPLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import io.smallrye.common.annotation.Blocking;
@@ -160,7 +161,13 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
     // results are consumed.
     return Uni.createFrom()
         .completionStage(
-            catalogService.commit(ref, commit.build(), reqParams, this::updateCommitMeta))
+            catalogService.commit(
+                ref,
+                commit.build(),
+                reqParams,
+                this::updateCommitMeta,
+                CATALOG_UPDATE_MULTIPLE.name(),
+                ICEBERG_V1))
         .map(stream -> stream.reduce(null, (ident, snap) -> ident, (i1, i2) -> i1));
   }
 }

@@ -23,6 +23,7 @@ import org.projectnessie.error.NessieNamespaceNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.versioned.RequestMeta;
 
 /**
  * Server-side interface to services managing namespaces.
@@ -32,14 +33,15 @@ import org.projectnessie.model.Namespace;
  */
 public interface NamespaceService {
 
-  Namespace createNamespace(String refName, Namespace namespace)
+  Namespace createNamespace(String refName, Namespace namespace, RequestMeta requestMeta)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException;
 
   void updateProperties(
       String refName,
       Namespace namespaceToUpdate,
       Map<String, String> propertyUpdates,
-      Set<String> propertyRemovals)
+      Set<String> propertyRemovals,
+      RequestMeta requestMeta)
       throws NessieNamespaceNotFoundException, NessieReferenceNotFoundException;
 
   void deleteNamespace(String refName, Namespace namespaceToDelete)

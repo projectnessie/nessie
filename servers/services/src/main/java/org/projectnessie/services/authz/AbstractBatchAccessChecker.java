@@ -16,17 +16,19 @@
 package org.projectnessie.services.authz;
 
 import static java.util.Collections.emptyMap;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.versioned.NamedRef;
 
 public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   public static final BatchAccessChecker NOOP_ACCESS_CHECKER =
-      new AbstractBatchAccessChecker() {
+      new AbstractBatchAccessChecker(apiContext("<unknown>", 0)) {
         @Override
         public Map<Check, String> check() {
           return emptyMap();
@@ -38,7 +40,17 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
         }
       };
 
+  private final ApiContext apiContext;
   private final Collection<Check> checks = new LinkedHashSet<>();
+
+  protected AbstractBatchAccessChecker(ApiContext apiContext) {
+    this.apiContext = apiContext;
+  }
+
+  @Override
+  public ApiContext getApiContext() {
+    return apiContext;
+  }
 
   protected Collection<Check> getChecks() {
     return checks;
@@ -85,6 +97,13 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
+  public BatchAccessChecker canReadContentKey(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    canViewReference(ref);
+    return can(Check.canReadContentKey(ref, identifiedKey, actions));
+  }
+
+  @Override
   public BatchAccessChecker canListCommitLog(NamedRef ref) {
     canViewReference(ref);
     return can(Check.canListCommitLog(ref));
@@ -103,10 +122,25 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
+  public BatchAccessChecker canReadEntityValue(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    canViewReference(ref);
+    return can(Check.canReadEntityValue(ref, identifiedKey, actions));
+  }
+
+  @Override
   @Deprecated
   public BatchAccessChecker canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     canViewReference(ref);
     return can(Check.canCreateEntity(ref, identifiedKey));
+  }
+
+  @Override
+  @Deprecated
+  public BatchAccessChecker canCreateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    canViewReference(ref);
+    return can(Check.canCreateEntity(ref, identifiedKey, actions));
   }
 
   @Override
@@ -117,9 +151,24 @@ public abstract class AbstractBatchAccessChecker implements BatchAccessChecker {
   }
 
   @Override
+  @Deprecated
+  public BatchAccessChecker canUpdateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    canViewReference(ref);
+    return can(Check.canUpdateEntity(ref, identifiedKey, actions));
+  }
+
+  @Override
   public BatchAccessChecker canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     canViewReference(ref);
     return can(Check.canDeleteEntity(ref, identifiedKey));
+  }
+
+  @Override
+  public BatchAccessChecker canDeleteEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    canViewReference(ref);
+    return can(Check.canDeleteEntity(ref, identifiedKey, actions));
   }
 
   @Override

@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -33,6 +34,7 @@ import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
@@ -44,6 +46,7 @@ import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
@@ -51,8 +54,12 @@ import org.projectnessie.versioned.WithHash;
 public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
   public ContentApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    super(config, store, authorizer, accessContext);
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext,
+      ApiContext apiContext) {
+    super(config, store, authorizer, accessContext, apiContext);
   }
 
   @Override
@@ -61,12 +68,13 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       String namedRef,
       String hashOnRef,
       boolean withDocumentation,
-      boolean forWrite)
+      RequestMeta requestMeta)
       throws NessieNotFoundException {
     try {
       ResolvedHash ref =
           getHashResolver()
               .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
+      boolean forWrite = requestMeta.forWrite();
       ContentResult obj = getStore().getValue(ref.getHash(), key, forWrite);
       BatchAccessChecker accessCheck = startAccessCheck();
 
@@ -76,10 +84,11 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
         accessCheck.canCommitChangeAgainstReference(r);
       }
 
+      Set<String> actions = requestMeta.keyActions(key);
       if (obj != null && obj.content() != null) {
-        accessCheck.canReadEntityValue(r, obj.identifiedKey());
+        accessCheck.canReadEntityValue(r, obj.identifiedKey(), actions);
         if (forWrite) {
-          accessCheck.canUpdateEntity(r, obj.identifiedKey());
+          accessCheck.canUpdateEntity(r, obj.identifiedKey(), actions);
         }
 
         accessCheck.checkAndThrow();
@@ -89,8 +98,8 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
       if (forWrite) {
         accessCheck
-            .canReadEntityValue(r, requireNonNull(obj, "obj is null").identifiedKey())
-            .canCreateEntity(r, obj.identifiedKey());
+            .canReadEntityValue(r, requireNonNull(obj, "obj is null").identifiedKey(), actions)
+            .canCreateEntity(r, obj.identifiedKey(), actions);
       }
       accessCheck.checkAndThrow();
 
@@ -106,7 +115,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       String hashOnRef,
       List<ContentKey> keys,
       boolean withDocumentation,
-      boolean forWrite)
+      RequestMeta requestMeta)
       throws NessieNotFoundException {
     try {
       ResolvedHash ref =
@@ -115,6 +124,7 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
 
       NamedRef r = ref.getValue();
       BatchAccessChecker check = startAccessCheck().canViewReference(r);
+      boolean forWrite = requestMeta.forWrite();
       if (forWrite) {
         check.canCommitChangeAgainstReference(r);
       }
@@ -126,15 +136,16 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
                   e -> {
                     ContentResult contentResult = e.getValue();
                     IdentifiedContentKey identifiedKey = contentResult.identifiedKey();
-                    check.canReadEntityValue(r, identifiedKey);
+                    Set<String> actions = requestMeta.keyActions(identifiedKey.contentKey());
+                    check.canReadEntityValue(r, identifiedKey, actions);
                     if (contentResult.content() != null) {
                       if (forWrite) {
-                        check.canUpdateEntity(r, identifiedKey);
+                        check.canUpdateEntity(r, identifiedKey, actions);
                       }
                       return true;
                     } else {
                       if (forWrite) {
-                        check.canCreateEntity(r, identifiedKey);
+                        check.canCreateEntity(r, identifiedKey, actions);
                       }
                       return false;
                     }

@@ -15,10 +15,13 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
 import static org.projectnessie.catalog.service.api.SnapshotReqParams.forSnapshotHttpReq;
 import static org.projectnessie.catalog.service.rest.ExternalBaseUri.parseRefPathString;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Multi;
@@ -48,11 +51,14 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
+import org.projectnessie.services.authz.ApiContext;
 
 @RequestScoped
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("catalog/v1")
 public class NessieCatalogResource extends AbstractCatalogResource {
+
+  static final ApiContext CATALOG_V0 = apiContext("Catalog", 0);
 
   @GET
   @Path("trees/{ref:" + REF_NAME_PATH_ELEMENT_REGEX + "}/snapshots")
@@ -73,7 +79,8 @@ public class NessieCatalogResource extends AbstractCatalogResource {
 
     // This operation can block --> @Blocking
     Stream<Supplier<CompletionStage<SnapshotResponse>>> snapshots =
-        catalogService.retrieveSnapshots(reqParams, keys, effectiveReference::set);
+        catalogService.retrieveSnapshots(
+            reqParams, keys, effectiveReference::set, API_READ, CATALOG_V0);
 
     Multi<Object> multi =
         Multi.createFrom()
@@ -105,7 +112,10 @@ public class NessieCatalogResource extends AbstractCatalogResource {
       @QueryParam("specVersion") String specVersion)
       throws NessieNotFoundException {
     return snapshotBased(
-        key, forSnapshotHttpReq(parseRefPathString(ref), format, specVersion), ICEBERG_TABLE);
+        key,
+        forSnapshotHttpReq(parseRefPathString(ref), format, specVersion),
+        ICEBERG_TABLE,
+        CATALOG_V0);
   }
 
   @POST
@@ -125,7 +135,13 @@ public class NessieCatalogResource extends AbstractCatalogResource {
 
     return Uni.createFrom()
         .completionStage(
-            catalogService.commit(reference, commit, reqParams, this::updateCommitMeta))
+            catalogService.commit(
+                reference,
+                commit,
+                reqParams,
+                this::updateCommitMeta,
+                CATALOG_UPDATE_ENTITY.name(),
+                CATALOG_V0))
         .map(v -> Response.ok().build());
   }
 }

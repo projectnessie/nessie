@@ -23,6 +23,7 @@ import jakarta.inject.Inject;
 import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthorizerType;
 import org.projectnessie.services.authz.BatchAccessChecker;
@@ -53,12 +54,12 @@ public class QuarkusAuthorizer implements Authorizer {
 
       this.authorizer = authorizerInstance.get();
     } else {
-      this.authorizer = context -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
+      this.authorizer = (context, apiContext) -> AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
     }
   }
 
   @Override
-  public BatchAccessChecker startAccessCheck(AccessContext context) {
-    return this.authorizer.startAccessCheck(context);
+  public BatchAccessChecker startAccessCheck(AccessContext context, ApiContext apiContext) {
+    return this.authorizer.startAccessCheck(context, apiContext);
   }
 }

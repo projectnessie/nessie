@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.projectnessie.model.CommitMeta.fromMessage;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -407,7 +408,8 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
       soft.assertThat(namespaceApi().getNamespace(reference.getName(), reference.getHash(), ns))
           .isNotNull();
 
-      soft.assertThatThrownBy(() -> namespaceApi().createNamespace(reference.getName(), ns))
+      soft.assertThatThrownBy(
+              () -> namespaceApi().createNamespace(reference.getName(), ns, API_WRITE))
           .cause()
           .isInstanceOf(NessieNamespaceAlreadyExistsException.class)
           .hasMessage(String.format("Namespace '%s' already exists", namespace));
