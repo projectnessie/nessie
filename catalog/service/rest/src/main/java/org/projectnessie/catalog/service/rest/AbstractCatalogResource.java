@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.net.URLEncoder;
@@ -30,14 +31,18 @@ import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
+import org.projectnessie.services.rest.common.RestCommon;
 
 abstract class AbstractCatalogResource {
   @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   CatalogService catalogService;
+
+  @Inject HttpHeaders httpHeaders;
 
   @Inject ObjectIO objectIO;
 
@@ -81,5 +86,9 @@ abstract class AbstractCatalogResource {
 
   static void nessieResponseHeaders(Reference reference, BiConsumer<String, String> header) {
     header.accept("Nessie-Reference", URLEncoder.encode(reference.toPathString(), UTF_8));
+  }
+
+  CommitMeta updateCommitMeta(String message) {
+    return RestCommon.updateCommitMeta(CommitMeta.builder().message(message), httpHeaders).build();
   }
 }

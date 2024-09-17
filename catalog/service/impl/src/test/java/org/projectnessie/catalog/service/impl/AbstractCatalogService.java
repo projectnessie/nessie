@@ -71,6 +71,7 @@ import org.projectnessie.catalog.service.config.ImmutableServiceConfig;
 import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.combined.CombinedClientBuilder;
@@ -92,9 +93,7 @@ import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.services.spi.ConfigService;
-import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.DiffService;
-import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -122,6 +121,8 @@ public abstract class AbstractCatalogService {
   protected ObjectIO objectIO;
   protected CatalogServiceImpl catalogService;
   protected NessieApiV2 api;
+  protected TreeApiImpl treeService;
+  protected ContentApiImpl contentService;
   protected volatile Function<AccessContext, BatchAccessChecker> batchAccessCheckerFactory;
 
   protected ParsedReference commitSingle(Reference branch, ContentKey key)
@@ -157,7 +158,10 @@ public abstract class AbstractCatalogService {
     }
 
     MultiTableUpdate update =
-        catalogService.commit(ref, commit.build()).toCompletableFuture().get();
+        catalogService
+            .commit(ref, commit.build(), CommitMeta::fromMessage)
+            .toCompletableFuture()
+            .get();
     branch = update.targetBranch();
 
     return parsedReference(branch.getName(), branch.getHash(), Reference.ReferenceType.BRANCH);
@@ -203,7 +207,8 @@ public abstract class AbstractCatalogService {
     catalogService.objectIO = objectIO;
     catalogService.persist = persist;
     catalogService.executor = executor;
-    catalogService.nessieApi = api;
+    catalogService.contentService = contentService;
+    catalogService.treeService = treeService;
 
     catalogService.backendExceptionMapper = BackendExceptionMapper.builder().build();
   }
@@ -267,9 +272,9 @@ public abstract class AbstractCatalogService {
     AccessContext accessContext = () -> () -> null;
     ConfigService configService =
         new ConfigApiImpl(config, versionStore, authorizer, accessContext, 2);
-    TreeService treeService = new TreeApiImpl(config, versionStore, authorizer, accessContext);
-    ContentService contentService =
-        new ContentApiImpl(config, versionStore, authorizer, accessContext);
+
+    treeService = new TreeApiImpl(config, versionStore, authorizer, accessContext);
+    contentService = new ContentApiImpl(config, versionStore, authorizer, accessContext);
     DiffService diffService = new DiffApiImpl(config, versionStore, authorizer, accessContext);
 
     RestV2TreeResource treeResource =

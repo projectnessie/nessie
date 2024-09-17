@@ -20,12 +20,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
@@ -58,7 +60,10 @@ public interface CatalogService {
       throws NessieNotFoundException;
 
   CompletionStage<Stream<SnapshotResponse>> commit(
-      ParsedReference reference, CatalogCommit commit, SnapshotReqParams reqParams)
+      ParsedReference reference,
+      CatalogCommit commit,
+      SnapshotReqParams reqParams,
+      Function<String, CommitMeta> commitMetaBuilder)
       throws BaseNessieClientServerException;
 
   interface CatalogUriResolver {

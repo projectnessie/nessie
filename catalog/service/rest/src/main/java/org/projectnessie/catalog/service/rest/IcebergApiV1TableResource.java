@@ -37,7 +37,6 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
-import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 
@@ -101,9 +100,12 @@ import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
+import org.projectnessie.model.FetchOption;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
+import org.projectnessie.model.Operations;
 import org.projectnessie.storage.uri.StorageUri;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with tables. */
@@ -187,12 +189,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       // Check whether the current user has write access to the table, if that hasn't been already
       // checked by the caller.
       try {
-        nessieApi
-            .getContent()
-            .reference(snap.effectiveReference())
-            .key(contentKey)
-            .forWrite(true)
-            .getWithResponse();
+        contentService.getContent(
+            contentKey,
+            snap.effectiveReference().getName(),
+            snap.effectiveReference().getHash(),
+            false,
+            true);
         writeAccessValidated = true;
       } catch (Exception ignore) {
       }
@@ -368,7 +370,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     }
 
     ParsedReference reference = requireNonNull(tableRef.reference());
-    Branch ref = checkBranch(nessieApi.getReference().refName(reference.name()).get());
+    Branch ref = checkBranch(treeService.getReferenceByName(reference.name(), FetchOption.MINIMAL));
 
     Optional<TableRef> catalogTableRef =
         uriInfo.resolveTableFromUri(registerTableRequest.metadataLocation());
@@ -385,17 +387,17 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       // It's technically a new table for Nessie, so need to clear the content-ID.
       Content newContent = contentResponse.getContent().withId(null);
 
-      CommitResponse committed =
-          nessieApi
-              .commitMultipleOperations()
-              .branch(ref)
+      Operations ops =
+          ImmutableOperations.builder()
+              .addOperations(Put.of(ctr.contentKey(), newContent))
               .commitMeta(
-                  fromMessage(
+                  updateCommitMeta(
                       format(
                           "Register Iceberg table '%s' from '%s'",
                           ctr.contentKey(), registerTableRequest.metadataLocation())))
-              .operation(Put.of(ctr.contentKey(), newContent))
-              .commitWithResponse();
+              .build();
+      CommitResponse committed =
+          treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
 
       return this.loadTable(
           TableRef.tableRef(
@@ -432,17 +434,17 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             safeUnbox.applyAsInt(tableMetadata.currentSchemaId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSpecId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSortOrderId()));
-    CommitResponse committed =
-        nessieApi
-            .commitMultipleOperations()
-            .branch(ref)
+    Operations ops =
+        ImmutableOperations.builder()
+            .addOperations(Put.of(tableRef.contentKey(), newContent))
             .commitMeta(
-                fromMessage(
+                updateCommitMeta(
                     format(
                         "Register Iceberg table '%s' from '%s'",
                         tableRef.contentKey(), registerTableRequest.metadataLocation())))
-            .operation(Put.of(tableRef.contentKey(), newContent))
-            .commitWithResponse();
+            .build();
+    CommitResponse committed =
+        treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
 
     return this.loadTable(
         tableRef(
@@ -472,12 +474,13 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     ContentResponse resp = fetchIcebergTable(tableRef, false);
     Branch ref = checkBranch(resp.getEffectiveReference());
 
-    nessieApi
-        .commitMultipleOperations()
-        .branch(ref)
-        .commitMeta(fromMessage(format("Drop ICEBERG_TABLE %s", tableRef.contentKey())))
-        .operation(Delete.of(tableRef.contentKey()))
-        .commitWithResponse();
+    Operations ops =
+        ImmutableOperations.builder()
+            .addOperations(Delete.of(tableRef.contentKey()))
+            .commitMeta(updateCommitMeta(format("Drop ICEBERG_TABLE %s", tableRef.contentKey())))
+            .build();
+
+    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
   }
 
   @Operation(operationId = "iceberg.v1.listTables")

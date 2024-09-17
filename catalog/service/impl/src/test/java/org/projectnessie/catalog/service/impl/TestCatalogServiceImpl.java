@@ -51,6 +51,7 @@ import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
@@ -165,7 +166,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
         parsedReference(main.getName(), main.getHash(), Reference.ReferenceType.BRANCH);
     CatalogCommit commit = CatalogCommit.builder().build();
 
-    catalogService.commit(ref, commit).toCompletableFuture().get();
+    catalogService.commit(ref, commit, CommitMeta::fromMessage).toCompletableFuture().get();
 
     Reference afterCommit = api.getReference().refName("main").get();
     soft.assertThat(afterCommit).isEqualTo(main);
