@@ -24,6 +24,15 @@ import org.projectnessie.events.api.ReferenceCreatedEvent;
 import org.projectnessie.events.api.ReferenceDeletedEvent;
 import org.projectnessie.events.api.ReferenceUpdatedEvent;
 import org.projectnessie.events.api.TransplantEvent;
+import org.projectnessie.events.api.catalog.NamespaceAlteredEvent;
+import org.projectnessie.events.api.catalog.NamespaceCreatedEvent;
+import org.projectnessie.events.api.catalog.NamespaceDroppedEvent;
+import org.projectnessie.events.api.catalog.TableAlteredEvent;
+import org.projectnessie.events.api.catalog.TableCreatedEvent;
+import org.projectnessie.events.api.catalog.TableDroppedEvent;
+import org.projectnessie.events.api.catalog.ViewAlteredEvent;
+import org.projectnessie.events.api.catalog.ViewCreatedEvent;
+import org.projectnessie.events.api.catalog.ViewDroppedEvent;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
 
@@ -89,6 +98,51 @@ public class PrintingEventSubscriber implements EventSubscriber {
   @Override
   public void onContentRemoved(ContentRemovedEvent event) {
     out.println("Content removed: " + event);
+  }
+
+  @Override
+  public void onTableCreated(TableCreatedEvent event) {
+    out.println("Table created: " + event);
+  }
+
+  @Override
+  public void onTableUpdated(TableAlteredEvent event) {
+    out.println("Table updated: " + event);
+  }
+
+  @Override
+  public void onTableDropped(TableDroppedEvent event) {
+    out.println("Table dropped: " + event);
+  }
+
+  @Override
+  public void onViewCreated(ViewCreatedEvent event) {
+    out.println("View created: " + event);
+  }
+
+  @Override
+  public void onViewUpdated(ViewAlteredEvent event) {
+    out.println("View updated: " + event);
+  }
+
+  @Override
+  public void onViewDropped(ViewDroppedEvent event) {
+    out.println("View dropped: " + event);
+  }
+
+  @Override
+  public void onNamespaceCreated(NamespaceCreatedEvent event) {
+    out.println("Namespace created: " + event);
+  }
+
+  @Override
+  public void onNamespaceUpdated(NamespaceAlteredEvent event) {
+    out.println("Namespace updated: " + event);
+  }
+
+  @Override
+  public void onNamespaceDropped(NamespaceDroppedEvent event) {
+    out.println("Namespace dropped: " + event);
   }
 
   @Override

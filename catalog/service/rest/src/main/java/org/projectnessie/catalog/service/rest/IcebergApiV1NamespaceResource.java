@@ -49,8 +49,13 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergGetNamespaceRespons
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergListNamespacesResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesResponse;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
+import org.projectnessie.catalog.model.ops.CatalogOperationType;
+import org.projectnessie.catalog.model.ops.ImmutableCatalogOperationResult;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
+import org.projectnessie.client.api.CreateNamespaceResult;
+import org.projectnessie.client.api.DeleteNamespaceResult;
 import org.projectnessie.client.api.UpdateNamespaceResult;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.model.Content;
@@ -86,18 +91,35 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
     // TODO might want to prevent setting 'location'
 
-    Namespace ns =
+    CreateNamespaceResult result =
         nessieApi
             .createNamespace()
             .refName(ref.name())
             .hashOnRef(ref.hashWithRelativeSpec())
             .namespace(createNamespaceRequest.namespace().toNessieNamespace())
             .properties(createNamespaceRequest.properties())
-            .create();
+            .createWithResponse();
+
+    CatalogOperationResult catalogOperationResult =
+        ImmutableCatalogOperationResult.builder()
+            .effectiveBranch(result.getEffectiveBranch())
+            .contentAfter(result.getNamespace())
+            .operation(
+                ImmutableNamespaceCatalogOperation.builder()
+                    .operationType(CatalogOperationType.CREATE_NAMESPACE)
+                    .contentKey(result.getNamespace().toContentKey())
+                    .addUpdate(
+                        ImmutableSetProperties.builder()
+                            .updates(createNamespaceRequest.properties())
+                            .build())
+                    .build())
+            .build();
+
+    catalogOperationResultCollector.accept(catalogOperationResult);
 
     return IcebergCreateNamespaceResponse.builder()
         .namespace(createNamespaceRequest.namespace())
-        .putAllProperties(ns.getProperties())
+        .putAllProperties(result.getNamespace().getProperties())
         .build();
   }
 
@@ -110,12 +132,26 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
       throws IOException {
     NamespaceRef namespaceRef = decodeNamespaceRef(prefix, namespace);
 
-    nessieApi
-        .deleteNamespace()
-        .refName(namespaceRef.referenceName())
-        .hashOnRef(namespaceRef.hashWithRelativeSpec())
-        .namespace(namespaceRef.namespace())
-        .delete();
+    DeleteNamespaceResult result =
+        nessieApi
+            .deleteNamespace()
+            .refName(namespaceRef.referenceName())
+            .hashOnRef(namespaceRef.hashWithRelativeSpec())
+            .namespace(namespaceRef.namespace())
+            .deleteWithResponse();
+
+    CatalogOperationResult catalogResult =
+        ImmutableCatalogOperationResult.builder()
+            .effectiveBranch(result.getEffectiveBranch())
+            .contentBefore(result.getNamespace())
+            .operation(
+                ImmutableNamespaceCatalogOperation.builder()
+                    .operationType(CatalogOperationType.DROP_NAMESPACE)
+                    .contentKey(result.getNamespace().toContentKey())
+                    .build())
+            .build();
+
+    catalogOperationResultCollector.accept(catalogResult);
   }
 
   @Operation(operationId = "iceberg.v1.listNamespaces")
@@ -278,6 +314,28 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             })
         .map(Map.Entry::getKey)
         .forEach(response::addUpdated);
+
+    CatalogOperationResult catalogOperationResult =
+        ImmutableCatalogOperationResult.builder()
+            .effectiveBranch(namespaceUpdate.getEffectiveBranch())
+            .contentBefore(namespaceUpdate.getNamespaceBeforeUpdate())
+            .contentAfter(namespaceUpdate.getNamespace())
+            .operation(
+                ImmutableNamespaceCatalogOperation.builder()
+                    .operationType(CatalogOperationType.ALTER_NAMESPACE)
+                    .contentKey(namespaceUpdate.getNamespace().toContentKey())
+                    .addUpdate(
+                        ImmutableSetProperties.builder()
+                            .updates(updateNamespacePropertiesRequest.updates())
+                            .build())
+                    .addUpdate(
+                        ImmutableRemoveProperties.builder()
+                            .removals(updateNamespacePropertiesRequest.removals())
+                            .build())
+                    .build())
+            .build();
+
+    catalogOperationResultCollector.accept(catalogOperationResult);
 
     return response.build();
   }

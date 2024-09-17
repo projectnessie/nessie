@@ -47,6 +47,8 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
+import org.projectnessie.catalog.model.ops.CatalogOperationType;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.CatalogService;
@@ -60,6 +62,7 @@ import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Content;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.EntriesResponse;
@@ -75,6 +78,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   @Inject NessieApiV2 nessieApi;
   @Inject ServerConfig serverConfig;
   @Inject CatalogConfig catalogConfig;
+  @Inject Consumer<CatalogOperationResult> catalogOperationResultCollector;
 
   protected Stream<EntriesResponse.Entry> listContent(
       NamespaceRef namespaceRef,
@@ -342,16 +346,19 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   }
 
   Uni<SnapshotResponse> createOrUpdateEntity(
-      TableRef tableRef, IcebergUpdateEntityRequest updateEntityRequest, Content.Type contentType)
+      TableRef tableRef,
+      IcebergUpdateEntityRequest updateEntityRequest,
+      Type contentType,
+      CatalogOperationType operationType)
       throws IOException {
 
     IcebergCatalogOperation op =
         IcebergCatalogOperation.builder()
             .updates(updateEntityRequest.updates())
             .requirements(updateEntityRequest.requirements())
-            .key(tableRef.contentKey())
+            .contentKey(tableRef.contentKey())
             .warehouse(tableRef.warehouse())
-            .type(contentType)
+            .contentType(contentType)
             .build();
 
     CatalogCommit commit = CatalogCommit.builder().addOperations(op).build();

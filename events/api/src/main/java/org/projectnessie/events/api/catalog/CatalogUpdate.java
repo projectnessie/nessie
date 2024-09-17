@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.model.ops;
+package org.projectnessie.events.api.catalog;
 
-import java.util.List;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+import java.util.Collections;
+import java.util.Map;
+import org.immutables.value.Value;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
+@Value.Immutable
+public interface CatalogUpdate {
 
-  CatalogOperationType getOperationType();
+  String getAction();
 
-  ContentKey getContentKey();
-
-  Content.Type getContentType();
-
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
+  /** A map of attributes that can be used to add additional information to the update object. */
+  @Value.Default
+  default Map<String, Object> getProperties() {
+    return Collections.emptyMap();
+  }
 }

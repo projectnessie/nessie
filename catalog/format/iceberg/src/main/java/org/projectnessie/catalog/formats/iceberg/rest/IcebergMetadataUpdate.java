@@ -48,12 +48,16 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewVersion;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergTableMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergViewMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg;
+import org.projectnessie.catalog.model.ops.CatalogUpdate;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /** Iceberg metadata update objects serialized according to the Iceberg REST Catalog schema. */
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "action")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    property = "action",
+    include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = IcebergMetadataUpdate.AssignUUID.class, name = "assign-uuid"),
   @JsonSubTypes.Type(
@@ -99,7 +103,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
       value = IcebergMetadataUpdate.RemovePartitionStatistics.class,
       name = "remove-partition-statistics"),
 })
-public interface IcebergMetadataUpdate {
+public interface IcebergMetadataUpdate extends CatalogUpdate {
 
   default void applyToTable(IcebergTableMetadataUpdateState state) {
     throw new UnsupportedOperationException(
@@ -120,6 +124,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableUpgradeFormatVersion.class)
   @JsonDeserialize(as = ImmutableUpgradeFormatVersion.class)
   interface UpgradeFormatVersion extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "upgrade-format-version";
+    }
 
     int formatVersion();
 
@@ -144,6 +155,13 @@ public interface IcebergMetadataUpdate {
   @JsonDeserialize(as = ImmutableRemoveSnapshots.class)
   interface RemoveSnapshots extends IcebergMetadataUpdate {
 
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "remove-snapshots";
+    }
+
     List<Long> snapshotIds();
 
     @Override
@@ -158,6 +176,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableRemoveProperties.class)
   @JsonDeserialize(as = ImmutableRemoveProperties.class)
   interface RemoveProperties extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "remove-properties";
+    }
 
     @JsonAlias({"removals", "removed"})
     List<String> removals();
@@ -178,6 +203,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAddViewVersion.class)
   @JsonDeserialize(as = ImmutableAddViewVersion.class)
   interface AddViewVersion extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "add-view-version";
+    }
 
     IcebergViewVersion viewVersion();
 
@@ -209,6 +241,13 @@ public interface IcebergMetadataUpdate {
   @JsonDeserialize(as = ImmutableSetCurrentViewVersion.class)
   interface SetCurrentViewVersion extends IcebergMetadataUpdate {
 
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-current-view-version";
+    }
+
     long viewVersionId();
 
     @Override
@@ -226,6 +265,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetStatistics.class)
   @JsonDeserialize(as = ImmutableSetStatistics.class)
   interface SetStatistics extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-statistics";
+    }
 
     long snapshotId();
 
@@ -246,6 +292,13 @@ public interface IcebergMetadataUpdate {
   @JsonDeserialize(as = ImmutableRemoveStatistics.class)
   interface RemoveStatistics extends IcebergMetadataUpdate {
 
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "remove-statistics";
+    }
+
     long snapshotId();
 
     @Override
@@ -262,6 +315,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetPartitionStatistics.class)
   @JsonDeserialize(as = ImmutableSetPartitionStatistics.class)
   interface SetPartitionStatistics extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-partition-statistics";
+    }
 
     IcebergPartitionStatisticsFile partitionStatistics();
 
@@ -284,6 +344,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableRemovePartitionStatistics.class)
   @JsonDeserialize(as = ImmutableRemovePartitionStatistics.class)
   interface RemovePartitionStatistics extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "remove-partition-statistics";
+    }
+
     long snapshotId();
 
     @Override
@@ -300,6 +368,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAssignUUID.class)
   @JsonDeserialize(as = ImmutableAssignUUID.class)
   interface AssignUUID extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "assign-uuid";
+    }
+
     String uuid();
 
     @Override
@@ -322,6 +398,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAddSchema.class)
   @JsonDeserialize(as = ImmutableAddSchema.class)
   interface AddSchema extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "add-schema";
+    }
+
     IcebergSchema schema();
 
     int lastColumnId();
@@ -346,6 +430,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetCurrentSchema.class)
   @JsonDeserialize(as = ImmutableSetCurrentSchema.class)
   interface SetCurrentSchema extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-current-schema";
+    }
+
     /** ID of the schema to become the current one or {@code -1} to use the last added schema. */
     int schemaId();
 
@@ -371,6 +463,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAddPartitionSpec.class)
   @JsonDeserialize(as = ImmutableAddPartitionSpec.class)
   interface AddPartitionSpec extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "add-spec";
+    }
+
     IcebergPartitionSpec spec();
 
     @Override
@@ -394,6 +494,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetDefaultPartitionSpec.class)
   @JsonDeserialize(as = ImmutableSetDefaultPartitionSpec.class)
   interface SetDefaultPartitionSpec extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-default-spec";
+    }
+
     /**
      * ID of the partition spec to become the current one or {@code -1} to use the last added
      * partition spec.
@@ -415,6 +523,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAddSnapshot.class)
   @JsonDeserialize(as = ImmutableAddSnapshot.class)
   interface AddSnapshot extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "add-snapshot";
+    }
+
     IcebergSnapshot snapshot();
 
     @Override
@@ -428,6 +544,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableAddSortOrder.class)
   @JsonDeserialize(as = ImmutableAddSortOrder.class)
   interface AddSortOrder extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "add-sort-order";
+    }
+
     IcebergSortOrder sortOrder();
 
     @Override
@@ -457,6 +581,13 @@ public interface IcebergMetadataUpdate {
   @JsonDeserialize(as = ImmutableSetDefaultSortOrder.class)
   interface SetDefaultSortOrder extends IcebergMetadataUpdate {
 
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-default-sort-order";
+    }
+
     /**
      * ID of the sort order to become the current one or {@code -1} to use the last added sort
      * order.
@@ -478,6 +609,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetLocation.class)
   @JsonDeserialize(as = ImmutableSetLocation.class)
   interface SetLocation extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-location";
+    }
+
     String location();
 
     @Override
@@ -514,6 +653,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetProperties.class)
   @JsonDeserialize(as = ImmutableSetProperties.class)
   interface SetProperties extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-properties";
+    }
+
     @JsonAlias({"updated", "updated"})
     Map<String, String> updates();
 
@@ -537,6 +684,14 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableSetSnapshotRef.class)
   @JsonDeserialize(as = ImmutableSetSnapshotRef.class)
   interface SetSnapshotRef extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "set-snapshot-ref";
+    }
+
     String refName();
 
     Long snapshotId();
@@ -567,6 +722,13 @@ public interface IcebergMetadataUpdate {
   @JsonSerialize(as = ImmutableRemoveSnapshotRef.class)
   @JsonDeserialize(as = ImmutableRemoveSnapshotRef.class)
   interface RemoveSnapshotRef extends IcebergMetadataUpdate {
+
+    @Value.Default
+    @Value.Parameter(false)
+    @Override
+    default String getAction() {
+      return "remove-snapshot-ref";
+    }
 
     String refName();
 

@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.model.ops;
+package org.projectnessie.events.api.catalog;
 
-import java.util.List;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+import org.projectnessie.events.api.ContentKey;
+import org.projectnessie.events.api.Event;
+import org.projectnessie.events.api.ReferenceEvent;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
+public interface CatalogEvent extends Event, ReferenceEvent {
 
-  CatalogOperationType getOperationType();
-
+  /** The key of the content that was updated. */
   ContentKey getContentKey();
 
-  Content.Type getContentType();
+  /** The operation that was performed on the content. */
+  CatalogOperation getOperation();
 
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
+  /** The hash of the commit that recorded the catalog operation. */
+  String getHash();
 }

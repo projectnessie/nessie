@@ -130,8 +130,8 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
                 IcebergCatalogOperation.builder()
                     .updates(tableChange.updates())
                     .requirements(tableChange.requirements())
-                    .key(requireNonNull(tableChange.identifier()).toNessieContentKey())
-                    .type(ICEBERG_TABLE)
+                    .contentKey(requireNonNull(tableChange.identifier()).toNessieContentKey())
+                    .contentType(ICEBERG_TABLE)
                     .build())
         .forEach(commit::addOperations);
 

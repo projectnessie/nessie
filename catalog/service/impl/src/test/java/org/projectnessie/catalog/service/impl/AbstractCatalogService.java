@@ -140,7 +140,7 @@ public abstract class AbstractCatalogService {
       commit
           .addOperations(
               IcebergCatalogOperation.builder()
-                  .key(key)
+                  .contentKey(key)
                   .addUpdates(
                       assignUUID(UUID.randomUUID().toString()),
                       upgradeFormatVersion(2),
@@ -151,7 +151,7 @@ public abstract class AbstractCatalogService {
                       addSortOrder(IcebergSortOrder.UNSORTED_ORDER),
                       setDefaultSortOrder(-1))
                   .addRequirement(assertTableDoesNotExist())
-                  .type(ICEBERG_TABLE)
+                  .contentType(ICEBERG_TABLE)
                   .build())
           .build();
     }
@@ -206,6 +206,7 @@ public abstract class AbstractCatalogService {
     catalogService.nessieApi = api;
 
     catalogService.backendExceptionMapper = BackendExceptionMapper.builder().build();
+    catalogService.catalogOperationResultCollector = r -> {};
   }
 
   private void setupObjectIO() {

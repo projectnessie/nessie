@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Dremio
+ * Copyright (C) 2023 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.catalog.model.ops;
 
-import java.util.List;
-import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
+/** API package for Nessie catalog events. */
+@Value.Style(
+    depluralize = true,
+    get = {"get*", "is*"})
+package org.projectnessie.events.api.catalog;
 
-/** Common interface for change operations on a catalog. */
-public interface CatalogOperation<T extends CatalogUpdate> {
-
-  CatalogOperationType getOperationType();
-
-  ContentKey getContentKey();
-
-  Content.Type getContentType();
-
-  /**
-   * Get the updates that were applied to the content. Empty if the operation is a DROP or a no-op.
-   */
-  List<T> getUpdates();
-}
+import org.immutables.value.Value;

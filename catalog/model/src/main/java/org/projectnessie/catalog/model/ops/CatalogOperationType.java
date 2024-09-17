@@ -15,19 +15,16 @@
  */
 package org.projectnessie.catalog.model.ops;
 
-import jakarta.validation.constraints.NotNull;
-import javax.annotation.Nullable;
-import org.projectnessie.model.Content;
+public enum CatalogOperationType {
+  CREATE_TABLE,
+  DROP_TABLE,
+  ALTER_TABLE,
 
-/**
- * Represents a pluggable component that supports certain {@link CatalogOperation} subclasses for
- * specific {@link Content.Type}s.
- */
-public interface CatalogOperationTypeResolver {
-  /**
-   * Returns the java object class representing {@link CatalogOperation}s for the given content
-   * type, or {@code null} if this resolver does not support the content type.
-   */
-  @Nullable
-  Class<? extends CatalogOperation> forContentType(@NotNull Content.Type type);
+  CREATE_VIEW,
+  DROP_VIEW,
+  ALTER_VIEW,
+
+  CREATE_NAMESPACE,
+  DROP_NAMESPACE,
+  ALTER_NAMESPACE,
 }

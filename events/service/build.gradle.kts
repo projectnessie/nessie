@@ -20,6 +20,8 @@ publishingHelper { mavenName = "Nessie - Events - Service" }
 
 dependencies {
   implementation(project(":nessie-model"))
+  implementation(project(":nessie-catalog-model"))
+  implementation(project(":nessie-catalog-format-iceberg"))
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
@@ -33,9 +35,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jakarta.annotation.api)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables"))
+  annotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

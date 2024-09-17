@@ -21,12 +21,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
 import org.projectnessie.events.api.Content;
 import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ReferenceCreatedEvent;
+import org.projectnessie.events.service.catalog.CatalogOperationResultEvent;
 import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
@@ -143,6 +145,47 @@ public class EventService implements AutoCloseable {
         break;
       default:
         throw new IllegalArgumentException("Unknown result type: " + result.getResultType());
+    }
+  }
+
+  public void onCatalogEvent(CatalogOperationResultEvent event) {
+    if (!started) {
+      return;
+    }
+    CatalogOperationResult result = event.getCatalogOperationResult();
+    Principal user = event.getUser().orElse(null);
+    String repositoryId = event.getRepositoryId();
+    switch (result.getOperation().getOperationType()) {
+      case CREATE_TABLE:
+        fireEvent(factory.newTableCreatedEvent(result, repositoryId, user));
+        break;
+      case DROP_TABLE:
+        fireEvent(factory.newTableDroppedEvent(result, repositoryId, user));
+        break;
+      case ALTER_TABLE:
+        fireEvent(factory.newTableAlteredEvent(result, repositoryId, user));
+        break;
+      case CREATE_VIEW:
+        fireEvent(factory.newViewCreatedEvent(result, repositoryId, user));
+        break;
+      case DROP_VIEW:
+        fireEvent(factory.newViewDroppedEvent(result, repositoryId, user));
+        break;
+      case ALTER_VIEW:
+        fireEvent(factory.newViewAlteredEvent(result, repositoryId, user));
+        break;
+      case CREATE_NAMESPACE:
+        fireEvent(factory.newNamespaceCreatedEvent(result, repositoryId, user));
+        break;
+      case DROP_NAMESPACE:
+        fireEvent(factory.newNamespaceDroppedEvent(result, repositoryId, user));
+        break;
+      case ALTER_NAMESPACE:
+        fireEvent(factory.newNamespaceAlteredEvent(result, repositoryId, user));
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unknown operation type: " + result.getOperation().getOperationType());
     }
   }
 

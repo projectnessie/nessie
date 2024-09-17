@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,35 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.service;
+package org.projectnessie.events.service.catalog;
 
 import java.security.Principal;
 import java.util.Optional;
 import org.immutables.value.Value;
+import org.projectnessie.catalog.model.ops.CatalogOperationResult;
 import org.projectnessie.nessie.immutables.NessieImmutable;
-import org.projectnessie.versioned.Result;
 
-/**
- * An internal event triggered when a result produced by the version store.
- *
- * <p>This event is meant to capture the {@link Result} emitted by the store, correlated with the
- * user that initiated the change, and the id of the repository affected by the change.
- *
- * <p>This event is produced by a {@link ResultCollector}; it is not meant to be delivered as is to
- * subscribers, but rather, to be forwarded to {@link
- * EventService#onVersionStoreEvent(VersionStoreEvent)}, then converted to one or many {@linkplain
- * org.projectnessie.events.api.Event API events}, which are in turn delivered to subscribers.
- */
+/** An internal event triggered when the catalog updates an entity. */
 @NessieImmutable
 @Value.Style(optionalAcceptNullable = true)
-public interface VersionStoreEvent {
-
-  /** The {@link Result} produced by the version store. */
-  Result getResult();
+public interface CatalogOperationResultEvent {
 
   /** The repository id affected by the change. Never null, but may be an empty string. */
   String getRepositoryId();
 
   /** The user principal that initiated the change. May be empty if authentication is disabled. */
   Optional<Principal> getUser();
+
+  /** The {@link CatalogOperationResult} produced by the catalog operation. */
+  CatalogOperationResult getCatalogOperationResult();
 }
