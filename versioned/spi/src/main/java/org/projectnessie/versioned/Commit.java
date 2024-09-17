@@ -19,6 +19,7 @@ import jakarta.annotation.Nullable;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Operation;
 
 @Value.Immutable
 public interface Commit extends Hashable {

@@ -35,11 +35,11 @@ import java.util.stream.Collectors;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -199,7 +199,11 @@ public final class ContentMapping {
           ContentKey key = keys.get(i);
           assert obj instanceof ContentValueObj;
           ContentValueObj contentValue = (ContentValueObj) obj;
-          commit.addOperations(Put.ofLazy(key, contentValue.payload(), contentValue.data()));
+          commit.addOperations(
+              Put.of(
+                  key,
+                  DefaultStoreWorker.instance()
+                      .valueFromStore(contentValue.payload(), contentValue.data())));
         }
       }
     }

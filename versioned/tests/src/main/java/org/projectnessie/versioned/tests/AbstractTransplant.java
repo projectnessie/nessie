@@ -39,12 +39,12 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.Operation.Delete;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
@@ -179,17 +179,17 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_1);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_1_1);
                       },
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_1);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_2_1);
                       },
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_3));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_3_1);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_3_1);
                       });
             },
             c -> {
@@ -202,7 +202,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_1));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_1_2);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_1_2);
                       },
                       o ->
                           soft.assertThat(o)
@@ -217,7 +217,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_4));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_4_1);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_4_1);
                       });
             },
             c -> {
@@ -230,7 +230,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
                       o -> {
                         soft.assertThat(o).isInstanceOf(Put.class);
                         soft.assertThat(o.getKey()).isEqualTo(ContentKey.of(T_2));
-                        soft.assertThat(contentWithoutId(((Put) o).getValue())).isEqualTo(V_2_2);
+                        soft.assertThat(contentWithoutId(((Put) o).getContent())).isEqualTo(V_2_2);
                       }
                       // Unchanged operation not retained
                       );

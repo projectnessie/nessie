@@ -42,11 +42,11 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.MergeOp;
 

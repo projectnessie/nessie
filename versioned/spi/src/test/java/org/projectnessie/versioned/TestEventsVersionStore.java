@@ -44,6 +44,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.VersionStore.TransplantOp;

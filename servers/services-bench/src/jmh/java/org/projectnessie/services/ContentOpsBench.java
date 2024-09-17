@@ -45,11 +45,11 @@ import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.KeyEntry;
-import org.projectnessie.versioned.Operation;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.paging.PaginationIterator;
 
