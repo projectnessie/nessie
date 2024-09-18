@@ -74,6 +74,16 @@
       automerge: false,
     },
 
+    // Jandex special
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
+      matchUpdateTypes: ["major", "minor"],
+      automerge: false,
+      matchPackageNames: [
+        "org.jboss:jandex",
+      ]
+    },
+
     // Exclude a couple packages that are known to break Nessie and/or downstream users
     {
       matchManagers: ["maven", "gradle"],
