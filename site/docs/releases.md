@@ -2,6 +2,33 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.97.0 Release (September 18, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.97.0).
+
+### New Features
+
+- Helm chart: support has been added for the `DYNAMODB2`, `MONGODB2`, `CASSANDRA2`, and `JDBC2`
+  version store types, introduced in Nessie 0.96.0. Also, support for legacy version store types
+  based on the old "database adapter" code, which were removed in Nessie 0.75.0, has also been
+  removed from the Helm chart.
+
+### Fixes
+
+- Helm chart: fixed a regression where a datasource secret would result in a failure to deploy the
+  chart.
+
+### Commits
+* Downgrade Jandex from 3.2.2 to 3.1.8 (#9561)
+* Site: Add information about warehouse + object storages (#9560)
+* Replace versioned-spi operation types with model operation types (#9551)
+* Use `Tree`/`ContentService` in Catalog (#9547)
+* Nit: fix JSON alias typo in IcebergMetadataUpdate interface (#9550)
+* Quarkus: fail on unknown config properties (#9542)
+* Add secrets-validation option to docs (#9541)
+* Docs: add missing link in TOC of index.md (#9529)
+* Events notification system for Nessie - Reference Implementation (#6943)
+
 ## 0.96.1 Release (September 12, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.96.1).
