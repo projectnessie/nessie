@@ -69,25 +69,13 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
   private static class BasicAuthentication implements HttpAuthentication {
     private final Supplier<String> headerSupplier;
 
-    private static String basicHeader(String username, String password) {
-      if (username == null || password == null) {
-        throw new NullPointerException(
-            "username and password parameters must be present for auth type " + AUTH_TYPE_VALUE);
-      }
-
-      String userPass = username + ':' + password;
-      byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
-      String encodedString = new String(encoded, StandardCharsets.UTF_8);
-      return "Basic " + encodedString;
-    }
-
     private BasicAuthentication(String username, String password) {
-      String header = basicHeader(username, password);
+      String header = basicAuthorizationHeader(username, password);
       this.headerSupplier = () -> header;
     }
 
     private BasicAuthentication(String username, Supplier<String> passwordSupplier) {
-      this.headerSupplier = () -> basicHeader(username, passwordSupplier.get());
+      this.headerSupplier = () -> basicAuthorizationHeader(username, passwordSupplier.get());
     }
 
     @Override
@@ -99,5 +87,17 @@ public class BasicAuthenticationProvider implements NessieAuthenticationProvider
     public void applyToHttpRequest(RequestContext context) {
       context.putHeader("Authorization", headerSupplier.get());
     }
+  }
+
+  public static String basicAuthorizationHeader(String username, String password) {
+    if (username == null || password == null) {
+      throw new NullPointerException(
+          "username and password parameters must be present for auth type " + AUTH_TYPE_VALUE);
+    }
+
+    String userPass = username + ':' + password;
+    byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
+    String encodedString = new String(encoded, StandardCharsets.UTF_8);
+    return "Basic " + encodedString;
   }
 }
