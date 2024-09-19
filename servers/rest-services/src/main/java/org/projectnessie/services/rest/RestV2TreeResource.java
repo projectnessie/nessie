@@ -65,11 +65,19 @@ import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.SingleReferenceResponse;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ConfigApiImpl;
+import org.projectnessie.services.impl.ContentApiImpl;
+import org.projectnessie.services.impl.DiffApiImpl;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.ConfigService;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedCountingResponseHandler;
 import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
@@ -89,15 +97,15 @@ public class RestV2TreeResource implements HttpTreeApi {
 
   @Inject
   public RestV2TreeResource(
-      ConfigService configService,
-      TreeService treeService,
-      ContentService contentService,
-      DiffService diffService,
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext,
       HttpHeaders httpHeaders) {
-    this.configService = configService;
-    this.treeService = treeService;
-    this.contentService = contentService;
-    this.diffService = diffService;
+    this.configService = new ConfigApiImpl(config, store, authorizer, accessContext, 2);
+    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext);
+    this.contentService = new ContentApiImpl(config, store, authorizer, accessContext);
+    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext);
     this.httpHeaders = httpHeaders;
   }
 

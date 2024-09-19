@@ -52,6 +52,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergGetNamespaceRespons
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergListNamespacesResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesResponse;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -70,8 +71,12 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.VersionStore;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with namespaces. */
 @RequestScoped
@@ -81,6 +86,20 @@ import org.projectnessie.storage.uri.StorageUri;
 public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergErrorMapper errorMapper;
+
+  public IcebergApiV1NamespaceResource() {
+    this(null, null, null, null, null);
+  }
+
+  @Inject
+  public IcebergApiV1NamespaceResource(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+  }
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {

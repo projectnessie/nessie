@@ -22,7 +22,12 @@ import jakarta.ws.rs.Path;
 import org.projectnessie.api.v1.http.HttpConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.spi.ConfigService;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint to retrieve server settings. */
 @RequestScoped
@@ -33,12 +38,13 @@ public class RestConfigResource implements HttpConfigApi {
 
   // Mandated by CDI 2.0
   public RestConfigResource() {
-    this(null);
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestConfigResource(ConfigService configService) {
-    this.configService = configService;
+  public RestConfigResource(
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.configService = new ConfigApiImpl(config, store, authorizer, accessContext, 1);
   }
 
   @Override

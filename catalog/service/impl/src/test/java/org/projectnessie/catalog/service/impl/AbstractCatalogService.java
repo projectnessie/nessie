@@ -86,14 +86,10 @@ import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ConfigApiImpl;
 import org.projectnessie.services.impl.ContentApiImpl;
-import org.projectnessie.services.impl.DiffApiImpl;
 import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
-import org.projectnessie.services.spi.ConfigService;
-import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -270,16 +266,12 @@ public abstract class AbstractCatalogService {
     VersionStore versionStore = new VersionStoreImpl(persist);
     Authorizer authorizer = context -> batchAccessCheckerFactory.apply(context);
     AccessContext accessContext = () -> () -> null;
-    ConfigService configService =
-        new ConfigApiImpl(config, versionStore, authorizer, accessContext, 2);
 
     treeService = new TreeApiImpl(config, versionStore, authorizer, accessContext);
     contentService = new ContentApiImpl(config, versionStore, authorizer, accessContext);
-    DiffService diffService = new DiffApiImpl(config, versionStore, authorizer, accessContext);
 
     RestV2TreeResource treeResource =
-        new RestV2TreeResource(
-            configService, treeService, contentService, diffService, emptyHttpHeaders());
+        new RestV2TreeResource(config, versionStore, authorizer, accessContext, emptyHttpHeaders());
     RestV2ConfigResource configResource =
         new RestV2ConfigResource(config, versionStore, authorizer, accessContext);
     api =

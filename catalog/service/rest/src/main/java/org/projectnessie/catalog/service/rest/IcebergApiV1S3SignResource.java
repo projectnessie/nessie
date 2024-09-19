@@ -38,9 +38,14 @@ import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.service.api.SignerKeysService;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.VersionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +67,20 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
   @Inject UriInfo uriInfo;
 
   Clock clock = Clock.systemUTC();
+
+  public IcebergApiV1S3SignResource() {
+    this(null, null, null, null, null);
+  }
+
+  @Inject
+  public IcebergApiV1S3SignResource(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+  }
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {

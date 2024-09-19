@@ -43,7 +43,12 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTransactionRe
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.VersionStore;
 
 /**
  * Handles Iceberg REST API v1 endpoints that are not strongly associated with a particular entity
@@ -57,6 +62,20 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergConfigurer icebergConfigurer;
   @Inject IcebergErrorMapper errorMapper;
+
+  public IcebergApiV1GenericResource() {
+    this(null, null, null, null, null);
+  }
+
+  @Inject
+  public IcebergApiV1GenericResource(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+  }
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {

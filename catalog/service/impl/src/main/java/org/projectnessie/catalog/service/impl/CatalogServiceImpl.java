@@ -102,9 +102,15 @@ import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ContentApiImpl;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.slf4j.Logger;
@@ -116,17 +122,33 @@ public class CatalogServiceImpl implements CatalogService {
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogServiceImpl.class);
 
   @Inject ObjectIO objectIO;
-  @Inject TreeService treeService;
-  @Inject ContentService contentService;
+  TreeService treeService;
+  ContentService contentService;
+  CatalogConfig catalogConfig;
   @Inject Persist persist;
   @Inject TasksService tasksService;
   @Inject BackendExceptionMapper backendExceptionMapper;
-  @Inject CatalogConfig catalogConfig;
   @Inject ServiceConfig serviceConfig;
 
   @Inject
   @Named("import-jobs")
   Executor executor;
+
+  public CatalogServiceImpl() {
+    this(null, null, null, null, null);
+  }
+
+  @Inject
+  public CatalogServiceImpl(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    this.catalogConfig = catalogConfig;
+    this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext);
+    this.contentService = new ContentApiImpl(serverConfig, store, authorizer, accessContext);
+  }
 
   private IcebergStuff icebergStuff() {
     return new IcebergStuff(

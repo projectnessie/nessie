@@ -32,7 +32,6 @@ import static org.projectnessie.services.impl.RefUtil.toReference;
 
 import com.google.common.base.Splitter;
 import io.smallrye.mutiny.Uni;
-import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.time.OffsetDateTime;
@@ -70,17 +69,34 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.TableReference;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.ContentApiImpl;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.PagedCountingResponseHandler;
 import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.VersionStore;
 
 abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
-  @Inject TreeService treeService;
-  @Inject ContentService contentService;
-  @Inject ServerConfig serverConfig;
-  @Inject CatalogConfig catalogConfig;
+  final TreeService treeService;
+  final ContentService contentService;
+  final ServerConfig serverConfig;
+  final CatalogConfig catalogConfig;
+
+  protected IcebergApiV1ResourceBase(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    this.serverConfig = serverConfig;
+    this.catalogConfig = catalogConfig;
+    this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext);
+    this.contentService = new ContentApiImpl(serverConfig, store, authorizer, accessContext);
+  }
 
   protected Stream<EntriesResponse.Entry> listContent(
       NamespaceRef namespaceRef,
