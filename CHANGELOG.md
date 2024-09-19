@@ -8,6 +8,21 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Alert: If you are using MySQL or MariaDB, make sure to update `objs` table immediately:
+  ```sql
+  ALTER TABLE objs MODIFY c_headers LONGBLOB;
+  ALTER TABLE objs MODIFY c_incremental_index LONGBLOB;
+  ALTER TABLE objs MODIFY c_reference_index_stripes LONGBLOB;
+  ALTER TABLE objs MODIFY i_index LONGBLOB;
+  ALTER TABLE objs MODIFY i_stripes LONGBLOB;
+  ALTER TABLE objs MODIFY s_text LONGBLOB;
+  ALTER TABLE objs MODIFY t_headers LONGBLOB;
+  ALTER TABLE objs MODIFY t_signature LONGBLOB;
+  ALTER TABLE objs MODIFY u_value LONGBLOB;
+  ALTER TABLE objs MODIFY v_data LONGBLOB;
+  ALTER TABLE objs MODIFY x_data LONGBLOB;
+  ```
+
 ### Upgrade notes
 
 ### Breaking changes
@@ -19,6 +34,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+
+- MySQL: Change type of binary columns from `BLOB` to `LONGBLOB`.
 
 ### Commits
 

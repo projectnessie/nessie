@@ -192,7 +192,7 @@ public final class DatabaseSpecifics {
       typeIdMap.put(JdbcColumnType.OBJ_ID_LIST, Types.VARCHAR);
       typeMap.put(JdbcColumnType.BOOL, "BIT(1)");
       typeIdMap.put(JdbcColumnType.BOOL, Types.BIT);
-      typeMap.put(JdbcColumnType.VARBINARY, "BLOB");
+      typeMap.put(JdbcColumnType.VARBINARY, "LONGBLOB");
       typeIdMap.put(JdbcColumnType.VARBINARY, Types.BLOB);
       typeMap.put(JdbcColumnType.BIGINT, "BIGINT");
       typeIdMap.put(JdbcColumnType.BIGINT, Types.BIGINT);
