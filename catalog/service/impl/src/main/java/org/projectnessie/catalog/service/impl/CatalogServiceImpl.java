@@ -31,8 +31,8 @@ import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceber
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergViewSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.api.NessieSnapshotResponse.nessieSnapshotResponse;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
 import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snapshotObjIdForContent;

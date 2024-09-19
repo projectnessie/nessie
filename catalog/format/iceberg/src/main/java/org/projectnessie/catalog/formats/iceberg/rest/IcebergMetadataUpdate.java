@@ -21,6 +21,7 @@ import static java.util.Collections.singleton;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergStatisticsFileToNessie;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -480,32 +481,28 @@ public interface IcebergMetadataUpdate {
   interface SetLocation extends IcebergMetadataUpdate {
     String location();
 
+    @JsonIgnore
+    @Value.Default
+    default boolean trusted() {
+      return false;
+    }
+
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
-      // don't trust locations sent by clients
+      if (trusted()) {
+        NessieModelIceberg.setLocation(this, state.builder());
+      }
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
-      // don't trust locations sent by clients
-    }
-  }
-
-  @NessieImmutable
-  interface SetTrustedLocation extends SetLocation {
-
-    @Override
-    default void applyToTable(IcebergTableMetadataUpdateState state) {
-      NessieModelIceberg.setLocation(this, state.builder());
+      if (trusted()) {
+        NessieModelIceberg.setLocation(this, state.builder());
+      }
     }
 
-    @Override
-    default void applyToView(IcebergViewMetadataUpdateState state) {
-      NessieModelIceberg.setLocation(this, state.builder());
-    }
-
-    static SetTrustedLocation setTrustedLocation(String location) {
-      return ImmutableSetTrustedLocation.of(location);
+    static SetLocation setTrustedLocation(String location) {
+      return ImmutableSetLocation.of(location, true);
     }
   }
 
