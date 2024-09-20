@@ -31,7 +31,12 @@ import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.GetNamespacesResponse;
 import org.projectnessie.model.Namespace;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.NamespaceApiImpl;
 import org.projectnessie.services.spi.NamespaceService;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the namespace-API. */
 @RequestScoped
@@ -46,12 +51,13 @@ public class RestNamespaceResource implements HttpNamespaceApi {
 
   // Mandated by CDI 2.0
   public RestNamespaceResource() {
-    this(null);
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestNamespaceResource(NamespaceService namespaceService) {
-    this.namespaceService = namespaceService;
+  public RestNamespaceResource(
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.namespaceService = new NamespaceApiImpl(config, store, authorizer, accessContext);
   }
 
   private NamespaceService resource() {

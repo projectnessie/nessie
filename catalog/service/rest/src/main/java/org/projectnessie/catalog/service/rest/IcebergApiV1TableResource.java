@@ -91,6 +91,7 @@ import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
+import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -106,7 +107,11 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.VersionStore;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with tables. */
 @RequestScoped
@@ -117,6 +122,20 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergConfigurer icebergConfigurer;
   @Inject IcebergErrorMapper errorMapper;
+
+  public IcebergApiV1TableResource() {
+    this(null, null, null, null, null);
+  }
+
+  @Inject
+  public IcebergApiV1TableResource(
+      ServerConfig serverConfig,
+      CatalogConfig catalogConfig,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext) {
+    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+  }
 
   @ServerExceptionMapper
   public Response mapException(Exception ex) {

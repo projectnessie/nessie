@@ -28,8 +28,13 @@ import org.projectnessie.model.DiffResponse;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.model.ImmutableDiffResponse;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.DiffApiImpl;
 import org.projectnessie.services.spi.DiffService;
 import org.projectnessie.services.spi.PagedResponseHandler;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the diff-API. */
 @RequestScoped
@@ -44,12 +49,13 @@ public class RestDiffResource implements HttpDiffApi {
 
   // Mandated by CDI 2.0
   public RestDiffResource() {
-    this(null);
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestDiffResource(DiffService diffService) {
-    this.diffService = diffService;
+  public RestDiffResource(
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext);
   }
 
   private DiffService resource() {

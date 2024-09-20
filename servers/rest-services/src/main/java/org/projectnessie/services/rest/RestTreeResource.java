@@ -46,8 +46,13 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.ReferencesResponse;
 import org.projectnessie.model.ser.Views;
+import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.Authorizer;
+import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.PagedCountingResponseHandler;
 import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.VersionStore;
 
 /** REST endpoint for the tree-API. */
 @RequestScoped
@@ -62,12 +67,13 @@ public class RestTreeResource implements HttpTreeApi {
 
   // Mandated by CDI 2.0
   public RestTreeResource() {
-    this(null);
+    this(null, null, null, null);
   }
 
   @Inject
-  public RestTreeResource(TreeService treeService) {
-    this.treeService = treeService;
+  public RestTreeResource(
+      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
+    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext);
   }
 
   private TreeService resource() {

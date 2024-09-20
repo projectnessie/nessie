@@ -24,10 +24,6 @@ import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ConfigApiImpl;
-import org.projectnessie.services.impl.ContentApiImpl;
-import org.projectnessie.services.impl.DiffApiImpl;
-import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.rest.RestV2ConfigResource;
 import org.projectnessie.services.rest.RestV2TreeResource;
 import org.projectnessie.versioned.VersionStore;
@@ -105,20 +101,11 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
 
     AccessContext accessContext = () -> null;
 
-    ConfigApiImpl configService =
-        new ConfigApiImpl(serverConfig, versionStore, authorizer, accessContext, 2);
-    TreeApiImpl treeService =
-        new TreeApiImpl(serverConfig, versionStore, authorizer, accessContext);
-    ContentApiImpl contentService =
-        new ContentApiImpl(serverConfig, versionStore, authorizer, accessContext);
-    DiffApiImpl diffService =
-        new DiffApiImpl(serverConfig, versionStore, authorizer, accessContext);
-
     configResource =
         new RestV2ConfigResource(serverConfig, versionStore, authorizer, accessContext);
     treeResource =
         new RestV2TreeResource(
-            configService, treeService, contentService, diffService, emptyHttpHeaders());
+            serverConfig, versionStore, authorizer, accessContext, emptyHttpHeaders());
 
     // Optimistic cast...
     @SuppressWarnings("unchecked")
