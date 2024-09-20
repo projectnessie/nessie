@@ -20,6 +20,7 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import com.google.common.collect.ImmutableMap;
@@ -83,8 +84,6 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatalog> {
-  public static final String EMPTY_OBJ_ID =
-      "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
   private static final Catalogs CATALOGS = new Catalogs();
 

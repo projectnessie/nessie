@@ -17,4 +17,5 @@ package org.projectnessie.server.catalog;
 
 public interface IcebergCatalogTestCommon {
   String WAREHOUSE_NAME = "warehouse1";
+  String EMPTY_OBJ_ID = "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 }

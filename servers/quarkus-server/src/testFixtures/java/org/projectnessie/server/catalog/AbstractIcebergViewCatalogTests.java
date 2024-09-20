@@ -16,6 +16,7 @@
 package org.projectnessie.server.catalog;
 
 import static java.util.Collections.singletonMap;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import java.util.Map;
@@ -30,8 +31,6 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
 public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<RESTCatalog> {
-  public static final String EMPTY_OBJ_ID =
-      "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d";
 
   private static final Catalogs CATALOGS = new Catalogs();
 

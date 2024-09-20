@@ -16,7 +16,7 @@
 package org.projectnessie.server.catalog;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
-import static org.projectnessie.server.catalog.AbstractIcebergCatalogTests.EMPTY_OBJ_ID;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import io.quarkus.test.junit.QuarkusTest;
