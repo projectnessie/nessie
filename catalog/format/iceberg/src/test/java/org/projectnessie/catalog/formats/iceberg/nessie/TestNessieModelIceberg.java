@@ -30,7 +30,7 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpe
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema.INITIAL_SCHEMA_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation.setTrustedLocation;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.binaryType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.integerType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.listType;

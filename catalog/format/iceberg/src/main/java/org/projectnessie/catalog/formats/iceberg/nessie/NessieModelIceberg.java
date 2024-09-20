@@ -90,8 +90,8 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
-import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetTrustedLocation;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergDecimalType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergFixedType;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergListType;
@@ -1103,7 +1103,7 @@ public class NessieModelIceberg {
         uuid);
   }
 
-  public static void setLocation(SetTrustedLocation u, NessieEntitySnapshot.Builder<?> builder) {
+  public static void setLocation(SetLocation u, NessieEntitySnapshot.Builder<?> builder) {
     builder.icebergLocation(u.location());
   }
 
