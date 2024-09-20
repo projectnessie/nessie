@@ -16,6 +16,7 @@
 package org.projectnessie.events.api;
 
 import org.immutables.value.Value;
+import org.projectnessie.model.CommitMeta;
 
 /**
  * Event that is emitted when a commit is performed. This event is emitted after the commit has been

@@ -43,22 +43,22 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ImmutableCommitEvent;
-import org.projectnessie.events.api.ImmutableCommitMeta;
-import org.projectnessie.events.api.ImmutableContent;
 import org.projectnessie.events.api.ImmutableContentRemovedEvent;
 import org.projectnessie.events.api.ImmutableContentStoredEvent;
-import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
 import org.projectnessie.events.api.ImmutableReferenceDeletedEvent;
 import org.projectnessie.events.api.ImmutableReferenceUpdatedEvent;
-import org.projectnessie.events.api.Reference;
 import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSystemConfiguration;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.Reference;
 
 public class TestKafkaEventSubscriber {
 
@@ -66,12 +66,7 @@ public class TestKafkaEventSubscriber {
 
   Instant now = Instant.now();
 
-  Reference branch =
-      ImmutableReference.builder()
-          .simpleName("branch1")
-          .fullName("refs/heads/branch1")
-          .type("BRANCH")
-          .build();
+  Reference branch = Branch.of("branch1", "cafebabe");
 
   @Test
   public void testCommit() {
@@ -88,16 +83,16 @@ public class TestKafkaEventSubscriber {
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .committer("committer")
-                    .commitTimestamp(now)
-                    .authorTimestamp(now)
-                    .addAuthor("author")
+                    .commitTime(now)
+                    .authorTime(now)
+                    .addAllAuthors("author")
                     .message("message")
                     .build())
             .build();
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(CommitEvent.class))
@@ -106,7 +101,7 @@ public class TestKafkaEventSubscriber {
             CommitEvent::getHashBefore,
             CommitEvent::getHashAfter,
             CommitEvent::getReference)
-        .containsExactly(id, "hashBefore", "hashAfter", "refs/heads/branch1");
+        .containsExactly(id, "hashBefore", "hashAfter", "branch1");
 
     assertCommonHeaders(actual, EventType.COMMIT);
   }
@@ -124,17 +119,12 @@ public class TestKafkaEventSubscriber {
             .hash("hash")
             .reference(branch)
             .contentKey(ContentKey.of("folder1", "folder2", "table1"))
-            .content(
-                ImmutableContent.builder()
-                    .id("id")
-                    .type("ICEBERG_TABLE")
-                    .properties(Map.of("key", "value"))
-                    .build())
+            .content(IcebergTable.of("metadataLocation", 1L, 2, 3, 4, "id"))
             .build();
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(OperationEvent.class))
@@ -151,11 +141,16 @@ public class TestKafkaEventSubscriber {
             OperationEventType.PUT,
             id,
             "hash",
-            "refs/heads/branch1",
+            "branch1",
             "folder1.folder2.table1",
             "ICEBERG_TABLE",
             "id",
-            Map.of("key", "value"));
+            Map.of(
+                "metadataLocation", "metadataLocation",
+                "snapshotId", "1",
+                "schemaId", "2",
+                "specId", "3",
+                "sortOrderId", "4"));
 
     assertCommonHeaders(actual, EventType.CONTENT_STORED);
   }
@@ -177,7 +172,7 @@ public class TestKafkaEventSubscriber {
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(OperationEvent.class))
@@ -194,7 +189,7 @@ public class TestKafkaEventSubscriber {
             OperationEventType.DELETE,
             id,
             "hash",
-            "refs/heads/branch1",
+            "branch1",
             "folder1.folder2.table1",
             null,
             null,
@@ -218,7 +213,7 @@ public class TestKafkaEventSubscriber {
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(ReferenceEvent.class))
@@ -228,7 +223,7 @@ public class TestKafkaEventSubscriber {
             ReferenceEvent::getHashBefore,
             ReferenceEvent::getHashAfter,
             ReferenceEvent::getReference)
-        .containsExactly(id, ReferenceEventType.CREATED, null, "hashAfter", "refs/heads/branch1");
+        .containsExactly(id, ReferenceEventType.CREATED, null, "hashAfter", "branch1");
 
     assertCommonHeaders(actual, EventType.REFERENCE_CREATED);
   }
@@ -248,7 +243,7 @@ public class TestKafkaEventSubscriber {
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(ReferenceEvent.class))
@@ -258,7 +253,7 @@ public class TestKafkaEventSubscriber {
             ReferenceEvent::getHashBefore,
             ReferenceEvent::getHashAfter,
             ReferenceEvent::getReference)
-        .containsExactly(id, ReferenceEventType.DELETED, "hashBefore", null, "refs/heads/branch1");
+        .containsExactly(id, ReferenceEventType.DELETED, "hashBefore", null, "branch1");
 
     assertCommonHeaders(actual, EventType.REFERENCE_DELETED);
   }
@@ -279,7 +274,7 @@ public class TestKafkaEventSubscriber {
 
     ProducerRecord<String, Object> actual = sendAndReceive(upstreamEvent);
 
-    assertThat(actual.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(actual.key()).isEqualTo("repo1:branch1");
 
     assertThat(actual.value())
         .asInstanceOf(type(ReferenceEvent.class))
@@ -289,8 +284,7 @@ public class TestKafkaEventSubscriber {
             ReferenceEvent::getHashBefore,
             ReferenceEvent::getHashAfter,
             ReferenceEvent::getReference)
-        .containsExactly(
-            id, ReferenceEventType.REASSIGNED, "hashBefore", "hashAfter", "refs/heads/branch1");
+        .containsExactly(id, ReferenceEventType.REASSIGNED, "hashBefore", "hashAfter", "branch1");
 
     assertCommonHeaders(actual, EventType.REFERENCE_UPDATED);
   }

@@ -22,10 +22,14 @@ import com.example.nessie.events.generated.OperationEvent;
 import com.example.nessie.events.generated.OperationEventType;
 import com.example.nessie.events.generated.ReferenceEvent;
 import com.example.nessie.events.generated.ReferenceEventType;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -42,11 +46,11 @@ import org.apache.kafka.common.header.Headers;
 import org.projectnessie.events.api.ContentEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
-import org.projectnessie.events.api.Reference;
 import org.projectnessie.events.spi.EventFilter;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.events.spi.EventTypeFilter;
+import org.projectnessie.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -262,10 +266,10 @@ public class KafkaEventSubscriber implements EventSubscriber {
             upstreamEvent.getId(),
             reference,
             upstreamEvent.getHash(),
-            upstreamEvent.getContentKey().getName(),
+            upstreamEvent.getContentKey().toCanonicalString(),
             upstreamEvent.getContent().getId(),
-            upstreamEvent.getContent().getType(),
-            flattenProperties(upstreamEvent.getContent().getProperties()));
+            upstreamEvent.getContent().getType().toString(),
+            objectAsMap(upstreamEvent.getContent(), "id", "type"));
     fireEvent(reference, upstreamEvent, downstreamEvent);
   }
 
@@ -278,7 +282,7 @@ public class KafkaEventSubscriber implements EventSubscriber {
             upstreamEvent.getId(),
             reference,
             upstreamEvent.getHash(),
-            upstreamEvent.getContentKey().getName(),
+            upstreamEvent.getContentKey().toCanonicalString(),
             null,
             null,
             Map.of());
@@ -396,8 +400,10 @@ public class KafkaEventSubscriber implements EventSubscriber {
     if (upstreamEvent instanceof org.projectnessie.events.api.CommitEvent) {
       org.projectnessie.events.api.CommitEvent commitEvent =
           (org.projectnessie.events.api.CommitEvent) upstreamEvent;
-      Header.COMMIT_CREATION_TIME.addValue(
-          headers, commitEvent.getCommitMeta().getCommitTimestamp().toString().getBytes(UTF_8));
+      Instant commitTime = commitEvent.getCommitMeta().getCommitTime();
+      if (commitTime != null) {
+        Header.COMMIT_CREATION_TIME.addValue(headers, commitTime.toString().getBytes(UTF_8));
+      }
     } else if (upstreamEvent instanceof ContentEvent) {
       ContentEvent contentEvent = (ContentEvent) upstreamEvent;
       Header.COMMIT_CREATION_TIME.addValue(
@@ -420,11 +426,19 @@ public class KafkaEventSubscriber implements EventSubscriber {
   }
 
   private static String referenceName(Reference reference) {
-    return reference.getFullName().orElse(reference.getSimpleName());
+    return reference.getName();
   }
 
-  private static Map<String, String> flattenProperties(Map<String, Object> properties) {
-    return properties.entrySet().stream()
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+
+  private static Map<String, String> objectAsMap(Object o, String... ignoredProperties) {
+    Set<String> ignoredSet = Set.of(ignoredProperties);
+    return MAPPER.convertValue(o, MAP_TYPE).entrySet().stream()
+        .filter(e -> !ignoredSet.contains(e.getKey()))
+        .filter(e -> e.getValue() != null)
         .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
   }
 

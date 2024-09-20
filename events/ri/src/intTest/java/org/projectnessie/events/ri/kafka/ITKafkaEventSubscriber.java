@@ -57,20 +57,20 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.ImmutableCommitEvent;
-import org.projectnessie.events.api.ImmutableCommitMeta;
-import org.projectnessie.events.api.ImmutableContent;
 import org.projectnessie.events.api.ImmutableContentRemovedEvent;
 import org.projectnessie.events.api.ImmutableContentStoredEvent;
-import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
 import org.projectnessie.events.api.ImmutableReferenceDeletedEvent;
-import org.projectnessie.events.api.Reference;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSystemConfiguration;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
@@ -111,12 +111,8 @@ public class ITKafkaEventSubscriber {
 
   private static final String TOPIC_NAME = "nessie.events";
 
-  private static final Reference BRANCH =
-      ImmutableReference.builder()
-          .simpleName("branch1")
-          .fullName("refs/heads/branch1")
-          .type("BRANCH")
-          .build();
+  private static final Reference BRANCH = Branch.of("branch1", "cafebabe");
+
   private static Properties consumerConfig;
 
   @BeforeAll
@@ -241,9 +237,9 @@ public class ITKafkaEventSubscriber {
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .committer("committer")
-                    .commitTimestamp(i2)
-                    .authorTimestamp(i2)
-                    .addAuthor("alice")
+                    .commitTime(i2)
+                    .authorTime(i2)
+                    .addAllAuthors("alice")
                     .message("commit1")
                     .build())
             .build());
@@ -257,23 +253,7 @@ public class ITKafkaEventSubscriber {
             .hash("hash2")
             .reference(BRANCH)
             .contentKey(ContentKey.of("directory", "subdirectory", "table1"))
-            .content(
-                ImmutableContent.builder()
-                    .id("id1")
-                    .type("ICEBERG_TABLE")
-                    .properties(
-                        Map.of(
-                            "metadataLocation",
-                            "location1",
-                            "snapshotId",
-                            1L,
-                            "schemaId",
-                            1,
-                            "specId",
-                            1,
-                            "sortOrderId",
-                            1))
-                    .build())
+            .content(IcebergTable.of("location1", 1L, 1, 1, 1, "id1"))
             .build());
 
     // User bob updates the table => COMMIT + CONTENT_STORED events
@@ -290,9 +270,9 @@ public class ITKafkaEventSubscriber {
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .committer("committer")
-                    .commitTimestamp(i3)
-                    .authorTimestamp(i3)
-                    .addAuthor("bob")
+                    .commitTime(i3)
+                    .authorTime(i3)
+                    .addAllAuthors("bob")
                     .message("commit2")
                     .build())
             .build());
@@ -306,23 +286,7 @@ public class ITKafkaEventSubscriber {
             .hash("hash3")
             .reference(BRANCH)
             .contentKey(ContentKey.of("directory", "subdirectory", "table1"))
-            .content(
-                ImmutableContent.builder()
-                    .id("id2")
-                    .type("ICEBERG_TABLE")
-                    .properties(
-                        Map.of(
-                            "metadataLocation",
-                            "location2",
-                            "snapshotId",
-                            2L,
-                            "schemaId",
-                            2,
-                            "specId",
-                            2,
-                            "sortOrderId",
-                            2))
-                    .build())
+            .content(IcebergTable.of("location2", 2L, 2, 2, 2, "id2"))
             .build());
 
     // User charlie deletes the table => COMMIT + CONTENT_REMOVED events
@@ -339,9 +303,9 @@ public class ITKafkaEventSubscriber {
             .commitMeta(
                 ImmutableCommitMeta.builder()
                     .committer("committer")
-                    .commitTimestamp(i4)
-                    .authorTimestamp(i4)
-                    .addAuthor("charlie")
+                    .commitTime(i4)
+                    .authorTime(i4)
+                    .addAllAuthors("charlie")
                     .message("commit3")
                     .build())
             .build());
@@ -390,7 +354,7 @@ public class ITKafkaEventSubscriber {
   }
 
   private void assertReferenceCreated(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -402,13 +366,13 @@ public class ITKafkaEventSubscriber {
     assertThat(record.value()).isInstanceOf(ReferenceEvent.class);
     ReferenceEvent event = (ReferenceEvent) record.value();
     assertThat(event.getId()).isNotNull();
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
     assertThat(event.getHashBefore()).isNull();
     assertThat(event.getHashAfter()).isEqualTo("hash1");
   }
 
   private void assertCommitAlice(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -423,11 +387,11 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getHashBefore()).isEqualTo("hash1");
     assertThat(event.getHashAfter()).isEqualTo("hash2");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
   }
 
   private void assertTableCreated(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -442,7 +406,7 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getType()).isEqualTo(OperationEventType.PUT);
     assertThat(event.getHash()).isEqualTo("hash2");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
     assertThat(event.getContentKey()).isEqualTo("directory.subdirectory.table1");
     assertThat(event.getContentId()).isEqualTo("id1");
     assertThat(event.getContentType()).isEqualTo("ICEBERG_TABLE");
@@ -462,7 +426,7 @@ public class ITKafkaEventSubscriber {
   }
 
   private void assertCommitBob(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -477,11 +441,11 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getHashBefore()).isEqualTo("hash2");
     assertThat(event.getHashAfter()).isEqualTo("hash3");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
   }
 
   private void assertTableUpdated(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -496,7 +460,7 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getType()).isEqualTo(OperationEventType.PUT);
     assertThat(event.getHash()).isEqualTo("hash3");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
     assertThat(event.getContentKey()).isEqualTo("directory.subdirectory.table1");
     assertThat(event.getContentId()).isEqualTo("id2");
     assertThat(event.getContentType()).isEqualTo("ICEBERG_TABLE");
@@ -516,7 +480,7 @@ public class ITKafkaEventSubscriber {
   }
 
   private void assertCommitCharlie(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -531,11 +495,11 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getHashBefore()).isEqualTo("hash3");
     assertThat(event.getHashAfter()).isEqualTo("hash4");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
   }
 
   private void assertTableDeleted(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(
@@ -550,7 +514,7 @@ public class ITKafkaEventSubscriber {
     assertThat(event.getId()).isNotNull();
     assertThat(event.getType()).isEqualTo(OperationEventType.DELETE);
     assertThat(event.getHash()).isEqualTo("hash4");
-    assertThat(event.getReference()).isEqualTo("refs/heads/branch1");
+    assertThat(event.getReference()).isEqualTo("branch1");
     assertThat(event.getContentKey()).isEqualTo("directory.subdirectory.table1");
     assertThat(event.getContentId()).isNull();
     assertThat(event.getContentType()).isNull();
@@ -558,7 +522,7 @@ public class ITKafkaEventSubscriber {
   }
 
   private void assertReferenceDeleted(ConsumerRecord<String, Object> record) {
-    assertThat(record.key()).isEqualTo("repo1:refs/heads/branch1");
+    assertThat(record.key()).isEqualTo("repo1:branch1");
     assertThat(record.headers())
         .extracting(Header::key, header -> new String(header.value(), UTF_8))
         .containsExactlyInAnyOrder(

@@ -55,8 +55,8 @@ public class EventScenarios {
 
   final Commit commit =
       ImmutableCommit.builder()
-          .parentHash(Hash.of("1234"))
-          .hash(Hash.of("5678"))
+          .parentHash(Hash.of("12345678"))
+          .hash(Hash.of("567890ab"))
           .operations(operations)
           .commitMeta(
               org.projectnessie.model.ImmutableCommitMeta.builder()
@@ -83,9 +83,9 @@ public class EventScenarios {
             .sourceRef(BranchName.of("branch1"))
             .sourceHash(Hash.of("cdef"))
             .targetBranch(BranchName.of("branch2"))
-            .commonAncestor(Hash.of("1234"))
-            .effectiveTargetHash(Hash.of("5678"))
-            .resultantTargetHash(Hash.of("9abc"))
+            .commonAncestor(Hash.of("12345678"))
+            .effectiveTargetHash(Hash.of("567890ab"))
+            .resultantTargetHash(Hash.of("90abcedf"))
             .addCreatedCommits(commit)
             .build();
     resultCollector.accept(result);
@@ -97,8 +97,8 @@ public class EventScenarios {
             .sourceRef(BranchName.of("branch1"))
             .sourceHashes(List.of(Hash.of("cdef")))
             .targetBranch(BranchName.of("branch2"))
-            .effectiveTargetHash(Hash.of("5678"))
-            .resultantTargetHash(Hash.of("9abc"))
+            .effectiveTargetHash(Hash.of("567890ab"))
+            .resultantTargetHash(Hash.of("90abcedf"))
             .addCreatedCommits(commit)
             .build();
     resultCollector.accept(result);
@@ -108,7 +108,7 @@ public class EventScenarios {
     ReferenceCreatedResult result =
         ImmutableReferenceCreatedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("12345678"))
             .build();
     resultCollector.accept(result);
   }
@@ -117,7 +117,7 @@ public class EventScenarios {
     ReferenceDeletedResult result =
         ImmutableReferenceDeletedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("12345678"))
             .build();
     resultCollector.accept(result);
   }
@@ -126,8 +126,8 @@ public class EventScenarios {
     ReferenceAssignedResult result =
         ImmutableReferenceAssignedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .previousHash(Hash.of("1234"))
-            .currentHash(Hash.of("5678"))
+            .previousHash(Hash.of("12345678"))
+            .currentHash(Hash.of("567890ab"))
             .build();
     resultCollector.accept(result);
   }

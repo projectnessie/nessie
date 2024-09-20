@@ -129,8 +129,8 @@ public class TestEventService {
   private Stream<Result> allResults() {
     Commit commit =
         ImmutableCommit.builder()
-            .hash(Hash.of("5678"))
-            .parentHash(Hash.of("1234"))
+            .hash(Hash.of("deadbeef"))
+            .parentHash(Hash.of("cafebabe"))
             .commitMeta(
                 org.projectnessie.model.ImmutableCommitMeta.builder()
                     .committer("committer")
@@ -155,8 +155,8 @@ public class TestEventService {
             .sourceRef(BranchName.of("branch1"))
             .sourceHash(Hash.of("90ab"))
             .targetBranch(BranchName.of("branch2"))
-            .effectiveTargetHash(Hash.of("1234")) // hash before
-            .resultantTargetHash(Hash.of("5678")) // hash after
+            .effectiveTargetHash(Hash.of("cafebabe")) // hash before
+            .resultantTargetHash(Hash.of("deadbeef")) // hash after
             .commonAncestor(Hash.of("0000"))
             .addCreatedCommits(commit)
             .build(),
@@ -164,22 +164,22 @@ public class TestEventService {
             .sourceRef(BranchName.of("branch1"))
             .sourceHashes(List.of(Hash.of("90ab")))
             .targetBranch(BranchName.of("branch2"))
-            .effectiveTargetHash(Hash.of("1234")) // hash before
-            .resultantTargetHash(Hash.of("5678")) // hash after
+            .effectiveTargetHash(Hash.of("cafebabe")) // hash before
+            .resultantTargetHash(Hash.of("deadbeef")) // hash after
             .addCreatedCommits(commit)
             .build(),
         ImmutableReferenceCreatedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("cafebabe"))
             .build(),
         ImmutableReferenceAssignedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .previousHash(Hash.of("1234"))
-            .currentHash(Hash.of("5678"))
+            .previousHash(Hash.of("cafebabe"))
+            .currentHash(Hash.of("deadbeef"))
             .build(),
         ImmutableReferenceDeletedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("cafebabe"))
             .build());
   }
 }

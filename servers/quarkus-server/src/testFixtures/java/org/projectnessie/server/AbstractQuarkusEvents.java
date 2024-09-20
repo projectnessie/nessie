@@ -49,6 +49,7 @@ import org.projectnessie.events.api.ReferenceUpdatedEvent;
 import org.projectnessie.events.api.TransplantEvent;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Content.Type;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeResponse;
@@ -259,14 +260,14 @@ public abstract class AbstractQuarkusEvents {
             CommitEvent::getProperties,
             CommitEvent::getHashBefore,
             CommitEvent::getHashAfter,
-            e -> e.getReference().getFullName().orElse(null))
+            e -> e.getReference().getName())
         .containsExactly(
             TEST_REPO_ID,
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
             hashBefore,
             hashAfter,
-            "refs/heads/" + branch.getName());
+            branch.getName());
   }
 
   private void checkMergeEvent(
@@ -280,16 +281,16 @@ public abstract class AbstractQuarkusEvents {
             MergeEvent::getProperties,
             MergeEvent::getHashBefore,
             MergeEvent::getHashAfter,
-            e -> e.getSourceReference().getFullName().orElse(null),
-            e -> e.getTargetReference().getFullName().orElse(null))
+            e -> e.getSourceReference().getName(),
+            e -> e.getTargetReference().getName())
         .containsExactly(
             TEST_REPO_ID,
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
             hashBefore,
             hashAfter,
-            "refs/heads/" + source.getName(),
-            "refs/heads/" + target.getName());
+            source.getName(),
+            target.getName());
   }
 
   private void checkTransplantEvent(
@@ -303,16 +304,16 @@ public abstract class AbstractQuarkusEvents {
             TransplantEvent::getProperties,
             TransplantEvent::getHashBefore,
             TransplantEvent::getHashAfter,
-            e -> e.getSourceReference().getFullName().orElse(null),
-            e -> e.getTargetReference().getFullName().orElse(null))
+            e -> e.getSourceReference().getName(),
+            e -> e.getTargetReference().getName())
         .containsExactly(
             TEST_REPO_ID,
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
             hashBefore,
             hashAfter,
-            "refs/heads/" + source.getName(),
-            "refs/heads/" + target.getName());
+            source.getName(),
+            target.getName());
   }
 
   private void checkContentStoredEvent(List<Event> events) {
@@ -326,7 +327,11 @@ public abstract class AbstractQuarkusEvents {
             e -> e.getContentKey().getName(),
             e -> e.getContent().getType())
         .containsExactly(
-            TEST_REPO_ID, eventInitiator(), ImmutableMap.of("foo", "bar"), "key1", "ICEBERG_TABLE");
+            TEST_REPO_ID,
+            eventInitiator(),
+            ImmutableMap.of("foo", "bar"),
+            "key1",
+            Type.ICEBERG_TABLE);
   }
 
   private void checkReferenceCreatedEvent(List<Event> events, Branch branch) {
@@ -337,13 +342,13 @@ public abstract class AbstractQuarkusEvents {
             ReferenceCreatedEvent::getRepositoryId,
             e -> e.getEventInitiator().orElse(null),
             ReferenceCreatedEvent::getProperties,
-            e -> e.getReference().getFullName().orElse(null),
+            e -> e.getReference().getName(),
             ReferenceCreatedEvent::getHashAfter)
         .containsExactly(
             TEST_REPO_ID,
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
-            "refs/heads/" + branch.getName(),
+            branch.getName(),
             branch.getHash());
   }
 
@@ -355,13 +360,13 @@ public abstract class AbstractQuarkusEvents {
             ReferenceDeletedEvent::getRepositoryId,
             e -> e.getEventInitiator().orElse(null),
             ReferenceDeletedEvent::getProperties,
-            e -> e.getReference().getFullName().orElse(null),
+            e -> e.getReference().getName(),
             ReferenceDeletedEvent::getHashBefore)
         .containsExactly(
             TEST_REPO_ID,
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
-            "refs/heads/" + branch.getName(),
+            branch.getName(),
             branch.getHash());
   }
 

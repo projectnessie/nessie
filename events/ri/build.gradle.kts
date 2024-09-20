@@ -22,14 +22,19 @@ plugins {
 extra["maven.name"] = "Nessie - Events - SPI Reference Implementation"
 
 dependencies {
+  implementation(project(":nessie-model"))
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
+
+  compileOnly(libs.microprofile.openapi)
 
   implementation(libs.slf4j.api)
   implementation(libs.kafka.clients)
   implementation(libs.avro)
 
-  intTestCompileOnly(libs.immutables.value.annotations)
+  implementation(platform(libs.jackson.bom))
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

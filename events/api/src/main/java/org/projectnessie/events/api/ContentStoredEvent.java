@@ -16,6 +16,7 @@
 package org.projectnessie.events.api;
 
 import org.immutables.value.Value;
+import org.projectnessie.model.Content;
 
 /**
  * Event that is emitted when a content is stored. This event corresponds to a PUT operation in a

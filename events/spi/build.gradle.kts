@@ -19,7 +19,7 @@ plugins { id("nessie-conventions-server") }
 publishingHelper { mavenName = "Nessie - Events - SPI" }
 
 dependencies {
-  implementation(project(":nessie-events-api"))
+  api(project(":nessie-events-api"))
 
   // Immutables
   implementation(libs.immutables.builder)

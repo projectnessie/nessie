@@ -15,6 +15,8 @@
  */
 package org.projectnessie.events.api;
 
+import org.projectnessie.model.Reference;
+
 /**
  * Event that affects only one reference.
  *
