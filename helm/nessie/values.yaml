@@ -261,18 +261,18 @@ catalog:
           sessionDuration: ~
           # -- Additional IAM policy statements in JSON format to add to generated per-table IAM policies.
           statements: ~
-          #- >-
-          #  {
-          #  "Effect": "Allow",
-          #  "Action": "s3:GetObject",
-          #  "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
-          #  }
-          #- >-
-          #  {
-          #    "Effect": "Allow",
-          #    "Action": "s3:PutObject",
-          #    "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
-          #  }
+          # - >-
+          #   {
+          #   "Effect": "Allow",
+          #   "Action": "s3:GetObject",
+          #   "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+          #   }
+          # - >-
+          #   {
+          #     "Effect": "Allow",
+          #     "Action": "s3:PutObject",
+          #     "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+          #   }
 
         # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
         serverIam:
