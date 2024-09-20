@@ -218,14 +218,14 @@ catalog:
         # -- Whether to use path-style access. Optional; if not provided, the default is used. If
         # true, path-style access will be used, as in: https://<domain>/<bucket>. If false, a
         # virtual-hosted style will be used instead, as in: https://<bucket>.<domain>.
-        pathStyleAccess: false
+        pathStyleAccess: ~
         # -- AWS Access point for this bucket. Access points can be used to perform S3 operations by
         # specifying a mapping of bucket to access points. This is useful for multi-region access,
         # cross-region access, disaster recovery, etc. See
         # https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html.
         accessPoint: ~
         # -- Authorize cross-region calls when contacting an access point. The default is false.
-        allowCrossRegionAccessPoint: false
+        allowCrossRegionAccessPoint: ~
         # -- Controls the authentication mode for the Catalog server. Valid values are:
         # - APPLICATION_GLOBAL: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
@@ -261,6 +261,18 @@ catalog:
           sessionDuration: ~
           # -- Additional IAM policy statements in JSON format to add to generated per-table IAM policies.
           statements: ~
+          # - >-
+          #   {
+          #   "Effect": "Allow",
+          #   "Action": "s3:GetObject",
+          #   "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+          #   }
+          # - >-
+          #   {
+          #     "Effect": "Allow",
+          #     "Action": "s3:PutObject",
+          #     "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+          #   }
 
         # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
         serverIam:

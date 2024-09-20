@@ -148,18 +148,18 @@ Apply S3 catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- if .transport -}}
-{{- if .transport.maxHttpConnections -}}{{- $_ := set $map ( print $prefix "http.max-http-connections" ) .transport.maxHttpConnections -}}{{- end -}}
-{{- if .transport.readTimeout -}}{{- $_ := set $map ( print $prefix "http.read-timeout" ) .transport.readTimeout -}}{{- end -}}
-{{- if .transport.connectTimeout -}}{{- $_ := set $map ( print $prefix "http.connect-timeout" ) .transport.connectTimeout -}}{{- end -}}
-{{- if .transport.connectionAcquisitionTimeout -}}{{- $_ := set $map ( print $prefix "http.connection-acquisition-timeout" ) .transport.connectionAcquisitionTimeout -}}{{- end -}}
-{{- if .transport.connectionMaxIdleTime -}}{{- $_ := set $map ( print $prefix "http.connection-max-idle-time" ) .transport.connectionMaxIdleTime -}}{{- end -}}
-{{- if .transport.connectionTimeToLive -}}{{- $_ := set $map ( print $prefix "http.connection-time-to-live" ) .transport.connectionTimeToLive -}}{{- end -}}
-{{- if .transport.expectContinueEnabled -}}{{- $_ := set $map ( print $prefix "http.expect-continue-enabled" ) .transport.expectContinueEnabled -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .transport.maxHttpConnections $map ( print $prefix "http.max-http-connections" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.readTimeout $map ( print $prefix "http.read-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectTimeout $map ( print $prefix "http.connect-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectionAcquisitionTimeout $map ( print $prefix "http.connection-acquisition-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectionMaxIdleTime $map ( print $prefix "http.connection-max-idle-time" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectionTimeToLive $map ( print $prefix "http.connection-time-to-live" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.expectContinueEnabled $map ( print $prefix "http.expect-continue-enabled" )) -}}
 {{- end -}}
 {{- if .sessionCredentials }}
-{{- if .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- $_ := set $map ( print $prefix "sts.session-grace-period" ) .sessionCredentials.sessionCredentialRefreshGracePeriod -}}{{- end -}}
-{{- if .sessionCredentials.sessionCredentialCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.session-cache-max-size" ) .sessionCredentials.sessionCredentialCacheMaxEntries -}}{{- end -}}
-{{- if .sessionCredentials.stsClientsCacheMaxEntries -}}{{- $_ := set $map ( print $prefix "sts.clients-cache-max-size" ) .sessionCredentials.stsClientsCacheMaxEntries -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .sessionCredentials.sessionCredentialRefreshGracePeriod $map ( print $prefix "sts.session-grace-period" )) -}}
+{{- include "nessie.addConfigOption" (list .sessionCredentials.sessionCredentialCacheMaxEntries $map ( print $prefix "sts.session-cache-max-size" )) -}}
+{{- include "nessie.addConfigOption" (list .sessionCredentials.stsClientsCacheMaxEntries $map ( print $prefix "sts.clients-cache-max-size" )) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -169,36 +169,36 @@ Apply S3 catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
-{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
-{{- if .region -}}{{- $_ := set $map ( print $prefix "region" ) .region -}}{{- end -}}
-{{- if .endpoint -}}{{- $_ := set $map ( print $prefix "endpoint" ) .endpoint -}}{{- end -}}
-{{- if .externalEndpoint -}}{{- $_ := set $map ( print $prefix "external-endpoint" ) .externalEndpoint -}}{{- end -}}
-{{- if .pathStyleAccess -}}{{- $_ := set $map ( print $prefix "path-style-access" ) .pathStyleAccess -}}{{- end -}}
-{{- if .accessPoint -}}{{- $_ := set $map ( print $prefix "access-point" ) .accessPoint -}}{{- end -}}
-{{- if .allowCrossRegionAccessPoint -}}{{- $_ := set $map ( print $prefix "allow-cross-region-access-point" ) .allowCrossRegionAccessPoint -}}{{- end -}}
-{{- if .requestSigningEnabled -}}{{- $_ := set $map ( print $prefix "request-signing-enabled" ) .requestSigningEnabled -}}{{- end -}}
-{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
-{{- if .stsEndpoint -}}{{- $_ := set $map ( print $prefix "sts-endpoint" ) .assumeRole.stsEndpoint -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .region $map ( print $prefix "region" )) -}}
+{{- include "nessie.addConfigOption" (list .endpoint $map ( print $prefix "endpoint" )) -}}
+{{- include "nessie.addConfigOption" (list .externalEndpoint $map ( print $prefix "external-endpoint" )) -}}
+{{- include "nessie.addConfigOption" (list .pathStyleAccess $map ( print $prefix "path-style-access" )) -}}
+{{- include "nessie.addConfigOption" (list .accessPoint $map ( print $prefix "access-point" )) -}}
+{{- include "nessie.addConfigOption" (list .allowCrossRegionAccessPoint $map ( print $prefix "allow-cross-region-access-point" )) -}}
+{{- include "nessie.addConfigOption" (list .requestSigningEnabled $map ( print $prefix "request-signing-enabled" )) -}}
+{{- include "nessie.addConfigOption" (list .authType $map ( print $prefix "auth-type" )) -}}
+{{- include "nessie.addConfigOption" (list .stsEndpoint $map ( print $prefix "sts-endpoint" )) -}}
 {{- if .clientIam -}}
-{{- if .clientIam.enabled -}}{{- $_ := set $map ( print $prefix "client-iam.enabled" ) .clientIam.enabled -}}{{- end -}}
-{{- if .clientIam.policy -}}{{- $_ := set $map ( print $prefix "client-iam.policy" ) .clientIam.policy -}}{{- end -}}
-{{- if .clientIam.roleArn -}}{{- $_ := set $map ( print $prefix "client-iam.assume-role" ) .clientIam.roleArn -}}{{- end -}}
-{{- if .clientIam.roleSessionName -}}{{- $_ := set $map ( print $prefix "client-iam.role-session-name" ) .clientIam.roleSessionName -}}{{- end -}}
-{{- if .clientIam.externalId -}}{{- $_ := set $map ( print $prefix "client-iam.external-id" ) .clientIam.externalId -}}{{- end -}}
-{{- if .clientIam.sessionDuration -}}{{- $_ := set $map ( print $prefix "client-iam.session-duration" ) .clientIam.sessionDuration -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .clientIam.enabled $map ( print $prefix "client-iam.enabled" )) -}}
+{{- include "nessie.addConfigOption" (list .clientIam.policy $map ( print $prefix "client-iam.policy" )) -}}
+{{- include "nessie.addConfigOption" (list .clientIam.roleArn $map ( print $prefix "client-iam.assume-role" )) -}}
+{{- include "nessie.addConfigOption" (list .clientIam.roleSessionName $map ( print $prefix "client-iam.role-session-name" )) -}}
+{{- include "nessie.addConfigOption" (list .clientIam.externalId $map ( print $prefix "client-iam.external-id" )) -}}
+{{- include "nessie.addConfigOption" (list .clientIam.sessionDuration $map ( print $prefix "client-iam.session-duration" )) -}}
 {{- if .clientIam.statements -}}
 {{- range $i, $statement := .clientIam.statements -}}
-{{- $_ := set $map ( print $prefix "client-iam.statements[%d]" $i ) $statement -}}
+{{- $_ := set $map ( printf "%sclient-iam.statements[%d]" $prefix $i ) $statement -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 {{- if .serverIam -}}
-{{- if .serverIam.enabled -}}{{- $_ := set $map ( print $prefix "server-iam.enabled" ) .serverIam.enabled -}}{{- end -}}
-{{- if .serverIam.policy -}}{{- $_ := set $map ( print $prefix "server-iam.policy" ) .serverIam.policy -}}{{- end -}}
-{{- if .serverIam.roleArn -}}{{- $_ := set $map ( print $prefix "server-iam.ssume-role" ) .serverIam.roleArn -}}{{- end -}}
-{{- if .serverIam.roleSessionName -}}{{- $_ := set $map ( print $prefix "server-iam.role-session-name" ) .serverIam.roleSessionName -}}{{- end -}}
-{{- if .serverIam.externalId -}}{{- $_ := set $map ( print $prefix "server-iam.external-id" ) .serverIam.externalId -}}{{- end -}}
-{{- if .serverIam.sessionDuration -}}{{- $_ := set $map ( print $prefix "server-iam.session-duration" ) .serverIam.sessionDuration -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .serverIam.enabled $map ( print $prefix "server-iam.enabled" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.policy $map ( print $prefix "server-iam.policy" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.roleArn $map ( print $prefix "server-iam.ssume-role" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.roleSessionName $map ( print $prefix "server-iam.role-session-name" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.externalId $map ( print $prefix "server-iam.external-id" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.sessionDuration $map ( print $prefix "server-iam.session-duration" )) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -212,17 +212,17 @@ Apply GCS catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- if .transport -}}
-{{- if .transport.maxAttempts -}}{{- $_ := set $map ( print $prefix "max-attempts" ) .transport.maxAttempts -}}{{- end -}}
-{{- if .transport.connectTimeout -}}{{- $_ := set $map ( print $prefix "connect-timeout" ) .transport.connectTimeout -}}{{- end -}}
-{{- if .transport.readTimeout -}}{{- $_ := set $map ( print $prefix "read-timeout" ) .transport.readTimeout -}}{{- end -}}
-{{- if .transport.initialRetryDelay -}}{{- $_ := set $map ( print $prefix "initial-retry-delay" ) .transport.initialRetryDelay -}}{{- end -}}
-{{- if .transport.maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .transport.maxRetryDelay -}}{{- end -}}
-{{- if .transport.retryDelayMultiplier -}}{{- $_ := set $map ( print $prefix "retry-delay-multiplier" ) .transport.retryDelayMultiplier -}}{{- end -}}
-{{- if .transport.initialRpcTimeout -}}{{- $_ := set $map ( print $prefix "initial-rpc-timeout" ) .transport.initialRpcTimeout -}}{{- end -}}
-{{- if .transport.maxRpcTimeout -}}{{- $_ := set $map ( print $prefix "max-rpc-timeout" ) .transport.maxRpcTimeout -}}{{- end -}}
-{{- if .transport.rpcTimeoutMultiplier -}}{{- $_ := set $map ( print $prefix "rpc-timeout-multiplier" ) .transport.rpcTimeoutMultiplier -}}{{- end -}}
-{{- if .transport.logicalTimeout -}}{{- $_ := set $map ( print $prefix "logical-timeout" ) .transport.logicalTimeout -}}{{- end -}}
-{{- if .transport.totalTimeout -}}{{- $_ := set $map ( print $prefix "total-timeout" ) .transport.totalTimeout -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .transport.maxAttempts $map ( print $prefix "max-attempts" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectTimeout $map ( print $prefix "connect-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.readTimeout $map ( print $prefix "read-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.initialRetryDelay $map ( print $prefix "initial-retry-delay" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.maxRetryDelay $map ( print $prefix "max-retry-delay" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.retryDelayMultiplier $map ( print $prefix "retry-delay-multiplier" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.initialRpcTimeout $map ( print $prefix "initial-rpc-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.maxRpcTimeout $map ( print $prefix "max-rpc-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.rpcTimeoutMultiplier $map ( print $prefix "rpc-timeout-multiplier" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.logicalTimeout $map ( print $prefix "logical-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.totalTimeout $map ( print $prefix "total-timeout" )) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -232,19 +232,19 @@ Apply GCS catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
-{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
-{{- if .host -}}{{- $_ := set $map ( print $prefix "host" ) .host -}}{{- end -}}
-{{- if .externalHost -}}{{- $_ := set $map ( print $prefix "external-host" ) .externalHost -}}{{- end -}}
-{{- if .userProject -}}{{- $_ := set $map ( print $prefix "user-project" ) .userProject -}}{{- end -}}
-{{- if .projectId -}}{{- $_ := set $map ( print $prefix "project-id" ) .projectId -}}{{- end -}}
-{{- if .quotaProjectId -}}{{- $_ := set $map ( print $prefix "quota-project-id" ) .quotaProjectId -}}{{- end -}}
-{{- if .clientLibToken -}}{{- $_ := set $map ( print $prefix "client-lib-token" ) .clientLibToken -}}{{- end -}}
-{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
-{{- if .encryptionKey -}}{{- $_ := set $map ( print $prefix "encryption-key" ) .encryptionKey -}}{{- end -}}
-{{- if .decryptionKey -}}{{- $_ := set $map ( print $prefix "decryption-key" ) .decryptionKey -}}{{- end -}}
-{{- if .readChunkSize -}}{{- $_ := set $map ( print $prefix "read-chunk-size" ) .readChunkSize -}}{{- end -}}
-{{- if .writeChunkSize -}}{{- $_ := set $map ( print $prefix "write-chunk-size" ) .writeChunkSize -}}{{- end -}}
-{{- if .deleteBatchSize -}}{{- $_ := set $map ( print $prefix "delete-batch-size" ) .deleteBatchSize -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .host $map ( print $prefix "host" )) -}}
+{{- include "nessie.addConfigOption" (list .externalHost $map ( print $prefix "external-host" )) -}}
+{{- include "nessie.addConfigOption" (list .userProject $map ( print $prefix "user-project" )) -}}
+{{- include "nessie.addConfigOption" (list .projectId $map ( print $prefix "project-id" )) -}}
+{{- include "nessie.addConfigOption" (list .quotaProjectId $map ( print $prefix "quota-project-id" )) -}}
+{{- include "nessie.addConfigOption" (list .clientLibToken $map ( print $prefix "client-lib-token" )) -}}
+{{- include "nessie.addConfigOption" (list .authType $map ( print $prefix "auth-type" )) -}}
+{{- include "nessie.addConfigOption" (list .encryptionKey $map ( print $prefix "encryption-key" )) -}}
+{{- include "nessie.addConfigOption" (list .decryptionKey $map ( print $prefix "decryption-key" )) -}}
+{{- include "nessie.addConfigOption" (list .readChunkSize $map ( print $prefix "read-chunk-size" )) -}}
+{{- include "nessie.addConfigOption" (list .writeChunkSize $map ( print $prefix "write-chunk-size" )) -}}
+{{- include "nessie.addConfigOption" (list .deleteBatchSize $map ( print $prefix "delete-batch-size" )) -}}
 {{- end -}}
 {{- end -}}
 
@@ -257,13 +257,13 @@ Apply ADLS catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- if .transport -}}
-{{- if .transport.maxHttpConnections -}}{{- $_ := set $map ( print $prefix "max-http-connections" ) .transport.maxHttpConnections -}}{{- end -}}
-{{- if .transport.connectTimeout -}}{{- $_ := set $map ( print $prefix "connect-timeout" ) .transport.connectTimeout -}}{{- end -}}
-{{- if .transport.readTimeout -}}{{- $_ := set $map ( print $prefix "read-timeout" ) .transport.readTimeout -}}{{- end -}}
-{{- if .transport.writeTimeout -}}{{- $_ := set $map ( print $prefix "write-timeout" ) .transport.writeTimeout -}}{{- end -}}
-{{- if .transport.connectionIdleTimeout -}}{{- $_ := set $map ( print $prefix "connection-idle-timeout" ) .transport.connectionIdleTimeout -}}{{- end -}}
-{{- if .transport.readBlockSize -}}{{- $_ := set $map ( print $prefix "read-block-size" ) .transport.readBlockSize -}}{{- end -}}
-{{- if .transport.writeBlockSize -}}{{- $_ := set $map ( print $prefix "write-block-size" ) .transport.writeBlockSize -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .transport.maxHttpConnections $map ( print $prefix "max-http-connections" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectTimeout $map ( print $prefix "connect-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.readTimeout $map ( print $prefix "read-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.writeTimeout $map ( print $prefix "write-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.connectionIdleTimeout $map ( print $prefix "connection-idle-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.readBlockSize $map ( print $prefix "read-block-size" )) -}}
+{{- include "nessie.addConfigOption" (list .transport.writeBlockSize $map ( print $prefix "write-block-size" )) -}}
 {{- end -}}
 {{- list .advancedConfig ( print $prefix "configuration" ) $map | include "nessie.mergeAdvancedConfig" }}
 {{- end -}}
@@ -274,15 +274,15 @@ Apply ADLS catalog options.
 {{- $prefix := index . 1 -}}{{/* the current prefix */}}
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
-{{- if .name -}}{{- $_ := set $map ( print $prefix "name" ) .name -}}{{- end -}}
-{{- if .endpoint -}}{{- $_ := set $map ( print $prefix "endpoint" ) .endpoint -}}{{- end -}}
-{{- if .externalEndpoint -}}{{- $_ := set $map ( print $prefix "external-endpoint" ) .externalEndpoint -}}{{- end -}}
-{{- if .retryPolicy -}}{{- $_ := set $map ( print $prefix "retry-policy" ) .retryPolicy -}}{{- end -}}
-{{- if .maxRetries -}}{{- $_ := set $map ( print $prefix "max-retries" ) .maxRetries -}}{{- end -}}
-{{- if .tryTimeout -}}{{- $_ := set $map ( print $prefix "try-timeout" ) .tryTimeout -}}{{- end -}}
-{{- if .retryDelay -}}{{- $_ := set $map ( print $prefix "retry-delay" ) .retryDelay -}}{{- end -}}
-{{- if .maxRetryDelay -}}{{- $_ := set $map ( print $prefix "max-retry-delay" ) .maxRetryDelay -}}{{- end -}}
-{{- if .authType -}}{{- $_ := set $map ( print $prefix "auth-type" ) .authType -}}{{- end -}}
+{{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .endpoint $map ( print $prefix "endpoint" )) -}}
+{{- include "nessie.addConfigOption" (list .externalEndpoint $map ( print $prefix "external-endpoint" )) -}}
+{{- include "nessie.addConfigOption" (list .retryPolicy $map ( print $prefix "retry-policy" )) -}}
+{{- include "nessie.addConfigOption" (list .maxRetries $map ( print $prefix "max-retries" )) -}}
+{{- include "nessie.addConfigOption" (list .tryTimeout $map ( print $prefix "try-timeout" )) -}}
+{{- include "nessie.addConfigOption" (list .retryDelay $map ( print $prefix "retry-delay" )) -}}
+{{- include "nessie.addConfigOption" (list .maxRetryDelay $map ( print $prefix "max-retry-delay" )) -}}
+{{- include "nessie.addConfigOption" (list .authType $map ( print $prefix "auth-type" )) -}}
 {{- end -}}
 {{- end -}}
 
@@ -381,4 +381,40 @@ Define an env var from secret key.
 {{ end -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Adds a configuration option to the map if the value is not nil. Zero-values like false or 0 are
+considered valid and thus added. This template should not be applied to non-scalar values like
+slices or maps.
+*/}}
+{{- define "nessie.addConfigOption" -}}
+{{- $value := index . 0 -}}{{/* the value to add */}}
+{{- $map := index . 1 -}}{{/* the destination map */}}
+{{- $key := index . 2 -}}{{/* the destination map key */}}
+{{- if (ne $value nil) -}}
+{{- $_ := set $map $key $value -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Prints the configuration option to the destination configmap entry. See confimap.yaml.
+Any nil values will be printed as empty config options; otherwise, the value will be evaluated
+as a template against the global context, then printed. Furthermore, if the value contains
+line breaks, they will be escaped and a multi-line option will be printed.
+*/}}
+{{- define "nessie.appendConfigOption" -}}
+{{- $key := index . 0 -}}
+{{- $value := index . 1 -}}
+{{- $global := index . 2 -}}
+{{- $valAsString := "" -}}
+{{- if ne $value nil -}}
+{{- $valAsString = tpl (toString $value) $global -}}
+{{- if contains "\r\n" $valAsString -}}
+{{- $valAsString = $valAsString | nindent 4 | replace "\r\n" "\\\r\n" -}}
+{{- else if contains "\n" $valAsString -}}
+{{- $valAsString = $valAsString | nindent 4 | replace "\n" "\\\n" -}}
+{{- end -}}
+{{- end -}}
+{{ print $key "=" $valAsString }}
 {{- end -}}
