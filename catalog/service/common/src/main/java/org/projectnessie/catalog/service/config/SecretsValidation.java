@@ -128,8 +128,7 @@ public abstract class SecretsValidation {
       AdlsFileSystemOptions fs, String name) {
     var failures = new ArrayList<SecretValidationFailure>();
     validateSecret(fs.account(), BASIC, List.of("adls", name, "account")).ifPresent(failures::add);
-    validateSecret(fs.sasToken(), EXPIRING_TOKEN, List.of("adls", name, "sasToken"))
-        .ifPresent(failures::add);
+    validateSecret(fs.sasToken(), KEY, List.of("adls", name, "sasToken")).ifPresent(failures::add);
     return failures;
   }
 
