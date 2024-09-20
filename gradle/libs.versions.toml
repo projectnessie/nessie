@@ -110,7 +110,7 @@ mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version
 maven-resolver-supplier = { module = "org.apache.maven.resolver:maven-resolver-supplier", version.ref = "mavenResolver" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version = "1.13.4" }
 microprofile-contextpropagation-api = { module = "org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api", version = "1.3" }
-microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "4.0" }
+microprofile-openapi = { module = "org.eclipse.microprofile.openapi:microprofile-openapi-api", version = "4.0.1" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mongodb-driver-sync = { module = "org.mongodb:mongodb-driver-sync", version = "5.1.4" }
