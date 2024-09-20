@@ -311,12 +311,12 @@ Define environkent variables for catalog storage options.
 {{- end -}}
 {{ include "nessie.catalogSecretToEnv" (list .Values.catalog.storage.adls.defaultOptions.accountSecret "accountName" "adls.default-options.account" "name" true . ) }}
 {{- include "nessie.catalogSecretToEnv" (list .Values.catalog.storage.adls.defaultOptions.accountSecret "accountKey" "adls.default-options.account" "secret" false . ) }}
-{{- include "nessie.catalogSecretToEnv" (list .Values.catalog.storage.adls.defaultOptions.sasTokenSecret "sasToken" "adls.default-options.sas-token" "token" true . ) }}
+{{- include "nessie.catalogSecretToEnv" (list .Values.catalog.storage.adls.defaultOptions.sasTokenSecret "sasToken" "adls.default-options.sas-token" "key" true . ) }}
 {{- range $i, $filesystem := .Values.catalog.storage.adls.filesystems -}}
 {{- with $global }}
 {{- include "nessie.catalogSecretToEnv" (list $filesystem.accountSecret "accountName" (printf "adls.file-systems.filesystem%d.account" (add $i 1)) "name" true . ) }}
 {{- include "nessie.catalogSecretToEnv" (list $filesystem.accountSecret "accountKey" (printf "adls.file-systems.filesystem%d.account" (add $i 1)) "secret" false . ) }}
-{{- include "nessie.catalogSecretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "adls.file-systems.filesystem%d.sas-token" (add $i 1)) "token" true . ) }}
+{{- include "nessie.catalogSecretToEnv" (list $filesystem.sasTokenSecret "sasToken" (printf "adls.file-systems.filesystem%d.sas-token" (add $i 1)) "key" true . ) }}
 {{- end -}}
 {{- end -}}
 {{- end -}}
