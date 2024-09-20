@@ -23,9 +23,9 @@ import static java.util.stream.Collectors.toList;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataJsonLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergMetadataToContent;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergNewEntityBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieViewSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
@@ -39,6 +39,8 @@ import static org.projectnessie.catalog.service.objtypes.EntitySnapshotObj.snaps
 import static org.projectnessie.error.ReferenceConflicts.referenceConflicts;
 import static org.projectnessie.model.Conflict.conflict;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.NAMESPACE;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
@@ -100,6 +102,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
 import org.projectnessie.services.authz.AccessContext;
@@ -155,6 +158,79 @@ public class CatalogServiceImpl implements CatalogService {
         new EntitySnapshotTaskBehavior(
             backendExceptionMapper, serviceConfig.effectiveRetryAfterThrottled()),
         executor);
+  }
+
+  @Override
+  public Optional<String> validateStorageLocation(String location) {
+    StorageUri uri = StorageUri.of(location);
+    return objectIO.canResolve(uri);
+  }
+
+  @Override
+  public StorageUri locationForEntity(
+      WarehouseConfig warehouse,
+      ContentKey contentKey,
+      Content.Type contentType,
+      ApiContext apiContext,
+      String refName,
+      String hash) {
+    List<String> keyElements = contentKey.getElements();
+    int keyElementCount = keyElements.size();
+
+    List<ContentKey> keysInOrder = new ArrayList<>(keyElementCount);
+    for (int i = 0; i < keyElementCount; i++) {
+      ContentKey key = ContentKey.of(keyElements.subList(0, i + 1));
+      keysInOrder.add(key);
+    }
+
+    GetMultipleContentsResponse namespaces;
+    try {
+      namespaces =
+          contentService(apiContext)
+              .getMultipleContents(refName, hash, keysInOrder, false, API_READ);
+    } catch (NessieNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+    Map<ContentKey, Content> contentsMap = namespaces.toContentsMap();
+
+    return locationForEntity(warehouse, contentKey, keysInOrder, contentsMap);
+  }
+
+  @Override
+  public StorageUri locationForEntity(
+      WarehouseConfig warehouse,
+      ContentKey contentKey,
+      List<ContentKey> keysInOrder,
+      Map<ContentKey, Content> contentsMap) {
+    List<String> keyElements = contentKey.getElements();
+    int keyElementCount = keyElements.size();
+    StorageUri location = null;
+    List<String> remainingElements = List.of();
+
+    // Find the nearest namespace with a 'location' property and start from there
+    for (int n = keysInOrder.size() - 1; n >= 0; n--) {
+      Content parent = contentsMap.get(keysInOrder.get(n));
+      if (parent != null && parent.getType().equals(NAMESPACE)) {
+        Namespace parentNamespace = (Namespace) parent;
+        String parentLocation = parentNamespace.getProperties().get("location");
+        if (parentLocation != null) {
+          location = StorageUri.of(parentLocation).withTrailingSeparator();
+          remainingElements = keyElements.subList(n + 1, keyElementCount);
+        }
+      }
+    }
+
+    // No parent namespace has a 'location' property, start from the warehouse
+    if (location == null) {
+      location = StorageUri.of(warehouse.location()).withTrailingSeparator();
+      remainingElements = keyElements;
+    }
+
+    for (String element : remainingElements) {
+      location = location.withTrailingSeparator().resolve(element);
+    }
+
+    return location;
   }
 
   @Override
@@ -430,12 +506,12 @@ public class CatalogServiceImpl implements CatalogService {
         verifyIcebergOperation(op, reference, content);
         commitBuilderStage =
             applyIcebergTableCommitOperation(
-                target, op, content, multiTableUpdate, commitBuilderStage);
+                target, op, content, multiTableUpdate, commitBuilderStage, apiContext);
       } else if (op.getType().equals(Content.Type.ICEBERG_VIEW)) {
         verifyIcebergOperation(op, reference, content);
         commitBuilderStage =
             applyIcebergViewCommitOperation(
-                target, op, content, multiTableUpdate, commitBuilderStage);
+                target, op, content, multiTableUpdate, commitBuilderStage, apiContext);
       } else {
         throw new IllegalArgumentException("(Yet) unsupported entity type: " + op.getType());
       }
@@ -561,7 +637,8 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage) {
+      CompletionStage<MultiTableUpdate> commitBuilderStage,
+      ApiContext apiContext) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -594,7 +671,8 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergTableMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(pruneUpdates(icebergOp, content != null));
+                      .applyUpdates(
+                          pruneUpdates(reference, icebergOp, content != null, apiContext));
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
                 })
@@ -630,7 +708,8 @@ public class CatalogServiceImpl implements CatalogService {
       CatalogOperation op,
       Content content,
       MultiTableUpdate multiTableUpdate,
-      CompletionStage<MultiTableUpdate> commitBuilderStage) {
+      CompletionStage<MultiTableUpdate> commitBuilderStage,
+      ApiContext apiContext) {
     // TODO serialize the changes as well, so that we can retrieve those later for content-aware
     //  merges and automatic conflict resolution.
 
@@ -663,7 +742,8 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergViewMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(pruneUpdates(icebergOp, content != null));
+                      .applyUpdates(
+                          pruneUpdates(reference, icebergOp, content != null, apiContext));
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
                 })
@@ -693,28 +773,44 @@ public class CatalogServiceImpl implements CatalogService {
     return commitBuilderStage;
   }
 
-  private List<IcebergMetadataUpdate> pruneUpdates(IcebergCatalogOperation op, boolean update) {
+  private List<IcebergMetadataUpdate> pruneUpdates(
+      Branch reference, IcebergCatalogOperation op, boolean update, ApiContext apiContext) {
     if (update) {
       return op.updates();
     }
     List<IcebergMetadataUpdate> prunedUpdates = new ArrayList<>(op.updates());
-    String location = null;
+    String location = op.getSingleUpdate(SetLocation.class, SetLocation::location).orElse(null);
     if (op.hasUpdate(SetProperties.class)) {
       Map<String, String> properties =
           op.getSingleUpdateValue(SetProperties.class, SetProperties::updates);
       if (properties.containsKey(IcebergTableMetadata.STAGED_PROPERTY)) {
-        String stagedLocation = op.getSingleUpdateValue(SetLocation.class, SetLocation::location);
-        // TODO verify integrity of staged location
         prunedUpdates.removeIf(u -> u instanceof SetProperties);
         properties = new HashMap<>(properties);
         properties.remove(IcebergTableMetadata.STAGED_PROPERTY);
         prunedUpdates.add(setProperties(properties));
-        location = stagedLocation;
       }
     }
     if (location == null) {
       WarehouseConfig w = catalogConfig.getWarehouse(op.warehouse());
-      location = icebergBaseLocation(w.location(), op.getKey());
+      location =
+          icebergNewEntityBaseLocation(
+              locationForEntity(
+                      w,
+                      op.getKey(),
+                      op.getType(),
+                      apiContext,
+                      reference.getName(),
+                      reference.getHash())
+                  .toString());
+    } else {
+      validateStorageLocation(location)
+          .ifPresent(
+              msg -> {
+                throw new IllegalArgumentException(
+                    format(
+                        "Location for %s '%s' cannot be associated with any configured object storage location: %s",
+                        op.getType().name(), op.getKey(), msg));
+              });
     }
     prunedUpdates.add(setTrustedLocation(location));
     return prunedUpdates;

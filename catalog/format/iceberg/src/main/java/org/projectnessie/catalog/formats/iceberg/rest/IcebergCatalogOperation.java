@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
@@ -73,6 +74,17 @@ public abstract class IcebergCatalogOperation implements CatalogOperation {
   @Value.Derived
   public <T, U extends IcebergMetadataUpdate> T getSingleUpdateValue(
       Class<U> update, Function<U, T> mapper) {
+    return getSingleUpdate(update, mapper)
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Could not find any updates of type " + update.getSimpleName()));
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  public <T, U extends IcebergMetadataUpdate> Optional<T> getSingleUpdate(
+      Class<U> update, Function<U, T> mapper) {
     return updates().stream()
         .filter(update::isInstance)
         .map(update::cast)
@@ -81,11 +93,7 @@ public abstract class IcebergCatalogOperation implements CatalogOperation {
             (e1, e2) -> {
               throw new IllegalArgumentException(
                   "Found multiple updates of type " + update.getSimpleName());
-            })
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Could not find any updates of type " + update.getSimpleName()));
+            });
   }
 
   @Value.Check

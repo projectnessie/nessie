@@ -18,6 +18,8 @@ package org.projectnessie.catalog.service.api;
 import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -32,6 +35,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
 import org.projectnessie.services.authz.ApiContext;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.RequestMeta;
 
 public interface CatalogService {
@@ -78,4 +82,21 @@ public interface CatalogService {
     URI icebergSnapshot(
         Reference effectiveReference, ContentKey key, NessieEntitySnapshot<?> snapshot);
   }
+
+  Optional<String> validateStorageLocation(String location);
+
+  StorageUri locationForEntity(
+      WarehouseConfig warehouse,
+      ContentKey contentKey,
+      Content.Type contentType,
+      ApiContext apiContext,
+      String refName,
+      String hash)
+      throws NessieNotFoundException;
+
+  StorageUri locationForEntity(
+      WarehouseConfig warehouse,
+      ContentKey contentKey,
+      List<ContentKey> keysInOrder,
+      Map<ContentKey, Content> contentsMap);
 }

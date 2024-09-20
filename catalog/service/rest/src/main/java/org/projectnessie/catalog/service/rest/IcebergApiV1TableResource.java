@@ -26,7 +26,7 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadat
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergBaseLocation;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergNewEntityBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
@@ -41,6 +41,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import static org.projectnessie.versioned.RequestMeta.apiWrite;
@@ -324,11 +325,21 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
 
+    ParsedReference ref = tableRef.reference();
+    String location =
+        icebergNewEntityBaseLocation(
+            catalogService
+                .locationForEntity(
+                    warehouse,
+                    tableRef.contentKey(),
+                    NAMESPACE,
+                    ICEBERG_V1,
+                    ref.name(),
+                    ref.hashWithRelativeSpec())
+                .toString());
+    updates.add(setTrustedLocation(location));
+
     if (createTableRequest.stageCreate()) {
-
-      String location = icebergBaseLocation(warehouse.location(), tableRef.contentKey());
-      updates.add(setTrustedLocation(location));
-
       NessieTableSnapshot snapshot =
           new IcebergTableMetadataUpdateState(
                   newIcebergTableSnapshot(uuid), tableRef.contentKey(), false)
@@ -455,6 +466,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       tableMetadata =
           IcebergJson.objectMapper().readValue(metadataInput, IcebergTableMetadata.class);
     }
+
+    // TODO allow updating the "location" property, rely on AuthZ
+    // TODO verify the "location" can be mapped to a configured object-store
 
     ToIntFunction<Integer> safeUnbox = i -> i != null ? i : 0;
 
@@ -597,6 +611,9 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       @Valid IcebergUpdateTableRequest commitTableRequest)
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
+
+    // TODO allow updating the "location" property, rely on AuthZ
+    // TODO verify the "location" can be mapped to a configured object-store
 
     return createOrUpdateEntity(tableRef, commitTableRequest, ICEBERG_TABLE, CATALOG_UPDATE_ENTITY)
         .map(

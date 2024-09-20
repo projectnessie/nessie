@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static java.lang.String.format;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
@@ -125,8 +126,6 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
       throws IOException {
     ParsedReference ref = decodePrefix(prefix).parsedReference();
 
-    // TODO might want to prevent setting 'location'
-
     Map<String, String> properties = createNamespaceRequest.properties();
 
     Namespace namespace =
@@ -170,8 +169,18 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         apiWrite().addKeyAction(key, CATALOG_CREATE_ENTITY.name());
     if (!namespace.getProperties().isEmpty()) {
       requestMeta.addKeyAction(key, META_SET_PROPERTIES.name());
-      if (namespace.getProperties().containsKey("location")) {
+      String location = namespace.getProperties().get("location");
+      if (location != null) {
         requestMeta.addKeyAction(key, META_SET_LOCATION.name());
+        catalogService
+            .validateStorageLocation(location)
+            .ifPresent(
+                msg -> {
+                  throw new IllegalArgumentException(
+                      format(
+                          "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
+                          key, msg));
+                });
       }
     }
 
@@ -336,43 +345,20 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             API_READ);
     Map<ContentKey, Content> namespacesMap = namespaces.toContentsMap();
 
-    Content content = namespacesMap.get(nessieNamespace.toContentKey());
+    ContentKey contentKey = nessieNamespace.toContentKey();
+    Content content = namespacesMap.get(contentKey);
     if (content == null || !content.getType().equals(NAMESPACE)) {
-      throw new NessieContentNotFoundException(
-          nessieNamespace.toContentKey(), namespaceRef.referenceName());
+      throw new NessieContentNotFoundException(contentKey, namespaceRef.referenceName());
     }
     nessieNamespace = (Namespace) content;
 
     Map<String, String> properties = new HashMap<>(nessieNamespace.getProperties());
     if (!properties.containsKey("location")) {
-      StorageUri location = null;
-      List<String> remainingElements = null;
-
-      // Find the nearest namespace with a 'location' property and start from there
-      for (int n = keysInOrder.size() - 2; n >= 0; n--) {
-        Content parent = namespacesMap.get(keysInOrder.get(n));
-        if (parent != null && parent.getType().equals(NAMESPACE)) {
-          Namespace parentNamespace = (Namespace) parent;
-          String parentLocationString = parentNamespace.getProperties().get("location");
-          if (parentLocationString != null) {
-            location = StorageUri.of(parentLocationString);
-            remainingElements =
-                nessieNamespace.getElements().subList(n + 1, nessieNamespace.getElementCount());
-          }
-        }
-      }
-
-      // No parent namespace has a 'location' property, start from the warehouse
-      if (location == null) {
-        WarehouseConfig warehouse = catalogConfig.getWarehouse(decoded.warehouse());
-        location = StorageUri.of(warehouse.location()).withTrailingSeparator();
-        remainingElements = nessieNamespace.getElements();
-      }
-
-      for (String element : remainingElements) {
-        location = location.resolve(element).withTrailingSeparator();
-      }
-
+      WarehouseConfig warehouse = catalogConfig.getWarehouse(decoded.warehouse());
+      StorageUri location =
+          catalogService
+              .locationForEntity(warehouse, contentKey, keysInOrder, namespacesMap)
+              .withTrailingSeparator();
       properties.put("location", location.toString());
     }
 
@@ -432,8 +418,18 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
     }
     if (!updateNamespacePropertiesRequest.updates().isEmpty()) {
       requestMeta.addKeyAction(key, CatalogOps.META_SET_PROPERTIES.name());
-      if (updateNamespacePropertiesRequest.updates().containsKey("location")) {
+      String location = updateNamespacePropertiesRequest.updates().get("location");
+      if (location != null) {
         requestMeta.addKeyAction(key, CatalogOps.META_SET_LOCATION.name());
+        catalogService
+            .validateStorageLocation(location)
+            .ifPresent(
+                msg -> {
+                  throw new IllegalArgumentException(
+                      format(
+                          "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
+                          key, msg));
+                });
       }
     }
     treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());

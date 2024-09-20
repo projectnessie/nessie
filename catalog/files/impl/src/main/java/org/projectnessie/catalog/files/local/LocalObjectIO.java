@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -96,6 +97,16 @@ public class LocalObjectIO implements ObjectIO {
       StorageUri warehouse,
       Map<String, String> icebergConfig,
       BiConsumer<String, String> properties) {}
+
+  @Override
+  public Optional<String> canResolve(StorageUri uri) {
+    Path path = LocalObjectIO.filePath(uri);
+    // We expect a directory here (or non-existing here), because the URI is meant to store other
+    // files
+    return Files.isRegularFile(path)
+        ? Optional.of(path + " does must not be file")
+        : Optional.empty();
+  }
 
   private static Path filePath(StorageUri uri) {
     return Paths.get(uri.requiredPath());

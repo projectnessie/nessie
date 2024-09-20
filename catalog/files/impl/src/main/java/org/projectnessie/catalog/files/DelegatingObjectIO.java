@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -41,6 +42,16 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   @Override
   public InputStream readObject(StorageUri uri) throws IOException {
     return resolve(uri).readObject(uri);
+  }
+
+  @Override
+  public Optional<String> canResolve(StorageUri uri) {
+    try {
+      ObjectIO resolved = resolve(uri);
+      return resolved.canResolve(uri);
+    } catch (IllegalArgumentException e) {
+      return Optional.of(e.getMessage());
+    }
   }
 
   @Override
