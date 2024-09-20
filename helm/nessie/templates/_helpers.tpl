@@ -385,7 +385,8 @@ Define an env var from secret key.
 
 {{/*
 Adds a configuration option to the map if the value is not nil. Zero-values like false or 0 are
-considered valid and thus added.
+considered valid and thus added. This template should not be applied to non-scalar values like
+slices or maps.
 */}}
 {{- define "nessie.addConfigOption" -}}
 {{- $value := index . 0 -}}{{/* the value to add */}}
