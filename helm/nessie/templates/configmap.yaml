@@ -173,7 +173,5 @@ data:
     {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
     {{- $global := . -}}
     {{- range $k, $v := $map }}
-    {{- with $global }}
-    {{ printf "%s=%s" $k ( eq $v nil | ternary "" ( tpl (toString $v) . )) }}
-    {{- end }}
+    {{ include "nessie.appendConfigOption" (list  $k $v $global) }}
     {{- end }}

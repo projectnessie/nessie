@@ -41,9 +41,29 @@ catalog:
     s3:
       transport:
         readTimeout: PT1M
+        expectContinueEnabled: false
       defaultOptions:
         region: us-west-2
         endpoint: s3.amazonaws.com
+        requestSigningEnabled: false
+        pathStyleAccess: false
+        serverIam:
+          enabled: false
+        clientIam:
+          enabled: true
+          statements:
+            - >-
+              {
+                "Effect": "Allow",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+              }
+            - >-
+              {
+                "Effect": "Allow",
+                "Action": "s3:PutObject",
+                "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
+              }
       buckets:
         - name: bucket1.{{ .Release.Namespace }}
           endpoint: prod-us.s3.amazonaws.com
@@ -54,6 +74,7 @@ catalog:
     gcs:
       transport:
         readTimeout: PT1M
+        maxAttempts: 0
       defaultOptions:
         host: https://storage.googleapis.com
       buckets:
