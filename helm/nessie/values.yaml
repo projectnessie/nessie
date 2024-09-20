@@ -274,7 +274,7 @@ catalog:
           #    "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
           #  }
 
-  # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
+        # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
         serverIam:
           # -- Whether to enable server assume-role functionality.
           enabled: ~  # false
