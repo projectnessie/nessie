@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -697,12 +696,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
                       .validator(createCommitValidator((BranchName) toRef.getNamedRef()))
                       .build());
-      return createResponse(fetchAdditionalInfo, result);
+      return createResponse(result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(returnConflictAsResult)) {
-        return createResponse(fetchAdditionalInfo, e.getMergeResult());
+        return createResponse(e.getMergeResult());
       }
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -771,12 +770,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                       .fetchAdditionalInfo(Boolean.TRUE.equals(fetchAdditionalInfo))
                       .validator(createCommitValidator((BranchName) toRef.getNamedRef()))
                       .build());
-      return createResponse(fetchAdditionalInfo, result);
+      return createResponse(result);
     } catch (ReferenceNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(returnConflictAsResult)) {
-        return createResponse(fetchAdditionalInfo, e.getMergeResult());
+        return createResponse(e.getMergeResult());
       }
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -803,7 +802,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @SuppressWarnings("deprecation")
-  private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult result) {
+  private MergeResponse createResponse(MergeResult result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
         ImmutableMergeResponse.builder()
@@ -815,27 +814,6 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .wasApplied(result.wasApplied())
             .wasSuccessful(result.wasSuccessful());
 
-    BiConsumer<List<Commit>, Consumer<LogEntry>> convertCommits =
-        (src, dest) -> {
-          if (src == null) {
-            return;
-          }
-          src.stream()
-              .map(c -> commitToLogEntry(Boolean.TRUE.equals(fetchAdditionalInfo), c))
-              .forEach(dest);
-        };
-
-    convertCommits.accept(result.getSourceCommits(), response::addSourceCommits);
-    convertCommits.accept(result.getTargetCommits(), response::addTargetCommits);
-
-    BiConsumer<List<Hash>, Consumer<String>> convertCommitIds =
-        (src, dest) -> {
-          if (src == null) {
-            return;
-          }
-          src.stream().map(hashToString).forEach(dest);
-        };
-
     result
         .getDetails()
         .forEach(
@@ -843,12 +821,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               ImmutableContentKeyDetails.Builder keyDetails =
                   ImmutableContentKeyDetails.builder()
                       .key(ContentKey.of(key.getElements()))
-                      .conflictType(ContentKeyConflict.valueOf(details.getConflictType().name()))
+                      .conflictType(
+                          details.getConflict() != null
+                              ? ContentKeyConflict.UNRESOLVABLE
+                              : ContentKeyConflict.NONE)
                       .mergeBehavior(MergeBehavior.valueOf(details.getMergeBehavior().name()))
                       .conflict(details.getConflict());
-
-              convertCommitIds.accept(details.getSourceCommits(), keyDetails::addSourceCommits);
-              convertCommitIds.accept(details.getTargetCommits(), keyDetails::addTargetCommits);
 
               response.addDetails(keyDetails.build());
             });

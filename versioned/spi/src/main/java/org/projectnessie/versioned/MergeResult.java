@@ -59,20 +59,6 @@ public interface MergeResult extends Result {
   @Nullable
   Hash getExpectedHash();
 
-  /** List of commit-IDs to be merged or transplanted. */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated // for removal and replaced with something else
-  List<Commit> getSourceCommits();
-
-  /**
-   * List of commit-IDs between {@link #getExpectedHash()} and {@link #getEffectiveTargetHash()}, if
-   * the expected hash was provided.
-   */
-  @Nullable
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated // for removal and replaced with something else
-  List<Commit> getTargetCommits();
-
   /**
    * List of new commits that where created and added to the target branch.
    *
@@ -81,8 +67,8 @@ public interface MergeResult extends Result {
    * resulted in a fast-forward merge or transplant, because no new commit is created in this case.
    * Otherwise, if commits were squashed, the returned list will contain exactly one element: the
    * squashed commit; conversely, if individual commits were preserved, the list will generally
-   * contain as many commits as there were {@linkplain #getSourceCommits() source commits} to rebase
-   * (unless some source commits were filtered out).
+   * contain as many commits as there were source commits to rebase (unless some source commits were
+   * filtered out).
    *
    * <p>The REST API does not expose this property currently; it is used by the Nessie events
    * notification system.
@@ -97,25 +83,9 @@ public interface MergeResult extends Result {
     @Value.Parameter(order = 1)
     MergeBehavior getMergeBehavior();
 
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated // for removal, #getConflict() is a proper replacement
-    @Value.Default
-    @Value.Parameter(order = 2)
-    default ConflictType getConflictType() {
-      return ConflictType.NONE;
-    }
-
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated // for removal and replaced with something else
-    List<Hash> getSourceCommits();
-
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated // for removal and replaced with something else
-    List<Hash> getTargetCommits();
-
     /** Optional message, usually present in case of a conflict. */
     @Nullable
-    @Value.Parameter(order = 3)
+    @Value.Parameter(order = 2)
     Conflict getConflict();
 
     static ImmutableKeyDetails.Builder builder() {
@@ -123,17 +93,8 @@ public interface MergeResult extends Result {
     }
 
     static KeyDetails keyDetails(MergeBehavior mergeBehavior, Conflict conflict) {
-      return ImmutableKeyDetails.of(
-          mergeBehavior,
-          conflict != null ? ConflictType.UNRESOLVABLE : ConflictType.NONE,
-          conflict);
+      return ImmutableKeyDetails.of(mergeBehavior, conflict);
     }
-  }
-
-  @Deprecated // for removal
-  enum ConflictType {
-    NONE,
-    UNRESOLVABLE
   }
 
   static ImmutableMergeResult.Builder builder() {
