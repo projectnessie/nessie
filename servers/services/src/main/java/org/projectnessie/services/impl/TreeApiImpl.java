@@ -672,7 +672,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         commitMeta = null;
       }
 
-      MergeResult<Commit> result =
+      MergeResult result =
           getStore()
               .transplant(
                   TransplantOp.builder()
@@ -702,9 +702,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(returnConflictAsResult)) {
-        @SuppressWarnings("unchecked")
-        MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
-        return createResponse(fetchAdditionalInfo, mr);
+        return createResponse(fetchAdditionalInfo, e.getMergeResult());
       }
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -748,7 +746,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
           .canCommitChangeAgainstReference(toRef.getNamedRef())
           .checkAndThrow();
 
-      MergeResult<Commit> result =
+      MergeResult result =
           getStore()
               .merge(
                   MergeOp.builder()
@@ -778,9 +776,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     } catch (MergeConflictException e) {
       if (Boolean.TRUE.equals(returnConflictAsResult)) {
-        @SuppressWarnings("unchecked")
-        MergeResult<Commit> mr = (MergeResult<Commit>) e.getMergeResult();
-        return createResponse(fetchAdditionalInfo, mr);
+        return createResponse(fetchAdditionalInfo, e.getMergeResult());
       }
       throw new NessieReferenceConflictException(e.getReferenceConflicts(), e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -807,7 +803,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @SuppressWarnings("deprecation")
-  private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult<Commit> result) {
+  private MergeResponse createResponse(Boolean fetchAdditionalInfo, MergeResult result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
         ImmutableMergeResponse.builder()

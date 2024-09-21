@@ -18,14 +18,14 @@ package org.projectnessie.versioned;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface CommitResult<COMMIT extends Hashable> extends Result {
+public interface CommitResult extends Result {
 
   @Override
   default ResultType getResultType() {
     return ResultType.COMMIT;
   }
 
-  COMMIT getCommit();
+  Commit getCommit();
 
   BranchName getTargetBranch();
 
@@ -34,7 +34,7 @@ public interface CommitResult<COMMIT extends Hashable> extends Result {
     return getCommit().getHash();
   }
 
-  static <COMMIT extends Hashable> ImmutableCommitResult.Builder<COMMIT> builder() {
+  static ImmutableCommitResult.Builder builder() {
     return ImmutableCommitResult.builder();
   }
 }

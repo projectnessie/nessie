@@ -272,7 +272,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .withMessage(
             "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key t2");
 
-    MergeResult<Commit> result =
+    MergeResult result =
         store()
             .merge(
                 MergeOp.builder()

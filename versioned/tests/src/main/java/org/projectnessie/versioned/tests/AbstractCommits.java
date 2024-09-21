@@ -59,7 +59,6 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
@@ -107,7 +106,7 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
     final Hash initialHash = store().hashOnReference(branch, Optional.empty(), emptyList());
     soft.assertThat(createHash).isEqualTo(initialHash);
 
-    CommitResult<Commit> result =
+    CommitResult result =
         store()
             .commit(
                 branch,

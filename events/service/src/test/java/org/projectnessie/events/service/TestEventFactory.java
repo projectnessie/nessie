@@ -139,8 +139,8 @@ class TestEventFactory {
   @MethodSource("principals")
   void newMergeEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    MergeResult result =
+        ImmutableMergeResult.builder()
             .resultType(ResultType.MERGE)
             .sourceRef(BranchName.of("branch1"))
             .targetBranch(BranchName.of("branch2"))
@@ -170,8 +170,8 @@ class TestEventFactory {
   @MethodSource("principals")
   void newTransplantEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    MergeResult result =
+        ImmutableMergeResult.builder()
             .resultType(ResultType.TRANSPLANT)
             .sourceRef(BranchName.of("branch1"))
             .targetBranch(BranchName.of("branch2"))

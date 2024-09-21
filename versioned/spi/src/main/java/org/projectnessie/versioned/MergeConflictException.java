@@ -29,14 +29,14 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
  */
 public class MergeConflictException extends ReferenceConflictException {
 
-  private final MergeResult<?> mergeResult;
+  private final MergeResult mergeResult;
 
-  public MergeConflictException(String message, MergeResult<?> mergeResult) {
+  public MergeConflictException(String message, MergeResult mergeResult) {
     super(referenceConflicts(asReferenceConflicts(mergeResult)), message);
     this.mergeResult = mergeResult;
   }
 
-  private static List<Conflict> asReferenceConflicts(MergeResult<?> mergeResult) {
+  private static List<Conflict> asReferenceConflicts(MergeResult mergeResult) {
     return mergeResult.getDetails().entrySet().stream()
         .map(
             e -> {
@@ -49,7 +49,7 @@ public class MergeConflictException extends ReferenceConflictException {
         .collect(Collectors.toList());
   }
 
-  public MergeResult<?> getMergeResult() {
+  public MergeResult getMergeResult() {
     return mergeResult;
   }
 }

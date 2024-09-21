@@ -125,13 +125,13 @@ public class EventService implements AutoCloseable {
     String repositoryId = event.getRepositoryId();
     switch (result.getResultType()) {
       case COMMIT:
-        onCommitResult((CommitResult<Commit>) result, repositoryId, user);
+        onCommitResult((CommitResult) result, repositoryId, user);
         break;
       case MERGE:
-        onMergeResult((MergeResult<Commit>) result, repositoryId, user);
+        onMergeResult((MergeResult) result, repositoryId, user);
         break;
       case TRANSPLANT:
-        onTransplantResult((MergeResult<Commit>) result, repositoryId, user);
+        onTransplantResult((MergeResult) result, repositoryId, user);
         break;
       case REFERENCE_CREATED:
         onReferenceCreatedResult((ReferenceCreatedResult) result, repositoryId, user);
@@ -147,20 +147,18 @@ public class EventService implements AutoCloseable {
     }
   }
 
-  private void onCommitResult(
-      CommitResult<Commit> result, String repositoryId, @Nullable Principal user) {
+  private void onCommitResult(CommitResult result, String repositoryId, @Nullable Principal user) {
     LOGGER.debug("Received commit result: {}", result);
     fireCommitEvent(result.getCommit(), result.getTargetBranch(), repositoryId, user);
   }
 
-  private void onMergeResult(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+  private void onMergeResult(MergeResult result, String repositoryId, @Nullable Principal user) {
     LOGGER.debug("Received merge result: {}", result);
     fireMergeEvent(result, repositoryId, user);
   }
 
   private void onTransplantResult(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+      MergeResult result, String repositoryId, @Nullable Principal user) {
     LOGGER.debug("Received transplant result: {}", result);
     fireTransplantEvent(result, repositoryId, user);
   }
@@ -191,8 +189,7 @@ public class EventService implements AutoCloseable {
     }
   }
 
-  private void fireMergeEvent(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+  private void fireMergeEvent(MergeResult result, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newMergeEvent(result, repositoryId, user));
     if (hasCommitSubscribers) {
       for (Commit commit : result.getCreatedCommits()) {
@@ -202,7 +199,7 @@ public class EventService implements AutoCloseable {
   }
 
   private void fireTransplantEvent(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+      MergeResult result, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newTransplantEvent(result, repositoryId, user));
     if (hasCommitSubscribers) {
       for (Commit commit : result.getCreatedCommits()) {

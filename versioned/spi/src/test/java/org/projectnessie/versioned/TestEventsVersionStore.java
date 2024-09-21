@@ -78,8 +78,8 @@ class TestEventsVersionStore {
 
   @Test
   void testCommitSuccess() throws Exception {
-    CommitResult<Commit> expectedResult =
-        CommitResult.<Commit>builder()
+    CommitResult expectedResult =
+        CommitResult.builder()
             .targetBranch(branch1)
             .commit(
                 ImmutableCommit.builder()
@@ -92,7 +92,7 @@ class TestEventsVersionStore {
             branch1, Optional.of(hash1), commitMeta, operations, validator, addedContents))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    CommitResult<Commit> actualResult =
+    CommitResult actualResult =
         versionStore.commit(
             branch1, Optional.of(hash1), commitMeta, operations, validator, addedContents);
     assertThat(actualResult).isEqualTo(expectedResult);
@@ -137,8 +137,8 @@ class TestEventsVersionStore {
   @Test
   void testTransplantDryRun() throws Exception {
     boolean dryRun = true;
-    MergeResult<Commit> expectedResult =
-        MergeResult.<Commit>builder()
+    MergeResult expectedResult =
+        MergeResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.TRANSPLANT)
@@ -156,7 +156,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult<Commit> result =
+    MergeResult result =
         versionStore.transplant(
             TransplantOp.builder()
                 .fromRef(branch1)
@@ -185,8 +185,8 @@ class TestEventsVersionStore {
   @Test
   void testTransplantSuccessful() throws Exception {
     boolean dryRun = false;
-    MergeResult<Commit> expectedResult =
-        MergeResult.<Commit>builder()
+    MergeResult expectedResult =
+        MergeResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.TRANSPLANT)
@@ -205,7 +205,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult<Commit> result =
+    MergeResult result =
         versionStore.transplant(
             TransplantOp.builder()
                 .fromRef(branch1)
@@ -274,8 +274,8 @@ class TestEventsVersionStore {
   @Test
   void testMergeDryRun() throws Exception {
     boolean dryRun = true;
-    MergeResult<Commit> expectedResult =
-        MergeResult.<Commit>builder()
+    MergeResult expectedResult =
+        MergeResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.MERGE)
@@ -292,7 +292,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult<Commit> result =
+    MergeResult result =
         versionStore.merge(
             MergeOp.builder()
                 .fromRef(branch1)
@@ -319,8 +319,8 @@ class TestEventsVersionStore {
   @Test
   void testMergeSuccessful() throws Exception {
     boolean dryRun = false;
-    MergeResult<Commit> expectedResult =
-        MergeResult.<Commit>builder()
+    MergeResult expectedResult =
+        MergeResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
             .resultType(ResultType.MERGE)
@@ -338,7 +338,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult<Commit> result =
+    MergeResult result =
         versionStore.merge(
             MergeOp.builder()
                 .fromRef(branch1)

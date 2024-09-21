@@ -35,7 +35,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
@@ -72,9 +71,9 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
     super(branch, referenceHash, persist, reference, head);
   }
 
-  MergeResult<Commit> squash(
+  MergeResult squash(
       MergeTransplantOpBase mergeTransplantOpBase,
-      ImmutableMergeResult.Builder<Commit> mergeResult,
+      ImmutableMergeResult.Builder mergeResult,
       MergeTransplantContext mergeTransplantContext,
       @Nullable ObjId mergeFromId)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {

@@ -69,8 +69,8 @@ public class EventScenarios {
           .build();
 
   public void commit() {
-    CommitResult<Commit> result =
-        ImmutableCommitResult.<Commit>builder()
+    CommitResult result =
+        ImmutableCommitResult.builder()
             .targetBranch(BranchName.of("branch1"))
             .commit(commit)
             .build();
@@ -78,8 +78,8 @@ public class EventScenarios {
   }
 
   public void merge() {
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    MergeResult result =
+        ImmutableMergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
             .targetBranch(BranchName.of("branch2"))
             .resultType(ResultType.MERGE)
@@ -92,8 +92,8 @@ public class EventScenarios {
   }
 
   public void transplant() {
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    MergeResult result =
+        ImmutableMergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
             .targetBranch(BranchName.of("branch2"))
             .resultType(ResultType.TRANSPLANT)

@@ -24,7 +24,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 
 @Value.Immutable
-public interface MergeResult<COMMIT> extends Result {
+public interface MergeResult extends Result {
 
   /** Indicates whether the merge or transplant operation has been applied. */
   @Value.Default
@@ -62,7 +62,7 @@ public interface MergeResult<COMMIT> extends Result {
   /** List of commit-IDs to be merged or transplanted. */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
-  List<COMMIT> getSourceCommits();
+  List<Commit> getSourceCommits();
 
   /**
    * List of commit-IDs between {@link #getExpectedHash()} and {@link #getEffectiveTargetHash()}, if
@@ -71,7 +71,7 @@ public interface MergeResult<COMMIT> extends Result {
   @Nullable
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
-  List<COMMIT> getTargetCommits();
+  List<Commit> getTargetCommits();
 
   /**
    * List of new commits that where created and added to the target branch.
@@ -87,7 +87,7 @@ public interface MergeResult<COMMIT> extends Result {
    * <p>The REST API does not expose this property currently; it is used by the Nessie events
    * notification system.
    */
-  List<COMMIT> getCreatedCommits();
+  List<Commit> getCreatedCommits();
 
   /** Details of all keys encountered during the merge or transplant operation. */
   Map<ContentKey, KeyDetails> getDetails();
@@ -136,7 +136,7 @@ public interface MergeResult<COMMIT> extends Result {
     UNRESOLVABLE
   }
 
-  static <COMMIT extends Hashable> ImmutableMergeResult.Builder<COMMIT> builder() {
+  static ImmutableMergeResult.Builder builder() {
     return ImmutableMergeResult.builder();
   }
 }

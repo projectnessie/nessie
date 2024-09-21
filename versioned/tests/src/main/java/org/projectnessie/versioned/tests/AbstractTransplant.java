@@ -119,7 +119,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty()).getHash();
 
-    MergeResult<Commit> result =
+    MergeResult result =
         store()
             .transplant(
                 TransplantOp.builder()
@@ -157,7 +157,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    MergeResult<Commit> result =
+    MergeResult result =
         store()
             .transplant(
                 TransplantOp.builder()
@@ -447,7 +447,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    MergeResult<Commit> result =
+    MergeResult result =
         store()
             .transplant(
                 TransplantOp.builder()

@@ -82,8 +82,7 @@ public class EventFactory {
         .build();
   }
 
-  protected Event newMergeEvent(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+  protected Event newMergeEvent(MergeResult result, String repositoryId, @Nullable Principal user) {
     assert result.getResultType() == ResultType.MERGE;
     String commonAncestorHash = Objects.requireNonNull(result.getCommonAncestor()).asString();
     return ImmutableMergeEvent.builder()
@@ -101,7 +100,7 @@ public class EventFactory {
   }
 
   protected Event newTransplantEvent(
-      MergeResult<Commit> result, String repositoryId, @Nullable Principal user) {
+      MergeResult result, String repositoryId, @Nullable Principal user) {
     assert result.getResultType() == ResultType.TRANSPLANT;
     return ImmutableTransplantEvent.builder()
         .id(config.getIdGenerator().get())

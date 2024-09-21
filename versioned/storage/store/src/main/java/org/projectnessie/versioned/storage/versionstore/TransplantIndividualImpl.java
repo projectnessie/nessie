@@ -38,7 +38,6 @@ import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
@@ -76,11 +75,11 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
   }
 
   @Override
-  public MergeResult<Commit> transplant(Optional<?> retryState, TransplantOp transplantOp)
+  public MergeResult transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     MergeTransplantContext mergeTransplantContext = loadSourceCommitsForTransplant(transplantOp);
 
-    ImmutableMergeResult.Builder<Commit> mergeResult =
+    ImmutableMergeResult.Builder mergeResult =
         prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(transplantOp.fromRef());
 
     IndexesLogic indexesLogic = indexesLogic(persist);

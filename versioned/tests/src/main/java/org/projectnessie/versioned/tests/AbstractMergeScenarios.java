@@ -322,11 +322,11 @@ public abstract class AbstractMergeScenarios extends AbstractNestedVersionStore 
           .isEqualTo(expected.getHash());
     }
 
-    MergeResult<Commit> doMerge(String target) throws VersionStoreException {
+    MergeResult doMerge(String target) throws VersionStoreException {
       Hash head = requireNonNull(branches.get(target), "Branch " + target + " not created");
       VersionStore.MergeOp op =
           merge.toBranch(BranchName.of(target)).expectedHash(Optional.of(head)).build();
-      MergeResult<Commit> result = store().merge(op);
+      MergeResult result = store().merge(op);
       if (!op.dryRun()) {
         head = result.getCreatedCommits().get(0).getHash();
         branches.put(target, head);
@@ -415,7 +415,7 @@ public abstract class AbstractMergeScenarios extends AbstractNestedVersionStore 
 
       Hash head = branches.get(branch);
       requireNonNull(head, "Branch " + branch + " not created");
-      CommitResult<Commit> result =
+      CommitResult result =
           store()
               .commit(
                   BranchName.of(branch),

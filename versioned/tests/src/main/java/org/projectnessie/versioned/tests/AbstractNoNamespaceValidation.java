@@ -31,7 +31,6 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.VersionStore;
@@ -69,7 +68,7 @@ public abstract class AbstractNoNamespaceValidation {
     BranchName branch = BranchName.of("branch");
     store().create(root, Optional.empty());
 
-    CommitResult<Commit> rootHead =
+    CommitResult rootHead =
         store()
             .commit(
                 root,

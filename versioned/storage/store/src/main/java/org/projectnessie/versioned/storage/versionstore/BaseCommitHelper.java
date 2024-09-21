@@ -440,11 +440,9 @@ class BaseCommitHelper {
     validateNamespaces(checkContents, deletedKeysAndPayload, headIndex);
   }
 
-  ImmutableMergeResult.Builder<Commit> prepareMergeResult() {
-    ImmutableMergeResult.Builder<Commit> mergeResult =
-        MergeResult.<Commit>builder()
-            .targetBranch(branch)
-            .effectiveTargetHash(objIdToHash(headId()));
+  ImmutableMergeResult.Builder prepareMergeResult() {
+    ImmutableMergeResult.Builder mergeResult =
+        MergeResult.builder().targetBranch(branch).effectiveTargetHash(objIdToHash(headId()));
 
     referenceHash.ifPresent(mergeResult::expectedHash);
     return mergeResult;
@@ -638,7 +636,7 @@ class BaseCommitHelper {
   }
 
   boolean recordKeyDetailsAndCheckConflicts(
-      ImmutableMergeResult.Builder<Commit> mergeResult, Map<ContentKey, KeyDetails> keyDetailsMap) {
+      ImmutableMergeResult.Builder mergeResult, Map<ContentKey, KeyDetails> keyDetailsMap) {
     boolean hasConflicts = false;
     for (Entry<ContentKey, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
       KeyDetails details = keyDetail.getValue();
@@ -648,9 +646,9 @@ class BaseCommitHelper {
     return hasConflicts;
   }
 
-  MergeResult<Commit> finishMergeTransplant(
+  MergeResult finishMergeTransplant(
       boolean isEmpty,
-      ImmutableMergeResult.Builder<Commit> mergeResult,
+      ImmutableMergeResult.Builder mergeResult,
       ObjId newHead,
       boolean dryRun,
       boolean hasConflicts)

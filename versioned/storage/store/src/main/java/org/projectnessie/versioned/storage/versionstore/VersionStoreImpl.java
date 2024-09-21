@@ -1011,7 +1011,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public CommitResult<Commit> commit(
+  public CommitResult commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
@@ -1030,7 +1030,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> merge(MergeOp mergeOp)
+  public MergeResult merge(MergeOp mergeOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     CommitterSupplier<Merge> supplier = MergeSquashImpl::new;
 
@@ -1038,7 +1038,7 @@ public class VersionStoreImpl implements VersionStore {
       supplier = dryRunCommitterSupplier(supplier);
     }
 
-    MergeResult<Commit> mergeResult =
+    MergeResult mergeResult =
         committingOperation(
             "merge",
             mergeOp.toBranch(),
@@ -1051,7 +1051,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public MergeResult<Commit> transplant(TransplantOp transplantOp)
+  public MergeResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     CommitterSupplier<Transplant> supplier = TransplantIndividualImpl::new;
@@ -1060,7 +1060,7 @@ public class VersionStoreImpl implements VersionStore {
       supplier = dryRunCommitterSupplier(supplier);
     }
 
-    MergeResult<Commit> mergeResult =
+    MergeResult mergeResult =
         committingOperation(
             "transplant",
             transplantOp.toBranch(),
@@ -1072,7 +1072,7 @@ public class VersionStoreImpl implements VersionStore {
     return mergeTransplantResponse(mergeResult);
   }
 
-  private MergeResult<Commit> mergeTransplantResponse(MergeResult<Commit> mergeResult)
+  private MergeResult mergeTransplantResponse(MergeResult mergeResult)
       throws MergeConflictException {
     if (!mergeResult.wasSuccessful()) {
       throw new MergeConflictException(

@@ -44,7 +44,6 @@ import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.VersionStore;
@@ -229,7 +228,7 @@ public abstract class AbstractMergeKeyBehaviors extends AbstractNestedVersionSto
                     Put.of(keyCommon2, commonTable2onSource)))
             .getCommitHash();
 
-    MergeResult<Commit> mergeResult =
+    MergeResult mergeResult =
         store()
             .merge(
                 MergeOp.builder()

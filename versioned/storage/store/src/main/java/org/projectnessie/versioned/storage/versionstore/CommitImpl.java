@@ -66,7 +66,6 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.CommitValidation;
 import org.projectnessie.versioned.Hash;
@@ -153,7 +152,7 @@ class CommitImpl extends BaseCommitHelper {
     ObjId commitPersisted;
   }
 
-  CommitResult<Commit> commit(
+  CommitResult commit(
       @Nonnull Optional<?> retryState,
       @Nonnull CommitMeta metadata,
       @Nonnull List<Operation> operations,
@@ -222,7 +221,7 @@ class CommitImpl extends BaseCommitHelper {
 
       commitRetryState.generatedContentIds.forEach(addedContents);
 
-      return ImmutableCommitResult.<Commit>builder()
+      return ImmutableCommitResult.builder()
           .commit(contentMapping.commitObjToCommit(true, newHead))
           .targetBranch((BranchName) RefMapping.referenceToNamedRef(reference))
           .build();
