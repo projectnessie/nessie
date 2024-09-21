@@ -96,7 +96,7 @@ public class ObservingVersionStore implements VersionStore {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
-  public MergeResult transplant(TransplantOp transplantOp)
+  public TransplantResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return delegate.transplant(transplantOp);
   }

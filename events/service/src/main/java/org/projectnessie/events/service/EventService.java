@@ -43,6 +43,7 @@ import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.Result;
+import org.projectnessie.versioned.TransplantResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -115,7 +116,6 @@ public class EventService implements AutoCloseable {
    * @see ResultCollector#accept(Result)
    * @see ResultCollector#shouldProcess(Result)
    */
-  @SuppressWarnings("unchecked")
   public void onVersionStoreEvent(VersionStoreEvent event) {
     if (!started) {
       return;
@@ -131,7 +131,7 @@ public class EventService implements AutoCloseable {
         onMergeResult((MergeResult) result, repositoryId, user);
         break;
       case TRANSPLANT:
-        onTransplantResult((MergeResult) result, repositoryId, user);
+        onTransplantResult((TransplantResult) result, repositoryId, user);
         break;
       case REFERENCE_CREATED:
         onReferenceCreatedResult((ReferenceCreatedResult) result, repositoryId, user);
@@ -158,7 +158,7 @@ public class EventService implements AutoCloseable {
   }
 
   private void onTransplantResult(
-      MergeResult result, String repositoryId, @Nullable Principal user) {
+      TransplantResult result, String repositoryId, @Nullable Principal user) {
     LOGGER.debug("Received transplant result: {}", result);
     fireTransplantEvent(result, repositoryId, user);
   }
@@ -199,7 +199,7 @@ public class EventService implements AutoCloseable {
   }
 
   private void fireTransplantEvent(
-      MergeResult result, String repositoryId, @Nullable Principal user) {
+      TransplantResult result, String repositoryId, @Nullable Principal user) {
     fireEvent(factory.newTransplantEvent(result, repositoryId, user));
     if (hasCommitSubscribers) {
       for (Commit commit : result.getCreatedCommits()) {

@@ -26,6 +26,7 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceNotFound;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.fromCommitMeta;
+import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.toCommitMeta;
 
 import jakarta.annotation.Nonnull;
@@ -39,12 +40,11 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -75,12 +75,18 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
   }
 
   @Override
-  public MergeResult transplant(Optional<?> retryState, TransplantOp transplantOp)
+  public TransplantResult transplant(Optional<?> retryState, TransplantOp transplantOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     MergeTransplantContext mergeTransplantContext = loadSourceCommitsForTransplant(transplantOp);
 
-    ImmutableMergeResult.Builder mergeResult =
-        prepareMergeResult().resultType(ResultType.TRANSPLANT).sourceRef(transplantOp.fromRef());
+    TransplantResult.Builder transplantResult =
+        TransplantResult.builder()
+            .targetBranch(branch)
+            .effectiveTargetHash(objIdToHash(headId()))
+            .sourceRef(transplantOp.fromRef())
+            .sourceHashes(transplantOp.sequenceToTransplant());
+
+    referenceHash.ifPresent(transplantResult::expectedHash);
 
     IndexesLogic indexesLogic = indexesLogic(persist);
     StoreIndex<CommitOp> sourceParentIndex =
@@ -122,7 +128,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
         // (This .equals has been introduced with https://github.com/projectnessie/nessie/pull/8533)
         if (committed.stored()) {
           newCommit = committed.obj().orElseThrow();
-          mergeResult.addCreatedCommits(commitObjToCommit(newCommit));
+          transplantResult.addCreatedCommits(commitObjToCommit(newCommit));
         }
       }
 
@@ -130,9 +136,10 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
       targetParentIndex = indexesLogic.buildCompleteIndex(newCommit, Optional.empty());
     }
 
-    boolean hasConflicts = recordKeyDetailsAndCheckConflicts(mergeResult, keyDetailsMap);
+    boolean hasConflicts = recordKeyDetailsAndCheckConflicts(transplantResult, keyDetailsMap);
 
-    return finishMergeTransplant(empty, mergeResult, newHead, transplantOp.dryRun(), hasConflicts);
+    return finishMergeTransplant(
+        empty, transplantResult, newHead, transplantOp.dryRun(), hasConflicts);
   }
 
   private CreateCommit cloneCommit(

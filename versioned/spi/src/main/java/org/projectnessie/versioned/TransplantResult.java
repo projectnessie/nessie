@@ -16,27 +16,28 @@
 package org.projectnessie.versioned;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface MergeResult extends MergeTransplantResultBase {
+public interface TransplantResult extends MergeTransplantResultBase {
 
   @Override
   default ResultType getResultType() {
-    return ResultType.MERGE;
+    return ResultType.TRANSPLANT;
   }
 
-  Hash getSourceHash();
+  List<Hash> getSourceHashes();
 
-  interface Builder extends MergeTransplantResultBase.Builder<MergeResult, Builder> {
+  static TransplantResult.Builder builder() {
+    return ImmutableTransplantResult.builder();
+  }
+
+  interface Builder extends MergeTransplantResultBase.Builder<TransplantResult, Builder> {
 
     @CanIgnoreReturnValue
-    Builder sourceHash(Hash sourceHash);
+    Builder sourceHashes(Iterable<? extends Hash> hashes);
 
-    MergeResult build();
-  }
-
-  static MergeResult.Builder builder() {
-    return ImmutableMergeResult.builder();
+    TransplantResult build();
   }
 }

@@ -27,7 +27,7 @@ import static org.projectnessie.versioned.CommitValidation.CommitOperation.commi
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.CREATE;
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.DELETE;
 import static org.projectnessie.versioned.CommitValidation.CommitOperationType.UPDATE;
-import static org.projectnessie.versioned.MergeResult.KeyDetails.keyDetails;
+import static org.projectnessie.versioned.MergeTransplantResultBase.KeyDetails.keyDetails;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
@@ -70,9 +70,8 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitValidation;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommitValidation;
-import org.projectnessie.versioned.ImmutableMergeResult;
-import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeTransplantResultBase;
+import org.projectnessie.versioned.MergeTransplantResultBase.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
@@ -440,14 +439,6 @@ class BaseCommitHelper {
     validateNamespaces(checkContents, deletedKeysAndPayload, headIndex);
   }
 
-  ImmutableMergeResult.Builder prepareMergeResult() {
-    ImmutableMergeResult.Builder mergeResult =
-        MergeResult.builder().targetBranch(branch).effectiveTargetHash(objIdToHash(headId()));
-
-    referenceHash.ifPresent(mergeResult::expectedHash);
-    return mergeResult;
-  }
-
   CommitObj createMergeTransplantCommit(
       MergeBehaviors mergeBehaviors,
       Map<ContentKey, KeyDetails> keyDetailsMap,
@@ -635,8 +626,9 @@ class BaseCommitHelper {
     }
   }
 
-  boolean recordKeyDetailsAndCheckConflicts(
-      ImmutableMergeResult.Builder mergeResult, Map<ContentKey, KeyDetails> keyDetailsMap) {
+  <R extends MergeTransplantResultBase, B extends MergeTransplantResultBase.Builder<R, B>>
+      boolean recordKeyDetailsAndCheckConflicts(
+          B mergeResult, Map<ContentKey, KeyDetails> keyDetailsMap) {
     boolean hasConflicts = false;
     for (Entry<ContentKey, KeyDetails> keyDetail : keyDetailsMap.entrySet()) {
       KeyDetails details = keyDetail.getValue();
@@ -646,13 +638,10 @@ class BaseCommitHelper {
     return hasConflicts;
   }
 
-  MergeResult finishMergeTransplant(
-      boolean isEmpty,
-      ImmutableMergeResult.Builder mergeResult,
-      ObjId newHead,
-      boolean dryRun,
-      boolean hasConflicts)
-      throws RetryException {
+  <R extends MergeTransplantResultBase, B extends MergeTransplantResultBase.Builder<R, B>>
+      R finishMergeTransplant(
+          boolean isEmpty, B mergeResult, ObjId newHead, boolean dryRun, boolean hasConflicts)
+          throws RetryException {
 
     if (!hasConflicts) {
       mergeResult.wasSuccessful(true);

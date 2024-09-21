@@ -66,9 +66,9 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public MergeResult transplant(TransplantOp transplantOp)
+  public TransplantResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    MergeResult result = delegate.transplant(transplantOp);
+    TransplantResult result = delegate.transplant(transplantOp);
     if (result.wasApplied()) {
       resultSink.accept(result);
     }

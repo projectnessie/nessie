@@ -108,6 +108,7 @@ import org.projectnessie.versioned.ImmutableRepositoryInformation;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeTransplantResultBase;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
@@ -122,6 +123,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.RelativeCommitSpec;
 import org.projectnessie.versioned.RepositoryInformation;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.paging.FilteringPaginationIterator;
 import org.projectnessie.versioned.paging.PaginationIterator;
@@ -1051,7 +1053,7 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public MergeResult transplant(TransplantOp transplantOp)
+  public TransplantResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     CommitterSupplier<Transplant> supplier = TransplantIndividualImpl::new;
@@ -1060,7 +1062,7 @@ public class VersionStoreImpl implements VersionStore {
       supplier = dryRunCommitterSupplier(supplier);
     }
 
-    MergeResult mergeResult =
+    TransplantResult mergeResult =
         committingOperation(
             "transplant",
             transplantOp.toBranch(),
@@ -1072,7 +1074,7 @@ public class VersionStoreImpl implements VersionStore {
     return mergeTransplantResponse(mergeResult);
   }
 
-  private MergeResult mergeTransplantResponse(MergeResult mergeResult)
+  private <R extends MergeTransplantResultBase> R mergeTransplantResponse(R mergeResult)
       throws MergeConflictException {
     if (!mergeResult.wasSuccessful()) {
       throw new MergeConflictException(

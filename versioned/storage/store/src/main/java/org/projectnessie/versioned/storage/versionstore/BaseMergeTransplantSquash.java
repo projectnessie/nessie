@@ -36,9 +36,8 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeTransplantResultBase.KeyDetails;
 import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -73,7 +72,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
 
   MergeResult squash(
       MergeTransplantOpBase mergeTransplantOpBase,
-      ImmutableMergeResult.Builder mergeResult,
+      MergeResult.Builder mergeResult,
       MergeTransplantContext mergeTransplantContext,
       @Nullable ObjId mergeFromId)
       throws RetryException, ReferenceNotFoundException, ReferenceConflictException {

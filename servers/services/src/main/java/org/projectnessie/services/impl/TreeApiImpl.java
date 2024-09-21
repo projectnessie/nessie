@@ -117,6 +117,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.KeyEntry;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.MergeTransplantResultBase;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
@@ -124,6 +125,7 @@ import org.projectnessie.versioned.ReferenceHistory;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
 import org.projectnessie.versioned.VersionStore.MergeOp;
@@ -671,7 +673,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
         commitMeta = null;
       }
 
-      MergeResult result =
+      TransplantResult result =
           getStore()
               .transplant(
                   TransplantOp.builder()
@@ -802,7 +804,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @SuppressWarnings("deprecation")
-  private MergeResponse createResponse(MergeResult result) {
+  private MergeResponse createResponse(MergeTransplantResultBase result) {
     Function<Hash, String> hashToString = h -> h != null ? h.asString() : null;
     ImmutableMergeResponse.Builder response =
         ImmutableMergeResponse.builder()

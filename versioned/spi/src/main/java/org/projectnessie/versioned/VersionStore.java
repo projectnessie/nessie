@@ -208,7 +208,7 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  MergeResult transplant(TransplantOp transplantOp)
+  TransplantResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

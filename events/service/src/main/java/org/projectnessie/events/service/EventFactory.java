@@ -41,7 +41,7 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
-import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.TransplantResult;
 
 /**
  * Factory for creating {@link Event}s from various version store objects, with all the boilerplate
@@ -83,7 +83,6 @@ public class EventFactory {
   }
 
   protected Event newMergeEvent(MergeResult result, String repositoryId, @Nullable Principal user) {
-    assert result.getResultType() == ResultType.MERGE;
     String commonAncestorHash = Objects.requireNonNull(result.getCommonAncestor()).asString();
     return ImmutableMergeEvent.builder()
         .id(config.getIdGenerator().get())
@@ -100,8 +99,7 @@ public class EventFactory {
   }
 
   protected Event newTransplantEvent(
-      MergeResult result, String repositoryId, @Nullable Principal user) {
-    assert result.getResultType() == ResultType.TRANSPLANT;
+      TransplantResult result, String repositoryId, @Nullable Principal user) {
     return ImmutableTransplantEvent.builder()
         .id(config.getIdGenerator().get())
         .eventCreationTimestamp(config.getClock().instant())

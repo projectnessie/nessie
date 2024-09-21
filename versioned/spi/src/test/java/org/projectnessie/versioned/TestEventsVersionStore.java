@@ -137,11 +137,10 @@ class TestEventsVersionStore {
   @Test
   void testTransplantDryRun() throws Exception {
     boolean dryRun = true;
-    MergeResult expectedResult =
-        MergeResult.builder()
+    TransplantResult expectedResult =
+        TransplantResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
-            .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
             .build();
@@ -156,7 +155,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult result =
+    TransplantResult result =
         versionStore.transplant(
             TransplantOp.builder()
                 .fromRef(branch1)
@@ -185,11 +184,10 @@ class TestEventsVersionStore {
   @Test
   void testTransplantSuccessful() throws Exception {
     boolean dryRun = false;
-    MergeResult expectedResult =
-        MergeResult.builder()
+    TransplantResult expectedResult =
+        TransplantResult.builder()
             .sourceRef(branch1)
             .targetBranch(branch2)
-            .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
             .wasApplied(true)
@@ -205,7 +203,7 @@ class TestEventsVersionStore {
                 .build()))
         .thenReturn(expectedResult);
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    MergeResult result =
+    TransplantResult result =
         versionStore.transplant(
             TransplantOp.builder()
                 .fromRef(branch1)
@@ -277,8 +275,8 @@ class TestEventsVersionStore {
     MergeResult expectedResult =
         MergeResult.builder()
             .sourceRef(branch1)
+            .sourceHash(hash1)
             .targetBranch(branch2)
-            .resultType(ResultType.MERGE)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
             .build();
@@ -322,8 +320,8 @@ class TestEventsVersionStore {
     MergeResult expectedResult =
         MergeResult.builder()
             .sourceRef(branch1)
+            .sourceHash(hash1)
             .targetBranch(branch2)
-            .resultType(ResultType.MERGE)
             .effectiveTargetHash(hash1)
             .resultantTargetHash(hash2)
             .wasApplied(true)
