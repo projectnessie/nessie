@@ -155,7 +155,7 @@ undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow"
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 vertx-core = { module = "io.vertx:vertx-core", version = "4.5.10" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "3.0.1" }
-zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-5" }
+zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-6" }
 
 [plugins]
 avro = { id = "com.github.davidmc24.gradle.plugin.avro", version = "1.9.1" }
