@@ -3,7 +3,7 @@
 [libraries]
 assertj-core = { module = "org.assertj:assertj-core", version = "3.26.3" }
 errorprone = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version = "4.0.1" }
-idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version = "1.1.8" }
+idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version = "1.1.9" }
 jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version = "1.90" }
 junit-bom = { module = "org.junit:junit-bom", version = "5.11.0" }
 license-report = { module = "com.github.jk1:gradle-license-report", version = "2.9" }
