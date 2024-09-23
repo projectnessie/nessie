@@ -78,12 +78,24 @@ public interface MergeResponse {
   @jakarta.annotation.Nullable
   String getExpectedHash();
 
+  /**
+   * This field is deprecated and will be removed in a future version. It always returns an empty
+   * list with the current Nessie version.
+   *
+   * @deprecated for removal and replaced with something else.
+   */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated // for removal and replaced with something else
   @Schema(deprecated = true, hidden = true)
   @JsonView(Views.V1.class)
   List<LogEntry> getSourceCommits();
 
+  /**
+   * This field is deprecated and will be removed in a future version. It always returns null with
+   * the current Nessie version.
+   *
+   * @deprecated for removal and replaced with something else.
+   */
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Nullable
   @jakarta.annotation.Nullable

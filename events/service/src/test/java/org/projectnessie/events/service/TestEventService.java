@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,12 +46,12 @@ import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
 import org.projectnessie.versioned.ImmutableCommitResult;
-import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
 import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
+import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.Result;
-import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.TransplantResult;
 
 @ExtendWith(MockitoExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -146,22 +147,22 @@ public class TestEventService {
                     Delete.of(ContentKey.of("foo.bar.table2"))))
             .build();
     return Stream.of(
-        ImmutableCommitResult.<Commit>builder()
+        ImmutableCommitResult.builder()
             .commit(commit)
             .targetBranch(BranchName.of("branch1"))
             .build(),
-        ImmutableMergeResult.<Commit>builder()
-            .resultType(ResultType.MERGE)
+        MergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHash(Hash.of("90ab"))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("1234")) // hash before
             .resultantTargetHash(Hash.of("5678")) // hash after
             .commonAncestor(Hash.of("0000"))
             .addCreatedCommits(commit)
             .build(),
-        ImmutableMergeResult.<Commit>builder()
-            .resultType(ResultType.TRANSPLANT)
+        TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHashes(List.of(Hash.of("90ab")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("1234")) // hash before
             .resultantTargetHash(Hash.of("5678")) // hash after

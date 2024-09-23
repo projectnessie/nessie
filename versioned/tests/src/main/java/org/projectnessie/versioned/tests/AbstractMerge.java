@@ -47,7 +47,8 @@ import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeConflictException;
 import org.projectnessie.versioned.MergeResult;
-import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeTransplantResultBase;
+import org.projectnessie.versioned.MergeTransplantResultBase.KeyDetails;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -182,7 +183,9 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
           .asInstanceOf(type(MergeConflictException.class))
           .extracting(MergeConflictException::getMergeResult)
           .extracting(
-              MergeResult::wasApplied, MergeResult::wasSuccessful, r -> r.getDetails().get(keyT3))
+              MergeTransplantResultBase::wasApplied,
+              MergeTransplantResultBase::wasSuccessful,
+              r -> r.getDetails().get(keyT3))
           .containsExactly(
               false,
               false,
@@ -272,7 +275,7 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
         .withMessage(
             "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key t2");
 
-    MergeResult<Commit> result =
+    MergeResult result =
         store()
             .merge(
                 MergeOp.builder()

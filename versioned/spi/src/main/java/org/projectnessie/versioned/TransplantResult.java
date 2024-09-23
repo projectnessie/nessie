@@ -15,26 +15,29 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface CommitResult extends Result {
+public interface TransplantResult extends MergeTransplantResultBase {
 
   @Override
   default ResultType getResultType() {
-    return ResultType.COMMIT;
+    return ResultType.TRANSPLANT;
   }
 
-  Commit getCommit();
+  List<Hash> getSourceHashes();
 
-  BranchName getTargetBranch();
-
-  @Value.Derived
-  default Hash getCommitHash() {
-    return getCommit().getHash();
+  static TransplantResult.Builder builder() {
+    return ImmutableTransplantResult.builder();
   }
 
-  static ImmutableCommitResult.Builder builder() {
-    return ImmutableCommitResult.builder();
+  interface Builder extends MergeTransplantResultBase.Builder<TransplantResult, Builder> {
+
+    @CanIgnoreReturnValue
+    Builder sourceHashes(Iterable<? extends Hash> hashes);
+
+    TransplantResult build();
   }
 }

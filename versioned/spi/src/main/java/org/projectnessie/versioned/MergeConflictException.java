@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.projectnessie.model.Conflict;
 import org.projectnessie.model.Conflict.ConflictType;
-import org.projectnessie.versioned.MergeResult.KeyDetails;
+import org.projectnessie.versioned.MergeTransplantResultBase.KeyDetails;
 
 /**
  * Special case of a {@link ReferenceConflictException} indicating that a non-dry-run merge or
@@ -29,14 +29,14 @@ import org.projectnessie.versioned.MergeResult.KeyDetails;
  */
 public class MergeConflictException extends ReferenceConflictException {
 
-  private final MergeResult<?> mergeResult;
+  private final MergeTransplantResultBase mergeResult;
 
-  public MergeConflictException(String message, MergeResult<?> mergeResult) {
+  public MergeConflictException(String message, MergeTransplantResultBase mergeResult) {
     super(referenceConflicts(asReferenceConflicts(mergeResult)), message);
     this.mergeResult = mergeResult;
   }
 
-  private static List<Conflict> asReferenceConflicts(MergeResult<?> mergeResult) {
+  private static List<Conflict> asReferenceConflicts(MergeTransplantResultBase mergeResult) {
     return mergeResult.getDetails().entrySet().stream()
         .map(
             e -> {
@@ -49,7 +49,7 @@ public class MergeConflictException extends ReferenceConflictException {
         .collect(Collectors.toList());
   }
 
-  public MergeResult<?> getMergeResult() {
+  public MergeTransplantResultBase getMergeResult() {
     return mergeResult;
   }
 }

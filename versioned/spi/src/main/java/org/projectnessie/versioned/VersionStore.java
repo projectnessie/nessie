@@ -98,7 +98,7 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    * @throws NullPointerException if one of the argument is {@code null}
    */
-  CommitResult<Commit> commit(
+  CommitResult commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
@@ -107,7 +107,7 @@ public interface VersionStore {
       @Nonnull BiConsumer<ContentKey, String> addedContents)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
-  default CommitResult<Commit> commit(
+  default CommitResult commit(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull CommitMeta metadata,
@@ -208,7 +208,7 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code
    *     sequenceToTransplant} is not present in the store.
    */
-  MergeResult<Commit> transplant(TransplantOp transplantOp)
+  TransplantResult transplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -232,8 +232,7 @@ public interface VersionStore {
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in
    *     the store.
    */
-  MergeResult<Commit> merge(MergeOp mergeOp)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+  MergeResult merge(MergeOp mergeOp) throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Assign the NamedRef to point to a particular hash.

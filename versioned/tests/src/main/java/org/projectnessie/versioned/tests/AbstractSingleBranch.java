@@ -118,7 +118,7 @@ public abstract class AbstractSingleBranch extends AbstractNestedVersionStore {
         List<Operation> ops =
             singleBranchManyUsersOps(branch, commitNum, user, hashKnownByUser, key);
 
-        CommitResult<Commit> commitHash;
+        CommitResult commitHash;
         try {
           commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg.build(), ops);
         } catch (ReferenceConflictException inconsistentValueException) {

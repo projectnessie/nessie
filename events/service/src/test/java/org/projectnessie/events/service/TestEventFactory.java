@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,7 +50,6 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ImmutableCommit;
-import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
 import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
@@ -57,7 +57,7 @@ import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
-import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.TransplantResult;
 
 class TestEventFactory {
 
@@ -139,10 +139,10 @@ class TestEventFactory {
   @MethodSource("principals")
   void newMergeEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
-            .resultType(ResultType.MERGE)
+    MergeResult result =
+        MergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHash(Hash.of("90ab"))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("1234")) // hash before
             .resultantTargetHash(Hash.of("5678")) // hash after
@@ -170,10 +170,10 @@ class TestEventFactory {
   @MethodSource("principals")
   void newTransplantEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
-            .resultType(ResultType.TRANSPLANT)
+    TransplantResult result =
+        TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHashes(List.of(Hash.of("90ab")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("1234")) // hash before
             .resultantTargetHash(Hash.of("5678")) // hash after

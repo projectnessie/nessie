@@ -51,7 +51,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.VersionStore;
@@ -372,7 +371,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
 
     Namespace ns = Namespace.of("ns");
     Namespace ns2 = Namespace.of("ns2");
-    CommitResult<Commit> rootHead =
+    CommitResult rootHead =
         store()
             .commit(
                 root,
@@ -395,7 +394,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     }
 
     ContentKey key = ContentKey.of(ns, "foo");
-    CommitResult<Commit> commit1 =
+    CommitResult commit1 =
         store()
             .commit(
                 branch,
@@ -403,7 +402,7 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                 fromMessage("create table ns.foo"),
                 singletonList(Put.of(key, newOnRef("foo"))));
 
-    CommitResult<Commit> commit2 =
+    CommitResult commit2 =
         store()
             .commit(
                 branch,

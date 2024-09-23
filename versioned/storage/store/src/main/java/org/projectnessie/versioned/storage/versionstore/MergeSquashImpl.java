@@ -26,13 +26,10 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ImmutableMergeResult;
 import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.ResultType;
 import org.projectnessie.versioned.VersionStore.MergeOp;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
@@ -55,7 +52,7 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   }
 
   @Override
-  public MergeResult<Commit> merge(Optional<?> retryState, MergeOp mergeOp)
+  public MergeResult merge(Optional<?> retryState, MergeOp mergeOp)
       throws ReferenceNotFoundException, RetryException, ReferenceConflictException {
     ObjId fromId = hashToObjId(mergeOp.fromHash());
     ObjId commonAncestorId = identifyMergeBase(fromId);
@@ -63,11 +60,15 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
     MergeTransplantContext mergeTransplantContext =
         loadSourceCommitsForMerge(fromId, commonAncestorId, mergeOp);
 
-    ImmutableMergeResult.Builder<Commit> mergeResult =
-        prepareMergeResult()
-            .resultType(ResultType.MERGE)
+    MergeResult.Builder mergeResult =
+        MergeResult.builder()
+            .targetBranch(branch)
+            .effectiveTargetHash(objIdToHash(headId()))
             .sourceRef(mergeOp.fromRef())
+            .sourceHash(mergeOp.fromHash())
             .commonAncestor(objIdToHash(commonAncestorId));
+
+    referenceHash.ifPresent(mergeResult::expectedHash);
 
     if (fromId.equals(commonAncestorId)) {
       return mergeResult

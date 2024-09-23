@@ -39,7 +39,6 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.VersionStore;
@@ -111,7 +110,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     // commit just something to have a "real" common ancestor and not "beginning of time", which
     // means no-common-ancestor
     Content initialState = newOnRef("value");
-    CommitResult<Commit> ancestor =
+    CommitResult ancestor =
         store()
             .commit(
                 branch,
@@ -122,7 +121,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     soft.assertThat(contentWithoutId(store().getValue(ancestor.getCommitHash(), key, false)))
         .isEqualTo(initialState);
 
-    CommitResult<Commit> delete =
+    CommitResult delete =
         store()
             .commit(
                 branch,
@@ -133,7 +132,7 @@ public abstract class AbstractContents extends AbstractNestedVersionStore {
     soft.assertThat(store().getValue(delete.getCommitHash(), key, false)).isNull();
 
     Content recreateState = newOnRef("value");
-    CommitResult<Commit> recreate =
+    CommitResult recreate =
         store()
             .commit(
                 branch,

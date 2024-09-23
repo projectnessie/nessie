@@ -44,9 +44,9 @@ import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.MergeResult;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.VersionStoreException;
@@ -119,7 +119,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_1");
     store().create(newBranch, Optional.empty()).getHash();
 
-    MergeResult<Commit> result =
+    TransplantResult result =
         store()
             .transplant(
                 TransplantOp.builder()
@@ -157,7 +157,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    MergeResult<Commit> result =
+    TransplantResult result =
         store()
             .transplant(
                 TransplantOp.builder()
@@ -447,7 +447,7 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
     Hash targetHead = commit("Unrelated commit").put(T_5, V_5_1).toBranch(newBranch);
 
-    MergeResult<Commit> result =
+    TransplantResult result =
         store()
             .transplant(
                 TransplantOp.builder()

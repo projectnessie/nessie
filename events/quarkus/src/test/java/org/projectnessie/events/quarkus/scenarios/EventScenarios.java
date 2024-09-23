@@ -41,7 +41,7 @@ import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
 import org.projectnessie.versioned.Result;
-import org.projectnessie.versioned.ResultType;
+import org.projectnessie.versioned.TransplantResult;
 
 @Singleton
 public class EventScenarios {
@@ -69,8 +69,8 @@ public class EventScenarios {
           .build();
 
   public void commit() {
-    CommitResult<Commit> result =
-        ImmutableCommitResult.<Commit>builder()
+    CommitResult result =
+        ImmutableCommitResult.builder()
             .targetBranch(BranchName.of("branch1"))
             .commit(commit)
             .build();
@@ -78,11 +78,11 @@ public class EventScenarios {
   }
 
   public void merge() {
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    MergeResult result =
+        ImmutableMergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHash(Hash.of("cdef"))
             .targetBranch(BranchName.of("branch2"))
-            .resultType(ResultType.MERGE)
             .commonAncestor(Hash.of("1234"))
             .effectiveTargetHash(Hash.of("5678"))
             .resultantTargetHash(Hash.of("9abc"))
@@ -92,11 +92,11 @@ public class EventScenarios {
   }
 
   public void transplant() {
-    MergeResult<Commit> result =
-        ImmutableMergeResult.<Commit>builder()
+    TransplantResult result =
+        TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
+            .sourceHashes(List.of(Hash.of("cdef")))
             .targetBranch(BranchName.of("branch2"))
-            .resultType(ResultType.TRANSPLANT)
             .effectiveTargetHash(Hash.of("5678"))
             .resultantTargetHash(Hash.of("9abc"))
             .addCreatedCommits(commit)
