@@ -15,10 +15,14 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /** Event that is emitted after a reference is created. */
 @Value.Immutable
+@JsonSerialize(as = ImmutableReferenceCreatedEvent.class)
+@JsonDeserialize(as = ImmutableReferenceCreatedEvent.class)
 public interface ReferenceCreatedEvent extends ReferenceEvent, WithHashAfterEvent {
 
   @Value.Default

@@ -33,4 +33,7 @@ dependencies {
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
+
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }

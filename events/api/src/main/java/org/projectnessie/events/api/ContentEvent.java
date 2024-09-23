@@ -15,7 +15,10 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 
 /**
@@ -34,6 +37,8 @@ public interface ContentEvent extends ReferenceEvent {
   String getHash();
 
   /** The timestamp of the commit that the content was stored in or removed from. */
+  @JsonSerialize(using = CommitMeta.InstantSerializer.class)
+  @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
   Instant getCommitCreationTimestamp();
 
   /** The key of the content that was stored or removed. */
