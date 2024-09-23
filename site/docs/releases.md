@@ -2,6 +2,38 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.98.0 Release (September 23, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.98.0).
+
+### Highlights
+
+- Alert: If you are using MySQL or MariaDB, make sure to update `objs` table immediately:
+  ```sql
+  ALTER TABLE objs MODIFY c_headers LONGBLOB;
+  ALTER TABLE objs MODIFY c_incremental_index LONGBLOB;
+  ALTER TABLE objs MODIFY c_reference_index_stripes LONGBLOB;
+  ALTER TABLE objs MODIFY i_index LONGBLOB;
+  ALTER TABLE objs MODIFY i_stripes LONGBLOB;
+  ALTER TABLE objs MODIFY s_text LONGBLOB;
+  ALTER TABLE objs MODIFY t_headers LONGBLOB;
+  ALTER TABLE objs MODIFY t_signature LONGBLOB;
+  ALTER TABLE objs MODIFY u_value LONGBLOB;
+  ALTER TABLE objs MODIFY v_data LONGBLOB;
+  ALTER TABLE objs MODIFY x_data LONGBLOB;
+  ```
+
+### Fixes
+
+- MySQL: Change type of binary columns from `BLOB` to `LONGBLOB`.
+
+### Commits
+* Helm chart: allow setting config options when the value is a zero-value (#9587)
+* Helm chart: fix Azure SAS token settings (#9585)
+* Nit: move constant used in tests (#9579)
+* Construct `*ApiImpl` instead of injecting the V1 rest instances (#9577)
+* Simplify IcebergMetadataUpdate/trusted-location (#9576)
+
 ## 0.97.1 Release (September 19, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.97.1).
