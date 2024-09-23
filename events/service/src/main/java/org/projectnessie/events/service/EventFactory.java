@@ -20,6 +20,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ImmutableCommitEvent;
@@ -44,8 +45,8 @@ import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
-import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.TagName;
+import org.projectnessie.versioned.TransplantResult;
 
 /**
  * Factory for creating {@link Event}s from various version store objects, with all the boilerplate
@@ -70,7 +71,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(targetBranch))
+        .reference(makeReference(targetBranch, commit.getHash()))
         .hashBefore(Objects.requireNonNull(commit.getParentHash()).asString())
         .hashAfter(commit.getHash().asString())
         .commitMeta(
@@ -95,8 +96,9 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .sourceReference(makeReference(result.getSourceRef()))
-        .targetReference(makeReference(result.getTargetBranch()))
+        .sourceReference(makeReference(result.getSourceRef(), result.getSourceHash()))
+        .sourceHash(result.getSourceHash().asString())
+        .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
         .hashAfter(hashAfter.asString())
         .commonAncestorHash(commonAncestorHash)
@@ -106,14 +108,17 @@ public class EventFactory {
   protected Event newTransplantEvent(
       TransplantResult result, String repositoryId, @Nullable Principal user) {
     Hash hashAfter = Objects.requireNonNull(result.getResultantTargetHash());
+    Hash sourceHash = result.getSourceHashes().get(result.getSourceHashes().size() - 1);
     return ImmutableTransplantEvent.builder()
         .id(config.getIdGenerator().get())
         .eventCreationTimestamp(config.getClock().instant())
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .sourceReference(makeReference(result.getSourceRef()))
-        .targetReference(makeReference(result.getTargetBranch()))
+        .sourceReference(makeReference(result.getSourceRef(), sourceHash))
+        .sourceHashes(
+            result.getSourceHashes().stream().map(Hash::asString).collect(Collectors.toList()))
+        .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
         .hashAfter(hashAfter.asString())
         .build();
@@ -127,7 +132,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getHash()))
         .hashAfter(result.getHash().asString())
         .build();
   }
@@ -140,7 +145,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getCurrentHash()))
         .hashBefore(result.getPreviousHash().asString())
         .hashAfter(result.getCurrentHash().asString())
         .build();
@@ -154,7 +159,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getHash()))
         .hashBefore(result.getHash().asString())
         .build();
   }
@@ -174,7 +179,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(branch))
+        .reference(makeReference(branch, hash))
         .hash(hash.asString())
         .contentKey(contentKey)
         .content(content)
@@ -196,18 +201,18 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(makeReference(branch))
+        .reference(makeReference(branch, hash))
         .hash(hash.asString())
         .contentKey(contentKey)
         .commitCreationTimestamp(commitTimestamp)
         .build();
   }
 
-  private static Reference makeReference(NamedRef refName) {
+  private static Reference makeReference(NamedRef refName, Hash hash) {
     if (refName instanceof TagName) {
-      return Tag.of(refName.getName(), null);
+      return Tag.of(refName.getName(), hash.asString());
     } else if (refName instanceof BranchName) {
-      return Branch.of(refName.getName(), null);
+      return Branch.of(refName.getName(), hash.asString());
     } else {
       throw new UnsupportedOperationException(
           "unsupported reference type, only branches and tags are supported");

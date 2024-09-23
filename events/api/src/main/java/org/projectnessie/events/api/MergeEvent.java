@@ -30,6 +30,9 @@ public interface MergeEvent extends MultiReferenceEvent, WithHashBeforeEvent, Wi
     return EventType.MERGE;
   }
 
+  /** The hash of the source reference that was merged into the target reference. */
+  String getSourceHash();
+
   /**
    * The hash of the common ancestor of the two merged branches.
    *

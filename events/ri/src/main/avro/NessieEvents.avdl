@@ -100,15 +100,35 @@ protocol NessieEvents {
 
   /**
    * This record corresponds to Nessie's
-   * org.projectnessie.events.api.MergeEvent or
+   * org.projectnessie.events.api.MergeEvent.
+   *
+   * Note: this record is not used in the example implementation; it is included
+   * here for completeness and to serve as a starting point for users who wish
+   * to process these events in Kafka using Avro.
+   */
+  record MergeEvent {
+    uuid id;
+    string sourceReference;
+    string targetReference;
+    /** The hash on sourceReference that was merged. */
+    string sourceHash;
+    /** The hash on targetReference before the merge or transplant. */
+    string hashBefore;
+    /** The hash on targetReference after the merge or transplant. */
+    string hashAfter;
+    /** The common ancestor hash of sourceReference and targetReference. */
+    string commonAncestorHash;
+  }
+
+  /**
+   * This record corresponds to Nessie's
    * org.projectnessie.events.api.TransplantEvent.
    *
    * Note: this record is not used in the example implementation; it is included
    * here for completeness and to serve as a starting point for users who wish
    * to process these events in Kafka using Avro.
    */
-  record MultiBranchEvent {
-    MultiBranchEventType type;
+  record TransplantEvent {
     uuid id;
     string sourceReference;
     string targetReference;
@@ -116,14 +136,7 @@ protocol NessieEvents {
     string hashBefore;
     /** The hash on targetReference after the merge or transplant. */
     string hashAfter;
-    /** Present when type is MERGE. */
-    string? commonAncestorHash;
-  }
-
-  enum MultiBranchEventType {
-    // corresponds to Nessie's MERGE event type
-    MERGE,
-    // corresponds to Nessie's TRANSPLANT event type
-    TRANSPLANT
+    /** The sequence of hashes on sourceReference that were transplanted. */
+    array<string> sourceHashes;
   }
 }

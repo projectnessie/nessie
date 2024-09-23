@@ -153,7 +153,7 @@ public class TestEventService {
             .build(),
         MergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHash(Hash.of("90ab"))
+            .sourceHash(Hash.of("11111111"))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("cafebabe")) // hash before
             .resultantTargetHash(Hash.of("deadbeef")) // hash after
@@ -162,7 +162,7 @@ public class TestEventService {
             .build(),
         TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHashes(List.of(Hash.of("90ab")))
+            .sourceHashes(List.of(Hash.of("11111111"), Hash.of("22222222"), Hash.of("33333333")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("cafebabe")) // hash before
             .resultantTargetHash(Hash.of("deadbeef")) // hash after
