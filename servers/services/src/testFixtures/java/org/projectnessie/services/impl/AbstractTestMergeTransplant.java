@@ -179,8 +179,7 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
         commit(target, fromMessage("test-main"), Put.of(key2, table2)).getTargetBranch();
 
     MergeResponse response = actor.act(target, source, committed1, committed2, false);
-    Reference newHead =
-        mergeWentFine(target, source, key1, committed1, committed2, baseHead, response);
+    Reference newHead = mergeWentFine(target, source, key1, baseHead, response);
 
     // try again --> conflict
 
@@ -242,15 +241,8 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     }
   }
 
-  @SuppressWarnings("deprecation")
   private Reference mergeWentFine(
-      Branch target,
-      Branch source,
-      ContentKey key1,
-      Branch committed1,
-      Branch committed2,
-      Branch baseHead,
-      MergeResponse response)
+      Branch target, Branch source, ContentKey key1, Branch baseHead, MergeResponse response)
       throws NessieNotFoundException {
     Reference newHead = getReference(target.getName());
     soft.assertThat(response)
@@ -269,30 +261,13 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             a -> assertThat(a).isNull(), b -> assertThat(b).isEqualTo(target.getHash()));
     soft.assertThat(response.getDetails())
         .asInstanceOf(list(ContentKeyDetails.class))
-        .extracting(
-            ContentKeyDetails::getKey,
-            ContentKeyDetails::getConflictType,
-            ContentKeyDetails::getMergeBehavior)
-        .contains(tuple(key1, ContentKeyConflict.NONE, NORMAL));
-    if (response.getSourceCommits() != null && !response.getSourceCommits().isEmpty()) {
-      // Database adapter
-      soft.assertThat(response.getSourceCommits())
-          .asInstanceOf(list(LogEntry.class))
-          .extracting(LogEntry::getCommitMeta)
-          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-          .containsExactly(
-              tuple(committed2.getHash(), "test-branch2"),
-              tuple(committed1.getHash(), "test-branch1"));
-    }
-    if (response.getTargetCommits() != null) {
-      // Database adapter
-      soft.assertThat(response.getTargetCommits())
-          .asInstanceOf(list(LogEntry.class))
-          .extracting(LogEntry::getCommitMeta)
-          .extracting(CommitMeta::getHash, CommitMeta::getMessage)
-          .contains(tuple(baseHead.getHash(), "test-main"));
-    }
-
+        .singleElement()
+        .satisfies(
+            details -> {
+              assertThat(details.getKey()).isEqualTo(key1);
+              assertThat(details.getConflict()).isNull();
+              assertThat(details.getMergeBehavior()).isEqualTo(NORMAL);
+            });
     return newHead;
   }
 
