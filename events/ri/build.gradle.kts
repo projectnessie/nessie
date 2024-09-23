@@ -30,8 +30,11 @@ dependencies {
 
   implementation(libs.slf4j.api)
   implementation(libs.kafka.clients)
+
+  // Avro serialization examples
   implementation(libs.avro)
 
+  // Jackson serialization examples
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -44,6 +47,7 @@ dependencies {
   testImplementation(libs.kafka.streams.test.utils)
   testImplementation(libs.logback.classic)
   testImplementation(libs.kafka.avro.serializer)
+  testImplementation(libs.kafka.json.schema.serializer)
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.immutables.value.annotations)
