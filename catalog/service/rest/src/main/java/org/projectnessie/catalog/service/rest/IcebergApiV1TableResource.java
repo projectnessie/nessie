@@ -467,8 +467,15 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           IcebergJson.objectMapper().readValue(metadataInput, IcebergTableMetadata.class);
     }
 
-    // TODO allow updating the "location" property, rely on AuthZ
-    // TODO verify the "location" can be mapped to a configured object-store
+    catalogService
+        .validateStorageLocation(tableMetadata.location())
+        .ifPresent(
+            msg -> {
+              throw new IllegalArgumentException(
+                  format(
+                      "Location for table '%s' to be registered cannot be associated with any configured object storage location: %s",
+                      tableRef.contentKey(), msg));
+            });
 
     ToIntFunction<Integer> safeUnbox = i -> i != null ? i : 0;
 
