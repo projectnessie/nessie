@@ -22,11 +22,8 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.pool.PoolConcurrencyPolicy;
 import org.apache.hc.core5.pool.PoolReusePolicy;
@@ -43,38 +40,31 @@ final class ApacheHttpClient implements HttpClient {
   ApacheHttpClient(HttpRuntimeConfig config) {
     this.config = config;
 
-    RegistryBuilder<ConnectionSocketFactory> socketFactoryRegistryBuilder =
-        RegistryBuilder.<ConnectionSocketFactory>create()
-            .register("http", PlainConnectionSocketFactory.INSTANCE);
+    PoolingHttpClientConnectionManagerBuilder connManager =
+        PoolingHttpClientConnectionManagerBuilder.create()
+            .setPoolConcurrencyPolicy(PoolConcurrencyPolicy.STRICT)
+            .setConnPoolPolicy(PoolReusePolicy.LIFO);
 
     if (config.getSslContext() != null) {
-      SSLConnectionSocketFactory sslConnectionSocketFactory =
-          new SSLConnectionSocketFactory(config.getSslContext());
-      socketFactoryRegistryBuilder.register("https", sslConnectionSocketFactory);
+      connManager.setTlsSocketStrategy(new DefaultClientTlsStrategy(config.getSslContext()));
     }
 
-    PoolingHttpClientConnectionManager connManager =
-        new PoolingHttpClientConnectionManager(
-            socketFactoryRegistryBuilder.build(),
-            PoolConcurrencyPolicy.STRICT,
-            PoolReusePolicy.LIFO,
-            TimeValue.ofMinutes(5));
-
-    SocketConfig socketConfig =
+    connManager.setDefaultSocketConfig(
         SocketConfig.custom()
             .setTcpNoDelay(true)
             .setSoTimeout(Timeout.ofMilliseconds(config.getReadTimeoutMillis()))
             .setTcpNoDelay(true)
-            .build();
+            .build());
 
-    connManager.setDefaultSocketConfig(socketConfig);
     connManager.setDefaultConnectionConfig(
         ConnectionConfig.custom()
+            .setTimeToLive(TimeValue.ofMinutes(5))
             .setValidateAfterInactivity(TimeValue.ofSeconds(10))
             .setConnectTimeout(Timeout.ofMilliseconds(config.getConnectionTimeoutMillis()))
             .build());
-    connManager.setMaxTotal(100);
-    connManager.setDefaultMaxPerRoute(10);
+
+    connManager.setMaxConnTotal(100);
+    connManager.setMaxConnPerRoute(10);
 
     RequestConfig defaultRequestConfig =
         RequestConfig.custom()
@@ -90,7 +80,7 @@ final class ApacheHttpClient implements HttpClient {
             .disableDefaultUserAgent()
             .disableAuthCaching()
             .disableCookieManagement()
-            .setConnectionManager(connManager)
+            .setConnectionManager(connManager.build())
             .setDefaultRequestConfig(defaultRequestConfig);
     if (config.isDisableCompression()) {
       clientBuilder.disableContentCompression();
