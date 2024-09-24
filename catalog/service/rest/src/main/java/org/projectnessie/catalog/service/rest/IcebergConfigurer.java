@@ -54,7 +54,7 @@ import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.api.SignerKeysService;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
@@ -76,7 +76,7 @@ public class IcebergConfigurer {
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
   @Inject ServerConfig serverConfig;
-  @Inject CatalogConfig catalogConfig;
+  @Inject LakehouseConfig lakehouseConfig;
   @Inject ObjectIO objectIO;
   @Inject SignerKeysService signerKeysService;
 
@@ -88,7 +88,7 @@ public class IcebergConfigurer {
 
   public Response trinoConfig(String reference, String warehouse, String format) {
 
-    WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
+    WarehouseConfig warehouseConfig = lakehouseConfig.catalog().getWarehouse(warehouse);
 
     StorageUri location = StorageUri.of(warehouseConfig.location());
 
@@ -177,7 +177,7 @@ public class IcebergConfigurer {
       BiConsumer<String, String> configDefault,
       BiConsumer<String, String> configOverride) {
     boolean hasWarehouse = warehouse != null && !warehouse.isEmpty();
-    WarehouseConfig warehouseConfig = catalogConfig.getWarehouse(warehouse);
+    WarehouseConfig warehouseConfig = lakehouseConfig.catalog().getWarehouse(warehouse);
 
     // defaults
 
@@ -190,20 +190,20 @@ public class IcebergConfigurer {
         StorageUri.of(warehouseConfig.location()), configDefault, configOverride);
     // allow users to override the 'rest-page-size' in the Nessie configuration
     configDefault.accept("rest-page-size", "200");
-    catalogConfig.icebergConfigDefaults().forEach(configDefault);
+    lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
-    if (!hasWarehouse && catalogConfig.defaultWarehouse().isPresent()) {
+    if (!hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()) {
       configDefault.accept(ICEBERG_PREFIX, encode(branch, UTF_8));
     } else {
       configDefault.accept(
           ICEBERG_PREFIX,
-          encode(branch + "|" + catalogConfig.resolveWarehouseName(warehouse), UTF_8));
+          encode(branch + "|" + lakehouseConfig.catalog().resolveWarehouseName(warehouse), UTF_8));
     }
 
     // overrides
     uriInfo.icebergConfigOverrides(configOverride);
-    catalogConfig.icebergConfigOverrides().forEach(configOverride);
+    lakehouseConfig.catalog().icebergConfigOverrides().forEach(configOverride);
     warehouseConfig.icebergConfigOverrides().forEach(configOverride);
     // Marker property telling clients that the backend is a Nessie Catalog.
     configOverride.accept("nessie.is-nessie-catalog", "true");

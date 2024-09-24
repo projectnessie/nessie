@@ -61,7 +61,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergGetNamespaceRespons
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergListNamespacesResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateNamespacePropertiesResponse;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -104,11 +104,11 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
   @Inject
   public IcebergApiV1NamespaceResource(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
-    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+    super(serverConfig, lakehouseConfig, store, authorizer, accessContext);
   }
 
   @ServerExceptionMapper
@@ -354,7 +354,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
     Map<String, String> properties = new HashMap<>(nessieNamespace.getProperties());
     if (!properties.containsKey("location")) {
-      WarehouseConfig warehouse = catalogConfig.getWarehouse(decoded.warehouse());
+      WarehouseConfig warehouse = lakehouseConfig.catalog().getWarehouse(decoded.warehouse());
       StorageUri location =
           catalogService
               .locationForEntity(warehouse, contentKey, keysInOrder, namespacesMap)

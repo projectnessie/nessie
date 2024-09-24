@@ -65,7 +65,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -97,11 +97,11 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
   @Inject
   public IcebergApiV1ViewResource(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
-    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+    super(serverConfig, lakehouseConfig, store, authorizer, accessContext);
   }
 
   @ServerExceptionMapper

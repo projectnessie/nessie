@@ -87,7 +87,7 @@ import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.config.ServiceConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.impl.MultiTableUpdate.SingleTableUpdate;
@@ -129,7 +129,7 @@ public class CatalogServiceImpl implements CatalogService {
 
   @Inject ObjectIO objectIO;
   @Inject ServerConfig serverConfig;
-  @Inject CatalogConfig catalogConfig;
+  @Inject LakehouseConfig lakehouseConfig;
   @Inject VersionStore versionStore;
   @Inject Authorizer authorizer;
   @Inject AccessContext accessContext;
@@ -791,7 +791,7 @@ public class CatalogServiceImpl implements CatalogService {
       }
     }
     if (location == null) {
-      WarehouseConfig w = catalogConfig.getWarehouse(op.warehouse());
+      WarehouseConfig w = lakehouseConfig.catalog().getWarehouse(op.warehouse());
       location =
           icebergNewEntityBaseLocation(
               locationForEntity(

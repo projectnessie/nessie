@@ -40,7 +40,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
 import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
-import org.projectnessie.catalog.files.config.GcsOptions;
+import org.projectnessie.catalog.files.config.GcsConfig;
 import org.projectnessie.catalog.secrets.KeySecret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -50,16 +50,16 @@ public final class GcsClients {
   private GcsClients() {}
 
   public static Storage buildStorage(
-      GcsOptions gcsOptions,
+      GcsConfig gcsConfig,
       GcsBucketOptions bucketOptions,
       HttpTransportFactory transportFactory,
       SecretsProvider secretsProvider) {
     HttpTransportOptions.Builder transportOptions =
         HttpTransportOptions.newBuilder().setHttpTransportFactory(transportFactory);
-    gcsOptions
+    gcsConfig
         .connectTimeout()
         .ifPresent(d -> transportOptions.setConnectTimeout((int) d.toMillis()));
-    gcsOptions.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
+    gcsConfig.readTimeout().ifPresent(d -> transportOptions.setReadTimeout((int) d.toMillis()));
 
     StorageOptions.Builder builder =
         StorageOptions.http()
@@ -69,29 +69,29 @@ public final class GcsClients {
     bucketOptions.quotaProjectId().ifPresent(builder::setQuotaProjectId);
     bucketOptions.host().map(URI::toString).ifPresent(builder::setHost);
     bucketOptions.clientLibToken().ifPresent(builder::setClientLibToken);
-    builder.setRetrySettings(buildRetrySettings(gcsOptions));
+    builder.setRetrySettings(buildRetrySettings(gcsConfig));
     // TODO ??
     // bucketOptions.buildStorageRetryStrategy().ifPresent(builder::setStorageRetryStrategy);
 
     return builder.build().getService();
   }
 
-  static RetrySettings buildRetrySettings(GcsOptions gcsOptions) {
+  static RetrySettings buildRetrySettings(GcsConfig gcsConfig) {
     Function<Duration, org.threeten.bp.Duration> duration =
         d -> org.threeten.bp.Duration.ofMillis(d.toMillis());
 
     RetrySettings.Builder retry = RetrySettings.newBuilder();
-    gcsOptions.maxAttempts().ifPresent(retry::setMaxAttempts);
-    gcsOptions.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
-    gcsOptions.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
+    gcsConfig.maxAttempts().ifPresent(retry::setMaxAttempts);
+    gcsConfig.logicalTimeout().map(duration).ifPresent(retry::setLogicalTimeout);
+    gcsConfig.totalTimeout().map(duration).ifPresent(retry::setTotalTimeout);
 
-    gcsOptions.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
-    gcsOptions.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
-    gcsOptions.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
+    gcsConfig.initialRetryDelay().map(duration).ifPresent(retry::setInitialRetryDelay);
+    gcsConfig.maxRetryDelay().map(duration).ifPresent(retry::setMaxRetryDelay);
+    gcsConfig.retryDelayMultiplier().ifPresent(retry::setRetryDelayMultiplier);
 
-    gcsOptions.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
-    gcsOptions.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
-    gcsOptions.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
+    gcsConfig.initialRpcTimeout().map(duration).ifPresent(retry::setInitialRpcTimeout);
+    gcsConfig.maxRpcTimeout().map(duration).ifPresent(retry::setMaxRpcTimeout);
+    gcsConfig.rpcTimeoutMultiplier().ifPresent(retry::setRpcTimeoutMultiplier);
 
     return retry.build();
   }

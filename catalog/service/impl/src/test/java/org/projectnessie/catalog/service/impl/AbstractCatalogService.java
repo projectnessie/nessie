@@ -53,6 +53,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.config.ImmutableAdlsOptions;
+import org.projectnessie.catalog.files.config.ImmutableGcsOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Config;
@@ -69,6 +71,7 @@ import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.config.ImmutableCatalogConfig;
+import org.projectnessie.catalog.service.config.ImmutableLakehouseConfig;
 import org.projectnessie.catalog.service.config.ImmutableServiceConfig;
 import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.client.api.NessieApiV2;
@@ -199,14 +202,20 @@ public abstract class AbstractCatalogService {
 
   private void setupCatalogService() {
     catalogService = new CatalogServiceImpl();
-    catalogService.catalogConfig =
-        ImmutableCatalogConfig.builder()
-            .defaultWarehouse(WAREHOUSE)
-            .putWarehouse(
-                WAREHOUSE,
-                ImmutableWarehouseConfig.builder()
-                    .location("s3://" + BUCKET + "/foo/bar/baz/")
+    catalogService.lakehouseConfig =
+        ImmutableLakehouseConfig.builder()
+            .catalog(
+                ImmutableCatalogConfig.builder()
+                    .defaultWarehouse(WAREHOUSE)
+                    .putWarehouse(
+                        WAREHOUSE,
+                        ImmutableWarehouseConfig.builder()
+                            .location("s3://" + BUCKET + "/foo/bar/baz/")
+                            .build())
                     .build())
+            .s3(ImmutableS3Options.builder().build())
+            .gcs(ImmutableGcsOptions.builder().build())
+            .adls(ImmutableAdlsOptions.builder().build())
             .build();
     catalogService.serviceConfig =
         ImmutableServiceConfig.builder().objectStoresHealthCheck(false).build();

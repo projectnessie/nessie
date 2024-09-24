@@ -18,12 +18,9 @@ package org.projectnessie.catalog.files.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
@@ -58,53 +55,8 @@ public interface GcsOptions {
   @ConfigPropertyName("bucket-name")
   Map<String, GcsNamedBucketOptions> buckets();
 
-  /** Override the default read timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> readTimeout();
-
-  /** Override the default connection timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> connectTimeout();
-
-  /** Override the default maximum number of attempts. */
-  @ConfigItem(section = "transport")
-  OptionalInt maxAttempts();
-
-  /** Override the default logical request timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> logicalTimeout();
-
-  /** Override the default total timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> totalTimeout();
-
-  /** Override the default initial retry delay. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> initialRetryDelay();
-
-  /** Override the default maximum retry delay. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> maxRetryDelay();
-
-  /** Override the default retry delay multiplier. */
-  @ConfigItem(section = "transport")
-  OptionalDouble retryDelayMultiplier();
-
-  /** Override the default initial RPC timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> initialRpcTimeout();
-
-  /** Override the default maximum RPC timeout. */
-  @ConfigItem(section = "transport")
-  Optional<Duration> maxRpcTimeout();
-
-  /** Override the default RPC timeout multiplier. */
-  @ConfigItem(section = "transport")
-  OptionalDouble rpcTimeoutMultiplier();
-
   default GcsBucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
-    GcsBucketOptions defaultOptions =
-        defaultOptions().map(GcsBucketOptions.class::cast).orElse(GcsNamedBucketOptions.FALLBACK);
+    GcsBucketOptions defaultOptions = defaultOptions().orElse(GcsNamedBucketOptions.FALLBACK);
 
     if (bucketName.isEmpty()) {
       return defaultOptions;

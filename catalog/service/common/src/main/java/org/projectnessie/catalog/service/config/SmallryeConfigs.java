@@ -15,15 +15,21 @@
  */
 package org.projectnessie.catalog.service.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import io.smallrye.config.WithParentName;
+import java.util.Optional;
+import org.immutables.value.Value;
 import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsOptions;
+import org.projectnessie.catalog.files.config.GcsConfig;
 import org.projectnessie.catalog.files.config.GcsOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3StsCache;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -40,6 +46,16 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @ConfigMapping(prefix = "nessie.catalog")
 @NessieImmutable
 public interface SmallryeConfigs {
+  /**
+   * Flag whether the lakehouse config is managed (persisted in Nessie) or static (retrieved from
+   * Quarkus configs).
+   *
+   * @hidden hidden from docs on projectnessie website
+   */
+  @WithName("advanced.persist-config")
+  @WithDefault("false")
+  boolean usePersistedLakehouseConfig();
+
   @WithName("service.s3")
   @ConfigItem(section = "s3", sectionDocFromType = true)
   S3Options s3();
@@ -62,6 +78,20 @@ public interface SmallryeConfigs {
   @WithName("service.s3")
   @ConfigItem(section = "s3_config", sectionDocFromType = true)
   S3Config s3config();
+
+  @WithName("service.gcs")
+  @ConfigItem(section = "gcs_config", sectionDocFromType = true)
+  GcsConfig gcsConfig();
+
+  @WithName("service.s3.sts")
+  @ConfigItem(section = "s3_config_sts", sectionDocFromType = true)
+  Optional<S3StsCache> s3StsCache();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default S3StsCache effectiveS3StsCache() {
+    return s3StsCache().orElse(ImmutableS3StsCache.builder().build());
+  }
 
   @WithName("service.adls")
   @ConfigItem(section = "adls_config", sectionDocFromType = true)

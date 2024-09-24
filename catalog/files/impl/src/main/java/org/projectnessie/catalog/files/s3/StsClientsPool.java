@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
-import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.http.SdkHttpClient;
@@ -43,9 +43,9 @@ public class StsClientsPool {
   private final Function<StsClientKey, StsClient> clientBuilder;
 
   public StsClientsPool(
-      S3Options options, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
+      S3StsCache effectiveSts, SdkHttpClient sdkHttpClient, MeterRegistry meterRegistry) {
     this(
-        options.effectiveSts().effectiveClientsCacheMaxSize(),
+        effectiveSts.effectiveClientsCacheMaxSize(),
         key -> defaultStsClient(key, sdkHttpClient),
         Optional.ofNullable(meterRegistry));
   }

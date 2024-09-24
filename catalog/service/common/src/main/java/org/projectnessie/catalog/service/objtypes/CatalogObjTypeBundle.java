@@ -25,5 +25,6 @@ public class CatalogObjTypeBundle implements ObjTypeBundle {
     registrar.accept(EntityObj.OBJ_TYPE);
     registrar.accept(EntitySnapshotObj.OBJ_TYPE);
     registrar.accept(SignerKeysObj.OBJ_TYPE);
+    registrar.accept(LakehouseConfigObj.OBJ_TYPE);
   }
 }

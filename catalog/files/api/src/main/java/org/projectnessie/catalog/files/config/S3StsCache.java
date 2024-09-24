@@ -25,9 +25,9 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
-@JsonSerialize(as = ImmutableS3Sts.class)
-@JsonDeserialize(as = ImmutableS3Sts.class)
-public interface S3Sts {
+@JsonSerialize(as = ImmutableS3StsCache.class)
+@JsonDeserialize(as = ImmutableS3StsCache.class)
+public interface S3StsCache {
 
   /** Default value for {@link #sessionCacheMaxSize()}. */
   int DEFAULT_MAX_SESSION_CREDENTIAL_CACHE_ENTRIES = 1000;
