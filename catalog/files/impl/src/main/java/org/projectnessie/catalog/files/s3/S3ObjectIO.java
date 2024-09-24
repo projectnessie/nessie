@@ -135,6 +135,23 @@ public class S3ObjectIO implements ObjectIO {
     }
   }
 
+  @Override
+  public Optional<String> canResolve(StorageUri uri) {
+    String scheme = uri.scheme();
+    if (!isS3scheme(scheme)) {
+      return Optional.of("Not an S3 URI");
+    }
+
+    try {
+      S3Client s3client = s3clientSupplier.getClient(uri);
+      return s3client != null
+          ? Optional.empty()
+          : Optional.of("S3 client could not be constructed");
+    } catch (IllegalArgumentException e) {
+      return Optional.of(e.getMessage());
+    }
+  }
+
   private static String withoutLeadingSlash(StorageUri uri) {
     String path = uri.requiredPath();
     return path.startsWith("/") ? path.substring(1) : path;

@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import org.projectnessie.storage.uri.StorageUri;
@@ -60,4 +61,11 @@ public interface ObjectIO {
       StorageUri warehouse,
       Map<String, String> icebergConfig,
       BiConsumer<String, String> properties);
+
+  /**
+   * Checks whether the given storage URI can be resolved.
+   *
+   * @return an empty optional, if the URI can be resolved, otherwise an error message.
+   */
+  Optional<String> canResolve(StorageUri uri);
 }

@@ -84,10 +84,6 @@ public final class AdlsClientSupplier {
     return adlsOptions;
   }
 
-  SecretsProvider secretsProvider() {
-    return secretsProvider;
-  }
-
   public DataLakeFileClient fileClientForLocation(StorageUri uri) {
     AdlsLocation location = adlsLocation(uri);
 

@@ -117,6 +117,16 @@ public class AdlsObjectIO implements ObjectIO {
   }
 
   @Override
+  public Optional<String> canResolve(StorageUri uri) {
+    try {
+      DataLakeFileClient file = clientSupplier.fileClientForLocation(uri);
+      return file != null ? Optional.empty() : Optional.of("ADLS client could not be constructed");
+    } catch (IllegalArgumentException e) {
+      return Optional.of(e.getMessage());
+    }
+  }
+
+  @Override
   public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,

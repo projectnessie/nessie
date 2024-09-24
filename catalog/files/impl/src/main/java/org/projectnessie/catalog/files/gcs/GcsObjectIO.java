@@ -158,6 +158,19 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   @Override
+  public Optional<String> canResolve(StorageUri uri) {
+    try {
+      GcsLocation location = gcsLocation(uri);
+      GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+      @SuppressWarnings("resource")
+      Storage client = storageSupplier.forLocation(bucketOptions);
+      return client != null ? Optional.empty() : Optional.of("GCS client could not be constructed");
+    } catch (IllegalArgumentException e) {
+      return Optional.of(e.getMessage());
+    }
+  }
+
+  @Override
   public void configureIcebergWarehouse(
       StorageUri warehouse,
       BiConsumer<String, String> defaultConfig,

@@ -154,6 +154,13 @@ public class TestAuthzMeta extends BaseClientAuthTest {
                     check(READ_ENTITY_VALUE, branch, tableKey),
                     check(CREATE_ENTITY, branch, tableKey)),
                 Map.of()),
+            // 'CatalogServiceImpl.locationForEntity'
+            authzCheck(
+                apiContext,
+                List.of(
+                    canViewReference(branch),
+                    check(READ_ENTITY_VALUE, branch, tableKey.getParent())),
+                Map.of()),
             // 'CatalogServiceImpl.commit'
             authzCheck(
                 apiContext,
@@ -226,8 +233,11 @@ public class TestAuthzMeta extends BaseClientAuthTest {
                     canCommitChangeAgainstReference(branch)),
                 Map.of()));
 
+    Map<String, String> meta = catalog.loadNamespaceMetadata(myNamespaceIceberg);
+    String location = meta.get("location");
+
     var props = new HashMap<String, String>();
-    props.put("location", "my_location");
+    props.put("location", location + "/foo_bar/baz");
     mockedAuthorizer.reset();
     catalog.createNamespace(myNamespaceIcebergInner, props);
     soft.assertThat(mockedAuthorizer.checksWithoutIdentifiedKey())

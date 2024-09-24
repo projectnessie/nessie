@@ -128,10 +128,8 @@ import org.projectnessie.catalog.model.statistics.NessieIcebergBlobMetadata;
 import org.projectnessie.catalog.model.statistics.NessiePartitionStatisticsFile;
 import org.projectnessie.catalog.model.statistics.NessieStatisticsFile;
 import org.projectnessie.model.Content;
-import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
-import org.projectnessie.model.Namespace;
 
 public class NessieModelIceberg {
   private NessieModelIceberg() {}
@@ -795,14 +793,8 @@ public class NessieModelIceberg {
    *
    * <p>Also: we deliberately ignore the TableProperties.WRITE_METADATA_LOCATION property here.
    */
-  public static String icebergBaseLocation(String warehouseLocation, ContentKey key) {
+  public static String icebergNewEntityBaseLocation(String baseLocation) {
     // FIXME escape or remove forbidden chars, cf. #8524
-    String baseLocation = warehouseLocation;
-    Namespace ns = key.getNamespace();
-    if (!ns.isEmpty()) {
-      baseLocation = concatLocation(warehouseLocation, ns.toString());
-    }
-    baseLocation = concatLocation(baseLocation, key.getName());
     return baseLocation + "_" + randomUUID();
   }
 
