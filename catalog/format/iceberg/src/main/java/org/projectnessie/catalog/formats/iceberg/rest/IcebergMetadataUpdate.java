@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +47,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergStatisticsFile;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewRepresentation;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewVersion;
+import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergTableMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.nessie.IcebergViewMetadataUpdateState;
 import org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg;
@@ -130,11 +132,13 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_UPGRADE_FORMAT_VERSION);
       NessieModelIceberg.upgradeFormatVersion(formatVersion(), state.snapshot(), state.builder());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_UPGRADE_FORMAT_VERSION);
       NessieModelIceberg.upgradeFormatVersion(formatVersion(), state.snapshot(), state.builder());
     }
   }
@@ -165,11 +169,19 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_PROPERTIES);
+      if (removals().contains("location")) {
+        state.addCatalogOp(CatalogOps.META_REMOVE_LOCATION_PROPERTY);
+      }
       NessieModelIceberg.removeProperties(this, state.snapshot(), state.builder());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_PROPERTIES);
+      if (removals().contains("location")) {
+        state.addCatalogOp(CatalogOps.META_REMOVE_LOCATION_PROPERTY);
+      }
       NessieModelIceberg.removeProperties(this, state.snapshot(), state.builder());
     }
   }
@@ -184,6 +196,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_VIEW_VERSION);
       NessieModelIceberg.addViewVersion(this, state);
     }
 
@@ -214,6 +227,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_CURRENT_VIEW_VERSION);
       NessieModelIceberg.setCurrentViewVersion(this, state);
     }
 
@@ -234,6 +248,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_STATISTICS);
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
       if (snapshotId == snapshotId()) {
         state.builder().statisticsFiles(singleton(icebergStatisticsFileToNessie(statistics())));
@@ -251,6 +266,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_STATISTICS);
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
       if (snapshotId == snapshotId()) {
         state.builder().statisticsFiles(emptyList());
@@ -268,6 +284,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_PARTITION_STATISTICS);
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
       if (snapshotId == partitionStatistics().snapshotId()) {
         state
@@ -289,6 +306,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_PARTITION_STATISTICS);
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
       if (snapshotId == snapshotId()) {
         state.builder().partitionStatisticsFiles(emptyList());
@@ -305,11 +323,13 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ASSIGN_UUID);
       NessieModelIceberg.assignUUID(this, state.snapshot());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ASSIGN_UUID);
       NessieModelIceberg.assignUUID(this, state.snapshot());
     }
 
@@ -329,11 +349,13 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_SCHEMA);
       NessieModelIceberg.addSchema(this, state);
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_SCHEMA);
       NessieModelIceberg.addSchema(this, state);
     }
 
@@ -352,12 +374,14 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_CURRENT_SCHEMA);
       NessieModelIceberg.setCurrentSchema(
           this, state.lastAddedSchemaId(), state.snapshot(), state.builder());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_CURRENT_SCHEMA);
       NessieModelIceberg.setCurrentSchema(
           this, state.lastAddedSchemaId(), state.snapshot(), state.builder());
     }
@@ -376,6 +400,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_PARTITION_SPEC);
       NessieModelIceberg.addPartitionSpec(this, state);
     }
 
@@ -403,6 +428,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_DEFAULT_PARTITION_SPEC);
       NessieModelIceberg.setDefaultPartitionSpec(this, state);
     }
 
@@ -420,6 +446,89 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_SNAPSHOT);
+      Map<String, String> summary = snapshot().summary();
+
+      String v = summary.get("added-data-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADD_DATA_FILES);
+      }
+      v = summary.get("deleted-data-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_DELETE_DATA_FILES);
+      }
+      v = summary.get("added-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADD_DELETE_FILES);
+      }
+      v = summary.get("added-equality-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADD_EQUALITY_DELETE_FILES);
+      }
+      v = summary.get("added-position-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADD_POSITION_DELETE_FILES);
+      }
+      v = summary.get("removed-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_REMOVE_DELETE_FILES);
+      }
+      v = summary.get("removed-equality-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_REMOVE_EQUALITY_DELETE_FILES);
+      }
+      v = summary.get("removed-position-delete-files");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_REMOVE_POSITION_DELETE_FILES);
+      }
+      v = summary.get("added-records");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADDED_RECORDS);
+      }
+      v = summary.get("deleted-records");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_DELETED_RECORDS);
+      }
+      v = summary.get("added-position-deletes");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADDED_POSITION_DELETES);
+      }
+      v = summary.get("deleted-position-deletes");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_DELETED_POSITION_DELETES);
+      }
+      v = summary.get("added-equality-deletes");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_ADDED_EQUALITY_DELETES);
+      }
+      v = summary.get("deleted-equality-deletes");
+      if (v != null && Long.parseLong(v) > 0) {
+        state.addCatalogOp(CatalogOps.SNAP_DELETED_EQUALITY_DELETES);
+      }
+      v = summary.get("replace-partitions");
+      if (Boolean.parseBoolean(v)) {
+        state.addCatalogOp(CatalogOps.SNAP_REPLACE_PARTITIONS);
+      }
+      v = summary.get("operation");
+      if (v != null) {
+        switch (v.toLowerCase(Locale.ROOT)) {
+          case "append":
+            state.addCatalogOp(CatalogOps.SNAP_OP_APPEND);
+            break;
+          case "replace":
+            state.addCatalogOp(CatalogOps.SNAP_OP_REPLACE);
+            break;
+          case "overwrite":
+            state.addCatalogOp(CatalogOps.SNAP_OP_OVERWRITE);
+            break;
+          case "delete":
+            state.addCatalogOp(CatalogOps.SNAP_OP_DELETE);
+            break;
+          default:
+            break;
+        }
+      }
+
       NessieModelIceberg.addSnapshot(this, state);
     }
   }
@@ -433,6 +542,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_ADD_SORT_ORDER);
       NessieModelIceberg.addSortOrder(this, state);
     }
 
@@ -466,6 +576,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_DEFAULT_SORT_ORDER);
       NessieModelIceberg.setDefaultSortOrder(this, state);
     }
 
@@ -489,6 +600,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_LOCATION);
       if (trusted()) {
         NessieModelIceberg.setLocation(this, state.builder());
       }
@@ -496,6 +608,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_LOCATION);
       if (trusted()) {
         NessieModelIceberg.setLocation(this, state.builder());
       }
@@ -516,11 +629,19 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_PROPERTIES);
+      if (updates().containsKey("location")) {
+        state.addCatalogOp(CatalogOps.META_SET_LOCATION);
+      }
       NessieModelIceberg.setProperties(this, state.snapshot(), state.builder());
     }
 
     @Override
     default void applyToView(IcebergViewMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_PROPERTIES);
+      if (updates().containsKey("location")) {
+        state.addCatalogOp(CatalogOps.META_SET_LOCATION);
+      }
       NessieModelIceberg.setProperties(this, state.snapshot(), state.builder());
     }
 
@@ -554,6 +675,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_SET_SNAPSHOT_REF);
       // NOP - This class is used for JSON deserialization only.
       // Nessie has catalog-level branches and tags.
     }
@@ -569,6 +691,7 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_SNAPSHOT_REF);
       // NOP - This class is used for JSON deserialization only.
       // Nessie has catalog-level branches and tags.
     }

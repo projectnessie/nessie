@@ -15,6 +15,9 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V1;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -57,7 +60,8 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   @Inject
   public RestNamespaceResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    this.namespaceService = new NamespaceApiImpl(config, store, authorizer, accessContext);
+    this.namespaceService =
+        new NamespaceApiImpl(config, store, authorizer, accessContext, NESSIE_V1);
   }
 
   private NamespaceService resource() {
@@ -68,7 +72,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
   @JsonView(Views.V1.class)
   public Namespace createNamespace(NamespaceParams params, Namespace namespace)
       throws NessieNamespaceAlreadyExistsException, NessieReferenceNotFoundException {
-    return resource().createNamespace(params.getRefName(), namespace);
+    return resource().createNamespace(params.getRefName(), namespace, API_WRITE);
   }
 
   @Override
@@ -105,6 +109,7 @@ public class RestNamespaceResource implements HttpNamespaceApi {
             params.getRefName(),
             params.getNamespace(),
             namespaceUpdate.getPropertyUpdates(),
-            namespaceUpdate.getPropertyRemovals());
+            namespaceUpdate.getPropertyRemovals(),
+            API_WRITE);
   }
 }

@@ -18,8 +18,11 @@ package org.projectnessie.services.rest;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V2;
 import static org.projectnessie.services.rest.common.RestCommon.updateCommitMeta;
 import static org.projectnessie.services.spi.TreeService.MAX_COMMIT_LOG_ENTRIES;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
@@ -102,10 +105,10 @@ public class RestV2TreeResource implements HttpTreeApi {
       Authorizer authorizer,
       AccessContext accessContext,
       HttpHeaders httpHeaders) {
-    this.configService = new ConfigApiImpl(config, store, authorizer, accessContext, 2);
-    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext);
-    this.contentService = new ContentApiImpl(config, store, authorizer, accessContext);
-    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext);
+    this.configService = new ConfigApiImpl(config, store, authorizer, accessContext, NESSIE_V2);
+    this.treeService = new TreeApiImpl(config, store, authorizer, accessContext, NESSIE_V2);
+    this.contentService = new ContentApiImpl(config, store, authorizer, accessContext, NESSIE_V2);
+    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext, NESSIE_V2);
     this.httpHeaders = httpHeaders;
   }
 
@@ -356,7 +359,7 @@ public class RestV2TreeResource implements HttpTreeApi {
     ParsedReference reference = parseRefPathString(ref);
     return content()
         .getContent(
-            key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation, forWrite);
+            key, reference.name(), reference.hashWithRelativeSpec(), withDocumentation, API_READ);
   }
 
   @JsonView(Views.V2.class)
@@ -381,7 +384,7 @@ public class RestV2TreeResource implements HttpTreeApi {
             reference.hashWithRelativeSpec(),
             request.getRequestedKeys(),
             withDocumentation,
-            forWrite);
+            API_READ);
   }
 
   @JsonView(Views.V2.class)
@@ -452,7 +455,8 @@ public class RestV2TreeResource implements HttpTreeApi {
             .commitMeta(commitMeta(CommitMeta.builder().from(operations.getCommitMeta())).build());
 
     ParsedReference ref = parseRefPathString(branch);
-    return tree().commitMultipleOperations(ref.name(), ref.hashWithRelativeSpec(), ops.build());
+    return tree()
+        .commitMultipleOperations(ref.name(), ref.hashWithRelativeSpec(), ops.build(), API_WRITE);
   }
 
   CommitMeta.Builder commitMeta(CommitMeta.Builder commitMeta) {

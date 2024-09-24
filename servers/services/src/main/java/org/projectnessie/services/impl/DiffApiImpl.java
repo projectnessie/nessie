@@ -34,6 +34,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.DiffResponse.DiffEntry;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.AuthzPaginationIterator;
 import org.projectnessie.services.authz.Check;
@@ -53,8 +54,12 @@ import org.projectnessie.versioned.paging.PaginationIterator;
 public class DiffApiImpl extends BaseApiImpl implements DiffService {
 
   public DiffApiImpl(
-      ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    super(config, store, authorizer, accessContext);
+      ServerConfig config,
+      VersionStore store,
+      Authorizer authorizer,
+      AccessContext accessContext,
+      ApiContext apiContext) {
+    super(config, store, authorizer, accessContext, apiContext);
   }
 
   @Override

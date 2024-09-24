@@ -103,6 +103,7 @@ import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.tasks.api.TasksService;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ContentApiImpl;
@@ -110,6 +111,8 @@ import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.RequestMeta;
+import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -122,9 +125,11 @@ public class CatalogServiceImpl implements CatalogService {
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogServiceImpl.class);
 
   @Inject ObjectIO objectIO;
-  TreeService treeService;
-  ContentService contentService;
-  CatalogConfig catalogConfig;
+  @Inject ServerConfig serverConfig;
+  @Inject CatalogConfig catalogConfig;
+  @Inject VersionStore versionStore;
+  @Inject Authorizer authorizer;
+  @Inject AccessContext accessContext;
   @Inject Persist persist;
   @Inject TasksService tasksService;
   @Inject BackendExceptionMapper backendExceptionMapper;
@@ -134,20 +139,12 @@ public class CatalogServiceImpl implements CatalogService {
   @Named("import-jobs")
   Executor executor;
 
-  public CatalogServiceImpl() {
-    this(null, null, null, null, null);
+  TreeService treeService(ApiContext apiContext) {
+    return new TreeApiImpl(serverConfig, versionStore, authorizer, accessContext, apiContext);
   }
 
-  @Inject
-  public CatalogServiceImpl(
-      ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
-      VersionStore store,
-      Authorizer authorizer,
-      AccessContext accessContext) {
-    this.catalogConfig = catalogConfig;
-    this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext);
-    this.contentService = new ContentApiImpl(serverConfig, store, authorizer, accessContext);
+  ContentService contentService(ApiContext apiContext) {
+    return new ContentApiImpl(serverConfig, versionStore, authorizer, accessContext, apiContext);
   }
 
   private IcebergStuff icebergStuff() {
@@ -164,7 +161,9 @@ public class CatalogServiceImpl implements CatalogService {
   public Stream<Supplier<CompletionStage<SnapshotResponse>>> retrieveSnapshots(
       SnapshotReqParams reqParams,
       List<ContentKey> keys,
-      Consumer<Reference> effectiveReferenceConsumer)
+      Consumer<Reference> effectiveReferenceConsumer,
+      RequestMeta requestMeta,
+      ApiContext apiContext)
       throws NessieNotFoundException {
     ParsedReference reference = reqParams.ref();
 
@@ -175,8 +174,9 @@ public class CatalogServiceImpl implements CatalogService {
         keys);
 
     GetMultipleContentsResponse contentResponse =
-        contentService.getMultipleContents(
-            reference.name(), reference.hashWithRelativeSpec(), keys, false, false);
+        contentService(apiContext)
+            .getMultipleContents(
+                reference.name(), reference.hashWithRelativeSpec(), keys, false, requestMeta);
 
     IcebergStuff icebergStuff = icebergStuff();
 
@@ -219,7 +219,8 @@ public class CatalogServiceImpl implements CatalogService {
       SnapshotReqParams reqParams,
       ContentKey key,
       @Nullable Content.Type expectedType,
-      boolean forWrite)
+      RequestMeta requestMeta,
+      ApiContext apiContext)
       throws NessieNotFoundException {
 
     ParsedReference reference = reqParams.ref();
@@ -231,8 +232,9 @@ public class CatalogServiceImpl implements CatalogService {
         key);
 
     ContentResponse contentResponse =
-        contentService.getContent(
-            key, reference.name(), reference.hashWithRelativeSpec(), false, forWrite);
+        contentService(apiContext)
+            .getContent(
+                key, reference.name(), reference.hashWithRelativeSpec(), false, requestMeta);
     Content content = contentResponse.getContent();
     if (expectedType != null && !content.getType().equals(expectedType)) {
       throw new NessieContentNotFoundException(key, reference.name());
@@ -360,16 +362,26 @@ public class CatalogServiceImpl implements CatalogService {
   CompletionStage<MultiTableUpdate> commit(
       ParsedReference reference,
       CatalogCommit commit,
-      Function<String, CommitMeta> commitMetaBuilder)
+      Function<String, CommitMeta> commitMetaBuilder,
+      String apiRequest,
+      ApiContext apiContext)
       throws BaseNessieClientServerException {
 
+    RequestMetaBuilder requestMeta = RequestMeta.apiWrite();
+    List<ContentKey> allKeys =
+        commit.getOperations().stream().map(CatalogOperation::getKey).collect(toList());
+    for (ContentKey key : allKeys) {
+      requestMeta.addKeyAction(key, apiRequest);
+    }
+
     GetMultipleContentsResponse contentsResponse =
-        contentService.getMultipleContents(
-            reference.name(),
-            reference.hashWithRelativeSpec(),
-            commit.getOperations().stream().map(CatalogOperation::getKey).collect(toList()),
-            false,
-            true);
+        contentService(apiContext)
+            .getMultipleContents(
+                reference.name(),
+                reference.hashWithRelativeSpec(),
+                allKeys,
+                false,
+                requestMeta.build());
 
     checkArgument(
         requireNonNull(contentsResponse.getEffectiveReference()) instanceof Branch,
@@ -388,7 +400,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     IcebergStuff icebergStuff = icebergStuff();
 
-    MultiTableUpdate multiTableUpdate = new MultiTableUpdate(treeService, target);
+    MultiTableUpdate multiTableUpdate =
+        new MultiTableUpdate(treeService(apiContext), target, requestMeta);
 
     LOGGER.trace(
         "Executing commit containing {} operations against '{}@{}'",
@@ -496,9 +509,11 @@ public class CatalogServiceImpl implements CatalogService {
       ParsedReference reference,
       CatalogCommit commit,
       SnapshotReqParams reqParams,
-      Function<String, CommitMeta> commitMetaBuilder)
+      Function<String, CommitMeta> commitMetaBuilder,
+      String apiRequest,
+      ApiContext apiContext)
       throws BaseNessieClientServerException {
-    return commit(reference, commit, commitMetaBuilder)
+    return commit(reference, commit, commitMetaBuilder, apiRequest, apiContext)
         // Finally, transform each MultiTableUpdate.SingleTableUpdate to a SnapshotResponse
         .thenApply(
             updates ->
@@ -579,13 +594,13 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergTableMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(pruneUpdates(icebergOp, content != null))
-                      .snapshot();
+                      .applyUpdates(pruneUpdates(icebergOp, content != null));
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
                 })
             .thenApply(
-                nessieSnapshot -> {
+                updateState -> {
+                  NessieTableSnapshot nessieSnapshot = updateState.snapshot();
                   String metadataJsonLocation =
                       icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
                   IcebergTableMetadata icebergMetadata =
@@ -597,7 +612,8 @@ public class CatalogServiceImpl implements CatalogService {
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
-                      new SingleTableUpdate(nessieSnapshot, updated, icebergOp.getKey());
+                      new SingleTableUpdate(
+                          nessieSnapshot, updated, icebergOp.getKey(), updateState.catalogOps());
                   multiTableUpdate.addUpdate(op.getKey(), singleTableUpdate);
                   return singleTableUpdate;
                 });
@@ -647,13 +663,13 @@ public class CatalogServiceImpl implements CatalogService {
                   return new IcebergViewMetadataUpdateState(
                           nessieSnapshot, op.getKey(), content != null)
                       .checkRequirements(icebergOp.requirements())
-                      .applyUpdates(pruneUpdates(icebergOp, content != null))
-                      .snapshot();
+                      .applyUpdates(pruneUpdates(icebergOp, content != null));
                   // TODO handle the case when nothing changed -> do not update
                   //  e.g. when adding a schema/spec/order that already exists
                 })
             .thenApply(
-                nessieSnapshot -> {
+                updateState -> {
+                  NessieViewSnapshot nessieSnapshot = updateState.snapshot();
                   String metadataJsonLocation =
                       icebergMetadataJsonLocation(nessieSnapshot.icebergLocation());
                   IcebergViewMetadata icebergMetadata =
@@ -664,7 +680,8 @@ public class CatalogServiceImpl implements CatalogService {
                   nessieSnapshot = nessieSnapshot.withId(objIdToNessieId(snapshotId));
 
                   SingleTableUpdate singleTableUpdate =
-                      new SingleTableUpdate(nessieSnapshot, updated, icebergOp.getKey());
+                      new SingleTableUpdate(
+                          nessieSnapshot, updated, icebergOp.getKey(), updateState.catalogOps());
                   multiTableUpdate.addUpdate(op.getKey(), singleTableUpdate);
                   return singleTableUpdate;
                 });

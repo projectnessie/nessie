@@ -20,6 +20,9 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -30,6 +33,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation;
 import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 
 /** Maintains state across all individual updates of a commit. */
 final class MultiTableUpdate {
@@ -40,11 +44,13 @@ final class MultiTableUpdate {
   private Map<ContentKey, String> addedContentsMap;
   private Branch targetBranch;
   private boolean committed;
+  private final RequestMetaBuilder requestMeta;
 
-  MultiTableUpdate(TreeService treeService, Branch target) {
+  MultiTableUpdate(TreeService treeService, Branch target, RequestMetaBuilder requestMeta) {
     this.treeService = treeService;
     this.operations = ImmutableOperations.builder();
     this.targetBranch = target;
+    this.requestMeta = requestMeta;
   }
 
   ImmutableOperations.Builder operations() {
@@ -55,9 +61,21 @@ final class MultiTableUpdate {
     synchronized (this) {
       committed = true;
       if (!tableUpdates.isEmpty()) {
+        RequestMetaBuilder checkMeta = requestMeta;
+        for (SingleTableUpdate update : tableUpdates) {
+          checkMeta.addKeyActions(
+              update.key,
+              update.catalogOps.stream()
+                  .map(CatalogOps::name)
+                  .collect(Collectors.toUnmodifiableSet()));
+        }
+
         CommitResponse commitResponse =
             treeService.commitMultipleOperations(
-                targetBranch().getName(), targetBranch.getHash(), operations.build());
+                targetBranch().getName(),
+                targetBranch.getHash(),
+                operations.build(),
+                checkMeta.build());
 
         addedContentsMap =
             commitResponse.getAddedContents() != null
@@ -112,11 +130,17 @@ final class MultiTableUpdate {
     final NessieEntitySnapshot<?> snapshot;
     final Content content;
     final ContentKey key;
+    final Set<CatalogOps> catalogOps;
 
-    SingleTableUpdate(NessieEntitySnapshot<?> snapshot, Content content, ContentKey key) {
+    SingleTableUpdate(
+        NessieEntitySnapshot<?> snapshot,
+        Content content,
+        ContentKey key,
+        Set<CatalogOps> catalogOps) {
       this.snapshot = snapshot;
       this.content = content;
       this.key = key;
+      this.catalogOps = catalogOps;
     }
   }
 }

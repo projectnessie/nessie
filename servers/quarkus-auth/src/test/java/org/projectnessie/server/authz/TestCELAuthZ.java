@@ -17,6 +17,7 @@ package org.projectnessie.server.authz;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 import static org.projectnessie.services.authz.Check.CheckType.CREATE_REFERENCE;
 import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
 
@@ -93,7 +94,8 @@ public class TestCELAuthZ {
               public Set<String> roleIds() {
                 return roles.get();
               }
-            });
+            },
+            apiContext("Nessie", 2));
 
     BranchName main = BranchName.of("main");
     soft.assertThatCode(() -> batchAccessChecker.canViewReference(main).checkAndThrow())
@@ -127,7 +129,8 @@ public class TestCELAuthZ {
   void celBatchAccessCheckerEmptyChecks(CheckType type) {
     QuarkusNessieAuthorizationConfig config = buildConfig(true);
     CompiledAuthorizationRules rules = new CompiledAuthorizationRules(config);
-    CelBatchAccessChecker batchAccessChecker = new CelBatchAccessChecker(rules, () -> () -> null);
+    CelBatchAccessChecker batchAccessChecker =
+        new CelBatchAccessChecker(rules, () -> () -> null, apiContext("Nessie", 2));
     Check check = Check.builder(type).build();
     if (type == CheckType.VIEW_REFERENCE) {
       soft.assertThatCode(() -> batchAccessChecker.can(check).checkAndThrow())
@@ -155,14 +158,14 @@ public class TestCELAuthZ {
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configEnabled, authorizers)
-                .startAccessCheck(() -> () -> "some-user"))
+                .startAccessCheck(() -> () -> "some-user", apiContext("Nessie", 2)))
         .isInstanceOf(CelBatchAccessChecker.class);
 
     when(celAuthorizerInstance.get()).thenReturn(celAuthorizer);
     when(authorizers.select(new AuthorizerType.Literal("CEL"))).thenReturn(celAuthorizerInstance);
     soft.assertThat(
             new QuarkusAuthorizer(configDisabled, authorizers)
-                .startAccessCheck(() -> () -> "some-user"))
+                .startAccessCheck(() -> () -> "some-user", apiContext("Nessie", 2)))
         .isSameAs(AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER);
   }
 

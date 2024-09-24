@@ -15,11 +15,17 @@
  */
 package org.projectnessie.catalog.service.rest;
 
-import static java.lang.String.format;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.META_SET_LOCATION;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.META_SET_PROPERTIES;
 import static org.projectnessie.error.ContentKeyErrorDetails.contentKeyErrorDetails;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.services.impl.RefUtil.toReference;
-import static org.projectnessie.services.rest.common.RestCommon.updateCommitMeta;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
+import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
 import io.smallrye.common.annotation.Blocking;
 import jakarta.enterprise.context.RequestScoped;
@@ -41,11 +47,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace;
+import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateNamespaceRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateNamespaceResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergGetNamespaceResponse;
@@ -63,12 +71,12 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
-import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
 import org.projectnessie.model.ImmutableNamespace;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
+import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.services.authz.AccessContext;
@@ -76,6 +84,7 @@ import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.VersionStore;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with namespaces. */
@@ -131,7 +140,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
     try {
       contentsResponse =
           contentService.getMultipleContents(
-              ref.name(), ref.hashWithRelativeSpec(), List.of(key), false, false);
+              ref.name(), ref.hashWithRelativeSpec(), List.of(key), false, API_READ);
     } catch (NessieNotFoundException e) {
       throw new NessieReferenceNotFoundException(e.getMessage(), e);
     }
@@ -157,10 +166,20 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             .commitMeta(updateCommitMeta("update namespace " + key))
             .build();
 
+    RequestMeta.RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(key, CATALOG_CREATE_ENTITY.name());
+    if (!namespace.getProperties().isEmpty()) {
+      requestMeta.addKeyAction(key, META_SET_PROPERTIES.name());
+      if (namespace.getProperties().containsKey("location")) {
+        requestMeta.addKeyAction(key, META_SET_LOCATION.name());
+      }
+    }
+
     treeService.commitMultipleOperations(
         contentsResponse.getEffectiveReference().getName(),
         contentsResponse.getEffectiveReference().getHash(),
-        ops);
+        ops,
+        requestMeta.build());
 
     return IcebergCreateNamespaceResponse.builder()
         .namespace(createNamespaceRequest.namespace())
@@ -176,54 +195,54 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
       @PathParam("prefix") String prefix, @PathParam("namespace") String namespace)
       throws IOException {
     NamespaceRef namespaceRef = decodeNamespaceRef(prefix, namespace);
-
     ContentKey key = namespaceRef.namespace().toContentKey();
-    ContentResponse contentResponse =
-        contentService.getContent(
-            key, namespaceRef.referenceName(), namespaceRef.hashWithRelativeSpec(), false, false);
-    if (!(contentResponse.getContent() instanceof Namespace)) {
-      throw new NessieNamespaceNotFoundException(
-          contentKeyErrorDetails(key),
-          String.format("Namespace '%s' does not exist", key.toCanonicalString()));
-    }
 
-    Reference ref = contentResponse.getEffectiveReference();
-
-    boolean notEmpty =
+    var ref = new AtomicReference<Reference>();
+    var entries =
         treeService.getEntries(
-            ref.getName(),
-            ref.getHash(),
+            namespaceRef.referenceName(),
+            namespaceRef.hashWithRelativeSpec(),
             null,
-            format("entry.encodedKey.startsWith('%s.')", key.toPathString()),
+            null,
             null,
             false,
-            new PagedResponseHandler<>() {
-              boolean found;
+            new PagedResponseHandler<List<EntriesResponse.Entry>, EntriesResponse.Entry>() {
+              final List<EntriesResponse.Entry> entries = new ArrayList<>();
 
               @Override
               public boolean addEntry(EntriesResponse.Entry entry) {
-                if (found) {
+                if (entries.size() == 2) {
                   return false;
                 }
-                found = true;
+                entries.add(entry);
                 return true;
               }
 
               @Override
-              public Boolean build() {
-                return found;
+              public List<EntriesResponse.Entry> build() {
+                return entries;
               }
 
               @Override
               public void hasMore(String pagingToken) {}
             },
-            h -> toReference(h),
+            h -> ref.set(toReference(h)),
             null,
             null,
             key,
-            null);
+            List.of());
 
-    if (notEmpty) {
+    if (entries.isEmpty()) {
+      throw new NessieNamespaceNotFoundException(
+          contentKeyErrorDetails(key),
+          String.format("Namespace '%s' does not exist", key.toCanonicalString()));
+    }
+    if (!NAMESPACE.equals(entries.get(0).getType())) {
+      throw new NessieNamespaceNotFoundException(
+          contentKeyErrorDetails(key),
+          String.format("Namespace '%s' does not exist", key.toCanonicalString()));
+    }
+    if (entries.size() > 1) {
       throw new NessieNamespaceNotEmptyException(
           contentKeyErrorDetails(key),
           String.format("Namespace '%s' is not empty", key.toCanonicalString()));
@@ -231,11 +250,14 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
     Operations ops =
         ImmutableOperations.builder()
-            .addOperations(org.projectnessie.model.Operation.Delete.of(key))
+            .addOperations(Delete.of(key))
             .commitMeta(updateCommitMeta("delete namespace " + key))
             .build();
 
-    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+    RequestMeta.RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(key, CATALOG_DROP_ENTITY.name());
+    treeService.commitMultipleOperations(
+        ref.get().getName(), ref.get().getHash(), ops, requestMeta.build());
   }
 
   @Operation(operationId = "iceberg.v1.listNamespaces")
@@ -279,7 +301,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
                 namespaceRef.referenceName(),
                 namespaceRef.hashWithRelativeSpec(),
                 false,
-                false)
+                API_READ)
             .getContent();
     if (!(c instanceof Namespace)) {
       throw new NessieNamespaceNotFoundException(
@@ -311,7 +333,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             namespaceRef.hashWithRelativeSpec(),
             keysInOrder,
             false,
-            false);
+            API_READ);
     Map<ContentKey, Content> namespacesMap = namespaces.toContentsMap();
 
     Content content = namespacesMap.get(nessieNamespace.toContentKey());
@@ -371,8 +393,6 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
       throws IOException {
     NamespaceRef namespaceRef = decodeNamespaceRef(prefix, namespace);
 
-    // TODO might want to prevent setting 'location'
-
     ContentKey key = namespaceRef.namespace().toContentKey();
     GetMultipleContentsResponse namespaces =
         contentService.getMultipleContents(
@@ -380,7 +400,7 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             namespaceRef.hashWithRelativeSpec(),
             List.of(key),
             false,
-            true);
+            API_WRITE);
     Reference ref = namespaces.getEffectiveReference();
     Map<ContentKey, Content> namespacesMap = namespaces.toContentsMap();
 
@@ -403,7 +423,20 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
             .commitMeta(updateCommitMeta("update namespace " + key))
             .build();
 
-    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+    RequestMeta.RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(key, CATALOG_UPDATE_ENTITY.name());
+    if (!updateNamespacePropertiesRequest.removals().isEmpty()) {
+      if (updateNamespacePropertiesRequest.removals().contains("location")) {
+        requestMeta.addKeyAction(key, CatalogOps.META_REMOVE_LOCATION_PROPERTY.name());
+      }
+    }
+    if (!updateNamespacePropertiesRequest.updates().isEmpty()) {
+      requestMeta.addKeyAction(key, CatalogOps.META_SET_PROPERTIES.name());
+      if (updateNamespacePropertiesRequest.updates().containsKey("location")) {
+        requestMeta.addKeyAction(key, CatalogOps.META_SET_LOCATION.name());
+      }
+    }
+    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());
 
     IcebergUpdateNamespacePropertiesResponse.Builder response =
         IcebergUpdateNamespacePropertiesResponse.builder();

@@ -17,6 +17,7 @@ package org.projectnessie.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.projectnessie.model.FetchOption.MINIMAL;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import org.junit.jupiter.api.Test;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -51,7 +52,7 @@ public abstract class AbstractTestInvalidRefs extends BaseTestServiceImpl {
             () ->
                 contentApi()
                     .getContent(
-                        ContentKey.of("table0"), branch.getName(), invalidHash, false, false))
+                        ContentKey.of("table0"), branch.getName(), invalidHash, false, API_READ))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
   }

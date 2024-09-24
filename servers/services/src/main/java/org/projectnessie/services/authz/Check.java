@@ -16,6 +16,8 @@
 package org.projectnessie.services.authz;
 
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
+import java.util.Set;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -53,24 +55,43 @@ public interface Check {
   @Value.Parameter(order = 7)
   RepositoryConfig.Type repositoryConfigType();
 
+  @Value.Parameter(order = 8)
+  Set<String> actions();
+
   static Check check(CheckType type) {
-    return ImmutableCheck.of(type, null, null, null, null, null, null);
+    return ImmutableCheck.of(type, null, null, null, null, null, null, Set.of());
   }
 
   static Check check(CheckType type, RepositoryConfig.Type repositoryConfigType) {
-    return ImmutableCheck.of(type, null, null, null, null, null, repositoryConfigType);
+    return ImmutableCheck.of(type, null, null, null, null, null, repositoryConfigType, Set.of());
   }
 
   static Check check(CheckType type, @Nullable NamedRef ref) {
-    return ImmutableCheck.of(type, ref, null, null, null, null, null);
+    return ImmutableCheck.of(type, ref, null, null, null, null, null, Set.of());
   }
 
   static Check check(CheckType type, @Nullable NamedRef ref, @Nullable ContentKey key) {
-    return ImmutableCheck.of(type, ref, key, null, null, null, null);
+    return check(type, ref, key, Set.of());
+  }
+
+  static Check check(
+      CheckType type,
+      @Nullable NamedRef ref,
+      @Nullable ContentKey key,
+      @NotNull Set<String> actions) {
+    return ImmutableCheck.of(type, ref, key, null, null, null, null, actions);
   }
 
   static Check check(
       CheckType type, @Nullable NamedRef ref, @Nullable IdentifiedContentKey identifiedKey) {
+    return check(type, ref, identifiedKey, Set.of());
+  }
+
+  static Check check(
+      CheckType type,
+      @Nullable NamedRef ref,
+      @Nullable IdentifiedContentKey identifiedKey,
+      @NotNull Set<String> actions) {
     if (identifiedKey != null) {
       IdentifiedContentKey.IdentifiedElement element = identifiedKey.lastElement();
       return ImmutableCheck.of(
@@ -80,10 +101,11 @@ public interface Check {
           element.contentId(),
           identifiedKey.type(),
           identifiedKey,
-          null);
+          null,
+          actions);
     }
 
-    return ImmutableCheck.of(type, ref, null, null, null, null, null);
+    return ImmutableCheck.of(type, ref, null, null, null, null, null, actions);
   }
 
   static ImmutableCheck.Builder builder(CheckType type) {
@@ -167,8 +189,17 @@ public interface Check {
     return check(CheckType.READ_CONTENT_KEY, ref, key);
   }
 
+  static Check canReadContentKey(NamedRef ref, ContentKey key, Set<String> actions) {
+    return check(CheckType.READ_CONTENT_KEY, ref, key, actions);
+  }
+
   static Check canReadContentKey(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.READ_CONTENT_KEY, ref, identifiedKey);
+  }
+
+  static Check canReadContentKey(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    return check(CheckType.READ_CONTENT_KEY, ref, identifiedKey, actions);
   }
 
   static Check canListCommitLog(NamedRef ref) {
@@ -183,16 +214,36 @@ public interface Check {
     return check(CheckType.READ_ENTITY_VALUE, ref, identifiedKey);
   }
 
+  static Check canReadEntityValue(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    return check(CheckType.READ_ENTITY_VALUE, ref, identifiedKey, actions);
+  }
+
   static Check canCreateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.CREATE_ENTITY, ref, identifiedKey);
+  }
+
+  static Check canCreateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    return check(CheckType.CREATE_ENTITY, ref, identifiedKey, actions);
   }
 
   static Check canUpdateEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.UPDATE_ENTITY, ref, identifiedKey);
   }
 
+  static Check canUpdateEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    return check(CheckType.UPDATE_ENTITY, ref, identifiedKey, actions);
+  }
+
   static Check canDeleteEntity(NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(CheckType.DELETE_ENTITY, ref, identifiedKey);
+  }
+
+  static Check canDeleteEntity(
+      NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
+    return check(CheckType.DELETE_ENTITY, ref, identifiedKey, actions);
   }
 
   static Check canReadRepositoryConfig(RepositoryConfig.Type repositoryConfigType) {

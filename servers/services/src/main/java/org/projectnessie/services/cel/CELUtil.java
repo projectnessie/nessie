@@ -50,6 +50,8 @@ public final class CELUtil {
   public static final String VAR_ROLE = "role";
   public static final String VAR_ROLES = "roles";
   public static final String VAR_OP = "op";
+  public static final String VAR_ACTIONS = "actions";
+  public static final String VAR_API = "api";
   public static final String VAR_OPERATIONS = "operations";
   public static final String VAR_CONTENT_TYPE = "contentType";
 

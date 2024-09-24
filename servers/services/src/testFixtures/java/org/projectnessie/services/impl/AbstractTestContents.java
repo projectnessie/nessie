@@ -20,6 +20,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.FetchOption.ALL;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import com.google.common.collect.Maps;
 import java.util.List;
@@ -293,7 +294,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       soft.assertThat(
               contentApi()
                   .getContent(
-                      fixedContentKey, committed.getName(), committed.getHash(), false, false))
+                      fixedContentKey, committed.getName(), committed.getHash(), false, API_READ))
           .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(put.getContent());
@@ -320,7 +321,11 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
               () ->
                   contentApi()
                       .getContent(
-                          fixedContentKey, committed.getName(), committed.getHash(), false, false))
+                          fixedContentKey,
+                          committed.getName(),
+                          committed.getHash(),
+                          false,
+                          API_READ))
           .isInstanceOf(NessieNotFoundException.class);
 
       // Compare operation on HEAD commit with the committed operation
@@ -343,7 +348,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       soft.assertThat(
               contentApi()
                   .getContent(
-                      fixedContentKey, committed.getName(), committed.getHash(), false, false))
+                      fixedContentKey, committed.getName(), committed.getHash(), false, API_READ))
           .extracting(ContentResponse::getContent)
           .extracting(this::clearIdOnContent)
           .isEqualTo(contentAndOperationType.prepare.getContent());

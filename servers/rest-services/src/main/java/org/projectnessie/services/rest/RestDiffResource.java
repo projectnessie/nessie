@@ -16,6 +16,7 @@
 package org.projectnessie.services.rest;
 
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V1;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
@@ -55,7 +56,7 @@ public class RestDiffResource implements HttpDiffApi {
   @Inject
   public RestDiffResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext);
+    this.diffService = new DiffApiImpl(config, store, authorizer, accessContext, NESSIE_V1);
   }
 
   private DiffService resource() {

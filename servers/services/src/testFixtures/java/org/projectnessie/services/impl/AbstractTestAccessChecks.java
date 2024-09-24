@@ -27,12 +27,14 @@ import static org.projectnessie.model.FetchOption.ALL;
 import static org.projectnessie.model.FetchOption.MINIMAL;
 import static org.projectnessie.model.IdentifiedContentKey.IdentifiedElement.identifiedElement;
 import static org.projectnessie.model.MergeBehavior.NORMAL;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 import static org.projectnessie.services.authz.Check.canCommitChangeAgainstReference;
 import static org.projectnessie.services.authz.Check.canCreateEntity;
 import static org.projectnessie.services.authz.Check.canDeleteEntity;
 import static org.projectnessie.services.authz.Check.canReadEntityValue;
 import static org.projectnessie.services.authz.Check.canUpdateEntity;
 import static org.projectnessie.services.authz.Check.canViewReference;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
@@ -95,7 +97,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     Set<Check> checks = new HashSet<>();
     setBatchAccessChecker(
         c ->
-            new AbstractBatchAccessChecker() {
+            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
               @Override
               public Map<Check, String> check() {
                 checks.addAll(getChecks());
@@ -416,7 +418,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
     setBatchAccessChecker(
         x ->
-            new AbstractBatchAccessChecker() {
+            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
               @Override
               public Map<Check, String> check() {
                 return getChecks().stream()
@@ -450,7 +452,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
     setBatchAccessChecker(
         x ->
-            new AbstractBatchAccessChecker() {
+            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
               @Override
               public Map<Check, String> check() {
                 getChecks()
@@ -474,7 +476,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
   public void detachedRefAccessChecks() throws Exception {
 
     BatchAccessChecker accessChecker =
-        new AbstractBatchAccessChecker() {
+        new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
           @Override
           public Map<Check, String> check() {
             Map<Check, String> failed = new LinkedHashMap<>();
@@ -557,7 +559,7 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(READ_MSG);
       soft.assertThatThrownBy(
-              () -> contentApi().getContent(key, ref.getName(), ref.getHash(), false, false))
+              () -> contentApi().getContent(key, ref.getName(), ref.getHash(), false, API_READ))
           .describedAs("ref='%s', getContent", ref)
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(ENTITIES_MSG);

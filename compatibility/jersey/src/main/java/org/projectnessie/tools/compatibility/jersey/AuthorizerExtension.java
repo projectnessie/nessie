@@ -24,6 +24,7 @@ import jakarta.enterprise.inject.spi.Extension;
 import java.util.function.Function;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.authz.BatchAccessChecker;
 
@@ -33,7 +34,7 @@ public class AuthorizerExtension implements Extension {
   private final Authorizer authorizer =
       new Authorizer() {
         @Override
-        public BatchAccessChecker startAccessCheck(AccessContext context) {
+        public BatchAccessChecker startAccessCheck(AccessContext context, ApiContext apiContext) {
           if (accessCheckerSupplier == null) {
             return AbstractBatchAccessChecker.NOOP_ACCESS_CHECKER;
           }

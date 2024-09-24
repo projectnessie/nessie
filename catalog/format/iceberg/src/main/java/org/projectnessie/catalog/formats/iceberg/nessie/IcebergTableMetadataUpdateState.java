@@ -20,6 +20,7 @@ import static java.util.Collections.emptyMap;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class IcebergTableMetadataUpdateState {
   private final Set<Integer> addedSchemaIds = new HashSet<>();
   private final Set<Integer> addedSpecIds = new HashSet<>();
   private final Set<Integer> addedOrderIds = new HashSet<>();
+  private final Set<CatalogOps> catalogOps = EnumSet.noneOf(CatalogOps.class);
 
   public IcebergTableMetadataUpdateState(
       NessieTableSnapshot snapshot, ContentKey key, boolean tableExists) {
@@ -70,6 +72,14 @@ public class IcebergTableMetadataUpdateState {
 
   public NessieTableSnapshot.Builder builder() {
     return builder;
+  }
+
+  public void addCatalogOp(CatalogOps op) {
+    catalogOps.add(op);
+  }
+
+  public Set<CatalogOps> catalogOps() {
+    return catalogOps;
   }
 
   public NessieTableSnapshot snapshot() {

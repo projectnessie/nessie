@@ -15,6 +15,9 @@
  */
 package org.projectnessie.services.rest;
 
+import static org.projectnessie.services.rest.RestApiContext.NESSIE_V1;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -52,7 +55,7 @@ public class RestContentResource implements HttpContentApi {
   @Inject
   public RestContentResource(
       ServerConfig config, VersionStore store, Authorizer authorizer, AccessContext accessContext) {
-    this.contentService = new ContentApiImpl(config, store, authorizer, accessContext);
+    this.contentService = new ContentApiImpl(config, store, authorizer, accessContext, NESSIE_V1);
   }
 
   private ContentService resource() {
@@ -63,7 +66,7 @@ public class RestContentResource implements HttpContentApi {
   @JsonView(Views.V1.class)
   public Content getContent(ContentKey key, String ref, String hashOnRef)
       throws NessieNotFoundException {
-    return resource().getContent(key, ref, hashOnRef, false, false).getContent();
+    return resource().getContent(key, ref, hashOnRef, false, API_READ).getContent();
   }
 
   @Override
@@ -71,6 +74,7 @@ public class RestContentResource implements HttpContentApi {
   public GetMultipleContentsResponse getMultipleContents(
       String ref, String hashOnRef, GetMultipleContentsRequest request)
       throws NessieNotFoundException {
-    return resource().getMultipleContents(ref, hashOnRef, request.getRequestedKeys(), false, false);
+    return resource()
+        .getMultipleContents(ref, hashOnRef, request.getRequestedKeys(), false, API_READ);
   }
 }

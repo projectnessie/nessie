@@ -15,6 +15,15 @@
  */
 package org.projectnessie.server.authz;
 
+import static org.projectnessie.services.cel.CELUtil.VAR_ACTIONS;
+import static org.projectnessie.services.cel.CELUtil.VAR_API;
+import static org.projectnessie.services.cel.CELUtil.VAR_CONTENT_TYPE;
+import static org.projectnessie.services.cel.CELUtil.VAR_OP;
+import static org.projectnessie.services.cel.CELUtil.VAR_PATH;
+import static org.projectnessie.services.cel.CELUtil.VAR_REF;
+import static org.projectnessie.services.cel.CELUtil.VAR_ROLE;
+import static org.projectnessie.services.cel.CELUtil.VAR_ROLES;
+
 import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +36,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.BatchAccessChecker;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.versioned.NamedRef;
@@ -39,7 +49,9 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   private final CompiledAuthorizationRules compiledRules;
   private final AccessContext context;
 
-  CelBatchAccessChecker(CompiledAuthorizationRules compiledRules, AccessContext context) {
+  CelBatchAccessChecker(
+      CompiledAuthorizationRules compiledRules, AccessContext context, ApiContext apiContext) {
+    super(apiContext);
     this.compiledRules = compiledRules;
     this.context = context;
   }
@@ -81,17 +93,21 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
     String roleName = roleName();
     Map<String, Object> arguments =
         Map.of(
-            "role",
+            VAR_ROLE,
             roleName,
-            "roles",
+            VAR_ROLES,
             roles(),
-            "op",
+            VAR_OP,
             check.type().name(),
-            "path",
+            VAR_ACTIONS,
+            check.actions(),
+            VAR_API,
+            getApiContext(),
+            VAR_PATH,
             "",
-            "ref",
+            VAR_REF,
             "",
-            "contentType",
+            VAR_CONTENT_TYPE,
             "");
 
     Supplier<String> errorMsgSupplier =

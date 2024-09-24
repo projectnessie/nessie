@@ -19,13 +19,17 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_MULTIPLE;
 import static org.projectnessie.catalog.service.api.SnapshotReqParams.forSnapshotHttpReq;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 import static org.projectnessie.services.authz.Check.CheckType.COMMIT_CHANGE_AGAINST_REFERENCE;
 import static org.projectnessie.services.authz.Check.CheckType.READ_ENTITY_VALUE;
 import static org.projectnessie.services.authz.Check.CheckType.UPDATE_ENTITY;
 import static org.projectnessie.services.authz.Check.CheckType.VIEW_REFERENCE;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -62,9 +66,11 @@ import org.projectnessie.objectstoragemock.Bucket;
 import org.projectnessie.objectstoragemock.MockObject;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessCheckException;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Check;
 import org.projectnessie.services.authz.Check.CheckType;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.versioned.RequestMeta;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class TestCatalogServiceImpl extends AbstractCatalogService {
@@ -92,7 +98,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
         .operation(Operation.Put.of(key1, IcebergView.of("meta", 1, 2)))
         .commitWithResponse();
 
-    soft.assertThatThrownBy(() -> commitMultiple(main, key1, key2))
+    soft.assertThatThrownBy(() -> commitMultiple(main, API_WRITE, key1, key2))
         .isInstanceOf(ExecutionException.class)
         .cause()
         .isInstanceOf(RuntimeException.class)
@@ -148,7 +154,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
           return Optional.empty();
         });
 
-    soft.assertThatThrownBy(() -> commitMultiple(main, key1, key2, key3, key4))
+    soft.assertThatThrownBy(() -> commitMultiple(main, API_WRITE, key1, key2, key3, key4))
         .isInstanceOf(ExecutionException.class)
         .cause()
         .cause()
@@ -166,7 +172,15 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
         parsedReference(main.getName(), main.getHash(), Reference.ReferenceType.BRANCH);
     CatalogCommit commit = CatalogCommit.builder().build();
 
-    catalogService.commit(ref, commit, CommitMeta::fromMessage).toCompletableFuture().get();
+    catalogService
+        .commit(
+            ref,
+            commit,
+            CommitMeta::fromMessage,
+            CATALOG_UPDATE_MULTIPLE.name(),
+            apiContext("Catalog", 0))
+        .toCompletableFuture()
+        .get();
 
     Reference afterCommit = api.getReference().refName("main").get();
     soft.assertThat(afterCommit).isEqualTo(main);
@@ -179,7 +193,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     ContentKey key1 = ContentKey.of("mytable1");
     ContentKey key2 = ContentKey.of("mytable2");
 
-    ParsedReference committed = commitMultiple(main, key1, key2);
+    ParsedReference committed = commitMultiple(main, API_WRITE, key1, key2);
 
     Reference afterCommit = api.getReference().refName("main").get();
     soft.assertThat(afterCommit)
@@ -193,7 +207,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     Reference main = api.getReference().refName("main").get();
     ContentKey key = ContentKey.of("mytable");
 
-    ParsedReference committed = commitSingle(main, key);
+    ParsedReference committed = commitSingle(main, key, API_WRITE);
 
     Reference afterCommit = api.getReference().refName("main").get();
     soft.assertThat(afterCommit)
@@ -204,7 +218,11 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     SnapshotResponse snap =
         catalogService
             .retrieveSnapshot(
-                forSnapshotHttpReq(committed, "ICEBERG", "2"), key, ICEBERG_TABLE, false)
+                forSnapshotHttpReq(committed, "ICEBERG", "2"),
+                key,
+                ICEBERG_TABLE,
+                API_READ,
+                apiContext("Catalog", 0))
             .toCompletableFuture()
             .get(5, MINUTES);
 
@@ -247,20 +265,20 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
 
   /**
    * Verify behavior of {@link CatalogService#retrieveSnapshot(SnapshotReqParams, ContentKey,
-   * Content.Type, boolean)} against related Nessie {@link CheckType check types} for read and write
-   * intents.
+   * Content.Type, RequestMeta, ApiContext)} against related Nessie {@link CheckType check types}
+   * for read and write intents.
    */
   @Test
   public void retrieveSnapshotAccessChecks() throws Exception {
     Reference main = api.getReference().refName("main").get();
     ContentKey key = ContentKey.of("mytable");
 
-    ParsedReference committed = commitSingle(main, key);
+    ParsedReference committed = commitSingle(main, key, API_WRITE);
 
     AtomicReference<CheckType> failingCheckType = new AtomicReference<>();
     batchAccessCheckerFactory =
         x ->
-            new AbstractBatchAccessChecker() {
+            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
               @Override
               public Map<Check, String> check() {
                 return getChecks().stream()
@@ -290,7 +308,8 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
                               forSnapshotHttpReq(committed, "ICEBERG", "2"),
                               key,
                               ICEBERG_TABLE,
-                              false)
+                              API_READ,
+                              apiContext("Catalog", 0))
                           .toCompletableFuture()
                           .get(5, MINUTES))
               .describedAs("forRead with %s", checkType);
@@ -308,7 +327,8 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
                               forSnapshotHttpReq(committed, "ICEBERG", "2"),
                               key,
                               ICEBERG_TABLE,
-                              true)
+                              API_WRITE,
+                              apiContext("Catalog", 0))
                           .toCompletableFuture()
                           .get(5, MINUTES))
               .describedAs("forWrite with %s", checkType);

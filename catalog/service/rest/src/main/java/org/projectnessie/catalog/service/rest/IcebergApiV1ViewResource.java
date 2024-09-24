@@ -18,6 +18,9 @@ package org.projectnessie.catalog.service.rest;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier.fromNessieContentKey;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
+import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddViewVersion.addViewVersion;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID.assignUUID;
@@ -26,6 +29,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
@@ -74,6 +78,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.VersionStore;
 
 /** Handles Iceberg REST API v1 endpoints that are associated with views. */
@@ -138,7 +143,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
             .addRequirement(IcebergUpdateRequirement.AssertCreate.assertTableDoesNotExist())
             .build();
 
-    return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_VIEW)
+    return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_VIEW, CATALOG_CREATE_ENTITY)
         .map(snap -> loadViewResultFromSnapshotResponse(snap, IcebergLoadViewResponse.builder()));
   }
 
@@ -180,7 +185,9 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
             .commitMeta(updateCommitMeta(format("Drop ICEBERG_VIEW %s", tableRef.contentKey())))
             .build();
 
-    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops);
+    RequestMeta.RequestMetaBuilder requestMeta =
+        apiWrite().addKeyAction(tableRef.contentKey(), CATALOG_DROP_ENTITY.name());
+    treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());
   }
 
   private ContentResponse fetchIcebergView(TableRef tableRef, boolean forWrite)
@@ -230,7 +237,8 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     return snapshotResponse(
             key,
             SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null),
-            ICEBERG_VIEW)
+            ICEBERG_VIEW,
+            ICEBERG_V1)
         .map(snap -> loadViewResultFromSnapshotResponse(snap, IcebergLoadViewResponse.builder()));
   }
 
@@ -272,7 +280,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    return createOrUpdateEntity(tableRef, commitViewRequest, ICEBERG_VIEW)
+    return createOrUpdateEntity(tableRef, commitViewRequest, ICEBERG_VIEW, CATALOG_UPDATE_ENTITY)
         .map(
             snap -> {
               IcebergViewMetadata viewMetadata =

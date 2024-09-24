@@ -19,6 +19,7 @@ import static java.time.Instant.now;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,6 +51,7 @@ public class IcebergViewMetadataUpdateState {
   private final List<IcebergSnapshot> addedSnapshots = new ArrayList<>();
   private final Set<Integer> addedSchemaIds = new HashSet<>();
   private final Set<Long> addedVersionIds = new HashSet<>();
+  private final Set<CatalogOps> catalogOps = EnumSet.noneOf(CatalogOps.class);
 
   public IcebergViewMetadataUpdateState(
       NessieViewSnapshot snapshot, ContentKey key, boolean viewExists) {
@@ -61,6 +63,14 @@ public class IcebergViewMetadataUpdateState {
 
   public NessieViewSnapshot.Builder builder() {
     return builder;
+  }
+
+  public void addCatalogOp(CatalogOps op) {
+    catalogOps.add(op);
+  }
+
+  public Set<CatalogOps> catalogOps() {
+    return catalogOps;
   }
 
   public NessieViewSnapshot snapshot() {

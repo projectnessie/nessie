@@ -45,6 +45,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.WithHash;
 
 /**
@@ -201,6 +202,7 @@ public interface TreeService {
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash,
-      @Valid Operations operations)
+      @Valid Operations operations,
+      @NotNull RequestMeta requestMeta)
       throws NessieNotFoundException, NessieConflictException;
 }

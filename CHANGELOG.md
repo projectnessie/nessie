@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Access check SPI has been enhanced to provide richer information in the `Check` type about the receiving
+  API (Nessie REST or Iceberg REST) and about the individual changes, especially during a commit operation.
+
 ### Changes
 
 ### Deprecations

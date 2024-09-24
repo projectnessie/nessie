@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.service.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -35,6 +36,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Reference;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.rest.common.RestCommon;
 
 abstract class AbstractCatalogResource {
@@ -49,18 +51,25 @@ abstract class AbstractCatalogResource {
   @Context ExternalBaseUri uriInfo;
 
   Uni<Response> snapshotBased(
-      ContentKey key, SnapshotReqParams snapshotReqParams, Content.Type expectedType)
+      ContentKey key,
+      SnapshotReqParams snapshotReqParams,
+      Content.Type expectedType,
+      ApiContext apiContext)
       throws NessieNotFoundException {
-    return snapshotResponse(key, snapshotReqParams, expectedType)
+    return snapshotResponse(key, snapshotReqParams, expectedType, apiContext)
         .map(AbstractCatalogResource::snapshotToResponse);
   }
 
   Uni<SnapshotResponse> snapshotResponse(
-      ContentKey key, SnapshotReqParams snapshotReqParams, Content.Type expectedType)
+      ContentKey key,
+      SnapshotReqParams snapshotReqParams,
+      Content.Type expectedType,
+      ApiContext apiContext)
       throws NessieNotFoundException {
     return Uni.createFrom()
         .completionStage(
-            catalogService.retrieveSnapshot(snapshotReqParams, key, expectedType, false));
+            catalogService.retrieveSnapshot(
+                snapshotReqParams, key, expectedType, API_READ, apiContext));
   }
 
   private static Response snapshotToResponse(SnapshotResponse snapshot) {

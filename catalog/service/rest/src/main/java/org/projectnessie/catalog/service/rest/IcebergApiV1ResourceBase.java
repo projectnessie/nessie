@@ -28,7 +28,10 @@ import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.catalog.service.rest.TimestampParser.timestampToNessie;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
+import static org.projectnessie.services.authz.ApiContext.apiContext;
 import static org.projectnessie.services.impl.RefUtil.toReference;
+import static org.projectnessie.versioned.RequestMeta.API_READ;
+import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.google.common.base.Splitter;
 import io.smallrye.mutiny.Uni;
@@ -44,6 +47,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
+import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
@@ -70,6 +74,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.TableReference;
 import org.projectnessie.services.authz.AccessContext;
+import org.projectnessie.services.authz.ApiContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ContentApiImpl;
@@ -77,6 +82,8 @@ import org.projectnessie.services.impl.TreeApiImpl;
 import org.projectnessie.services.spi.ContentService;
 import org.projectnessie.services.spi.PagedCountingResponseHandler;
 import org.projectnessie.services.spi.TreeService;
+import org.projectnessie.versioned.RequestMeta;
+import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.projectnessie.versioned.VersionStore;
 
 abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
@@ -86,6 +93,8 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   final ServerConfig serverConfig;
   final CatalogConfig catalogConfig;
 
+  static final ApiContext ICEBERG_V1 = apiContext("Iceberg", 1);
+
   protected IcebergApiV1ResourceBase(
       ServerConfig serverConfig,
       CatalogConfig catalogConfig,
@@ -94,8 +103,9 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
       AccessContext accessContext) {
     this.serverConfig = serverConfig;
     this.catalogConfig = catalogConfig;
-    this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext);
-    this.contentService = new ContentApiImpl(serverConfig, store, authorizer, accessContext);
+    this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext, ICEBERG_V1);
+    this.contentService =
+        new ContentApiImpl(serverConfig, store, authorizer, accessContext, ICEBERG_V1);
   }
 
   protected Stream<EntriesResponse.Entry> listContent(
@@ -182,7 +192,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
             ref.hashWithRelativeSpec(),
             List.of(toTableRef.contentKey(), fromTableRef.contentKey()),
             false,
-            false);
+            API_READ);
     Map<ContentKey, Content> contentsMap = contents.toContentsMap();
     Content existingFrom = contentsMap.get(fromTableRef.contentKey());
     if (existingFrom == null || !expectedContentType.equals(existingFrom.getType())) {
@@ -220,7 +230,13 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
                         entityType, fromTableRef.contentKey(), toTableRef.contentKey())))
             .build();
 
-    treeService.commitMultipleOperations(effectiveRef.getName(), effectiveRef.getHash(), ops);
+    RequestMetaBuilder requestMeta =
+        RequestMeta.apiWrite()
+            .addKeyAction(fromTableRef.contentKey(), CatalogOps.CATALOG_RENAME_ENTITY_FROM.name())
+            .addKeyAction(toTableRef.contentKey(), CatalogOps.CATALOG_RENAME_ENTITY_TO.name());
+
+    treeService.commitMultipleOperations(
+        effectiveRef.getName(), effectiveRef.getHash(), ops, requestMeta.build());
   }
 
   protected NamespaceRef decodeNamespaceRef(String prefix, String encodedNs) {
@@ -339,7 +355,11 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
     GetMultipleContentsResponse contentResponse =
         contentService.getMultipleContents(
-            ref.name(), ref.hashWithRelativeSpec(), List.of(tableRef.contentKey()), false, true);
+            ref.name(),
+            ref.hashWithRelativeSpec(),
+            List.of(tableRef.contentKey()),
+            false,
+            API_WRITE);
     if (!contentResponse.getContents().isEmpty()) {
       Content existing = contentResponse.getContents().get(0).getContent();
       throw new CatalogEntityAlreadyExistsException(
@@ -354,7 +374,11 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     ParsedReference ref = requireNonNull(tableRef.reference());
     ContentResponse content =
         contentService.getContent(
-            tableRef.contentKey(), ref.name(), ref.hashWithRelativeSpec(), false, forWrite);
+            tableRef.contentKey(),
+            ref.name(),
+            ref.hashWithRelativeSpec(),
+            false,
+            forWrite ? API_WRITE : API_READ);
     checkArgument(
         content.getContent().getType().equals(expectedType),
         "Expecting an Iceberg %s, but got type %s",
@@ -364,7 +388,10 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   }
 
   Uni<SnapshotResponse> createOrUpdateEntity(
-      TableRef tableRef, IcebergUpdateEntityRequest updateEntityRequest, Content.Type contentType)
+      TableRef tableRef,
+      IcebergUpdateEntityRequest updateEntityRequest,
+      Content.Type contentType,
+      CatalogOps apiOperation)
       throws IOException {
 
     IcebergCatalogOperation op =
@@ -383,7 +410,13 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
     return Uni.createFrom()
         .completionStage(
-            catalogService.commit(tableRef.reference(), commit, reqParams, this::updateCommitMeta))
+            catalogService.commit(
+                tableRef.reference(),
+                commit,
+                reqParams,
+                this::updateCommitMeta,
+                apiOperation.name(),
+                ICEBERG_V1))
         .map(Stream::findFirst)
         .map(
             o ->

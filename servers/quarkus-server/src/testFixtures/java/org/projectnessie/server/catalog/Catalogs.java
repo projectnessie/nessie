@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.rest.HTTPClient;
 import org.apache.iceberg.rest.RESTCatalog;
 
 public class Catalogs implements AutoCloseable {
@@ -33,7 +34,18 @@ public class Catalogs implements AutoCloseable {
         options,
         opts -> {
           int catalogServerPort = Integer.getInteger("quarkus.http.port");
-          RESTCatalog c = new RESTCatalog();
+          RESTCatalog c =
+              new RESTCatalog(
+                  config -> {
+                    var builder = HTTPClient.builder(config).uri(config.get(CatalogProperties.URI));
+                    config.entrySet().stream()
+                        .filter(e -> e.getKey().startsWith("http.header."))
+                        .forEach(
+                            e ->
+                                builder.withHeader(
+                                    e.getKey().substring("http.header.".length()), e.getValue()));
+                    return builder.build();
+                  });
           c.setConf(new Configuration());
           Map<String, String> catalogOptions = new HashMap<>();
           catalogOptions.put(
