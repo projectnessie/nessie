@@ -19,6 +19,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- The base `location` of a new entity (e.g. tables) created via Iceberg REST is derived from the nearest
+  parent namespace that has an explicitly set `location` property. (Path separator character is `/`.)
+- The `location` property on tables (and view) created via Iceberg REST may be explicitly configured, as
+  long as it can be resolved against the configured object storage locations. (Path separator character
+  is `/`.)
+
 ### Deprecations
 
 ### Fixes
