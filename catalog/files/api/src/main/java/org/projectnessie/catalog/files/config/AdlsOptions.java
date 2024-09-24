@@ -15,10 +15,11 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import static org.projectnessie.catalog.files.config.OptionsUtil.resolveSpecializedBucket;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 import org.projectnessie.nessie.immutables.NessieImmutable;
+import org.projectnessie.storage.uri.StorageUri;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableAdlsOptions.class)
@@ -48,9 +50,13 @@ public interface AdlsOptions {
   @ConfigItem(section = "default-options")
   Optional<AdlsFileSystemOptions> defaultOptions();
 
-  /** ADLS file-system specific options, per file system name. */
+  /**
+   * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
+   * setting. If no per-bucket setting is present, uses the defaults from the top-level ADLS
+   * settings in {@code default-options}.
+   */
   @ConfigItem(section = "buckets")
-  @ConfigPropertyName("filesystem-name")
+  @ConfigPropertyName("key")
   Map<String, AdlsNamedFileSystemOptions> fileSystems();
 
   default AdlsOptions validate() {
@@ -76,56 +82,14 @@ public interface AdlsOptions {
     return this;
   }
 
-  default AdlsFileSystemOptions effectiveOptionsForFileSystem(Optional<String> filesystemName) {
-    AdlsFileSystemOptions defaultOptions =
-        defaultOptions()
-            .map(AdlsFileSystemOptions.class::cast)
-            .orElse(AdlsNamedFileSystemOptions.FALLBACK);
-    if (filesystemName.isEmpty()) {
-      return defaultOptions;
-    }
+  default AdlsNamedFileSystemOptions resolveOptionsForUri(StorageUri uri) {
+    Optional<AdlsNamedFileSystemOptions> specific = resolveSpecializedBucket(uri, fileSystems());
 
-    AdlsFileSystemOptions specific = fileSystems().get(filesystemName.get());
-
-    if (specific == null) {
-      return defaultOptions;
-    }
-
-    return ImmutableAdlsNamedFileSystemOptions.builder()
-        .from(defaultOptions)
-        .from(specific)
-        .build();
-  }
-
-  @Value.Check
-  default AdlsOptions normalizeBuckets() {
-    Map<String, AdlsNamedFileSystemOptions> fileSystems = new HashMap<>();
-    for (String fileSystemName : fileSystems().keySet()) {
-      AdlsNamedFileSystemOptions options = fileSystems().get(fileSystemName);
-      if (options.name().isPresent()) {
-        fileSystemName = options.name().get();
-      } else {
-        options =
-            ImmutableAdlsNamedFileSystemOptions.builder()
-                .from(options)
-                .name(fileSystemName)
-                .build();
-      }
-      if (fileSystems.put(fileSystemName, options) != null) {
-        throw new IllegalArgumentException(
-            "Duplicate ADLS filesystem name '"
-                + fileSystemName
-                + "', check your ADLS file system configurations");
-      }
-    }
-    if (fileSystems.equals(fileSystems())) {
-      return this;
-    }
-    return ImmutableAdlsOptions.builder()
-        .from(this)
-        .defaultOptions(defaultOptions())
-        .fileSystems(fileSystems)
-        .build();
+    ImmutableAdlsNamedFileSystemOptions.Builder builder =
+        ImmutableAdlsNamedFileSystemOptions.builder();
+    defaultOptions().ifPresent(builder::from);
+    specific.ifPresent(builder::from);
+    return builder.build();
   }
 
   @Value.NonAttribute

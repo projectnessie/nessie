@@ -308,6 +308,8 @@ catalog:
       # -- Per-bucket S3 settings. Override the general settings above.
       buckets: []
       # - name: bucket1
+      #   authority: bucket1
+      #   pathPrefix: path/in/the/bucket
       #   endpoint: "https://bucket1.s3.amazonaws.com"
       #   accessKeySecret:
       #     name: awscreds
@@ -401,6 +403,8 @@ catalog:
       # -- Per-bucket GCS settings. Override the general settings above.
       buckets: []
       # - name: bucket1
+      #   authority: bucket1
+      #   pathPrefix: path/in/the/bucket
       #   authType: ACCESS_TOKEN
       #   oauth2TokenSecret:
       #     name: gcs-creds
@@ -480,6 +484,8 @@ catalog:
       # -- Per-filesystem ADLS settings. Override the general settings above.
       filesystems: []
       # - name: filesystem1
+      #   authority: bucket1
+      #   pathPrefix: path/in/the/bucket
       #   endpoint: http://localhost/adlsgen2/bucket
       #   accountSecret:
       #     name: adls-account-secret

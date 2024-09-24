@@ -27,6 +27,7 @@ import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
@@ -70,7 +71,9 @@ public class S3Signer implements RequestSigner {
             .method(SdkHttpMethod.fromValue(clientRequest.method()))
             .headers(clientRequest.headers());
 
-    S3BucketOptions bucketOptions = s3Options.effectiveOptionsForBucket(clientRequest.bucket());
+    S3BucketOptions bucketOptions =
+        s3Options.resolveOptionsForUri(
+            StorageUri.of(S3Utils.asS3Location(clientRequest.uri().toString())));
     AwsCredentialsProvider credentialsProvider =
         S3Clients.serverCredentialsProvider(bucketOptions, s3sessions, secretsProvider);
     AwsCredentialsIdentity credentials = credentialsProvider.resolveCredentials();

@@ -66,8 +66,8 @@ public abstract class SecretsValidation {
     var failures = new ArrayList<SecretValidationFailure>();
     s3.defaultOptions().map(b -> validateS3Bucket(b, "<default>")).ifPresent(failures::addAll);
     s3.buckets()
-        .values()
-        .forEach(b -> failures.addAll(validateS3Bucket(b, b.name().orElseThrow())));
+        .forEach(
+            (key, value) -> failures.addAll(validateS3Bucket(value, value.name().orElse(key))));
     return failures;
   }
 
@@ -89,8 +89,8 @@ public abstract class SecretsValidation {
     var failures = new ArrayList<SecretValidationFailure>();
     gcs.defaultOptions().map(b -> validateGcsBucket(b, "<default>")).ifPresent(failures::addAll);
     gcs.buckets()
-        .values()
-        .forEach(b -> failures.addAll(validateGcsBucket(b, b.name().orElseThrow())));
+        .forEach(
+            (key, value) -> failures.addAll(validateGcsBucket(value, value.name().orElse(key))));
     return failures;
   }
 
@@ -100,8 +100,9 @@ public abstract class SecretsValidation {
         .map(fs -> validateAdlsFileSystem(fs, "<default>"))
         .ifPresent(failures::addAll);
     adls.fileSystems()
-        .values()
-        .forEach(fs -> failures.addAll(validateAdlsFileSystem(fs, fs.name().orElseThrow())));
+        .forEach(
+            (key, value) ->
+                failures.addAll(validateAdlsFileSystem(value, value.name().orElse(key))));
     return failures;
   }
 

@@ -39,8 +39,8 @@ public class ObjectStorageMockTestResourceLifecycleManager
   public static final String S3A_WAREHOUSE_LOCATION = bucketWarehouseLocation("s3a");
   public static final String S3N_WAREHOUSE_LOCATION = bucketWarehouseLocation("s3n");
   public static final String GCS_WAREHOUSE_LOCATION = bucketWarehouseLocation("gs");
-  public static final String ADLS_WAREHOUSE_LOCATION =
-      "abfs://" + BUCKET + "@account.dfs.core.windows.net/warehouse";
+  public static final String ADLS_AUTHORITY = BUCKET + "@account.dfs.core.windows.net";
+  public static final String ADLS_WAREHOUSE_LOCATION = "abfs://" + ADLS_AUTHORITY + "/warehouse";
 
   public static final String INIT_ADDRESS =
       "ObjectStorageMockTestResourceLifecycleManager.initAddress";
@@ -89,6 +89,7 @@ public class ObjectStorageMockTestResourceLifecycleManager
         .put("nessie.catalog.service.gcs.buckets.mock-bucket.auth-type", "none")
         // ADLS
         .put("nessie.catalog.service.adls.file-systems.mock-fs.name", BUCKET)
+        .put("nessie.catalog.service.adls.file-systems.mock-fs.authority", ADLS_AUTHORITY)
         .put("nessie.catalog.service.adls.file-systems.mock-fs.endpoint", adlsEndpoint)
         .put(
             "nessie.catalog.service.adls.file-systems.mock-fs.sas-token",

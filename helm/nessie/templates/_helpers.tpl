@@ -170,6 +170,8 @@ Apply S3 catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .authority $map ( print $prefix "authority" )) -}}
+{{- include "nessie.addConfigOption" (list .pathPrefix $map ( print $prefix "path-prefix" )) -}}
 {{- include "nessie.addConfigOption" (list .region $map ( print $prefix "region" )) -}}
 {{- include "nessie.addConfigOption" (list .endpoint $map ( print $prefix "endpoint" )) -}}
 {{- include "nessie.addConfigOption" (list .externalEndpoint $map ( print $prefix "external-endpoint" )) -}}
@@ -233,6 +235,8 @@ Apply GCS catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .authority $map ( print $prefix "authority" )) -}}
+{{- include "nessie.addConfigOption" (list .pathPrefix $map ( print $prefix "path-prefix" )) -}}
 {{- include "nessie.addConfigOption" (list .host $map ( print $prefix "host" )) -}}
 {{- include "nessie.addConfigOption" (list .externalHost $map ( print $prefix "external-host" )) -}}
 {{- include "nessie.addConfigOption" (list .userProject $map ( print $prefix "user-project" )) -}}
@@ -275,6 +279,8 @@ Apply ADLS catalog options.
 {{- $map := index . 2 -}}{{/* the destination map */}}
 {{- with $root -}}
 {{- include "nessie.addConfigOption" (list .name $map ( print $prefix "name" )) -}}
+{{- include "nessie.addConfigOption" (list .authority $map ( print $prefix "authority" )) -}}
+{{- include "nessie.addConfigOption" (list .pathPrefix $map ( print $prefix "path-prefix" )) -}}
 {{- include "nessie.addConfigOption" (list .endpoint $map ( print $prefix "endpoint" )) -}}
 {{- include "nessie.addConfigOption" (list .externalEndpoint $map ( print $prefix "external-endpoint" )) -}}
 {{- include "nessie.addConfigOption" (list .retryPolicy $map ( print $prefix "retry-policy" )) -}}

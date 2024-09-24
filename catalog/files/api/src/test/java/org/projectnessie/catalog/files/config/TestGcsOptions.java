@@ -16,13 +16,116 @@
 package org.projectnessie.catalog.files.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.net.URI;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
+import org.projectnessie.storage.uri.StorageUri;
 
 class TestGcsOptions {
+
+  @ParameterizedTest
+  @MethodSource
+  public void resolveOptionsForUri(GcsOptions options, StorageUri uri, String expectedName) {
+    GcsNamedBucketOptions resolved = options.resolveOptionsForUri(uri);
+    assertThat(resolved.name()).isEqualTo(Optional.ofNullable(expectedName));
+  }
+
+  static Stream<Arguments> resolveOptionsForUri() {
+    return Stream.of(
+        arguments(
+            ImmutableGcsOptions.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableGcsOptions.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "baz",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("too-short-path-prefix")
+                        .authority("my-authority")
+                        .pathPrefix("fo")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableGcsOptions.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/baaz/blah/moo"),
+            "other-bucket"),
+        //
+        arguments(
+            ImmutableGcsOptions.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableGcsNamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/"),
+            null));
+  }
 
   @Test
   void deepClone() {
@@ -89,7 +192,6 @@ class TestGcsOptions {
             .putBucket(
                 "bucket1",
                 ImmutableGcsNamedBucketOptions.builder()
-                    .name("bucket1")
                     .host(URI.create("https://host1"))
                     .externalHost(URI.create("https://externalHost1"))
                     .userProject("userProject1")
@@ -102,7 +204,7 @@ class TestGcsOptions {
                     .deleteBatchSize(6)
                     .build())
             .putBucket(
-                "my-bucket-2",
+                "bucket2",
                 ImmutableGcsNamedBucketOptions.builder()
                     .name("my-bucket-2")
                     .host(URI.create("https://host2"))
@@ -119,26 +221,5 @@ class TestGcsOptions {
             .build();
     GcsOptions actual = input.deepClone();
     assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void normalizeBuckets() {
-    assertThat(
-            ImmutableGcsOptions.builder()
-                .putBucket("fs1", ImmutableGcsNamedBucketOptions.builder().build())
-                .putBucket(
-                    "fs2", ImmutableGcsNamedBucketOptions.builder().name("my-bucket").build())
-                .build()
-                .buckets())
-        .containsOnlyKeys("fs1", "my-bucket");
-    assertThatThrownBy(
-            () ->
-                ImmutableGcsOptions.builder()
-                    .putBucket("bucket1", ImmutableGcsNamedBucketOptions.builder().build())
-                    .putBucket(
-                        "bucket2", ImmutableGcsNamedBucketOptions.builder().name("bucket1").build())
-                    .build())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Duplicate GCS bucket name 'bucket1', check your GCS bucket configurations");
   }
 }

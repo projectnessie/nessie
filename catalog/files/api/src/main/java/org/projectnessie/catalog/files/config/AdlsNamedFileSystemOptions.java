@@ -18,27 +18,13 @@ package org.projectnessie.catalog.files.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 @JsonDeserialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 @SuppressWarnings("immutables:subtype")
-public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
-
-  AdlsFileSystemOptions FALLBACK = ImmutableAdlsNamedFileSystemOptions.builder().build();
-
-  /**
-   * The name of the filesystem. If unset, the name of the bucket will be extracted from the
-   * configuration option, e.g. if {@code
-   * nessie.catalog.service.adls.filesystem1.name=my-filesystem} is set, the name of the filesystem
-   * will be {@code my-filesystem}; otherwise, it will be {@code filesystem1}.
-   *
-   * <p>This should only be defined if the filesystem name contains non-alphanumeric characters,
-   * such as dots or dashes.
-   */
-  Optional<String> name();
+public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions, PerBucket {
 
   @Value.NonAttribute
   @JsonIgnore
@@ -46,6 +32,8 @@ public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions {
     return ImmutableAdlsNamedFileSystemOptions.builder()
         .from(AdlsFileSystemOptions.super.deepClone())
         .name(name())
+        .authority(authority())
+        .pathPrefix(pathPrefix())
         .build();
   }
 }

@@ -126,7 +126,7 @@ public class TestSecretsValidation {
 
     return Stream.of(
         arguments(builder.get().build(), List.of()),
-        //
+        // 1
         arguments(
             builder
                 .get()
@@ -143,6 +143,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
+        // 2
         arguments(
             builder
                 .get()
@@ -160,7 +161,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
-        //
+        // 3
         arguments(
             builder
                 .get()
@@ -179,6 +180,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
+        // 4
         arguments(
             builder
                 .get()
@@ -195,6 +197,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
+        // 5
         arguments(
             builder
                 .get()
@@ -211,6 +214,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
+        // 6
         arguments(
             builder
                 .get()
@@ -230,7 +234,7 @@ public class TestSecretsValidation {
                     NOT_FOUND,
                     Optional.empty(),
                     "secret does not exist"))),
-        //
+        // 7
         arguments(
             builder
                 .get()

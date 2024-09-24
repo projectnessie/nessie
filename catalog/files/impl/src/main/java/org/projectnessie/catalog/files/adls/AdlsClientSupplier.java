@@ -52,6 +52,7 @@ import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
 import org.projectnessie.catalog.files.config.AdlsFileSystemOptions.AzureAuthType;
+import org.projectnessie.catalog.files.config.AdlsNamedFileSystemOptions;
 import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.catalog.secrets.BasicCredentials;
 import org.projectnessie.catalog.secrets.KeySecret;
@@ -87,7 +88,7 @@ public final class AdlsClientSupplier {
   public DataLakeFileClient fileClientForLocation(StorageUri uri) {
     AdlsLocation location = adlsLocation(uri);
 
-    DataLakeFileSystemClient fileSystem = fileSystemClient(location);
+    DataLakeFileSystemClient fileSystem = fileSystemClient(uri);
     String path = uri.requiredPath();
     if (path.startsWith("/")) {
       path = path.substring(1);
@@ -96,21 +97,18 @@ public final class AdlsClientSupplier {
     return fileSystem.getFileClient(path);
   }
 
-  DataLakeFileSystemClient fileSystemClient(AdlsLocation location) {
+  DataLakeFileSystemClient fileSystemClient(StorageUri uri) {
     Configuration clientConfig = buildClientConfiguration();
 
-    AdlsFileSystemOptions fileSystemOptions =
-        adlsOptions.effectiveOptionsForFileSystem(location.container());
+    AdlsNamedFileSystemOptions fileSystemOptions = adlsOptions.resolveOptionsForUri(uri);
 
-    String endpoint = endpointForLocation(location, fileSystemOptions);
+    String endpoint = endpointForLocation(uri, fileSystemOptions);
 
-    return buildFileSystemClient(location, fileSystemOptions, clientConfig, endpoint);
+    return buildFileSystemClient(uri, fileSystemOptions, clientConfig, endpoint);
   }
 
   public Optional<String> generateUserDelegationSas(
-      StorageLocations storageLocations, AdlsFileSystemOptions fileSystemOptions) {
-    AdlsLocation location = adlsLocation(storageLocations.warehouseLocation());
-
+      StorageLocations storageLocations, AdlsNamedFileSystemOptions fileSystemOptions) {
     if (!fileSystemOptions.effectiveUserDelegation().enable().orElse(false)) {
       return Optional.empty();
     }
@@ -123,10 +121,11 @@ public final class AdlsClientSupplier {
 
     Configuration clientConfig = buildClientConfiguration();
 
-    String endpoint = endpointForLocation(location, fileSystemOptions);
+    String endpoint = endpointForLocation(storageLocations.warehouseLocation(), fileSystemOptions);
 
     DataLakeFileSystemClient client =
-        buildFileSystemClient(location, fileSystemOptions, clientConfig, endpoint);
+        buildFileSystemClient(
+            storageLocations.warehouseLocation(), fileSystemOptions, clientConfig, endpoint);
 
     DataLakeServiceClientBuilder dataLakeServiceClientBuilder =
         new DataLakeServiceClientBuilder()
@@ -181,8 +180,8 @@ public final class AdlsClientSupplier {
   }
 
   private DataLakeFileSystemClient buildFileSystemClient(
-      AdlsLocation location,
-      AdlsFileSystemOptions fileSystemOptions,
+      StorageUri uri,
+      AdlsNamedFileSystemOptions fileSystemOptions,
       Configuration clientConfig,
       String endpoint) {
     // MUST set the endpoint FIRST, because it ALSO sets accountName, fileSystemName and sasToken!
@@ -196,6 +195,7 @@ public final class AdlsClientSupplier {
 
     buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
     buildRequestRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
+    AdlsLocation location = adlsLocation(uri);
     location.container().ifPresent(clientBuilder::fileSystemName);
 
     if (!applyCredentials(
@@ -210,16 +210,15 @@ public final class AdlsClientSupplier {
   }
 
   private static String endpointForLocation(
-      AdlsLocation location, AdlsFileSystemOptions fileSystemOptions) {
+      StorageUri uri, AdlsFileSystemOptions fileSystemOptions) {
     return fileSystemOptions
         .endpoint()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
                     format(
-                        "Mandatory ADLS endpoint is not configured for storage account %s%s.",
-                        location.storageAccount(),
-                        location.container().map(c -> ", container " + c).orElse(""))));
+                        "Mandatory ADLS endpoint is not configured for storage account %s.",
+                        uri.requiredAuthority())));
   }
 
   private Configuration buildClientConfiguration() {

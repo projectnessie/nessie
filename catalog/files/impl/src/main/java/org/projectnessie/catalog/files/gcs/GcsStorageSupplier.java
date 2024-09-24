@@ -46,6 +46,7 @@ import org.projectnessie.catalog.files.config.GcsDownscopedCredentials;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.secrets.TokenSecret;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +78,8 @@ public final class GcsStorageSupplier {
     return secretsProvider;
   }
 
-  public GcsBucketOptions bucketOptions(GcsLocation location) {
-    return gcsOptions.effectiveOptionsForBucket(Optional.of(location.bucket()));
+  public GcsBucketOptions bucketOptions(StorageUri location) {
+    return gcsOptions.resolveOptionsForUri(location);
   }
 
   public Storage forLocation(GcsBucketOptions bucketOptions) {

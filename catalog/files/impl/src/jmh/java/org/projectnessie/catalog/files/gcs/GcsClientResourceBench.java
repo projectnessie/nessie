@@ -18,7 +18,6 @@ package org.projectnessie.catalog.files.gcs;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.projectnessie.catalog.files.BenchUtils.mockServer;
-import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
@@ -102,8 +101,7 @@ public class GcsClientResourceBench {
 
   @Benchmark
   public void gcsClient(BenchmarkParam param, Blackhole bh) {
-    GcsLocation gcsLocation = gcsLocation("bucket", "key");
-    GcsBucketOptions bucketOptions = param.storageSupplier.bucketOptions(gcsLocation);
+    GcsBucketOptions bucketOptions = param.storageSupplier.bucketOptions(StorageUri.of("gs://key"));
     bh.consume(param.storageSupplier.forLocation(bucketOptions));
   }
 

@@ -70,6 +70,7 @@ public class TestAdlsClients extends AbstractClients {
                     .endpoint(server1.getAdlsGen2BaseUri().toString())
                     .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
                     .account(secretUri)
+                    .authority(BUCKET_1 + "@storageAccount")
                     .build());
     if (server2 != null) {
       adlsOptions.putFileSystem(
@@ -78,6 +79,7 @@ public class TestAdlsClients extends AbstractClients {
               .endpoint(server2.getAdlsGen2BaseUri().toString())
               .authType(AdlsFileSystemOptions.AzureAuthType.STORAGE_SHARED_KEY)
               .account(secretUri)
+              .authority(BUCKET_2 + "@storageAccount")
               .build());
     }
 

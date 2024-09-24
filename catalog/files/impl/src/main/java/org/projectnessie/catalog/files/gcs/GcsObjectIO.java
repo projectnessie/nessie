@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.gcs;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.projectnessie.catalog.files.gcs.GcsLocation.gcsLocation;
 
 import com.google.cloud.ReadChannel;
 import com.google.cloud.WriteChannel;
@@ -67,17 +66,15 @@ public class GcsObjectIO implements ObjectIO {
 
   @Override
   public void ping(StorageUri uri) {
-    GcsLocation location = gcsLocation(uri);
-    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(uri);
     @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
-    client.get(BlobId.of(uri.requiredAuthority(), uri.requiredPath()));
+    client.get(BlobId.of(uri.requiredAuthority(), uri.pathWithoutLeadingTrailingSlash()));
   }
 
   @Override
   public InputStream readObject(StorageUri uri) {
-    GcsLocation location = gcsLocation(uri);
-    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(uri);
     @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
     List<BlobSourceOption> sourceOptions = new ArrayList<>();
@@ -96,7 +93,7 @@ public class GcsObjectIO implements ObjectIO {
     bucketOptions.userProject().map(BlobSourceOption::userProject).ifPresent(sourceOptions::add);
     ReadChannel reader =
         client.reader(
-            BlobId.of(location.bucket(), location.path()),
+            BlobId.of(uri.requiredAuthority(), uri.pathWithoutLeadingTrailingSlash()),
             sourceOptions.toArray(new BlobSourceOption[0]));
     bucketOptions.readChunkSize().ifPresent(reader::setChunkSize);
     return Channels.newInputStream(reader);
@@ -104,8 +101,7 @@ public class GcsObjectIO implements ObjectIO {
 
   @Override
   public OutputStream writeObject(StorageUri uri) {
-    GcsLocation location = gcsLocation(uri);
-    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+    GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(uri);
     @SuppressWarnings("resource")
     Storage client = storageSupplier.forLocation(bucketOptions);
     List<BlobWriteOption> writeOptions = new ArrayList<>();
@@ -124,7 +120,10 @@ public class GcsObjectIO implements ObjectIO {
         .ifPresent(writeOptions::add);
     bucketOptions.userProject().map(BlobWriteOption::userProject).ifPresent(writeOptions::add);
 
-    BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(location.bucket(), location.path())).build();
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(
+                BlobId.of(uri.requiredAuthority(), uri.pathWithoutLeadingTrailingSlash()))
+            .build();
     WriteChannel channel = client.writer(blobInfo, writeOptions.toArray(new BlobWriteOption[0]));
     bucketOptions.writeChunkSize().ifPresent(channel::setChunkSize);
     return Channels.newOutputStream(channel);
@@ -132,19 +131,21 @@ public class GcsObjectIO implements ObjectIO {
 
   @Override
   public void deleteObjects(List<StorageUri> uris) {
-    Map<String, List<GcsLocation>> bucketToUris =
-        uris.stream()
-            .map(GcsLocation::gcsLocation)
-            .collect(Collectors.groupingBy(GcsLocation::bucket));
+    // TODO this should group by **resolved prefix**
+    Map<String, List<StorageUri>> bucketToUris =
+        uris.stream().collect(Collectors.groupingBy(StorageUri::requiredAuthority));
 
-    for (List<GcsLocation> locations : bucketToUris.values()) {
+    for (List<StorageUri> locations : bucketToUris.values()) {
       GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(locations.get(0));
       @SuppressWarnings("resource")
       Storage client = storageSupplier.forLocation(bucketOptions);
 
       List<BlobId> blobIds =
           locations.stream()
-              .map(location -> BlobId.of(location.bucket(), location.path()))
+              .map(
+                  location ->
+                      BlobId.of(
+                          location.requiredAuthority(), location.pathWithoutLeadingTrailingSlash()))
               .collect(Collectors.toList());
 
       // This is rather a hack to make the `AbstractClients` test pass, because our object storage
@@ -160,8 +161,7 @@ public class GcsObjectIO implements ObjectIO {
   @Override
   public Optional<String> canResolve(StorageUri uri) {
     try {
-      GcsLocation location = gcsLocation(uri);
-      GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(location);
+      GcsBucketOptions bucketOptions = storageSupplier.bucketOptions(uri);
       @SuppressWarnings("resource")
       Storage client = storageSupplier.forLocation(bucketOptions);
       return client != null ? Optional.empty() : Optional.of("GCS client could not be constructed");
@@ -238,10 +238,15 @@ public class GcsObjectIO implements ObjectIO {
         buckets.size() == 1,
         "Only one GCS bucket supported for warehouse %s",
         storageLocations.warehouseLocation());
-    String bucket = buckets.iterator().next();
 
-    GcsBucketOptions bucketOptions =
-        storageSupplier.gcsOptions().effectiveOptionsForBucket(Optional.of(bucket));
+    // We just need one of the locations to resolve the GCS bucket options. Any should work, because
+    // it's all for the same table.
+    StorageUri loc =
+        storageLocations.writeableLocations().isEmpty()
+            ? storageLocations.readonlyLocations().get(0)
+            : storageLocations.writeableLocations().get(0);
+
+    GcsBucketOptions bucketOptions = storageSupplier.gcsOptions().resolveOptionsForUri(loc);
 
     bucketOptions.projectId().ifPresent(p -> config.accept(GCS_PROJECT_ID, p));
     bucketOptions.clientLibToken().ifPresent(t -> config.accept(GCS_CLIENT_LIB_TOKEN, t));

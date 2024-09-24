@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.adls;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.projectnessie.catalog.files.adls.AdlsLocation.adlsLocation;
 
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ParallelTransferOptions;
@@ -38,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
-import org.projectnessie.catalog.files.config.AdlsFileSystemOptions;
+import org.projectnessie.catalog.files.config.AdlsNamedFileSystemOptions;
 import org.projectnessie.catalog.files.config.AdlsOptions;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -56,9 +55,7 @@ public class AdlsObjectIO implements ObjectIO {
 
   @Override
   public void ping(StorageUri uri) {
-    AdlsLocation location = adlsLocation(uri);
-
-    DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(location);
+    DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(uri);
     fileSystem.getProperties();
   }
 
@@ -82,19 +79,16 @@ public class AdlsObjectIO implements ObjectIO {
 
   @Override
   public void deleteObjects(List<StorageUri> uris) throws IOException {
-    // Note: the default container is mapped to an empty string
-    Map<String, List<AdlsLocation>> bucketToUris =
-        uris.stream()
-            .map(AdlsLocation::adlsLocation)
-            .collect(Collectors.groupingBy(l -> l.container().orElse("")));
+    Map<String, List<StorageUri>> bucketToUris =
+        uris.stream().collect(Collectors.groupingBy(StorageUri::requiredAuthority));
 
     IOException ex = null;
-    for (List<AdlsLocation> locations : bucketToUris.values()) {
+    for (List<StorageUri> locations : bucketToUris.values()) {
       DataLakeFileSystemClient fileSystem = clientSupplier.fileSystemClient(locations.get(0));
 
       // No batch-delete ... yay
-      for (AdlsLocation location : locations) {
-        String path = location.path();
+      for (StorageUri location : locations) {
+        String path = location.requiredPath();
         if (path.startsWith("/")) {
           path = path.substring(1);
         }
@@ -194,12 +188,17 @@ public class AdlsObjectIO implements ObjectIO {
         "Only one ADLS storage account supported for warehouse %s",
         storageLocations.warehouseLocation());
 
-    Optional<String> fileSystem =
-        fileSystems.isEmpty() ? Optional.empty() : Optional.of(fileSystems.iterator().next());
     String storageAccount = storageAccounts.iterator().next();
 
+    // We just need one of the locations to resolve the GCS bucket options. Any should work, because
+    // it's all for the same table.
+    StorageUri loc =
+        storageLocations.writeableLocations().isEmpty()
+            ? storageLocations.readonlyLocations().get(0)
+            : storageLocations.writeableLocations().get(0);
+
     AdlsOptions adlsOptions = clientSupplier.adlsOptions();
-    AdlsFileSystemOptions fileSystemOptions = adlsOptions.effectiveOptionsForFileSystem(fileSystem);
+    AdlsNamedFileSystemOptions fileSystemOptions = adlsOptions.resolveOptionsForUri(loc);
     fileSystemOptions
         .endpoint()
         .ifPresent(e -> config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));
