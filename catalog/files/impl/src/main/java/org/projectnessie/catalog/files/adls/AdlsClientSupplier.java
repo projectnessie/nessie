@@ -175,8 +175,6 @@ public final class AdlsClientSupplier {
 
     String sasToken = client.generateUserDelegationSas(sasSignatureValues, userDelegationKey);
 
-    System.err.println("generateUserDelegationSas / RETURN " + sasToken);
-
     return Optional.of(sasToken);
   }
 
