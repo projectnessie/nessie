@@ -183,6 +183,7 @@ public abstract class AbstractExportImport {
 
     when(exportPersist.config()).thenReturn(config);
     when(exportPersist.scanAllObjects(any())).thenReturn(exportScan);
+    when(exportPersist.fetchObjsIfExist(any())).thenReturn(new Obj[0]);
 
     RepositoryLogic repositoryLogic = mock(RepositoryLogic.class);
     when(repositoryLogic.repositoryExists()).thenReturn(true);

@@ -15,9 +15,11 @@
  */
 package org.projectnessie.catalog.service.objtypes.transfer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 import static org.projectnessie.versioned.storage.common.persist.ObjIdHasher.objIdHasher;
 
 import org.projectnessie.model.Content;
@@ -25,6 +27,9 @@ import org.projectnessie.model.IcebergContent;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 public final class CatalogObjIds {
+  public static final ObjId LAKEHOUSE_CONFIG_ID =
+      objIdFromByteArray("lakehouse-config".getBytes(UTF_8));
+
   private CatalogObjIds() {}
 
   public static ObjId snapshotIdForContent(Content content) {
