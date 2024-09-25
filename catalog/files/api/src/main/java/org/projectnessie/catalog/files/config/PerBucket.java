@@ -24,8 +24,8 @@ public interface PerBucket {
    * nessie.catalog.service.s3.bucket1.name=my-bucket} is set, the bucket name will be {@code
    * my-bucket}; otherwise, it will be {@code bucket1}.
    *
-   * <p>This should only be defined if the bucket name contains non-alphanumeric characters, such as
-   * dots or dashes.
+   * <p>This can be used; if the bucket name contains non-alphanumeric characters, such as dots or
+   * dashes.
    */
   Optional<String> name();
 
@@ -39,7 +39,8 @@ public interface PerBucket {
    * <p>For ADLS: The value of this option is using the {@code container@storageAccount} syntax. It
    * is mentioned as {@code <file_system>@<account_name>} in the <a
    * href="https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction-abfs-uri">Azure
-   * Docs</a>. Note that the {@code <file_system>@} part is optional.
+   * Docs</a>. Note that the {@code <file_system>@} part is optional, {@code <account_name>} is the
+   * fully qualified name, usually ending in {@code .dfs.core.windows.net}.
    */
   Optional<String> authority();
 
