@@ -12,6 +12,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- ADLS: The way how storage URIs are resolved to ADLS "buckets" (container @ storage-account) has been
+  changed (fixed). An ADLS "bucket" is technically identified by the storage-account, optionally further
+  identified by a container/file-system name. It is recommended to specify the newly added via the
+  `nessie.catalog.service.adls.file-systems.<key>.authority=container@storageAccount` option(s).
+  The `container@storageAccount` part is what is mentioned as `<file_system>@<account_name>` in the [Azure
+  docs](https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction-abfs-uri).
+
 ### New Features
 
 - Access check SPI has been enhanced to provide richer information in the `Check` type about the receiving
@@ -19,6 +26,17 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- S3/GCS/ADLS: Bucket settings
+  - The resolution of the specific bucket options has been enhanced to select the specific bucket options
+    using the longest matching option including an optional path-prefix.
+  - All bucket specific options (`nessie.catalog.service.adls.buckets.<key>.`,
+    `nessie.catalog.service.gcs.buckets.<key>.`, `nessie.catalog.service.adls.file-systems.<key>.`) got a
+    new option `path-prefix`, which is used to restrict settings to a specific object store path prefix.
+  - All bucket specific options (`nessie.catalog.service.adls.buckets.<key>.`,
+    `nessie.catalog.service.gcs.buckets.<key>.`, `nessie.catalog.service.adls.file-systems.<key>.`) got a
+    new option `authority`, which is recommended to specify the technical bucket name. If `authority` is
+    not specified, it will default to the value of the `name` option, then default to the `key` part of the
+    formerly mentioned maps.
 - The base `location` of a new entity (e.g. tables) created via Iceberg REST is derived from the nearest
   parent namespace that has an explicitly set `location` property. (Path separator character is `/`.)
 - The `location` property on tables (and view) created via Iceberg REST may be explicitly configured, as

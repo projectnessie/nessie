@@ -26,10 +26,13 @@ public final class AdlsLocation {
   private final StorageUri uri;
   private final String storageAccount;
   private final String container;
+  private final String authority;
   private final String path;
 
-  private AdlsLocation(StorageUri uri, String storageAccount, String container, String path) {
+  private AdlsLocation(
+      StorageUri uri, String authority, String storageAccount, String container, String path) {
     this.uri = uri;
+    this.authority = authority;
     this.storageAccount = requireNonNull(storageAccount, "storageAccount argument missing");
     this.container = container;
     this.path =
@@ -55,7 +58,7 @@ public final class AdlsLocation {
 
     String path = location.path();
     path = path == null ? "" : path.startsWith("/") ? path.substring(1) : path;
-    return new AdlsLocation(location, storageAccount, container, path);
+    return new AdlsLocation(location, authority, storageAccount, container, path);
   }
 
   public static boolean isAdlsScheme(String scheme) {
@@ -77,5 +80,9 @@ public final class AdlsLocation {
 
   public String path() {
     return this.path;
+  }
+
+  public String authority() {
+    return authority;
   }
 }

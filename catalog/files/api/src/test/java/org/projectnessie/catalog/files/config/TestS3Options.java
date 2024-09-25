@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.net.URI;
@@ -26,11 +25,11 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestS3Options {
@@ -38,12 +37,109 @@ public class TestS3Options {
 
   @ParameterizedTest
   @MethodSource
+  public void resolveOptionsForUri(S3Options options, StorageUri uri, String expectedName) {
+    S3NamedBucketOptions resolved = options.resolveOptionsForUri(uri);
+    assertThat(resolved.name()).isEqualTo(Optional.ofNullable(expectedName));
+  }
+
+  static Stream<Arguments> resolveOptionsForUri() {
+    return Stream.of(
+        arguments(
+            ImmutableS3Options.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableS3Options.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "baz",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("too-short-path-prefix")
+                        .authority("my-authority")
+                        .pathPrefix("fo")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableS3Options.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/baaz/blah/moo"),
+            "other-bucket"),
+        //
+        arguments(
+            ImmutableS3Options.builder()
+                .putBucket(
+                    "foo",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putBucket(
+                    "bar",
+                    ImmutableS3NamedBucketOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/"),
+            null));
+  }
+
+  @ParameterizedTest
+  @MethodSource
   public void effectiveOptionsForBucketIamOptions(
       S3Options options,
-      S3BucketOptions expected,
+      S3NamedBucketOptions expected,
       S3Iam expectedClientIam,
       S3Iam expectedServerIam) {
-    S3BucketOptions actual = options.effectiveOptionsForBucket(Optional.of("bucket"));
+    S3NamedBucketOptions actual = options.resolveOptionsForUri(StorageUri.of("s3://bucket/"));
     soft.assertThat(actual).isEqualTo(expected);
     soft.assertThat(actual.getEnabledClientIam()).isEqualTo(Optional.ofNullable(expectedClientIam));
     soft.assertThat(actual.getEnabledServerIam()).isEqualTo(Optional.ofNullable(expectedServerIam));
@@ -73,7 +169,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(
                     ImmutableS3ClientIam.builder()
                         .policy("default-policy")
@@ -112,7 +207,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(
                     ImmutableS3ClientIam.builder()
                         .policy("default-policy")
@@ -152,7 +246,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(
                     ImmutableS3ClientIam.builder()
                         .policy("default-policy")
@@ -192,7 +285,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(noClientIam)
                 .serverIam(
                     ImmutableS3ServerIam.builder()
@@ -231,7 +323,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(noClientIam)
                 .serverIam(
                     ImmutableS3ServerIam.builder()
@@ -271,7 +362,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(noClientIam)
                 .serverIam(
                     ImmutableS3ServerIam.builder()
@@ -327,7 +417,6 @@ public class TestS3Options {
                 .build(),
             // expected options
             ImmutableS3NamedBucketOptions.builder()
-                .name("bucket")
                 .clientIam(
                     ImmutableS3ClientIam.builder()
                         .policy("default-client-policy")
@@ -367,7 +456,10 @@ public class TestS3Options {
         arguments(
             ImmutableS3Options.builder().build(),
             // expected options
-            ImmutableS3NamedBucketOptions.builder().build(),
+            ImmutableS3NamedBucketOptions.builder()
+                .clientIam(ImmutableS3ClientIam.builder().build())
+                .serverIam(ImmutableS3ServerIam.builder().build())
+                .build(),
             // client IAM
             null,
             // server IAM
@@ -476,7 +568,6 @@ public class TestS3Options {
                 .putBucket(
                     "bucket1",
                     ImmutableS3NamedBucketOptions.builder()
-                        .name("bucket1")
                         .endpoint(URI.create("https://host1"))
                         .externalEndpoint(URI.create("https://externalHost1"))
                         .pathStyleAccess(false)
@@ -496,7 +587,7 @@ public class TestS3Options {
                                 .build())
                         .build())
                 .putBucket(
-                    "my-bucket-2",
+                    "bucket2",
                     ImmutableS3NamedBucketOptions.builder()
                         .name("my-bucket-2")
                         .endpoint(URI.create("https://host2"))
@@ -573,7 +664,6 @@ public class TestS3Options {
                 .putBucket(
                     "bucket1",
                     ImmutableS3NamedBucketOptions.builder()
-                        .name("bucket1")
                         .endpoint(URI.create("https://host1"))
                         .externalEndpoint(URI.create("https://externalHost1"))
                         .pathStyleAccess(false)
@@ -584,7 +674,7 @@ public class TestS3Options {
                         .stsEndpoint(URI.create("https://stsEndpoint1"))
                         .build())
                 .putBucket(
-                    "my-bucket-2",
+                    "bucket2",
                     ImmutableS3NamedBucketOptions.builder()
                         .name("my-bucket-2")
                         .endpoint(URI.create("https://host2"))
@@ -599,25 +689,5 @@ public class TestS3Options {
                 .build())
         //
         );
-  }
-
-  @Test
-  void normalizeBuckets() {
-    assertThat(
-            ImmutableS3Options.builder()
-                .putBucket("fs1", ImmutableS3NamedBucketOptions.builder().build())
-                .putBucket("fs2", ImmutableS3NamedBucketOptions.builder().name("my-bucket").build())
-                .build()
-                .buckets())
-        .containsOnlyKeys("fs1", "my-bucket");
-    assertThatThrownBy(
-            () ->
-                ImmutableS3Options.builder()
-                    .putBucket("bucket1", ImmutableS3NamedBucketOptions.builder().build())
-                    .putBucket(
-                        "bucket2", ImmutableS3NamedBucketOptions.builder().name("bucket1").build())
-                    .build())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Duplicate S3 bucket name 'bucket1', check your S3 bucket configurations");
   }
 }

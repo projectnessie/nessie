@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Function;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3NamedBucketOptions;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
@@ -74,14 +75,12 @@ public class S3ClientSupplier {
 
     String scheme = location.scheme();
     checkArgument(isS3scheme(scheme), "Invalid S3 scheme: %s", location);
-    String bucketName = location.requiredAuthority();
 
-    return getClient(bucketName);
+    S3NamedBucketOptions bucketOptions = s3options.resolveOptionsForUri(location);
+    return getClient(bucketOptions);
   }
 
-  public S3Client getClient(String bucketName) {
-    S3BucketOptions bucketOptions = s3options.effectiveOptionsForBucket(Optional.of(bucketName));
-
+  public S3Client getClient(S3NamedBucketOptions bucketOptions) {
     S3ClientBuilder builder =
         S3Client.builder()
             .httpClient(sdkClient)
@@ -94,8 +93,8 @@ public class S3ClientSupplier {
 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace(
-          "Building S3-client for bucket {} using endpoint {} with {}",
-          bucketName,
+          "Building S3-client for bucket named '{}' using endpoint {} with {}",
+          bucketOptions.name().orElseThrow(),
           bucketOptions.endpoint(),
           toLogString(bucketOptions));
     }

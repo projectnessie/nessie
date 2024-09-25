@@ -21,14 +21,114 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.files.config.AdlsFileSystemOptions.AdlsRetryStrategy;
+import org.projectnessie.storage.uri.StorageUri;
 
 public class TestAdlsOptions {
+
+  @ParameterizedTest
+  @MethodSource
+  public void resolveOptionsForUri(AdlsOptions options, StorageUri uri, String expectedName) {
+    AdlsNamedFileSystemOptions resolved = options.resolveOptionsForUri(uri);
+    assertThat(resolved.name()).isEqualTo(Optional.ofNullable(expectedName));
+  }
+
+  static Stream<Arguments> resolveOptionsForUri() {
+    return Stream.of(
+        arguments(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem(
+                    "foo",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putFileSystem(
+                    "bar",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem(
+                    "foo",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putFileSystem(
+                    "baz",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("too-short-path-prefix")
+                        .authority("my-authority")
+                        .pathPrefix("fo")
+                        .build())
+                .putFileSystem(
+                    "bar",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/foop"),
+            "my-bucket"),
+        //
+        arguments(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem(
+                    "foo",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putFileSystem(
+                    "bar",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/baaz/blah/moo"),
+            "other-bucket"),
+        //
+        arguments(
+            ImmutableAdlsOptions.builder()
+                .putFileSystem(
+                    "foo",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("my-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("foop")
+                        .build())
+                .putFileSystem(
+                    "bar",
+                    ImmutableAdlsNamedFileSystemOptions.builder()
+                        .name("other-bucket")
+                        .authority("my-authority")
+                        .pathPrefix("baaz")
+                        .build())
+                .build(),
+            StorageUri.of("s3://my-authority/"),
+            null));
+  }
+
   @ParameterizedTest
   @MethodSource
   public void missingEndpoint(AdlsOptions options, String keys) {
@@ -162,7 +262,6 @@ public class TestAdlsOptions {
             .putFileSystem(
                 "fs1",
                 ImmutableAdlsNamedFileSystemOptions.builder()
-                    .name("fs1")
                     .endpoint("endpoint1")
                     .externalEndpoint("externalEndpoint1")
                     .retryPolicy(AdlsRetryStrategy.FIXED_DELAY)
@@ -172,7 +271,7 @@ public class TestAdlsOptions {
                     .maxRetryDelay(Duration.ofSeconds(6))
                     .build())
             .putFileSystem(
-                "my-bucket-2",
+                "fs2",
                 ImmutableAdlsNamedFileSystemOptions.builder()
                     .name("my-bucket-2")
                     .endpoint("endpoint2")
@@ -186,27 +285,5 @@ public class TestAdlsOptions {
             .build();
     AdlsOptions actual = input.deepClone();
     assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  void normalizeBuckets() {
-    assertThat(
-            ImmutableAdlsOptions.builder()
-                .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                .putFileSystem(
-                    "fs2", ImmutableAdlsNamedFileSystemOptions.builder().name("my-bucket").build())
-                .build()
-                .fileSystems())
-        .containsOnlyKeys("fs1", "my-bucket");
-    assertThatThrownBy(
-            () ->
-                ImmutableAdlsOptions.builder()
-                    .putFileSystem("fs1", ImmutableAdlsNamedFileSystemOptions.builder().build())
-                    .putFileSystem(
-                        "fs2", ImmutableAdlsNamedFileSystemOptions.builder().name("fs1").build())
-                    .build())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            "Duplicate ADLS filesystem name 'fs1', check your ADLS file system configurations");
   }
 }

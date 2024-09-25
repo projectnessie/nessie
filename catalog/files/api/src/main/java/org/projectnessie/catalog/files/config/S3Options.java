@@ -15,16 +15,18 @@
  */
 package org.projectnessie.catalog.files.config;
 
+import static org.projectnessie.catalog.files.config.OptionsUtil.resolveSpecializedBucket;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
 import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigPropertyName;
 import org.projectnessie.nessie.immutables.NessieImmutable;
+import org.projectnessie.storage.uri.StorageUri;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableS3Options.class)
@@ -39,33 +41,32 @@ public interface S3Options {
 
   /**
    * Per-bucket configurations. The effective value for a bucket is taken from the per-bucket
-   * setting. If no per-bucket setting is present, uses the values from top-level S3 settings.
+   * setting. If no per-bucket setting is present, uses the defaults from the top-level S3 settings
+   * in {@code default-options}.
    */
   @ConfigItem(section = "buckets")
-  @ConfigPropertyName("bucket-name")
+  @ConfigPropertyName("key")
   Map<String, S3NamedBucketOptions> buckets();
 
-  default S3BucketOptions effectiveOptionsForBucket(Optional<String> bucketName) {
-    S3BucketOptions defaultOptions =
-        defaultOptions().map(S3BucketOptions.class::cast).orElse(S3NamedBucketOptions.FALLBACK);
+  default S3NamedBucketOptions resolveOptionsForUri(StorageUri uri) {
+    Optional<S3NamedBucketOptions> specific = resolveSpecializedBucket(uri, buckets());
 
-    if (bucketName.isEmpty()) {
-      return defaultOptions;
-    }
-
-    S3BucketOptions specific = buckets().get(bucketName.orElse(null));
-    if (specific == null) {
-      return defaultOptions;
-    }
-
-    ImmutableS3NamedBucketOptions.Builder builder =
-        ImmutableS3NamedBucketOptions.builder().from(defaultOptions).from(specific);
+    ImmutableS3NamedBucketOptions.Builder builder = ImmutableS3NamedBucketOptions.builder();
+    defaultOptions().ifPresent(builder::from);
+    specific.ifPresent(builder::from);
     ImmutableS3ServerIam.Builder serverIam = ImmutableS3ServerIam.builder();
     ImmutableS3ClientIam.Builder clientIam = ImmutableS3ClientIam.builder();
-    defaultOptions.serverIam().ifPresent(serverIam::from);
-    defaultOptions.clientIam().ifPresent(clientIam::from);
-    specific.serverIam().ifPresent(serverIam::from);
-    specific.clientIam().ifPresent(clientIam::from);
+    defaultOptions()
+        .ifPresent(
+            d -> {
+              d.serverIam().ifPresent(serverIam::from);
+              d.clientIam().ifPresent(clientIam::from);
+            });
+    specific.ifPresent(
+        d -> {
+          d.serverIam().ifPresent(serverIam::from);
+          d.clientIam().ifPresent(clientIam::from);
+        });
     builder.serverIam(serverIam.build());
     builder.clientIam(clientIam.build());
 
@@ -76,35 +77,6 @@ public interface S3Options {
     defaultOptions().ifPresent(options -> options.validate("<default>"));
     buckets().forEach((key, opts) -> opts.validate(opts.name().orElse(key)));
     return this;
-  }
-
-  @Value.Check
-  default S3Options normalizeBuckets() {
-    Map<String, S3NamedBucketOptions> buckets = new HashMap<>();
-    boolean changed = false;
-    for (String bucketName : buckets().keySet()) {
-      S3NamedBucketOptions options = buckets().get(bucketName);
-      if (options.name().isPresent()) {
-        String explicitName = options.name().get();
-        changed |= !explicitName.equals(bucketName);
-        bucketName = options.name().get();
-      } else {
-        changed = true;
-        options = ImmutableS3NamedBucketOptions.builder().from(options).name(bucketName).build();
-      }
-      if (buckets.put(bucketName, options) != null) {
-        throw new IllegalArgumentException(
-            "Duplicate S3 bucket name '" + bucketName + "', check your S3 bucket configurations");
-      }
-    }
-
-    return changed
-        ? ImmutableS3Options.builder()
-            .from(this)
-            .defaultOptions(defaultOptions())
-            .buckets(buckets)
-            .build()
-        : this;
   }
 
   @Value.NonAttribute

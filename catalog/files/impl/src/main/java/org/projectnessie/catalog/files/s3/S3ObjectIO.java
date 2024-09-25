@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3NamedBucketOptions;
 import org.projectnessie.storage.uri.StorageUri;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -112,14 +113,16 @@ public class S3ObjectIO implements ObjectIO {
 
   @Override
   public void deleteObjects(List<StorageUri> uris) {
+    // TODO this should group by **resolved prefix**
     Map<String, List<StorageUri>> bucketToUris =
         uris.stream().collect(Collectors.groupingBy(StorageUri::requiredAuthority));
 
     for (Map.Entry<String, List<StorageUri>> bucketDeletes : bucketToUris.entrySet()) {
       String bucket = bucketDeletes.getKey();
-      S3Client s3client = s3clientSupplier.getClient(bucket);
-
       List<StorageUri> locations = bucketDeletes.getValue();
+
+      S3Client s3client = s3clientSupplier.getClient(locations.get(0));
+
       List<ObjectIdentifier> objectIdentifiers =
           locations.stream()
               .map(S3ObjectIO::withoutLeadingSlash)
@@ -214,9 +217,7 @@ public class S3ObjectIO implements ObjectIO {
       StorageUri warehouse,
       Map<String, String> icebergConfig,
       BiConsumer<String, String> properties) {
-    String bucket = warehouse.requiredAuthority();
-    S3BucketOptions s3BucketOptions =
-        s3clientSupplier.s3options().effectiveOptionsForBucket(Optional.of(bucket));
+    S3BucketOptions s3BucketOptions = s3clientSupplier.s3options().resolveOptionsForUri(warehouse);
 
     properties.accept(
         "iceberg.rest-catalog.vended-credentials-enabled",
@@ -234,10 +235,8 @@ public class S3ObjectIO implements ObjectIO {
 
   S3BucketOptions icebergConfigOverrides(StorageUri warehouse, BiConsumer<String, String> config) {
 
-    String bucket = warehouse.requiredAuthority();
-
-    S3BucketOptions bucketOptions =
-        s3clientSupplier.s3options().effectiveOptionsForBucket(Optional.of(bucket));
+    S3NamedBucketOptions bucketOptions =
+        s3clientSupplier.s3options().resolveOptionsForUri(warehouse);
     bucketOptions.region().ifPresent(r -> config.accept(S3_CLIENT_REGION, r));
     if (bucketOptions.externalEndpoint().isPresent()) {
       config.accept(S3_ENDPOINT, bucketOptions.externalEndpoint().get().toString());
@@ -246,7 +245,10 @@ public class S3ObjectIO implements ObjectIO {
     }
     bucketOptions
         .accessPoint()
-        .ifPresent(ap -> config.accept(S3_ACCESS_POINTS_PREFIX + bucket, ap));
+        .ifPresent(
+            ap ->
+                config.accept(
+                    S3_ACCESS_POINTS_PREFIX + bucketOptions.authority().orElseThrow(), ap));
     bucketOptions
         .allowCrossRegionAccessPoint()
         .ifPresent(allow -> config.accept(S3_USE_ARN_REGION_ENABLED, allow ? "true" : "false"));
@@ -258,10 +260,7 @@ public class S3ObjectIO implements ObjectIO {
   }
 
   void icebergConfigDefaults(StorageUri warehouse, BiConsumer<String, String> config) {
-    S3BucketOptions bucketOptions =
-        s3clientSupplier
-            .s3options()
-            .effectiveOptionsForBucket(Optional.ofNullable(warehouse.authority()));
+    S3BucketOptions bucketOptions = s3clientSupplier.s3options().resolveOptionsForUri(warehouse);
     bucketOptions.region().ifPresent(x -> config.accept(S3_CLIENT_REGION, x));
     config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
   }
