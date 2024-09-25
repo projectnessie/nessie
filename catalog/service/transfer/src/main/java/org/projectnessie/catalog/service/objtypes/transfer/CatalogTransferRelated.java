@@ -38,4 +38,9 @@ public class CatalogTransferRelated implements TransferRelatedObjects {
     }
     return emptySet();
   }
+
+  @Override
+  public Set<ObjId> repositoryRelatedObjects() {
+    return Set.of(CatalogObjIds.LAKEHOUSE_CONFIG_ID);
+  }
 }
