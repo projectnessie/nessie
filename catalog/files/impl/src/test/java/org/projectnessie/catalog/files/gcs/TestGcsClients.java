@@ -24,6 +24,7 @@ import org.projectnessie.catalog.files.AbstractClients;
 import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableGcsConfig;
 import org.projectnessie.catalog.files.config.ImmutableGcsNamedBucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableGcsOptions;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
@@ -65,10 +66,12 @@ public class TestGcsClients extends AbstractClients {
               .authType(GcsBucketOptions.GcsAuthType.NONE)
               .build());
     }
+    ImmutableGcsConfig.Builder gcsConfig = ImmutableGcsConfig.builder();
 
     GcsStorageSupplier supplier =
         new GcsStorageSupplier(
             httpTransportFactory,
+            gcsConfig.build(),
             gcsOptions.build(),
             ResolvingSecretsProvider.builder()
                 .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))

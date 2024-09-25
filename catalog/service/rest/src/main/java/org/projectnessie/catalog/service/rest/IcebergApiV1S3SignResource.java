@@ -38,7 +38,7 @@ import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignResponse;
 import org.projectnessie.catalog.service.api.SignerKeysService;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.model.ContentKey;
@@ -75,11 +75,11 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
   @Inject
   public IcebergApiV1S3SignResource(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
-    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+    super(serverConfig, lakehouseConfig, store, authorizer, accessContext);
   }
 
   @ServerExceptionMapper

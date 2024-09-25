@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
+import org.projectnessie.catalog.files.config.GcsConfig;
 import org.projectnessie.catalog.files.config.GcsDownscopedCredentials;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -53,14 +54,17 @@ public final class GcsStorageSupplier {
   static final String RANDOMIZED_PART = "([A-Za-z0-9=]+/)?";
 
   private final HttpTransportFactory httpTransportFactory;
+  private final GcsConfig gcsConfig;
   private final GcsOptions gcsOptions;
   private final SecretsProvider secretsProvider;
 
   public GcsStorageSupplier(
       HttpTransportFactory httpTransportFactory,
+      GcsConfig gcsConfig,
       GcsOptions gcsOptions,
       SecretsProvider secretsProvider) {
     this.httpTransportFactory = httpTransportFactory;
+    this.gcsConfig = gcsConfig;
     this.gcsOptions = gcsOptions;
     this.secretsProvider = secretsProvider;
   }
@@ -78,8 +82,7 @@ public final class GcsStorageSupplier {
   }
 
   public Storage forLocation(GcsBucketOptions bucketOptions) {
-    return GcsClients.buildStorage(
-        gcsOptions, bucketOptions, httpTransportFactory, secretsProvider);
+    return GcsClients.buildStorage(gcsConfig, bucketOptions, httpTransportFactory, secretsProvider);
   }
 
   public Optional<TokenSecret> generateDelegationToken(

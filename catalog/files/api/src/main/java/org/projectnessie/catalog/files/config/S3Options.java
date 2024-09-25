@@ -31,15 +31,6 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @JsonDeserialize(as = ImmutableS3Options.class)
 public interface S3Options {
 
-  @ConfigItem(section = "sts")
-  Optional<S3Sts> sts();
-
-  @Value.NonAttribute
-  @JsonIgnore
-  default S3Sts effectiveSts() {
-    return sts().orElse(ImmutableS3Sts.builder().build());
-  }
-
   /**
    * Default bucket configuration, default/fallback values for all buckets are taken from this one.
    */
@@ -120,7 +111,6 @@ public interface S3Options {
   @JsonIgnore
   default S3Options deepClone() {
     ImmutableS3Options.Builder b = ImmutableS3Options.builder().from(this).buckets(Map.of());
-    sts().ifPresent(v -> b.sts(ImmutableS3Sts.copyOf(v)));
     defaultOptions().ifPresent(v -> b.defaultOptions(v.deepClone()));
     buckets().forEach((n, v) -> b.putBucket(n, v.deepClone()));
     return b.build();

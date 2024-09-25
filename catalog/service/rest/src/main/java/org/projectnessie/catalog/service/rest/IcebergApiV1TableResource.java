@@ -98,7 +98,7 @@ import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.error.NessieContentNotFoundException;
@@ -138,11 +138,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   @Inject
   public IcebergApiV1TableResource(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
-    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+    super(serverConfig, lakehouseConfig, store, authorizer, accessContext);
   }
 
   @ServerExceptionMapper
@@ -172,7 +172,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
-    WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+    WarehouseConfig warehouse = lakehouseConfig.catalog().getWarehouse(tableRef.warehouse());
 
     return snapshotResponse(
             key,
@@ -323,7 +323,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     createEntityVerifyNotExists(tableRef, ICEBERG_TABLE);
 
-    WarehouseConfig warehouse = catalogConfig.getWarehouse(tableRef.warehouse());
+    WarehouseConfig warehouse = lakehouseConfig.catalog().getWarehouse(tableRef.warehouse());
 
     ParsedReference ref = tableRef.reference();
     String location =

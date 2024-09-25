@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.URI;
-import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.catalog.files.config.GcsBucketOptions.GcsAuthType;
 
@@ -29,17 +28,6 @@ class TestGcsOptions {
   void deepClone() {
     GcsOptions input =
         ImmutableGcsOptions.builder()
-            .readTimeout(Duration.ofSeconds(1))
-            .connectTimeout(Duration.ofSeconds(2))
-            .maxAttempts(2)
-            .logicalTimeout(Duration.ofSeconds(3))
-            .totalTimeout(Duration.ofSeconds(4))
-            .initialRetryDelay(Duration.ofSeconds(5))
-            .maxRetryDelay(Duration.ofSeconds(6))
-            .retryDelayMultiplier(7)
-            .initialRpcTimeout(Duration.ofSeconds(8))
-            .maxRpcTimeout(Duration.ofSeconds(9))
-            .rpcTimeoutMultiplier(10)
             .defaultOptions(
                 ImmutableGcsNamedBucketOptions.builder()
                     .host(URI.create("https://host"))
@@ -85,17 +73,6 @@ class TestGcsOptions {
             .build();
     GcsOptions expected =
         ImmutableGcsOptions.builder()
-            .readTimeout(Duration.ofSeconds(1))
-            .connectTimeout(Duration.ofSeconds(2))
-            .maxAttempts(2)
-            .logicalTimeout(Duration.ofSeconds(3))
-            .totalTimeout(Duration.ofSeconds(4))
-            .initialRetryDelay(Duration.ofSeconds(5))
-            .maxRetryDelay(Duration.ofSeconds(6))
-            .retryDelayMultiplier(7)
-            .initialRpcTimeout(Duration.ofSeconds(8))
-            .maxRpcTimeout(Duration.ofSeconds(9))
-            .rpcTimeoutMultiplier(10)
             .defaultOptions(
                 ImmutableGcsNamedBucketOptions.builder()
                     .host(URI.create("https://host"))

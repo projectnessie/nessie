@@ -65,10 +65,6 @@ public class S3ClientSupplier {
     return s3options;
   }
 
-  SecretsProvider secretsProvider() {
-    return secretsProvider;
-  }
-
   /**
    * Produces an S3 client for the set of S3 options and secrets. S3 options are retrieved from the
    * per-bucket config, which derives from the global config. References to the secrets that contain

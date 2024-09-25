@@ -124,14 +124,6 @@ Related Quarkus settings:
 
 {% include './generated-docs/smallrye-nessie_catalog_s3_config.md' %}
 
-##### S3 transport
-
-{% include './generated-docs/smallrye-nessie_catalog_s3_config_transport.md' %}
-
-##### S3 STS, assume-role global settings
-
-{% include './generated-docs/smallrye-nessie_catalog_s3_sts.md' %}
-
 ##### S3 default bucket settings
 
 {% include './generated-docs/smallrye-nessie_catalog_s3_default_options.md' %}
@@ -140,14 +132,22 @@ Related Quarkus settings:
 
 {% include './generated-docs/smallrye-nessie_catalog_s3_buckets.md' %}
 
+##### S3 transport
+
+{% include './generated-docs/smallrye-nessie_catalog_s3_config_transport.md' %}
+
+##### S3 STS, assume-role global settings
+
+{% include './generated-docs/smallrye-nessie_catalog_s3_config_sts.md' %}
+
 #### Google Cloud Storage settings
 
 !!! note
     Support for GCS is experimental.
 
-##### GCS transport
+##### GCS buckets
 
-{% include './generated-docs/smallrye-nessie_catalog_gcs_transport.md' %}
+{% include './generated-docs/smallrye-nessie_catalog_gcs.md' %}
 
 ##### GCS default bucket settings
 
@@ -157,16 +157,16 @@ Related Quarkus settings:
 
 {% include './generated-docs/smallrye-nessie_catalog_gcs_buckets.md' %}
 
+##### GCS transport
+
+{% include './generated-docs/smallrye-nessie_catalog_gcs_config_transport.md' %}
+
 #### ADLS settings
 
 !!! note
     Support for ADLS is experimental.
 
 {% include './generated-docs/smallrye-nessie_catalog_adls.md' %}
-
-##### ADLS transport
-
-{% include './generated-docs/smallrye-nessie_catalog_adls_config_transport.md' %}
 
 ##### ADLS default file-system settings
 
@@ -175,6 +175,10 @@ Related Quarkus settings:
 ##### ADLS per file-system  settings
 
 {% include './generated-docs/smallrye-nessie_catalog_adls_buckets.md' %}
+
+##### ADLS transport
+
+{% include './generated-docs/smallrye-nessie_catalog_adls_config_transport.md' %}
 
 #### Advanced catalog settings
 

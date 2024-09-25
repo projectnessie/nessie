@@ -56,7 +56,7 @@ import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -91,18 +91,18 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   final TreeService treeService;
   final ContentService contentService;
   final ServerConfig serverConfig;
-  final CatalogConfig catalogConfig;
+  final LakehouseConfig lakehouseConfig;
 
   static final ApiContext ICEBERG_V1 = apiContext("Iceberg", 1);
 
   protected IcebergApiV1ResourceBase(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
     this.serverConfig = serverConfig;
-    this.catalogConfig = catalogConfig;
+    this.lakehouseConfig = lakehouseConfig;
     this.treeService = new TreeApiImpl(serverConfig, store, authorizer, accessContext, ICEBERG_V1);
     this.contentService =
         new ContentApiImpl(serverConfig, store, authorizer, accessContext, ICEBERG_V1);
@@ -317,7 +317,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
           ParsedReference.parsedReference(serverConfig.getDefaultBranch(), null, BRANCH);
     }
 
-    String resolvedWarehouse = catalogConfig.resolveWarehouseName(warehouse);
+    String resolvedWarehouse = lakehouseConfig.catalog().resolveWarehouseName(warehouse);
 
     return decodedPrefix(parsedReference, resolvedWarehouse);
   }

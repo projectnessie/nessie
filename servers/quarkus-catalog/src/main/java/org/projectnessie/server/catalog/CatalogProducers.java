@@ -24,6 +24,7 @@ import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.smallrye.context.SmallRyeManagedExecutor;
 import io.smallrye.context.SmallRyeThreadContext;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Disposes;
@@ -48,10 +49,9 @@ import org.projectnessie.catalog.files.api.BackendExceptionMapper;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.config.AdlsConfig;
-import org.projectnessie.catalog.files.config.AdlsOptions;
-import org.projectnessie.catalog.files.config.GcsOptions;
+import org.projectnessie.catalog.files.config.GcsConfig;
 import org.projectnessie.catalog.files.config.S3Config;
-import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.catalog.files.gcs.GcsClients;
 import org.projectnessie.catalog.files.gcs.GcsExceptionMapper;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
@@ -141,22 +141,22 @@ public class CatalogProducers {
   @Produces
   @Singleton
   public StsClientsPool stsClientsPool(
-      S3Options s3options,
+      S3StsCache s3StsCache,
       @CatalogS3Client SdkHttpClient sdkClient,
       @Any Instance<MeterRegistry> meterRegistry) {
     return new StsClientsPool(
-        s3options, sdkClient, meterRegistry.isResolvable() ? meterRegistry.get() : null);
+        s3StsCache, sdkClient, meterRegistry.isResolvable() ? meterRegistry.get() : null);
   }
 
   @Produces
   @Singleton
   public StsCredentialsManager s3SessionsManager(
-      S3Options s3options,
+      S3StsCache s3StsCache,
       StsClientsPool clientsPool,
       SecretsProvider secretsProvider,
       @Any Instance<MeterRegistry> meterRegistry) {
     return new StsCredentialsManager(
-        s3options,
+        s3StsCache,
         clientsPool,
         secretsProvider,
         meterRegistry.isResolvable() ? meterRegistry.get() : null);
@@ -188,36 +188,39 @@ public class CatalogProducers {
   }
 
   @Produces
-  @Singleton
+  @RequestScoped
   public S3ClientSupplier s3ClientSupplier(
-      S3Options s3Options,
+      LakehouseConfig lakehouseConfig,
       @CatalogS3Client SdkHttpClient sdkClient,
       S3Sessions sessions,
       SecretsProvider secretsProvider) {
-    return new S3ClientSupplier(sdkClient, s3Options, sessions, secretsProvider);
+    return new S3ClientSupplier(sdkClient, lakehouseConfig.s3(), sessions, secretsProvider);
   }
 
   @Produces
-  @Singleton
+  @RequestScoped
   public AdlsClientSupplier adlsClientSupplier(
       AdlsConfig adlsConfig,
-      AdlsOptions adlsOptions,
+      LakehouseConfig lakehouseConfig,
       HttpClient adlsHttpClient,
       SecretsProvider secretsProvider) {
-    return new AdlsClientSupplier(adlsHttpClient, adlsConfig, adlsOptions, secretsProvider);
+    return new AdlsClientSupplier(
+        adlsHttpClient, adlsConfig, lakehouseConfig.adls(), secretsProvider);
   }
 
   @Produces
-  @Singleton
+  @RequestScoped
   public GcsStorageSupplier gcsStorageSupplier(
-      GcsOptions gcsOptions,
+      GcsConfig gcsConfig,
+      LakehouseConfig lakehouseConfig,
       HttpTransportFactory gcsHttpTransportFactory,
       SecretsProvider secretsProvider) {
-    return new GcsStorageSupplier(gcsHttpTransportFactory, gcsOptions, secretsProvider);
+    return new GcsStorageSupplier(
+        gcsHttpTransportFactory, gcsConfig, lakehouseConfig.gcs(), secretsProvider);
   }
 
   @Produces
-  @Singleton
+  @RequestScoped
   public ObjectIO objectIO(
       S3ClientSupplier s3ClientSupplier,
       S3CredentialsResolver s3CredentialsResolver,
@@ -228,10 +231,10 @@ public class CatalogProducers {
   }
 
   @Produces
-  @Singleton
+  @RequestScoped
   public RequestSigner signer(
-      S3Options s3Options, SecretsProvider secretsProvider, S3Sessions s3sessions) {
-    return new S3Signer(s3Options, secretsProvider, s3sessions);
+      LakehouseConfig lakehouseConfig, SecretsProvider secretsProvider, S3Sessions s3sessions) {
+    return new S3Signer(lakehouseConfig.s3(), secretsProvider, s3sessions);
   }
 
   @Produces

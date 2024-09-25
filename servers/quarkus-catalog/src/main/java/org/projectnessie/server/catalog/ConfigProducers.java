@@ -15,24 +15,36 @@
  */
 package org.projectnessie.server.catalog;
 
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import org.projectnessie.catalog.files.config.AdlsConfig;
 import org.projectnessie.catalog.files.config.AdlsOptions;
+import org.projectnessie.catalog.files.config.GcsConfig;
 import org.projectnessie.catalog.files.config.GcsOptions;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.catalog.files.config.S3StsCache;
+import org.projectnessie.catalog.service.api.LakehouseConfigManagement;
 import org.projectnessie.catalog.service.config.CatalogConfig;
 import org.projectnessie.catalog.service.config.ImmutableLakehouseConfig;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.config.ServiceConfig;
 import org.projectnessie.catalog.service.config.SmallryeConfigs;
+import org.projectnessie.versioned.storage.common.persist.Persist;
 
 public class ConfigProducers {
 
   @Produces
   @Singleton
-  public LakehouseConfig lakehouseConfig(SmallryeConfigs smallryeConfigs) {
+  public LakehouseConfigManagement lakehouseConfigProvider(
+      SmallryeConfigs smallryeConfigs, Persist persist) {
+    boolean dynamic = smallryeConfigs.usePersistedLakehouseConfig();
+    return new LakehouseConfigManagementImpl(
+        persist, dynamic, staticLakehouseConfig(smallryeConfigs));
+  }
+
+  private static LakehouseConfig staticLakehouseConfig(SmallryeConfigs smallryeConfigs) {
     CatalogConfig catalogConfig = smallryeConfigs.catalog().validate();
     AdlsOptions adlsOptions = smallryeConfigs.adls().validate().validate();
     GcsOptions gcsOptions = smallryeConfigs.gcs().validate();
@@ -47,27 +59,15 @@ public class ConfigProducers {
   }
 
   @Produces
-  @Singleton
-  public CatalogConfig catalogConfig(LakehouseConfig lakehouseConfig) {
-    return lakehouseConfig.catalog();
+  @RequestScoped
+  public LakehouseConfig lakehouseConfig(LakehouseConfigManagement lakehouseConfigManagement) {
+    return lakehouseConfigManagement.currentConfig();
   }
 
   @Produces
   @Singleton
-  public S3Options s3Options(LakehouseConfig lakehouseConfig) {
-    return lakehouseConfig.s3();
-  }
-
-  @Produces
-  @Singleton
-  public GcsOptions gcsOptions(LakehouseConfig lakehouseConfig) {
-    return lakehouseConfig.gcs();
-  }
-
-  @Produces
-  @Singleton
-  public AdlsOptions adlsOptions(LakehouseConfig lakehouseConfig) {
-    return lakehouseConfig.adls();
+  public S3StsCache s3sts(SmallryeConfigs smallryeConfigs) {
+    return smallryeConfigs.effectiveS3StsCache();
   }
 
   @Produces
@@ -80,6 +80,12 @@ public class ConfigProducers {
   @Singleton
   public AdlsConfig adlsConfig(SmallryeConfigs smallryeConfigs) {
     return smallryeConfigs.adlsconfig();
+  }
+
+  @Produces
+  @Singleton
+  public GcsConfig gcsConfig(SmallryeConfigs smallryeConfigs) {
+    return smallryeConfigs.gcsConfig();
   }
 
   @Produces

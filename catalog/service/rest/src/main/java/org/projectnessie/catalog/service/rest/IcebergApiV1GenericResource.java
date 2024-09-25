@@ -44,7 +44,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTransactionRe
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
-import org.projectnessie.catalog.service.config.CatalogConfig;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKind;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
@@ -71,11 +71,11 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   @Inject
   public IcebergApiV1GenericResource(
       ServerConfig serverConfig,
-      CatalogConfig catalogConfig,
+      LakehouseConfig lakehouseConfig,
       VersionStore store,
       Authorizer authorizer,
       AccessContext accessContext) {
-    super(serverConfig, catalogConfig, store, authorizer, accessContext);
+    super(serverConfig, lakehouseConfig, store, authorizer, accessContext);
   }
 
   @ServerExceptionMapper

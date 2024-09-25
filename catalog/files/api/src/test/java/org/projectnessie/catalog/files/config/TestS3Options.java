@@ -388,12 +388,6 @@ public class TestS3Options {
         //
         arguments(
             ImmutableS3Options.builder()
-                .sts(
-                    ImmutableS3Sts.builder()
-                        .sessionGracePeriod(Duration.ofSeconds(1))
-                        .sessionCacheMaxSize(2)
-                        .clientsCacheMaxSize(3)
-                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -459,12 +453,6 @@ public class TestS3Options {
                         .build())
                 .build(),
             ImmutableS3Options.builder()
-                .sts(
-                    ImmutableS3Sts.builder()
-                        .sessionGracePeriod(Duration.ofSeconds(1))
-                        .sessionCacheMaxSize(2)
-                        .clientsCacheMaxSize(3)
-                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -533,12 +521,6 @@ public class TestS3Options {
         //
         arguments(
             ImmutableS3Options.builder()
-                .sts(
-                    ImmutableS3Sts.builder()
-                        .sessionGracePeriod(Duration.ofSeconds(1))
-                        .sessionCacheMaxSize(2)
-                        .clientsCacheMaxSize(3)
-                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))
@@ -577,12 +559,6 @@ public class TestS3Options {
                         .build())
                 .build(),
             ImmutableS3Options.builder()
-                .sts(
-                    ImmutableS3Sts.builder()
-                        .sessionGracePeriod(Duration.ofSeconds(1))
-                        .sessionCacheMaxSize(2)
-                        .clientsCacheMaxSize(3)
-                        .build())
                 .defaultOptions(
                     ImmutableS3NamedBucketOptions.builder()
                         .endpoint(URI.create("https://host"))

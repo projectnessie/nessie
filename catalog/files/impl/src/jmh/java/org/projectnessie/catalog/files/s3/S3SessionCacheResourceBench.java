@@ -48,9 +48,11 @@ import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.ImmutableS3ServerIam;
+import org.projectnessie.catalog.files.config.ImmutableS3StsCache;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3Config;
 import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.objectstoragemock.ObjectStorageMock;
@@ -105,9 +107,9 @@ public class S3SessionCacheResourceBench {
                       .build())
               .build();
 
-      StsClientsPool stsClientsPool = new StsClientsPool(s3options, httpClient, null);
-      stsCredentialsManager =
-          new StsCredentialsManager(s3options, stsClientsPool, secretsProvider, null);
+      S3StsCache sts = ImmutableS3StsCache.builder().build();
+      StsClientsPool stsClientsPool = new StsClientsPool(sts, httpClient, null);
+      stsCredentialsManager = new StsCredentialsManager(sts, stsClientsPool, secretsProvider, null);
 
       List<String> regions =
           Region.regions().stream()
