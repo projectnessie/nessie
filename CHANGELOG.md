@@ -12,6 +12,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- Helm chart: the `service` section has been redesigned to allow for extra services to be defined.
+  If you have customized the `service.ports` field, beware that this field is now an array. Also,
+  the management port configuration has been moved to a new `managementService` section. And
+  finally, a new `extraServices` section has been added to allow for additional services to be
+  defined.
 - ADLS: The way how storage URIs are resolved to ADLS "buckets" (container @ storage-account) has been
   changed (fixed). An ADLS "bucket" is technically identified by the storage-account, optionally further
   identified by a container/file-system name. It is recommended to specify the newly added via the

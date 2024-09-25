@@ -688,20 +688,19 @@ securityContext:
     drop:
       - ALL
 
-# Nessie service settings.
+# -- Nessie main service settings.
 service:
   # -- The type of service to create.
   type: ClusterIP
-  # -- The ports the service will listen on. Two ports are required: one for the Nessie server and
-  # one for the management API. Other ports can be declared as needed. The management port is
-  # handled differently from other ports as a dedicated headless service is created for it.
+  # -- The ports the service will listen on.
+  # At least one port is required; the first port implicitly becomes the HTTP port that the
+  # application will use for serving API requests. By default, it's 19120.
   # Note: port names must be unique and no more than 15 characters long.
   ports:
-    # nessie-server: The port the Nessie server listens on for API requests.
-    nessie-server: 19120
-    # nessie-mgmt: The port the Nessie server listens on for management API requests (health checks, metrics, etc.).
-    nessie-mgmt: 9000
-    # nessie-alt: 19121
+    - name: nessie-http
+      number: 19120
+    # - name: nessie-https
+    #  number: 19121
   # -- The session affinity for the service. Valid values are: None, ClientIP.
   # ClientIP enables sticky sessions based on the client's IP address.
   # This is generally beneficial to Nessie deployments, but some testing may be
@@ -712,28 +711,63 @@ service:
   # -- Annotations to add to the service.
   annotations: {}
 
-# Nessie Ingress settings.
-# These settings generate an Ingress resource that routes external traffic to the Nessie service
-# using the "nessie-server" port described above.
+# -- Management service settings. These settings are used to configure liveness and readiness probes,
+# and to configure the dedicated headless service that will expose health checks and metrics, e.g.
+# for metrics scraping and service monitoring.
+managementService:
+  # -- The name of the management port. Required.
+  portName: nessie-mgmt
+  # -- The port the management service listens on. By default, the management interface is exposed
+  # on HTTP port 9000.
+  portNumber: 9000
+  # -- Annotations to add to the service.
+  annotations: {}
+
+# -- Additional service definitions. All service definitions always select all Nessie pods. Use
+# this if you need to expose specific ports with different configurations.
+extraServices: []
+  #  - # -- The suffix to append to the service name. Required.
+  #    nameSuffix: "-ext"
+  #    # -- The type of service to create.
+  #    type: LoadBalancer
+  #    # -- The ports the service will listen on.
+  #    ports:
+  #    - name: nessie-http
+  #      number: 19120
+  #    - name: nessie-https
+  #      number: 19121
+  #    sessionAffinity: None
+  #    annotations: {}
+
+# -- Nessie Ingress settings.
+# These settings generate an Ingress resource that routes external traffic to the Nessie service.
 # Consider enabling sticky sessions based on the remote client's IP address;
 # this is generally beneficial to Nessie deployments, but some testing may be
 # required in order to make sure that the load is distributed evenly among the pods.
 # Check your ingress controller's documentation.
 ingress:
-  # -- Specifies the ingressClassName; leave empty if you don't want to customize it
-  className: ""
   # -- Specifies whether an ingress should be created.
   enabled: false
+  # -- Specifies the ingressClassName; leave empty if you don't want to customize it.
+  className: ""
   # -- Annotations to add to the ingress.
   annotations: {
     # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
   }
-  # -- Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific"
+  # -- Specifies the path type of host paths. Valid values are: "Prefix", "Exact" or "ImplementationSpecific".
   pathType: ImplementationSpecific
   # -- A list of host paths used to configure the ingress.
   hosts:
     - host: chart-example.local
       paths: []
+      # -- The service target for the ingress.
+      service:
+        # -- The port name to route traffic to. Must match one of the ports in service.ports or in
+        # extraServices.ports. Optional; if not provided, the first port in service.ports will be used.
+        portName: nessie-http
+        # -- The target service name suffix. Optional; if not provided, the main service will be
+        # targeted. Change this only if you are targeting a service defined in extraServices.
+        nameSuffix: ""
   # -- A list of TLS certificates; each entry has a list of hosts in the certificate,
   # along with the secret name used to terminate TLS traffic on port 443.
   tls: []

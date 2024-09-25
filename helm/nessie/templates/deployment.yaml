@@ -116,16 +116,11 @@ spec:
             {{- if .Values.extraEnv }}
             {{- tpl (toYaml .Values.extraEnv) . | nindent 12 }}
             {{- end }}
-          ports:
-            {{- range $portName, $portNumber := .Values.service.ports }}
-            - name: {{ $portName }}
-              containerPort: {{ $portNumber }}
-              protocol: TCP
-            {{- end }}
+          {{- include "nessie.containerPorts" . | trim | nindent 10 }}
           livenessProbe:
             httpGet:
               path: /q/health/live
-              port: "nessie-mgmt"
+              port: {{ .Values.managementService.portName }}
               scheme: HTTP
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -136,7 +131,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /q/health/ready
-              port: "nessie-mgmt"
+              port: {{ .Values.managementService.portName }}
               scheme: HTTP
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
