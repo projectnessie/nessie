@@ -31,6 +31,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
+import com.google.common.collect.Lists;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
@@ -50,7 +51,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -125,7 +125,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     Map<String, String> properties = createEntityProperties(createViewRequest.properties());
 
     List<IcebergMetadataUpdate> updates =
-        Arrays.asList(
+        Lists.newArrayList(
             assignUUID(randomUUID().toString()),
             upgradeFormatVersion(1),
             addSchema(createViewRequest.schema(), 0),
@@ -134,7 +134,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
             addViewVersion(createViewRequest.viewVersion()),
             setCurrentViewVersion(-1L));
 
-    createEntityVerifyNotExists(tableRef, ICEBERG_VIEW);
+    createEntityCommonOps(tableRef, ICEBERG_VIEW, updates);
 
     IcebergCommitViewRequest updateTableReq =
         IcebergCommitViewRequest.builder()

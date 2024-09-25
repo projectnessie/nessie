@@ -26,7 +26,6 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadat
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_CREATE_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_DROP_ENTITY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_ENTITY;
-import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergNewEntityBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieTableSnapshotToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
@@ -36,12 +35,10 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
-import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
-import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import static org.projectnessie.versioned.RequestMeta.apiWrite;
@@ -321,23 +318,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             setDefaultSortOrder(-1),
             setProperties(properties));
 
-    createEntityVerifyNotExists(tableRef, ICEBERG_TABLE);
-
-    WarehouseConfig warehouse = lakehouseConfig.catalog().getWarehouse(tableRef.warehouse());
-
-    ParsedReference ref = tableRef.reference();
-    String location =
-        icebergNewEntityBaseLocation(
-            catalogService
-                .locationForEntity(
-                    warehouse,
-                    tableRef.contentKey(),
-                    NAMESPACE,
-                    ICEBERG_V1,
-                    ref.name(),
-                    ref.hashWithRelativeSpec())
-                .toString());
-    updates.add(setTrustedLocation(location));
+    WarehouseConfig warehouse = createEntityCommonOps(tableRef, ICEBERG_TABLE, updates);
 
     if (createTableRequest.stageCreate()) {
       NessieTableSnapshot snapshot =

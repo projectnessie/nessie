@@ -21,11 +21,14 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.DERIVED_PROPERTIES;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergNewEntityBaseLocation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.typeToEntityName;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
 import static org.projectnessie.catalog.service.rest.DecodedPrefix.decodedPrefix;
 import static org.projectnessie.catalog.service.rest.NamespaceRef.namespaceRef;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.catalog.service.rest.TimestampParser.timestampToNessie;
+import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Namespace.Empty.EMPTY_NAMESPACE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.services.authz.ApiContext.apiContext;
@@ -49,6 +52,7 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableIdentifier;
 import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
 import org.projectnessie.catalog.service.api.CatalogCommit;
@@ -57,6 +61,7 @@ import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -349,7 +354,8 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     return properties;
   }
 
-  void createEntityVerifyNotExists(TableRef tableRef, Content.Type type)
+  WarehouseConfig createEntityCommonOps(
+      TableRef tableRef, Content.Type type, List<IcebergMetadataUpdate> updates)
       throws NessieNotFoundException, CatalogEntityAlreadyExistsException {
     ParsedReference ref = requireNonNull(tableRef.reference());
 
@@ -366,6 +372,22 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
           false, type, tableRef.contentKey(), existing.getType());
     }
     checkBranch(contentResponse.getEffectiveReference());
+
+    WarehouseConfig warehouse = lakehouseConfig.catalog().getWarehouse(tableRef.warehouse());
+    String location =
+        icebergNewEntityBaseLocation(
+            catalogService
+                .locationForEntity(
+                    warehouse,
+                    tableRef.contentKey(),
+                    ICEBERG_TABLE,
+                    ICEBERG_V1,
+                    ref.name(),
+                    ref.hashWithRelativeSpec())
+                .toString());
+    updates.add(setTrustedLocation(location));
+
+    return warehouse;
   }
 
   ContentResponse fetchIcebergEntity(
