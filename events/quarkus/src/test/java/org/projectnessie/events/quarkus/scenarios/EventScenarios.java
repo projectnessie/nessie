@@ -95,7 +95,6 @@ public class EventScenarios {
     TransplantResult result =
         TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHashes(List.of(Hash.of("11111111"), Hash.of("22222222"), Hash.of("33333333")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("567890ab"))
             .resultantTargetHash(Hash.of("90abcedf"))

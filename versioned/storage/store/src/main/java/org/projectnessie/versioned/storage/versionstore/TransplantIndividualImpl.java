@@ -83,8 +83,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
         TransplantResult.builder()
             .targetBranch(branch)
             .effectiveTargetHash(objIdToHash(headId()))
-            .sourceRef(transplantOp.fromRef())
-            .sourceHashes(transplantOp.sequenceToTransplant());
+            .sourceRef(transplantOp.fromRef());
 
     referenceHash.ifPresent(transplantResult::expectedHash);
 

@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -162,7 +161,6 @@ public class TestEventService {
             .build(),
         TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHashes(List.of(Hash.of("11111111"), Hash.of("22222222"), Hash.of("33333333")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("cafebabe")) // hash before
             .resultantTargetHash(Hash.of("deadbeef")) // hash after

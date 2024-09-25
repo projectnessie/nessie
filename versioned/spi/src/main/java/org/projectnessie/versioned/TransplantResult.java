@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -27,17 +25,11 @@ public interface TransplantResult extends MergeTransplantResultBase {
     return ResultType.TRANSPLANT;
   }
 
-  List<Hash> getSourceHashes();
-
   static TransplantResult.Builder builder() {
     return ImmutableTransplantResult.builder();
   }
 
   interface Builder extends MergeTransplantResultBase.Builder<TransplantResult, Builder> {
-
-    @CanIgnoreReturnValue
-    Builder sourceHashes(Iterable<? extends Hash> hashes);
-
     TransplantResult build();
   }
 }
