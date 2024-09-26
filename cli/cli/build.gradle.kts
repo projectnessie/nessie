@@ -44,7 +44,8 @@ dependencies {
   // Include these FileIO implementations, as those are necessary to initialize
   // RESTCatalog *sigh*. Those FileIO's aren't functional, because the necessary
   // cloud specific clients (e.g. awssdk) are missing.
-  implementation("org.apache.iceberg:iceberg-aws")
+  implementation("org.apache.iceberg:iceberg-aws:1.6.1")
+  implementation("org.apache.iceberg:iceberg-aws-bundle:1.6.1")
   implementation("org.apache.iceberg:iceberg-azure")
   implementation("org.apache.iceberg:iceberg-gcp")
 
