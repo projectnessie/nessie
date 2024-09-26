@@ -112,9 +112,9 @@ protocol NessieEvents {
     string targetReference;
     /** The hash on sourceReference that was merged. */
     string sourceHash;
-    /** The hash on targetReference before the merge or transplant. */
+    /** The hash on targetReference before the merge. */
     string hashBefore;
-    /** The hash on targetReference after the merge or transplant. */
+    /** The hash on targetReference after the merge. */
     string hashAfter;
     /** The common ancestor hash of sourceReference and targetReference. */
     string commonAncestorHash;
@@ -130,13 +130,12 @@ protocol NessieEvents {
    */
   record TransplantEvent {
     uuid id;
-    string sourceReference;
     string targetReference;
-    /** The hash on targetReference before the merge or transplant. */
+    /** The hash on targetReference before the transplant. */
     string hashBefore;
-    /** The hash on targetReference after the merge or transplant. */
+    /** The hash on targetReference after the transplant. */
     string hashAfter;
-    /** The sequence of hashes on sourceReference that were transplanted. */
-    array<string> sourceHashes;
+    /** The number of commits that were transplanted. */
+    int size;
   }
 }
