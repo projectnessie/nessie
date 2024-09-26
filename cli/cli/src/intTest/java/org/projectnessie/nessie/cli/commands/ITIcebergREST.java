@@ -51,13 +51,15 @@ public class ITIcebergREST extends WithNessie {
       String initialUri,
       String icebergConnectedUri,
       String initialReference,
-      Reference expectedReference)
+      Reference expectedReference,
+      String warehouse)
       throws Exception {
-    ImmutableConnectCommandSpec spec =
-        ImmutableConnectCommandSpec.builder()
-            .uri(initialUri)
-            .initialReference(initialReference)
-            .build();
+    ImmutableConnectCommandSpec.Builder specBuilder =
+        ImmutableConnectCommandSpec.builder().uri(initialUri).initialReference(initialReference);
+    if (warehouse != null) {
+      specBuilder.putParameter("warehouse", warehouse);
+    }
+    ImmutableConnectCommandSpec spec = specBuilder.build();
 
     try (NessieCliTester cli = new NessieCliTester()) {
       soft.assertThatThrownBy(cli::mandatoryNessieApi).isInstanceOf(NotConnectedException.class);
@@ -139,29 +141,36 @@ public class ITIcebergREST extends WithNessie {
   static Stream<Arguments> connectAndUse() {
     return Stream.of(
         // CONNECT TO with initial reference to "testBranch"
-        arguments(icebergUri, icebergUri, testBranch.getName(), testBranch),
+        arguments(icebergUri, icebergUri, testBranch.getName(), testBranch, null),
         // CONNECT TO with a "prefixed" Iceberg REST URI, but a different initial reference
         arguments(
             icebergUri + "/" + testBranch.getName() + "/",
             icebergUri + "/" + testBranch.getName() + "/",
             defaultBranch.getName(),
-            defaultBranch),
+            defaultBranch,
+            null),
         // CONNECT TO with a "prefixed" Iceberg REST URI
         arguments(
             icebergUri + "/" + testBranch.getName() + "/",
             icebergUri + "/" + testBranch.getName() + "/",
             null,
-            testBranch),
+            testBranch,
+            null),
         arguments(
             icebergUri + "/" + testBranch.getName(),
             icebergUri + "/" + testBranch.getName(),
             null,
-            testBranch),
+            testBranch,
+            null),
         // CONNECT TO with a Nessie API URI
-        arguments(nessieApiUri, icebergUri + "/", null, defaultBranch),
-        arguments(nessieApiUri + "/", icebergUri + "/", null, defaultBranch),
+        arguments(nessieApiUri, icebergUri + "/", null, defaultBranch, null),
+        arguments(nessieApiUri + "/", icebergUri + "/", null, defaultBranch, null),
         // CONNECT TO with an Iceberg REST URI
-        arguments(icebergUri, icebergUri, null, defaultBranch),
-        arguments(icebergUri + "/", icebergUri + "/", null, defaultBranch));
+        arguments(icebergUri, icebergUri, null, defaultBranch, null),
+        arguments(icebergUri + "/", icebergUri + "/", null, defaultBranch, null),
+        // S3 + GCS + ADLS
+        arguments(icebergUri, icebergUri, null, defaultBranch, S3_WAREHOUSE),
+        arguments(icebergUri, icebergUri, null, defaultBranch, GCS_WAREHOUSE),
+        arguments(icebergUri, icebergUri, null, defaultBranch, ADLS_WAREHOUSE));
   }
 }

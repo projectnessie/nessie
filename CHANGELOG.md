@@ -16,6 +16,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Iceberg REST: No longer return `*FileIO` options from the Iceberg REST config endpoint
+
 ### Deprecations
 
 ### Fixes
