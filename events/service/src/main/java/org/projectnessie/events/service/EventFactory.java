@@ -116,7 +116,7 @@ public class EventFactory {
         .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
         .hashAfter(hashAfter.asString())
-        .size(result.getCreatedCommits().size())
+        .commitCount(result.getCreatedCommits().size())
         .build();
   }
 

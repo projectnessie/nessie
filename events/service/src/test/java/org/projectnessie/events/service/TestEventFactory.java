@@ -180,7 +180,7 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .hashBefore("cafebabe")
                 .hashAfter("deadbeef")
-                .size(3)
+                .commitCount(3)
                 .targetReference(Branch.of("branch2", "deadbeef"))
                 .build());
   }

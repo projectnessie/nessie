@@ -18,7 +18,7 @@ package org.projectnessie.events.api;
 import org.projectnessie.model.Reference;
 
 /**
- * Event that affects two references: a source and a target.
+ * Event that affects more than one reference.
  *
  * <p>This type has 2 child interfaces:
  *

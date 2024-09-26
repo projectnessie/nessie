@@ -42,10 +42,16 @@ dependencies {
   testImplementation(libs.logback.classic)
   testImplementation(libs.kafka.avro.serializer)
 
+  testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(libs.immutables.value.annotations)
+
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:junit-jupiter")
   intTestImplementation("org.testcontainers:kafka")
   intTestImplementation(project(":nessie-container-spec-helper"))
+
+  intTestCompileOnly(libs.microprofile.openapi)
+  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
 tasks.withType<Checkstyle> { exclude("com/example/**/generated/**") }
