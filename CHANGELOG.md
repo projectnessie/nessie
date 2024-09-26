@@ -12,6 +12,20 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.99.0] Release (2024-09-26)
+
+### Breaking changes
+
 - The Events API has been redesigned to import the Nessie Model API directly, instead of using
   specific DTO classes. This change is intended to simplify the API and facilitate consumption of
   the events. The following classes from the `org.projectnessie.events.api` package have been
@@ -57,13 +71,9 @@ as necessary. Empty sections will not end in the release notes.
   long as it can be resolved against the configured object storage locations. (Path separator character
   is `/`.)
 
-### Deprecations
-
 ### Fixes
 
 - CLI: Fix connecting to Nessie's Iceberg REST
-
-### Commits
 
 ## [0.97.1] Release (2024-09-19)
 
@@ -898,7 +908,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.97.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.99.0...HEAD
+[0.99.0]: https://github.com/projectnessie/nessie/compare/nessie-0.97.1...nessie-0.99.0
 [0.97.1]: https://github.com/projectnessie/nessie/compare/nessie-0.96.1...nessie-0.97.1
 [0.96.1]: https://github.com/projectnessie/nessie/compare/nessie-0.96.0...nessie-0.96.1
 [0.96.0]: https://github.com/projectnessie/nessie/compare/nessie-0.95.0...nessie-0.96.0
