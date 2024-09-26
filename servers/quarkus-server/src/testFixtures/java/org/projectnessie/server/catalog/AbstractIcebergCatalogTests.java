@@ -68,6 +68,7 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.PositionOutputStream;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.view.View;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -211,6 +212,16 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     String tableLocation = tableWithNsLoc.location();
     assertThat(tableLocation).startsWith(namespaceLocation + "/nested_level/table_loc_from_ns_");
+
+    View viewWithNsLoc =
+        catalog
+            .buildView(TableIdentifier.of(nestedNamespace, "view_loc_from_ns"))
+            .withSchema(SCHEMA)
+            .withQuery("magic", "foo")
+            .withDefaultNamespace(nestedNamespace)
+            .create();
+    String viewLocation = viewWithNsLoc.location();
+    assertThat(viewLocation).startsWith(namespaceLocation + "/nested_level/view_loc_from_ns_");
   }
 
   @Test
