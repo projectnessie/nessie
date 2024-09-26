@@ -11,5 +11,7 @@
   },
   "hashBefore" : "hash1",
   "hashAfter" : "hash2",
-  "commitCount": 3
+  "commitCount": 3,
+  "key1" : "value1",
+  "key2" : "value2"
 }

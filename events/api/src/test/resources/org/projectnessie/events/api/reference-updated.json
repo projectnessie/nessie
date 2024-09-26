@@ -10,5 +10,7 @@
     "hash" : "cafebabe"
   },
   "hashBefore" : "hash1",
-  "hashAfter" : "hash2"
+  "hashAfter" : "hash2",
+  "key1" : "value1",
+  "key2" : "value2"
 }

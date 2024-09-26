@@ -17,5 +17,7 @@
   "commonAncestorHash" : "hash0",
   "hashBefore" : "hash1",
   "hashAfter" : "hash2",
-  "sourceHash" : "hash3"
+  "sourceHash" : "hash3",
+  "key1" : "value1",
+  "key2" : "value2"
 }

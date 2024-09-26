@@ -22,5 +22,7 @@
     "schemaId" : 2,
     "specId" : 3,
     "sortOrderId" : 4
-  }
+  },
+  "key1" : "value1",
+  "key2" : "value2"
 }

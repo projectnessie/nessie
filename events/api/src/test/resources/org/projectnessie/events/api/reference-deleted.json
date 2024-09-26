@@ -9,5 +9,7 @@
     "name" : "branch1",
     "hash" : "cafebabe"
   },
-  "hashBefore" : "hash1"
+  "hashBefore" : "hash1",
+  "key1" : "value1",
+  "key2" : "value2"
 }

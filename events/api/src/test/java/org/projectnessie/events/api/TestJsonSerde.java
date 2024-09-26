@@ -58,6 +58,8 @@ class TestJsonSerde {
                     .commitTime(Instant.parse("2024-09-26T11:11:11Z"))
                     .authorTime(Instant.parse("2024-09-26T22:22:22Z"))
                     .build())
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.COMMIT);
     testSerde(event, "commit.json", CommitEvent.class);
@@ -78,6 +80,8 @@ class TestJsonSerde {
             .eventCreationTimestamp(Instant.parse("2024-09-26T00:00:00Z"))
             .eventInitiator("Alice")
             .commonAncestorHash("hash0")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.MERGE);
     testSerde(event, "merge.json", MergeEvent.class);
@@ -95,6 +99,8 @@ class TestJsonSerde {
             .commitCount(3)
             .eventCreationTimestamp(Instant.parse("2024-09-26T00:00:00Z"))
             .eventInitiator("Alice")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.TRANSPLANT);
     testSerde(event, "transplant.json", TransplantEvent.class);
@@ -110,6 +116,8 @@ class TestJsonSerde {
             .eventCreationTimestamp(Instant.parse("2024-09-26T00:00:00Z"))
             .eventInitiator("Alice")
             .hashAfter("hash2")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_CREATED);
     testSerde(event, "reference-created.json", ReferenceCreatedEvent.class);
@@ -126,6 +134,8 @@ class TestJsonSerde {
             .eventInitiator("Alice")
             .hashBefore("hash1")
             .hashAfter("hash2")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_UPDATED);
     testSerde(event, "reference-updated.json", ReferenceUpdatedEvent.class);
@@ -141,6 +151,8 @@ class TestJsonSerde {
             .eventCreationTimestamp(Instant.parse("2024-09-26T00:00:00Z"))
             .eventInitiator("Alice")
             .hashBefore("hash1")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.REFERENCE_DELETED);
     testSerde(event, "reference-deleted.json", ReferenceDeletedEvent.class);
@@ -159,6 +171,8 @@ class TestJsonSerde {
             .commitCreationTimestamp(Instant.parse("2024-09-26T11:11:11Z"))
             .eventInitiator("Alice")
             .content(IcebergTable.of("metadataLocation", 1L, 2, 3, 4, "id"))
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_STORED);
     testSerde(event, "content-stored.json", ContentStoredEvent.class);
@@ -176,6 +190,8 @@ class TestJsonSerde {
             .eventCreationTimestamp(Instant.parse("2024-09-26T00:00:00Z"))
             .commitCreationTimestamp(Instant.parse("2024-09-26T11:11:11Z"))
             .eventInitiator("Alice")
+            .putProperty("key1", "value1")
+            .putProperty("key2", "value2")
             .build();
     assertThat(event.getType()).isEqualTo(EventType.CONTENT_REMOVED);
     testSerde(event, "content-removed.json", ContentRemovedEvent.class);
