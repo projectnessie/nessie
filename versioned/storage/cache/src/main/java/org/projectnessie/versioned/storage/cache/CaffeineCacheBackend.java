@@ -31,6 +31,7 @@ import com.github.benmanes.caffeine.cache.Expiry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
+import java.lang.ref.SoftReference;
 import java.time.Duration;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -44,10 +45,11 @@ import org.projectnessie.versioned.storage.serialize.ProtoSerialization;
 class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
-  private static final byte[] NON_EXISTING_SENTINEL = "NON_EXISTING".getBytes(UTF_8);
+  private static final CacheKeyValue NON_EXISTING_SENTINEL =
+      new CacheKeyValue("x", ObjId.EMPTY_OBJ_ID, 0L, new byte[0], null);
 
   private final CacheConfig config;
-  final Cache<CacheKeyValue, byte[]> cache;
+  final Cache<CacheKeyValue, CacheKeyValue> cache;
 
   private final long refCacheTtlNanos;
   private final long refCacheNegativeTtlNanos;
@@ -58,15 +60,15 @@ class CaffeineCacheBackend implements CacheBackend {
     refCacheTtlNanos = config.referenceTtl().orElse(Duration.ZERO).toNanos();
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
 
-    Caffeine<CacheKeyValue, byte[]> cacheBuilder =
+    Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
             .maximumWeight(config.capacityMb() * 1024L * 1024L)
             .weigher(this::weigher)
             .expireAfter(
-                new Expiry<CacheKeyValue, byte[]>() {
+                new Expiry<CacheKeyValue, CacheKeyValue>() {
                   @Override
                   public long expireAfterCreate(
-                      CacheKeyValue key, byte[] value, long currentTimeNanos) {
+                      CacheKeyValue key, CacheKeyValue value, long currentTimeNanos) {
                     long expire = key.expiresAtNanosEpoch;
                     if (expire == CACHE_UNLIMITED) {
                       return Long.MAX_VALUE;
@@ -81,7 +83,7 @@ class CaffeineCacheBackend implements CacheBackend {
                   @Override
                   public long expireAfterUpdate(
                       CacheKeyValue key,
-                      byte[] value,
+                      CacheKeyValue value,
                       long currentTimeNanos,
                       @NonNegative long currentDurationNanos) {
                     return expireAfterCreate(key, value, currentTimeNanos);
@@ -90,7 +92,7 @@ class CaffeineCacheBackend implements CacheBackend {
                   @Override
                   public long expireAfterRead(
                       CacheKeyValue key,
-                      byte[] value,
+                      CacheKeyValue value,
                       long currentTimeNanos,
                       @NonNegative long currentDurationNanos) {
                     return currentDurationNanos;
@@ -118,11 +120,8 @@ class CaffeineCacheBackend implements CacheBackend {
     return new CachingPersistImpl(persist, cache);
   }
 
-  private int weigher(CacheKeyValue key, byte[] value) {
+  private int weigher(CacheKeyValue key, CacheKeyValue value) {
     int size = key.heapSize();
-    if (value != null) {
-      size += ARRAY_OVERHEAD + value.length;
-    }
     size += CAFFEINE_OBJ_OVERHEAD;
     return size;
   }
@@ -130,14 +129,14 @@ class CaffeineCacheBackend implements CacheBackend {
   @Override
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKey(repositoryId, id);
-    byte[] value = cache.getIfPresent(key);
+    CacheKeyValue value = cache.getIfPresent(key);
     if (value == null) {
       return null;
     }
     if (value == NON_EXISTING_SENTINEL) {
       return NOT_FOUND_OBJ_SENTINEL;
     }
-    return ProtoSerialization.deserializeObj(id, 0L, value, null);
+    return value.getObj();
   }
 
   @Override
@@ -159,8 +158,9 @@ class CaffeineCacheBackend implements CacheBackend {
       byte[] serialized = serializeObj(obj, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
       long expiresAtNanos =
           expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
-      CacheKeyValue keyValue = cacheKeyValue(repositoryId, obj.id(), expiresAtNanos);
-      cache.put(keyValue, serialized);
+      CacheKeyValue keyValue =
+          cacheKeyValue(repositoryId, obj.id(), expiresAtNanos, serialized, obj);
+      cache.put(keyValue, keyValue);
     } catch (ObjTooLargeException e) {
       // this should never happen
       throw new RuntimeException(e);
@@ -220,9 +220,14 @@ class CaffeineCacheBackend implements CacheBackend {
       return;
     }
     ObjId id = refObjId(r.name());
-    CacheKeyValue key =
-        cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheTtlNanos);
-    cache.put(key, serializeReference(r));
+    CacheKeyValue keyValue =
+        cacheKeyValue(
+            repositoryId,
+            id,
+            config.clockNanos().getAsLong() + refCacheTtlNanos,
+            serializeReference(r),
+            r);
+    cache.put(keyValue, keyValue);
   }
 
   @Override
@@ -242,12 +247,14 @@ class CaffeineCacheBackend implements CacheBackend {
       return null;
     }
     ObjId id = refObjId(name);
-    CacheKeyValue keyValue = cacheKey(repositoryId, id);
-    byte[] bytes = cache.getIfPresent(keyValue);
-    if (bytes == NON_EXISTING_SENTINEL) {
+    CacheKeyValue value = cache.getIfPresent(cacheKey(repositoryId, id));
+    if (value == null) {
+      return null;
+    }
+    if (value == NON_EXISTING_SENTINEL) {
       return NON_EXISTENT_REFERENCE_SENTINEL;
     }
-    return bytes != null ? deserializeReference(bytes) : null;
+    return value.getReference();
   }
 
   static CacheKeyValue cacheKey(String repositoryId, ObjId id) {
@@ -257,6 +264,11 @@ class CaffeineCacheBackend implements CacheBackend {
   private static CacheKeyValue cacheKeyValue(
       String repositoryId, ObjId id, long expiresAtNanosEpoch) {
     return new CacheKeyValue(repositoryId, id, expiresAtNanosEpoch);
+  }
+
+  private static CacheKeyValue cacheKeyValue(
+      String repositoryId, ObjId id, long expiresAtNanosEpoch, byte[] serialized, Object object) {
+    return new CacheKeyValue(repositoryId, id, expiresAtNanosEpoch, serialized, object);
   }
 
   /**
@@ -273,20 +285,35 @@ class CaffeineCacheBackend implements CacheBackend {
     // Revisit this field before 2262-04-11T23:47:16.854Z (64-bit signed long overflow) ;) ;)
     final long expiresAtNanosEpoch;
 
+    final byte[] serialized;
+    java.lang.ref.Reference<Object> object;
+
     CacheKeyValue(String repositoryId, ObjId id) {
       this(repositoryId, id, 0L);
     }
 
     CacheKeyValue(String repositoryId, ObjId id, long expiresAtNanosEpoch) {
+      this(repositoryId, id, expiresAtNanosEpoch, null, null);
+    }
+
+    CacheKeyValue(
+        String repositoryId, ObjId id, long expiresAtNanosEpoch, byte[] serialized, Object object) {
       this.repositoryId = repositoryId;
       this.id = id;
       this.expiresAtNanosEpoch = expiresAtNanosEpoch;
+      this.serialized = serialized;
+      this.object = new SoftReference<>(object, null);
     }
 
     int heapSize() {
       int size = OBJ_SIZE;
       size += STRING_OBJ_OVERHEAD + repositoryId.length();
       size += id.heapSize();
+      byte[] s = serialized;
+      if (s != null) {
+        size += ARRAY_OVERHEAD + s.length;
+      }
+      size += SOFT_REFERENCE_OVERHEAD;
       return size;
     }
 
@@ -311,6 +338,26 @@ class CaffeineCacheBackend implements CacheBackend {
     public String toString() {
       return "{" + repositoryId + ", " + id + '}';
     }
+
+    Obj getObj() {
+      Obj obj = (Obj) this.object.get();
+      if (obj == null) {
+        obj = ProtoSerialization.deserializeObj(id, 0L, this.serialized, null);
+        // re-create the soft reference - but don't care about JMM side effects
+        this.object = new SoftReference<>(obj);
+      }
+      return obj;
+    }
+
+    Reference getReference() {
+      Reference ref = (Reference) this.object.get();
+      if (ref == null) {
+        ref = deserializeReference(this.serialized);
+        // re-create the soft reference - but don't care about JMM side effects
+        this.object = new SoftReference<>(ref);
+      }
+      return ref;
+    }
   }
 
   /*
@@ -321,15 +368,18 @@ class CaffeineCacheBackend implements CacheBackend {
    12   4                                           java.lang.String CacheKeyValue.repositoryId   null
    16   8                                                       long CacheKeyValue.expiresAt      0
    24   4   org.projectnessie.versioned.storage.common.persist.ObjId CacheKeyValue.id             null
-   28   4                                                            (object alignment gap)
-  Instance size: 32 bytes
+   28   4                                                     byte[] CacheKeyValue.serialized     null
+   32   4                                    java.lang.ref.Reference CacheKeyValue.object         null
+   36   4                                                            (object alignment gap)
+  Instance size: 40 bytes
   Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
   */
-  static final int OBJ_SIZE = 32;
+  static final int OBJ_SIZE = 40;
   /*
   Array overhead: 16 bytes
   */
   static final int ARRAY_OVERHEAD = 16;
+  static final int SOFT_REFERENCE_OVERHEAD = 32;
   /*
   java.lang.String object internals:
   OFF  SZ      TYPE DESCRIPTION               VALUE
