@@ -50,7 +50,7 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.guava)
   implementation(project(":nessie-versioned-storage-inmemory"))
-  implementation(project(":nessie-versioned-storage-rocksdb"))
+  testRuntimeOnly(project(":nessie-versioned-storage-rocksdb"))
 
   testCompileOnly(libs.microprofile.openapi)
 
