@@ -61,6 +61,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- CLI: Fix connecting to Nessie's Iceberg REST
+
 ### Commits
 
 ## [0.97.1] Release (2024-09-19)

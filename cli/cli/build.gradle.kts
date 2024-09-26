@@ -42,11 +42,19 @@ dependencies {
   implementation("org.apache.iceberg:iceberg-core")
   runtimeOnly(libs.hadoop.common) { isTransitive = false }
   // Include these FileIO implementations, as those are necessary to initialize
-  // RESTCatalog *sigh*. Those FileIO's aren't functional, because the necessary
-  // cloud specific clients (e.g. awssdk) are missing.
+  // RESTCatalog *sigh*. Those FileIO's aren't fully functional, because only the
+  // essential dependencies are pulled in to keep the size of the Nessie-CLI jar
+  // somewhat reasonable.
   implementation("org.apache.iceberg:iceberg-aws")
-  implementation("org.apache.iceberg:iceberg-azure")
+  runtimeOnly(platform(libs.awssdk.bom))
+  runtimeOnly("software.amazon.awssdk:s3")
+  runtimeOnly("software.amazon.awssdk:sts")
   implementation("org.apache.iceberg:iceberg-gcp")
+  runtimeOnly(platform(libs.google.cloud.storage.bom))
+  runtimeOnly("com.google.cloud:google-cloud-storage")
+  implementation("org.apache.iceberg:iceberg-azure")
+  runtimeOnly(platform(libs.azuresdk.bom))
+  runtimeOnly("com.azure:azure-storage-file-datalake")
 
   compileOnly(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
