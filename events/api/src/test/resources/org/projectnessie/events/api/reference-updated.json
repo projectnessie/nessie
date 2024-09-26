@@ -1,0 +1,16 @@
+{
+  "type" : "REFERENCE_UPDATED",
+  "id" : "58bdb0a2-20c0-4a6f-b6fe-abd4ebce2e96",
+  "repositoryId" : "repo1",
+  "eventCreationTimestamp" : "2024-09-26T00:00:00Z",
+  "eventInitiator" : "Alice",
+  "reference" : {
+    "type" : "BRANCH",
+    "name" : "branch1",
+    "hash" : "cafebabe"
+  },
+  "hashBefore" : "hash1",
+  "hashAfter" : "hash2",
+  "key1" : "value1",
+  "key2" : "value2"
+}

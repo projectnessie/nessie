@@ -15,6 +15,8 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.projectnessie.model.Reference;
 
@@ -23,6 +25,8 @@ import org.projectnessie.model.Reference;
  * persisted.
  */
 @Value.Immutable
+@JsonSerialize(as = ImmutableMergeEvent.class)
+@JsonDeserialize(as = ImmutableMergeEvent.class)
 public interface MergeEvent extends MultiReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Override

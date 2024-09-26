@@ -1,0 +1,28 @@
+{
+  "type" : "CONTENT_STORED",
+  "id" : "58bdb0a2-20c0-4a6f-b6fe-abd4ebce2e96",
+  "repositoryId" : "repo1",
+  "eventInitiator" : "Alice",
+  "eventCreationTimestamp" : "2024-09-26T00:00:00Z",
+  "commitCreationTimestamp" : "2024-09-26T11:11:11Z",
+  "reference" : {
+    "type" : "BRANCH",
+    "name" : "branch1",
+    "hash" : "cafebabe"
+  },
+  "hash" : "hash1",
+  "contentKey" : {
+    "elements" : [ "ns", "table1" ]
+  },
+  "content" : {
+    "type" : "ICEBERG_TABLE",
+    "id" : "id",
+    "metadataLocation" : "metadataLocation",
+    "snapshotId" : 1,
+    "schemaId" : 2,
+    "specId" : 3,
+    "sortOrderId" : 4
+  },
+  "key1" : "value1",
+  "key2" : "value2"
+}

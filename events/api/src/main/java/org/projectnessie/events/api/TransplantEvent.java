@@ -15,6 +15,8 @@
  */
 package org.projectnessie.events.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
@@ -22,6 +24,8 @@ import org.immutables.value.Value;
  * has been persisted.
  */
 @Value.Immutable
+@JsonSerialize(as = ImmutableTransplantEvent.class)
+@JsonDeserialize(as = ImmutableTransplantEvent.class)
 public interface TransplantEvent
     extends MultiReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 

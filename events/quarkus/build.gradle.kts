@@ -38,6 +38,10 @@ dependencies {
   // OpenTelemetry
   implementation("io.opentelemetry:opentelemetry-api")
 
+  // Jackson
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+
   testImplementation(project(":nessie-model"))
 
   testImplementation(enforcedPlatform(libs.quarkus.bom))

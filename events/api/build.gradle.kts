@@ -26,15 +26,18 @@ dependencies {
   implementation(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  // Jackson
+  implementation(platform(libs.jackson.bom))
+  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("com.fasterxml.jackson.core:jackson-annotations")
+
   compileOnly(libs.microprofile.openapi)
-  compileOnly(platform(libs.jackson.bom))
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 
+  testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+
   testCompileOnly(libs.microprofile.openapi)
-  testCompileOnly(platform(libs.jackson.bom))
-  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }
