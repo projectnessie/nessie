@@ -17,45 +17,40 @@ package org.projectnessie.events.ri.kafka;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.example.nessie.events.generated.CommitEvent;
-import com.example.nessie.events.generated.OperationEvent;
-import com.example.nessie.events.generated.OperationEventType;
-import com.example.nessie.events.generated.ReferenceEvent;
-import com.example.nessie.events.generated.ReferenceEventType;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.header.Headers;
+import org.projectnessie.events.api.CommitEvent;
 import org.projectnessie.events.api.ContentEvent;
 import org.projectnessie.events.api.Event;
-import org.projectnessie.events.api.EventType;
+import org.projectnessie.events.api.MultiReferenceEvent;
+import org.projectnessie.events.api.ReferenceEvent;
 import org.projectnessie.events.spi.EventFilter;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
-import org.projectnessie.events.spi.EventTypeFilter;
-import org.projectnessie.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** An {@link EventSubscriber} that publishes events to a Kafka topic. */
-public class KafkaEventSubscriber implements EventSubscriber {
+/**
+ * An {@link EventSubscriber} that publishes events to a Kafka topic.
+ *
+ * @param <T> The Kafka record value type emitted by this subscriber.
+ */
+public abstract class AbstractKafkaEventSubscriber<T> implements EventSubscriber {
 
   /** The environment variable pointing to the location of the configuration file to use. */
   public static final String NESSIE_KAFKA_PROPERTIES_FILE_ENV_VAR = "NESSIE_EVENTS_CONFIG_FILE";
@@ -98,6 +93,7 @@ public class KafkaEventSubscriber implements EventSubscriber {
   /** Headers that are added to the Kafka records. */
   public enum Header {
     SPEC_VERSION("spec-version"),
+    MAX_API_VERSION("max-api-version"),
     REPOSITORY_ID("repository-id"),
     INITIATOR("initiator"),
     EVENT_TYPE("event-type"),
@@ -118,41 +114,37 @@ public class KafkaEventSubscriber implements EventSubscriber {
     public void addValue(Headers headers, byte[] value) {
       headers.add(key, value);
     }
+
+    public byte[] getValue(Headers headers) {
+      org.apache.kafka.common.header.Header header = headers.lastHeader(key);
+      if (header == null) {
+        return null;
+      }
+      return header.value();
+    }
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaEventSubscriber.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKafkaEventSubscriber.class);
   private static final Pattern COMMA = Pattern.compile(",");
 
-  // Accept all event types except: MERGE and TRANSPLANT
-  private static final EventTypeFilter EVENT_TYPE_FILTER =
-      EventTypeFilter.of(
-          EventType.COMMIT,
-          EventType.REFERENCE_CREATED,
-          EventType.REFERENCE_DELETED,
-          EventType.REFERENCE_UPDATED,
-          EventType.CONTENT_STORED,
-          EventType.CONTENT_REMOVED);
-
   private final Properties props;
-  private final Function<Properties, Producer<String, Object>> producerFactory;
+  private final Function<Properties, Producer<String, T>> producerFactory;
 
   private byte[] serverSpecVersion;
+  private byte[] maxApiVersion;
+
   private EventFilter eventFilter;
-  private String topicName;
-  private Producer<String, Object> producer;
+  protected String topicName;
+  protected Producer<String, T> producer;
 
   /**
-   * Creates a new {@link KafkaEventSubscriber} using the configuration file specified by the system
-   * property {@value #NESSIE_KAFKA_PROPERTIES_FILE_SYS_PROP} or the environment variable {@value
-   * #NESSIE_KAFKA_PROPERTIES_FILE_ENV_VAR}.
+   * Creates a new {@link KafkaAvroEventSubscriber} using the configuration file specified by the
+   * system property {@value #NESSIE_KAFKA_PROPERTIES_FILE_SYS_PROP} or the environment variable
+   * {@value #NESSIE_KAFKA_PROPERTIES_FILE_ENV_VAR}.
    *
-   * <p>Note: This default no-arg constructor MUST be present since that's the constructor used by
-   * {@link java.util.ServiceLoader}.
-   *
-   * @throws IOException if the configuration file cannot be read.
+   * @throws UncheckedIOException if the configuration file cannot be read.
    */
-  @SuppressWarnings("unused") // loaded via ServiceLoader
-  public KafkaEventSubscriber() throws IOException {
+  public AbstractKafkaEventSubscriber() throws UncheckedIOException {
     this(
         System.getProperty(
             NESSIE_KAFKA_PROPERTIES_FILE_SYS_PROP,
@@ -161,22 +153,22 @@ public class KafkaEventSubscriber implements EventSubscriber {
                 : System.getenv(NESSIE_KAFKA_PROPERTIES_FILE_ENV_VAR)));
   }
 
-  public KafkaEventSubscriber(String location) throws IOException {
+  public AbstractKafkaEventSubscriber(String location) throws UncheckedIOException {
     this(loadProperties(location));
   }
 
-  public KafkaEventSubscriber(Properties props) {
+  public AbstractKafkaEventSubscriber(Properties props) {
     this(props, KafkaProducer::new);
   }
 
   /**
-   * Creates a new {@link KafkaEventSubscriber} using the given {@link Properties} and {@link
-   * Producer} factory.
+   * Creates a new {@link AbstractKafkaEventSubscriber} using the given {@link Properties} and
+   * {@link Producer} factory.
    *
    * <p>Intended for testing mostly.
    */
-  public KafkaEventSubscriber(
-      Properties props, Function<Properties, Producer<String, Object>> producerFactory) {
+  public AbstractKafkaEventSubscriber(
+      Properties props, Function<Properties, Producer<String, T>> producerFactory) {
     this.props = props;
     this.producerFactory = producerFactory;
   }
@@ -197,6 +189,8 @@ public class KafkaEventSubscriber implements EventSubscriber {
     // Use this method to initialize the subscriber and create the Kafka producer.
     // You can also use the passed-in EventSubscription to inspect the Nessie system configuration.
     serverSpecVersion = subscription.getSystemConfiguration().getSpecVersion().getBytes(UTF_8);
+    maxApiVersion =
+        new byte[] {(byte) subscription.getSystemConfiguration().getMaxSupportedApiVersion()};
     Set<String> repositoryIds =
         COMMA
             .splitAsStream(ConfigOption.REPOSITORY_IDS.getValue(props))
@@ -236,96 +230,8 @@ public class KafkaEventSubscriber implements EventSubscriber {
   }
 
   @Override
-  public final EventTypeFilter getEventTypeFilter() {
-    return EVENT_TYPE_FILTER;
-  }
-
-  @Override
   public final EventFilter getEventFilter() {
     return eventFilter;
-  }
-
-  @Override
-  public void onCommit(org.projectnessie.events.api.CommitEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    CommitEvent downstreamEvent =
-        new CommitEvent(
-            upstreamEvent.getId(),
-            reference,
-            upstreamEvent.getHashBefore(),
-            upstreamEvent.getHashAfter());
-    fireEvent(reference, upstreamEvent, downstreamEvent);
-  }
-
-  @Override
-  public void onContentStored(org.projectnessie.events.api.ContentStoredEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    OperationEvent downstreamEvent =
-        new OperationEvent(
-            OperationEventType.PUT,
-            upstreamEvent.getId(),
-            reference,
-            upstreamEvent.getHash(),
-            upstreamEvent.getContentKey().toCanonicalString(),
-            upstreamEvent.getContent().getId(),
-            upstreamEvent.getContent().getType().toString(),
-            objectAsMap(upstreamEvent.getContent(), "id", "type"));
-    fireEvent(reference, upstreamEvent, downstreamEvent);
-  }
-
-  @Override
-  public void onContentRemoved(org.projectnessie.events.api.ContentRemovedEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    OperationEvent downstreamEvent =
-        new OperationEvent(
-            OperationEventType.DELETE,
-            upstreamEvent.getId(),
-            reference,
-            upstreamEvent.getHash(),
-            upstreamEvent.getContentKey().toCanonicalString(),
-            null,
-            null,
-            Map.of());
-    fireEvent(reference, upstreamEvent, downstreamEvent);
-  }
-
-  @Override
-  public void onReferenceCreated(org.projectnessie.events.api.ReferenceCreatedEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    ReferenceEvent downstreamEvent =
-        new ReferenceEvent(
-            ReferenceEventType.CREATED,
-            upstreamEvent.getId(),
-            reference,
-            null,
-            upstreamEvent.getHashAfter());
-    fireEvent(reference, upstreamEvent, downstreamEvent);
-  }
-
-  @Override
-  public void onReferenceUpdated(org.projectnessie.events.api.ReferenceUpdatedEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    ReferenceEvent downstreamEvent =
-        new ReferenceEvent(
-            ReferenceEventType.REASSIGNED,
-            upstreamEvent.getId(),
-            reference,
-            upstreamEvent.getHashBefore(),
-            upstreamEvent.getHashAfter());
-    fireEvent(reference, upstreamEvent, downstreamEvent);
-  }
-
-  @Override
-  public void onReferenceDeleted(org.projectnessie.events.api.ReferenceDeletedEvent upstreamEvent) {
-    String reference = referenceName(upstreamEvent.getReference());
-    ReferenceEvent downstreamEvent =
-        new ReferenceEvent(
-            ReferenceEventType.DELETED,
-            upstreamEvent.getId(),
-            reference,
-            upstreamEvent.getHashBefore(),
-            null);
-    fireEvent(reference, upstreamEvent, downstreamEvent);
   }
 
   /**
@@ -344,15 +250,62 @@ public class KafkaEventSubscriber implements EventSubscriber {
    * the Nessie server can react to it. For example, the server could record the exception and
    * cancel the subscription after a configurable number of consecutive failures.
    */
-  private void fireEvent(String reference, Event upstreamEvent, SpecificRecord downstreamEvent) {
-    String key = eventKey(upstreamEvent, reference);
-    ProducerRecord<String, Object> record = new ProducerRecord<>(topicName, key, downstreamEvent);
+  protected void fireEvent(Event upstreamEvent, T downstreamEvent) {
+    ProducerRecord<String, T> record =
+        new ProducerRecord<>(topicName, eventKey(upstreamEvent), downstreamEvent);
     addCommonHeaders(upstreamEvent, record);
     try {
       Future<RecordMetadata> ignored = producer.send(record, this::onResult);
     } catch (RuntimeException e) {
       LOGGER.error("Failed to send event to Kafka", e);
       throw e;
+    }
+  }
+
+  /**
+   * Create a key for the downstream event. This is a combination of the repository ID and the
+   * reference name. This allows the topic to be partitioned by repository ID and reference name,
+   * which should help with downstream consumers that want to process events for a given reference
+   * in order.
+   *
+   * <p>Note: strict ordering of events is not guaranteed. If necessary, consider using Kafka
+   * Streams.
+   */
+  protected String eventKey(Event event) {
+    String repositoryId = event.getRepositoryId();
+    String reference;
+    if (event instanceof ReferenceEvent) {
+      reference = ((ReferenceEvent) event).getReference().getName();
+    } else {
+      assert event instanceof MultiReferenceEvent;
+      reference = ((MultiReferenceEvent) event).getTargetReference().getName();
+    }
+    return repositoryId + ":" + reference;
+  }
+
+  protected void addCommonHeaders(Event event, ProducerRecord<?, ?> record) {
+    Headers headers = record.headers();
+    Header.SPEC_VERSION.addValue(headers, serverSpecVersion);
+    Header.MAX_API_VERSION.addValue(headers, maxApiVersion);
+    Header.EVENT_TYPE.addValue(headers, event.getType().name().getBytes(UTF_8));
+    Header.REPOSITORY_ID.addValue(headers, event.getRepositoryId().getBytes(UTF_8));
+    event
+        .getEventInitiator()
+        .ifPresent(user -> Header.INITIATOR.addValue(headers, user.getBytes(UTF_8)));
+    Header.EVENT_CREATION_TIME.addValue(
+        headers, event.getEventCreationTimestamp().toString().getBytes(UTF_8));
+    // For commits and operations, add the commit creation time as well
+    if (event instanceof CommitEvent) {
+      org.projectnessie.events.api.CommitEvent commitEvent =
+          (org.projectnessie.events.api.CommitEvent) event;
+      Instant commitTime = commitEvent.getCommitMeta().getCommitTime();
+      if (commitTime != null) {
+        Header.COMMIT_CREATION_TIME.addValue(headers, commitTime.toString().getBytes(UTF_8));
+      }
+    } else if (event instanceof ContentEvent) {
+      ContentEvent contentEvent = (ContentEvent) event;
+      Header.COMMIT_CREATION_TIME.addValue(
+          headers, contentEvent.getCommitCreationTimestamp().toString().getBytes(UTF_8));
     }
   }
 
@@ -371,7 +324,7 @@ public class KafkaEventSubscriber implements EventSubscriber {
    * @param error The exception that occurred, or {@code null} if the event was written
    *     successfully.
    */
-  private void onResult(RecordMetadata metadata, Exception error) {
+  protected void onResult(RecordMetadata metadata, Exception error) {
     if (error == null) {
       // Do NOT enable this log statement in production!
       if (LOGGER.isDebugEnabled()) {
@@ -386,67 +339,13 @@ public class KafkaEventSubscriber implements EventSubscriber {
     }
   }
 
-  private void addCommonHeaders(Event upstreamEvent, ProducerRecord<?, ?> record) {
-    Headers headers = record.headers();
-    Header.SPEC_VERSION.addValue(headers, serverSpecVersion);
-    Header.EVENT_TYPE.addValue(headers, upstreamEvent.getType().name().getBytes(UTF_8));
-    Header.REPOSITORY_ID.addValue(headers, upstreamEvent.getRepositoryId().getBytes(UTF_8));
-    upstreamEvent
-        .getEventInitiator()
-        .ifPresent(user -> Header.INITIATOR.addValue(headers, user.getBytes(UTF_8)));
-    Header.EVENT_CREATION_TIME.addValue(
-        headers, upstreamEvent.getEventCreationTimestamp().toString().getBytes(UTF_8));
-    // For commits and operations, add the commit creation time as well
-    if (upstreamEvent instanceof org.projectnessie.events.api.CommitEvent) {
-      org.projectnessie.events.api.CommitEvent commitEvent =
-          (org.projectnessie.events.api.CommitEvent) upstreamEvent;
-      Instant commitTime = commitEvent.getCommitMeta().getCommitTime();
-      if (commitTime != null) {
-        Header.COMMIT_CREATION_TIME.addValue(headers, commitTime.toString().getBytes(UTF_8));
-      }
-    } else if (upstreamEvent instanceof ContentEvent) {
-      ContentEvent contentEvent = (ContentEvent) upstreamEvent;
-      Header.COMMIT_CREATION_TIME.addValue(
-          headers, contentEvent.getCommitCreationTimestamp().toString().getBytes(UTF_8));
-    }
-  }
-
-  /**
-   * Create a key for the downstream event. This is a combination of the repository ID and the
-   * reference name. This allows the topic to be partitioned by repository ID and reference name,
-   * which should help with downstream consumers that want to process events for a given reference
-   * in order.
-   *
-   * <p>Note: strict ordering of events is not guaranteed. If necessary, consider using Kafka
-   * Streams.
-   */
-  private static String eventKey(Event upstreamEvent, String reference) {
-    String repositoryId = upstreamEvent.getRepositoryId();
-    return repositoryId + ":" + reference;
-  }
-
-  private static String referenceName(Reference reference) {
-    return reference.getName();
-  }
-
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
-
-  private static Map<String, String> objectAsMap(Object o, String... ignoredProperties) {
-    Set<String> ignoredSet = Set.of(ignoredProperties);
-    return MAPPER.convertValue(o, MAP_TYPE).entrySet().stream()
-        .filter(e -> !ignoredSet.contains(e.getKey()))
-        .filter(e -> e.getValue() != null)
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
-  }
-
-  private static Properties loadProperties(String location) throws IOException {
+  private static Properties loadProperties(String location) throws UncheckedIOException {
     try (BufferedReader reader = Files.newBufferedReader(Paths.get(location), UTF_8)) {
       Properties props = new Properties();
       props.load(reader);
       return props;
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to read Kafka properties file: " + location, e);
     }
   }
 }

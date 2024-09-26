@@ -17,5 +17,6 @@
 # Console printing event subscriber
 org.projectnessie.events.ri.console.PrintingEventSubscriber
 
-# Kafka event subscriber
-org.projectnessie.events.ri.kafka.KafkaEventSubscriber
+# Kafka event subscribers
+org.projectnessie.events.ri.kafka.KafkaAvroEventSubscriber
+org.projectnessie.events.ri.kafka.KafkaJsonEventSubscriber
