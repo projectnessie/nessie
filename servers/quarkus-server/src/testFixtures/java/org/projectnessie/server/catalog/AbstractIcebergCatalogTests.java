@@ -576,7 +576,10 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   protected FileIO temporaryFileIO(RESTCatalog catalog, FileIO io) {
-    String ioImpl = catalog.properties().get(CatalogProperties.FILE_IO_IMPL);
+    String ioImpl =
+        catalog
+            .properties()
+            .getOrDefault(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
     Map<String, String> props = new HashMap<>(io.properties());
     props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
     // dummy credentials - must be overridden if the test requires real credentials

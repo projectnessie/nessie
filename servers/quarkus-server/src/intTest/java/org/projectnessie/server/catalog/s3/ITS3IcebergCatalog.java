@@ -53,7 +53,10 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @Override
   protected FileIO temporaryFileIO(RESTCatalog catalog, FileIO io) {
-    String ioImpl = catalog.properties().get(CatalogProperties.FILE_IO_IMPL);
+    String ioImpl =
+        catalog
+            .properties()
+            .getOrDefault(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
     Map<String, String> props = new HashMap<>(io.properties());
     props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
     props.put(S3FileIOProperties.ACCESS_KEY_ID, minio.accessKey());
