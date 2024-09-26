@@ -79,6 +79,7 @@ class TestEventType {
             .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
+            .size(3)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .eventCreationTimestamp(Instant.now())

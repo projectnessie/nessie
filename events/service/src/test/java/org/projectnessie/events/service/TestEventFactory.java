@@ -166,6 +166,8 @@ class TestEventFactory {
             .effectiveTargetHash(Hash.of("cafebabe")) // hash before
             .resultantTargetHash(Hash.of("deadbeef")) // hash after
             .addCreatedCommits(commit)
+            .addCreatedCommits(commit)
+            .addCreatedCommits(commit)
             .build();
     Event actual = ef.newTransplantEvent(result, "repo1", user);
     assertThat(actual)
@@ -178,6 +180,7 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .hashBefore("cafebabe")
                 .hashAfter("deadbeef")
+                .size(3)
                 .targetReference(Branch.of("branch2", "deadbeef"))
                 .build());
   }
