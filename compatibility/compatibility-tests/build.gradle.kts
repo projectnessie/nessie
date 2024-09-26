@@ -33,6 +33,7 @@ dependencies {
 
   intTestImplementation(libs.guava)
   intTestImplementation(project(":nessie-versioned-storage-common"))
+  intTestRuntimeOnly(project(":nessie-versioned-storage-rocksdb"))
   intTestRuntimeOnly(project(":nessie-versioned-storage-mongodb-tests"))
   intTestRuntimeOnly(project(":nessie-versioned-storage-testextension"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
