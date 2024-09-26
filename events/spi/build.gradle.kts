@@ -26,6 +26,10 @@ dependencies {
   implementation(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  // Jackson
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

@@ -32,5 +32,5 @@ public interface TransplantEvent
   }
 
   /** The number of commits that were transplanted into the target reference. */
-  int size();
+  int getSize();
 }
