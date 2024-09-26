@@ -178,8 +178,6 @@ class TestEventFactory {
                 .putProperty("key", "value")
                 .hashBefore("cafebabe")
                 .hashAfter("deadbeef")
-                .sourceHashes(List.of("11111111", "22222222", "33333333"))
-                .sourceReference(Branch.of("branch1", "33333333"))
                 .targetReference(Branch.of("branch2", "deadbeef"))
                 .build());
   }

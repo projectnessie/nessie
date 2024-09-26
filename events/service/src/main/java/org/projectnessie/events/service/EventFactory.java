@@ -20,7 +20,6 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ImmutableCommitEvent;
@@ -108,16 +107,12 @@ public class EventFactory {
   protected Event newTransplantEvent(
       TransplantResult result, String repositoryId, @Nullable Principal user) {
     Hash hashAfter = Objects.requireNonNull(result.getResultantTargetHash());
-    Hash sourceHash = result.getSourceHashes().get(result.getSourceHashes().size() - 1);
     return ImmutableTransplantEvent.builder()
         .id(config.getIdGenerator().get())
         .eventCreationTimestamp(config.getClock().instant())
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .sourceReference(makeReference(result.getSourceRef(), sourceHash))
-        .sourceHashes(
-            result.getSourceHashes().stream().map(Hash::asString).collect(Collectors.toList()))
         .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
         .hashAfter(hashAfter.asString())

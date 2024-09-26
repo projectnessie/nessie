@@ -76,11 +76,9 @@ class TestEventType {
   void transplant() {
     TransplantEvent event =
         ImmutableTransplantEvent.builder()
-            .sourceReference(branch1)
             .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
-            .addSourceHashes("hash3", "hash4", "hash5")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .eventCreationTimestamp(Instant.now())

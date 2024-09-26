@@ -15,7 +15,6 @@
  */
 package org.projectnessie.events.api;
 
-import java.util.List;
 import org.immutables.value.Value;
 
 /**
@@ -31,10 +30,4 @@ public interface TransplantEvent
   default EventType getType() {
     return EventType.TRANSPLANT;
   }
-
-  /**
-   * The sequence of hashes from the source reference that were transplanted into the target
-   * reference.
-   */
-  List<String> getSourceHashes();
 }

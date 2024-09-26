@@ -152,7 +152,7 @@ public abstract class AbstractQuarkusEvents {
             .branch(target)
             .transplant();
     String hashAfter = response.getResultantTargetHash();
-    checkEventsForTransplantResult(source, target, hashBefore, hashAfter);
+    checkEventsForTransplantResult(target, hashBefore, hashAfter);
   }
 
   @Test
@@ -202,11 +202,10 @@ public abstract class AbstractQuarkusEvents {
     }
   }
 
-  private void checkEventsForTransplantResult(
-      Branch source, Branch target, String hashBefore, String hashAfter) {
+  private void checkEventsForTransplantResult(Branch target, String hashBefore, String hashAfter) {
     if (eventsEnabled()) {
       List<Event> events = subscriber().awaitEvents(3);
-      checkTransplantEvent(events, source, target, hashBefore, hashAfter);
+      checkTransplantEvent(events, target, hashBefore, hashAfter);
       checkCommitEvent(events, target, hashBefore, hashAfter);
       checkContentStoredEvent(events);
       checkTransplantMetrics();
@@ -294,7 +293,7 @@ public abstract class AbstractQuarkusEvents {
   }
 
   private void checkTransplantEvent(
-      List<Event> events, Branch source, Branch target, String hashBefore, String hashAfter) {
+      List<Event> events, Branch target, String hashBefore, String hashAfter) {
     TransplantEvent transplantEvent = findEvent(events, TransplantEvent.class);
     assertThat(transplantEvent)
         .isNotNull()
@@ -304,7 +303,6 @@ public abstract class AbstractQuarkusEvents {
             TransplantEvent::getProperties,
             TransplantEvent::getHashBefore,
             TransplantEvent::getHashAfter,
-            e -> e.getSourceReference().getName(),
             e -> e.getTargetReference().getName())
         .containsExactly(
             TEST_REPO_ID,
@@ -312,7 +310,6 @@ public abstract class AbstractQuarkusEvents {
             ImmutableMap.of("foo", "bar"),
             hashBefore,
             hashAfter,
-            source.getName(),
             target.getName());
   }
 

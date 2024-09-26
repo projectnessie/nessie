@@ -30,12 +30,6 @@ import org.projectnessie.model.Reference;
 public interface MultiReferenceEvent extends Event {
 
   /**
-   * The source reference where the committed operations come from. This is usually a branch, but
-   * not always (e.g. it could be a tag or a detached reference).
-   */
-  Reference getSourceReference();
-
-  /**
    * The target reference where the committed operations were applied to.
    *
    * <p>For the time being, the target reference is guaranteed to be a branch.
