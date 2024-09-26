@@ -31,14 +31,63 @@ spec:
   selector:
     {{- include "nessie.selectorLabels" . | nindent 4 }}
   ports:
-    {{- $oldPortNumber := .Values.service.port -}}
-    {{- range $portName, $portNumber := .Values.service.ports }}
-    {{- if ne $portName "nessie-mgmt" }}
-    {{- if eq $portName "nessie-server"}}{{- $portNumber := coalesce $oldPortNumber $portNumber -}}{{- end }}
-    - port: {{ $portNumber }}
-      targetPort: {{ $portNumber }}
+    {{- range .Values.service.ports }}
+    - name: {{ .name }}
+      port: {{ .number }}
+      targetPort: {{ .number }}
       protocol: TCP
-      name: {{ $portName }}
-    {{- end }}
     {{- end }}
   sessionAffinity: {{ .Values.service.sessionAffinity }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nessie.fullname" . }}-mgmt
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+  {{- with .Values.managementService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "nessie.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: {{ .Values.managementService.portName }}
+      port: {{ .Values.managementService.portNumber }}
+      targetPort: {{ .Values.managementService.portNumber }}
+      protocol: TCP
+  publishNotReadyAddresses: true
+{{- range $i, $svc := .Values.extraServices }}
+{{- if not $svc.nameSuffix }}
+{{- fail (printf "extraServices[%d]: missing required nameSuffix" $i) }}
+{{- else if eq $svc.nameSuffix "-mgmt" }}
+{{- fail (printf "extraServices[%d]: invalid nameSuffix" $i) }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nessie.fullname" $ }}{{ $svc.nameSuffix }}
+  labels:
+    {{- include "nessie.labels" $ | nindent 4 }}
+  {{- with $svc.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $svc.type }}
+  selector:
+    {{- include "nessie.selectorLabels" $ | nindent 4 }}
+  ports:
+    {{- range $svc.ports }}
+    - name: {{ .name }}
+      port: {{ .number }}
+      targetPort: {{ .number }}
+      protocol: TCP
+    {{- end }}
+  {{- if $svc.sessionAffinity }}
+  sessionAffinity: {{ $svc.sessionAffinity }}
+  {{- end }}
+{{- end }}

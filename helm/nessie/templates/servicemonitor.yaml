@@ -21,7 +21,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "nessie.fullname" . }}
-  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
     {{- if .Values.serviceMonitor.labels }}
@@ -29,7 +28,7 @@ metadata:
     {{- end }}
 spec:
   endpoints:
-    - port: nessie-mgmt
+    - port: {{ .Values.managementService.portName }}
       scheme: http
       {{- if .Values.serviceMonitor.interval }}
       interval: {{ .Values.serviceMonitor.interval }}

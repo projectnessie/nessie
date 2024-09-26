@@ -424,3 +424,45 @@ line breaks, they will be escaped and a multi-line option will be printed.
 {{- end -}}
 {{ print $key "=" $valAsString }}
 {{- end -}}
+
+{{/*
+Prints the ports section of the container spec. Also validates all port names and numbers to ensure
+that they are consistent and that there are no overlaps.
+*/}}
+{{- define "nessie.containerPorts" -}}
+{{- $ports := dict -}}
+{{- range $i, $port := .Values.service.ports -}}
+{{- if hasKey $ports $port.name -}}
+{{- fail (printf "service.ports[%d]: port name already taken: %v" $i $port.name) -}}
+{{- end -}}
+{{- if has $port.number (values $ports) -}}
+{{- fail (printf "service.ports[%d]: port number already taken: %v" $i $port.number) -}}
+{{- end -}}
+{{- $_ := set $ports $port.name $port.number -}}
+{{- end -}}
+{{- if hasKey $ports .Values.managementService.portName -}}
+{{- fail (print "managementService.portName: port name already taken: " .Values.managementService.portName ) -}}
+{{- end -}}
+{{- if has .Values.managementService.portNumber (values $ports) -}}
+{{- fail (print "managementService.portNumber: port number already taken: " .Values.managementService.portNumber) -}}
+{{- end -}}
+{{- $_ := set $ports .Values.managementService.portName .Values.managementService.portNumber -}}
+{{- range $i, $svc := .Values.extraServices -}}
+{{- range $j, $port := $svc.ports -}}
+{{- if hasKey $ports $port.name -}}
+{{- if ne $port.number (get $ports $port.name) -}}
+{{- fail (printf "extraServices[%d].ports[%d]: wrong port number for port %s, expected %v, got %v" $i $j $port.name (get $ports $port.name) $port.number) -}}
+{{- end -}}
+{{- else if has $port.number (values $ports) -}}
+{{- fail (printf "extraServices[%d].ports[%d]: port number already taken: %v" $i $j $port.number) -}}
+{{- end -}}
+{{- $_ := set $ports $port.name $port.number -}}
+{{- end -}}
+{{- end -}}
+ports:
+{{ range $portName, $portNumber := $ports -}}
+- name: {{ $portName }}
+  containerPort: {{ $portNumber }}
+  protocol: TCP
+{{ end -}}
+{{ end -}}

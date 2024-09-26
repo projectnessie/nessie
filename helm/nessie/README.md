@@ -240,6 +240,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
 | dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
+| extraServices | list | `[]` | Additional service definitions. All service definitions always select all Nessie pods. Use this if you need to expose specific ports with different configurations. |
 | extraVolumeMounts | list | `[]` | Extra volume mounts to add to the nessie container. See https://kubernetes.io/docs/concepts/storage/volumes/. |
 | extraVolumes | list | `[]` | Extra volumes to add to the nessie pod. See https://kubernetes.io/docs/concepts/storage/volumes/. |
 | image.configDir | string | `"/deployments/config"` | The path to the directory where the application.properties file should be mounted. |
@@ -247,11 +248,15 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart version. |
 | imagePullSecrets | list | `[]` | References to secrets in the same namespace to use for pulling any of the images used by this chart. Each entry is a LocalObjectReference to an existing secret in the namespace. The secret must contain a .dockerconfigjson key with a base64-encoded Docker configuration file. See https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ for more information. |
+| ingress | object | `{"annotations":{},"className":"","enabled":false,"hosts":[{"host":"chart-example.local","paths":[],"service":{"nameSuffix":"","portName":"nessie-http"}}],"pathType":"ImplementationSpecific","tls":[]}` | Nessie Ingress settings. These settings generate an Ingress resource that routes external traffic to the Nessie service. Consider enabling sticky sessions based on the remote client's IP address; this is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Check your ingress controller's documentation. |
 | ingress.annotations | object | `{}` | Annotations to add to the ingress. |
-| ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it |
+| ingress.className | string | `""` | Specifies the ingressClassName; leave empty if you don't want to customize it. |
 | ingress.enabled | bool | `false` | Specifies whether an ingress should be created. |
-| ingress.hosts | list | `[{"host":"chart-example.local","paths":[]}]` | A list of host paths used to configure the ingress. |
-| ingress.pathType | string | `"ImplementationSpecific"` | Specifies pathType of host paths. e.g. "Prefix" or "ImplementationSpecific" |
+| ingress.hosts | list | `[{"host":"chart-example.local","paths":[],"service":{"nameSuffix":"","portName":"nessie-http"}}]` | A list of host paths used to configure the ingress. |
+| ingress.hosts[0].service | object | `{"nameSuffix":"","portName":"nessie-http"}` | The service target for the ingress. |
+| ingress.hosts[0].service.nameSuffix | string | `""` | The target service name suffix. Optional; if not provided, the main service will be targeted. Change this only if you are targeting a service defined in extraServices. |
+| ingress.hosts[0].service.portName | string | `"nessie-http"` | The port name to route traffic to. Must match one of the ports in service.ports or in extraServices.ports. Optional; if not provided, the first port in service.ports will be used. |
+| ingress.pathType | string | `"ImplementationSpecific"` | Specifies the path type of host paths. Valid values are: "Prefix", "Exact" or "ImplementationSpecific". |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
 | jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation for the correct URL format. |
 | jdbc.secret.name | string | `"datasource-creds"` | The secret name to pull datasource credentials from. |
@@ -265,6 +270,10 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | livenessProbe.terminationGracePeriodSeconds | int | `30` | Optional duration in seconds the pod needs to terminate gracefully upon probe failure. Minimum value is 1. |
 | livenessProbe.timeoutSeconds | int | `10` | Number of seconds after which the probe times out. Minimum value is 1. |
 | logLevel | string | `"INFO"` | The minimum log level for the Nessie server. If you need to debug Nessie, set this to DEBUG, then add the following to the advancedConfig section: `quarkus.log.category."<logger>".level: DEBUG` where `<logger>` is the logger you want to debug. E.g. to debug issues with the Nessie configuration, add: `quarkus.log.category."io.smallrye.config".level: DEBUG` |
+| managementService | object | `{"annotations":{},"portName":"nessie-mgmt","portNumber":9000}` | Management service settings. These settings are used to configure liveness and readiness probes, and to configure the dedicated headless service that will expose health checks and metrics, e.g. for metrics scraping and service monitoring. |
+| managementService.annotations | object | `{}` | Annotations to add to the service. |
+| managementService.portName | string | `"nessie-mgmt"` | The name of the management port. Required. |
+| managementService.portNumber | int | `9000` | The port the management service listens on. By default, the management interface is exposed on HTTP port 9000. |
 | metrics.enabled | bool | `true` | Specifies whether metrics for the nessie server should be enabled. |
 | metrics.tags | object | `{}` | Additional tags (dimensional labels) to add to the metrics. |
 | mongodb.connectionString | string | `"mongodb://localhost:27017"` | The MongoDB connection string. |
@@ -288,8 +297,9 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
 | rocksdb.storageSize | string | `"1Gi"` | The size of the persistent volume claim to create. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10000}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
+| service | object | `{"annotations":{},"ports":[{"name":"nessie-http","number":19120}],"sessionAffinity":"None","type":"ClusterIP"}` | Nessie main service settings. |
 | service.annotations | object | `{}` | Annotations to add to the service. |
-| service.ports | object | `{"nessie-mgmt":9000,"nessie-server":19120}` | The ports the service will listen on. Two ports are required: one for the Nessie server and one for the management API. Other ports can be declared as needed. The management port is handled differently from other ports as a dedicated headless service is created for it. Note: port names must be unique and no more than 15 characters long. |
+| service.ports | list | `[{"name":"nessie-http","number":19120}]` | The ports the service will listen on. At least one port is required; the first port implicitly becomes the HTTP port that the application will use for serving API requests. By default, it's 19120. Note: port names must be unique and no more than 15 characters long. |
 | service.sessionAffinity | string | `"None"` | The session affinity for the service. Valid values are: None, ClientIP. ClientIP enables sticky sessions based on the client's IP address. This is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Also, this setting affects only internal clients, not external ones. If Ingress is enabled, it is recommended to set sessionAffinity to None. |
 | service.type | string | `"ClusterIP"` | The type of service to create. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |

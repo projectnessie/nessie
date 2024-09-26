@@ -1,7 +1,38 @@
----
+service:
+  ports:
+    - name: http
+      number: 19120
+    - name: https
+      number: 19121
+  sessionAffinity: ClientIP
+
+managementService:
+  portName: mgmt
+  portNumber: 9001
+
+extraServices:
+  - nameSuffix: "-nodeport"
+    type: NodePort
+    sessionAffinity: None
+    annotations:
+      service-type: nodeport
+    ports:
+      - name: http
+        number: 19120
+      - name: alt-http
+        number: 29120
+  - nameSuffix: "-alt"
+    sessionAffinity: None
+    ports:
+      - name: http
+        number: 19120
+
 ingress:
   enabled: true
   hosts:
     - host: chart-example.local
+      service:
+        portName: http
+        nameSuffix: "-alt"
       paths:
         - "/"

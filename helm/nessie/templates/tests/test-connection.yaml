@@ -11,7 +11,7 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "nessie.fullname" . }}:{{ index .Values.service.ports "nessie-server" }}']
+      args: ['{{ include "nessie.fullname" . }}:{{ get (first .Values.service.ports) "number" }}']
   initContainers:
     - name: sleep
       image: busybox

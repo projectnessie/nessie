@@ -19,7 +19,6 @@
 {{- $kubeVersion := .Capabilities.KubeVersion.Version -}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "nessie.fullname" . -}}
-{{- $svcPort := coalesce .Values.service.port (index .Values.service.ports "nessie-server") -}}
 {{- if semverCompare ">=1.22-0" $kubeVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" $kubeVersion -}}
@@ -53,6 +52,8 @@ spec:
   rules:
     {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}
+      {{- $portName := dig "service" "portName" (get (first $.Values.service.ports) "name") . }}
+      {{- $svcName := printf "%s%s" $fullName (dig "service" "nameSuffix" "" .) }}
       http:
         paths:
           {{- range .paths }}
@@ -61,12 +62,12 @@ spec:
             backend:
               {{- if semverCompare ">=1.22-0" $kubeVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $svcName }}
                 port:
-                  number: {{ $svcPort }}
+                  name: {{ $portName }}
               {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              serviceName: {{ $svcName }}
+              servicePort: {{ $portName }}
               {{- end }}
           {{- end }}
     {{- end }}

@@ -31,12 +31,12 @@ data:
     {{- $_ := set $map "nessie.version.store.type" .Values.versionStoreType -}}
 
     {{- $serviceNamesMgmt := include "nessie.fullname" . | printf "%s-mgmt" -}}
-    {{- $cacheInvalToken := include (print $.Template.BasePath "/management-service.yaml") . | sha1sum -}}
+    {{- $cacheInvalToken := .Values.managementService | toYaml | sha1sum -}}
     {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.service-names" $serviceNamesMgmt -}}
     {{- $_ = set $map "nessie.version.store.persist.cache-invalidations.valid-tokens" $cacheInvalToken -}}
 
-    {{- $_ = set $map "quarkus.http.port" (coalesce .Values.service.port (index .Values.service.ports "nessie-server")) -}}
-    {{- $_ = set $map "quarkus.management.port" (index .Values.service.ports "nessie-mgmt") -}}
+    {{- $_ = set $map "quarkus.http.port" (get (first .Values.service.ports) "number") -}}
+    {{- $_ = set $map "quarkus.management.port" .Values.managementService.portNumber -}}
 
     {{- if .Values.logLevel -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
