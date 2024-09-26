@@ -15,8 +15,10 @@
  */
 package org.projectnessie.events.api;
 
+import org.projectnessie.model.Reference;
+
 /**
- * Event that affects two references: a source and a target.
+ * Event that affects more than one reference.
  *
  * <p>This type has 2 child interfaces:
  *
@@ -26,12 +28,6 @@ package org.projectnessie.events.api;
  * </ul>
  */
 public interface MultiReferenceEvent extends Event {
-
-  /**
-   * The source reference where the committed operations come from. This is usually a branch, but
-   * not always (e.g. it could be a tag or a detached reference).
-   */
-  Reference getSourceReference();
 
   /**
    * The target reference where the committed operations were applied to.

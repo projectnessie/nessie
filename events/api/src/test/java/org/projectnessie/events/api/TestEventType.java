@@ -21,21 +21,16 @@ import static org.mockito.Mockito.mock;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.Reference;
 
 class TestEventType {
 
-  private final Reference branch1 =
-      ImmutableReference.builder()
-          .simpleName("branch1")
-          .fullName("refs/heads/branch1")
-          .type(Reference.BRANCH)
-          .build();
-  private final Reference branch2 =
-      ImmutableReference.builder()
-          .simpleName("branch2")
-          .fullName("refs/heads/branch2")
-          .type(Reference.BRANCH)
-          .build();
+  private final Reference branch1 = Branch.of("branch1", "cafebabe");
+  private final Reference branch2 = Branch.of("branch2", "deadbeef");
 
   @Test
   void commit() {
@@ -50,10 +45,10 @@ class TestEventType {
             .eventInitiator("Alice")
             .commitMeta(
                 ImmutableCommitMeta.builder()
-                    .commitTimestamp(Instant.now())
+                    .commitTime(Instant.now())
                     .committer("committer")
                     .message("message")
-                    .authorTimestamp(Instant.now())
+                    .authorTime(Instant.now())
                     .build())
             .build();
     assertThat(event.getType()).isEqualTo(EventType.COMMIT);
@@ -67,6 +62,7 @@ class TestEventType {
             .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
+            .sourceHash("hash3")
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .eventCreationTimestamp(Instant.now())
@@ -80,10 +76,10 @@ class TestEventType {
   void transplant() {
     TransplantEvent event =
         ImmutableTransplantEvent.builder()
-            .sourceReference(branch1)
             .targetReference(branch2)
             .hashBefore("hash1")
             .hashAfter("hash2")
+            .commitCount(3)
             .id(UUID.randomUUID())
             .repositoryId("repo1")
             .eventCreationTimestamp(Instant.now())

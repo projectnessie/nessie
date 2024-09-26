@@ -20,12 +20,9 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import org.projectnessie.events.api.Content;
-import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ImmutableCommitEvent;
-import org.projectnessie.events.api.ImmutableCommitMeta;
 import org.projectnessie.events.api.ImmutableContentRemovedEvent;
 import org.projectnessie.events.api.ImmutableContentStoredEvent;
 import org.projectnessie.events.api.ImmutableMergeEvent;
@@ -33,14 +30,21 @@ import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
 import org.projectnessie.events.api.ImmutableReferenceDeletedEvent;
 import org.projectnessie.events.api.ImmutableReferenceUpdatedEvent;
 import org.projectnessie.events.api.ImmutableTransplantEvent;
-import org.projectnessie.events.service.util.ReferenceMapping;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.Reference;
+import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeResult;
+import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAssignedResult;
 import org.projectnessie.versioned.ReferenceCreatedResult;
 import org.projectnessie.versioned.ReferenceDeletedResult;
+import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.TransplantResult;
 
 /**
@@ -66,17 +70,17 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(targetBranch))
+        .reference(makeReference(targetBranch, commit.getHash()))
         .hashBefore(Objects.requireNonNull(commit.getParentHash()).asString())
         .hashAfter(commit.getHash().asString())
         .commitMeta(
             ImmutableCommitMeta.builder()
                 .committer(Objects.requireNonNull(commitMeta.getCommitter()))
-                .authors(commitMeta.getAllAuthors())
+                .addAllAllAuthors(commitMeta.getAllAuthors())
                 .allSignedOffBy(commitMeta.getAllSignedOffBy())
                 .message(commitMeta.getMessage())
-                .commitTimestamp(Objects.requireNonNull(commitMeta.getCommitTime()))
-                .authorTimestamp(Objects.requireNonNull(commitMeta.getAuthorTime()))
+                .commitTime(Objects.requireNonNull(commitMeta.getCommitTime()))
+                .authorTime(Objects.requireNonNull(commitMeta.getAuthorTime()))
                 .allProperties(commitMeta.getAllProperties())
                 .build())
         .build();
@@ -84,32 +88,35 @@ public class EventFactory {
 
   protected Event newMergeEvent(MergeResult result, String repositoryId, @Nullable Principal user) {
     String commonAncestorHash = Objects.requireNonNull(result.getCommonAncestor()).asString();
+    Hash hashAfter = Objects.requireNonNull(result.getResultantTargetHash());
     return ImmutableMergeEvent.builder()
         .id(config.getIdGenerator().get())
         .eventCreationTimestamp(config.getClock().instant())
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .sourceReference(ReferenceMapping.map(result.getSourceRef()))
-        .targetReference(ReferenceMapping.map(result.getTargetBranch()))
+        .sourceReference(makeReference(result.getSourceRef(), result.getSourceHash()))
+        .sourceHash(result.getSourceHash().asString())
+        .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
-        .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString())
+        .hashAfter(hashAfter.asString())
         .commonAncestorHash(commonAncestorHash)
         .build();
   }
 
   protected Event newTransplantEvent(
       TransplantResult result, String repositoryId, @Nullable Principal user) {
+    Hash hashAfter = Objects.requireNonNull(result.getResultantTargetHash());
     return ImmutableTransplantEvent.builder()
         .id(config.getIdGenerator().get())
         .eventCreationTimestamp(config.getClock().instant())
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .sourceReference(ReferenceMapping.map(result.getSourceRef()))
-        .targetReference(ReferenceMapping.map(result.getTargetBranch()))
+        .targetReference(makeReference(result.getTargetBranch(), hashAfter))
         .hashBefore(result.getEffectiveTargetHash().asString())
-        .hashAfter(Objects.requireNonNull(result.getResultantTargetHash()).asString())
+        .hashAfter(hashAfter.asString())
+        .commitCount(result.getCreatedCommits().size())
         .build();
   }
 
@@ -121,7 +128,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getHash()))
         .hashAfter(result.getHash().asString())
         .build();
   }
@@ -134,7 +141,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getCurrentHash()))
         .hashBefore(result.getPreviousHash().asString())
         .hashAfter(result.getCurrentHash().asString())
         .build();
@@ -148,7 +155,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(result.getNamedRef()))
+        .reference(makeReference(result.getNamedRef(), result.getHash()))
         .hashBefore(result.getHash().asString())
         .build();
   }
@@ -168,7 +175,7 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(branch))
+        .reference(makeReference(branch, hash))
         .hash(hash.asString())
         .contentKey(contentKey)
         .content(content)
@@ -190,11 +197,22 @@ public class EventFactory {
         .eventInitiator(extractName(user))
         .repositoryId(repositoryId)
         .properties(config.getStaticProperties())
-        .reference(ReferenceMapping.map(branch))
+        .reference(makeReference(branch, hash))
         .hash(hash.asString())
         .contentKey(contentKey)
         .commitCreationTimestamp(commitTimestamp)
         .build();
+  }
+
+  private static Reference makeReference(NamedRef refName, Hash hash) {
+    if (refName instanceof TagName) {
+      return Tag.of(refName.getName(), hash.asString());
+    } else if (refName instanceof BranchName) {
+      return Branch.of(refName.getName(), hash.asString());
+    } else {
+      throw new UnsupportedOperationException(
+          "unsupported reference type, only branches and tags are supported");
+    }
   }
 
   private static Optional<String> extractName(@Nullable Principal user) {

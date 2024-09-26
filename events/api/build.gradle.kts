@@ -19,13 +19,22 @@ plugins { id("nessie-conventions-server") }
 publishingHelper { mavenName = "Nessie - Events - API" }
 
 dependencies {
+  api(project(":nessie-model"))
 
   // Immutables
   implementation(libs.immutables.builder)
   implementation(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
 
+  compileOnly(libs.microprofile.openapi)
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+
   // Testing
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
+
+  testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }

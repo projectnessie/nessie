@@ -31,21 +31,20 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.projectnessie.events.api.Content;
-import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.ImmutableCommitEvent;
-import org.projectnessie.events.api.ImmutableCommitMeta;
-import org.projectnessie.events.api.ImmutableContent;
 import org.projectnessie.events.api.ImmutableContentRemovedEvent;
 import org.projectnessie.events.api.ImmutableContentStoredEvent;
 import org.projectnessie.events.api.ImmutableMergeEvent;
-import org.projectnessie.events.api.ImmutableReference;
 import org.projectnessie.events.api.ImmutableReferenceCreatedEvent;
 import org.projectnessie.events.api.ImmutableReferenceDeletedEvent;
 import org.projectnessie.events.api.ImmutableReferenceUpdatedEvent;
 import org.projectnessie.events.api.ImmutableTransplantEvent;
-import org.projectnessie.events.api.Reference;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
@@ -64,24 +63,12 @@ class TestEventFactory {
   UUID uuid = UUID.randomUUID();
   Instant now = Instant.now();
 
-  ImmutableReference branch1 =
-      ImmutableReference.builder()
-          .type(Reference.BRANCH)
-          .simpleName(BranchName.of("branch1").getName())
-          .fullName("refs/heads/" + BranchName.of("branch1").getName())
-          .build();
-  ImmutableReference branch2 =
-      ImmutableReference.builder()
-          .type(Reference.BRANCH)
-          .simpleName(BranchName.of("branch2").getName())
-          .fullName("refs/heads/" + BranchName.of("branch2").getName())
-          .build();
   Commit commit =
       ImmutableCommit.builder()
-          .hash(Hash.of("5678"))
-          .parentHash(Hash.of("1234"))
+          .hash(Hash.of("deadbeef"))
+          .parentHash(Hash.of("cafebabe"))
           .commitMeta(
-              org.projectnessie.model.ImmutableCommitMeta.builder()
+              ImmutableCommitMeta.builder()
                   .committer("committer")
                   .author("author")
                   .message("message")
@@ -121,16 +108,16 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .hashBefore(Hash.of("1234").asString())
-                .hashAfter(Hash.of("5678").asString())
-                .reference(branch1)
+                .hashBefore("cafebabe")
+                .hashAfter("deadbeef")
+                .reference(Branch.of("branch1", "deadbeef"))
                 .commitMeta(
                     ImmutableCommitMeta.builder()
                         .message("message")
-                        .addAuthor("author")
+                        .addAllAuthors("author")
                         .committer("committer")
-                        .authorTimestamp(now)
-                        .commitTimestamp(now)
+                        .authorTime(now)
+                        .commitTime(now)
                         .build())
                 .build());
   }
@@ -142,10 +129,10 @@ class TestEventFactory {
     MergeResult result =
         MergeResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHash(Hash.of("90ab"))
+            .sourceHash(Hash.of("11111111"))
             .targetBranch(BranchName.of("branch2"))
-            .effectiveTargetHash(Hash.of("1234")) // hash before
-            .resultantTargetHash(Hash.of("5678")) // hash after
+            .effectiveTargetHash(Hash.of("cafebabe")) // hash before
+            .resultantTargetHash(Hash.of("deadbeef")) // hash after
             .commonAncestor(Hash.of("0000"))
             .addCreatedCommits(commit)
             .build();
@@ -158,11 +145,12 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .commonAncestorHash(Hash.of("0000").asString())
-                .hashBefore(Hash.of("1234").asString())
-                .hashAfter(Hash.of("5678").asString())
-                .sourceReference(branch1)
-                .targetReference(branch2)
+                .commonAncestorHash("0000")
+                .hashBefore("cafebabe")
+                .hashAfter("deadbeef")
+                .sourceHash(Hash.of("11111111").asString())
+                .sourceReference(Branch.of("branch1", "11111111"))
+                .targetReference(Branch.of("branch2", "deadbeef"))
                 .build());
   }
 
@@ -173,10 +161,12 @@ class TestEventFactory {
     TransplantResult result =
         TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHashes(List.of(Hash.of("90ab")))
+            .sourceHashes(List.of(Hash.of("11111111"), Hash.of("22222222"), Hash.of("33333333")))
             .targetBranch(BranchName.of("branch2"))
-            .effectiveTargetHash(Hash.of("1234")) // hash before
-            .resultantTargetHash(Hash.of("5678")) // hash after
+            .effectiveTargetHash(Hash.of("cafebabe")) // hash before
+            .resultantTargetHash(Hash.of("deadbeef")) // hash after
+            .addCreatedCommits(commit)
+            .addCreatedCommits(commit)
             .addCreatedCommits(commit)
             .build();
     Event actual = ef.newTransplantEvent(result, "repo1", user);
@@ -188,10 +178,10 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .hashBefore(Hash.of("1234").asString())
-                .hashAfter(Hash.of("5678").asString())
-                .sourceReference(branch1)
-                .targetReference(branch2)
+                .hashBefore("cafebabe")
+                .hashAfter("deadbeef")
+                .commitCount(3)
+                .targetReference(Branch.of("branch2", "deadbeef"))
                 .build());
   }
 
@@ -202,7 +192,7 @@ class TestEventFactory {
     ReferenceCreatedResult result =
         ImmutableReferenceCreatedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("cafebabe"))
             .build();
     Event actual = ef.newReferenceCreatedEvent(result, "repo1", user);
     assertThat(actual)
@@ -213,8 +203,8 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .reference(branch1)
-                .hashAfter(Hash.of("1234").asString())
+                .reference(Branch.of("branch1", "cafebabe"))
+                .hashAfter("cafebabe")
                 .build());
   }
 
@@ -225,8 +215,8 @@ class TestEventFactory {
     ReferenceAssignedResult result =
         ImmutableReferenceAssignedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .previousHash(Hash.of("1234"))
-            .currentHash(Hash.of("5678"))
+            .previousHash(Hash.of("cafebabe"))
+            .currentHash(Hash.of("deadbeef"))
             .build();
     Event actual = ef.newReferenceUpdatedEvent(result, "repo1", user);
     assertThat(actual)
@@ -237,9 +227,9 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .reference(branch1)
-                .hashBefore(Hash.of("1234").asString())
-                .hashAfter(Hash.of("5678").asString())
+                .reference(Branch.of("branch1", "deadbeef"))
+                .hashBefore("cafebabe")
+                .hashAfter("deadbeef")
                 .build());
   }
 
@@ -250,7 +240,7 @@ class TestEventFactory {
     ReferenceDeletedResult result =
         ImmutableReferenceDeletedResult.builder()
             .namedRef(BranchName.of("branch1"))
-            .hash(Hash.of("1234"))
+            .hash(Hash.of("cafebabe"))
             .build();
     Event actual = ef.newReferenceDeletedEvent(result, "repo1", user);
     assertThat(actual)
@@ -261,8 +251,8 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .reference(branch1)
-                .hashBefore(Hash.of("1234").asString())
+                .reference(Branch.of("branch1", "cafebabe"))
+                .hashBefore("cafebabe")
                 .build());
   }
 
@@ -270,20 +260,11 @@ class TestEventFactory {
   @MethodSource("principals")
   void newContentStoredEvent(Principal user, String expectedInitiator) {
     EventFactory ef = new EventFactory(config);
-    Content table =
-        ImmutableContent.builder()
-            .id("table1")
-            .type("ICEBERG_TABLE")
-            .putProperty("metadataLocation", "location")
-            .putProperty("schemaId", 1)
-            .putProperty("specId", 2)
-            .putProperty("sortOrderId", 3)
-            .putProperty("snapshotId", 4)
-            .build();
+    Content table = IcebergTable.of("location", 1, 2, 3, 4, "table1");
     Event actual =
         ef.newContentStoredEvent(
             BranchName.of("branch1"),
-            Hash.of("1234"),
+            Hash.of("cafebabe"),
             now,
             ContentKey.of("foo.bar.table1"),
             table,
@@ -297,8 +278,8 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .reference(branch1)
-                .hash(Hash.of("1234").asString())
+                .reference(Branch.of("branch1", "cafebabe"))
+                .hash("cafebabe")
                 .commitCreationTimestamp(now)
                 .contentKey(ContentKey.of("foo.bar.table1"))
                 .content(table)
@@ -312,7 +293,7 @@ class TestEventFactory {
     Event actual =
         ef.newContentRemovedEvent(
             BranchName.of("branch1"),
-            Hash.of("1234"),
+            Hash.of("cafebabe"),
             now,
             ContentKey.of("foo.bar.table1"),
             "repo1",
@@ -325,8 +306,8 @@ class TestEventFactory {
                 .repositoryId("repo1")
                 .eventCreationTimestamp(now)
                 .putProperty("key", "value")
-                .reference(branch1)
-                .hash(Hash.of("1234").asString())
+                .reference(Branch.of("branch1", "cafebabe"))
+                .hash("cafebabe")
                 .commitCreationTimestamp(now)
                 .contentKey(ContentKey.of("foo.bar.table1"))
                 .build());

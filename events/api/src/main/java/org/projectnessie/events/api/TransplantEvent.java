@@ -30,4 +30,7 @@ public interface TransplantEvent
   default EventType getType() {
     return EventType.TRANSPLANT;
   }
+
+  /** The number of commits that were transplanted into the target reference. */
+  int getCommitCount();
 }

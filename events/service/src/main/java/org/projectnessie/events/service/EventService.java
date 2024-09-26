@@ -21,16 +21,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.projectnessie.events.api.Content;
-import org.projectnessie.events.api.ContentKey;
 import org.projectnessie.events.api.ContentStoredEvent;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.api.ReferenceCreatedEvent;
-import org.projectnessie.events.service.util.ContentMapping;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
 import org.projectnessie.events.spi.ImmutableEventSubscription;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
@@ -215,14 +214,13 @@ public class EventService implements AutoCloseable {
       Hash hash = Objects.requireNonNull(commit.getHash());
       Instant commitTime = Objects.requireNonNull(commit.getCommitMeta().getCommitTime());
       for (Operation operation : operations) {
+        ContentKey contentKey = operation.getKey();
         if (operation instanceof Put) {
-          ContentKey contentKey = ContentMapping.map(operation.getKey());
-          Content content = ContentMapping.map(((Put) operation).getContent());
+          Content content = ((Put) operation).getContent();
           fireEvent(
               factory.newContentStoredEvent(
                   targetBranch, hash, commitTime, contentKey, content, repositoryId, user));
         } else if (operation instanceof Delete) {
-          ContentKey contentKey = ContentMapping.map(operation.getKey());
           fireEvent(
               factory.newContentRemovedEvent(
                   targetBranch, hash, commitTime, contentKey, repositoryId, user));

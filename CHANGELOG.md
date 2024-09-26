@@ -12,6 +12,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Breaking changes
 
+- The Events API has been redesigned to import the Nessie Model API directly, instead of using
+  specific DTO classes. This change is intended to simplify the API and facilitate consumption of
+  the events. The following classes from the `org.projectnessie.events.api` package have been
+  removed and replaced with their respective model classes from the `org.projectnessie.model`
+  package:
+    - `CommitMeta`
+    - `Content` and its subclasses
+    - `ContentKey`
+    - `Reference` and its subclasses
 - Helm chart: the `service` section has been redesigned to allow for extra services to be defined.
   If you have customized the `service.ports` field, beware that this field is now an array. Also,
   the management port configuration has been moved to a new `managementService` section. And

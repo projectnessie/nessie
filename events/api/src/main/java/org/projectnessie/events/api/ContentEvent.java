@@ -16,6 +16,7 @@
 package org.projectnessie.events.api;
 
 import java.time.Instant;
+import org.projectnessie.model.ContentKey;
 
 /**
  * Event that is emitted when a content is stored (PUT) or removed (DELETE).

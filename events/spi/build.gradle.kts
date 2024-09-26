@@ -19,12 +19,16 @@ plugins { id("nessie-conventions-server") }
 publishingHelper { mavenName = "Nessie - Events - SPI" }
 
 dependencies {
-  implementation(project(":nessie-events-api"))
+  api(project(":nessie-events-api"))
 
   // Immutables
   implementation(libs.immutables.builder)
   implementation(libs.immutables.value.annotations)
   annotationProcessor(libs.immutables.value.processor)
+
+  // Jackson
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   // Testing
   testImplementation(platform(libs.junit.bom))
