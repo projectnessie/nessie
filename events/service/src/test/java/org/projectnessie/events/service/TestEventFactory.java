@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import java.security.Principal;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -161,7 +160,6 @@ class TestEventFactory {
     TransplantResult result =
         TransplantResult.builder()
             .sourceRef(BranchName.of("branch1"))
-            .sourceHashes(List.of(Hash.of("11111111"), Hash.of("22222222"), Hash.of("33333333")))
             .targetBranch(BranchName.of("branch2"))
             .effectiveTargetHash(Hash.of("cafebabe")) // hash before
             .resultantTargetHash(Hash.of("deadbeef")) // hash after
