@@ -16,28 +16,6 @@ runs:
       # /dev/sda15      105M  6.1M   99M   6% /boot/efi
       # /dev/sdb1        14G  4.1G  9.0G  31% /mnt
       # tmpfs           694M   12K  694M   1% /run/user/1001
-    - name: List docker images
-      shell: bash
-      run: docker image ls -a
-    - name: Remove unused Docker images
-      shell: bash
-      # See https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md#cached-docker-images
-      run: |
-        docker image rm \
-          node:16 \
-          node:16-alpine \
-          node:18 \
-          node:18-alpine \
-          node:20 \
-          node:20-alpine \
-          moby/buildkit:latest \
-          alpine:3.16 \
-          alpine:3.17 \
-          alpine:3.18 \
-          debian:10 \
-          debian:11 \
-          ubuntu:22.04 \
-          ubuntu:20.04
     - name: Delete unneeded files
       shell: bash
       run: |
@@ -63,6 +41,3 @@ runs:
       # /dev/sda15      105M  6.1M   99M   6% /boot/efi
       # /dev/sdb1        14G  4.1G  9.0G  31% /mnt
       # tmpfs           694M   12K  694M   1% /run/user/1001
-    - name: List docker images
-      shell: bash
-      run: docker image ls -a

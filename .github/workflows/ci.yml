@@ -56,7 +56,7 @@ concurrency:
 jobs:
   code-checks:
     name: CI Code Checks et al
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -111,7 +111,7 @@ jobs:
 
   test:
     name: CI Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -144,7 +144,7 @@ jobs:
 
   test-quarkus:
     name: CI Test Quarkus
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -198,7 +198,7 @@ jobs:
 
   int-test:
     name: CI intTest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -253,7 +253,7 @@ jobs:
 
   int-test-stores:
     name: CI intTest versioned/stores
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -295,7 +295,7 @@ jobs:
 
   int-test-integrations:
     name: CI intTest integrations
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -338,7 +338,7 @@ jobs:
 
   int-test-quarkus-server:
     name: CI intTest Quarkus Server
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -385,7 +385,7 @@ jobs:
 
   int-test-quarkus-tool:
     name: CI intTest Admin Tool
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -432,7 +432,7 @@ jobs:
 
   int-test-quarkus-events:
     name: CI intTest Quarkus Events
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -479,7 +479,7 @@ jobs:
 
   determine-jobs:
     name: CI Determine jobs
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       # Each "conditional" job has a mapped output here, also a "non-PR" case and a "PR" case
@@ -584,7 +584,7 @@ jobs:
 
   docker-testing:
     name: CI Docker and Helm checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs:
       - determine-jobs
@@ -653,9 +653,7 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Update /etc/docker/daemon.json for 'docker pull'"
-          cp /etc/docker/daemon.json ..
-          cat ../daemon.json | \
-            jq ". + {\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
+          echo "{\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
             sudo tee /etc/docker/daemon.json
           echo "::endgroup::"
 
@@ -855,7 +853,7 @@ jobs:
 
   nesqueit:
     name: CI NesQuEIT
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs:
       - determine-jobs
@@ -963,7 +961,7 @@ jobs:
 
   site:
     name: CI Website
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
@@ -997,7 +995,7 @@ jobs:
   store-cache:
     # Store the Gradle cache to GH cache as soon as all relevant Nessie/Gradle jobs have finished.
     name: CI Store Cache
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
