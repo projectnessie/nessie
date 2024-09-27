@@ -653,9 +653,7 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Update /etc/docker/daemon.json for 'docker pull'"
-          cp /etc/docker/daemon.json ..
-          cat ../daemon.json | \
-            jq ". + {\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
+          echo "{\"insecure-registries\": [\"${DOCKER_REGISTRY}:5000\"]}" | \
             sudo tee /etc/docker/daemon.json
           echo "::endgroup::"
 
