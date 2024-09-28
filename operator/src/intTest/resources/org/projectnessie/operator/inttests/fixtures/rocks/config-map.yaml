@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.server.authentication.anonymous-paths=/q/health/live,/q/health/live/,/q/health/ready,/q/health/ready/,/q/metrics,/q/metrics/
+    nessie.server.authentication.enabled=true
+    nessie.server.authorization.enabled=true
+    nessie.server.authorization.rules.allow_branch_listing=op=='VIEW_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+    nessie.server.authorization.rules.allow_commits=op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+    nessie.server.authorization.rules.allow_create_entities=op=='CREATE_ENTITY' && role.startsWith('service-account-nessie') && ref.startsWith('main')
+    nessie.version.store.persist.cache-capacity-mb=0
+    nessie.version.store.persist.repository-id=my-repository
+    nessie.version.store.persist.rocks.database-path=/rocks-nessie
+    nessie.version.store.type=ROCKSDB
+    quarkus.oidc.auth-server-url=https://placeholder.com
+    quarkus.oidc.client-id=nessie
+    quarkus.otel.sdk.disabled=true

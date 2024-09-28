@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.version.store.persist.cache-capacity-mb=0
+    quarkus.cassandra.auth.username=cassandra
+    quarkus.cassandra.contact-points=placeholder:9042
+    quarkus.cassandra.keyspace=nessie
+    quarkus.cassandra.local-datacenter=datacenter1
+    nessie.version.store.type=CASSANDRA
+    quarkus.oidc.tenant-enabled=false
+    quarkus.otel.exporter.otlp.traces.endpoint=http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317
+    quarkus.otel.resource.attributes=service.name=nessie-test-custom
+    quarkus.otel.traces.sampler=parentbased_always_on

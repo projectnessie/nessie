@@ -1,0 +1,57 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: Cassandra
+    cassandra:
+      contactPoints:
+        - cassandra.cassandra.svc.cluster.local:9042
+      localDatacenter: datacenter1
+      keyspace: nessie
+      username: cassandra
+      password:
+        secret: nessie-db-credentials
+        key: password
+  service:
+    type: NodePort
+    nodePort: 30120
+  monitoring:
+    enabled: false
+  telemetry:
+    enabled: true
+    endpoint: http://otel-collector-opentelemetry-collector.otel-collector.svc.cluster.local:4317
+    sample: all
+    attributes:
+      service.name: nessie-test-custom
+  advancedConfig:
+    nessie.version.store.persist.cache-capacity-mb: "0"
+  deployment:
+    image:
+      repository: projectnessie/nessie-test-server
+      tag: @projectVersion@
+      pullPolicy: Never
+    serviceAccount:
+      create: true
+    resources:
+      requests:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+      limits:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+    livenessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20

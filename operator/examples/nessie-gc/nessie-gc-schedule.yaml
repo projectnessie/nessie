@@ -1,0 +1,12 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: NessieGc
+metadata:
+  name: nessie-scheduled-gc
+  namespace: nessie-ns
+spec:
+  nessieRef:
+    name: nessie-simple
+  run: Periodically
+  schedule:
+    cron: "* * * * *"
+    timeZone: "UTC"

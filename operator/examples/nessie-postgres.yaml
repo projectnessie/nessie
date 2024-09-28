@@ -1,0 +1,19 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-postgres
+spec:
+  size: 3
+  logLevel: INFO
+  deployment:
+    image:
+      repository: ghcr.io/projectnessie/nessie
+  versionStore:
+    type: Jdbc
+    jdbc:
+      # helm install nessie-postgres oci://registry-1.docker.io/bitnamicharts/postgresql
+      url: jdbc:postgresql://nessie-postgres-postgresql:5432/nessiedb?currentSchema=nessie
+      username: postgres
+      password:
+        secret: postgres-creds
+        key: postgres_password

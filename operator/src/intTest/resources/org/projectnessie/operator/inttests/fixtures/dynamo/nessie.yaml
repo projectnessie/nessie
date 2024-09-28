@@ -1,0 +1,55 @@
+apiVersion: nessie.projectnessie.org/v1alpha1
+kind: Nessie
+metadata:
+  name: nessie-test
+spec:
+  versionStore:
+    type: DynamoDb
+    cache:
+      fixedSize: 32Mi
+    dynamoDb:
+      credentials:
+        secret: nessie-dynamo-credentials
+        accessKeyId: accessKey
+        secretAccessKey: secretKey
+      region: us-west-2
+  ingress:
+    enabled: true
+    annotations:
+      foo: bar
+    rules:
+      - host: nessie.example.com
+        paths:
+          - /
+  service:
+    type: LoadBalancer
+  monitoring:
+    enabled: false
+  deployment:
+    image:
+      repository: projectnessie/nessie-test-server
+      tag: @projectVersion@
+      pullPolicy: Never
+    serviceAccount:
+      create: true
+    resources:
+      requests:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+      limits:
+        cpu: 800m
+        memory: 384Mi
+        ephemeral-storage: 10Mi
+    livenessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 20

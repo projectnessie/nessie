@@ -133,6 +133,7 @@ quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quark
 quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkusPlatform" }
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.0.7" }
+quarkus-operator-sdk-bom = { module = "io.quarkus.platform:quarkus-operator-sdk-bom", version.ref = "quarkusPlatform" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.0" }
 rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "9.6.1" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.19" }}
@@ -149,6 +150,7 @@ spark-sql-v34-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { s
 spark-sql-v34-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.4, 3.5[", prefer = "3.4.3"}}
 spark-sql-v35-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.5, 3.6[", prefer = "3.5.1"}}
 spark-sql-v35-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.5, 3.6[", prefer = "3.5.1"}}
+sundr-builder-annotations = { module = "io.sundr:builder-annotations", version = "0.103.1" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version = "1.20.1" }
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "3.4.0" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.8.0" }
