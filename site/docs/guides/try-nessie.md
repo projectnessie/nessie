@@ -13,9 +13,9 @@ Running Nessie on your laptop and accessing it using Spark SQL and Iceberg REST 
 The following starts Nessie with Minio and a predefined bucket.
 
 ```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/projectnessie/nessie/main/docker/catalog-auth-s3/docker-compose.yml
-
-docker-compose -f docker-compose.yml up
+git clone projectnessie/nessie
+cd nessie/docker
+docker-compose -f catalog-auth-s3/docker-compose.yml up
 # or use podman-compose, if you're using Podman
 ```
 
@@ -35,10 +35,10 @@ spark-sql  \
 ```
 
 !!! note
-    With Nessie all necessary configuration about the object store (in the above example it is S3 via MinIO) is
+    With Nessie, all necessary configuration about the object store (in the above example it is S3 via MinIO) is
     pushed from Nessie to the Iceberg client used by Spark. Requests from Spark/Iceberg to the object store are
-    "secured" via Nessie, in the above example using S3 request signing. This means, that you do not configure
-    object store credentials on your Iceberg REST clients.
+    "secured" via Nessie, in the above example using S3 request signing. This means, that you do not need to
+    configure object store credentials on your Iceberg REST clients.
 
 And that's basically all to connect to Nessie using Iceberg REST and try it out _locally_ - from there it just works.
 
