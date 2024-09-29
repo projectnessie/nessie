@@ -15,7 +15,6 @@ jandex = "3.1.8"
 jmh = "1.37"
 junit = "5.11.1"
 kafka = "3.8.0"
-kafka-confluent = "7.7.1"
 keycloak = "25.0.6"
 logback = "1.5.8"
 mavenResolver = "1.9.22"
@@ -102,9 +101,6 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
-kafka-streams-test-utils = { module = "org.apache.kafka:kafka-streams-test-utils", version.ref = "kafka" }
-kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref = "kafka-confluent" }
-kafka-json-schema-serializer = { module = "io.confluent:kafka-json-schema-serializer", version.ref = "kafka-confluent" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 lowkey-vault-testcontainers = { module = "com.github.nagyesta.lowkey-vault:lowkey-vault-testcontainers", version = "2.5.6" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
@@ -160,7 +156,6 @@ wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-6" }
 
 [plugins]
-avro = { id = "com.github.davidmc24.gradle.plugin.avro", version = "1.9.1" }
 gatling = { id = "io.gatling.gradle", version = "3.12.0.2" }
 jmh = { id = "me.champeau.jmh", version = "0.7.2" }
 nessie-run = { id = "org.projectnessie", version = "0.32.2" }

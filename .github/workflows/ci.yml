@@ -80,14 +80,15 @@ jobs:
             -x :nessie-quarkus:compileAll \
             -x :nessie-server-admin-tool:compileAll \
             -x :nessie-events-quarkus:compileAll \
+            -x :nessie-events-ri:compileAll \
             --scan
 
       - name: Gradle / Compile Quarkus
         run: |
           # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll --scan
+          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan || \
+            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan
 
       - name: Gradle / Code checks
         run: ./gradlew codeChecks --scan
@@ -124,7 +125,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Gradle / test
-        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test --scan
+        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test -x :nessie-events-ri:test --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4
@@ -169,6 +170,13 @@ jobs:
           ./gradlew :nessie-events-quarkus:test --scan || \
             ./gradlew :nessie-events-quarkus:test --scan || \
             ./gradlew :nessie-events-quarkus:test --scan
+
+      - name: Gradle / Test Quarkus Events RI
+        run: |
+          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
+          ./gradlew :nessie-events-ri:test --scan || \
+            ./gradlew :nessie-events-ri:test --scan || \
+            ./gradlew :nessie-events-ri:test --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}

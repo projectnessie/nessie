@@ -18,5 +18,6 @@
 org.projectnessie.events.ri.console.PrintingEventSubscriber
 
 # Kafka event subscribers
-org.projectnessie.events.ri.kafka.KafkaAvroEventSubscriber
-org.projectnessie.events.ri.kafka.KafkaJsonEventSubscriber
+org.projectnessie.events.ri.messaging.kafka.avro.KafkaAvroEventSubscriber$ServiceLoaderShim
+org.projectnessie.events.ri.messaging.kafka.json.KafkaJsonEventSubscriber$ServiceLoaderShim
+org.projectnessie.events.ri.messaging.nats.json.NatsJsonEventSubscriber$ServiceLoaderShim
