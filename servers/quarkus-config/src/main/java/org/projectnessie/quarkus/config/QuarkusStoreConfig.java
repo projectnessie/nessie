@@ -135,7 +135,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
   /**
    * Fraction of Java’s max heap size to use for cache objects, set to 0 to disable. Must not be
    * used with fixed cache sizing. If neither this value nor a fixed size is configured, a default
-   * of .7 (70%) is assumed.
+   * of {@code .6} (60%) is assumed.
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP)
   OptionalDouble cacheCapacityFractionOfHeap();
