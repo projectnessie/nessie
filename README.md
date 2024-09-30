@@ -111,7 +111,7 @@ Nessie Iceberg's integration is compatible with Iceberg as in the following tabl
 ### Distribution
 To run:
 1. configuration in `servers/quarkus-server/src/main/resources/application.properties`
-2. execute `./gradlew quarkusDev`
+2. execute `./gradlew :nessie-quarkus:assemble && java -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar`
 3. go to `http://localhost:19120`
 
 ### UI 
