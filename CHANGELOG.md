@@ -16,6 +16,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- The persistence cache tries to avoid deserialization overhead when getting an object from the
+  cache by using Java's `SoftReference`. There is no guarantee that cached objects keep their
+  Java object tree around, but it should eventually for the majority of accesses to frequently
+  accessed cached objects. The default cache capacity fraction has been reduced from 70% of the
+  heap size to 60% of the heap size. However, extreme heap pressure may let Java GC clear all
+  `SoftReference`s.
+
 ### Deprecations
 
 ### Fixes

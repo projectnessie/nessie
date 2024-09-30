@@ -27,7 +27,7 @@ public interface CacheSizing {
 
   int DEFAULT_HEAP_SIZE_KEEP_FREE = 256;
   int DEFAULT_MIN_SIZE_MB = 64;
-  double DEFAULT_HEAP_FRACTION = 0.7d;
+  double DEFAULT_HEAP_FRACTION = 0.6d;
 
   OptionalInt fixedSizeInMB();
 

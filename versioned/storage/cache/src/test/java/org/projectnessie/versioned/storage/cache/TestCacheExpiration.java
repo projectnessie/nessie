@@ -57,7 +57,8 @@ public class TestCacheExpiration {
     backend.put("repo", dynamicCachingObj);
     backend.put("repo", stdObj);
 
-    ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, byte[]> cacheMap = backend.cache.asMap();
+    ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, CaffeineCacheBackend.CacheKeyValue> cacheMap =
+        backend.cache.asMap();
 
     soft.assertThat(cacheMap)
         .doesNotContainKey(CaffeineCacheBackend.cacheKey("repo", nonCachingObj.id()))
