@@ -134,14 +134,18 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
       SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
       Iterable<FileInfo> fileInfos;
       try {
+        LOGGER.info("Listing prefixes started: {}", basePath);
         fileInfos = fileIo.listPrefix(basePath.toString());
+        LOGGER.info("Listing prefixes completed: {}", basePath);
       } catch (Exception e) {
         throw new NessieFileIOException("Failed to list prefix of " + path, e);
       }
       return StreamSupport.stream(fileInfos.spliterator(), false)
           .map(
               f -> {
+                LOGGER.info("StorageUri.of started: {}", f.location());
                 StorageUri location = StorageUri.of(f.location());
+                LOGGER.info("StorageUri.of completed: {}", f.location());
                 if (!location.isAbsolute()) {
                   location = basePath.resolve("/").resolve(location);
                 }
@@ -150,7 +154,10 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
               });
     }
 
-    return listHadoop(basePath);
+    LOGGER.info("Listing Hadoop started: {}", basePath);
+    Stream<FileReference> listHadoopReturn = listHadoop(basePath);
+    LOGGER.info("Listing Hadoop completed: {}", basePath);
+    return listHadoopReturn;
   }
 
   private Stream<FileReference> listHadoop(StorageUri basePath) throws NessieFileIOException {
@@ -180,11 +187,13 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
               LocatedFileStatus status = iterator.next();
 
               if (status.isFile()) {
+                LOGGER.info("Action accept started: {}", status.getPath().toUri().toString());
                 action.accept(
                     FileReference.of(
                         basePath.relativize(StorageUri.of(status.getPath().toUri())),
                         basePath,
                         status.getModificationTime()));
+                LOGGER.info("Action accept completed: {}", status.getPath().toUri().toString());
               }
 
               return true;
