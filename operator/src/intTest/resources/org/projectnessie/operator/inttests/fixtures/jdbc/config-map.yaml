@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+data:
+  application.properties: |
+    nessie.version.store.persist.cache-capacity-fraction-adjust-mb=66
+    nessie.version.store.persist.cache-capacity-fraction-min-size-mb=65
+    nessie.version.store.persist.cache-capacity-fraction-of-heap=0.6
+    nessie.version.store.persist.jdbc.datasource=postgresql
+    nessie.version.store.type=JDBC
+    quarkus.datasource.postgresql.jdbc.url=jdbc:postgresql://placeholder.com:5432/
+    quarkus.datasource.postgresql.username=nessie
+    quarkus.oidc.tenant-enabled=false
+    quarkus.otel.sdk.disabled=true

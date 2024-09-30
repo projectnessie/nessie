@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nessie-test
+  labels:
+    app.kubernetes.io/component: nessie
+    app.kubernetes.io/instance: nessie-test
+    app.kubernetes.io/managed-by: nessie-controller
+    app.kubernetes.io/name: nessie
+    app.kubernetes.io/part-of: nessie
+    # noinspection KubernetesUnknownValues
+    app.kubernetes.io/version: "@projectVersion@"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nessie
+      app.kubernetes.io/instance: nessie-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nessie
+        app.kubernetes.io/instance: nessie-test
+      annotations:
+        projectnessie.org/config-checksum: sha256:placeholder
+    spec:
+      containers:
+        - name: nessie
+          # noinspection KubernetesUnknownValues
+          image: "projectnessie/nessie-test-server:@projectVersion@"
+          imagePullPolicy: Never
+          ports:
+            - name: nessie-server
+              containerPort: 19120
+              protocol: TCP
+            - name: nessie-mgmt
+              containerPort: 9000
+              protocol: TCP
+            - name: nessie-debug
+              containerPort: 5009
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 800m
+              memory: 384Mi
+              ephemeral-storage: 10Mi
+            limits:
+              cpu: 800m
+              memory: 384Mi
+              ephemeral-storage: 10Mi
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/bigtable-nessie/sa_credentials.json"
+            - name: JAVA_DEBUG
+              value: "true"
+            - name: JAVA_DEBUG_PORT
+              value: "*:5009"
+            - name: JAVA_OPTS_APPEND
+              value: "-XX:+PrintFlagsFinal"
+          volumeMounts:
+            - name: nessie-config
+              mountPath: /deployments/config/application.properties
+              subPath: application.properties
+            - name: bigtable-creds
+              mountPath: /bigtable-nessie
+          livenessProbe:
+            httpGet:
+              path: /q/health/live
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /q/health/ready
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+      volumes:
+        - name: nessie-config
+          configMap:
+            name: nessie-test
+        - name: bigtable-creds
+          secret:
+            secretName: nessie-db-credentials
+            items:
+            - key: sa_json
+              path: sa_credentials.json
+      serviceAccountName: default
