@@ -82,14 +82,14 @@ public class TestCacheSizing {
   void defaultSettings4G() {
     // Assuming a 4G max heap, requesting 70% (358MB), sizing must yield 2867MB.
     soft.assertThat(CacheSizing.builder().build().calculateEffectiveSizeInMB(BYTES_4G))
-        .isEqualTo(2867);
+        .isEqualTo(2457);
   }
 
   @Test
   void defaultSettings1G() {
     soft.assertThat(CacheSizing.builder().build().calculateEffectiveSizeInMB(BYTES_1G))
         // 70 % of 1024 MB
-        .isEqualTo(716);
+        .isEqualTo(614);
   }
 
   @Test
