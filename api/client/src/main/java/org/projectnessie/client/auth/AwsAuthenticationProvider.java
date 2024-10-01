@@ -28,12 +28,13 @@ import org.projectnessie.client.NessieConfigConstants;
 import org.projectnessie.client.http.HttpAuthentication;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.RequestContext;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.signer.Aws4Signer;
-import software.amazon.awssdk.auth.signer.params.Aws4SignerParams;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
 import software.amazon.awssdk.regions.Region;
 
 /**
@@ -108,17 +109,22 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
 
     @Override
     public void applyToHttpRequest(RequestContext context) {
-      SdkHttpFullRequest modifiedRequest =
-          Aws4Signer.create()
+      SdkHttpFullRequest request =
+          prepareRequest(context.getUri(), context.getMethod(), context.getBody());
+      AwsCredentials identity = awsCredentialsProvider.resolveCredentials();
+      String signingName = "execute-api";
+      SdkHttpRequest modReq =
+          AwsV4HttpSigner.create()
               .sign(
-                  prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
-                  Aws4SignerParams.builder()
-                      .signingName("execute-api")
-                      .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                      .signingRegion(region)
-                      .build());
-      for (Map.Entry<String, List<String>> entry :
-          modifiedRequest.toBuilder().headers().entrySet()) {
+                  b -> {
+                    b.request(request)
+                        .identity(identity)
+                        .putProperty(AwsV4HttpSigner.REGION_NAME, region.id())
+                        .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, signingName);
+                    request.contentStreamProvider().ifPresent(b::payload);
+                  })
+              .request();
+      for (Map.Entry<String, List<String>> entry : modReq.headers().entrySet()) {
         if (context.containsHeader(entry.getKey())) {
           continue;
         }
