@@ -64,7 +64,7 @@ public class ITKafkaAvroEventSubscriber extends AbstractKafkaEventSubscriberTest
           .dependsOn(KAFKA)
           .withExposedPorts(8081)
           .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schemaregistry")
-          .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "broker:9092");
+          .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "broker:9093");
 
   @Override
   protected Class<?> subscriberClass() {

@@ -18,7 +18,7 @@ package org.projectnessie.versioned.storage.cassandra2tests;
 import static java.util.Collections.emptyList;
 
 import org.projectnessie.versioned.storage.cassandra2.Cassandra2BackendFactory;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 
 public class CassandraBackendTestFactory extends AbstractCassandraBackendTestFactory {
 
@@ -37,7 +37,7 @@ public class CassandraBackendTestFactory extends AbstractCassandraBackendTestFac
   }
 
   @Override
-  protected void configureContainer(CassandraContainer<?> c) {
+  protected void configureContainer(CassandraContainer c) {
     c.withEnv("JVM_OPTS", JVM_OPTS_TEST);
   }
 }

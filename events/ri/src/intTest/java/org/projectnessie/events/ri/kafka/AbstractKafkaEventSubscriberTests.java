@@ -61,9 +61,9 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.Reference;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
 
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class AbstractKafkaEventSubscriberTests {
@@ -71,13 +71,14 @@ abstract class AbstractKafkaEventSubscriberTests {
   protected static final Network NETWORK = Network.newNetwork();
 
   @Container
-  protected static final KafkaContainer KAFKA =
-      new KafkaContainer(
+  protected static final ConfluentKafkaContainer KAFKA =
+      new ConfluentKafkaContainer(
               ContainerSpecHelper.builder()
                   .name("kafka")
                   .containerClass(ITKafkaAvroEventSubscriber.class)
                   .build()
-                  .dockerImageName(null))
+                  .dockerImageName(null)
+                  .asCompatibleSubstituteFor("confluentinc/cp-kafka"))
           .withNetwork(NETWORK)
           .withNetworkAliases("broker");
 

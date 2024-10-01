@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.cassandratests;
 
 import static java.lang.String.format;
-import static org.testcontainers.containers.CassandraContainer.CQL_PORT;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
@@ -32,7 +31,7 @@ import org.projectnessie.versioned.storage.cassandra.CassandraBackendConfig;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -42,11 +41,12 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
   private static final Logger LOGGER =
       LoggerFactory.getLogger(AbstractCassandraBackendTestFactory.class);
   public static final String KEYSPACE_FOR_TEST = "nessie";
+  public static final Integer CQL_PORT = 9042;
 
   private final String dbName;
   private final List<String> args;
 
-  private CassandraContainer<?> container;
+  private CassandraContainer container;
   private InetSocketAddress hostAndPort;
   private String localDc;
 
@@ -116,8 +116,8 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
             .asCompatibleSubstituteFor("cassandra");
 
     for (int retry = 0; ; retry++) {
-      CassandraContainer<?> c =
-          new CassandraContainer<>(dockerImageName)
+      CassandraContainer c =
+          new CassandraContainer(dockerImageName)
               .withLogConsumer(new Slf4jLogConsumer(LOGGER))
               .withCommand(args.toArray(new String[0]));
       configureContainer(c);
@@ -160,7 +160,7 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
     return localDc;
   }
 
-  protected abstract void configureContainer(CassandraContainer<?> c);
+  protected abstract void configureContainer(CassandraContainer c);
 
   @Override
   public void start() {
