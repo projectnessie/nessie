@@ -542,7 +542,7 @@ public abstract class ObjId {
 
     @Override
     public long longAt(int index) {
-      index *= 4;
+      index *= 8;
       long l = 0;
       l |= (((long) byteAt(index++)) & 0xffL) << 56;
       l |= (((long) byteAt(index++)) & 0xffL) << 48;
