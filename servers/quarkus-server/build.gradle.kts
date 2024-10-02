@@ -184,6 +184,7 @@ dependencies {
   intTestCompileOnly(project(":nessie-immutables"))
   intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
+  intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
   intTestImplementation(libs.lowkey.vault.testcontainers)
