@@ -113,7 +113,41 @@ public class TestObjId {
             ObjId256.class),
         arguments(
             "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe12345688",
-            ObjId256.class));
+            ObjId256.class),
+        arguments("0123456789abcdef" + "42", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "4213", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "421399", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "42139987", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "4213998738", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "421399873891", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "421399873891cd", ObjIdGeneric.class),
+        arguments("0123456789abcdef" + "421399873891cdde", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "21", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "2123", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "212324", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "21232425", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "2123242526", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "212324252627", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "21232425262728", ObjIdGeneric.class),
+        arguments("0011223344556677" + "1213141516171819" + "2123242526272829", ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "ca",
+            ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafe",
+            ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafeba",
+            ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe",
+            ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe12",
+            ObjIdGeneric.class),
+        arguments(
+            "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe1234",
+            ObjIdGeneric.class));
   }
 
   @ParameterizedTest
@@ -194,12 +228,23 @@ public class TestObjId {
     soft.assertThat(h).isInstanceOf(type);
     soft.assertThat(h.size()).isEqualTo(s.length() / 2);
     soft.assertThat(h.serializedSize()).isEqualTo(h.size() + 1);
-    soft.assertThat(h.asByteArray()).hasSize(h.size()).isEqualTo(fromHex(s, false).array());
-    soft.assertThat(h.asByteBuffer()).isEqualTo(fromHex(s, false));
-    soft.assertThat(ObjId.objIdFromByteBuffer(h.asByteBuffer())).isEqualTo(h);
+    byte[] byteArray = h.asByteArray();
+    soft.assertThat(h.size()).isEqualTo(byteArray.length);
+    soft.assertThat(byteArray).hasSize(h.size()).isEqualTo(fromHex(s, false).array());
+    ByteBuffer byteBuffer = h.asByteBuffer();
+    soft.assertThat(byteBuffer.remaining()).isEqualTo(byteArray.length);
+    soft.assertThat(byteBuffer).isEqualTo(fromHex(s, false));
+    soft.assertThat(ObjId.objIdFromByteBuffer(byteBuffer)).isEqualTo(h);
     soft.assertThat(h.toString()).isEqualTo(s.toLowerCase(Locale.US));
     soft.assertThat(h).isEqualTo(deserializeObjId(fromHex(s, true)));
     soft.assertThat(h.heapSize()).isGreaterThan(h.size());
+    for (int i = 0; i < byteArray.length / 8; i++) {
+      long l = h.longAt(i);
+      soft.assertThat(l).isEqualTo(byteBuffer.getLong(i * 8));
+    }
+    for (int i = 0; i < byteArray.length; i++) {
+      soft.assertThat(h.byteAt(i)).isEqualTo(byteArray[i]);
+    }
   }
 
   static Stream<Arguments> hashCodes() {
@@ -241,6 +286,28 @@ public class TestObjId {
         "ef",
         "0123456789abcdef",
         "0011223344556677" + "1213141516171819" + "2123242526272829" + "3132343536373839",
+        "0123456789abcdef" + "42",
+        "0123456789abcdef" + "4213",
+        "0123456789abcdef" + "421399",
+        "0123456789abcdef" + "42139987",
+        "0123456789abcdef" + "4213998738",
+        "0123456789abcdef" + "421399873891",
+        "0123456789abcdef" + "421399873891cd",
+        "0123456789abcdef" + "421399873891cdde",
+        "0011223344556677" + "1213141516171819" + "21",
+        "0011223344556677" + "1213141516171819" + "2123",
+        "0011223344556677" + "1213141516171819" + "212324",
+        "0011223344556677" + "1213141516171819" + "21232425",
+        "0011223344556677" + "1213141516171819" + "2123242526",
+        "0011223344556677" + "1213141516171819" + "212324252627",
+        "0011223344556677" + "1213141516171819" + "21232425262728",
+        "0011223344556677" + "1213141516171819" + "2123242526272829",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "ca",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafe",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafeba",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe12",
+        "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe1234",
         "ffddbbaa88665544" + "9192939495969798" + "80776699deadbeef" + "cafebabe12345688"
       })
   void nibbles(String s) {
