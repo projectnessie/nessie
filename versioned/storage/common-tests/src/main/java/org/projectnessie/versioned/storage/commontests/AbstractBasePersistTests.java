@@ -1121,6 +1121,17 @@ public class AbstractBasePersistTests {
     soft.assertThat(list1).isNotEmpty().doesNotContainAnyElementsOf(list2);
     soft.assertThat(list2).isNotEmpty().doesNotContainAnyElementsOf(list1);
 
+    ArrayList<Obj> list1b;
+    try (CloseableIterator<Obj> iter = persist.scanAllObjects(Set.of())) {
+      list1b = newArrayList(iter);
+    }
+    ArrayList<Obj> list2b;
+    try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(Set.of())) {
+      list2b = newArrayList(iter);
+    }
+    soft.assertThat(list1b).isEqualTo(list1);
+    soft.assertThat(list2b).isEqualTo(list2);
+
     try (CloseableIterator<Obj> iter = otherRepo.scanAllObjects(Set.of(COMMIT))) {
       soft.assertThat(newArrayList(iter)).isNotEmpty().allMatch(o -> o.type() == COMMIT);
     }
@@ -1376,6 +1387,13 @@ public class AbstractBasePersistTests {
           .contains(strings)
           .contains(commits);
     }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of())) {
+      soft.assertThat(Lists.newArrayList(scan))
+          .hasSize(3 * numObjs)
+          .contains(values)
+          .contains(strings)
+          .contains(commits);
+    }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(VALUE, STRING))) {
       soft.assertThat(Lists.newArrayList(scan))
           .hasSize(2 * numObjs)
@@ -1426,6 +1444,9 @@ public class AbstractBasePersistTests {
         .containsExactly(objs);
 
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(ObjTypes.allObjTypes())) {
+      soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
+    }
+    try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of())) {
       soft.assertThat(Lists.newArrayList(scan)).containsExactlyInAnyOrder(objs);
     }
     try (CloseableIterator<Obj> scan =

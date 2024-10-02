@@ -21,6 +21,7 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.REFS_H
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -42,7 +43,6 @@ import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
 import org.projectnessie.versioned.storage.common.persist.Reference;
@@ -80,7 +80,7 @@ public class AbstractBackendRepositoryTests {
                     .toArray(Obj[]::new)))
         .hasSize(objs)
         .doesNotContain(false);
-    try (CloseableIterator<Obj> scan = repo1.scanAllObjects(ObjTypes.allObjTypes())) {
+    try (CloseableIterator<Obj> scan = repo1.scanAllObjects(Set.of())) {
       soft.assertThat(scan)
           .toIterable()
           .filteredOn(
@@ -90,7 +90,7 @@ public class AbstractBackendRepositoryTests {
 
     repo1.erase();
     soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
-    try (CloseableIterator<Obj> scan = repo1.scanAllObjects(ObjTypes.allObjTypes())) {
+    try (CloseableIterator<Obj> scan = repo1.scanAllObjects(Set.of())) {
       soft.assertThat(scan).isExhausted();
     }
   }
@@ -109,7 +109,7 @@ public class AbstractBackendRepositoryTests {
     soft.assertThat(repos)
         .noneMatch(
             r -> {
-              try (CloseableIterator<Obj> scan = r.scanAllObjects(ObjTypes.allObjTypes())) {
+              try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
                 return scan.hasNext();
               }
             });
@@ -152,7 +152,7 @@ public class AbstractBackendRepositoryTests {
     soft.assertThat(toDelete)
         .noneMatch(
             r -> {
-              try (CloseableIterator<Obj> scan = r.scanAllObjects(ObjTypes.allObjTypes())) {
+              try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
                 return scan.hasNext();
               }
             });
@@ -162,7 +162,7 @@ public class AbstractBackendRepositoryTests {
       for (int i = 0; i < refs; i++) {
         soft.assertThat(repo.fetchReference(REFS_HEADS + "reference-" + i)).isNotNull();
       }
-      try (CloseableIterator<Obj> scan = repo.scanAllObjects(ObjTypes.allObjTypes())) {
+      try (CloseableIterator<Obj> scan = repo.scanAllObjects(Set.of())) {
         soft.assertThat(scan)
             .toIterable()
             .filteredOn(

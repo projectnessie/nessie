@@ -427,6 +427,8 @@ public interface Persist {
    * <p>It is possible that databases have to scan all rows/items in the tables/collections, which
    * can lead to a <em>very</em> long runtime of this method.
    *
+   * @param returnedObjTypes if empty, all object types are returned, otherwise only the given
+   *     object types will be returned
    * @return iterator over all objects, must be closed
    */
   @Nonnull

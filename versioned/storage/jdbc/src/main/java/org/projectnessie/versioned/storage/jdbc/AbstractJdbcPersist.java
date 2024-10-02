@@ -41,6 +41,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.PURGE_REFERE
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_CREATED_AT_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.REFS_EXTENDED_INFO_COND;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.SCAN_OBJS_ALL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.TABLE_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_OBJS_REFERENCED;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.UPDATE_REFERENCE_POINTER;
@@ -681,16 +682,25 @@ abstract class AbstractJdbcPersist implements Persist {
     void accept(T t) throws SQLException;
   }
 
+  private static String scanSql(Set<ObjType> returnedObjTypes) {
+    if (returnedObjTypes.isEmpty()) {
+      return SCAN_OBJS_ALL;
+    }
+    return sqlSelectMultiple(SCAN_OBJS, returnedObjTypes.size());
+  }
+
   private class ScanAllObjectsIterator extends ResultSetIterator<Obj> {
     ScanAllObjectsIterator(Connection conn, Set<ObjType> returnedObjTypes) {
       super(
           conn,
-          sqlSelectMultiple(SCAN_OBJS, returnedObjTypes.size()),
+          scanSql(returnedObjTypes),
           ps -> {
             int idx = 1;
             ps.setString(idx++, config.repositoryId());
-            for (ObjType returnedObjType : returnedObjTypes) {
-              ps.setString(idx++, returnedObjType.name());
+            if (!returnedObjTypes.isEmpty()) {
+              for (ObjType returnedObjType : returnedObjTypes) {
+                ps.setString(idx++, returnedObjType.name());
+              }
             }
           });
     }
