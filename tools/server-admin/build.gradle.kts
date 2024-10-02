@@ -86,6 +86,7 @@ dependencies {
 
   testFixturesApi(project(":nessie-quarkus-tests"))
   testFixturesApi(project(":nessie-versioned-tests"))
+  intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation(project(":nessie-versioned-storage-mongodb-tests"))
   intTestImplementation(project(":nessie-versioned-storage-mongodb2-tests"))
   intTestImplementation(project(":nessie-versioned-storage-jdbc-tests"))

@@ -21,7 +21,7 @@ import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 
 public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFactory {
 
@@ -47,5 +47,5 @@ public class ScyllaDBBackendTestFactory extends AbstractCassandraBackendTestFact
   }
 
   @Override
-  protected void configureContainer(CassandraContainer<?> c) {}
+  protected void configureContainer(CassandraContainer c) {}
 }
