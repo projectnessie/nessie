@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import org.agrona.collections.ObjectHashSet;
 import org.projectnessie.api.NessieVersion;
 import org.projectnessie.nessie.relocated.protobuf.UnsafeByteOperations;
 import org.projectnessie.versioned.storage.common.logic.RepositoryDescription;
@@ -37,6 +38,7 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.serialize.SmileSerialization;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
+import org.projectnessie.versioned.transfer.related.CompositeTransferRelatedObjects;
 import org.projectnessie.versioned.transfer.related.TransferRelatedObjects;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
@@ -60,8 +62,15 @@ abstract class ExportCommon {
 
     this.exportVersion = verifyExportVersion(exportVersion);
 
+    /*
+     * One "related" object might be referenced by multiple content objects or commits or references.
+     * This implementation avoid exporting the same "related" object more than once. This set of
+     * {@link ObjId}s is unbounded, like the collections in {@link IdentifyHeadsAndForkPoints}.
+     */
+    ObjectHashSet<ObjId> seen = new ObjectHashSet<>();
     this.transferRelatedObjects =
-        new CompositeTransferRelatedObjects(exporter.genericObjectResolvers());
+        CompositeTransferRelatedObjects.createCompositeTransferRelatedObjects(
+            exporter.genericObjectResolvers(), seen::add);
   }
 
   private static ExportVersion verifyExportVersion(ExportVersion exportVersion) {
