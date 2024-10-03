@@ -163,7 +163,7 @@ going to be blocking by returning `true` from the `isBlocking()` method.
 
 Finally, `EventSubscriber` implementations are discovered automatically by Quarkus, and therefore
 must be declared as application-scoped  CDI beans. This is done by annotating the implementation
-class with `@ApplicationScoped`.
+class with `@ApplicationScoped` (or `@Singleton`).
 
 ## Testing
 

@@ -120,6 +120,7 @@ public class EventSubscribers implements AutoCloseable {
         if (!errors.isEmpty()) {
           RuntimeException e = new RuntimeException("Error closing at least one subscriber");
           errors.forEach(e::addSuppressed);
+          LOGGER.error(e.getMessage(), e);
           throw e;
         }
         LOGGER.info("Done closing subscribers.");
