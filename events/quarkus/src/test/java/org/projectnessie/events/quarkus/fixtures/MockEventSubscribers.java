@@ -15,28 +15,20 @@
  */
 package org.projectnessie.events.quarkus.fixtures;
 
-import io.quarkus.test.Mock;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
-import org.projectnessie.events.quarkus.QuarkusEventSubscribers;
 
-@Mock
-@Singleton
-public class MockEventSubscribers extends QuarkusEventSubscribers {
+public class MockEventSubscribers {
 
   @Produces
   @Singleton
   public MockEventSubscriber.MockEventSubscriber1 produceSubscriber1() {
-    return findSubscriber(MockEventSubscriber.MockEventSubscriber1.class);
+    return new MockEventSubscriber.MockEventSubscriber1();
   }
 
   @Produces
   @Singleton
   public MockEventSubscriber.MockEventSubscriber2 produceSubscriber2() {
-    return findSubscriber(MockEventSubscriber.MockEventSubscriber2.class);
-  }
-
-  private <T extends MockEventSubscriber> T findSubscriber(Class<? extends T> cl) {
-    return getSubscribers().stream().filter(cl::isInstance).map(cl::cast).findFirst().orElseThrow();
+    return new MockEventSubscriber.MockEventSubscriber2();
   }
 }

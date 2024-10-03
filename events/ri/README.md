@@ -161,10 +161,9 @@ messages without waiting for the broker's acknowledgement. If your implementatio
 the broker's acknowledgement synchronously, then you should report to Nessie that this subscriber is
 going to be blocking by returning `true` from the `isBlocking()` method.
 
-Finally, the messaging subscribers use a "shim" to initialize the subscriber. This is because
-subscribers are loaded by ServiceLoader, and the loaded instance is not managed by Quarkus. The shim
-provides a bridge between the Quarkus-managed instance and the ServiceLoader-loaded instance.
-See `KafkaJsonEventSubscriber.ServiceLoaderShim` for example.
+Finally, `EventSubscriber` implementations are discovered automatically by Quarkus, and therefore
+must be declared as application-scoped  CDI beans. This is done by annotating the implementation
+class with `@ApplicationScoped`.
 
 ## Testing
 

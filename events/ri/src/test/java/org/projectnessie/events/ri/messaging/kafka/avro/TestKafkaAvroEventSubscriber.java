@@ -23,20 +23,23 @@ import com.example.nessie.events.generated.OperationEventType;
 import com.example.nessie.events.generated.ReferenceEvent;
 import com.example.nessie.events.generated.ReferenceEventType;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import java.util.Map;
 import org.apache.avro.specific.SpecificRecord;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.ri.messaging.kafka.AbstractKafkaEventSubscriberTests;
-import org.projectnessie.events.ri.messaging.kafka.avro.KafkaAvroEventSubscriber.ServiceLoaderShim;
+import org.projectnessie.events.spi.EventSubscriber;
 
 @QuarkusTest
 public class TestKafkaAvroEventSubscriber
     extends AbstractKafkaEventSubscriberTests<SpecificRecord> {
 
+  @Inject KafkaAvroEventSubscriber subscriber;
+
   @Override
-  protected Class<?> subscriberClass() {
-    return ServiceLoaderShim.class;
+  protected EventSubscriber subscriber() {
+    return subscriber;
   }
 
   @Override

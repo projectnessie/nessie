@@ -19,9 +19,6 @@
  *
  * <p>Events published by the Nessie server can be consumed by {@linkplain
  * org.projectnessie.events.spi.EventSubscriber subscribers}.
- *
- * <p>{@link org.projectnessie.events.spi.EventSubscriber} instances are meant to be discovered and
- * registered via Java's ServiceLoader mechanism.
  */
 @Value.Style(
     depluralize = true,

@@ -17,8 +17,6 @@ package org.projectnessie.events.ri.messaging;
 
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.util.ServiceLoader;
-import java.util.ServiceLoader.Provider;
 import java.util.UUID;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterAll;
@@ -67,7 +65,7 @@ public abstract class AbstractMessagingEventSubscriberTests<T> {
 
   @BeforeAll
   public void setUpSubscriber() {
-    eventSubscriber = loadEventSubscriberSpi();
+    eventSubscriber = subscriber();
     eventSubscriber.onSubscribe(createSubscription());
   }
 
@@ -246,6 +244,8 @@ public abstract class AbstractMessagingEventSubscriberTests<T> {
     checkMessage(actual, upstreamEvent);
   }
 
+  protected abstract EventSubscriber subscriber();
+
   protected void send(Event event) {
     eventSubscriber.onEvent(event);
   }
@@ -253,16 +253,6 @@ public abstract class AbstractMessagingEventSubscriberTests<T> {
   protected abstract Message<T> receive();
 
   protected abstract void checkMessage(Message<T> actual, Event upstreamEvent);
-
-  protected abstract Class<?> subscriberClass();
-
-  private EventSubscriber loadEventSubscriberSpi() {
-    return ServiceLoader.load(EventSubscriber.class).stream()
-        .map(Provider::get)
-        .filter(s -> s.getClass().equals(subscriberClass()))
-        .findFirst()
-        .orElseThrow();
-  }
 
   private EventSubscription createSubscription() {
     return ImmutableEventSubscription.builder()

@@ -22,9 +22,7 @@ import com.example.nessie.events.generated.OperationEventType;
 import com.example.nessie.events.generated.ReferenceEvent;
 import com.example.nessie.events.generated.ReferenceEventType;
 import com.example.nessie.events.generated.TransplantEvent;
-import io.quarkus.arc.Unremovable;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import java.util.Map;
 import org.apache.avro.specific.SpecificRecord;
@@ -33,7 +31,6 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig;
 import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig.EventSubscriberConfig;
 import org.projectnessie.events.ri.messaging.kafka.AbstractKafkaEventSubscriber;
-import org.projectnessie.events.spi.DelegatingEventSubscriber;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.IcebergTable;
@@ -41,22 +38,9 @@ import org.projectnessie.model.IcebergView;
 
 /** An {@link EventSubscriber} that publishes events to a Kafka topic using Avro. */
 @ApplicationScoped
-@Unremovable
 public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<SpecificRecord> {
 
   public static final String CHANNEL = "nessie-kafka-avro";
-
-  /**
-   * ServiceLoader shim. This is the class that will be instantiated by the ServiceLoader and
-   * registered with the Events service.
-   *
-   * <p>It delegates to the actual implementation, which is a CDI bean.
-   */
-  public static class ServiceLoaderShim extends DelegatingEventSubscriber {
-    public ServiceLoaderShim() {
-      super(CDI.current().select(KafkaAvroEventSubscriber.class).get());
-    }
-  }
 
   /** Constructor required by CDI. */
   @SuppressWarnings("unused")

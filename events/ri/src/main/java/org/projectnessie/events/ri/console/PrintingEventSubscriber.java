@@ -15,6 +15,7 @@
  */
 package org.projectnessie.events.ri.console;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.PrintStream;
 import org.projectnessie.events.api.CommitEvent;
 import org.projectnessie.events.api.ContentRemovedEvent;
@@ -33,6 +34,7 @@ import org.projectnessie.events.spi.EventSubscription;
  *
  * <p>Do NOT use this in production, it would spam your console!
  */
+@ApplicationScoped
 public class PrintingEventSubscriber implements EventSubscriber {
 
   private final PrintStream out;
