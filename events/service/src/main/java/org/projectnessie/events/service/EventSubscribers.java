@@ -17,16 +17,15 @@ package org.projectnessie.events.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.spi.EventSubscriber;
 import org.projectnessie.events.spi.EventSubscription;
@@ -47,15 +46,6 @@ public class EventSubscribers implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscribers.class);
 
-  /** Load all {@link EventSubscriber}s via {@link ServiceLoader}. */
-  public static List<EventSubscriber> loadSubscribers() {
-    List<EventSubscriber> subscribers = new ArrayList<>();
-    for (EventSubscriber subscriber : ServiceLoader.load(EventSubscriber.class)) {
-      subscribers.add(subscriber);
-    }
-    return subscribers;
-  }
-
   // Visible for testing
   final List<EventSubscriber> subscribers;
 
@@ -73,10 +63,8 @@ public class EventSubscribers implements AutoCloseable {
     this(Arrays.asList(subscribers));
   }
 
-  public EventSubscribers(Iterable<EventSubscriber> subscribers) {
-    this.subscribers =
-        StreamSupport.stream(subscribers.spliterator(), false)
-            .collect(Collectors.toUnmodifiableList());
+  public EventSubscribers(Collection<EventSubscriber> subscribers) {
+    this.subscribers = List.copyOf(subscribers);
     acceptedEventTypes =
         Arrays.stream(EventType.values())
             .filter(t -> this.subscribers.stream().anyMatch(s -> s.accepts(t)))
@@ -119,21 +107,24 @@ public class EventSubscribers implements AutoCloseable {
   @Override
   public synchronized void close() {
     if (!closed) {
-      LOGGER.info("Closing subscribers...");
-      List<Exception> errors = new ArrayList<>();
-      for (EventSubscriber subscriber : subscribers) {
-        try {
-          subscriber.close();
-        } catch (Exception e) {
-          errors.add(e);
+      if (!subscribers.isEmpty()) {
+        LOGGER.info("Closing subscribers...");
+        List<Exception> errors = new ArrayList<>();
+        for (EventSubscriber subscriber : subscribers) {
+          try {
+            subscriber.close();
+          } catch (Exception e) {
+            errors.add(e);
+          }
         }
+        if (!errors.isEmpty()) {
+          RuntimeException e = new RuntimeException("Error closing at least one subscriber");
+          errors.forEach(e::addSuppressed);
+          LOGGER.error(e.getMessage(), e);
+          throw e;
+        }
+        LOGGER.info("Done closing subscribers.");
       }
-      if (!errors.isEmpty()) {
-        RuntimeException e = new RuntimeException("Error closing at least one subscriber");
-        errors.forEach(e::addSuppressed);
-        throw e;
-      }
-      LOGGER.info("Done closing subscribers.");
       closed = true;
     }
   }

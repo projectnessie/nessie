@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -41,12 +40,6 @@ class TestEventSubscribers {
   @Mock private EventSubscriber subscriber1;
   @Mock private EventSubscriber subscriber2;
   @Mock private EventSubscriber subscriber3;
-
-  @Test
-  void loadSubscribers() {
-    List<EventSubscriber> subscribers = EventSubscribers.loadSubscribers();
-    assertThat(subscribers).hasSize(1).singleElement().isInstanceOf(MockEventSubscriber.class);
-  }
 
   @Test
   void startSuccess() {
@@ -147,15 +140,5 @@ class TestEventSubscribers {
                   || resultType == ResultType.MERGE
                   || resultType == ResultType.TRANSPLANT);
     }
-  }
-
-  /** Expected to be loaded by ServiceLoader. */
-  public static class MockEventSubscriber implements EventSubscriber {
-
-    @Override
-    public void onSubscribe(EventSubscription subscription) {}
-
-    @Override
-    public void close() {}
   }
 }

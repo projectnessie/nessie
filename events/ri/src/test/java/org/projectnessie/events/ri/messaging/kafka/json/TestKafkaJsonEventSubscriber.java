@@ -18,17 +18,20 @@ package org.projectnessie.events.ri.messaging.kafka.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.projectnessie.events.api.Event;
 import org.projectnessie.events.ri.messaging.kafka.AbstractKafkaEventSubscriberTests;
-import org.projectnessie.events.ri.messaging.kafka.json.KafkaJsonEventSubscriber.ServiceLoaderShim;
+import org.projectnessie.events.spi.EventSubscriber;
 
 @QuarkusTest
 public class TestKafkaJsonEventSubscriber extends AbstractKafkaEventSubscriberTests<Event> {
 
+  @Inject KafkaJsonEventSubscriber subscriber;
+
   @Override
-  protected Class<?> subscriberClass() {
-    return ServiceLoaderShim.class;
+  protected EventSubscriber subscriber() {
+    return subscriber;
   }
 
   @Override

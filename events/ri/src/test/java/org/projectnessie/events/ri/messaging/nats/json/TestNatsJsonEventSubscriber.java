@@ -28,6 +28,7 @@ import static org.projectnessie.events.ri.messaging.MessageHeaders.SPEC_VERSION;
 
 import io.quarkiverse.reactive.messaging.nats.jetstream.JetStreamIncomingMessageMetadata;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -35,14 +36,16 @@ import org.projectnessie.events.api.Event;
 import org.projectnessie.events.api.EventType;
 import org.projectnessie.events.ri.messaging.AbstractMessagingEventSubscriberTests;
 import org.projectnessie.events.ri.messaging.nats.AbstractNatsEventSubscriber;
-import org.projectnessie.events.ri.messaging.nats.json.NatsJsonEventSubscriber.ServiceLoaderShim;
+import org.projectnessie.events.spi.EventSubscriber;
 
 @QuarkusTest
 public class TestNatsJsonEventSubscriber extends AbstractMessagingEventSubscriberTests<Event> {
 
+  @Inject NatsJsonEventSubscriber subscriber;
+
   @Override
-  protected Class<?> subscriberClass() {
-    return ServiceLoaderShim.class;
+  protected EventSubscriber subscriber() {
+    return subscriber;
   }
 
   @Override

@@ -32,9 +32,8 @@ import org.projectnessie.events.api.TransplantEvent;
  * <p>This is the main SPI interface that must be implemented in order to receive events from
  * Nessie.
  *
- * <p>Implementations must be properly registered in a {@code
- * META-INF/services/org.projectnessie.events.spi.EventSubscriber} file. They will be then
- * discovered and loaded by the ServiceLoader mechanism.
+ * <p>How subscribers are registered with Nessie is implementation-specific. For example, if Nessie
+ * is running on Quarkus, subscribers are typically discovered by CDI and classpath scanning.
  *
  * <p>Implementations of this interface must not block. If blocking I/O is required, then the {@link
  * #isBlocking()} method should return {@code true}.

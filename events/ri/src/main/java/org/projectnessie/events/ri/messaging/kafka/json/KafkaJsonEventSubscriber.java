@@ -15,9 +15,7 @@
  */
 package org.projectnessie.events.ri.messaging.kafka.json;
 
-import io.quarkus.arc.Unremovable;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -25,28 +23,13 @@ import org.projectnessie.events.api.Event;
 import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig;
 import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig.EventSubscriberConfig;
 import org.projectnessie.events.ri.messaging.kafka.AbstractKafkaEventSubscriber;
-import org.projectnessie.events.spi.DelegatingEventSubscriber;
 import org.projectnessie.events.spi.EventSubscriber;
 
 /** An {@link EventSubscriber} that publishes events to a Kafka topic using JSON. */
 @ApplicationScoped
-@Unremovable
 public class KafkaJsonEventSubscriber extends AbstractKafkaEventSubscriber<Event> {
 
   public static final String CHANNEL = "nessie-kafka-json";
-
-  /**
-   * ServiceLoader shim. This is the class that will be instantiated by the ServiceLoader and
-   * registered with the Events service.
-   *
-   * <p>It delegates to the actual implementation, which is a CDI bean.
-   */
-  public static class ServiceLoaderShim extends DelegatingEventSubscriber {
-
-    public ServiceLoaderShim() {
-      super(CDI.current().select(KafkaJsonEventSubscriber.class).get());
-    }
-  }
 
   /** Constructor required by CDI. */
   @SuppressWarnings("unused")
