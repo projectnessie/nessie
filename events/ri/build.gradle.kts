@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 
 plugins {
-  alias(libs.plugins.avro)
-  id("nessie-conventions-server")
+  alias(libs.plugins.quarkus)
+  id("nessie-conventions-quarkus")
 }
 
 extra["maven.name"] = "Nessie - Events - SPI Reference Implementation"
@@ -26,39 +26,51 @@ dependencies {
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
 
-  compileOnly(libs.microprofile.openapi)
+  // Quarkus
+  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation("io.quarkus:quarkus-core")
 
-  implementation(libs.slf4j.api)
-  implementation(libs.kafka.clients)
+  // Quarkus - Kafka
+  implementation("io.quarkus:quarkus-messaging-kafka")
 
-  // Avro serialization examples
+  // Quarkus - NATS
+  implementation(
+    "io.quarkiverse.reactivemessaging.nats-jetstream:quarkus-messaging-nats-jetstream:1.13.3"
+  )
+
+  // Avro serialization
   implementation(libs.avro)
+  implementation("io.quarkus:quarkus-apicurio-registry-avro")
+  // This example uses the Apicurio registry, but you can switch to the Confluent registry:
+  // implementation("io.quarkus:quarkus-confluent-registry-avro")
+  // implementation("io.confluent:kafka-avro-serializer")
 
-  // Jackson serialization examples
+  // Jackson serialization
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
 
-  testCompileOnly(libs.microprofile.openapi)
+  compileOnly(libs.microprofile.openapi)
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
-  testImplementation(libs.kafka.streams.test.utils)
-  testImplementation(libs.logback.classic)
-  testImplementation(libs.kafka.avro.serializer)
-  testImplementation(libs.kafka.json.schema.serializer)
+  testImplementation(libs.awaitility)
+  testImplementation(enforcedPlatform(libs.quarkus.bom))
+  testImplementation("io.quarkus:quarkus-junit5")
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.immutables.value.annotations)
-
-  intTestImplementation(platform(libs.testcontainers.bom))
-  intTestImplementation("org.testcontainers:junit-jupiter")
-  intTestImplementation("org.testcontainers:kafka")
-  intTestImplementation(project(":nessie-container-spec-helper"))
-
-  intTestCompileOnly(libs.microprofile.openapi)
-  intTestCompileOnly(libs.immutables.value.annotations)
 }
 
-tasks.withType<Checkstyle> { exclude("com/example/**/generated/**") }
+tasks.withType<Checkstyle> { exclude("**/generated/**") }
+
+listOf("javadoc", "sourcesJar").forEach { name ->
+  tasks.named(name).configure { dependsOn("compileQuarkusGeneratedSourcesJava") }
+}
+
+listOf("checkstyleTest", "compileTestJava").forEach { name ->
+  tasks.named(name).configure { dependsOn("compileQuarkusTestGeneratedSourcesJava") }
+}
+
+tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }

@@ -101,10 +101,6 @@ protocol NessieEvents {
   /**
    * This record corresponds to Nessie's
    * org.projectnessie.events.api.MergeEvent.
-   *
-   * Note: this record is not used in the example implementation; it is included
-   * here for completeness and to serve as a starting point for users who wish
-   * to process these events in Kafka using Avro.
    */
   record MergeEvent {
     uuid id;
@@ -123,10 +119,6 @@ protocol NessieEvents {
   /**
    * This record corresponds to Nessie's
    * org.projectnessie.events.api.TransplantEvent.
-   *
-   * Note: this record is not used in the example implementation; it is included
-   * here for completeness and to serve as a starting point for users who wish
-   * to process these events in Kafka using Avro.
    */
   record TransplantEvent {
     uuid id;
@@ -136,6 +128,6 @@ protocol NessieEvents {
     /** The hash on targetReference after the transplant. */
     string hashAfter;
     /** The number of commits that were transplanted. */
-    int size;
+    int commitCount;
   }
 }

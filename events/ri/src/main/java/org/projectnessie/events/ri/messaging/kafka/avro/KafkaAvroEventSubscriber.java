@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dremio
+ * Copyright (C) 2024 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,64 +13,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.events.ri.kafka;
+package org.projectnessie.events.ri.messaging.kafka.avro;
 
 import com.example.nessie.events.generated.CommitEvent;
+import com.example.nessie.events.generated.MergeEvent;
 import com.example.nessie.events.generated.OperationEvent;
 import com.example.nessie.events.generated.OperationEventType;
 import com.example.nessie.events.generated.ReferenceEvent;
 import com.example.nessie.events.generated.ReferenceEventType;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.UncheckedIOException;
+import com.example.nessie.events.generated.TransplantEvent;
+import io.quarkus.arc.Unremovable;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.apache.kafka.clients.producer.Producer;
-import org.projectnessie.events.api.EventType;
+import org.apache.avro.specific.SpecificRecord;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig;
+import org.projectnessie.events.ri.messaging.config.MessagingEventSubscribersConfig.EventSubscriberConfig;
+import org.projectnessie.events.ri.messaging.kafka.AbstractKafkaEventSubscriber;
+import org.projectnessie.events.spi.DelegatingEventSubscriber;
 import org.projectnessie.events.spi.EventSubscriber;
-import org.projectnessie.events.spi.EventTypeFilter;
+import org.projectnessie.model.Content;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 
 /** An {@link EventSubscriber} that publishes events to a Kafka topic using Avro. */
-public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<Object> {
+@ApplicationScoped
+@Unremovable
+public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<SpecificRecord> {
 
-  // Accept all event types except: MERGE and TRANSPLANT (as an example of event type filter)
-  private static final EventTypeFilter EVENT_TYPE_FILTER =
-      EventTypeFilter.of(
-          EventType.COMMIT,
-          EventType.REFERENCE_CREATED,
-          EventType.REFERENCE_DELETED,
-          EventType.REFERENCE_UPDATED,
-          EventType.CONTENT_STORED,
-          EventType.CONTENT_REMOVED);
+  public static final String CHANNEL = "nessie-kafka-avro";
 
   /**
-   * Default no-arg constructor.
+   * ServiceLoader shim. This is the class that will be instantiated by the ServiceLoader and
+   * registered with the Events service.
    *
-   * <p>A default no-arg constructor MUST be present in every {@link EventSubscriber}
-   * implementation, since that's the constructor used by {@link java.util.ServiceLoader}.
+   * <p>It delegates to the actual implementation, which is a CDI bean.
    */
-  public KafkaAvroEventSubscriber() throws UncheckedIOException {}
-
-  public KafkaAvroEventSubscriber(String location) throws UncheckedIOException {
-    super(location);
+  public static class ServiceLoaderShim extends DelegatingEventSubscriber {
+    public ServiceLoaderShim() {
+      super(CDI.current().select(KafkaAvroEventSubscriber.class).get());
+    }
   }
 
-  public KafkaAvroEventSubscriber(Properties props) {
-    super(props);
+  /** Constructor required by CDI. */
+  @SuppressWarnings("unused")
+  public KafkaAvroEventSubscriber() {
+    super(null, null);
   }
 
+  @Inject
   public KafkaAvroEventSubscriber(
-      Properties props, Function<Properties, Producer<String, Object>> producerFactory) {
-    super(props, producerFactory);
-  }
-
-  @Override
-  public final EventTypeFilter getEventTypeFilter() {
-    return EVENT_TYPE_FILTER;
+      @Channel(CHANNEL) Emitter<SpecificRecord> emitter, MessagingEventSubscribersConfig config) {
+    super(emitter, config.subscribers().getOrDefault(CHANNEL, EventSubscriberConfig.EMPTY));
   }
 
   @Override
@@ -85,6 +82,32 @@ public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<Objec
   }
 
   @Override
+  public void onMerge(org.projectnessie.events.api.MergeEvent event) {
+    MergeEvent downstreamEvent =
+        new MergeEvent(
+            event.getId(),
+            event.getSourceReference().getName(),
+            event.getTargetReference().getName(),
+            event.getSourceHash(),
+            event.getHashBefore(),
+            event.getHashAfter(),
+            event.getCommonAncestorHash());
+    fireEvent(event, downstreamEvent);
+  }
+
+  @Override
+  public void onTransplant(org.projectnessie.events.api.TransplantEvent event) {
+    TransplantEvent downstreamEvent =
+        new TransplantEvent(
+            event.getId(),
+            event.getTargetReference().getName(),
+            event.getHashBefore(),
+            event.getHashAfter(),
+            event.getCommitCount());
+    fireEvent(event, downstreamEvent);
+  }
+
+  @Override
   public void onContentStored(org.projectnessie.events.api.ContentStoredEvent upstreamEvent) {
     OperationEvent downstreamEvent =
         new OperationEvent(
@@ -95,8 +118,24 @@ public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<Objec
             upstreamEvent.getContentKey().toCanonicalString(),
             upstreamEvent.getContent().getId(),
             upstreamEvent.getContent().getType().toString(),
-            objectAsMap(upstreamEvent.getContent(), "id", "type"));
+            contentProperties(upstreamEvent.getContent()));
     fireEvent(upstreamEvent, downstreamEvent);
+  }
+
+  private Map<String, String> contentProperties(Content content) {
+    if (content instanceof IcebergTable icebergTable) {
+      return Map.of(
+          "metadataLocation", icebergTable.getMetadataLocation(),
+          "snapshotId", String.valueOf(icebergTable.getSnapshotId()),
+          "specId", String.valueOf(icebergTable.getSpecId()),
+          "sortOrderId", String.valueOf(icebergTable.getSortOrderId()),
+          "schemaId", String.valueOf(icebergTable.getSchemaId()));
+    } else if (content instanceof IcebergView icebergView) {
+      return Map.of(
+          "metadataLocation", icebergView.getMetadataLocation(),
+          "schemaId", String.valueOf(icebergView.getSchemaId()));
+    }
+    return Map.of();
   }
 
   @Override
@@ -148,18 +187,5 @@ public class KafkaAvroEventSubscriber extends AbstractKafkaEventSubscriber<Objec
             upstreamEvent.getHashBefore(),
             null);
     fireEvent(upstreamEvent, downstreamEvent);
-  }
-
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
-
-  private static Map<String, String> objectAsMap(Object o, String... ignoredProperties) {
-    Set<String> ignoredSet = Set.of(ignoredProperties);
-    return MAPPER.convertValue(o, MAP_TYPE).entrySet().stream()
-        .filter(e -> !ignoredSet.contains(e.getKey()))
-        .filter(e -> e.getValue() != null)
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
   }
 }

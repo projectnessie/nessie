@@ -4,145 +4,169 @@ This module contains reference implementations of Nessie's events notification s
 
 ## Overview
 
-Two implementations of the SPI module can be found in this module:
+The following implementations of the SPI module can be found in this module:
 
-1. `org.projectnessie.events.ri.console.PrintingEventSubscriber` - a (very) simple implementation 
-   that prints events to the console.
-2. `org.projectnessie.events.ri.kafka.KafkaAvroEventSubscriber` - an implementation that publishes 
-   events to a Kafka topic using Avro.
-3. `org.projectnessie.events.ri.kafka.KafkaJsonEventSubscriber` - an implementation that publishes 
-   events to a Kafka topic using JSON.
+1. `PrintingEventSubscriber` - a (very) simple implementation that prints events to the console.
+2. Messaging subscribers:
+    1. `KafkaAvroEventSubscriber` - publishes events to a Kafka topic using Avro.
+    2. `KafkaJsonEventSubscriber` - publishes events to a Kafka topic using JSON.
+    3. `NatsJsonEventSubscriber` - publishes events to a NATS stream using JSON.
 
-## Printing Subscriber
+This module uses Quarkus, since Nessie servers are based on Quarkus. The [Quarkus Messaging
+extension] is particularly useful in this context, as it unifies the way to handle messages in
+Quarkus, regardless of the messaging system used. Two actual messaging extensions are used in this
+module: the [Apache Kafka extension] and the [Quarkus NATS extension]. Please make sure to read the
+documentation of these extensions to understand how they work.
 
-The `PrintingEventSubscriber` implementation is a very simple implementation that prints events to the console. It is
-intended to illustrate the basic concepts of an SPI implementation. Do NOT use in production.
+[Quarkus Messaging extension]:https://quarkus.io/guides/messaging
+[Apache Kafka extension]:https://quarkus.io/guides/kafka
+[Quarkus NATS extension]:https://docs.quarkiverse.io/quarkus-reactive-messaging-nats-jetstream/dev
 
-## Kafka Subscribers
+### Printing Subscriber
 
-`KafkaAvroEventSubscriber` illustrates how to handle events using Avro to serizalize and deserialize messages, 
-and using a Schema Registry.
+The `PrintingEventSubscriber` implementation is a very simple implementation that prints events to
+the console. It is intended to illustrate the basic concepts of an SPI implementation. Do NOT use in
+production.
 
-`KafkaJsonEventSubscriber` illustrates how to handle events using JSON to serizalize and deserialize events. 
+### Messaging Subscribers
 
-Both subscribers are intended to be used as a starting point for implementing a real-world subscriber based on 
-[Apache Kafka](https://kafka.apache.org/).
+`KafkaAvroEventSubscriber` illustrates how to handle events using Avro to serialize and deserialize
+messages, and using a Schema Registry.
 
-### Configuration
+`KafkaJsonEventSubscriber` illustrates how to handle events using JSON to serialize and deserialize
+events.
 
-The `KafkaAvroEventSubscriber` and `KafkaJsonEventSubscriber` implementations read their
-configuration from a properties file. The default location of this file is
-`./nessie-kafka.properties`, but this can be changed by setting the `nessie.events.config.file`
-system property or the `NESSIE_EVENTS_CONFIG_FILE` environment variable to a different location.
+`NatsJsonEventSubscriber` illustrates how to handle events using JSON to serialize and deserialize
+events, and using NATS as the messaging system.
 
-The properties file should contain all the desired Kafka producer configuration options, as well as the following
-subscriber-specific options:
+These subscribers are intended to be used as a starting point for implementing a real-world
+subscriber based on [Apache Kafka](https://kafka.apache.org/) and [NATS](https://nats.io/).
 
-- `nessie.events.topic` - the name of the Kafka topic to publish events to. Defaults to `nessie-events`.
-- `nessie.events.repository-ids` - a comma-separated list of repository ids to watch. If not set, all repositories will
-  be watched. See below for more details.
+## Configuration
 
-A template configuration file can be found in `src/main/resources/nessie-kafka-avro.template.properties`
-and `src/main/resources/nessie-kafka-json.template.properties`.
+All subscribers, producers, as well as the middleware (brokers), can be configured through the
+`application.properties` file. Read the comments in the file for more information.
 
-### Serialization and deserialization
+## Serialization and deserialization
 
-`KafkaAvroEventSubscriber` uses the [Avro] library to define a domain model that is specific to the subscriber, and is not
-tied in any way to Nessie's. This is the recommended approach, when you want to decouple Nessie's domain model
-from the subscriber's domain model, at the cost of having to maintain the Avro schema files.
+### Avro
+
+`KafkaAvroEventSubscriber` uses the [Avro] library to define a domain model that is specific to the
+subscriber, and is not tied in any way to Nessie's. This approach allows to decouple Nessie's domain
+model from the subscriber's domain model, at the cost of having to maintain the Avro schema files.
 
 [Avro]:https://avro.apache.org/
 
-The domain model is defined in the `src/main/avro/NessieEvents.avdl` file. The Avro compiler and its Gradle plugin are
-used during build to generate Java classes from the Avro schema files. The generated classes are located in the
-`build/generated-main-avro-java` directory.
+The domain model is defined in the `src/main/avro/NessieEvents.avdl` file. There are several Avro
+messages declared in this file, and the `KafkaAvroEventSubscriber` implementation illustrates how to
+handle different types of events being pushed to a single Kafka topic.
 
-Note: for the consumer to be able to deserialize the messages into the same generated classes, it must be configured
-with `specific.avro.reader=true`.
+Producing records of different types to the same topic is a common pattern in Kafka, but requires
+some extra work on both the producer and consumer sides, especially with respect to schema handling.
+Depending on the schema registry used, various strategies for retrieving the right schema for a
+message can be used. Have a look at the [Using Apache Kafka with Schema Registry and Avro] guide for
+general guidelines.
 
-`KafkaJsonEventSubscriber` uses Jackson to serialize and deserialize events to and from JSON. This is a simpler approach
-than using Avro, but it requires the subscriber to have a good understanding of Nessie's domain model, as the JSON
-representation of the events is directly tied to it.
+Note: for the consumer to be able to deserialize the messages into the same generated classes, it
+must be configured to use Avro's `SpecificRecord` serialization. This is done e.g. with the
+`specific.avro.reader` property (if using Confluent) or the
+`apicurio.registry.use-specific-avro-reader` property (if using Apicurio). See the
+`application.properties` file for more information.
 
-### Schema and polymorphism with Avro messages
+[Using Apache Kafka with Schema Registry and Avro]:https://quarkus.io/guides/kafka-schema-registry-avro
 
-Nessie's Events API is polymorphic, in the sense that it supports different types of events. The `KafkaAvroEventSubscriber`
-implementation illustrates how to handle different types of events in the same subscriber, pushing to a single Kafka
-topic.
+### JSON
 
-In this case, the subscriber aggregates Nessie's event types into three kinds of Avro messages: `CommitEvent`,
-`ReferenceEvent`, and `OperationEvent`.
+Both `KafkaJsonEventSubscriber` and `NatsJsonEventSubscriber` use Jackson to serialize and
+deserialize events to and from JSON. This is a simpler approach than using Avro, but it requires the
+subscriber to have a good understanding of Nessie's domain model, as the JSON representation of the
+events is directly tied to it.
 
-- `CommitEvent` is generated when a commit is made to a branch and corresponds to Nessie's `COMMIT` event type;
-- `ReferenceEvent` is generated when a branch or tag is created, updated, or deleted, and corresponds to Nessie's
-  `REFERENCE_CREATED`, `REFERENCE_UPDATED`, and `REFERENCE_DELETED` event types;
-- `OperationEvent` is generated when a PUT or a DELETE operation occurs, and corresponds to Nessie's
-  `CONTENT_STORED` and `CONTENT_REMOVED` event types.
+Also, Nessie's model API makes usage of Jackson views; depending on the active view, the serialized
+payload may change. The serialization and deserialization of the events must take this into account.
+See `KafkaJsonEventSerialization` and `ViewAwareJsonMessageFactory` for more details.
 
-In this example, the destination Kafka topic is going to receive messages of three different types. This is a common
-scenario in Kafka, but requires some extra work to be done on both the producer and consumer sides, especially with
-respect to schema handling. The strategy we chose to use here is outlined in [Martin Kleppmann's excellent article] and
-relies on the subject-name strategy called `TopicRecordNameStrategy`. Other strategies are available, see [Robert
-Yokota's follow-up article] for a good overview.
+## Kafka topic partitioning and message ordering
 
-[Martin Kleppmann's excellent article]:https://www.confluent.io/blog/put-several-event-types-kafka-topic/
-[Robert Yokota's follow-up article]:https://www.confluent.io/blog/multiple-event-types-in-the-same-kafka-topic/
+`KafkaAvroEventSubscriber` and `KafkaJsonEventSubscriber` both illustrate how to partition the
+destination Kafka topic _by repository id and reference name_: this should allow downstream
+consumers to process events for a given reference in the order they were produced.
 
-### Topic partitioning and message ordering
+Note that the order in which events are produced to a topic does not necessarily reflect the order
+in which Nessie's version store recorded them. As stated in Nessie's [Events API design document],
+strict ordering of events is not guaranteed. More specifically, for two events A and B that happened
+sequentially in a very short timeframe on the same reference, Nessie may notify the subscriber of B
+first, than A. In this case, the subscriber would put B in the topic before A, resulting in
+out-of-order sequencing.
 
-`KafkaAvroEventSubscriber` and `KafkaJsonEventSubscriber` both illustrate how to partition the destination Kafka 
-topic _by repository id and reference name_: this should allow downstream consumers to process events for a given 
-reference in the order they were produced.
-
-Note that the order in which events are produced to a topic does not necessarily reflect the order in which Nessie's
-version store recorded them. As stated in Nessie's [Events API design document], strict ordering of events is not
-guaranteed. More specifically, for two events A and B that happened sequentially in a very short timeframe on the same
-reference, Nessie may notify the subscriber of B first, than A. In this case, the subscriber would put B in the topic
-before A, resulting in out-of-order sequencing.
-
-This only happens for very close events, and for most use cases this shouldn't be a problem; but if strict ordering is
-required, consider using more advanced techniques, such as [Kafka Streams] to re-order the messages, based e.g. on the
-commit timestamp.
+This only happens for very close events, and for most use cases this shouldn't be a problem; but if
+strict ordering is required, consider using more advanced techniques, such as [Kafka Streams] to
+re-order the messages, based e.g. on the commit timestamp.
 
 [Events API design document]:https://github.com/projectnessie/nessie/blob/nessie-0.60.1/design/events.md?plain=1#L364
 [Kafka Streams]:https://kafka.apache.org/documentation/streams/
 
-### Producer-side filtering
+## NATS subject configuration
 
-Producer-side filtering is possible by changing the implementation of either the `getEventFilter()` or
-`getEventTypeFilter()` methods.
+`NatsJsonEventSubscriber` illustrates how to configure the NATS subject with hierarchical subjects.
+It publishes to the following subjects:
 
-To illustrate this, `KafkaAvroEventSubscriber` uses its `EventTypeFilter` to completely ignore merge and transplant events.
-(Also note: merge and transplant events also trigger commit events, so it's still possible to capture what happened in a
-branch by listening to commit events only.)
+* `nessie.events.commit`
+* `nessie.events.commit.content.stored`
+* `nessie.events.commit.content.removed`
+* `nessie.events.reference.created`
+* `nessie.events.reference.updated`
+* `nessie.events.reference.deleted`
+* `nessie.events.merge`
+* `nessie.events.transplant`
 
-The subscriber is further configured to optionally watch just a few repository ids, or all of them. This is done by
-setting the `nessie.events.repository-ids` configuration option, and is implemented by modifying the subscriber's
-`EventFilter`. Again, this is purely illustrative. Other ways of filtering events on the subscriber side are possible,
-for example one could configure the subscribe to watch only certain branches or tags.
+If a client want to subscribe to all events, it can subscribe to `nessie.events.>`. This is a
+convenient way to subscribe to all events, without having to subscribe to each individual subject.
+Conversely, if a client is only interested in a specific type of event, it can subscribe to the
+specific subject, e.g. `nessie.events.commit` would only receive commit events, as well as
+content-related events.
 
-### Using headers efficiently
+This is of course just an example, and the subject hierarchy can be changed to suit the client's
+needs.
 
-Both `KafkaAvroEventSubscriber` and `KafkaJsonEventSubscriber` show how to use Kafka headers to pass additional information along
-with the message. In this case, the subscriber adds the repository id, the user and the event creation timestamp to the
-message headers, allowing consumers to filter or sort messages based on these values.
+## Producer-side filtering
 
-### Other considerations
+Producer-side filtering is possible by changing the implementation of either the `getEventFilter()`
+or `getEventTypeFilter()` methods.
 
-`KafkaAvroEventSubscriber` and `KafkaJsonEventSubscriber` also illustrate how to handle events in a non-blocking way, by publishing
-messages without waiting for the broker's acknowledgement. This is achieved by calling the `KafkaProducer#send` method
-in asynchronous mode, with a completion callback. If your implementation needs to wait for the broker's acknowledgement
-synchronously, then you should report to Nessie that this subscriber is going to be blocking by returning `true` from
-the `isBlocking()` method.
+To illustrate this, all messaging subscribers can be configured to only watch certain event types;
+see the `application.properties` file for more information, and also the
+`MessagingEventSubscribersConfig` configuration class. Filtering out event types is done by
+modifying the subscriber's `EventTypeFilter`.
 
-Finally, both implementations avoid doing any initialization in their constructors. This is because
-the constructor is called during the SPI module's initialization, which happens before Nessie is fully started. Instead,
-the subscriber's initialization should be done in the `onSubscribe` method, which is called after Nessie has started
-(but before receiving events).
+The subscribers can also be configured to optionally watch just a few repository ids, or all of
+them. This is again done by configuration, and is implemented by modifying the subscriber's
+`EventFilter`.
 
-### Testing
+These filtering techniques are purely illustrative. Other ways of filtering events on the subscriber
+side are possible, for example one could configure the subscribe to watch only certain branches or
+tags.
 
-The integration tests provide a real-world example of how to test the subscriber. They use a real
-Kafka broker, and for Avro, also a schema registry. It then plays a sequence of events that is
-representative of what Nessie would send to the subscriber when a user creates a branch, commits to
-it, and then deletes it. Finally, it checks that the subscriber has received the expected messages.
+## Using headers efficiently
+
+ALl messaging subscribers show how to use Kafka headers to pass additional information along with
+the message. In this case, the subscriber adds the repository id, the user and the event creation
+timestamp to the message headers, allowing consumers to filter or sort messages based on these
+values.
+
+## Other considerations
+
+The example subscribers also illustrate how to handle events in a non-blocking way, by publishing
+messages without waiting for the broker's acknowledgement. If your implementation needs to wait for
+the broker's acknowledgement synchronously, then you should report to Nessie that this subscriber is
+going to be blocking by returning `true` from the `isBlocking()` method.
+
+Finally, the messaging subscribers use a "shim" to initialize the subscriber. This is because
+subscribers are loaded by ServiceLoader, and the loaded instance is not managed by Quarkus. The shim
+provides a bridge between the Quarkus-managed instance and the ServiceLoader-loaded instance.
+See `KafkaJsonEventSubscriber.ServiceLoaderShim` for example.
+
+## Testing
+
+The tests provide a real-world example of how to test the subscriber. They rely on Quarkus
+DevServices to start a Kafka and a NATS broker, and also an Apicurio schema registry.
