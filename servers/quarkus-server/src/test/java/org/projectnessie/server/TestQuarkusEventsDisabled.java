@@ -28,9 +28,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.ext.NessieApiVersion;
 import org.projectnessie.client.ext.NessieApiVersions;
-import org.projectnessie.events.service.EventSubscribers;
 import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
-import org.projectnessie.server.events.fixtures.MockEventSubscriber;
 import org.projectnessie.versioned.Result;
 
 /**
@@ -53,7 +51,6 @@ public class TestQuarkusEventsDisabled extends AbstractQuarkusEvents {
     }
   }
 
-  @Inject Instance<EventSubscribers> subscribers;
   @Inject Instance<Consumer<Result>> collector;
 
   @Test
@@ -64,11 +61,6 @@ public class TestQuarkusEventsDisabled extends AbstractQuarkusEvents {
   @Override
   protected boolean eventsEnabled() {
     return false;
-  }
-
-  @Override
-  protected MockEventSubscriber subscriber() {
-    return (MockEventSubscriber) subscribers.get().getSubscribers().get(0);
   }
 
   @Override
