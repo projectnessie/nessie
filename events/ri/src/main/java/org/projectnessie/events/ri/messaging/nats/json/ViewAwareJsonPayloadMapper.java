@@ -17,8 +17,7 @@ package org.projectnessie.events.ri.messaging.nats.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.message.MessageFactory;
-import io.quarkiverse.reactive.messaging.nats.jetstream.tracing.JetStreamInstrumenter;
+import io.quarkiverse.reactive.messaging.nats.jetstream.mapper.PayloadMapper;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -30,7 +29,7 @@ import org.projectnessie.model.ser.Views;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class ViewAwareJsonMessageFactory extends MessageFactory {
+public class ViewAwareJsonPayloadMapper extends PayloadMapper {
 
   static {
     int apiVersion = NessieConfiguration.getBuiltInConfig().getMaxSupportedApiVersion();
@@ -43,20 +42,19 @@ public class ViewAwareJsonMessageFactory extends MessageFactory {
   private final ObjectMapper objectMapper;
 
   @SuppressWarnings("unused")
-  public ViewAwareJsonMessageFactory() {
-    super(null, null);
+  public ViewAwareJsonPayloadMapper() {
+    super(null);
     this.objectMapper = null;
   }
 
   @Inject
-  public ViewAwareJsonMessageFactory(
-      ObjectMapper objectMapper, JetStreamInstrumenter instrumenter) {
-    super(objectMapper, instrumenter);
+  public ViewAwareJsonPayloadMapper(ObjectMapper objectMapper) {
+    super(objectMapper);
     this.objectMapper = objectMapper;
   }
 
   @Override
-  public byte[] toByteArray(Object payload) {
+  public byte[] of(Object payload) {
     try {
       if (payload == null) {
         return new byte[0];
@@ -71,9 +69,8 @@ public class ViewAwareJsonMessageFactory extends MessageFactory {
     }
   }
 
-  // Not used in production code, only in tests
   @Override
-  public <T> T decode(byte[] data, Class<T> type) {
+  public <T> T of(byte[] data, Class<T> type) {
     try {
       assert objectMapper != null;
       return objectMapper.readerWithView(Views.V2.class).readValue(data, type);
