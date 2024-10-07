@@ -20,7 +20,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "nessie.fullname" . }}
+  name: {{ include "nessie.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
     {{- if .Values.serviceMonitor.labels }}
