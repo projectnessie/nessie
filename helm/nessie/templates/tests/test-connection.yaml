@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "nessie.fullname" . }}-test-connection"
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
   annotations:

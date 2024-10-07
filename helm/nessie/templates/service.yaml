@@ -20,6 +20,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "nessie.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
@@ -43,6 +44,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "nessie.fullname" . }}-mgmt
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
   {{- with .Values.managementService.annotations }}
@@ -70,6 +72,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "nessie.fullname" $ }}{{ $svc.nameSuffix }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "nessie.labels" $ | nindent 4 }}
   {{- with $svc.annotations }}
