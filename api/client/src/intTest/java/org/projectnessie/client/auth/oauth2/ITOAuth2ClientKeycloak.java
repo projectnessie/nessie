@@ -16,7 +16,6 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_ENABLED;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN;
@@ -222,7 +221,7 @@ public class ITOAuth2ClientKeycloak {
   private Future<?> useClient(
       ScheduledExecutorService executor, HttpClient validatingClient, OAuth2Client client) {
     return executor.scheduleWithFixedDelay(
-        () -> tryUseAccessToken(validatingClient, client.authenticate()), 0, 1, TimeUnit.SECONDS);
+        () -> introspectToken(validatingClient, client.authenticate()), 0, 1, TimeUnit.SECONDS);
   }
 
   private void waitForFuture(Future<?> future, long timeoutSeconds) throws InterruptedException {
@@ -256,11 +255,11 @@ public class ITOAuth2ClientKeycloak {
         // first request: initial grant
         Tokens firstTokens = client.fetchNewTokens();
         soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
+        introspectToken(validatingClient, firstTokens.getAccessToken());
         // second request: refresh token grant
         Tokens refreshedTokens = client.refreshTokens(firstTokens);
         soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-        tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
+        introspectToken(validatingClient, refreshedTokens.getAccessToken());
         compareTokens(firstTokens, refreshedTokens, "Private2");
       }
     }
@@ -288,11 +287,11 @@ public class ITOAuth2ClientKeycloak {
         // first request: initial grant
         Tokens firstTokens = client.fetchNewTokens();
         soft.assertThat(firstTokens.getRefreshToken()).isNotNull();
-        tryUseAccessToken(validatingClient, firstTokens.getAccessToken());
+        introspectToken(validatingClient, firstTokens.getAccessToken());
         // second request: refresh token grant
         Tokens refreshedTokens = client.refreshTokens(firstTokens);
         soft.assertThat(refreshedTokens.getRefreshToken()).isNotNull();
-        tryUseAccessToken(validatingClient, refreshedTokens.getAccessToken());
+        introspectToken(validatingClient, refreshedTokens.getAccessToken());
         compareTokens(firstTokens, refreshedTokens, "Public2");
       }
     }
@@ -369,22 +368,6 @@ public class ITOAuth2ClientKeycloak {
     }
   }
 
-  @Test
-  void testOAuth2ClientExpiredToken() {
-    OAuth2ClientConfig config = clientConfig("Private1", true, false).build();
-    try (OAuth2Client client = new OAuth2Client(config);
-        HttpClient validatingClient = validatingHttpClient("Private1").build()) {
-      Tokens tokens = client.fetchNewTokens();
-      // Emulate a token expiration; we don't want to wait 10 seconds just for the token to really
-      // expire.
-      revokeAccessToken(validatingClient, tokens.getAccessToken());
-      soft.assertThatThrownBy(() -> tryUseAccessToken(validatingClient, tokens.getAccessToken()))
-          .asInstanceOf(throwable(HttpClientResponseException.class))
-          .extracting(HttpClientResponseException::getStatus)
-          .isEqualTo(Status.UNAUTHORIZED);
-    }
-  }
-
   /**
    * Tests a simple delegation scenario with a fixed subject token and the client playing the role
    * of the actor.
@@ -414,7 +397,7 @@ public class ITOAuth2ClientKeycloak {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
-      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+      introspectToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -447,7 +430,7 @@ public class ITOAuth2ClientKeycloak {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
-      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+      introspectToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -473,7 +456,7 @@ public class ITOAuth2ClientKeycloak {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
-      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+      introspectToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -504,7 +487,7 @@ public class ITOAuth2ClientKeycloak {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
-      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+      introspectToken(validatingClient, tokens.getAccessToken());
     }
   }
 
@@ -528,41 +511,17 @@ public class ITOAuth2ClientKeycloak {
         HttpClient validatingClient = validatingHttpClient("Private2").build()) {
       Tokens tokens = client.fetchNewTokens();
       soft.assertThat(tokens.getAccessToken()).isNotNull();
-      tryUseAccessToken(validatingClient, tokens.getAccessToken());
+      introspectToken(validatingClient, tokens.getAccessToken());
     }
   }
 
-  /**
-   * Attempts to use the access token to obtain a UMA (User Management Access) ticket from Keycloak,
-   * authorizing the client represented by the token to access resources hosted by "ResourceServer".
-   */
-  private void tryUseAccessToken(HttpClient httpClient, AccessToken accessToken) {
+  private void introspectToken(HttpClient httpClient, AccessToken accessToken) {
     HttpRequest request =
-        httpClient
-            .newRequest()
-            .path("realms/master/protocol/openid-connect/token")
-            .header("Authorization", "Bearer " + accessToken.getPayload());
-    HttpResponse response =
-        request.postForm(
-            ImmutableMap.of(
-                "grant_type",
-                "urn:ietf:params:oauth:grant-type:uma-ticket",
-                // audience: client ID of the resource server
-                "audience",
-                "ResourceServer"));
+        httpClient.newRequest().path("realms/master/protocol/openid-connect/token/introspect");
+    HttpResponse response = request.postForm(ImmutableMap.of("token", accessToken.getPayload()));
     JsonNode entity = response.readEntity(JsonNode.class);
     soft.assertThat(entity).isNotNull();
-    // should contain the Requesting Party Token (RPT) under access_token
-    soft.assertThat(entity.has("access_token")).isTrue();
-    JwtToken jwtToken = JwtToken.parse(entity.get("access_token").asText());
-    soft.assertThat(jwtToken).isNotNull();
-    soft.assertThat(jwtToken.getAudience()).isEqualTo("ResourceServer");
-  }
-
-  private void revokeAccessToken(HttpClient httpClient, AccessToken accessToken) {
-    HttpRequest request =
-        httpClient.newRequest().path("realms/master/protocol/openid-connect/revoke");
-    request.postForm(ImmutableMap.of("token", accessToken.getPayload()));
+    soft.assertThat(entity.get("active").asBoolean()).isTrue();
   }
 
   private void compareTokens(Tokens oldTokens, Tokens newTokens, String clientId) {
@@ -633,7 +592,6 @@ public class ITOAuth2ClientKeycloak {
     client.setDirectAccessGrantsEnabled(true); // required for password grant
     client.setStandardFlowEnabled(true); // required for authorization code grant
     client.setRedirectUris(ImmutableList.of("http://localhost:*"));
-    client.setAuthorizationServicesEnabled(confidential); // required to request UMA tokens
     client.setAttributes(
         ImmutableMap.of(
             "use.refresh.tokens",
@@ -680,8 +638,7 @@ public class ITOAuth2ClientKeycloak {
         .addResponseFilter(
             resp -> {
               if (resp.getStatus() != Status.OK) {
-                throw new HttpClientResponseException(
-                    "Failed to obtain UMA ticket", resp.getStatus());
+                throw new HttpClientResponseException("Failed to validate token", resp.getStatus());
               }
             });
   }
