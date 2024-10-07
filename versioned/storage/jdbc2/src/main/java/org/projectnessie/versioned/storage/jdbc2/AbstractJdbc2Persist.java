@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_VAL
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_VERS;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ_CONDITIONAL;
+import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FIND_OBJS_TYPED;
@@ -403,6 +404,17 @@ abstract class AbstractJdbc2Persist implements Persist {
       throws ObjTooLargeException {
     upsertObjs(conn, objs, false, false);
     return null;
+  }
+
+  protected final boolean deleteWithReferenced(@Nonnull Connection conn, @Nonnull Obj obj) {
+    try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_REFERENCED)) {
+      ps.setString(1, config.repositoryId());
+      serializeObjId(ps, 2, obj.id(), databaseSpecific);
+      ps.setLong(3, obj.referenced());
+      return ps.executeUpdate() == 1;
+    } catch (SQLException e) {
+      throw unhandledSQLException(e);
+    }
   }
 
   protected final boolean deleteConditional(@Nonnull Connection conn, @Nonnull UpdateableObj obj) {

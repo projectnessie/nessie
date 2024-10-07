@@ -288,6 +288,24 @@ class InmemoryPersist implements ValidatingPersist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    AtomicBoolean result = new AtomicBoolean();
+    inmemory.objects.compute(
+        compositeKey(obj.id()),
+        (k, v) -> {
+          if (v == null) {
+            // not present
+            return null;
+          } else if (v.referenced() != obj.referenced()) {
+            return v;
+          }
+          result.set(true);
+          return null;
+        });
+    return result.get();
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     return updateDeleteConditional(obj, null);
   }

@@ -199,6 +199,11 @@ public class PersistDelegate implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    return delegate.deleteWithReferenced(obj);
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     return delegate.deleteConditional(obj);
   }

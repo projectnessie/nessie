@@ -664,6 +664,21 @@ public class MongoDBPersist implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    ObjId id = obj.id();
+
+    try {
+      return backend
+              .objs()
+              .findOneAndDelete(
+                  and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_REFERENCED, obj.referenced())))
+          != null;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     ObjId id = obj.id();
     ObjType type = obj.type();
