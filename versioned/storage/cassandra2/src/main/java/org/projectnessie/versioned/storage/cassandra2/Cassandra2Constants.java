@@ -115,6 +115,17 @@ public final class Cassandra2Constants {
           + COL_OBJ_VERS
           + "=?";
 
+  static final String DELETE_OBJ_REFERENCED =
+      "DELETE FROM %s."
+          + TABLE_OBJS
+          + " WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
+          + "=? IF "
+          + COL_OBJ_REFERENCED
+          + "=?";
+
   static final String CREATE_TABLE_OBJS =
       "CREATE TABLE %s."
           + TABLE_OBJS
@@ -376,7 +387,10 @@ public final class Cassandra2Constants {
           + " AND "
           + COL_OBJ_ID
           + "=:"
-          + COL_OBJ_ID;
+          + COL_OBJ_ID
+          // IF EXISTS is necessary to prevent writing just the referenced timestamp after an object
+          // has been deleted.
+          + " IF EXISTS";
 
   private Cassandra2Constants() {}
 }

@@ -303,6 +303,15 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    try {
+      return persist.deleteWithReferenced(obj);
+    } finally {
+      cache.remove(obj.id());
+    }
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     try {
       return persist.deleteConditional(obj);
