@@ -72,7 +72,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -654,7 +653,7 @@ public class BigTablePersist implements Persist {
   @Nonnull
   @Override
   public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
-    return new ScanAllObjectsIterator(returnedObjTypes::contains);
+    return new ScanAllObjectsIterator(returnedObjTypes);
   }
 
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>
@@ -665,39 +664,41 @@ public class BigTablePersist implements Persist {
 
     private ByteString lastKey;
 
-    ScanAllObjectsIterator(Predicate<ObjType> filter) {
+    ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
 
       Query q = Query.create(backend.tableObjsId).prefix(keyPrefix);
 
       Filters.ChainFilter filterChain =
           FILTERS.chain().filter(FILTERS.family().exactMatch(FAMILY_OBJS));
 
-      Filters.InterleaveFilter typeFilter = null;
-      boolean all = true;
-      for (ObjType type : ObjTypes.allObjTypes()) {
-        boolean match = filter.test(type);
-        if (match) {
-          if (typeFilter == null) {
-            typeFilter = FILTERS.interleave();
+      if (!returnedObjTypes.isEmpty()) {
+        Filters.InterleaveFilter typeFilter = null;
+        boolean all = true;
+        for (ObjType type : ObjTypes.allObjTypes()) {
+          boolean match = returnedObjTypes.contains(type);
+          if (match) {
+            if (typeFilter == null) {
+              typeFilter = FILTERS.interleave();
+            }
+            typeFilter.filter(
+                FILTERS
+                    .chain()
+                    .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
+                    .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(type))));
+          } else {
+            all = false;
           }
-          typeFilter.filter(
-              FILTERS
-                  .chain()
-                  .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_TYPE))
-                  .filter(FILTERS.value().exactMatch(OBJ_TYPE_VALUES.get(type))));
-        } else {
-          all = false;
         }
-      }
-      if (typeFilter == null) {
-        throw new IllegalArgumentException("No object types matched the provided predicate");
-      }
-      if (!all) {
-        // Condition filters are generally not recommended because they are slower, but
-        // scanAllObjects is not meant to be particularly efficient. The fact that we are also
-        // limiting the query to a row prefix should alleviate the performance impact.
-        filterChain.filter(
-            FILTERS.condition(typeFilter).then(FILTERS.pass()).otherwise(FILTERS.block()));
+        if (typeFilter == null) {
+          throw new IllegalArgumentException("No object types matched the provided predicate");
+        }
+        if (!all) {
+          // Condition filters are generally not recommended because they are slower, but
+          // scanAllObjects is not meant to be particularly efficient. The fact that we are also
+          // limiting the query to a row prefix should alleviate the performance impact.
+          filterChain.filter(
+              FILTERS.condition(typeFilter).then(FILTERS.pass()).otherwise(FILTERS.block()));
+        }
       }
 
       filterChain.filter(FILTERS.qualifier().regex(QUALIFIER_OBJS_OR_VERS));

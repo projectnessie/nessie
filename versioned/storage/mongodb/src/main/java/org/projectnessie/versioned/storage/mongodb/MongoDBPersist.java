@@ -781,17 +781,14 @@ public class MongoDBPersist implements Persist {
     private final MongoCursor<Document> result;
 
     public ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
-      List<String> objTypeShortNames =
-          returnedObjTypes.stream().map(ObjType::shortName).collect(toList());
+      Bson condition = eq(ID_REPO_PATH, config.repositoryId());
+      if (!returnedObjTypes.isEmpty()) {
+        List<String> objTypeShortNames =
+            returnedObjTypes.stream().map(ObjType::shortName).collect(toList());
+        condition = and(condition, in(COL_OBJ_TYPE, objTypeShortNames));
+      }
       try {
-        result =
-            backend
-                .objs()
-                .find(
-                    and(
-                        eq(ID_REPO_PATH, config.repositoryId()),
-                        in(COL_OBJ_TYPE, objTypeShortNames)))
-                .iterator();
+        result = backend.objs().find(condition).iterator();
       } catch (RuntimeException e) {
         throw unhandledException(e);
       }

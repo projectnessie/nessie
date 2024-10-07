@@ -206,16 +206,10 @@ final class SqlConstants {
 
   static final String FIND_OBJS_TYPED = FIND_OBJS + " AND " + COL_OBJ_TYPE + "=?";
 
-  static final String SCAN_OBJS =
-      "SELECT "
-          + COLS_OBJS_ALL_NAMES
-          + " FROM "
-          + TABLE_OBJS
-          + " WHERE "
-          + COL_REPO_ID
-          + "=? AND "
-          + COL_OBJ_TYPE
-          + " IN (?)";
+  static final String SCAN_OBJS_ALL =
+      "SELECT " + COLS_OBJS_ALL_NAMES + " FROM " + TABLE_OBJS + " WHERE " + COL_REPO_ID + "=?";
+
+  static final String SCAN_OBJS = SCAN_OBJS_ALL + " AND " + COL_OBJ_TYPE + " IN (?)";
 
   private SqlConstants() {}
 }

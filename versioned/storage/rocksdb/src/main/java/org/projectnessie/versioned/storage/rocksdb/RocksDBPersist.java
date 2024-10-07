@@ -529,7 +529,8 @@ class RocksDBPersist implements Persist {
   @Nonnull
   @Override
   public CloseableIterator<Obj> scanAllObjects(@Nonnull Set<ObjType> returnedObjTypes) {
-    return new ScanAllObjectsIterator(returnedObjTypes::contains);
+    return new ScanAllObjectsIterator(
+        returnedObjTypes.isEmpty() ? x -> true : returnedObjTypes::contains);
   }
 
   private class ScanAllObjectsIterator extends AbstractIterator<Obj>

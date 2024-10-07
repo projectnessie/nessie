@@ -762,14 +762,17 @@ public class DynamoDBPersist implements Persist {
 
     public ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
 
-      AttributeValue[] objTypes =
-          returnedObjTypes.stream()
-              .map(ObjType::shortName)
-              .map(AttributeValue::fromS)
-              .toArray(AttributeValue[]::new);
       Map<String, Condition> scanFilter = new HashMap<>();
       scanFilter.put(KEY_NAME, condition(BEGINS_WITH, fromS(keyPrefix)));
-      scanFilter.put(COL_OBJ_TYPE, condition(IN, objTypes));
+
+      if (!returnedObjTypes.isEmpty()) {
+        AttributeValue[] objTypes =
+            returnedObjTypes.stream()
+                .map(ObjType::shortName)
+                .map(AttributeValue::fromS)
+                .toArray(AttributeValue[]::new);
+        scanFilter.put(COL_OBJ_TYPE, condition(IN, objTypes));
+      }
 
       try {
         iter =

@@ -57,7 +57,6 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.common.persist.ObjTypes;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -82,7 +81,7 @@ public class AbstractRepositoryLogicTests {
     persist.erase();
     soft.assertThat(repositoryLogic.repositoryExists()).isFalse();
 
-    try (CloseableIterator<Obj> iter = persist.scanAllObjects(ObjTypes.allObjTypes())) {
+    try (CloseableIterator<Obj> iter = persist.scanAllObjects(Set.of())) {
       soft.assertThat(iter).isExhausted();
     }
   }
