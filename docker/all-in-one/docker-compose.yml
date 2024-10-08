@@ -14,53 +14,62 @@
 # limitations under the License.
 #
 
-# To request an access token, use the following command:
-# token=$(curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=profile' | jq -r .access_token)
-
-# Then use the access token in the Authorization header:
-# curl http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
-
-# To connect using Nessie CLI:
-# connect to http://127.0.0.1:19120/api/v2 using
-#   "nessie.authentication.type"="OAUTH2" AND
-#   "nessie.authentication.oauth2.client-id"=client1 AND
-#   "nessie.authentication.oauth2.client-secret"=s3cr3t AND
-#   "nessie.authentication.oauth2.issuer-url"="http://127.0.0.1:8080/realms/iceberg/"
-
+# INSTRUCTIONS
+#
+# 1. Start the pods using either podman or docker:
+#
+#      podman compose -f docker/catalog-auth-s3-otel-jdbc/docker-compose.yml up
+#      docker compose -f docker/catalog-auth-s3-otel-jdbc/docker-compose.yml up
+#
+# 2. Using spark-sql: attach to the running spark-sql container:
+#
+#      podman attach $(podman ps -q --filter name=spark-sql)
+#      docker attach $(docker ps -q --filter name=spark-sql)
+#
+#    You may not see Spark's prompt immediately, type ENTER to see it. Then run the "standard smoketest SQL":
+#
+#      CREATE NAMESPACE nessie.sales;
+#      CREATE NAMESPACE nessie.eng;
+#
+#      USE nessie.sales;
+#      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+#      INSERT INTO city VALUES (1, 'a', 1, 'comment');
+#      SELECT * FROM city;
+#
+#      USE nessie.eng;
+#      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
+#      INSERT INTO city VALUES (2, 'b', 2, 'comment');
+#      SELECT * FROM city;
+#
+# 3. Using Nessie CLI: attach to the running nessie-cli container:
+#
+#      podman attach $(podman ps -q --filter name=nessie-cli)
+#      docker attach $(docker ps -q --filter name=nessie-cli)
+#
+#    Then run the following commands:
+#
+#      LIST CONTENTS ON main;
+#      SHOW NAMESPACE sales;
+#      SHOW NAMESPACE eng;
+#      SHOW TABLE sales.city;
+#      SHOW TABLE eng.city;
+#
+# 4. Accessing Nessie from the host machine: first, request an access token from Keycloak:
+#
+#      token=$(curl http://keycloak:8080/realms/iceberg/protocol/openid-connect/token --resolve keycloak:8080:127.0.0.1 --user client1:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog' | jq -r .access_token)
+#
+#    Note that you must use `keycloak` as the hostname since that is the token issuer hostname that Nessie expects.
+#    Then, use the access token in the Authorization header when accessing Nessie:
+#
+#      curl -v http://127.0.0.1:19120/api/v2/config -H "Authorization: Bearer $token"
+#      curl -v http://127.0.0.1:19120/iceberg/v1/config -H "Authorization: Bearer $token"
 
 version: '3'
 
 services:
 
-  ## IMPORTANT
-  ##
-  ## 1. Start the pods:
-  ##
-  ##      podman compose -f docker/catalog-auth-s3-otel-jdbc/docker-compose.yml up
-  ##
-  ## 2. Once the Nessie Catalog pod is up, you can run any of the following commands to start a Spark SQL session with Nessie enabled:
-  ##    The script will ask for the client secret, it is 's3cr3t' for all three clients.
-  ##
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client1
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client2
-  ##      catalog/bin/spark-sql.sh --no-nessie-start --aws --oauth --client-id client3
-  ##
-  ##    Run the "standard smoketest SQL":
-  ##
-  ##      CREATE NAMESPACE nessie.sales;
-  ##      CREATE NAMESPACE nessie.eng;
-  ##
-  ##      USE nessie.sales;
-  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
-  ##      INSERT INTO city VALUES (1, 'a', 1, 'comment');
-  ##      SELECT * FROM city;
-  ##
-  ##      USE nessie.eng;
-  ##      CREATE TABLE city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (bucket(16, N_NATIONKEY));
-  ##      INSERT INTO city VALUES (2, 'b', 2, 'comment');
-  ##      SELECT * FROM city;
-  ##
   nessie:
+    # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
     image: ghcr.io/projectnessie/nessie:0.99.0
     ports:
       # API port
@@ -87,7 +96,7 @@ services:
       - nessie.server.authentication.enabled=true
       - quarkus.oidc.auth-server-url=http://keycloak:8080/realms/iceberg
       - quarkus.oidc.client-id=client1
-      - quarkus.oidc.token.issuer=http://127.0.0.1:8080/realms/iceberg
+      - quarkus.oidc.token.issuer=http://keycloak:8080/realms/iceberg
       # Object store settings.
       # This example uses MinIO as the object store.
       - nessie.catalog.default-warehouse=warehouse
@@ -97,10 +106,8 @@ services:
       - nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
       - nessie.catalog.secrets.access-key.name=minioadmin
       - nessie.catalog.secrets.access-key.secret=minioadmin
-      # MinIO endpoint for Nessie server
+      # MinIO endpoint
       - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
-      # MinIO endpoint for clients (on the Podman/Docker host)
-      - nessie.catalog.service.s3.default-options.external-endpoint=http://127.0.0.1:9002/
       # OpenTelemetry settings.
       # This example uses Jaeger as the OpenTelemetry traces collector.
       - quarkus.otel.exporter.otlp.endpoint=http://jaeger:4317
@@ -257,3 +264,54 @@ services:
       interval: 5s
       timeout: 2s
       retries: 15
+
+  nessie-cli:
+      image: ghcr.io/projectnessie/nessie-cli:0.99.0
+      depends_on:
+        nessie:
+          condition: service_healthy
+      stdin_open: true
+      tty: true
+      command: [
+        --uri, "http://nessie:19120/iceberg/main",
+        --client-option, "nessie.enable-api-compatibility-check=false",
+        # Options for the internal Nessie client
+        --client-option, "nessie.authentication.type=OAUTH2",
+        --client-option, "nessie.authentication.oauth2.issuer-url=http://keycloak:8080/realms/iceberg",
+        --client-option, "nessie.authentication.oauth2.client-id=client1",
+        --client-option, "nessie.authentication.oauth2.client-secret=s3cr3t",
+        --client-option, "nessie.authentication.oauth2.client-scopes=catalog sign",
+        # Options for the internal Iceberg REST client
+        --client-option, "uri=http://nessie:19120/iceberg/main",
+        --client-option, "oauth2-server-uri=http://keycloak:8080/realms/iceberg/protocol/openid-connect/token",
+        --client-option, "credential=client1:s3cr3t",
+        --client-option, "scope=catalog sign",
+      ]
+
+  spark-sql:
+    image: apache/spark:3.5.3-java17-python3
+    depends_on:
+      nessie:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    ports:
+      - "4040-4045:4040-4045"
+    healthcheck:
+      test: "curl localhost:4040"
+      interval: 5s
+      retries: 15
+    command: [
+      /opt/spark/bin/spark-sql,
+      --packages, "org.projectnessie.nessie-integrations:nessie-spark-extensions-3.5_2.12:0.99.0,org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.0,software.amazon.awssdk:bundle:2.28.17,software.amazon.awssdk:url-connection-client:2.28.17",
+      --conf, "spark.sql.extensions=org.projectnessie.spark.extensions.NessieSparkSessionExtensions,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+      --conf, "spark.sql.catalog.nessie=org.apache.iceberg.spark.SparkCatalog",
+      --conf, "spark.sql.catalog.nessie.type=rest",
+      --conf, "spark.sql.catalog.nessie.uri=http://nessie:19120/iceberg/main",
+      --conf, "spark.sql.catalog.nessie.oauth2-server-uri=http://keycloak:8080/realms/iceberg/protocol/openid-connect/token",
+      --conf, "spark.sql.catalog.nessie.credential=client1:s3cr3t",
+      --conf, "spark.sql.catalog.nessie.scope=catalog sign",
+      --conf, "spark.sql.catalogImplementation=in-memory",
+    ]
+    volumes:
+      - ~/.ivy2:/home/spark/.ivy2
