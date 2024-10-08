@@ -1,6 +1,9 @@
-# Podman/Docker compose
+# Podman/Docker Compose Examples
 
-You can quickly get started with Nessie variants by following docker templates.
+You can quickly get started with Nessie by playing with the examples provided in this directory. 
+The examples are designed to be run with `docker-compose` or `podman-compose`.
+
+## Instructions for podman
 
 When you use podman, make sure that:
 * you have `podman-compose` installed (on Ubuntu: `pip3 install podman-compose` as `root`).
@@ -14,6 +17,19 @@ When you use podman, make sure that:
   network_backend = "netavark"
   ```
   _Might_ need to run `podman system reset --force` when changing the network backend. 
+
+## Nessie all-in-one
+
+The template brings up Nessie with Iceberg REST API, backed by a PostgreSQL database. Authentication
+is provided by Keycloak. Object storage is provided by MinIO. Prometheus and Grafana are also
+included for monitoring, and Jaeger for tracing. And finally, a Spark SQL server is included for
+testing, and also a Nessie CLI container for interacting with the Nessie server.
+
+```shell
+docker-compose -f all-in-one/docker-compose.yml up
+```
+
+See usage instructions in the compose file.
 
 ## Nessie with MongoDB
 The template brings up two containers, one for Nessie and one for MongoDB. Nessie uses MongoDB as a backing store.
@@ -42,39 +58,50 @@ docker-compose -f in_memory/docker-compose.yml up
 | WARNING: Bouncing Nessie server resets the in-memory store, which will in-turn reset the data|
 | --- |
 
-## Nessie with Authentication Enabled
+## Nessie with Keycloak
 
 The template brings up two containers, one for Nessie and one for Keycloak (OIDC server).
+
 ```shell
-docker-compose -f authn/docker-compose.yml up
+docker-compose -f authn-keycloak/docker-compose.yml up
 ```
+
 - Nessie port - 19120
 - Keycloak server port - 8080
 
-The docker template uses bridge network to communicate with the keycloak server. Hence, the token has to be generated with the issuer host `keycloak` <br><br>
-_Enter the Nessie container, and generate the token_
-```shell
-docker exec -it authn_nessie_1 /bin/bash
-```
-```shell
-curl -X POST http://keycloak:8080/auth/realms/master/protocol/openid-connect/token \
---user admin-cli:none -H 'content-type: application/x-www-form-urlencoded' \
--d 'username=admin&password=admin&grant_type=password'
-```
-Use this token as a bearer token for authenticating the requests to Nessie.
-```shell
-curl --location --request GET 'http://localhost:19120/api/v1/trees' \
---header 'Authorization: Bearer <TOKEN>'
-```
+See usage instructions in the compose file.
+
 You can configure new users, and reset the expiry time from the keycloak console as described [here](../servers/quarkus-server#readme).
 
-## Nessie with OpenTelemetry Enabled
+## Nessie with Authelia
+
+The template brings up two containers, one for Nessie and one for Authelia.
+
+```shell
+docker-compose -f authn-authelia/docker-compose.yml up
+```
+
+See usage instructions in the compose file.
+
+## Nessie with OpenTelemetry
 
 The template brings up two containers, one for Nessie and one for Jaeger (OpenTelemetry server).
 
 ```shell
 docker-compose -f telemetry/docker-compose.yml up
 ```
+
+## Nessie with Nginx
+
+The template brings up three containers, Nessie, Nginx, and MinIO.
+
+```shell
+docker-compose -f telemetry/docker-compose.yml up
+```
+
+In this example, Nessie is accessible in HTTPS at
+https://nessie-nginx.localhost.localdomain:8443/nessie/api/v2/. See usage instructions in the
+compose file.
 
 ## Misc
 - To check the status - `docker ps -a`
