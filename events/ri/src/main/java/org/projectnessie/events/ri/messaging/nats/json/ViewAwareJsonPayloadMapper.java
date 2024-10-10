@@ -17,19 +17,15 @@ package org.projectnessie.events.ri.messaging.nats.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkiverse.reactive.messaging.nats.jetstream.mapper.PayloadMapper;
-import jakarta.annotation.Priority;
+import io.quarkiverse.reactive.messaging.nats.jetstream.mapper.DefaultPayloadMapper;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.ser.Views;
 
-@Alternative
-@Priority(1)
 @ApplicationScoped
-public class ViewAwareJsonPayloadMapper extends PayloadMapper {
+public class ViewAwareJsonPayloadMapper extends DefaultPayloadMapper {
 
   static {
     int apiVersion = NessieConfiguration.getBuiltInConfig().getMaxSupportedApiVersion();
