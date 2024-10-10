@@ -31,14 +31,19 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
 import static org.projectnessie.versioned.storage.common.config.StoreConfig.CONFIG_COMMIT_TIMEOUT_MILLIS;
+import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.Add.commitAdd;
+import static org.projectnessie.versioned.storage.common.logic.CreateCommit.newCommitBuilder;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.REF_REPO;
 import static org.projectnessie.versioned.storage.common.logic.InternalRef.allInternalRefs;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.emptyPagingToken;
 import static org.projectnessie.versioned.storage.common.logic.PagingToken.pagingToken;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
@@ -49,9 +54,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -64,15 +71,18 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.logic.InternalRef;
 import org.projectnessie.versioned.storage.common.logic.PagedResult;
 import org.projectnessie.versioned.storage.common.logic.PagingToken;
 import org.projectnessie.versioned.storage.common.logic.ReferenceLogic;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitType;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -92,6 +102,111 @@ public abstract class AbstractReferenceLogicTests {
 
   protected AbstractReferenceLogicTests(Class<?> surroundingTestClass) {
     this.surroundingTestClass = surroundingTestClass;
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "0, 1", "1, 1", "5, 1", "50, 1", "5, 3", "50, 10",
+  })
+  public void rewriteCommitLog(int numSourceCommits, int cutoff) throws Exception {
+    var referenceLogic = referenceLogic(persist);
+    var commitLogic = commitLogic(persist);
+    var indexesLogic = indexesLogic(persist);
+
+    var commits = new ArrayList<CommitObj>();
+    var head = EMPTY_OBJ_ID;
+    for (int i = 0; i < numSourceCommits; i++) {
+      var commit =
+          commitLogic.doCommit(
+              newCommitBuilder()
+                  .message("commit #" + i)
+                  .parentCommitId(head)
+                  .headers(newCommitHeaders().add("random", UUID.randomUUID().toString()).build())
+                  .addAdds(
+                      commitAdd(key("key", "num-" + i), 1, EMPTY_OBJ_ID, null, UUID.randomUUID()))
+                  .build(),
+              List.of());
+      commits.add(commit);
+      soft.assertThat(commit.seq()).isEqualTo(1 + i);
+      head = commit.id();
+    }
+
+    var reference =
+        referenceLogic.createReference("rewrite-commits-" + numSourceCommits, head, null);
+
+    var expectedCommitSeq = new AtomicInteger(numSourceCommits);
+
+    var notRewritten =
+        referenceLogic.rewriteCommitLog(
+            reference,
+            (num, commit) -> {
+              soft.assertThat(commit.seq()).isEqualTo(expectedCommitSeq.getAndDecrement());
+              soft.assertThat(num - 1).isEqualTo(numSourceCommits - commit.seq());
+              soft.assertThat(commit).isEqualTo(commits.get(numSourceCommits - num));
+              return false;
+            });
+
+    soft.assertThat(notRewritten).isSameAs(reference);
+
+    var rewritten = referenceLogic.rewriteCommitLog(reference, (num, commit) -> num == cutoff);
+
+    if (numSourceCommits == 0 || numSourceCommits == 1) {
+      // nothing changed
+      soft.assertThat(rewritten).isSameAs(reference);
+    } else {
+      soft.assertThat(rewritten.pointer()).isNotEqualTo(reference.pointer());
+
+      var newCommits = newArrayList(commitLogic.commitLog(commitLogQuery(rewritten.pointer())));
+      soft.assertThat(newCommits).hasSize(cutoff);
+
+      var newHead = commitLogic.fetchCommit(rewritten.pointer());
+
+      if (cutoff > 1) {
+        for (int i = 0; i < cutoff - 1; i++) {
+          var newCommit = newCommits.get(i);
+          var oldCommit = commits.get(numSourceCommits - i - 1);
+
+          soft.assertThat(newCommit.directParent()).isEqualTo(newCommits.get(i + 1).id());
+          soft.assertThat(newCommit.seq()).isEqualTo(cutoff - i);
+
+          var newContents =
+              newArrayList(indexesLogic.incrementalIndexFromCommit(newCommit)).stream()
+                  .map(StoreIndexElement::content)
+                  .collect(Collectors.toList());
+          var oldContents =
+              newArrayList(indexesLogic.incrementalIndexFromCommit(oldCommit)).stream()
+                  .map(StoreIndexElement::content)
+                  .collect(Collectors.toList());
+
+          soft.assertThat(newContents).isEqualTo(oldContents);
+        }
+
+        var numNonIncremetalOps =
+            newArrayList(indexesLogic.incrementalIndexFromCommit(newHead)).stream()
+                .filter(c -> c.content().action().currentCommit())
+                .count();
+        soft.assertThat(numNonIncremetalOps).isEqualTo(1);
+        soft.assertThat(newHead.seq()).isEqualTo(cutoff);
+        soft.assertThat(newHead.directParent()).isNotEqualTo(EMPTY_OBJ_ID);
+        soft.assertThat(newHead.tail()).hasSize(cutoff);
+        soft.assertThat(newHead.tail().get(cutoff - 1)).isEqualTo(EMPTY_OBJ_ID);
+      } else {
+        var numNonIncremetalOps =
+            newArrayList(indexesLogic.incrementalIndexFromCommit(newHead)).stream()
+                .filter(c -> c.content().action().currentCommit())
+                .count();
+        soft.assertThat(numNonIncremetalOps).isEqualTo(numSourceCommits);
+        soft.assertThat(newHead.seq()).isEqualTo(1);
+        soft.assertThat(newHead.directParent()).isEqualTo(EMPTY_OBJ_ID);
+        soft.assertThat(newHead.tail()).containsExactly(EMPTY_OBJ_ID);
+      }
+
+      soft.assertThat(indexesLogic.buildCompleteIndexOrEmpty(newHead).asKeyList())
+          .containsExactlyInAnyOrderElementsOf(
+              IntStream.range(0, numSourceCommits)
+                  .mapToObj(i -> key("key", "num-" + i))
+                  .collect(Collectors.toList()));
+    }
   }
 
   @SuppressWarnings("BusyWait")

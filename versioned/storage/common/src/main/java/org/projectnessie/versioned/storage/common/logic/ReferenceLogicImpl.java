@@ -23,6 +23,7 @@ import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.nessie.relocated.protobuf.ByteString.copyFromUtf8;
+import static org.projectnessie.versioned.storage.common.indexes.StoreIndexElement.indexElement;
 import static org.projectnessie.versioned.storage.common.indexes.StoreKey.key;
 import static org.projectnessie.versioned.storage.common.logic.CommitConflict.ConflictType.KEY_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
@@ -38,6 +39,7 @@ import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImp
 import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult.Kind.REF_ROW_EXISTS;
 import static org.projectnessie.versioned.storage.common.logic.ReferenceLogicImpl.CommitReferenceResult.Kind.REF_ROW_MISSING;
 import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.newCommitHeaders;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.commitOp;
 import static org.projectnessie.versioned.storage.common.objtypes.RefObj.ref;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.REF;
@@ -51,11 +53,13 @@ import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
@@ -677,6 +681,78 @@ final class ReferenceLogicImpl implements ReferenceLogic {
     checkArgument(!current.isInternal());
 
     return persist.updateReferencePointer(current, newPointer);
+  }
+
+  @Override
+  public Reference rewriteCommitLog(
+      @Nonnull Reference current, BiPredicate<Integer, CommitObj> cutoffPredicate)
+      throws RefNotFoundException,
+          RefConditionFailedException,
+          CommitConflictException,
+          ObjNotFoundException {
+    var commitLogic = commitLogic(persist);
+    var indexesLogic = indexesLogic(persist);
+
+    var log = commitLogic.commitLog(CommitLogQuery.commitLogQuery(current.pointer()));
+    var commits = new ArrayDeque<CommitObj>();
+    for (int n = 1; log.hasNext(); n++) {
+      var commit = log.next();
+
+      if (cutoffPredicate.test(n, commit)) {
+        // THIS is the last commit to retain
+
+        if (commit.directParent().equals(EMPTY_OBJ_ID)) {
+          return current;
+        }
+
+        // Build the "oldest" commit
+        var c =
+            newCommitBuilder()
+                .message(commit.message())
+                .parentCommitId(EMPTY_OBJ_ID)
+                .headers(commit.headers());
+        for (StoreIndexElement<CommitOp> element : indexesLogic.buildCompleteIndexOrEmpty(commit)) {
+          var op = element.content();
+          if (op.action().exists()) {
+            c.addAdds(commitAdd(element.key(), op.payload(), op.value(), null, op.contentId()));
+          }
+        }
+        var head = commitLogic.buildCommitObj(c.build());
+        commitLogic.storeCommit(head, List.of());
+
+        // Build the "next newer" commit(s)
+        while (!commits.isEmpty()) {
+          commit = commits.removeLast();
+
+          c =
+              newCommitBuilder()
+                  .message(commit.message())
+                  .parentCommitId(head.id())
+                  .headers(commit.headers());
+          for (StoreIndexElement<CommitOp> element :
+              indexesLogic.incrementalIndexFromCommit(commit)) {
+            var op = element.content();
+            if (op.action().currentCommit()) {
+              if (op.action().exists()) {
+                c.addAdds(commitAdd(element.key(), op.payload(), op.value(), null, op.contentId()));
+              } else {
+                c.addRemoves(commitRemove(element.key(), op.payload(), op.value(), op.contentId()));
+              }
+            }
+          }
+          head = commitLogic.buildCommitObj(c.build());
+          commitLogic.storeCommit(head, List.of());
+        }
+
+        return persist.updateReferencePointer(current, head.id());
+      }
+
+      // memoize the
+      commits.addLast(commit);
+    }
+
+    // no cut-off found, just return "current"
+    return current;
   }
 
   private Reference maybeRecover(
