@@ -19,10 +19,14 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiPredicate;
+import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
+import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RefAlreadyExistsException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
+import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 
@@ -115,4 +119,26 @@ public interface ReferenceLogic {
   @Nonnull
   Reference assignReference(@Nonnull Reference current, @Nonnull ObjId newPointer)
       throws RefNotFoundException, RefConditionFailedException;
+
+  /**
+   * Rewrites the commit log of the given reference up to including the first commit for which the
+   * given predicate returns {@code true}.
+   *
+   * <p>Read the commit log of {@code current} until {@code cutoffPredicate} returns {@code true}.
+   * All commits that have been read so far, including the one for which the predicate returned
+   * {@code true}, will be included. The reference will be updated with the "tip/HEAD" of the newest
+   * written commit. If the predicate never returned {@code true}, no new commits will be written
+   * and the reference will not be updated.
+   *
+   * @param current the commit log of this reference is going to be rewritten
+   * @param cutoffPredicate predicate receiving the number of the commit (starting at {@code 1}) and
+   *     the {@link CommitObj}
+   * @return the updated reference or just {@code current}, if no new commits were written
+   */
+  Reference rewriteCommitLog(
+      @Nonnull Reference current, BiPredicate<Integer, CommitObj> cutoffPredicate)
+      throws RefNotFoundException,
+          RefConditionFailedException,
+          CommitConflictException,
+          ObjNotFoundException;
 }
