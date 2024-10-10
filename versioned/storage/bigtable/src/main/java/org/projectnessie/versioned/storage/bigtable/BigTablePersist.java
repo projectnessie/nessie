@@ -567,6 +567,20 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    Filter condition =
+        FILTERS
+            .chain()
+            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_REFERENCED))
+            .filter(FILTERS.value().exactMatch(copyFromUtf8(Long.toString(obj.referenced()))));
+
+    ConditionalRowMutation conditionalRowMutation =
+        conditionalRowMutation(obj, condition, Mutation.create().deleteRow());
+
+    return backend.client().checkAndMutateRow(conditionalRowMutation);
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     ConditionalRowMutation conditionalRowMutation =
         mutationForConditional(obj, Mutation.create().deleteRow());
@@ -591,9 +605,6 @@ public class BigTablePersist implements Persist {
   @Nonnull
   private ConditionalRowMutation mutationForConditional(
       @Nonnull UpdateableObj obj, Mutation mutation) {
-    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
-    ByteString key = dbKey(obj.id());
-
     Filters.ChainFilter objTypeFilter =
         FILTERS
             .chain()
@@ -606,6 +617,15 @@ public class BigTablePersist implements Persist {
             .filter(FILTERS.value().exactMatch(obj.versionToken()));
     Filter condition =
         FILTERS.condition(objTypeFilter).then(objVersionFilter).otherwise(FILTERS.block());
+
+    return conditionalRowMutation(obj, condition, mutation);
+  }
+
+  @Nonnull
+  private ConditionalRowMutation conditionalRowMutation(
+      @Nonnull Obj obj, @Nonnull Filter condition, @Nonnull Mutation mutation) {
+    checkArgument(obj.id() != null, "Obj to store must have a non-null ID");
+    ByteString key = dbKey(obj.id());
 
     return ConditionalRowMutation.create(backend.tableObjsId, key)
         .condition(condition)

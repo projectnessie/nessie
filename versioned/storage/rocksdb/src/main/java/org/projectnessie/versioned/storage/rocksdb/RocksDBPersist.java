@@ -444,6 +444,37 @@ class RocksDBPersist implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    ObjId id = obj.id();
+    Lock l = repo.objLock(id);
+    try {
+      RocksDBBackend b = backend;
+      TransactionDB db = b.db();
+      ColumnFamilyHandle cf = b.objs();
+      byte[] key = dbKey(id);
+
+      byte[] bytes = db.get(cf, key);
+      if (bytes == null) {
+        return false;
+      }
+      Obj existing = deserializeObj(id, 0L, bytes, null);
+      if (!existing.type().equals(obj.type())) {
+        return false;
+      }
+      if (existing.referenced() != obj.referenced()) {
+        return false;
+      }
+
+      db.delete(cf, key);
+      return true;
+    } catch (RocksDBException e) {
+      throw rocksDbException(e);
+    } finally {
+      l.unlock();
+    }
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     ObjId id = obj.id();
     Lock l = repo.objLock(id);

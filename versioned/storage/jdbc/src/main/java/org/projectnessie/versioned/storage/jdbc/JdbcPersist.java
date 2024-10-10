@@ -211,6 +211,11 @@ class JdbcPersist extends AbstractJdbcPersist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    return withConnectionException(false, conn -> super.deleteWithReferenced(conn, obj));
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     return withConnectionException(false, conn -> super.deleteConditional(conn, obj));
   }

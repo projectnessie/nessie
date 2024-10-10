@@ -275,6 +275,14 @@ public class ObservingPersist implements Persist {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    return delegate.deleteWithReferenced(obj);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     return delegate.deleteConditional(obj);
   }
