@@ -294,7 +294,8 @@ The following example `SELECT`s the state/contents of the table `my_namespace.my
 July 1st, 2024 at midnight UTC.
 
 Generally:
-* the table name must be quoted using backticks (`)
+
+* the table name must be quoted using backticks (`` ` ``)
 * specify a branch or tag name after the at-char (`@`) (for example `table@branch`)
 * specify a timestamp after the hash-char (`#`) (for example `table#2024-07-01T00:00:00Z`) or
 * specify a Nessie commit ID after the hash-char (`#`) (for example `table#748586fa39e02bd1e359df105c6c08287ad5ed7a53235f71c455afb10fbff14c`) 
