@@ -110,6 +110,7 @@ dependencies {
   testFixturesApi(project(":nessie-catalog-files-api"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-catalog-service-common"))
+  testFixturesApi(project(":nessie-catalog-service-config"))
   testFixturesApi(project(":nessie-events-api"))
   testFixturesApi(project(":nessie-events-spi"))
   testFixturesApi(project(":nessie-events-service"))

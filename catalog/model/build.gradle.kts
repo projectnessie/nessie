@@ -26,7 +26,6 @@ protobufSchemaGen.extendsFrom(configurations.runtimeClasspath.get())
 
 dependencies {
   implementation(project(":nessie-model"))
-  implementation(project(":nessie-client"))
 
   implementation(libs.guava)
 

@@ -25,6 +25,7 @@ dependencies {
   implementation(project(":nessie-catalog-files-impl"))
   implementation(project(":nessie-catalog-secrets-api"))
   implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-catalog-service-config"))
   implementation(project(":nessie-catalog-service-impl"))
   implementation(project(":nessie-catalog-service-rest"))
   implementation(project(":nessie-tasks-api"))

@@ -50,7 +50,7 @@ val genProjectPaths = listOf(
   ":nessie-versioned-storage-rocksdb",
   ":nessie-catalog-files-api",
   ":nessie-catalog-files-impl",
-  ":nessie-catalog-service-common"
+  ":nessie-catalog-service-config"
 )
 
 dependencies {
