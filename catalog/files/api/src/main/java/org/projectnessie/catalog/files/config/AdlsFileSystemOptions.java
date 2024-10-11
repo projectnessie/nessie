@@ -27,7 +27,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsFileSystemOptions.class)
 @JsonDeserialize(as = ImmutableAdlsFileSystemOptions.class)
-public interface AdlsFileSystemOptions {
+public interface AdlsFileSystemOptions extends BucketOptions {
 
   Duration DELEGATION_KEY_DEFAULT_EXPIRY = Duration.ofDays(7).minus(1, ChronoUnit.SECONDS);
   Duration DELEGATION_SAS_DEFAULT_EXPIRY = Duration.ofHours(3);

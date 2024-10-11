@@ -26,7 +26,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableGcsBucketOptions.class)
 @JsonDeserialize(as = ImmutableGcsBucketOptions.class)
-public interface GcsBucketOptions {
+public interface GcsBucketOptions extends BucketOptions {
 
   /** Default value for {@link #authType()}, being {@link GcsAuthType#NONE}. */
   GcsAuthType DEFAULT_AUTH_TYPE = GcsAuthType.NONE;

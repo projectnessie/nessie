@@ -25,7 +25,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableS3BucketOptions.class)
 @JsonDeserialize(as = ImmutableS3BucketOptions.class)
-public interface S3BucketOptions {
+public interface S3BucketOptions extends BucketOptions {
 
   /** Default value for {@link #authType()}, being {@link S3AuthType#STATIC}. */
   S3AuthType DEFAULT_SERVER_AUTH_TYPE = S3AuthType.STATIC;
