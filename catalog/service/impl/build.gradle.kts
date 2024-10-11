@@ -23,6 +23,7 @@ dependencies {
   implementation(project(":nessie-catalog-format-iceberg"))
   implementation(project(":nessie-catalog-model"))
   implementation(project(":nessie-catalog-service-common"))
+  implementation(project(":nessie-catalog-service-config"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-model"))
   implementation(project(":nessie-services"))

@@ -22,12 +22,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-catalog-files-api"))
   implementation(project(":nessie-catalog-model"))
-  implementation(project(":nessie-catalog-service-config"))
-  implementation(project(":nessie-services"))
-  implementation(project(":nessie-versioned-spi"))
-  implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(":nessie-tasks-api"))
-  implementation(project(":nessie-catalog-service-transfer"))
+  implementation(project(":nessie-catalog-secrets-api"))
 
   compileOnly(project(":nessie-doc-generator-annotations"))
   compileOnly(libs.smallrye.config.core)

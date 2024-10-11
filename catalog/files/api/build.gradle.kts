@@ -21,7 +21,6 @@ publishingHelper { mavenName = "Nessie - Catalog - Files API" }
 dependencies {
   api(project(":nessie-storage-uri"))
   implementation(project(":nessie-catalog-model"))
-  implementation(project(":nessie-catalog-secrets-api"))
   implementation(libs.guava)
 
   compileOnly(project(":nessie-immutables"))

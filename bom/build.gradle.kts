@@ -122,6 +122,7 @@ dependencies {
     api(project(":nessie-catalog-format-iceberg-fixturegen"))
     api(project(":nessie-catalog-model"))
     api(project(":nessie-catalog-service-common"))
+    api(project(":nessie-catalog-service-config"))
     api(project(":nessie-catalog-service-rest"))
     api(project(":nessie-catalog-service-impl"))
     api(project(":nessie-catalog-service-transfer"))
