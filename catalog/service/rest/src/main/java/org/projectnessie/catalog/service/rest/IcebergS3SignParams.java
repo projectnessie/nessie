@@ -265,12 +265,15 @@ abstract class IcebergS3SignParams {
                 List.of()));
     String s3Uri = requestedS3Uri();
     LOGGER.warn(
-        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request method: {}",
+        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request method: {}, warehouse: {}, writeable locations: {}, readable locations: {}",
         key(),
         ref(),
         s3Uri,
         request().uri(),
-        request().method());
+        request().method(),
+        warehouseLocation(),
+        writeLocations(),
+        readLocations());
     return exception;
   }
 }
