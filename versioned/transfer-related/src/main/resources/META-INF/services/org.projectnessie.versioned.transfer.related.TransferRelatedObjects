@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.projectnessie.versioned.transfer.CoreTransferRelatedObjects
+org.projectnessie.versioned.transfer.related.CoreTransferRelatedObjects

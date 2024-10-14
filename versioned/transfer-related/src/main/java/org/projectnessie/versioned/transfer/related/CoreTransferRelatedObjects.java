@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.transfer;
+package org.projectnessie.versioned.transfer.related;
 
 import static java.util.Collections.singleton;
 import static org.projectnessie.versioned.storage.common.objtypes.UniqueIdObj.uniqueId;
@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.projectnessie.model.Content;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.transfer.related.TransferRelatedObjects;
 
 public class CoreTransferRelatedObjects implements TransferRelatedObjects {
   @Override
