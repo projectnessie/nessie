@@ -546,6 +546,28 @@ public class DynamoDBPersist implements Persist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    ObjId id = obj.id();
+
+    Map<String, ExpectedAttributeValue> expectedValues =
+        Map.of(
+            COL_OBJ_REFERENCED,
+            ExpectedAttributeValue.builder().value(fromS(Long.toString(obj.referenced()))).build());
+
+    try {
+      backend
+          .client()
+          .deleteItem(
+              b -> b.tableName(backend.tableObjs).key(objKeyMap(id)).expected(expectedValues));
+      return true;
+    } catch (ConditionalCheckFailedException checkFailedException) {
+      return false;
+    } catch (RuntimeException e) {
+      throw unhandledException(e);
+    }
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     ObjId id = obj.id();
 

@@ -823,6 +823,27 @@ public class AbstractBasePersistTests {
 
   @ParameterizedTest
   @MethodSource("allObjectTypeSamples")
+  public void referencedDelete(Obj obj) throws Exception {
+    assumeThat(persist.isCaching())
+        .describedAs("'referenced' not tested against a caching Persist")
+        .isFalse();
+
+    soft.assertThat(persist.storeObj(obj)).isTrue();
+    Obj stored = persist.fetchObj(obj.id());
+    Thread.sleep(0, 1000);
+    persist.storeObj(stored);
+    Obj stored2 = persist.fetchObj(obj.id());
+    soft.assertThat(stored.referenced()).isNotEqualTo(stored2.referenced());
+
+    soft.assertThat(persist.deleteWithReferenced(stored)).isFalse();
+    soft.assertThatCode(() -> persist.fetchObj(obj.id())).doesNotThrowAnyException();
+    soft.assertThat(persist.deleteWithReferenced(stored2)).isTrue();
+    soft.assertThatExceptionOfType(ObjNotFoundException.class)
+        .isThrownBy(() -> persist.fetchObj(obj.id()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("allObjectTypeSamples")
   public void singleObjectCreateDelete(Obj obj) throws Exception {
     soft.assertThatThrownBy(() -> persist.fetchObj(obj.id()))
         .isInstanceOf(ObjNotFoundException.class);

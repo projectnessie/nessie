@@ -379,6 +379,14 @@ public interface Persist {
   void deleteObjs(@Nonnull ObjId[] ids);
 
   /**
+   * Deletes the given object, if its {@link Obj#referenced()} value is equal to the persisted
+   * object's value. Since a caching {@link Persist} does not guarantee that the {@link
+   * Obj#referenced()} value is up-to-date, callers must ensure that they read the uncached object
+   * state, for example via a {@link #scanAllObjects(Set)}.
+   */
+  boolean deleteWithReferenced(@Nonnull Obj obj);
+
+  /**
    * Deletes the object, if the current state in the database is equal to the given state, comparing
    * the {@link UpdateableObj#versionToken()}.
    *

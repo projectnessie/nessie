@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.C
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ_CONDITIONAL;
+import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.DELETE_OBJ_REFERENCED;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.EXPECTED_SUFFIX;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.cassandra.CassandraConstants.FIND_OBJS;
@@ -340,6 +341,18 @@ public class CassandraPersist implements Persist {
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     long referenced = config.currentTimeMicros();
     persistObjs(objs, referenced, true);
+  }
+
+  @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    BoundStatement stmt =
+        backend.buildStatement(
+            DELETE_OBJ_REFERENCED,
+            false,
+            config.repositoryId(),
+            serializeObjId(obj.id()),
+            obj.referenced());
+    return backend.executeCas(stmt);
   }
 
   @Override

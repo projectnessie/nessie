@@ -81,6 +81,17 @@ public final class CassandraConstants {
           + COL_OBJ_VERS
           + "=?";
 
+  static final String DELETE_OBJ_REFERENCED =
+      "DELETE FROM %s."
+          + TABLE_OBJS
+          + " WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
+          + "=? IF "
+          + COL_OBJ_REFERENCED
+          + "=?";
+
   public static final String INSERT_OBJ_PREFIX =
       "INSERT INTO %s."
           + TABLE_OBJS
@@ -124,7 +135,10 @@ public final class CassandraConstants {
           + " AND "
           + COL_OBJ_ID
           + "=:"
-          + COL_OBJ_ID;
+          + COL_OBJ_ID
+          // IF EXISTS is necessary to prevent writing just the referenced timestamp after an object
+          // has been deleted.
+          + " IF EXISTS";
 
   static final Set<CqlColumn> COLS_OBJS_ALL =
       Stream.concat(

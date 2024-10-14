@@ -57,6 +57,16 @@ final class SqlConstants {
           + "=? AND "
           + COL_OBJ_ID
           + "=?";
+  static final String DELETE_OBJ_REFERENCED =
+      "DELETE FROM "
+          + TABLE_OBJS
+          + " WHERE "
+          + COL_REPO_ID
+          + "=? AND "
+          + COL_OBJ_ID
+          + "=? AND "
+          + COL_OBJ_REFERENCED
+          + "=?";
 
   static final String COL_REFS_NAME = "ref_name";
   static final String COL_REFS_POINTER = "pointer";

@@ -330,6 +330,11 @@ final class BatchingPersistImpl implements BatchingPersist, ValidatingPersist {
   }
 
   @Override
+  public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public boolean deleteConditional(@Nonnull UpdateableObj obj) {
     throw new UnsupportedOperationException();
   }
