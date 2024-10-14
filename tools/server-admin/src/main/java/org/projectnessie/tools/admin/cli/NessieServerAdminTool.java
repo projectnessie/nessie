@@ -29,6 +29,7 @@ import picocli.CommandLine.HelpCommand;
     subcommands = {
       NessieInfo.class,
       HelpCommand.class,
+      CleanupRepository.class,
       CheckContent.class,
       DeleteCatalogTasks.class,
       EraseRepository.class,

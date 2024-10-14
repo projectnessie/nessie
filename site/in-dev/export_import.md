@@ -223,6 +223,10 @@ Below is the output of the Nessie Server Admin tool help for all commands.
 
 {% include './generated-docs/serverAdmin-help-delete-catalog-tasks.md' %}
 
+### `cleanup-repository`
+
+{% include './generated-docs/serverAdmin-help-cleanup-repository.md' %}
+
 ### `erase-repository`
 
 {% include './generated-docs/serverAdmin-help-erase-repository.md' %}
