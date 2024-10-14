@@ -21,10 +21,12 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     mavenLocal()
-    maven {
-      name = "Apache Snapshots"
-      url = new URI("https://repository.apache.org/content/repositories/snapshots/")
-      mavenContent { snapshotsOnly() }
+    if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
+      maven {
+        name = "Apache Snapshots"
+        url = new URI("https://repository.apache.org/content/repositories/snapshots/")
+        mavenContent { snapshotsOnly() }
+      }
     }
   }
 }

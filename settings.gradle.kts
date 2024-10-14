@@ -40,18 +40,20 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     gradlePluginPortal()
-    if (System.getProperty("withMavenLocal").toBoolean()) {
+    if (System.getProperty("withMavenLocal", "false").toBoolean()) {
       mavenLocal()
     }
-    maven {
-      name = "Apache Snapshots"
-      url = URI("https://repository.apache.org/content/repositories/snapshots/")
-      mavenContent { snapshotsOnly() }
-      metadataSources {
-        // Workaround for
-        // https://youtrack.jetbrains.com/issue/IDEA-327421/IJ-fails-to-import-Gradle-project-with-dependency-with-classifier
-        ignoreGradleMetadataRedirection()
-        mavenPom()
+    if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
+      maven {
+        name = "Apache Snapshots"
+        url = URI("https://repository.apache.org/content/repositories/snapshots/")
+        mavenContent { snapshotsOnly() }
+        metadataSources {
+          // Workaround for
+          // https://youtrack.jetbrains.com/issue/IDEA-327421/IJ-fails-to-import-Gradle-project-with-dependency-with-classifier
+          ignoreGradleMetadataRedirection()
+          mavenPom()
+        }
       }
     }
     // Only used for nessie-events-ri
