@@ -31,6 +31,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -54,6 +55,7 @@ import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.ImmutableS3ServerIam;
 import org.projectnessie.catalog.files.config.S3AuthType;
 import org.projectnessie.catalog.files.config.S3Options;
+import org.projectnessie.storage.uri.StorageUri;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestLakehouseConfig {
@@ -64,7 +66,126 @@ public class TestLakehouseConfig {
   @BeforeAll
   static void setupMapper() {
     mapper = new ObjectMapper().findAndRegisterModules();
-    ;
+  }
+
+  @Test
+  public void lakehouseLocationsEmpty() {
+    var lakehouseConfig =
+        ImmutableLakehouseConfig.builder()
+            .catalog(ImmutableCatalogConfig.builder().build())
+            .s3(ImmutableS3Options.builder().build())
+            .gcs(ImmutableGcsOptions.builder().build())
+            .adls(ImmutableAdlsOptions.builder().build())
+            .build();
+    var lakehouseLocations = LakehouseLocations.buildLakehouseLocations(lakehouseConfig);
+
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("s3"))
+        .isSameAs(lakehouseLocations.s3Locations());
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("gs"))
+        .isSameAs(lakehouseLocations.gcsLocations());
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("abfs"))
+        .isSameAs(lakehouseLocations.adlsLocations());
+
+    soft.assertThat(lakehouseLocations.s3Locations().defaultBucketOptions()).isEmpty();
+    soft.assertThat(lakehouseLocations.gcsLocations().defaultBucketOptions()).isEmpty();
+    soft.assertThat(lakehouseLocations.adlsLocations().defaultBucketOptions()).isEmpty();
+
+    soft.assertThat(lakehouseLocations.locationsBySchema()).containsOnlyKeys("s3", "gs", "abfs");
+  }
+
+  @Test
+  public void lakehouseLocations() {
+    var s3Defaults = ImmutableS3BucketOptions.builder().build();
+    var gcsDefaults = ImmutableGcsBucketOptions.builder().build();
+    var adlsDefaults = ImmutableAdlsFileSystemOptions.builder().build();
+
+    var s3bucket1 =
+        ImmutableS3NamedBucketOptions.builder()
+            .authority("authority-1")
+            .pathPrefix("path-1")
+            .build();
+    var s3bucket2 = ImmutableS3NamedBucketOptions.builder().build();
+    var s3bucket3 =
+        ImmutableS3NamedBucketOptions.builder().name("name-3").pathPrefix("path-3").build();
+
+    var gcsBucket1 =
+        ImmutableGcsNamedBucketOptions.builder()
+            .authority("authority-1")
+            .pathPrefix("path-1")
+            .build();
+    var gcsBucket2 = ImmutableGcsNamedBucketOptions.builder().build();
+    var gcsBucket3 =
+        ImmutableGcsNamedBucketOptions.builder().name("name-3").pathPrefix("path-3").build();
+
+    var adlsBucket1 =
+        ImmutableAdlsNamedFileSystemOptions.builder()
+            .authority("authority-1")
+            .pathPrefix("path-1")
+            .build();
+    var adlsBucket2 = ImmutableAdlsNamedFileSystemOptions.builder().build();
+    var adlsBucket3 =
+        ImmutableAdlsNamedFileSystemOptions.builder().name("name-3").pathPrefix("path-3").build();
+
+    var lakehouseConfig =
+        ImmutableLakehouseConfig.builder()
+            .catalog(ImmutableCatalogConfig.builder().build())
+            .s3(
+                ImmutableS3Options.builder()
+                    .defaultOptions(s3Defaults)
+                    .putBucket("bucket-1", s3bucket1)
+                    .putBucket("bucket-2", s3bucket2)
+                    .putBucket("bucket-3", s3bucket3)
+                    .build())
+            .gcs(
+                ImmutableGcsOptions.builder()
+                    .defaultOptions(gcsDefaults)
+                    .putBucket("bucket-1", gcsBucket1)
+                    .putBucket("bucket-2", gcsBucket2)
+                    .putBucket("bucket-3", gcsBucket3)
+                    .build())
+            .adls(
+                ImmutableAdlsOptions.builder()
+                    .defaultOptions(adlsDefaults)
+                    .putFileSystem("bucket-1", adlsBucket1)
+                    .putFileSystem("bucket-2", adlsBucket2)
+                    .putFileSystem("bucket-3", adlsBucket3)
+                    .build())
+            .build();
+    var lakehouseLocations = LakehouseLocations.buildLakehouseLocations(lakehouseConfig);
+
+    soft.assertThat(lakehouseLocations.s3Locations().defaultBucketOptions())
+        .get()
+        .isSameAs(s3Defaults);
+    soft.assertThat(lakehouseLocations.gcsLocations().defaultBucketOptions())
+        .get()
+        .isSameAs(gcsDefaults);
+    soft.assertThat(lakehouseLocations.adlsLocations().defaultBucketOptions())
+        .get()
+        .isSameAs(adlsDefaults);
+
+    soft.assertThat(lakehouseLocations.s3Locations().storageLocations())
+        .containsEntry(StorageUri.of("s3://authority-1/path-1"), s3bucket1)
+        .containsEntry(StorageUri.of("s3://bucket-2/"), s3bucket2)
+        .containsEntry(StorageUri.of("s3://name-3/path-3"), s3bucket3)
+        .hasSize(3);
+    soft.assertThat(lakehouseLocations.gcsLocations().storageLocations())
+        .containsEntry(StorageUri.of("gs://authority-1/path-1"), gcsBucket1)
+        .containsEntry(StorageUri.of("gs://bucket-2/"), gcsBucket2)
+        .containsEntry(StorageUri.of("gs://name-3/path-3"), gcsBucket3)
+        .hasSize(3);
+    soft.assertThat(lakehouseLocations.adlsLocations().storageLocations())
+        .containsEntry(StorageUri.of("abfs://authority-1/path-1"), adlsBucket1)
+        .containsEntry(StorageUri.of("abfs://bucket-2/"), adlsBucket2)
+        .containsEntry(StorageUri.of("abfs://name-3/path-3"), adlsBucket3)
+        .hasSize(3);
+
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("s3"))
+        .isSameAs(lakehouseLocations.s3Locations());
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("gs"))
+        .isSameAs(lakehouseLocations.gcsLocations());
+    soft.assertThat(lakehouseLocations.locationsBySchema().get("abfs"))
+        .isSameAs(lakehouseLocations.adlsLocations());
+    soft.assertThat(lakehouseLocations.locationsBySchema()).containsOnlyKeys("s3", "gs", "abfs");
   }
 
   @ParameterizedTest

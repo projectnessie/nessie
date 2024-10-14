@@ -17,7 +17,7 @@ package org.projectnessie.catalog.files.config;
 
 import java.util.Optional;
 
-public interface PerBucket {
+public interface PerBucket extends BucketOptions {
   /**
    * The human consumable name of the bucket. If unset, the name of the bucket will be extracted
    * from the configuration option name, e.g. if {@code
