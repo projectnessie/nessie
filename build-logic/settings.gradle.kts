@@ -25,13 +25,15 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     gradlePluginPortal()
-    if (System.getProperty("withMavenLocal").toBoolean()) {
+    if (System.getProperty("withMavenLocal", "false").toBoolean()) {
       mavenLocal()
     }
-    maven {
-      name = "Apache Snapshots"
-      url = URI("https://repository.apache.org/content/repositories/snapshots/")
-      mavenContent { snapshotsOnly() }
+    if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
+      maven {
+        name = "Apache Snapshots"
+        url = URI("https://repository.apache.org/content/repositories/snapshots/")
+        mavenContent { snapshotsOnly() }
+      }
     }
   }
 }
