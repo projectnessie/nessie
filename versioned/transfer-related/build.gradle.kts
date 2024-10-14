@@ -21,6 +21,7 @@ publishingHelper { mavenName = "Nessie - Import/Export - Related Objects" }
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-versioned-storage-common"))
+  compileOnly(project(":nessie-versioned-transfer-proto"))
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
