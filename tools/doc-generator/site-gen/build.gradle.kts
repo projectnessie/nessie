@@ -242,6 +242,7 @@ val serverAdminHelp by tasks.registering(JavaExec::class) {
       "info",
       "check-content",
       "delete-catalog-tasks",
+      "cleanup-repository",
       "erase-repository",
       "export",
       "import",

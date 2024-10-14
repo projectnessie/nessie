@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Add functionality to the Nessie server admin tool, the `cleanup-repository` command, to delete
+  unneeded objects from a Nessie repository (backend database).
+
 ### Changes
 
 - The persistence cache tries to avoid deserialization overhead when getting an object from the
