@@ -16,7 +16,6 @@
 package org.projectnessie.services.authz;
 
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotNull;
 import java.util.Set;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
@@ -66,32 +65,24 @@ public interface Check {
     return ImmutableCheck.of(type, null, null, null, null, null, repositoryConfigType, Set.of());
   }
 
-  static Check check(CheckType type, @Nullable NamedRef ref) {
+  static Check check(CheckType type, NamedRef ref) {
     return ImmutableCheck.of(type, ref, null, null, null, null, null, Set.of());
   }
 
-  static Check check(CheckType type, @Nullable NamedRef ref, @Nullable ContentKey key) {
+  static Check check(CheckType type, NamedRef ref, ContentKey key) {
     return check(type, ref, key, Set.of());
   }
 
-  static Check check(
-      CheckType type,
-      @Nullable NamedRef ref,
-      @Nullable ContentKey key,
-      @NotNull Set<String> actions) {
+  static Check check(CheckType type, NamedRef ref, ContentKey key, Set<String> actions) {
     return ImmutableCheck.of(type, ref, key, null, null, null, null, actions);
   }
 
-  static Check check(
-      CheckType type, @Nullable NamedRef ref, @Nullable IdentifiedContentKey identifiedKey) {
+  static Check check(CheckType type, NamedRef ref, IdentifiedContentKey identifiedKey) {
     return check(type, ref, identifiedKey, Set.of());
   }
 
   static Check check(
-      CheckType type,
-      @Nullable NamedRef ref,
-      @Nullable IdentifiedContentKey identifiedKey,
-      @NotNull Set<String> actions) {
+      CheckType type, NamedRef ref, IdentifiedContentKey identifiedKey, Set<String> actions) {
     if (identifiedKey != null) {
       IdentifiedContentKey.IdentifiedElement element = identifiedKey.lastElement();
       return ImmutableCheck.of(
