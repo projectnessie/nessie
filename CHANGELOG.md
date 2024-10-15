@@ -10,6 +10,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- If you are not using k8s and you are running Nessie with multiple nodes, you must either
+  * configure `nessie.version.store.persist.cache-invalidations.service-names`, see
+    [docs reference](https://projectnessie.org/nessie-latest/configuration/#version-store-advanced-settings),
+    or
+  * disable the reference cache by setting `nessie.version.store.persist.reference-cache-ttl` to `PT0S`.
+
 ### Breaking changes
 
 ### New Features
@@ -22,6 +28,11 @@ as necessary. Empty sections will not end in the release notes.
   accessed cached objects. The default cache capacity fraction has been reduced from 70% of the
   heap size to 60% of the heap size. However, extreme heap pressure may let Java GC clear all
   `SoftReference`s.
+- The reference-cache is now enabled by default with a TTL of 5 minutes for both cached entries
+  and negative entries. Updated references are invalidated across all Nessie nodes, which works
+  out of the box in k8s setups. Other multi-node Nessie setups need to configure
+  `nessie.version.store.persist.cache-invalidations.service-names`, see
+  [docs reference](https://projectnessie.org/nessie-latest/configuration/#version-store-advanced-settings).
 
 ### Deprecations
 
