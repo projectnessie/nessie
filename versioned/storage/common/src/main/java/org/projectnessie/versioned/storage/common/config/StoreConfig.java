@@ -70,6 +70,7 @@ public interface StoreConfig {
   long DEFAULT_PREVIOUS_HEAD_TIME_SPAN_SECONDS = 5 * 60;
 
   String CONFIG_REFERENCE_CACHE_TTL = "reference-cache-ttl";
+  String DEFAULT_REFERENCE_CACHE_TTL = "PT5M";
 
   String CONFIG_REFERENCE_NEGATIVE_CACHE_TTL = "reference-cache-negative-ttl";
 
@@ -258,35 +259,30 @@ public interface StoreConfig {
   }
 
   /**
-   * Defines the duration how long references shall be kept in the cache. Defaults to not cache
-   * references. If reference caching is enabled, it is highly recommended to also enable negative
-   * reference caching.
-   *
-   * <p>It is safe to enable this for single node Nessie deployments.
+   * Defines the duration how long references shall be kept in the cache. Defaults is {@value
+   * #DEFAULT_REFERENCE_CACHE_TTL}, set to {@code PT0M} to disable. If reference caching is enabled,
+   * it is highly recommended to also enable negative reference caching.
    *
    * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
    * PT1H} for single node Nessie deployments.
-   *
-   * <p><em>This feature is experimental except for single Nessie node deployments! If in doubt,
-   * leave this un-configured!</em>
    */
-  Optional<Duration> referenceCacheTtl();
+  @Value.Default
+  default Duration referenceCacheTtl() {
+    return Duration.parse(DEFAULT_REFERENCE_CACHE_TTL);
+  }
 
   /**
    * Defines the duration how long sentinels for non-existing references shall be kept in the cache
    * (negative reference caching).
    *
    * <p>Defaults to {@code reference-cache-ttl}. Has no effect, if {@code reference-cache-ttl} is
-   * not configured. Default is not enabled. If reference caching is enabled, it is highly
-   * recommended to also enable negative reference caching.
+   * not a positive value. If reference caching is enabled, it is highly recommended to also enable
+   * negative reference caching.
    *
    * <p>It is safe to enable this for single node Nessie deployments.
    *
    * <p>Recommended value is currently {@code PT5M} for distributed and high values like {@code
    * PT1H} for single node Nessie deployments.
-   *
-   * <p><em>This feature is experimental except for single Nessie node deployments! If in doubt,
-   * leave this un-configured!</em>
    */
   Optional<Duration> referenceCacheNegativeTtl();
 
@@ -432,6 +428,6 @@ public interface StoreConfig {
     Adjustable withReferenceCacheTtl(Duration referenceCacheTtl);
 
     /** See {@link StoreConfig#referenceCacheNegativeTtl()}. */
-    Adjustable withReferenceCacheNegativeTtl(Duration referencecacheNegativeTtl);
+    Adjustable withReferenceCacheNegativeTtl(Duration referenceCacheNegativeTtl);
   }
 }

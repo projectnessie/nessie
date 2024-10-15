@@ -149,15 +149,14 @@ public class PersistProvider {
         cacheConfig.meterRegistry(meterRegistry.get());
       }
 
-      Optional<Duration> referenceCacheTtl = storeConfig.referenceCacheTtl();
+      Duration referenceCacheTtl = storeConfig.referenceCacheTtl();
       Optional<Duration> referenceCacheNegativeTtl = storeConfig.referenceCacheNegativeTtl();
 
-      if (referenceCacheTtl.isPresent()) {
-        Duration refTtl = referenceCacheTtl.get();
-        LOGGER.warn(
-            "Reference caching is an experimental feature but enabled with a TTL of {}", refTtl);
-        cacheConfig.referenceTtl(refTtl);
-        cacheConfig.referenceNegativeTtl(referenceCacheNegativeTtl.orElse(refTtl));
+      if (referenceCacheTtl
+          .isPositive()) { // allow disabling the reference-cache by setting the TTL to 0
+        LOGGER.info("Reference caching is enabled with a TTL of {}", referenceCacheTtl);
+        cacheConfig.referenceTtl(referenceCacheTtl);
+        cacheConfig.referenceNegativeTtl(referenceCacheNegativeTtl.orElse(referenceCacheTtl));
       }
 
       String info = format("Using objects cache with %d MB", effectiveCacheSizeMB);

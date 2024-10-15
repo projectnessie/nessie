@@ -56,6 +56,11 @@ as necessary. Empty sections will not end in the release notes.
   Furthermore, Sentry integration can also be enabled and configured. And finally, it is now
   possible to configure the log level for specific loggers, not just the root logger. The old
   `logLevel` field is still supported, but will be removed in a future release.
+- If you are not using k8s and you are running Nessie with multiple nodes, you must either
+  * configure `nessie.version.store.persist.cache-invalidations.service-names`, see
+    [docs reference](https://projectnessie.org/nessie-latest/configuration/#version-store-advanced-settings),
+    or
+  * disable the reference cache by setting `nessie.version.store.persist.reference-cache-ttl` to `PT0S`.
 
 ### Changes
 
@@ -69,6 +74,11 @@ as necessary. Empty sections will not end in the release notes.
   * `py-io-impl=pyiceberg.io.fsspec.FsspecFileIO`
   * `s3.signer=S3V4RestSigner` when S3 signing is being used
 - Iceberg REST: No longer return `*FileIO` options from the Iceberg REST config endpoint
+- The reference-cache is now enabled by default with a TTL of 5 minutes for both cached entries
+  and negative entries. Updated references are invalidated across all Nessie nodes, which works
+  out of the box in k8s setups. Other multi-node Nessie setups need to configure
+  `nessie.version.store.persist.cache-invalidations.service-names`, see
+  [docs reference](https://projectnessie.org/nessie-latest/configuration/#version-store-advanced-settings).
 
 ### Fixes
 
