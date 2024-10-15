@@ -49,6 +49,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-cache"))
   implementation(project(":nessie-versioned-storage-cassandra"))
   implementation(project(":nessie-versioned-storage-cassandra2"))
+  implementation(project(":nessie-versioned-storage-cleanup"))
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-dynamodb"))
   implementation(project(":nessie-versioned-storage-dynamodb2"))
@@ -185,6 +186,9 @@ if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
 }
 
 tasks.named<Test>("intTest").configure {
+  // Reduce likelihood of OOM due to too many Quarkus apps in memory;
+  // Ideally, set this number to the number of IT classes to run for each backend.
+  forkEvery = 6
   // Optional; comma-separated list of backend names to test against;
   // see NessieServerAdminTestBackends for valid values.
   systemProperty("backends", System.getProperty("backends"))
