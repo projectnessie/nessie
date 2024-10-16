@@ -71,6 +71,11 @@ spec:
               mountPath: /rocks-nessie
               readOnly: false
           {{- end }}
+          {{- if .Values.log.file.enabled }}
+            - name: logs-storage
+              mountPath: {{ .Values.log.file.logsDir }}
+              readOnly: false
+          {{- end }}
           {{- if and (hasPrefix "BIGTABLE" .Values.versionStoreType) (.Values.bigtable.secret) }}
             - name: bigtable-creds
               mountPath: /bigtable-nessie
@@ -139,7 +144,6 @@ spec:
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-
           resources:
             {{- tpl (toYaml .Values.resources) . | nindent 12 }}
       volumes:
@@ -152,6 +156,11 @@ spec:
         - name: rocks-storage
           persistentVolumeClaim:
             claimName: {{ include "nessie.fullname" . }}
+      {{- end }}
+      {{- if .Values.log.file.enabled }}
+        - name: logs-storage
+          persistentVolumeClaim:
+            claimName: {{ include "nessie.fullname" . }}-logs
       {{- end }}
       {{- if and (hasPrefix "BIGTABLE" .Values.versionStoreType) (.Values.bigtable.secret) }}
         - name: bigtable-creds

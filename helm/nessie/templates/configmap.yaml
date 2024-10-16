@@ -39,9 +39,54 @@ data:
     {{- $_ = set $map "quarkus.http.port" (get (first .Values.service.ports) "number") -}}
     {{- $_ = set $map "quarkus.management.port" .Values.managementService.portNumber -}}
 
-    {{- if .Values.logLevel -}}
-    {{- $_ = set $map "quarkus.log.console.level" .Values.logLevel -}}
-    {{- $_ = set $map "quarkus.log.file.level" .Values.logLevel -}}
+    {{- $_ = set $map "quarkus.log.level" (coalesce .Values.logLevel .Values.log.level) -}}
+    {{- if .Values.log.console.enabled -}}
+    {{- $_ = set $map "quarkus.log.console.enable" "true" -}}
+    {{- $_ = set $map "quarkus.log.console.level" .Values.log.console.threshold -}}
+    {{- if .Values.log.console.json -}}
+    {{- $_ = set $map "quarkus.log.console.json" "true" -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.log.console.format" .Values.log.console.format -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.log.console.enable" "false" -}}
+    {{- end -}}
+    {{- if .Values.log.file.enabled -}}
+    {{- $_ = set $map "quarkus.log.file.enable" "true" -}}
+    {{- $_ = set $map "quarkus.log.file.level" .Values.log.file.threshold -}}
+    {{- $_ = set $map "quarkus.log.file.path" (printf "%s/%s" .Values.log.file.logsDir .Values.log.file.fileName) -}}
+    {{- $_ = set $map "quarkus.log.file.rotation.max-file-size" (include "nessie.quantity" .Values.log.file.rotation.maxFileSize) -}}
+    {{- $_ = set $map "quarkus.log.file.rotation.max-backup-index" .Values.log.file.rotation.maxBackupIndex -}}
+    {{- if .Values.log.file.rotation.fileSuffix -}}
+    {{- $_ = set $map "quarkus.log.file.rotation.file-suffix" .Values.log.file.rotation.fileSuffix -}}
+    {{- end -}}
+    {{- if .Values.log.file.json -}}
+    {{- $_ = set $map "quarkus.log.file.json" "true" -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.log.file.format" .Values.log.file.format -}}
+    {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.log.file.enable" "false" -}}
+    {{- end -}}
+    {{- if .Values.log.sentry.enabled -}}
+    {{- $_ = set $map "quarkus.log.sentry" "true" -}}
+    {{- if not .Values.log.sentry.dsn -}}{{- required "log.sentry.dsn is required when log.sentry.enabled is true" .Values.log.sentry.dsn -}}{{- end -}}
+    {{- $_ = set $map "quarkus.log.sentry.dsn" .Values.log.sentry.dsn -}}
+    {{- $_ = set $map "quarkus.log.sentry.level" .Values.log.sentry.level -}}
+    {{- if .Values.log.sentry.environment -}}
+    {{- $_ = set $map "quarkus.log.sentry.environment" .Values.log.sentry.environment -}}
+    {{- end -}}
+    {{- if .Values.log.sentry.release -}}
+    {{- $_ = set $map "quarkus.log.sentry.release" .Values.log.sentry.release -}}
+    {{- end -}}
+    {{- $_ = set $map "quarkus.log.sentry.in-app-packages" ( join "," .Values.log.sentry.inAppPackages ) -}}
+    {{- else -}}
+    {{- $_ = set $map "quarkus.log.sentry" "false" -}}
+    {{- end -}}
+    {{- $categories := dict -}}
+    {{- list .Values.log.categories "" $categories | include "nessie.mergeAdvancedConfig" -}}
+    {{- range $k, $v := $categories -}}
+    {{- $_ = set $map (printf "quarkus.log.category.\"%s\".level" $k) $v -}}
     {{- end -}}
 
     {{- if hasPrefix "DYNAMODB" .Values.versionStoreType -}}

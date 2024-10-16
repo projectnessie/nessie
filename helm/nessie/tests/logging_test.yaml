@@ -1,0 +1,215 @@
+##
+## Copyright (C) 2024 Dremio
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+
+templates:
+  - configmap.yaml
+tests:
+  - it: should set root log level
+    set:
+      log.level: DEBUG
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.level=DEBUG\n
+  - it: should enable console logging by default
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.enable=true\n
+  - it: should disable console logging
+    set:
+      log.console.enabled: false
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.enable=false\n
+  - it: should set console log level
+    set:
+      log.console.threshold: WARN
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.level=WARN\n
+  - it: should set console log JSON
+    set:
+      log.console.json: true
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.json=true\n
+  - it: should set console log format
+    set:
+      log.console.format: "(%t) %s%e%n"
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.format=\(%t\) %s%e%n\n
+  - it: should not set console log format if JSON is true
+    set:
+      log.console.json: true
+      log.console.format: "(%t) %s%e%n"
+    asserts:
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.console\.format
+  - it: should not enable file logging by default
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.enable=false\n
+  - it: should enable file logging
+    set:
+      log.file.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.enable=true\n
+  - it: should set file log level
+    set:
+      log.file.enabled: true
+      log.file.threshold: WARN
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.level=WARN\n
+  - it: should set file log JSON
+    set:
+      log.file.enabled: true
+      log.file.json: true
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.json=true\n
+  - it: should set file log format
+    set:
+      log.file.enabled: true
+      log.file.format: "(%t) %s%e%n"
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.format=\(%t\) %s%e%n\n
+  - it: should not set file log format if JSON is true
+    set:
+      log.file.enabled: true
+      log.file.json: true
+      log.file.format: "(%t) %s%e%n"
+    asserts:
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.format
+  - it: should set file log path
+    set:
+      log.file.enabled: true
+      log.file.logsDir: /var/log
+      log.file.fileName: app.log
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.path=/var/log/app\.log\n
+  - it: should set file rotation without grouping
+    set:
+      log.file.enabled: true
+      log.file.rotation.maxFileSize: 1Mi
+      log.file.rotation.maxBackupIndex: 10
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.max-file-size=1048576\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.max-backup-index=10\n
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.file-suffix
+  - it: should set file rotation with grouping
+    set:
+      log.file.enabled: true
+      log.file.rotation.maxFileSize: 1Mi
+      log.file.rotation.maxBackupIndex: 10
+      log.file.rotation.fileSuffix: .yyyy-MM-dd.gz
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.max-file-size=1048576\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.max-backup-index=10\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.file\.rotation\.file-suffix=\.yyyy-MM-dd\.gz\n
+  - it: should not enable Sentry logging by default
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry=false\n
+  - it: should enable Sentry logging
+    set:
+      log.sentry.enabled: true
+      log.sentry.dsn: "https://sentry.io/123456"
+      log.sentry.level: WARN
+      log.sentry.inAppPackages: [ "org.acme", "com.example" ]
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry=true\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.dsn=https://sentry\.io/123456\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.level=WARN\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.in-app-packages=org\.acme,com\.example\n
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.environment
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.release
+  - it: should fail on missing Sentry DSN
+    set:
+      log.sentry.enabled: true
+      log.sentry.dsn: ~
+    asserts:
+      - failedTemplate:
+          errorMessage: "log.sentry.dsn is required when log.sentry.enabled is true"
+  - it: should set Sentry environment and release
+    set:
+      log.sentry.enabled: true
+      log.sentry.dsn: "https://sentry.io/123456"
+      log.sentry.environment: "production"
+      log.sentry.release: "1.0.0"
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.environment=production\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.sentry\.release=1\.0\.0\n
+  - it: should set logging categories
+    set:
+      log.categories:
+        org.acme: DEBUG
+        com:
+          example: ERROR
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.category\."org\.acme".level=DEBUG\n
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: quarkus\.log\.category\."com\.example".level=ERROR\n

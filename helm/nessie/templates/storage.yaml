@@ -31,10 +31,33 @@ spec:
   storageClassName: {{ .Values.rocksdb.storageClassName }}
   resources:
     requests:
-      storage: {{ .Values.rocksdb.storageSize }}
+      storage: "{{ .Values.rocksdb.storageSize }}"
 {{- if .Values.rocksdb.selectorLabels }}
   selector:
     matchLabels:
       {{- toYaml .Values.rocksdb.selectorLabels | nindent 6 }}
+{{- end }}
+{{- end }}
+---
+{{- if .Values.log.file.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "nessie.fullname" . }}-logs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  storageClassName: {{ .Values.log.file.storage.className }}
+  resources:
+    requests:
+      storage: "{{ .Values.log.file.storage.size }}"
+{{- if .Values.log.file.storage.selectorLabels }}
+  selector:
+    matchLabels:
+      {{- toYaml .Values.log.file.storage.selectorLabels | nindent 6 }}
 {{- end }}
 {{- end }}

@@ -10,6 +10,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Helm chart: the old `logLevel` field has been replaced with a new `log` section with many more
+  options to configure logging. You can now configure console- and file-based logging separately. It
+  is also possible to enable JSON logging instead of plain text (but this feature requires Nessie >=
+  0.99.1). For file-based logging, it is also possible to configure rotation and retention policies,
+  and a persistent volume claim is now automatically created when file-based logging is enabled.
+  Furthermore, Sentry integration can also be enabled and configured. And finally, it is now
+  possible to configure the log level for specific loggers, not just the root logger. The old
+  `logLevel` field is still supported, but will be removed in a future release.
+
 ### Breaking changes
 
 ### New Features
