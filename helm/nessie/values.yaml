@@ -78,7 +78,7 @@ log:
       # The suffix must be in a date-time format that is understood by DateTimeFormatter. If the
       # suffix ends with .gz or .zip, the rotated files will also be compressed using the
       # corresponding algorithm.
-      fileSuffix: ~ # .yyyy-MM-dd.gz
+      fileSuffix: ~  # .yyyy-MM-dd.gz
     # -- The log storage configuration. A persistent volume claim will be created using these
     # settings.
     storage:
@@ -97,7 +97,7 @@ log:
     # -- Whether to enable the Sentry appender.
     enabled: false
     # -- The Sentry DSN. Required.
-    dsn: ~ # "https://abcd@sentry.io/1234"
+    dsn: ~  # "https://abcd@sentry.io/1234"
     # -- The log level of the Sentry appender.
     level: ERROR
     # -- The environment to report to Sentry. Optional.
