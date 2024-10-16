@@ -864,3 +864,10 @@ extraVolumes: []
 extraVolumeMounts: []
     # - name: extra-volume
     #   mountPath: /usr/share/extra-volume
+
+# -- Add additional init containers to the nessie pod(s) See https://kubernetes.io/docs/concepts/workloads/pods/init-containers/.
+extraInitContainers: []
+    # - name: your-image-name
+    #   image: your-image
+    #   imagePullPolicy: Always
+    #   command: ['sh', '-c', 'echo "hello world"']
