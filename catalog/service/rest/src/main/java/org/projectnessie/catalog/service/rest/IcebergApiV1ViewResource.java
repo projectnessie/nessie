@@ -90,10 +90,12 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergErrorMapper errorMapper;
 
+  @SuppressWarnings("unused")
   public IcebergApiV1ViewResource() {
     this(null, null, null, null, null);
   }
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public IcebergApiV1ViewResource(
       ServerConfig serverConfig,
@@ -176,7 +178,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    ContentResponse resp = fetchIcebergView(tableRef, false);
+    ContentResponse resp = fetchIcebergView(tableRef);
     Branch ref = checkBranch(resp.getEffectiveReference());
 
     Operations ops =
@@ -190,9 +192,8 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());
   }
 
-  private ContentResponse fetchIcebergView(TableRef tableRef, boolean forWrite)
-      throws NessieNotFoundException {
-    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", forWrite);
+  private ContentResponse fetchIcebergView(TableRef tableRef) throws NessieNotFoundException {
+    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", false);
   }
 
   @Operation(operationId = "iceberg.v1.listViews")
@@ -265,7 +266,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    fetchIcebergView(tableRef, false);
+    fetchIcebergView(tableRef);
   }
 
   @Operation(operationId = "iceberg.v1.updateView")

@@ -122,6 +122,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("CdiInjectionPointsInspection")
 @RequestScoped
 public class CatalogServiceImpl implements CatalogService {
 
@@ -570,11 +571,7 @@ public class CatalogServiceImpl implements CatalogService {
                 // for those to complete so that we keep the "request scoped context" alive.
                 CompletionStage<NessieEntitySnapshot<?>> stage =
                     icebergStuff.storeSnapshot(tableUpdate.snapshot.withId(snapshotId), content);
-                if (current == null) {
-                  current = stage;
-                } else {
-                  current = current.thenCombine(stage, (snap1, snap2) -> snap1);
-                }
+                current = current.thenCombine(stage, (snap1, snap2) -> snap1);
               }
               return current.thenApply(x -> updates);
             });

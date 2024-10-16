@@ -34,12 +34,10 @@ import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.S3ClientIam;
 import org.projectnessie.storage.uri.StorageUri;
-import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
 
 final class S3IamPolicies {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final IamPolicyReader IAM_POLICY_READER = IamPolicyReader.create();
 
   private S3IamPolicies() {}
 

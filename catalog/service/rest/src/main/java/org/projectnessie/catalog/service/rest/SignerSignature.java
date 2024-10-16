@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.hash.Hashing.hmacSha256;
-import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -70,28 +69,6 @@ public abstract class SignerSignature {
         .signerSignature(this)
         .build()
         .toPathParam();
-  }
-
-  public String uriQuery(SignerKey signerKey) {
-    String signature = sign(signerKey);
-
-    StringBuilder query =
-        new StringBuilder()
-            .append("e=")
-            .append(expirationTimestamp())
-            .append("&b=")
-            .append(encode(warehouseLocation(), UTF_8))
-            .append("&k=")
-            .append(encode(signerKey.name(), UTF_8))
-            .append("&s=")
-            .append(encode(signature, UTF_8));
-    for (String loc : writeLocations()) {
-      query.append("&w=").append(encode(loc, UTF_8));
-    }
-    for (String loc : readLocations()) {
-      query.append("&r=").append(encode(loc, UTF_8));
-    }
-    return query.toString();
   }
 
   public Optional<String> verify(

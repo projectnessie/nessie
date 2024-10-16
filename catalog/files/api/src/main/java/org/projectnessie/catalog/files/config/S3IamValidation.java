@@ -60,12 +60,9 @@ final class S3IamValidation {
 
   private static void parseStatement(String stmt) {
     try (MappingIterator<Object> values = MAPPER.readerFor(ObjectNode.class).readValues(stmt)) {
-      ObjectNode node = null;
       if (values.hasNext()) {
         Object value = values.nextValue();
-        if (value instanceof ObjectNode) {
-          node = (ObjectNode) value;
-        } else {
+        if (!(value instanceof ObjectNode)) {
           throw new IOException("Invalid statement");
         }
       }

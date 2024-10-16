@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
  * Handles Iceberg REST API v1 endpoints that are not strongly associated with a particular entity
  * type.
  */
+@SuppressWarnings("CdiInjectionPointsInspection")
 @RequestScoped
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces({MediaType.APPLICATION_JSON})
@@ -68,6 +69,7 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
 
   Clock clock = Clock.systemUTC();
 
+  @SuppressWarnings("unused")
   public IcebergApiV1S3SignResource() {
     this(null, null, null, null, null);
   }
