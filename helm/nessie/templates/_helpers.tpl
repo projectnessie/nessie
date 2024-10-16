@@ -466,3 +466,55 @@ ports:
   protocol: TCP
 {{ end -}}
 {{ end -}}
+
+{{/*
+Shared - Converts a Kubernetes quantity to a number (int64 if possible or float64 otherwise).
+It handles raw numbers as well as quantities with suffixes
+like m, k, M, G, T, P, E, ki, Mi, Gi, Ti, Pi, Ei.
+It also handles scientific notation.
+Quantities should be positive, so negative values, zero, or any unparseable number
+will result in a failure.
+https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
+*/}}
+{{- define "nessie.quantity" -}}
+{{- $quantity := . -}}
+{{- $n := $quantity | float64 -}}
+{{- if kindIs "string" $quantity -}}
+{{- if hasSuffix "m" $quantity -}}
+{{- $n = divf (trimSuffix "m" $quantity | float64) 1000.0 -}}
+{{- else if hasSuffix "k" $quantity -}}
+{{- $n = trimSuffix "k" $quantity | int64 | mul 1000 -}}
+{{- else if hasSuffix "M" $quantity -}}
+{{- $n = trimSuffix "M" $quantity | int64 | mul 1000000 -}}
+{{- else if hasSuffix "G" $quantity -}}
+{{- $n = trimSuffix "G" $quantity | int64 | mul 1000000000 -}}
+{{- else if hasSuffix "T" $quantity -}}
+{{- $n = trimSuffix "T" $quantity | int64 | mul 1000000000000 -}}
+{{- else if hasSuffix "P" $quantity -}}
+{{- $n = trimSuffix "P" $quantity | int64 | mul 1000000000000000 -}}
+{{- else if hasSuffix "E" $quantity -}}
+{{- $n = trimSuffix "E" $quantity | int64 | mul 1000000000000000000 -}}
+{{- else if hasSuffix "ki" $quantity -}}
+{{- $n = trimSuffix "ki" $quantity | int64 | mul 1024 -}}
+{{- else if hasSuffix "Mi" $quantity -}}
+{{- $n = trimSuffix "Mi" $quantity | int64 | mul 1048576 -}}
+{{- else if hasSuffix "Gi" $quantity -}}
+{{- $n = trimSuffix "Gi" $quantity | int64 | mul 1073741824 -}}
+{{- else if hasSuffix "Ti" $quantity -}}
+{{- $n = trimSuffix "Ti" $quantity | int64 | mul 1099511627776 -}}
+{{- else if hasSuffix "Pi" $quantity -}}
+{{- $n = trimSuffix "Pi" $quantity | int64 | mul 1125899906842624 -}}
+{{- else if hasSuffix "Ei" $quantity -}}
+{{- $n = trimSuffix "Ei" $quantity | int64 | mul 1152921504606846976 -}}
+{{- end -}}
+{{- end -}}
+{{- if le ($n | float64) 0.0 -}}
+{{- fail (print "invalid quantity: " $quantity) -}}
+{{- end -}}
+{{- if kindIs "float64" $n -}}
+{{- printf "%f" $n -}}
+{{- else -}}
+{{- printf "%v" $n -}}
+{{- end -}}
+{{- end -}}
+

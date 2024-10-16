@@ -36,13 +36,82 @@ image:
 imagePullSecrets: []
 #  - name: registry-creds
 
-# -- The minimum log level for the Nessie server. If you need to debug Nessie, set this to DEBUG,
-# then add the following to the advancedConfig section:
-# `quarkus.log.category."<logger>".level: DEBUG`
-# where `<logger>` is the logger you want to debug. E.g. to debug issues with the Nessie
-# configuration, add:
-# `quarkus.log.category."io.smallrye.config".level: DEBUG`
-logLevel: INFO
+# -- Logging configuration.
+log:
+  # -- The log level of the root category, which is used as the default log level for all categories.
+  level: INFO
+  # -- Configuration for the console appender.
+  console:
+    # -- Whether to enable the console appender.
+    enabled: true
+    # -- The log level of the console appender.
+    threshold: ALL
+    # -- Whether to log in JSON format.
+    json: false
+    # -- The log format to use. Ignored if JSON format is enabled. See
+    # https://quarkus.io/guides/logging#logging-format for details.
+    format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"
+  # -- Configuration for the file appender.
+  file:
+    # -- Whether to enable the file appender.
+    enabled: false
+    # -- The log level of the file appender.
+    threshold: ALL
+    # -- Whether to log in JSON format.
+    json: false
+    # -- The log format to use. Ignored if JSON format is enabled. See
+    # https://quarkus.io/guides/logging#logging-format for details.
+    format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %h %N[%i] %-5p [%X{traceId},%X{spanId},%X{sampled}] [%c{3.}] (%t) %s%e%n"
+    # -- The local directory where log files are stored. The persistent volume claim will be mounted
+    # here.
+    logsDir: /deployments/logs
+    # -- The log file name.
+    fileName: nessie.log
+    # -- Log rotation configuration.
+    rotation:
+      # -- The maximum size of the log file before it is rotated. Should be expressed as a Kubernetes quantity.
+      maxFileSize: 100Mi
+      # -- The maximum number of backup files to keep.
+      maxBackupIndex: 5
+      # -- An optional suffix to append to the rotated log files. If present, the rotated log files
+      # will be grouped in time buckets, and each bucket will contain at most maxBackupIndex files.
+      # The suffix must be in a date-time format that is understood by DateTimeFormatter. If the
+      # suffix ends with .gz or .zip, the rotated files will also be compressed using the
+      # corresponding algorithm.
+      fileSuffix: ~ # .yyyy-MM-dd.gz
+    # -- The log storage configuration. A persistent volume claim will be created using these
+    # settings.
+    storage:
+      # -- The storage class name of the persistent volume claim to create.
+      className: standard
+      # -- The size of the persistent volume claim to create.
+      size: 512Gi
+      # -- Labels to add to the persistent volume claim spec selector; a persistent volume with
+      # matching labels must exist. Leave empty if using dynamic provisioning.
+      selectorLabels: {}
+        # app.kubernetes.io/name: nessie
+        # app.kubernetes.io/instance: RELEASE-NAME
+  # -- Configuration for the Sentry appender. See https://sentry.io and
+  # https://docs.quarkiverse.io/quarkus-logging-sentry/dev for more information.
+  sentry:
+    # -- Whether to enable the Sentry appender.
+    enabled: false
+    # -- The Sentry DSN. Required.
+    dsn: ~ # "https://abcd@sentry.io/1234"
+    # -- The log level of the Sentry appender.
+    level: ERROR
+    # -- The environment to report to Sentry. Optional.
+    environment: ~
+    # -- The release version to report to Sentry. Optional.
+    release: ~
+    # -- Package prefixes that belong to your application.
+    inAppPackages:
+    - org.projectnessie
+  # -- Configuration for specific log categories.
+  categories:
+    org.projectnessie: INFO
+    # Useful to debug configuration issues:
+    # io.smallrye.config: DEBUG
 
 # -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2, BIGTABLE.
 # Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2.

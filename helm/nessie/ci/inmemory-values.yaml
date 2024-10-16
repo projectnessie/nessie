@@ -1,5 +1,25 @@
 ---
 versionStoreType: IN_MEMORY
+log:
+  level: INFO
+  console:
+    enabled: true
+    json: false
+  file:
+    enabled: true
+    json: true
+    threshold: WARN
+    rotation:
+      maxFileSize: 1Mi
+      maxBackupIndex: 5
+      fileSuffix: ~
+    storage:
+      className: standard
+      size: 100Mi
+  categories:
+    org:
+      projectnessie: DEBUG
+    io.smallrye.config: DEBUG
 tracing:
   enabled: true
 metrics:

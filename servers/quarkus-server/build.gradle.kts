@@ -75,6 +75,7 @@ dependencies {
   implementation("io.quarkus:quarkus-oidc")
   implementation("io.quarkus:quarkus-micrometer")
   implementation("io.quarkus:quarkus-opentelemetry")
+  implementation("io.quarkus:quarkus-logging-json")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
   implementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
