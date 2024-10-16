@@ -64,10 +64,12 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   @Inject IcebergConfigurer icebergConfigurer;
   @Inject IcebergErrorMapper errorMapper;
 
+  @SuppressWarnings("unused")
   public IcebergApiV1GenericResource() {
     this(null, null, null, null, null);
   }
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public IcebergApiV1GenericResource(
       ServerConfig serverConfig,

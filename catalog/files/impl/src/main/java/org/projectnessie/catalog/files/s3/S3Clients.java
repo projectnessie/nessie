@@ -93,31 +93,31 @@ public class S3Clients {
     s3Config
         .keyStore()
         .ifPresent(
-            keyStore -> {
-              keyStore
-                  .path()
-                  .ifPresent(
-                      p -> {
-                        char[] password =
-                            keyStore
-                                .password()
-                                .flatMap(
-                                    secretName ->
-                                        secretsProvider.getSecret(secretName, KEY, KeySecret.class))
-                                .map(KeySecret::key)
-                                .map(String::toCharArray)
-                                .orElse(null);
+            keyStore ->
+                keyStore
+                    .path()
+                    .ifPresent(
+                        p -> {
+                          char[] password =
+                              keyStore
+                                  .password()
+                                  .flatMap(
+                                      secretName ->
+                                          secretsProvider.getSecret(
+                                              secretName, KEY, KeySecret.class))
+                                  .map(KeySecret::key)
+                                  .map(String::toCharArray)
+                                  .orElse(null);
 
-                        httpClient.tlsKeyManagersProvider(
-                            new FileStoreTlsKeyManagersProvider(
-                                p,
-                                keyStore
-                                    .type()
-                                    .orElseThrow(
-                                        () -> new IllegalArgumentException("No key store type")),
-                                password));
-                      });
-            });
+                          httpClient.tlsKeyManagersProvider(
+                              new FileStoreTlsKeyManagersProvider(
+                                  p,
+                                  keyStore
+                                      .type()
+                                      .orElseThrow(
+                                          () -> new IllegalArgumentException("No key store type")),
+                                  password));
+                        }));
     AttributeMap.Builder options = AttributeMap.builder();
     s3Config.trustAllCertificates().ifPresent(v -> options.put(TRUST_ALL_CERTIFICATES, v));
     return httpClient.buildWithDefaults(options.build());

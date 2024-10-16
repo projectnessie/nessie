@@ -86,8 +86,6 @@ public final class AdlsClientSupplier {
   }
 
   public DataLakeFileClient fileClientForLocation(StorageUri uri) {
-    AdlsLocation location = adlsLocation(uri);
-
     DataLakeFileSystemClient fileSystem = fileSystemClient(uri);
     String path = uri.requiredPath();
     if (path.startsWith("/")) {

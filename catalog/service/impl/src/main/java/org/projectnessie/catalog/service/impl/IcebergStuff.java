@@ -46,7 +46,7 @@ public class IcebergStuff {
   private final EntitySnapshotTaskBehavior snapshotTaskBehavior;
   private final Executor executor;
 
-  public IcebergStuff(
+  IcebergStuff(
       ObjectIO objectIO,
       Persist persist,
       TasksService tasksService,

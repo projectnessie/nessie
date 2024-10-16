@@ -128,10 +128,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   @Inject IcebergConfigurer icebergConfigurer;
   @Inject IcebergErrorMapper errorMapper;
 
+  @SuppressWarnings("unused")
   public IcebergApiV1TableResource() {
     this(null, null, null, null, null);
   }
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public IcebergApiV1TableResource(
       ServerConfig serverConfig,
