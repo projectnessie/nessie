@@ -838,6 +838,11 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Run Helm unit tests
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git || true
+          helm unittest helm/nessie
+
       - name: Run chart-testing (lint)
         run: ct lint --debug --charts ./helm/nessie
 

@@ -61,6 +61,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.storage.uri.StorageUri;
 
+@SuppressWarnings("CdiInjectionPointsInspection")
 @RequestScoped
 public class IcebergConfigurer {
 

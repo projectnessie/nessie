@@ -226,8 +226,8 @@ services:
       - "8080:8080"
       - "9001:9000"
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/catalog
       KC_DB_USERNAME: postgres

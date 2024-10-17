@@ -97,10 +97,12 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
 
   @Inject IcebergErrorMapper errorMapper;
 
+  @SuppressWarnings("unused")
   public IcebergApiV1NamespaceResource() {
     this(null, null, null, null, null);
   }
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public IcebergApiV1NamespaceResource(
       ServerConfig serverConfig,

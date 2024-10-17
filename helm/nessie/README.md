@@ -270,7 +270,36 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | livenessProbe.successThreshold | int | `1` | Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1. |
 | livenessProbe.terminationGracePeriodSeconds | int | `30` | Optional duration in seconds the pod needs to terminate gracefully upon probe failure. Minimum value is 1. |
 | livenessProbe.timeoutSeconds | int | `10` | Number of seconds after which the probe times out. Minimum value is 1. |
-| logLevel | string | `"INFO"` | The minimum log level for the Nessie server. If you need to debug Nessie, set this to DEBUG, then add the following to the advancedConfig section: `quarkus.log.category."<logger>".level: DEBUG` where `<logger>` is the logger you want to debug. E.g. to debug issues with the Nessie configuration, add: `quarkus.log.category."io.smallrye.config".level: DEBUG` |
+| log | object | `{"categories":{"org.projectnessie":"INFO"},"console":{"enabled":true,"format":"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n","json":false,"threshold":"ALL"},"file":{"enabled":false,"fileName":"nessie.log","format":"%d{yyyy-MM-dd HH:mm:ss,SSS} %h %N[%i] %-5p [%X{traceId},%X{spanId},%X{sampled}] [%c{3.}] (%t) %s%e%n","json":false,"logsDir":"/deployments/logs","rotation":{"fileSuffix":null,"maxBackupIndex":5,"maxFileSize":"100Mi"},"storage":{"className":"standard","selectorLabels":{},"size":"512Gi"},"threshold":"ALL"},"level":"INFO","sentry":{"dsn":null,"enabled":false,"environment":null,"inAppPackages":["org.projectnessie"],"level":"ERROR","release":null}}` | Logging configuration. |
+| log.categories | object | `{"org.projectnessie":"INFO"}` | Configuration for specific log categories. |
+| log.console | object | `{"enabled":true,"format":"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n","json":false,"threshold":"ALL"}` | Configuration for the console appender. |
+| log.console.enabled | bool | `true` | Whether to enable the console appender. |
+| log.console.format | string | `"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"` | The log format to use. Ignored if JSON format is enabled. See https://quarkus.io/guides/logging#logging-format for details. |
+| log.console.json | bool | `false` | Whether to log in JSON format. |
+| log.console.threshold | string | `"ALL"` | The log level of the console appender. |
+| log.file | object | `{"enabled":false,"fileName":"nessie.log","format":"%d{yyyy-MM-dd HH:mm:ss,SSS} %h %N[%i] %-5p [%X{traceId},%X{spanId},%X{sampled}] [%c{3.}] (%t) %s%e%n","json":false,"logsDir":"/deployments/logs","rotation":{"fileSuffix":null,"maxBackupIndex":5,"maxFileSize":"100Mi"},"storage":{"className":"standard","selectorLabels":{},"size":"512Gi"},"threshold":"ALL"}` | Configuration for the file appender. |
+| log.file.enabled | bool | `false` | Whether to enable the file appender. |
+| log.file.fileName | string | `"nessie.log"` | The log file name. |
+| log.file.format | string | `"%d{yyyy-MM-dd HH:mm:ss,SSS} %h %N[%i] %-5p [%X{traceId},%X{spanId},%X{sampled}] [%c{3.}] (%t) %s%e%n"` | The log format to use. Ignored if JSON format is enabled. See https://quarkus.io/guides/logging#logging-format for details. |
+| log.file.json | bool | `false` | Whether to log in JSON format. |
+| log.file.logsDir | string | `"/deployments/logs"` | The local directory where log files are stored. The persistent volume claim will be mounted here. |
+| log.file.rotation | object | `{"fileSuffix":null,"maxBackupIndex":5,"maxFileSize":"100Mi"}` | Log rotation configuration. |
+| log.file.rotation.fileSuffix | string | `nil` | An optional suffix to append to the rotated log files. If present, the rotated log files will be grouped in time buckets, and each bucket will contain at most maxBackupIndex files. The suffix must be in a date-time format that is understood by DateTimeFormatter. If the suffix ends with .gz or .zip, the rotated files will also be compressed using the corresponding algorithm. |
+| log.file.rotation.maxBackupIndex | int | `5` | The maximum number of backup files to keep. |
+| log.file.rotation.maxFileSize | string | `"100Mi"` | The maximum size of the log file before it is rotated. Should be expressed as a Kubernetes quantity. |
+| log.file.storage | object | `{"className":"standard","selectorLabels":{},"size":"512Gi"}` | The log storage configuration. A persistent volume claim will be created using these settings. |
+| log.file.storage.className | string | `"standard"` | The storage class name of the persistent volume claim to create. |
+| log.file.storage.selectorLabels | object | `{}` | Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist. Leave empty if using dynamic provisioning. |
+| log.file.storage.size | string | `"512Gi"` | The size of the persistent volume claim to create. |
+| log.file.threshold | string | `"ALL"` | The log level of the file appender. |
+| log.level | string | `"INFO"` | The log level of the root category, which is used as the default log level for all categories. |
+| log.sentry | object | `{"dsn":null,"enabled":false,"environment":null,"inAppPackages":["org.projectnessie"],"level":"ERROR","release":null}` | Configuration for the Sentry appender. See https://sentry.io and https://docs.quarkiverse.io/quarkus-logging-sentry/dev for more information. |
+| log.sentry.dsn | string | `nil` | The Sentry DSN. Required. |
+| log.sentry.enabled | bool | `false` | Whether to enable the Sentry appender. |
+| log.sentry.environment | string | `nil` | The environment to report to Sentry. Optional. |
+| log.sentry.inAppPackages | list | `["org.projectnessie"]` | Package prefixes that belong to your application. |
+| log.sentry.level | string | `"ERROR"` | The log level of the Sentry appender. |
+| log.sentry.release | string | `nil` | The release version to report to Sentry. Optional. |
 | managementService | object | `{"annotations":{},"portName":"nessie-mgmt","portNumber":9000}` | Management service settings. These settings are used to configure liveness and readiness probes, and to configure the dedicated headless service that will expose health checks and metrics, e.g. for metrics scraping and service monitoring. |
 | managementService.annotations | object | `{}` | Annotations to add to the service. |
 | managementService.portName | string | `"nessie-mgmt"` | The name of the management port. Required. |

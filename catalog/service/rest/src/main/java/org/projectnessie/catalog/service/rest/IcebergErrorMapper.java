@@ -59,6 +59,7 @@ public class IcebergErrorMapper {
   private final ExceptionConfig exceptionConfig;
   private final BackendExceptionMapper backendExceptionMapper;
 
+  @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public IcebergErrorMapper(
       ExceptionConfig exceptionConfig, BackendExceptionMapper backendExceptionMapper) {

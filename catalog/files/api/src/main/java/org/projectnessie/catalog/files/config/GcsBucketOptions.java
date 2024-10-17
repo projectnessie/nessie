@@ -79,12 +79,6 @@ public interface GcsBucketOptions extends BucketOptions {
 
   Optional<GcsDownscopedCredentials> downscopedCredentials();
 
-  @Value.NonAttribute
-  @JsonIgnore
-  default GcsDownscopedCredentials effectiveDownscopedCredentials() {
-    return downscopedCredentials().orElse(ImmutableGcsDownscopedCredentials.builder().build());
-  }
-
   /** The read chunk size in bytes. */
   OptionalInt readChunkSize();
 

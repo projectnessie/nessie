@@ -39,11 +39,6 @@ public enum SecretType {
     public Secret parse(String string) {
       return keySecret(string);
     }
-
-    @Override
-    public boolean singleValued() {
-      return true;
-    }
   },
   EXPIRING_TOKEN() {
     @Override
@@ -55,10 +50,6 @@ public enum SecretType {
 
   /** Construct a {@link Secret} instance from its map representation. */
   public abstract Secret fromValueMap(Map<String, String> value);
-
-  public boolean singleValued() {
-    return false;
-  }
 
   public Secret parse(String string) {
     return fromValueMap(parseOrSingle(string));

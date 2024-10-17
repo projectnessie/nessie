@@ -146,13 +146,6 @@ public class CachingSecretsBackend {
       this.expiresAtNanosEpoch = expiresAtNanosEpoch;
     }
 
-    int heapSize() {
-      int size = OBJ_SIZE;
-      size += STRING_OBJ_OVERHEAD + repositoryId.length();
-      size += STRING_OBJ_OVERHEAD + name.length();
-      return size;
-    }
-
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -175,40 +168,4 @@ public class CachingSecretsBackend {
       return "{" + repositoryId + ", " + name + '}';
     }
   }
-
-  /*
-  CacheKeyValue object internals:
-  OFF  SZ               TYPE DESCRIPTION                  VALUE
-    0   8                    (object header: mark)        0x0000000000000001 (non-biasable; age: 0)
-    8   4                    (object header: class)       0x010c4800
-   12   4   java.lang.String CacheKeyValue.repositoryId   null
-   16   8               long CacheKeyValue.expiresAt      0
-   24   4   java.lang.String CacheKeyValue.id             null
-   28   4                    (object alignment gap)
-  Instance size: 32 bytes
-  */
-  static final int OBJ_SIZE = 32;
-  // rough estimate, probably good enough
-  static final int MAP_OBJ_OVERHEAD = OBJ_SIZE * 2;
-  /*
-  Array overhead: 16 bytes
-  */
-  static final int ARRAY_OVERHEAD = 16;
-  /*
-  java.lang.String object internals:
-  OFF  SZ      TYPE DESCRIPTION               VALUE
-    0   8           (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
-    8   4           (object header: class)    0x0000e8d8
-   12   4       int String.hash               0
-   16   1      byte String.coder              0
-   17   1   boolean String.hashIsZero         false
-   18   2           (alignment/padding gap)
-   20   4    byte[] String.value              []
-  Instance size: 24 bytes
-  */
-  static final int STRING_OBJ_OVERHEAD = 24 + ARRAY_OVERHEAD;
-  /*
-  Assume an overhead of 2 objects for each entry (java.util.concurrent.ConcurrentHashMap$Node is 32 bytes) in Caffeine.
-  */
-  static final int CAFFEINE_OBJ_OVERHEAD = 2 * 32;
 }

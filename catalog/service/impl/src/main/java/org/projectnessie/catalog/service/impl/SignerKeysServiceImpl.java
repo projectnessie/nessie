@@ -41,6 +41,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
  * Nessie repository. Relies on Nessie's distributed cache invalidation, when used in a horizontally
  * scaled setup (multiple Nessie processes serving the same repository).
  */
+@SuppressWarnings("CdiInjectionPointsInspection")
 @RequestScoped
 public class SignerKeysServiceImpl implements SignerKeysService {
   public static final long SPIN_LOOP_MIN_SLEEP_MILLIS = 20;
