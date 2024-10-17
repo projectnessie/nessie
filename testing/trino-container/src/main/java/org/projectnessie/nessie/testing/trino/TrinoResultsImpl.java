@@ -59,7 +59,7 @@ final class TrinoResultsImpl extends AbstractIterator<List<Object>> implements T
         if (error != null) {
           throw error.getFailureInfo().toException();
         }
-        Iterable<List<Object>> data = client.currentData().getData();
+        Iterable<List<Object>> data = client.currentRows();
 
         client.advance();
 
