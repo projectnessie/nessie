@@ -16,7 +16,6 @@
 package org.projectnessie.nessie.testing.trino;
 
 import static java.lang.String.format;
-import static org.rnorth.ducttape.unreliables.Unreliables.retryUntilSuccess;
 
 import io.trino.client.ClientSession;
 import io.trino.client.StatementClient;
@@ -31,7 +30,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
@@ -39,8 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.Base58;
@@ -94,32 +92,9 @@ public final class TrinoContainer extends GenericContainer<TrinoContainer> imple
                     .forPath(STATUS_ENDPOINT)
                     .withStartupTimeout(Duration.ofMinutes(2)))
             .withStrategy(
-                new AbstractWaitStrategy() {
-                  @Override
-                  protected void waitUntilReady() {
-                    retryUntilSuccess(
-                        (int) super.startupTimeout.toMillis(),
-                        TimeUnit.MILLISECONDS,
-                        () -> {
-                          try (StatementClient client = statementClient("SHOW CATALOGS")) {
-                            while (client.isRunning()) {
-                              Iterable<List<Object>> data = client.currentData().getData();
-
-                              client.advance();
-
-                              if (data == null) {
-                                Thread.sleep(200);
-                                LOGGER.info("No data for wait statement yet");
-                              } else {
-                                LOGGER.info("Got data from Trino ... assuming it's started up.");
-                                return null;
-                              }
-                            }
-                          }
-                          throw new RuntimeException("No legit result from Trino yet");
-                        });
-                  }
-                }));
+                new LogMessageWaitStrategy()
+                    .withRegEx(".*SERVER STARTED.*")
+                    .withStartupTimeout(Duration.ofMinutes(2))));
   }
 
   static final class PropertiesTransferable implements Transferable {
