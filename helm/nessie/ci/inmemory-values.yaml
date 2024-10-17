@@ -140,3 +140,9 @@ readinessProbe:
   periodSeconds: 5
   successThreshold: 1
   failureThreshold: 3
+
+extraInitContainers:
+  - name: hello-world
+    image: bash
+    imagePullPolicy: Always
+    command: ['sh', '-c', 'echo "hello world"']

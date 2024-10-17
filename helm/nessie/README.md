@@ -240,6 +240,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
 | dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
+| extraInitContainers | list | `[]` | Add additional init containers to the nessie pod(s) See https://kubernetes.io/docs/concepts/workloads/pods/init-containers/. |
 | extraServices | list | `[]` | Additional service definitions. All service definitions always select all Nessie pods. Use this if you need to expose specific ports with different configurations. |
 | extraVolumeMounts | list | `[]` | Extra volume mounts to add to the nessie container. See https://kubernetes.io/docs/concepts/storage/volumes/. |
 | extraVolumes | list | `[]` | Extra volumes to add to the nessie pod. See https://kubernetes.io/docs/concepts/storage/volumes/. |

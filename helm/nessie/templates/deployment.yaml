@@ -53,6 +53,10 @@ spec:
       serviceAccountName: {{ include "nessie.serviceAccountName" . }}
       securityContext:
         {{- tpl (toYaml .Values.podSecurityContext) . | nindent 8 }}
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+        {{- tpl (toYaml .Values.extraInitContainers) . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
