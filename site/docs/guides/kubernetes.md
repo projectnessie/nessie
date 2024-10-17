@@ -409,9 +409,9 @@ jcmd 1 GC.heap_dump /tmp/heapdump.hprof
 
 If you need other JVM tools, such as `jfr` or `async-profiler`, a more complex setup is required.
 
-First, restart the Nessie pod with some extra JVM options. The most
-useful option to add is the `--XX:+StartAttachListener` JVM option; without it, the JVM will not
-allow attaching to it and tools like `jcmd` will fail.
+First, restart the Nessie pod with some extra JVM options. The most useful option to add is the
+`--XX:+StartAttachListener` JVM option; without it, the JVM will not allow attaching to it and tools
+like `jcmd` will fail.
 
 This can be done by modifying the pod template spec in the deployment spec, and adding/updating the
 `JAVA_OPTS_APPEND` environment variable:
@@ -437,16 +437,17 @@ See the [JVM KoolKits page](https://github.com/lightrun-platform/koolkits/blob/m
 for more information. Beware that the image is quite large, so it may take some time to download.
 
 A few preliminary commands may need to be executed prior to be able to use the tools, for example if
-users don't match: the Nessie process runs as a non-root user (UID 185), while in many debug
-containers, the running user is root (UID 0). If that is the case, you won't be able to attach to
-Nessie JVM. You can solve the problem by creating a new user with the same UID and GID as the Nessie
-process. In the case of JVM KoolKits, you also need to copy a few files before switching to the new
-user; here is the whole snippet to run:
+users and groups don't match: the Nessie process runs as UID 10000 and GID 10001 by default, while
+in many debug containers, the running user is root (UID 0). If that is the case, you won't be able
+to attach to the Nessie JVM. You can solve the problem by creating a new user with the same UID and
+GID as the Nessie process. In the case of JVM KoolKits, you also need to copy a few files before
+switching to the new user; here is the whole snippet to run:
 
 ```bash
-adduser --home /home/debug --uid 185 --gid 0 --disabled-password --gecos "" debug
-cp -Rf /root/.sdkman/ /home/debug/ && chown -R 185:0 /home/debug/.sdkman
-cp /root/.bashrc /home/debug/ && chown 185:0 /home/debug/.bashrc 
+addgroup --gid 10001 debug
+adduser --home /home/debug --uid 10000 --gid 10001 --disabled-password --gecos "" debug
+cp -Rf /root/.sdkman/ /home/debug/ && chown -R 10000:10001 /home/debug/.sdkman
+cp /root/.bashrc /home/debug/ && chown 10000:10001 /home/debug/.bashrc 
 su - debug
 ```
 
