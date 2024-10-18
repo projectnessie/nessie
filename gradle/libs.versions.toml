@@ -3,7 +3,7 @@
 [versions]
 bouncycastle = "1.70"
 checkstyle = "10.18.2"
-errorprone = "2.33.0"
+errorprone = "2.34.0"
 errorproneSlf4j = "0.1.28"
 gatling = "3.12.0"
 googleCloudBigdataoss = "3.0.3"
