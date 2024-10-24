@@ -926,7 +926,7 @@ jobs:
           work-branch: iceberg-integration-patched
 
       - name: Setup JDK
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 # v4
+        uses: actions/setup-java@8df1039502a15bceb9433410b1a100fbe190c53b # v4
         with:
           distribution: 'temurin'
           # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto
