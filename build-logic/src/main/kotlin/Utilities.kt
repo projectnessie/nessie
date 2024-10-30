@@ -195,6 +195,9 @@ fun DependencyHandlerScope.nessieProject(
   artifactId: String,
   configuration: String? = null
 ): ModuleDependency {
+  if (artifactId.startsWith(":")) {
+    throw IllegalArgumentException("artifactId for nessieProject() must not start with ':'")
+  }
   return if (!isIncludedInNesQuEIT(project(":").dependencyProject.gradle)) {
     project(":$artifactId", configuration)
   } else {
