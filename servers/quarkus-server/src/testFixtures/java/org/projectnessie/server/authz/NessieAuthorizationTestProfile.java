@@ -18,8 +18,8 @@ package org.projectnessie.server.authz;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
+import org.projectnessie.quarkus.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.server.authn.AuthenticationEnabledProfile;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 
 /**
  * A simple {@link QuarkusTestProfile} that enables the Nessie authorization flag, which is fetched

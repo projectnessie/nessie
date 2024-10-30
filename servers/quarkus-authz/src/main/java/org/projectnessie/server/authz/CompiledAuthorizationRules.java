@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
+import org.projectnessie.quarkus.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.cel.CELUtil;
 
 /**

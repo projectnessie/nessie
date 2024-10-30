@@ -35,7 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
+import org.projectnessie.quarkus.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
 import org.projectnessie.services.authz.AccessCheckException;
 import org.projectnessie.services.authz.AccessContext;
