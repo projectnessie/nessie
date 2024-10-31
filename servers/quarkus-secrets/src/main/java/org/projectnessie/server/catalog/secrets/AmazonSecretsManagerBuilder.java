@@ -16,6 +16,7 @@
 package org.projectnessie.server.catalog.secrets;
 
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.projectnessie.catalog.secrets.SecretsManager;
 import org.projectnessie.catalog.secrets.aws.AwsSecretsManager;
@@ -26,7 +27,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 @Dependent
 @SecretsManagerType(ExternalSecretsManagerType.AMAZON)
 public class AmazonSecretsManagerBuilder implements SecretsManagerBuilder {
-  @Inject SecretsManagerClient client;
+  @Inject Instance<SecretsManagerClient> client;
 
   @Inject QuarkusSecretsConfig secretsConfig;
 
@@ -34,6 +35,6 @@ public class AmazonSecretsManagerBuilder implements SecretsManagerBuilder {
   public SecretsManager buildManager() {
     String prefix =
         secretsConfig.path().map(String::trim).map(p -> p.endsWith(".") ? p : p + ".").orElse("");
-    return new AwsSecretsManager(client, prefix);
+    return new AwsSecretsManager(client.get(), prefix);
   }
 }
