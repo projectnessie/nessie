@@ -25,7 +25,7 @@ import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 
 @ExtendWith(PersistExtension.class)
-abstract class AbstractTestRestApiPersist extends BaseTestNessieRest {
+abstract class AbstractTestRestApiPersist extends BaseTestNessieRestWithRelRef {
 
   @NessiePersist protected static Persist persist;
 

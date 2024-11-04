@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 import org.assertj.core.data.MapEntry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -824,14 +823,6 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
         .containsExactly(400, ErrorCode.BAD_REQUEST);
     soft.assertThat(nessieError.getMessage())
         .contains("Hashes are not allowed when fetching a reference by name");
-  }
-
-  @Nested
-  @NessieApiVersions(versions = NessieApiVersion.V2)
-  public class RelativeReferences extends AbstractRelativeReferences {
-    protected RelativeReferences() {
-      super(BaseTestNessieRest.this);
-    }
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})
