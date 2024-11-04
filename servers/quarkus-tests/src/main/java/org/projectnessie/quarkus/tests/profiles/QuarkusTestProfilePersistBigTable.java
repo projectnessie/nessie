@@ -29,6 +29,9 @@ public class QuarkusTestProfilePersistBigTable extends BaseConfigProfile {
     return ImmutableMap.<String, String>builder()
         .putAll(super.getConfigOverrides())
         .put("nessie.version.store.type", BIGTABLE.name())
+        // Disable telemetry to prevent test execution errors due to collision of
+        // `AutoConfiguredOpenTelemetrySdkBuilder` and Google's tracing code.
+        .put("nessie.version.store.persist.bigtable.enable-telemetry", "false")
         .build();
   }
 
