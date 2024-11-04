@@ -268,6 +268,7 @@ public class GcsObjectIO implements ObjectIO {
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {
+    config.accept(PYICEBERG_FILE_IO_IMPL, "pyiceberg.io.fsspec.FsspecFileIO");
     config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.gcp.gcs.GCSFileIO");
   }
 }

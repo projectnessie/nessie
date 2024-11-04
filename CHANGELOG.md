@@ -31,6 +31,10 @@ as necessary. Empty sections will not end in the release notes.
   accessed cached objects. The default cache capacity fraction has been reduced from 70% of the
   heap size to 60% of the heap size. However, extreme heap pressure may let Java GC clear all
   `SoftReference`s.
+- Sends the following default options, which are convenient when using pyiceberg:
+  * `py-io-impl=pyiceberg.io.fsspec.FsspecFileIO`
+  * `s3.signer=S3V4RestSigner` when S3 signing is being used
+
 
 ### Deprecations
 
