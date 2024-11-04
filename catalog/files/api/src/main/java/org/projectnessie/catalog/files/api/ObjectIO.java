@@ -27,6 +27,7 @@ import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
   String ICEBERG_FILE_IO_IMPL = "io-impl";
+  String PYICEBERG_FILE_IO_IMPL = "py-io-impl";
 
   void ping(StorageUri uri) throws IOException;
 

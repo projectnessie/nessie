@@ -54,6 +54,7 @@ public class S3ObjectIO implements ObjectIO {
   static final String S3_PATH_STYLE_ACCESS = "s3.path-style-access";
   static final String S3_USE_ARN_REGION_ENABLED = "s3.use-arn-region-enabled";
   static final String S3_REMOTE_SIGNING_ENABLED = "s3.remote-signing-enabled";
+  static final String S3_SIGNER = "s3.signer";
 
   private final S3ClientSupplier s3clientSupplier;
   private final S3CredentialsResolver s3CredentialsResolver;
@@ -199,6 +200,7 @@ public class S3ObjectIO implements ObjectIO {
       requestSigning = enableRequestSigning.getAsBoolean();
     }
     config.accept(S3_REMOTE_SIGNING_ENABLED, Boolean.toString(requestSigning));
+    config.accept(S3_SIGNER, "S3V4RestSigner"); // Needed for pyiceberg
 
     // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
     // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
@@ -262,6 +264,7 @@ public class S3ObjectIO implements ObjectIO {
   void icebergConfigDefaults(StorageUri warehouse, BiConsumer<String, String> config) {
     S3BucketOptions bucketOptions = s3clientSupplier.s3options().resolveOptionsForUri(warehouse);
     bucketOptions.region().ifPresent(x -> config.accept(S3_CLIENT_REGION, x));
+    config.accept(PYICEBERG_FILE_IO_IMPL, "pyiceberg.io.fsspec.FsspecFileIO");
     config.accept(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
   }
 }
