@@ -27,22 +27,22 @@ val baseVersion = file("version.txt").readText().trim()
 
 pluginManagement {
   repositories {
-    mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
-    gradlePluginPortal()
     if (System.getProperty("withMavenLocal").toBoolean()) {
       mavenLocal()
     }
+    mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
+    gradlePluginPortal()
   }
 }
 
 dependencyResolutionManagement {
   repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
   repositories {
-    mavenCentral()
-    gradlePluginPortal()
     if (System.getProperty("withMavenLocal", "false").toBoolean()) {
       mavenLocal()
     }
+    mavenCentral()
+    gradlePluginPortal()
     if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
       maven {
         name = "Apache Snapshots"
