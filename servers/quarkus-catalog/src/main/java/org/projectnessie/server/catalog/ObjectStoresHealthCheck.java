@@ -17,7 +17,7 @@ package org.projectnessie.server.catalog;
 
 import static com.google.common.base.Throwables.getStackTraceAsString;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Readiness
-@ApplicationScoped
+@RequestScoped
 public class ObjectStoresHealthCheck implements HealthCheck {
   private static final Logger LOGGER = LoggerFactory.getLogger(ObjectStoresHealthCheck.class);
 
