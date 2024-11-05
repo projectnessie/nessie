@@ -34,7 +34,7 @@ as necessary. Empty sections will not end in the release notes.
 - Sends the following default options, which are convenient when using pyiceberg:
   * `py-io-impl=pyiceberg.io.fsspec.FsspecFileIO`
   * `s3.signer=S3V4RestSigner` when S3 signing is being used
-
+- Iceberg REST: No longer return `*FileIO` options from the Iceberg REST config endpoint
 
 ### Deprecations
 

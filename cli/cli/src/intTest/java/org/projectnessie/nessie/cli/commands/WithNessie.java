@@ -58,6 +58,11 @@ import software.amazon.awssdk.http.SdkHttpClient;
 public abstract class WithNessie {
 
   public static final String S3_BUCKET = "s3://bucket/";
+  public static final String GCS_BUCKET = "gs://bucket/";
+  public static final String ADLS_BUCKET = "abfs://bucket/";
+  public static final String S3_WAREHOUSE = "warehouse";
+  public static final String GCS_WAREHOUSE = "gcs_warehouse";
+  public static final String ADLS_WAREHOUSE = "adls_warehouse";
   static String nessieApiUri;
   static String icebergUri;
 
@@ -86,8 +91,11 @@ public abstract class WithNessie {
         ObjectStorageMock.builder().putBuckets("bucket", bucket.bucket()).build().start();
 
     Map<String, String> nessieProperties = new HashMap<>();
-    nessieProperties.put("nessie.catalog.default-warehouse", "warehouse");
-    nessieProperties.put("nessie.catalog.warehouses.warehouse.location", S3_BUCKET);
+    nessieProperties.put("nessie.catalog.default-warehouse", S3_WAREHOUSE);
+    nessieProperties.put("nessie.catalog.warehouses." + S3_WAREHOUSE + ".location", S3_BUCKET);
+    nessieProperties.put("nessie.catalog.warehouses." + GCS_WAREHOUSE + ".location", GCS_BUCKET);
+    nessieProperties.put("nessie.catalog.warehouses." + ADLS_WAREHOUSE + ".location", ADLS_BUCKET);
+
     nessieProperties.put(
         "nessie.catalog.service.s3.default-options.endpoint",
         objectStorage.getS3BaseUri().toString());
@@ -98,6 +106,27 @@ public abstract class WithNessie {
         "urn:nessie-secret:quarkus:with-nessie-access-key");
     nessieProperties.put("with-nessie-access-key.name", "accessKey");
     nessieProperties.put("with-nessie-access-key.secret", "secretKey");
+
+    nessieProperties.put(
+        "nessie.catalog.service.gcs.default-options.host",
+        objectStorage.getGcsBaseUri().toString());
+    nessieProperties.put("nessie.catalog.service.gcs.default-options.project-id", "nessie");
+    nessieProperties.put("nessie.catalog.service.gcs.default-options.auth-type", "access_token");
+    nessieProperties.put(
+        "nessie.catalog.service.gcs.default-options.oauth2-token",
+        "urn:nessie-secret:quarkus:my-secrets.gcs-default");
+    nessieProperties.put("my-secrets.gcs-default.token", "tokenRef");
+
+    nessieProperties.put(
+        "nessie.catalog.service.adls.default-options.endpoint",
+        objectStorage.getAdlsGen2BaseUri().toString());
+    nessieProperties.put("nessie.catalog.service.adls.default-options.auth-type", "none");
+    nessieProperties.put(
+        "nessie.catalog.service.adls.default-options.account",
+        "urn:nessie-secret:quarkus:my-secrets.adls-default");
+    nessieProperties.put("my-secrets.adls-default.name", "account");
+    nessieProperties.put("my-secrets.adls-default.secret", "secret");
+
     nessieProperties.putAll(serverConfig);
 
     NessieProcess.start(nessieProperties);

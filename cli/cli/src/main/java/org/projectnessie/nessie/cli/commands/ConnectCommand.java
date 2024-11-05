@@ -123,6 +123,11 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
         writer.flush();
         bearerToken = new String(System.console().readPassword()).trim();
 
+        String warehouse = connectOptions.get("warehouse");
+        if (warehouse != null) {
+          icebergProperties.put("warehouse", warehouse);
+        }
+
         nessieOptions.put(CONF_NESSIE_AUTH_TOKEN, bearerToken);
         icebergProperties.put("token", bearerToken);
       }
