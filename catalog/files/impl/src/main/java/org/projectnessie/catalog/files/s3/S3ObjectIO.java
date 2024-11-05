@@ -200,7 +200,9 @@ public class S3ObjectIO implements ObjectIO {
       requestSigning = enableRequestSigning.getAsBoolean();
     }
     config.accept(S3_REMOTE_SIGNING_ENABLED, Boolean.toString(requestSigning));
-    config.accept(S3_SIGNER, "S3V4RestSigner"); // Needed for pyiceberg
+    if (requestSigning) {
+      config.accept(S3_SIGNER, "S3V4RestSigner"); // Needed for pyiceberg
+    }
 
     // Note: 'accessDelegationPredicate' returns 'true', if the client did not send the
     // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
