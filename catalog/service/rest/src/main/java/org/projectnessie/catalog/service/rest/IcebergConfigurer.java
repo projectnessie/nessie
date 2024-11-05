@@ -95,6 +95,8 @@ public class IcebergConfigurer {
 
     Map<String, String> config = new HashMap<>();
     icebergWarehouseConfig(reference, warehouse, (k, v) -> {}, config::put);
+    objectIO.configureIcebergWarehouse(
+        StorageUri.of(warehouseConfig.location()), config::put, config::put);
 
     Properties properties = new Properties();
 
@@ -111,8 +113,6 @@ public class IcebergConfigurer {
     }
 
     objectIO.trinoSampleConfig(location, config, properties::put);
-
-    properties.entrySet().forEach(System.err::println);
 
     List<String> header =
         List.of(
@@ -187,8 +187,6 @@ public class IcebergConfigurer {
     configDefault.accept(METRICS_REPORTING_ENABLED, "false");
     configDefault.accept(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     uriInfo.icebergConfigDefaults(configDefault);
-    objectIO.configureIcebergWarehouse(
-        StorageUri.of(warehouseConfig.location()), configDefault, configOverride);
     // allow users to override the 'rest-page-size' in the Nessie configuration
     configDefault.accept("rest-page-size", "200");
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
