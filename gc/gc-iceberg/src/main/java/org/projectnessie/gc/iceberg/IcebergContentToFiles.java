@@ -32,7 +32,9 @@ import java.util.stream.StreamSupport;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestReaderUtil;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.PartitionStatisticsFile;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.io.CloseableIterable;
@@ -137,11 +139,26 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     Snapshot snapshot =
         snapshotId < 0L ? tableMetadata.currentSnapshot() : tableMetadata.snapshot(snapshotId);
 
-    Map<Integer, PartitionSpec> specsById = tableMetadata.specsById();
-
     Stream<StorageUri> allFiles = elementaryUrisFromSnapshot(snapshot, contentReference);
 
     if (snapshot != null) {
+      long effectiveSnapshotId = snapshot.snapshotId();
+      allFiles =
+          Stream.concat(
+              allFiles,
+              tableMetadata.statisticsFiles().stream()
+                  .filter(s -> s.snapshotId() == effectiveSnapshotId)
+                  .map(StatisticsFile::path)
+                  .map(StorageUri::of));
+      allFiles =
+          Stream.concat(
+              allFiles,
+              tableMetadata.partitionStatisticsFiles().stream()
+                  .filter(s -> s.snapshotId() == effectiveSnapshotId)
+                  .map(PartitionStatisticsFile::path)
+                  .map(StorageUri::of));
+
+      Map<Integer, PartitionSpec> specsById = tableMetadata.specsById();
       allFiles =
           Stream.concat(
               allFiles,
