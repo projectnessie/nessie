@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.config;
 
+import com.google.api.gax.core.CredentialsProvider;
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
@@ -46,4 +47,13 @@ public interface QuarkusBigTableConfig extends BigTableClientsConfig {
 
   @WithDefault("false")
   boolean noTableAdminClient();
+
+  /**
+   * Prevent looking up {@link CredentialsProvider} to prevent "global tracer field race" in tests.
+   * This undocumented setting is ONLY for tests!
+   *
+   * @hidden
+   */
+  @WithDefault("false")
+  boolean disableCredentialsLookupForTests();
 }
