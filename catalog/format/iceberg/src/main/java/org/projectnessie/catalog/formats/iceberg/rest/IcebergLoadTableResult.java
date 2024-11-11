@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.formats.iceberg.rest;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import java.util.Map;
@@ -24,11 +25,13 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
 
   @Nullable
   @Override
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   String metadataLocation();
 
   @Override
   IcebergTableMetadata metadata();
 
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
   Map<String, String> config();
 
   @SuppressWarnings("unused")

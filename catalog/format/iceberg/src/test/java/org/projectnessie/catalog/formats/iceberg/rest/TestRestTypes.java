@@ -64,30 +64,28 @@ public class TestRestTypes {
     mapper.setPropertyNamingStrategy(new PropertyNamingStrategies.KebabCaseStrategy());
     RESTSerializers.registerAll(mapper);
 
-    if (icebergType != null) {
-      Object iceberg;
-      try {
-        iceberg = mapper.readValue(json, icebergType);
-      } catch (UnrecognizedPropertyException x) {
-        if (simpleName.endsWith("Request")) {
-          // Iceberg does not properly deserialize all *Request types
-          return;
-        }
-        throw x;
+    Object iceberg;
+    try {
+      iceberg = mapper.readValue(json, icebergType);
+    } catch (UnrecognizedPropertyException x) {
+      if (simpleName.endsWith("Request")) {
+        // Iceberg does not properly deserialize all *Request types
+        return;
       }
-      String icebergJson = mapper.writeValueAsString(iceberg);
+      throw x;
+    }
+    String icebergJson = mapper.writeValueAsString(iceberg);
 
-      Object nessieFromIceberg = IcebergJson.objectMapper().readValue(icebergJson, nessieType);
-      soft.assertThat(nessieFromIceberg).isEqualTo(nessie);
+    Object nessieFromIceberg = IcebergJson.objectMapper().readValue(icebergJson, nessieType);
+    soft.assertThat(nessieFromIceberg).isEqualTo(nessie);
 
-      Object icebergFromNessie = mapper.readValue(nessieJson, icebergType);
-      if (!icebergFromNessie.equals(iceberg)) {
-        // Most Iceberg types do not implement hashCode() & equals() :sigh:
-        // So we fall back and compare using JsonNode (and pray property orders are consistent)
-        JsonNode icebergFromNessieJsonNode = mapper.readValue(nessieJson, JsonNode.class);
-        soft.assertThat(icebergFromNessieJsonNode)
-            .isEqualTo(mapper.readValue(icebergJson, JsonNode.class));
-      }
+    Object icebergFromNessie = mapper.readValue(nessieJson, icebergType);
+    if (!icebergFromNessie.equals(iceberg)) {
+      // Most Iceberg types do not implement hashCode() & equals() :sigh:
+      // So we fall back and compare using JsonNode (and pray property orders are consistent)
+      JsonNode icebergFromNessieJsonNode = mapper.readValue(nessieJson, JsonNode.class);
+      soft.assertThat(icebergFromNessieJsonNode)
+          .isEqualTo(mapper.readValue(icebergJson, JsonNode.class));
     }
   }
 
