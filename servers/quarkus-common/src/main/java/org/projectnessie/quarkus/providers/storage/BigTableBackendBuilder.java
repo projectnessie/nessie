@@ -50,10 +50,14 @@ public class BigTableBackendBuilder implements BackendBuilder {
   public Backend buildBackend() {
     CredentialsProvider credentialsProvider = null;
     Exception googleCredentialsException = null;
-    try {
-      credentialsProvider = credentialsProviderInstance.get();
-    } catch (Exception e) {
-      googleCredentialsException = e;
+    // The disableCredentialsLookupForTests() is only used for tests and only to prevent the
+    // OpenTelemetry/global-tracer static-field initialization race described in #9866
+    if (!bigTableConfig.disableCredentialsLookupForTests()) {
+      try {
+        credentialsProvider = credentialsProviderInstance.get();
+      } catch (Exception e) {
+        googleCredentialsException = e;
+      }
     }
     GcpConfigHolder gcpConfigHolder = gcpConfigHolderInstance.get();
 
