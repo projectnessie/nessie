@@ -74,9 +74,12 @@ final class S3IamPolicies {
       ArrayNode s3Prefix = stringLike.withArray("s3:prefix");
       s3Prefix.add(path);
       s3Prefix.add(path + "/*");
-      // For write.object-storage.enabled=true
+      // For write.object-storage.enabled=true / before Iceberg 1.7.0
       s3Prefix.add("*/" + path);
       s3Prefix.add("*/" + path + "/*");
+      // For write.object-storage.enabled=true / after Iceberg 1.7.0
+      s3Prefix.add("*/*/*/*/" + path);
+      s3Prefix.add("*/*/*/*/" + path + "/*");
     }
 
     // "Allow Write" for all remaining S3 actions on the bucket+path.
@@ -94,8 +97,10 @@ final class S3IamPolicies {
         String bucket = iamEscapeString(location.requiredAuthority());
         String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
         resources.add(format("arn:aws:s3:::%s/%s/*", bucket, path));
-        // For write.object-storage.enabled=true
+        // For write.object-storage.enabled=true / before Iceberg 1.7.0
         resources.add(format("arn:aws:s3:::%s/*/%s/*", bucket, path));
+        // For write.object-storage.enabled=true / since Iceberg 1.7.0
+        resources.add(format("arn:aws:s3:::%s/*/*/*/*/%s/*", bucket, path));
       }
     }
 
@@ -112,8 +117,10 @@ final class S3IamPolicies {
         String bucket = iamEscapeString(location.requiredAuthority());
         String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
         resources.add(format("arn:aws:s3:::%s%s/*", bucket, path));
-        // For write.object-storage.enabled=true
+        // For write.object-storage.enabled=true / before Iceberg 1.7.0
         resources.add(format("arn:aws:s3:::%s/*/%s/*", bucket, path));
+        // For write.object-storage.enabled=true / since Iceberg 1.7.0
+        resources.add(format("arn:aws:s3:::%s/*/*/*/*/%s/*", bucket, path));
       }
     }
 

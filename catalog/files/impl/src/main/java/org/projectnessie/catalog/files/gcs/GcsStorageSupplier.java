@@ -52,7 +52,9 @@ import org.slf4j.LoggerFactory;
 
 public final class GcsStorageSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(GcsStorageSupplier.class);
-  static final String RANDOMIZED_PART = "([A-Za-z0-9=]+/)?";
+
+  // Suitable for both old object-storage layout (before Iceberg 1.7.0) and new (since 1.7.0)
+  static final String RANDOMIZED_PART = "([A-Za-z0-9=]+/|[01]{4}/[01]{4}/[01]{4}/[01]{8}/)?";
 
   private final HttpTransportFactory httpTransportFactory;
   private final GcsConfig gcsConfig;
