@@ -78,7 +78,7 @@ class TestS3IamPolicies {
                 + "    \"Resource\" : \"arn:aws:s3:::bucket1\",\n"
                 + "    \"Condition\" : {\n"
                 + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"my/path/bar\", \"my/path/bar/*\", \"*/my/path/bar\", \"*/my/path/bar/*\" ]\n"
+                + "        \"s3:prefix\" : [ \"my/path/bar\", \"my/path/bar/*\", \"*/my/path/bar\", \"*/my/path/bar/*\", \"*/*/*/*/my/path/bar\", \"*/*/*/*/my/path/bar/*\" ]\n"
                 + "      }\n"
                 + "    }\n"
                 + "  }, {\n"
@@ -87,7 +87,7 @@ class TestS3IamPolicies {
                 + "    \"Resource\" : \"arn:aws:s3:::bucket2\",\n"
                 + "    \"Condition\" : {\n"
                 + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"my/other/bar\", \"my/other/bar/*\", \"*/my/other/bar\", \"*/my/other/bar/*\" ]\n"
+                + "        \"s3:prefix\" : [ \"my/other/bar\", \"my/other/bar/*\", \"*/my/other/bar\", \"*/my/other/bar/*\", \"*/*/*/*/my/other/bar\", \"*/*/*/*/my/other/bar/*\" ]\n"
                 + "      }\n"
                 + "    }\n"
                 + "  }, {\n"
@@ -96,7 +96,7 @@ class TestS3IamPolicies {
                 + "    \"Resource\" : \"arn:aws:s3:::bucket3\",\n"
                 + "    \"Condition\" : {\n"
                 + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"read/path/bar\", \"read/path/bar/*\", \"*/read/path/bar\", \"*/read/path/bar/*\" ]\n"
+                + "        \"s3:prefix\" : [ \"read/path/bar\", \"read/path/bar/*\", \"*/read/path/bar\", \"*/read/path/bar/*\", \"*/*/*/*/read/path/bar\", \"*/*/*/*/read/path/bar/*\" ]\n"
                 + "      }\n"
                 + "    }\n"
                 + "  }, {\n"
@@ -105,17 +105,17 @@ class TestS3IamPolicies {
                 + "    \"Resource\" : \"arn:aws:s3:::bucket4\",\n"
                 + "    \"Condition\" : {\n"
                 + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"read/other/bar\", \"read/other/bar/*\", \"*/read/other/bar\", \"*/read/other/bar/*\" ]\n"
+                + "        \"s3:prefix\" : [ \"read/other/bar\", \"read/other/bar/*\", \"*/read/other/bar\", \"*/read/other/bar/*\", \"*/*/*/*/read/other/bar\", \"*/*/*/*/read/other/bar/*\" ]\n"
                 + "      }\n"
                 + "    }\n"
                 + "  }, {\n"
                 + "    \"Effect\" : \"Allow\",\n"
                 + "    \"Action\" : [ \"s3:GetObject\", \"s3:GetObjectVersion\", \"s3:PutObject\", \"s3:DeleteObject\" ],\n"
-                + "    \"Resource\" : [ \"arn:aws:s3:::bucket1/my/path/bar/*\", \"arn:aws:s3:::bucket1/*/my/path/bar/*\", \"arn:aws:s3:::bucket2/my/other/bar/*\", \"arn:aws:s3:::bucket2/*/my/other/bar/*\" ]\n"
+                + "    \"Resource\" : [ \"arn:aws:s3:::bucket1/my/path/bar/*\", \"arn:aws:s3:::bucket1/*/my/path/bar/*\", \"arn:aws:s3:::bucket1/*/*/*/*/my/path/bar/*\", \"arn:aws:s3:::bucket2/my/other/bar/*\", \"arn:aws:s3:::bucket2/*/my/other/bar/*\", \"arn:aws:s3:::bucket2/*/*/*/*/my/other/bar/*\" ]\n"
                 + "  }, {\n"
                 + "    \"Effect\" : \"Allow\",\n"
                 + "    \"Action\" : [ \"s3:GetObject\", \"s3:GetObjectVersion\" ],\n"
-                + "    \"Resource\" : [ \"arn:aws:s3:::bucket3read/path/bar/*\", \"arn:aws:s3:::bucket3/*/read/path/bar/*\", \"arn:aws:s3:::bucket4read/other/bar/*\", \"arn:aws:s3:::bucket4/*/read/other/bar/*\" ]\n"
+                + "    \"Resource\" : [ \"arn:aws:s3:::bucket3read/path/bar/*\", \"arn:aws:s3:::bucket3/*/read/path/bar/*\", \"arn:aws:s3:::bucket3/*/*/*/*/read/path/bar/*\", \"arn:aws:s3:::bucket4read/other/bar/*\", \"arn:aws:s3:::bucket4/*/read/other/bar/*\", \"arn:aws:s3:::bucket4/*/*/*/*/read/other/bar/*\" ]\n"
                 + "  }, {\n"
                 + "    \"Effect\" : \"Deny\",\n"
                 + "    \"Action\" : \"s3:*\",\n"
@@ -156,7 +156,11 @@ class TestS3IamPolicies {
     return Stream.of(
         arguments(
             ImmutableS3ClientIam.builder().enabled(true).build(),
-            List.of("arn:aws:s3:::foo", "arn:aws:s3:::foo/b\"ar/*", "arn:aws:s3:::foo/*/b\"ar/*")),
+            List.of(
+                "arn:aws:s3:::foo",
+                "arn:aws:s3:::foo/b\"ar/*",
+                "arn:aws:s3:::foo/*/b\"ar/*",
+                "arn:aws:s3:::foo/*/*/*/*/b\"ar/*")),
         arguments(
             ImmutableS3ClientIam.builder()
                 .enabled(true)
@@ -168,6 +172,7 @@ class TestS3IamPolicies {
                 "arn:aws:s3:::foo",
                 "arn:aws:s3:::foo/b\"ar/*",
                 "arn:aws:s3:::foo/*/b\"ar/*",
+                "arn:aws:s3:::foo/*/*/*/*/b\"ar/*",
                 "arn:aws:s3:::*/blocked\"Namespace/*")));
   }
 
