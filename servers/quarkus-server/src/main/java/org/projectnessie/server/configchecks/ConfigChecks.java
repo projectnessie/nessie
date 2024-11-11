@@ -19,10 +19,10 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.projectnessie.quarkus.config.QuarkusJdbcConfig;
+import org.projectnessie.quarkus.config.QuarkusNessieAuthenticationConfig;
+import org.projectnessie.quarkus.config.QuarkusNessieAuthorizationConfig;
 import org.projectnessie.quarkus.config.QuarkusServerConfig;
 import org.projectnessie.quarkus.config.VersionStoreConfig;
-import org.projectnessie.server.config.QuarkusNessieAuthenticationConfig;
-import org.projectnessie.server.config.QuarkusNessieAuthorizationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
