@@ -40,6 +40,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: Consider referenced statistics (and partition statistics) files as 'live'.
+
 ### Commits
 
 ## [0.99.0] Release (2024-09-26)
