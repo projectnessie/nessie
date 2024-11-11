@@ -197,29 +197,7 @@ public final class Jdbc2Backend implements Backend {
     try (Connection conn = borrowConnection()) {
       Integer nameTypeId = databaseSpecific.columnTypeIds().get(NAME);
       Integer objIdTypeId = databaseSpecific.columnTypeIds().get(OBJ_ID);
-      createTableIfNotExists(
-          0,
-          conn,
-          TABLE_REFS,
-          createTableRefsSql,
-          Stream.of(
-                  COL_REPO_ID,
-                  COL_REFS_NAME,
-                  COL_REFS_POINTER,
-                  COL_REFS_DELETED,
-                  COL_REFS_CREATED_AT,
-                  COL_REFS_EXTENDED_INFO,
-                  COL_REFS_PREVIOUS)
-              .collect(Collectors.toSet()),
-          ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_REFS_NAME, nameTypeId));
-      createTableIfNotExists(
-          0,
-          conn,
-          TABLE_OBJS,
-          createTableObjsSql,
-          Stream.of(COL_REPO_ID, COL_OBJ_ID, COL_OBJ_TYPE, COL_OBJ_VERS, COL_OBJ_VALUE)
-              .collect(Collectors.toSet()),
-          ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_OBJ_ID, objIdTypeId));
+
       StringBuilder info = new StringBuilder();
       String s = conn.getCatalog();
       if (s != null && !s.isEmpty()) {
@@ -232,13 +210,45 @@ public final class Jdbc2Backend implements Backend {
         }
         info.append("schema: ").append(s);
       }
+
+      info.append(", ")
+          .append(
+              createTableIfNotExists(
+                  0,
+                  conn,
+                  TABLE_REFS,
+                  createTableRefsSql,
+                  Stream.of(
+                          COL_REPO_ID,
+                          COL_REFS_NAME,
+                          COL_REFS_POINTER,
+                          COL_REFS_DELETED,
+                          COL_REFS_CREATED_AT,
+                          COL_REFS_EXTENDED_INFO,
+                          COL_REFS_PREVIOUS)
+                      .collect(Collectors.toSet()),
+                  ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_REFS_NAME, nameTypeId)));
+      info.append(", ")
+          .append(
+              createTableIfNotExists(
+                  0,
+                  conn,
+                  TABLE_OBJS,
+                  createTableObjsSql,
+                  Stream.of(COL_REPO_ID, COL_OBJ_ID, COL_OBJ_TYPE, COL_OBJ_VERS, COL_OBJ_VALUE)
+                      .collect(Collectors.toSet()),
+                  ImmutableMap.of(COL_REPO_ID, nameTypeId, COL_OBJ_ID, objIdTypeId)));
+
+      // Need to commit to get DDL changes into some databases (Postgres for example)
+      conn.commit();
+
       return Optional.of(info.toString());
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void createTableIfNotExists(
+  private String createTableIfNotExists(
       int depth,
       Connection conn,
       String tableName,
@@ -299,12 +309,14 @@ public final class Jdbc2Backend implements Backend {
           }
 
           // Existing table looks compatible
-          return;
+          return format("table '%s' looks compatible", tableName);
         }
       }
 
       try {
         st.executeUpdate(createTable);
+
+        return format("table '%s' created", tableName);
       } catch (SQLException e) {
         if (!databaseSpecific.isAlreadyExists(e)) {
           throw e;
@@ -315,7 +327,7 @@ public final class Jdbc2Backend implements Backend {
         }
 
         // table was created by another process, try again to check the schema
-        createTableIfNotExists(
+        return createTableIfNotExists(
             depth + 1, conn, tableName, createTable, expectedColumns, expectedPrimaryKey);
       }
     }

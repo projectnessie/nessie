@@ -41,6 +41,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 - GC: Consider referenced statistics (and partition statistics) files as 'live'.
+- JDBC: Perform JDBC commit when auto-creating tables to please transactional schema changes.
 
 ### Commits
 
