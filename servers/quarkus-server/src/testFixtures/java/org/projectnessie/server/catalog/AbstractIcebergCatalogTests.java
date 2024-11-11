@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.ToLongFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
@@ -491,9 +493,26 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
     assertThat(dataLocation).startsWith(writeDataPath + "/");
     String path = dataLocation.substring(writeDataPath.length() + 1);
-    int idx = path.indexOf('/');
-    assertThat(idx).isGreaterThan(1);
-    String pathNoRandom = path.substring(idx + 1);
+    // Before Iceberg 1.7.0:
+    //   dataLocation ==
+    // s3://bucket1/warehouse/iI5Yww/newdb/table_5256a122-69b3-4ec2-a6ce-f98f9ce509bf/my-data-file.txt
+    //           path == iI5Yww/newdb/table_5256a122-69b3-4ec2-a6ce-f98f9ce509bf/my-data-file.txt
+    //   pathNoRandom == newdb/table_5256a122-69b3-4ec2-a6ce-f98f9ce509bf/my-data-file.txt
+    // Since Iceberg 1.7.0:
+    //   dataLocation ==
+    // s3://bucket1/warehouse/1000/1000/1110/10001000/newdb/table_949afb2c-ed93-4702-b390-f1d4a9c59957/my-data-file.txt
+    //           path ==
+    // 1000/1000/1110/10001000/newdb/table_949afb2c-ed93-4702-b390-f1d4a9c59957/my-data-file.txt
+    Pattern patternNewObjectStorageLayout = Pattern.compile("[01]{4}/[01]{4}/[01]{4}/[01]{8}/(.*)");
+    Matcher matcherNewObjectStorageLayout = patternNewObjectStorageLayout.matcher(path);
+    String pathNoRandom;
+    if (matcherNewObjectStorageLayout.find()) {
+      pathNoRandom = matcherNewObjectStorageLayout.group(1);
+    } else {
+      int idx = path.indexOf('/');
+      assertThat(idx).isGreaterThan(1);
+      pathNoRandom = path.substring(idx + 1);
+    }
     assertThat(pathNoRandom)
         .startsWith(String.join("/", TABLE.namespace().levels()) + '/' + TABLE.name() + '_')
         .endsWith('/' + filename);

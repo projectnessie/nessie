@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -31,9 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,21 +69,37 @@ import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.versioned.RequestMeta;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, SoftAssertionsExtension.class})
 class TestIcebergS3SignParams {
 
+  @InjectSoftAssertions SoftAssertions soft;
   @Mock CatalogService catalogService;
   @Mock RequestSigner signer;
 
-  final String warehouseLocation = "s3://bucket/warehouse/";
-  final String baseLocation = warehouseLocation + "ns/table1_cafebabe";
-  final String oldBaseLocation = "s3://old-bucket/ns/table1";
-  final String metadataLocation = baseLocation + "/metadata/metadata.json";
-  final String dataFileUri =
-      "https://bucket.s3.amazonaws.com/warehouse/ns/table1_cafebabe/data/file1.parquet";
-  final String oldDataFileUri = "https://old-bucket.s3.amazonaws.com/ns/table1/data/file1.parquet";
-  final String metadataJsonUri =
-      "https://bucket.s3.amazonaws.com/warehouse/ns/table1_cafebabe/metadata/metadata.json";
+  static final String warehouseLocation = "s3://bucket/warehouse/";
+  static final String locationPart = "ns/table1_cafebabe";
+
+  // Before Iceberg 1.7.0
+  static final String objectStoragePartOld = "iI5Yww";
+  // Since Iceberg 1.7.0
+  static final String objectStoragePartNew = "1000/1000/1110/10001000";
+
+  static final String baseLocation = warehouseLocation + locationPart;
+  static final String oldBaseLocation = "s3://old-bucket/ns/table1";
+  static final String metadataLocation = baseLocation + "/metadata/metadata.json";
+
+  static final String s3BucketAws = "https://bucket.s3.amazonaws.com/warehouse/";
+  static final String dataFileUri = s3BucketAws + locationPart + "/data/file1.parquet";
+  static final String dataFileUriObjectStorageOld =
+      s3BucketAws + objectStoragePartOld + "/" + locationPart + "/data/file1.parquet";
+  static final String dataFileUriObjectStorageNew =
+      s3BucketAws + objectStoragePartNew + "/" + locationPart + "/data/file1.parquet";
+
+  static final String oldDataFileUri =
+      "https://old-bucket.s3.amazonaws.com/ns/table1/data/file1.parquet";
+
+  static final String metadataJsonUri = s3BucketAws + locationPart + "/metadata/metadata.json";
+
   final IcebergS3SignRequest writeRequest =
       IcebergS3SignRequest.builder()
           .method("DELETE")
@@ -123,31 +146,110 @@ class TestIcebergS3SignParams {
   final SigningResponse signingResponse =
       ImmutableSigningResponse.builder().uri(URI.create(dataFileUri)).build();
 
+  static Stream<Arguments> readMethodsAndUris() {
+    return Stream.of("GET", "HEAD", "OPTIONS", "TRACE").flatMap(TestIcebergS3SignParams::addUris);
+  }
+
+  static Stream<Arguments> writeMethodsAndUris() {
+    return Stream.of("PUT", "POST", "DELETE", "PATCH").flatMap(TestIcebergS3SignParams::addUris);
+  }
+
+  static Stream<Arguments> addUris(String method) {
+    return Stream.of(
+        arguments(method, dataFileUri),
+        arguments(method, dataFileUriObjectStorageOld),
+        arguments(method, dataFileUriObjectStorageNew));
+  }
+
+  @Test
+  void checkLocation() {
+    // Strip trailing '/'
+    String warehouseLocation = TestIcebergS3SignParams.warehouseLocation;
+    warehouseLocation = warehouseLocation.substring(0, warehouseLocation.length() - 1);
+
+    String requestedPlain = warehouseLocation + '/' + locationPart + "/data/file1.parquet";
+    String requestedObjectStorageOld =
+        warehouseLocation + '/' + objectStoragePartOld + '/' + locationPart + "/data/file1.parquet";
+    String requestedObjectStorageNew =
+        warehouseLocation + '/' + objectStoragePartNew + '/' + locationPart + "/data/file1.parquet";
+
+    String location = warehouseLocation + '/' + locationPart;
+
+    soft.assertThat(IcebergS3SignParams.checkLocation(warehouseLocation, requestedPlain, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(warehouseLocation, requestedPlain, location + '/'))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(warehouseLocation + '/', requestedPlain, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation + '/', requestedPlain, location + '/'))
+        .isTrue();
+
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation, requestedObjectStorageOld, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation, requestedObjectStorageOld, location + '/'))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation + '/', requestedObjectStorageOld, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation + '/', requestedObjectStorageOld, location + '/'))
+        .isTrue();
+
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation, requestedObjectStorageNew, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation, requestedObjectStorageNew, location + '/'))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation + '/', requestedObjectStorageNew, location))
+        .isTrue();
+    soft.assertThat(
+            IcebergS3SignParams.checkLocation(
+                warehouseLocation + '/', requestedObjectStorageNew, location + '/'))
+        .isTrue();
+  }
+
   @ParameterizedTest
-  @ValueSource(strings = {"GET", "HEAD", "OPTIONS", "TRACE"})
-  void verifyAndSignSuccessRead(String method) throws Exception {
+  @MethodSource("readMethodsAndUris")
+  void verifyAndSignSuccessRead(String method, String uri) throws Exception {
     when(catalogService.retrieveSnapshot(
             any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
         .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
-            .request(IcebergS3SignRequest.builder().from(readRequest).method(method).build())
+            .request(
+                IcebergS3SignRequest.builder().from(readRequest).uri(uri).method(method).build())
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectSuccess(response);
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"PUT", "POST", "DELETE", "PATCH"})
-  void verifyAndSignSuccessWrite(String method) throws Exception {
+  @MethodSource("writeMethodsAndUris")
+  void verifyAndSignSuccessWrite(String method, String uri) throws Exception {
     when(catalogService.retrieveSnapshot(
             any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
         .thenReturn(successStage);
     when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner =
         newBuilder()
-            .request(IcebergS3SignRequest.builder().from(writeRequest).method(method).build())
+            .request(
+                IcebergS3SignRequest.builder().from(writeRequest).uri(uri).method(method).build())
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectSuccess(response);
@@ -299,7 +401,7 @@ class TestIcebergS3SignParams {
         .thenReturn(successStage);
     IcebergS3SignParams icebergSigner =
         newBuilder()
-            .writeLocations(List.of("s3://wrong-bucket/warehouse/ns/table1_cafebabee"))
+            .writeLocations(List.of("s3://wrong-bucket/warehouse/" + locationPart + "e"))
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectFailure(response, "URI not allowed for signing: " + dataFileUri);
