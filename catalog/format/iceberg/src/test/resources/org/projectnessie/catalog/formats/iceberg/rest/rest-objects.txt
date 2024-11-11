@@ -565,7 +565,6 @@ UpdateNamespacePropertiesResponse: {"removed":["created-at"],"updated":[],"missi
 UpdateNamespacePropertiesResponse: {"removed":[],"updated":["owner","created-at"],"missing":[]}
 UpdateNamespacePropertiesResponse: {"removed":[],"updated":["owner","last-modified-at"],"missing":[]}
 UpdateNamespacePropertiesResponse: {"removed":[],"updated":["owner"],"missing":[]}
-ConfigResponse: {"defaults":{},"overrides":{}}
 CreateNamespaceResponse: {"namespace":["a"],"properties":{}}
 CreateNamespaceResponse: {"namespace":["multiDiffNamespace"],"properties":{}}
 CreateNamespaceResponse: {"namespace":["namespace"],"properties":{}}

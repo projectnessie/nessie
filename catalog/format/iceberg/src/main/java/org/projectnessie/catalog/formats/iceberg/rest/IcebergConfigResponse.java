@@ -16,12 +16,14 @@
 package org.projectnessie.catalog.formats.iceberg.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
 import java.util.Map;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -34,6 +36,9 @@ public interface IcebergConfigResponse {
   Map<String, String> defaults();
 
   Map<String, String> overrides();
+
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  List<IcebergEndpoint> endpoints();
 
   static Builder builder() {
     return ImmutableIcebergConfigResponse.builder();
@@ -70,6 +75,18 @@ public interface IcebergConfigResponse {
 
     @CanIgnoreReturnValue
     Builder putAllOverrides(Map<String, ? extends String> entries);
+
+    @CanIgnoreReturnValue
+    Builder addEndpoint(IcebergEndpoint element);
+
+    @CanIgnoreReturnValue
+    Builder addEndpoints(IcebergEndpoint... elements);
+
+    @CanIgnoreReturnValue
+    Builder endpoints(Iterable<? extends IcebergEndpoint> elements);
+
+    @CanIgnoreReturnValue
+    Builder addAllEndpoints(Iterable<? extends IcebergEndpoint> elements);
 
     IcebergConfigResponse build();
   }
