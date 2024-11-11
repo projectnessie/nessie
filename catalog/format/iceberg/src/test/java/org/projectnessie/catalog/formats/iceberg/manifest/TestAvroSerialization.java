@@ -536,7 +536,7 @@ public class TestAvroSerialization {
                     return dataFileBuilder
                         .content(IcebergDataContent.valueOf(dataFile.content().name()))
                         .fileFormat(IcebergFileFormat.valueOf(dataFile.format().name()))
-                        .filePath(dataFile.path().toString())
+                        .filePath(dataFile.location())
                         .fileSizeInBytes(dataFile.fileSizeInBytes())
                         // .blockSizeInBytes(dataFile.)
                         .keyMetadata(toByteArray(dataFile.keyMetadata()))

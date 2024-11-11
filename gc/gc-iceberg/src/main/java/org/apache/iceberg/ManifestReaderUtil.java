@@ -31,6 +31,6 @@ public final class ManifestReaderUtil {
         ManifestFiles.open(manifest, io, specsById)
             .select(ImmutableList.of("file_path"))
             .liveEntries(),
-        entry -> entry.file().path().toString());
+        entry -> entry.file().location());
   }
 }
