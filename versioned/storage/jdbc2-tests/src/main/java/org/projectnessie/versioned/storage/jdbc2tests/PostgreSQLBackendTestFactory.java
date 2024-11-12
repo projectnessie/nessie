@@ -16,10 +16,12 @@
 package org.projectnessie.versioned.storage.jdbc2tests;
 
 import jakarta.annotation.Nonnull;
+import java.time.Duration;
 import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.images.PullPolicy;
 
 public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
 
@@ -31,7 +33,10 @@ public class PostgreSQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    return new PostgreSQLContainer<>(dockerImage("postgres").asCompatibleSubstituteFor("postgres"));
+    return new PostgreSQLContainer<>(dockerImage("postgres").asCompatibleSubstituteFor("postgres"))
+        // use an age-based pull-policy, because image tags are just updated and there are no
+        // "patch" version tags
+        .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)));
   }
 
   @Override
