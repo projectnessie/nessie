@@ -82,6 +82,18 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   public static final String V1_VIEW = "/v1/{prefix}/namespaces/{namespace}/views/{view}";
   public static final String V1_VIEW_RENAME = "/v1/{prefix}/views/rename";
 
+  // NOT yet implemented
+  public static final String V1_TABLE_LOAD_CREDENTIALS =
+      "/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials";
+
+  // NOT implemented
+  public static final String V1_TABLE_PLAN_SUBMIT =
+      "/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan";
+  public static final String V1_TABLE_PLAN_FETCH_RESULT =
+      "/v1/{prefix}/namespaces/{namespace}/tables/{table}/plan/{plan-id}";
+  public static final String V1_TABLE_PLAN_FETCH_SCAN_TASKS =
+      "/v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks";
+
   // namespace endpoints
   public static final IcebergEndpoint V1_LIST_NAMESPACES = icebergEndpoint("GET", V1_NAMESPACES);
   public static final IcebergEndpoint V1_LOAD_NAMESPACE = icebergEndpoint("GET", V1_NAMESPACE);
