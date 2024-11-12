@@ -2,6 +2,92 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.100.0 Release (November 12, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.0).
+
+### Upgrade notes
+
+- Helm chart: the old `logLevel` field has been replaced with a new `log` section with many more
+  options to configure logging. You can now configure console- and file-based logging separately. It
+  is also possible to enable JSON logging instead of plain text (but this feature requires Nessie >=
+  0.99.1). For file-based logging, it is also possible to configure rotation and retention policies,
+  and a persistent volume claim is now automatically created when file-based logging is enabled.
+  Furthermore, Sentry integration can also be enabled and configured. And finally, it is now
+  possible to configure the log level for specific loggers, not just the root logger. The old
+  `logLevel` field is still supported, but will be removed in a future release.
+
+### Changes
+
+- The persistence cache tries to avoid deserialization overhead when getting an object from the
+  cache by using Java's `SoftReference`. There is no guarantee that cached objects keep their
+  Java object tree around, but it should eventually for the majority of accesses to frequently
+  accessed cached objects. The default cache capacity fraction has been reduced from 70% of the
+  heap size to 60% of the heap size. However, extreme heap pressure may let Java GC clear all
+  `SoftReference`s.
+- Sends the following default options, which are convenient when using pyiceberg:
+  * `py-io-impl=pyiceberg.io.fsspec.FsspecFileIO`
+  * `s3.signer=S3V4RestSigner` when S3 signing is being used
+- Iceberg REST: No longer return `*FileIO` options from the Iceberg REST config endpoint
+
+### Fixes
+
+- GC: Consider referenced statistics (and partition statistics) files as 'live'.
+- JDBC: Perform JDBC commit when auto-creating tables to please transactional schema changes.
+
+### Commits
+* Catalog/Iceberg: support new `remove-partition-specs` metadata-update (#9906)
+* Testing/Docker: use exact version for C* images (#9908)
+* Catalog: Fix "load credendials" model (#9907)
+* Catalog: add new model and api (#9905)
+* Refactor Nessie's HTTP authentication (Quarkus 3.16 prep) (#9863)
+* Catalog/S3,GCS: Adopt IAM policies to new object-storage layout (Iceberg 1.7.0) (#9897)
+* Catalog/config: add endpoints to config response (Iceberg 1.7.0) (#9895)
+* Testing: disable looking up GCP credentials (#9900)
+* JDBC: commit after DDL setup + more info (#9901)
+* GC: consider statistics files (#9898)
+* Catalog/S3: Adopt S3 signing to new object-storage layout (Iceberg 1.7.0) (#9896)
+* Revert "Prevent tracing initialization race (Quarkus 3.16 prep) (#9866)" (#9899)
+* [Catalog] Do not return `*FileIO` options from the Iceberg REST config endpoint (#9642)
+* Send s3-signer only when signing is enabled (#9869)
+* Prevent tracing initialization race (Quarkus 3.16 prep) (#9866)
+* Remove `@Nested` from a Quarkus test (Quarkus 3.16 prep) (#9865)
+* Adopt `AmazonSecretsManagerBuilder` (Quarkus 3.16 prep) (#9864)
+* Convenience for pyiceberg (#9868)
+* Build only: Prefer Maven Local if enabled (#9861)
+* Build/internal/NesQuEIT: enforce no colon `:` for `nessieProject()` (#9842)
+* Docs: update troubleshooting guide with recent UID/GID changes (#9783)
+* Helm chart: add `extraInitContainers` value (#9773)
+* fix/keycloak-v26-deprecated-vars (#9778)
+* Helm chart: redesign logging options (#9775)
+* Fix some IDE warnings, remove unused code (#9772)
+* server-admin-tool intTest: Re-add `forkEvery` (#9762)
+* Remove validatation annotations from static functions (#9761)
+* Do not access Apache snapshots repository by default (#9754)
+* Transfer/related: make `CoreTransferRelatedObjects` generally accessible (#9752)
+* Persist: introduce `deleteWithReferenced(Obj)` (#9731)
+* ReferenceLogic: parameterized purge of the commit log of a `Reference` (#9735)
+* Add convenience functionality to get all storage locations defined in `LakehouseConfig` (#9742)
+* More verbose "Unauthorized signing request" warnings (#9743)
+* Move catalog-config types to separate module (#9741)
+* Site: fix formatting in `Time travel with Iceberg REST` chapter (#9732)
+* Docker compose: enhance all-in-one example with Spark SQL and Nessie CLI (#9719)
+* Helm chart: explicitly include namespace in created resources (#9711)
+* Let `Persist.scanAllObjects()` accept an empty set to return all object types (#9687)
+* Make the composite `TransferRelatedObjects` accessible to other projects (#9689)
+* Events SPI: load implementations via CDI (#9696)
+* Events RI: use Quarkus Messaging extension (#9686)
+* Fix `ObjId.longAt()` for non-256-bit object IDs (#9685)
+* Fix deprecation of `o.t.containers.CassandraContainer` + `KafkaContainer` (#9680)
+* Replace deprecated `Aws4Signer` with `AwsV4HttpSigner` (#9681)
+* Cache: keep (deserialized) object around (#9648)
+* Patch version bumps of Scala + Spark 3.5 (#9667)
+* Fix running `nessie-quarkus` instructions (#9668)
+* Update Docker Compose instructions in Getting Started guide (#9662)
+* Helm chart: remove bogus default value for oidcAuthServerUrl (#9654)
+* Events API: test JSON serde with views (#9645)
+* Events RI: add example with JSON serialization (#9639)
+
 ## 0.99.0 Release (September 26, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.99.0).

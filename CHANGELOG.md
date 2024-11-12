@@ -10,6 +10,22 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.100.0] Release (2024-11-12)
+
+### Upgrade notes
+
 - Helm chart: the old `logLevel` field has been replaced with a new `log` section with many more
   options to configure logging. You can now configure console- and file-based logging separately. It
   is also possible to enable JSON logging instead of plain text (but this feature requires Nessie >=
@@ -18,10 +34,6 @@ as necessary. Empty sections will not end in the release notes.
   Furthermore, Sentry integration can also be enabled and configured. And finally, it is now
   possible to configure the log level for specific loggers, not just the root logger. The old
   `logLevel` field is still supported, but will be removed in a future release.
-
-### Breaking changes
-
-### New Features
 
 ### Changes
 
@@ -36,14 +48,10 @@ as necessary. Empty sections will not end in the release notes.
   * `s3.signer=S3V4RestSigner` when S3 signing is being used
 - Iceberg REST: No longer return `*FileIO` options from the Iceberg REST config endpoint
 
-### Deprecations
-
 ### Fixes
 
 - GC: Consider referenced statistics (and partition statistics) files as 'live'.
 - JDBC: Perform JDBC commit when auto-creating tables to please transactional schema changes.
-
-### Commits
 
 ## [0.99.0] Release (2024-09-26)
 
@@ -931,7 +939,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.99.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.100.0...HEAD
+[0.100.0]: https://github.com/projectnessie/nessie/compare/nessie-0.99.0...nessie-0.100.0
 [0.99.0]: https://github.com/projectnessie/nessie/compare/nessie-0.97.1...nessie-0.99.0
 [0.97.1]: https://github.com/projectnessie/nessie/compare/nessie-0.96.1...nessie-0.97.1
 [0.96.1]: https://github.com/projectnessie/nessie/compare/nessie-0.96.0...nessie-0.96.1
