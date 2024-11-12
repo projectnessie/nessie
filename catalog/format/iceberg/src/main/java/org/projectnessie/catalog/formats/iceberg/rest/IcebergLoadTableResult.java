@@ -26,14 +26,14 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
  *
  * <p>The following configurations should be respected by clients
  *
- * <h2>General Configurations
+ * <h2>General Configurations</h2>
  *
  * <ul>
  *   <li>{@code token}: Authorization bearer token to use for table requests if OAuth2 security is
  *       enabled
  * </ul>
  *
- * <h2>AWS Configurations
+ * <h2>AWS Configurations</h2>
  *
  * <p>The following configurations should be respected when working with tables stored in AWS S3
  *
@@ -46,7 +46,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
  *       described in the {@code s3-signer-open-api.yaml} specification
  * </ul>
  *
- * <h2>Storage Credentials
+ * <h2>Storage Credentials</h2>
  *
  * <p>Credentials for ADLS / GCS / S3 / ... are provided through the {@code storage-credentials}
  * field. Clients must first check whether the respective credentials exist in the {@code
