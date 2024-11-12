@@ -18,6 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.rest;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 
@@ -65,9 +66,9 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   Map<String, String> config();
 
-  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
   @Nullable
-  IcebergStorageCredential storageCredentials();
+  List<IcebergStorageCredential> storageCredentials();
 
   @SuppressWarnings("unused")
   interface Builder<R extends IcebergLoadTableResult, B extends Builder<R, B>>
@@ -82,7 +83,16 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
     B metadata(IcebergTableMetadata metadata);
 
     @CanIgnoreReturnValue
-    B storageCredentials(IcebergStorageCredential storageCredentials);
+    B addStorageCredential(IcebergStorageCredential element);
+
+    @CanIgnoreReturnValue
+    B addStorageCredentials(IcebergStorageCredential... elements);
+
+    @CanIgnoreReturnValue
+    B storageCredentials(@Nullable Iterable<? extends IcebergStorageCredential> elements);
+
+    @CanIgnoreReturnValue
+    B addAllStorageCredentials(Iterable<? extends IcebergStorageCredential> elements);
 
     @CanIgnoreReturnValue
     B putConfig(String key, String value);
