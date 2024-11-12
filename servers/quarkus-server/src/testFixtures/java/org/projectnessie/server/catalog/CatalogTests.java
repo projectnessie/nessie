@@ -534,6 +534,39 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   }
 
   @Test
+  public void testRemovePartitionSpec() {
+    C catalog = catalog();
+
+    TableIdentifier ident = TableIdentifier.of("ns", "table");
+
+    Assertions.assertThat(catalog.tableExists(ident)).as("Table should not exist").isFalse();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(ident.namespace());
+    }
+
+    Table table =
+        catalog
+            .buildTable(ident, SCHEMA)
+            .withLocation(temporaryLocation())
+            .withPartitionSpec(SPEC)
+            .withSortOrder(WRITE_ORDER)
+            .create();
+    Assertions.assertThat(catalog.tableExists(ident)).as("Table should exist").isTrue();
+    Assertions.assertThat(table.specs()).hasSize(1);
+    int initialSpecId = table.spec().specId();
+
+    table.updateSpec().addField("data").commit();
+
+    table = catalog.loadTable(ident);
+    Assertions.assertThat(table.specs()).hasSize(2);
+
+    table.updateSpec().commit();
+
+    // TODO there's no API in Iceberg/Java to actually remove a partition spec :(
+  }
+
+  @Test
   public void testTableNameWithSlash() {
     Assumptions.assumeTrue(supportsNamesWithSlashes());
 
