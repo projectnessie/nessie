@@ -11,6 +11,7 @@ runs:
     - name: Memory report
       shell: bash
       run: |
+        echo "::group::Memory and disk"
         echo "Memory and swap:"
         free
         echo
@@ -19,6 +20,7 @@ runs:
         echo "Available storage:"
         df -h
         echo
+        echo "::endgroup::"
     - name: Add 8G more swap
       if: ${{ inputs.more-memory != 'false' }}
       shell: bash
@@ -31,6 +33,7 @@ runs:
       if: ${{ inputs.more-memory != 'false' }}
       shell: bash
       run: |
+        echo "::group::Memory and disk after swap enabled"
         echo "Memory report after adding more swap:"
         free
         echo
@@ -39,7 +42,43 @@ runs:
         echo "Available storage:"
         df -h
         echo
+        echo "::endgroup::"
 
     - name: Update /etc/hosts
       shell: bash
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+      run: |
+        echo "::group::Contents of /etc/hosts"
+        echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+        echo "::endgroup::"
+
+    - name: Setup docker.io mirror
+      shell: bash
+      run: |
+        cat > docker-io-mirror.conf <<!
+        [[registry]]
+        # In Nov. 2020, Docker rate-limits image pulling.  To avoid hitting these
+        # limits while testing, always use the google mirror for qualified and
+        # unqualified 'docker.io' images.
+        # Ref: https://cloud.google.com/container-registry/docs/pulling-cached-images
+        prefix="docker.io"
+        location="mirror.gcr.io"
+        !
+        sudo mv docker-io-mirror.conf /etc/containers/registries.conf.d/
+
+        echo "::group::Added docker.io mirror"
+        cat /etc/containers/registries.conf.d/docker-io-mirror.conf 
+        echo "::endgroup::"
+
+        echo "::group::Restarting Docker"
+        echo "ps auxww | grep docker before restart"
+        sudo ps auxww | grep docker
+        echo ""
+        sudo service docker restart
+        echo ""
+        echo "ps auxww | grep docker after restart"
+        sudo ps auxww | grep docker
+        echo "::endgroup::"
+
+        echo "::group::docker info"
+        docker info
+        echo "::endgroup::"
