@@ -83,6 +83,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergCommitTableResponse
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateTableResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergListTablesResponse;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadTableResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadTableResult;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
@@ -90,6 +91,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergRegisterTableReques
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateTableRequest;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergLoadCredentialsResponse;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
@@ -164,6 +166,26 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
     return this.loadTable(tableRef, prefix, dataAccess, false);
+  }
+
+  @Operation(operationId = "iceberg.v1.loadCredentials")
+  @GET
+  @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials")
+  @Blocking
+  public Uni<IcebergLoadCredentialsResponse> loadCredentials(
+      @PathParam("prefix") String prefix,
+      @PathParam("namespace") String namespace,
+      @PathParam("table") String table,
+      @HeaderParam("X-Iceberg-Access-Delegation") String dataAccess)
+      throws IOException {
+
+    return loadTable(prefix, namespace, table, null, dataAccess)
+        .map(
+            loadTableResponse -> {
+              var creds = loadTableResponse.storageCredentials();
+
+              return ImmutableIcebergLoadCredentialsResponse.of(creds);
+            });
   }
 
   private Uni<IcebergLoadTableResponse> loadTable(
