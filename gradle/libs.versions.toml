@@ -28,7 +28,7 @@ protobuf = "4.28.3"
 quarkusPlatform = "3.16.2"
 quarkusPlugin = "3.16.2"
 slf4j = "2.0.16"
-smallryeConfig = "3.10.0"
+smallryeConfig = "3.10.1"
 undertow = "2.3.18.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
