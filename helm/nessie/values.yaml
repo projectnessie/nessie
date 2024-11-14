@@ -308,17 +308,20 @@ catalog:
         stsEndpoint: ~  # "https://sts.amazonaws.com"
 
         clientIam:
-          # -- Whether to enable client assume-role/scoped-down credentials functionality.
+          # -- Whether to enable vended credentials functionality. If this option is enabled, the
+          # server will temporarily assume the configured role, then pass the returned session
+          # credentials down to the client, for each table that is created, updated or registered.
+          # Vended credentials are not cached server-side.
           enabled: ~  # false
           # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
           # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
           # at all).
+          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          # -- The IAM policy in JSON format to be used as an inline session policy when calling the
+          # assume-role endpoint. Optional.
           policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
           # -- An identifier for the assumed role session. This parameter is most important in cases
           # when the same role is assumed by different principals in different use cases.
-          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
-          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
-          # If not supplied, Nessie will generate a policy scoped down to a table's location.
           roleSessionName: ~  # nessie
           # -- An identifier for the party assuming the role. This parameter must match the external
           # ID configured in IAM rules that govern the assume role process for the specified roleArn.
@@ -345,16 +348,19 @@ catalog:
 
         # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
         serverIam:
-          # -- Whether to enable server assume-role functionality.
+          # -- Whether to enable server assume-role functionality. If this option is enabled, the
+          # server will attempt to assume the configured role at startup and cache the returned
+          # session credentials.
           enabled: ~  # false
           # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
           # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
           # at all).
+          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          # -- The IAM policy in JSON format to be used as an inline session policy when calling the
+          # assume-role endpoint. Optional.
           policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
           # -- An identifier for the assumed role session. This parameter is most important in cases
           # when the same role is assumed by different principals in different use cases.
-          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
-          # -- The IAM policy in JSON format to be used as an inline session policy. Optional.
           roleSessionName: ~  # nessie
           # -- An identifier for the party assuming the role. This parameter must match the external
           # ID configured in IAM rules that govern the assume role process for the specified roleArn.
@@ -611,14 +617,6 @@ advancedConfig:
 #  nessie.server.default-branch: my-branch
 #
 #  nessie.version.store.persist.repository-id: my-repository
-#
-# Logging (via Quarkus)
-# ---------------------
-#
-#  quarkus:
-#    log:
-#      console.format: "%d{HH:mm:ss} %s%e%n"
-#      category."org.projectnessie".level: DEBUG
 #
 # Reverse Proxy Settings
 # ----------------------
