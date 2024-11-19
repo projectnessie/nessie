@@ -70,7 +70,7 @@ public abstract class AbstractTestExporterImporter<
         out.write("a".getBytes(UTF_8));
       }
 
-      soft.assertThatThrownBy(() -> exporter.newFileOutput("foo-bar-file"))
+      soft.assertThatThrownBy(() -> exporter.newFileOutput("foo-bar-file").close())
           .hasMessageContaining("foo-bar-file");
     }
   }

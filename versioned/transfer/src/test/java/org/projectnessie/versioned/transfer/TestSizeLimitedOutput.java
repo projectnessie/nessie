@@ -72,6 +72,11 @@ public class TestSizeLimitedOutput {
           }
 
           @Override
+          public long fixMaxFileSize(long userProvidedMaxFileSize) {
+            return userProvidedMaxFileSize;
+          }
+
+          @Override
           public void close() {}
         };
 

@@ -8,6 +8,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Export: ZIP file exports were broken in all Nessie versions from 0.92.1 until 0.100.0.
+  If you are using any of these versions, you must not use ZIP export mode, but use the
+  file (directory) based exporter (`--output-format=DIRECTORY`)!
+
 ### Upgrade notes
 
 ### Breaking changes
@@ -19,6 +23,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+
+- Export: ZIP file exports are fixed with this Nessie version 0.100.1.
 
 ### Commits
 

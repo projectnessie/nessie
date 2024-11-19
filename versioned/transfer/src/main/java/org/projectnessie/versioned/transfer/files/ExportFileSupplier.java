@@ -29,4 +29,6 @@ public interface ExportFileSupplier extends AutoCloseable {
 
   @Nonnull
   OutputStream newFileOutput(@Nonnull String fileName) throws IOException;
+
+  long fixMaxFileSize(long userProvidedMaxFileSize);
 }

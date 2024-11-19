@@ -44,7 +44,7 @@ final class SizeLimitedOutput {
       Consumer<String> newFileName,
       LongConsumer finalEntityCount) {
     this.exportFiles = exportFiles;
-    this.maxFileSize = exporter.maxFileSize();
+    this.maxFileSize = exportFiles.fixMaxFileSize(exporter.maxFileSize());
     this.outputBufferSize = exporter.outputBufferSize();
     this.fileNamePrefix = fileNamePrefix;
     this.newFileName = newFileName;

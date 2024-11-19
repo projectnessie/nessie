@@ -49,6 +49,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.api.NessieVersion;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -76,6 +77,7 @@ import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
+import org.projectnessie.versioned.transfer.serialize.TransferTypes;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
@@ -84,6 +86,38 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndFork
 @NessieBackendName(InmemoryBackendFactory.NAME)
 public abstract class AbstractExportImport {
   @InjectSoftAssertions private SoftAssertions soft;
+
+  @Test
+  public void fileSupplierMixed(@TempDir Path targetDir, @NessiePersist Persist persist)
+      throws Exception {
+    repositoryLogic(persist).initialize("main");
+
+    try (var exportFileSupplier = prepareExporter(targetDir)) {
+      var exporter =
+          NessieExporter.builder()
+              .exportFileSupplier(exportFileSupplier)
+              .persist(persist)
+              .fullScan(true)
+              .build();
+
+      var exportFiles = exporter.exportFileSupplier();
+
+      var exportContext =
+          new ExportContext(
+              exportFiles,
+              exporter,
+              ExportMeta.newBuilder()
+                  .setNessieVersion(NessieVersion.NESSIE_VERSION)
+                  .setCreatedMillisEpoch(System.currentTimeMillis())
+                  .setVersion(ExportVersion.V3));
+
+      exportContext.writeCommit(TransferTypes.Commit.newBuilder().build());
+      exportContext.writeGeneric(TransferTypes.RelatedObj.newBuilder().build());
+      exportContext.writeRef(TransferTypes.Ref.newBuilder().build());
+
+      exportContext.finish();
+    }
+  }
 
   @Test
   public void emptyExport(@TempDir Path targetDir, @NessiePersist Persist persist)

@@ -60,6 +60,8 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 import org.projectnessie.versioned.transfer.files.FileExporter;
 import org.projectnessie.versioned.transfer.files.FileImporter;
+import org.projectnessie.versioned.transfer.files.ZipArchiveExporter;
+import org.projectnessie.versioned.transfer.files.ZipArchiveImporter;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
 
@@ -107,24 +109,34 @@ public class TestExportImportV3 extends BaseExportImport {
   }
 
   @Override
-  ImportResult importRepo() throws IOException {
+  ImportResult importRepo(boolean zip) throws IOException {
     NessieImporter importer =
         NessieImporter.builder()
             .persist(persistImport)
-            .importFileSupplier(FileImporter.builder().sourceDirectory(dir).build())
+            .importFileSupplier(
+                zip
+                    ? ZipArchiveImporter.builder().sourceZipFile(dir.resolve("export.zip")).build()
+                    : FileImporter.builder().sourceDirectory(dir).build())
             .build();
     return importer.importNessieRepository();
   }
 
   @Override
-  ExportMeta exportRepo(boolean fullScan) throws IOException {
+  ExportMeta exportRepo(boolean zip, boolean fullScan) throws Exception {
     NessieExporter exporter =
         NessieExporter.builder()
             .persist(persistExport)
             .fullScan(fullScan)
-            .exportFileSupplier(FileExporter.builder().targetDirectory(dir).build())
+            .exportFileSupplier(
+                zip
+                    ? ZipArchiveExporter.builder().outputFile(dir.resolve("export.zip")).build()
+                    : FileExporter.builder().targetDirectory(dir).build())
             .build();
-    return exporter.exportNessieRepository();
+    try {
+      return exporter.exportNessieRepository();
+    } finally {
+      exporter.exportFileSupplier().close();
+    }
   }
 
   @Override
@@ -246,7 +258,7 @@ public class TestExportImportV3 extends BaseExportImport {
 
     prepareTargetRepo();
 
-    ImportResult importResult = importRepo();
+    ImportResult importResult = importRepo(false);
 
     soft.assertThat(importResult)
         .extracting(
