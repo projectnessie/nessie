@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.100.1 Release (November 19, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.1).
+
+### Highlights
+
+- Export: ZIP file exports were broken in all Nessie versions from 0.92.1 until 0.100.0.
+  If you are using any of these versions, you must not use ZIP export mode, but use the
+  file (directory) based exporter (`--output-format=DIRECTORY`)!
+
+### Fixes
+
+- Export: ZIP file exports are fixed with this Nessie version 0.100.1.
+
+### Commits
+* Export: fix ZIP output after #9034 (#9945)
+* Helm chart: fix incorrect documentation (#9923)
+* Testing: use age-based pull policy for postgres images (#9910)
+
 ## 0.100.0 Release (November 12, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.0).
