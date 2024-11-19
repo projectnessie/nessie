@@ -79,9 +79,9 @@ public abstract class BaseExportImport {
 
   abstract void prepareTargetRepo();
 
-  abstract ImportResult importRepo() throws IOException;
+  abstract ImportResult importRepo(boolean zip) throws IOException;
 
-  abstract ExportMeta exportRepo(boolean fullScan) throws IOException;
+  abstract ExportMeta exportRepo(boolean zip, boolean fullScan) throws Exception;
 
   @MustBeClosed
   abstract Stream<Hash> scanAllTargetCommits();
@@ -99,6 +99,14 @@ public abstract class BaseExportImport {
     BranchName mainBranch = BranchName.of("main");
 
     return Stream.of(
+        // Scenario: pretty empty
+        arguments(
+            0, // commitsTotal
+            0, // commitsLive
+            1, // namedRefs
+            0, // generic objects
+            0, // generic objects
+            (VersionStoreSetup) (vs, persist, headsAndForks, deleted) -> {}),
         // Scenario: branch + tag + default branch
         arguments(
             0, // commitsTotal
@@ -242,7 +250,21 @@ public abstract class BaseExportImport {
       long genericsWalking,
       VersionStoreSetup setup)
       throws Exception {
-    scenario(commitsTotal, namedRefs, generics, setup, true);
+    scenario(commitsTotal, namedRefs, generics, setup, false, true);
+  }
+
+  @SuppressWarnings("unused")
+  @ParameterizedTest
+  @MethodSource("scenarios")
+  public void scenariosFullScanZip(
+      long commitsTotal,
+      long commitsLive,
+      long namedRefs,
+      long generics,
+      long genericsWalking,
+      VersionStoreSetup setup)
+      throws Exception {
+    scenario(commitsTotal, namedRefs, generics, setup, true, true);
   }
 
   @SuppressWarnings("unused")
@@ -256,18 +278,23 @@ public abstract class BaseExportImport {
       long genericsWalking,
       VersionStoreSetup setup)
       throws Exception {
-    scenario(commitsLive, namedRefs, genericsWalking, setup, false);
+    scenario(commitsLive, namedRefs, genericsWalking, setup, false, false);
   }
 
   private void scenario(
-      long commits, long namedRefs, long generics, VersionStoreSetup setup, boolean fullScan)
+      long commits,
+      long namedRefs,
+      long generics,
+      VersionStoreSetup setup,
+      boolean zip,
+      boolean fullScan)
       throws Exception {
     HeadsAndForks.Builder headsAndForksBuilder = HeadsAndForks.newBuilder();
     Set<ByteString> deletedHeads = new HashSet<>();
     setup.setup(sourceVersionStore(), sourcePersist(), headsAndForksBuilder, deletedHeads::add);
     HeadsAndForks headsAndForks = headsAndForksBuilder.build();
 
-    ExportMeta exportMeta = exportRepo(fullScan);
+    ExportMeta exportMeta = exportRepo(zip, fullScan);
     soft.assertThat(exportMeta)
         .extracting(
             ExportMeta::getCommitCount,
@@ -278,7 +305,7 @@ public abstract class BaseExportImport {
 
     prepareTargetRepo();
 
-    ImportResult importResult = importRepo();
+    ImportResult importResult = importRepo(zip);
 
     checkRepositoryDescription();
 

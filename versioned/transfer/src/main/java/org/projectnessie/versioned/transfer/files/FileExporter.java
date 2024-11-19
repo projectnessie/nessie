@@ -48,6 +48,11 @@ public abstract class FileExporter implements ExportFileSupplier {
   abstract Path targetDirectory();
 
   @Override
+  public long fixMaxFileSize(long userProvidedMaxFileSize) {
+    return userProvidedMaxFileSize;
+  }
+
+  @Override
   @Nonnull
   public Path getTargetPath() {
     return targetDirectory();
