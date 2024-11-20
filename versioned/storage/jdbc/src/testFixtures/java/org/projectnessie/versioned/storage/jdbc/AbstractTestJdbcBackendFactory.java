@@ -59,6 +59,7 @@ public abstract class AbstractTestJdbcBackendFactory {
               .jdbcUrl(testFactory.jdbcUrl())
               .jdbcUser(testFactory.jdbcUser())
               .jdbcPass(testFactory.jdbcPass())
+              .transactionIsolation(testFactory.transactionIsolation())
               .build()
               .createNewDataSource();
       try {
@@ -116,6 +117,7 @@ public abstract class AbstractTestJdbcBackendFactory {
               .jdbcUrl(testFactory.jdbcUrl())
               .jdbcUser(testFactory.jdbcUser())
               .jdbcPass(testFactory.jdbcPass())
+              .transactionIsolation(testFactory.transactionIsolation())
               .build()
               .createNewDataSource();
       try (@SuppressWarnings("unused")
@@ -167,6 +169,7 @@ public abstract class AbstractTestJdbcBackendFactory {
               .jdbcUrl(testFactory.jdbcUrl())
               .jdbcUser(testFactory.jdbcUser())
               .jdbcPass(testFactory.jdbcPass())
+              .transactionIsolation(testFactory.transactionIsolation())
               .build()
               .createNewDataSource();
       try {

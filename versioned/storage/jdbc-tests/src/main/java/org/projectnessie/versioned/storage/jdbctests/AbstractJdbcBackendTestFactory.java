@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.jdbctests;
 
 import static org.testcontainers.shaded.com.google.common.base.Preconditions.checkState;
 
+import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.persist.Backend;
@@ -34,6 +35,10 @@ public abstract class AbstractJdbcBackendTestFactory implements BackendTestFacto
 
   public abstract String jdbcPass();
 
+  public AgroalConnectionFactoryConfiguration.TransactionIsolation transactionIsolation() {
+    return AgroalConnectionFactoryConfiguration.TransactionIsolation.READ_COMMITTED;
+  }
+
   @Override
   public Backend createNewBackend() throws SQLException {
     checkState(jdbcUrl() != null, "Must set JDBC URL first");
@@ -43,6 +48,7 @@ public abstract class AbstractJdbcBackendTestFactory implements BackendTestFacto
             .jdbcUrl(jdbcUrl())
             .jdbcUser(jdbcUser())
             .jdbcPass(jdbcPass())
+            .transactionIsolation(transactionIsolation())
             .build()
             .createNewDataSource();
 

@@ -45,7 +45,7 @@ import org.projectnessie.versioned.storage.commontests.KeyIndexTestSet.RandomUui
 @Warmup(iterations = 2, time = 2000, timeUnit = MILLISECONDS)
 @Measurement(iterations = 3, time = 1000, timeUnit = MILLISECONDS)
 @Fork(1)
-@Threads(4)
+@Threads(1) // Do NOT use multiple threads StoreIndex is NOT thread safe!
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(MICROSECONDS)
 public class RandomUuidKeyIndexImplBench {

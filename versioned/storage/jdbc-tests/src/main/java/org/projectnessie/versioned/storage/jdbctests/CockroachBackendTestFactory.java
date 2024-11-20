@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.jdbctests;
 
+import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration;
 import jakarta.annotation.Nonnull;
 import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
@@ -26,6 +27,11 @@ public class CockroachBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   public String getName() {
     return JdbcBackendFactory.NAME + "-Cockroach";
+  }
+
+  @Override
+  public AgroalConnectionFactoryConfiguration.TransactionIsolation transactionIsolation() {
+    return AgroalConnectionFactoryConfiguration.TransactionIsolation.SERIALIZABLE;
   }
 
   @Nonnull
