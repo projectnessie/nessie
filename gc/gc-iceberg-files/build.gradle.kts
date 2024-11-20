@@ -22,6 +22,8 @@ description =
   "Nessie GC integration tests with Spark, Iceberg and S3 as a separate project " +
     "due to the hugely different set of dependencies"
 
+dnsjavaDowngrade()
+
 dependencies {
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that

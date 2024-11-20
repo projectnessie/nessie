@@ -23,6 +23,8 @@ publishingHelper { mavenName = "Nessie - GC - CLI integration test" }
 
 val sparkScala = useSparkScalaVersionsForProject("3.4", "2.12")
 
+dnsjavaDowngrade()
+
 dependencies {
   implementation(nessieProject("nessie-gc-tool", "shadow"))
 

@@ -46,6 +46,22 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.process.JavaForkOptions
 
 /**
+ * dnsjava adds itself as the DNS resolver for the whole JVM, which is not something we want in
+ * Nessie.
+ */
+fun Project.dnsjavaDowngrade() {
+  configurations.all {
+    resolutionStrategy {
+      eachDependency {
+        when (requested.module.toString()) {
+          "dnsjava:dnsjava" -> useVersion("3.5.3")
+        }
+      }
+    }
+  }
+}
+
+/**
  * Apply the given `sparkVersion` as a `strictly` version constraint and [withSparkExcludes] on the
  * current [Dependency].
  */

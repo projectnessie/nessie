@@ -25,6 +25,8 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - GC - Standalone command line tool" }
 
+dnsjavaDowngrade()
+
 dependencies {
   implementation(nessieProject("nessie-client"))
   implementation(nessieProject("nessie-gc-base"))
