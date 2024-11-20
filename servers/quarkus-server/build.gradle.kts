@@ -35,6 +35,8 @@ val openapiSource by
 
 val versionIceberg = libs.versions.iceberg.get()
 
+dnsjavaDowngrade()
+
 dependencies {
   implementation(project(":nessie-client"))
   implementation(project(":nessie-model"))
@@ -173,7 +175,20 @@ dependencies {
   testFixturesApi("org.apache.iceberg:iceberg-azure")
   testFixturesApi("org.apache.iceberg:iceberg-api:$versionIceberg:tests")
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg:tests")
-  testFixturesApi(libs.hadoop.common) { hadoopExcludes() }
+  testFixturesApi(libs.hadoop.common) {
+    exclude("ch.qos.reload4j", "reload4j")
+    exclude("com.sun.jersey")
+    exclude("commons-cli", "commons-cli")
+    exclude("jakarta.activation", "jakarta.activation-api")
+    exclude("javax.servlet", "javax.servlet-api")
+    exclude("javax.servlet.jsp", "jsp-api")
+    exclude("javax.ws.rs", "javax.ws.rs-api")
+    exclude("log4j", "log4j")
+    exclude("org.slf4j", "slf4j-log4j12")
+    exclude("org.slf4j", "slf4j-reload4j")
+    exclude("org.eclipse.jetty")
+    exclude("org.apache.zookeeper")
+  }
 
   // These two testFixturesRuntimeOnly are here to avoid the 'Failed to index javax...: Class does
   // not exist in ClassLoader' warnings
@@ -293,19 +308,4 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest").configure { this.enabled = false }
-}
-
-fun ModuleDependency.hadoopExcludes() {
-  exclude("ch.qos.reload4j", "reload4j")
-  exclude("com.sun.jersey")
-  exclude("commons-cli", "commons-cli")
-  exclude("jakarta.activation", "jakarta.activation-api")
-  exclude("javax.servlet", "javax.servlet-api")
-  exclude("javax.servlet.jsp", "jsp-api")
-  exclude("javax.ws.rs", "javax.ws.rs-api")
-  exclude("log4j", "log4j")
-  exclude("org.slf4j", "slf4j-log4j12")
-  exclude("org.slf4j", "slf4j-reload4j")
-  exclude("org.eclipse.jetty")
-  exclude("org.apache.zookeeper")
 }
