@@ -2,6 +2,23 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.100.2 Release (November 20, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.2).
+
+### Highlights
+
+- Export: ZIP file exports were broken in all Nessie versions from 0.92.1 until 0.100.0.
+  If you are using any of these versions, you must not use ZIP export mode, but use the
+  file (directory) based exporter (`--output-format=DIRECTORY`)!
+
+### Fixes
+
+- Export: ZIP file exports are fixed with this Nessie version 0.100.1.
+
+### Commits
+* Force dnsjava downgrade to 3.5.3 (#9951)
+
 ## 0.100.1 Release (November 19, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.1).
