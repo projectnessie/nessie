@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.100.0
+      image: ghcr.io/projectnessie/nessie-cli:0.100.1
       depends_on:
         nessie:
           condition: service_healthy
