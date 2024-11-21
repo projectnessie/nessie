@@ -166,99 +166,87 @@ val cliHelp by tasks.registering(JavaExec::class) {
 
 val gcHelpDir = layout.buildDirectory.dir("gcHelp")
 
-val gcHelp by tasks.registering(JavaExec::class) {
+val gcHelp by tasks.registering(Sync::class) {
+  into(gcHelpDir)
+}
 
-  inputs.files(gcRunner)
-  outputs.dir(gcHelpDir)
+for (cmdArgs in listOf(
+  listOf("help", "--help")) +
+  listOf("mark",
+    "sweep",
+    "gc",
+    "list",
+    "delete",
+    "list-deferred",
+    "deferred-deletes",
+    "show",
+    "show-sql-create-schema-script",
+    "create-sql-schema",
+    "completion-script",
+    "show-licenses").map { cmd -> listOf("help-$cmd", "help", cmd) }
+) {
+  val name = cmdArgs[0]
+  val t = tasks.register<JavaExec>("gc-$name")
+  t.configure {
+    inputs.files(gcRunner)
+    val dir = layout.buildDirectory.dir("gc-$name")
+    outputs.dir(dir)
 
-  classpath(gcRunner)
+    classpath(gcRunner)
 
-  val gcMainClass = "org.projectnessie.gc.tool.cli.CLI"
+    val gcMainClass = "org.projectnessie.gc.tool.cli.CLI"
 
-  mainClass = gcMainClass
-  args("--help")
+    mainClass = gcMainClass
+    args(cmdArgs.subList(1, cmdArgs.size))
 
-  doFirst {
-    delete(gcHelpDir)
-  }
+    standardInput = InputStream.nullInputStream()
+    standardOutput = ByteArrayOutputStream()
 
-  standardInput = InputStream.nullInputStream()
-  standardOutput = ByteArrayOutputStream()
-
-  doLast {
-    gcHelpDir.get().asFile.mkdirs()
-
-    file(gcHelpDir.get().file("gc-help.md")).writeText("```\n$standardOutput\n```\n")
-
-    for (cmd in listOf(
-      "mark",
-      "sweep",
-      "gc",
-      "list",
-      "delete",
-      "list-deferred",
-      "deferred-deletes",
-      "show",
-      "show-sql-create-schema-script",
-      "create-sql-schema",
-      "completion-script",
-      "show-licenses"
-    )) {
-      logger.info("Generating GC command help for '$cmd' ...")
-      val capture = ByteArrayOutputStream()
-      javaexec {
-        mainClass = gcMainClass
-        classpath(gcRunner)
-        standardInput = InputStream.nullInputStream()
-        standardOutput = capture
-        args("help", cmd)
-      }
-      file(gcHelpDir.get().file("gc-help-$cmd.md")).writeText("```\n$capture\n```\n")
+    doLast {
+      dir.get().asFile.mkdirs()
+      file(dir.get().file("gc-$name.md")).writeText("```\n$standardOutput\n```\n")
     }
   }
+  gcHelp.configure { from(t) }
 }
 
 val serverAdminHelpDir = layout.buildDirectory.dir("serverAdminHelp")
 
-val serverAdminHelp by tasks.registering(JavaExec::class) {
+val serverAdminHelp by tasks.registering(Sync::class) {
+  into(serverAdminHelpDir)
+}
 
-  inputs.files(serverAdminRunner)
-  outputs.dir(serverAdminHelpDir)
-
-  classpath(serverAdminRunner)
-  args("help")
-
-  doFirst {
-    delete(serverAdminHelpDir)
-  }
-
-  standardOutput = ByteArrayOutputStream()
-
-  doLast {
-    serverAdminHelpDir.get().asFile.mkdirs()
-
-    file(serverAdminHelpDir.get().file("serverAdmin-help.md")).writeText("```\n$standardOutput\n```\n")
-
-    for (cmd in listOf(
+for (cmdArgs in listOf(
+  listOf("help", "help")) +
+  listOf(
       "info",
       "check-content",
       "delete-catalog-tasks",
       "erase-repository",
       "export",
       "import",
-      "show-licenses"
-    )) {
-      logger.info("Generating GC command help for '$cmd' ...")
-      val capture = ByteArrayOutputStream()
-      javaexec {
-        standardInput = InputStream.nullInputStream()
-        standardOutput = capture
-        classpath(serverAdminRunner)
-        args("help", cmd)
-      }
-      file(serverAdminHelpDir.get().file("serverAdmin-help-$cmd.md")).writeText("```\n$capture\n```\n")
+      "show-licenses").map { cmd -> listOf("help-$cmd", "help", cmd) }
+) {
+  val name = cmdArgs[0]
+  val t = tasks.register<JavaExec>("serverAdmin-$name")
+  t.configure {
+    inputs.files(serverAdminRunner)
+    val dir = layout.buildDirectory.dir("serverAdmin-$name")
+    outputs.dir(dir)
+
+    classpath(serverAdminRunner)
+
+    args(cmdArgs.subList(1, cmdArgs.size))
+
+    standardInput = InputStream.nullInputStream()
+    standardOutput = ByteArrayOutputStream()
+
+    doLast {
+      dir.get().asFile.mkdirs()
+      file(dir.get().file("serverAdmin-$name.md")).writeText("```\n$standardOutput\n```\n")
     }
   }
+  serverAdminHelp.configure { from(t) }
 }
 
 tasks.register<Sync>("generateDocs") {

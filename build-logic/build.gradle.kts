@@ -45,3 +45,7 @@ tasks.register("codeChecks").configure {
   description = "Runs code style and license checks"
   dependsOn("spotlessCheck")
 }
+
+kotlin {
+  jvmToolchain { (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(21)) }
+}

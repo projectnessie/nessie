@@ -178,7 +178,7 @@ class MemoizedGitInfo {
   companion object {
     private fun execProc(rootProject: Project, cmd: String, vararg args: Any): String {
       val buf = ByteArrayOutputStream()
-      rootProject.exec {
+      rootProject.providers.exec {
         executable = cmd
         args(args.toList())
         standardOutput = buf

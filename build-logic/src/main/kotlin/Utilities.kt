@@ -23,6 +23,7 @@ import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownProjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
@@ -214,9 +215,9 @@ fun DependencyHandlerScope.nessieProject(
   if (artifactId.startsWith(":")) {
     throw IllegalArgumentException("artifactId for nessieProject() must not start with ':'")
   }
-  return if (!isIncludedInNesQuEIT(project(":").dependencyProject.gradle)) {
+  return try {
     project(":$artifactId", configuration)
-  } else {
+  } catch (e: UnknownProjectException) {
     val groupId = NessieProjects.groupIdForArtifact(artifactId)
     create(groupId, artifactId, configuration = configuration)
   }
