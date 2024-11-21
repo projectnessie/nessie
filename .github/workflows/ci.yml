@@ -945,13 +945,13 @@ jobs:
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.3 / 2.12 Extensions test
-        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
+        run: ./gradlew -DscalaVersion=2.12 :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
 
       - name: Nessie Spark 3.4 / 2.13 Extensions test
-        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
+        run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
 
       - name: Nessie Spark 3.5 / 2.13 Extensions test
-        run: ./gradlew :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
+        run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
 
       #- name: Publish Nessie + Iceberg to local Maven repo
       #  run: ./gradlew publishLocal --scan
