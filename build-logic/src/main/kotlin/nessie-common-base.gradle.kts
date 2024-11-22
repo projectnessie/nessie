@@ -94,13 +94,6 @@ if (
       }
     }
 
-    if (project.plugins.hasPlugin("antlr")) {
-      antlr4 {
-        licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
-        target("src/**/antlr4/**")
-        targetExclude("build/**")
-      }
-    }
     if (project.plugins.hasPlugin("java-base")) {
       java {
         googleJavaFormat(libsRequiredVersion("googleJavaFormat"))
