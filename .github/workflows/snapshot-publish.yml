@@ -35,7 +35,7 @@ jobs:
           validate-wrappers: false
 
       - name: List projects
-        run: ./gradlew projects
+        run: ./gradlew --no-scan projects
 
       - name: Gradle / publish snapshot
         env:
@@ -45,14 +45,14 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
         run: |
           # 2 Retries - due to Gradle's old and unfixed CME bug
-          ./gradlew compileAll jar || \
-            ./gradlew compileAll jar || \
-            ./gradlew compileAll jar 
+          ./gradlew --no-scan compileAll jar || \
+            ./gradlew --no-scan compileAll jar || \
+            ./gradlew --no-scan compileAll jar 
 
           # 2 Retries - due to Gradle's old and unfixed CME bug
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
+          ./gradlew --no-scan publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+            ./gradlew --no-scan publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar || \
+            ./gradlew --no-scan publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar
 
   publish-images:
     name: Publish Images
@@ -78,7 +78,7 @@ jobs:
           validate-wrappers: false
 
       - name: List projects
-        run: ./gradlew projects
+        run: ./gradlew --no-scan projects
 
       - name: Gradle / build
         env:
@@ -86,9 +86,9 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         run: |
           # 2 Retries - due to Gradle's old and unfixed CME bug
-          ./gradlew compileAll jar || \
-            ./gradlew compileAll jar || \
-            ./gradlew compileAll jar 
+          ./gradlew --no-scan compileAll jar || \
+            ./gradlew --no-scan compileAll jar || \
+            ./gradlew --no-scan compileAll jar 
 
       - name: Docker images publishing
         run: |
