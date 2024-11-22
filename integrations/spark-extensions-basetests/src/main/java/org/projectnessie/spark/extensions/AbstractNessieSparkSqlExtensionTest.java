@@ -752,8 +752,12 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     List<Object[]> rewriteResult =
         sql("CALL nessie.system.rewrite_manifests(table => 'nessie.db.%s')", tableName);
 
-    // re-written files count is 4 and the added files count is 2
-    soft.assertThat(rewriteResult.get(0)).startsWith(9, 2);
+    String version = spark.version();
+    if (version.startsWith("3.3.")) {
+      soft.assertThat(rewriteResult.get(0)).startsWith(5, 1);
+    } else {
+      soft.assertThat(rewriteResult.get(0)).startsWith(11, 2);
+    }
 
     validateContentAfterMaintenance(branchName, tableName);
   }
@@ -776,10 +780,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
             row(23, 2303),
             row(24, 2411),
             row(24, 2403),
-            row(25, 2501),
-            row(25, 2502),
-            row(26, 2601),
-            row(26, 2602));
+            row(27, 2701),
+            row(27, 2702));
   }
 
   void prepareTableForMaintenance(String branchName)
@@ -809,6 +811,10 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     sql("INSERT INTO nessie.db.tbl (id, val) VALUES (25, 2501), (25, 2502)");
     sql("UPDATE nessie.db.tbl SET val = 2411 WHERE id = 24 AND val = 2401");
     sql("DELETE FROM nessie.db.tbl WHERE id = 24 AND val = 2402");
-    sql("INSERT INTO nessie.db.tbl (id, val) VALUES (26, 2601), (26, 2602)");
+    sql(
+        "INSERT INTO nessie.db.tbl (id, val) VALUES (26, 2601), (26, 2602), (27, 2701), (27, 2702)");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 25 AND val = 2501");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 25 AND val = 2502");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 26");
   }
 }
