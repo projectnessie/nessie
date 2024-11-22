@@ -175,7 +175,7 @@ public class TestCachingSecretsBackend {
           @Override
           public <S extends Secret> Optional<S> getSecret(
               @Nonnull URI name, @Nonnull SecretType secretType, @Nonnull Class<S> secretJavaType) {
-            return Optional.of((S) keySecret(name.toString()));
+            return Optional.of(secretJavaType.cast(keySecret(name.toString())));
           }
         };
     SecretsProvider caching = cachingSecrets.forRepository("repoMany", supplier);
