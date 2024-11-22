@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataSimple;
+import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.viewMetadataSimple;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +40,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
 
 public class IcebergGenerateFixtures {
   private IcebergGenerateFixtures() {}
@@ -62,8 +64,8 @@ public class IcebergGenerateFixtures {
     };
   }
 
-  public static String generateCompressedMetadata(ObjectWriter writer, int icebergSpecVersion)
-      throws Exception {
+  public static String generateCompressedMetadataForTable(
+      ObjectWriter writer, int icebergSpecVersion) throws Exception {
     IcebergTableMetadata simpleTableMetadata =
         tableMetadataSimple().formatVersion(icebergSpecVersion).build();
 
@@ -91,6 +93,35 @@ public class IcebergGenerateFixtures {
     return writer.write(URI.create(metadataPath), data);
   }
 
+  public static String generateCompressedMetadataForView(
+      ObjectWriter writer, int icebergSpecVersion) throws Exception {
+    IcebergViewMetadata simpleViewMetadata =
+        viewMetadataSimple().formatVersion(icebergSpecVersion).build();
+
+    byte[] data;
+    try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = new GZIPOutputStream(bytes)) {
+      IcebergJson.objectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .writeValue(gzip, simpleViewMetadata);
+      gzip.flush();
+      data = bytes.toByteArray();
+    }
+    String metadataPath = "view-metadata-simple-no-manifest/";
+    switch (icebergSpecVersion) {
+      case 1:
+        metadataPath += "view-metadata-simple-compressed-no-manifest.metadata.json.gz";
+        break;
+      case 2:
+        metadataPath += "view-metadata-simple-compressed-no-manifest.gz.metadata.json";
+        break;
+      default:
+        metadataPath += "view-metadata-simple-compressed-no-manifest.json.gz";
+        break;
+    }
+    return writer.write(URI.create(metadataPath), data);
+  }
+
   public static String generateSimpleMetadata(ObjectWriter writer, int icebergSpecVersion)
       throws Exception {
     IcebergTableMetadata simpleTableMetadata =
@@ -100,6 +131,18 @@ public class IcebergGenerateFixtures {
         IcebergJson.objectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .writeValueAsString(simpleTableMetadata)
+            .getBytes(UTF_8));
+  }
+
+  public static String generateSimpleMetadataForView(ObjectWriter writer, int icebergSpecVersion)
+      throws Exception {
+    IcebergViewMetadata simpViewMetadata =
+        viewMetadataSimple().formatVersion(icebergSpecVersion).build();
+    return writer.write(
+        URI.create("view-metadata-simple-no-manifest/view-metadata-simple-no-manifest.json"),
+        IcebergJson.objectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .writeValueAsString(simpViewMetadata)
             .getBytes(UTF_8));
   }
 
