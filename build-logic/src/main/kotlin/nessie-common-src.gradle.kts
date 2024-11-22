@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import java.io.ByteArrayOutputStream
-import java.nio.charset.StandardCharsets
 import java.util.Properties
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
@@ -177,13 +175,16 @@ if (project.hasProperty("release")) {
 class MemoizedGitInfo {
   companion object {
     private fun execProc(rootProject: Project, cmd: String, vararg args: Any): String {
-      val buf = ByteArrayOutputStream()
-      rootProject.providers.exec {
-        executable = cmd
-        args(args.toList())
-        standardOutput = buf
-      }
-      return buf.toString(StandardCharsets.UTF_8).trim()
+      var out =
+        rootProject.providers
+          .exec {
+            executable = cmd
+            args(args.toList())
+          }
+          .standardOutput
+          .asText
+          .get()
+      return out.trim()
     }
 
     fun gitInfo(rootProject: Project, attribs: Attributes) {
