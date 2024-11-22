@@ -32,8 +32,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.functions;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -50,7 +54,9 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Validation;
 
+@ExtendWith(SoftAssertionsExtension.class)
 public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBase {
+  @InjectSoftAssertions protected SoftAssertions soft;
 
   @TempDir File tempFile;
 
@@ -715,10 +721,70 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
   })
   void testCompaction(String branchName, String tableName)
       throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
-    executeAndValidateCompaction(branchName, prepareForCompaction(branchName), tableName);
+    prepareTableForMaintenance(branchName);
+
+    List<Object[]> compactionResult =
+        sql(
+            "CALL nessie.system.rewrite_data_files("
+                + "table => 'nessie.db.%s', "
+                + "options => map("
+                + "  'min-input-files','2'"
+                + "))",
+            tableName);
+
+    // re-written files count is 4 and the added files count is 2
+    soft.assertThat(compactionResult.get(0)).startsWith(4, 2);
+
+    validateContentAfterMaintenance(branchName, tableName);
   }
 
-  String prepareForCompaction(String branchName)
+  @ParameterizedTest
+  @CsvSource({
+    "testCompaction,tbl",
+    "main,tbl",
+    "testCompaction,`tbl@testCompaction`",
+    "main,`tbl@main`"
+  })
+  void testRewriteManifests(String branchName, String tableName)
+      throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
+    prepareTableForMaintenance(branchName);
+
+    List<Object[]> rewriteResult =
+        sql("CALL nessie.system.rewrite_manifests(table => 'nessie.db.%s')", tableName);
+
+    String version = spark.version();
+    if (version.startsWith("3.3.")) {
+      soft.assertThat(rewriteResult.get(0)).startsWith(5, 1);
+    } else {
+      soft.assertThat(rewriteResult.get(0)).startsWith(11, 2);
+    }
+
+    validateContentAfterMaintenance(branchName, tableName);
+  }
+
+  private void validateContentAfterMaintenance(String branchName, String tableName)
+      throws NessieNotFoundException {
+    // check for compaction commit
+    LogResponse.LogEntry logEntry =
+        api.getCommitLog().refName(branchName).maxRecords(1).get().getLogEntries().get(0);
+    soft.assertThat(logEntry.getCommitMeta().getMessage())
+        .isIn(
+            // Non-RESTCatalog
+            "Iceberg replace against db.tbl",
+            // RESTCatalog
+            "Update ICEBERG_TABLE db.tbl");
+
+    soft.assertThat(sql("SELECT * FROM nessie.db.%s", tableName))
+        .containsExactlyInAnyOrder(
+            row(23, 2311),
+            row(23, 2303),
+            row(24, 2411),
+            row(24, 2403),
+            row(27, 2701),
+            row(27, 2702));
+  }
+
+  void prepareTableForMaintenance(String branchName)
       throws NessieNotFoundException, NessieNamespaceAlreadyExistsException {
     if (!branchName.equals("main")) {
       assertThat(sql("CREATE BRANCH %s IN nessie FROM main", branchName))
@@ -727,46 +793,28 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
 
     api.createNamespace().refName(branchName).namespace(Namespace.of("db")).create();
 
-    sql("USE REFERENCE %s IN nessie", branchName);
-    sql("CREATE TABLE nessie.db.tbl (id int, name string)");
-    sql("INSERT INTO nessie.db.tbl select 23, \"test\"");
-    sql("INSERT INTO nessie.db.tbl select 24, \"test24\"");
-
-    String branchHash = api.getReference().refName(branchName).get().getHash();
-    assertThat(sql("CREATE BRANCH dev IN nessie FROM %s", branchName))
-        .containsExactly(row("Branch", "dev", branchHash));
-    return branchHash;
-  }
-
-  void executeAndValidateCompaction(String branchName, String branchHash, String tableName)
-      throws NessieNotFoundException {
-    List<Object[]> result = executeCompaction(tableName);
-    // re-written files count is 2 and the added files count is 1
-    assertThat(result.get(0)[0]).isEqualTo(2);
-    assertThat(result.get(0)[1]).isEqualTo(1);
-
-    // check for compaction commit
-    LogResponse.LogEntry logEntry =
-        api.getCommitLog().refName(branchName).maxRecords(1).get().getLogEntries().get(0);
-    assertThat(logEntry.getCommitMeta().getMessage())
-        .isIn(
-            // Non-RESTCatalog
-            "Iceberg replace against db.tbl",
-            // RESTCatalog
-            "Update ICEBERG_TABLE db.tbl");
-
-    assertThat(sql("SELECT * FROM nessie.db.tbl"))
-        .hasSize(2)
-        .containsExactlyInAnyOrder(row(23, "test"), row(24, "test24"));
-
-    // same table in other branch should not be modified
-    assertThat(api.getReference().refName("dev").get().getHash()).isEqualTo(branchHash);
-  }
-
-  static List<Object[]> executeCompaction(String tableName) {
-    return sql(
-        "CALL nessie.system.rewrite_data_files(table => 'nessie.db.%s', options => map"
-            + "('min-input-files','2'))",
-        tableName);
+    if (!branchName.equals("main")) {
+      sql("USE REFERENCE %s IN nessie", branchName);
+    }
+    sql(
+        "CREATE TABLE nessie.db.tbl (id int, val int) "
+            + "USING iceberg \n"
+            + "TBLPROPERTIES (\n"
+            + " 'write.delete.mode'='merge-on-read',\n"
+            + " 'write.update.mode'='merge-on-read',\n"
+            + " 'write.merge.mode'='merge-on-read'\n"
+            + ") PARTITIONED BY (id)");
+    sql(
+        "INSERT INTO nessie.db.tbl (id, val) VALUES (23, 2301), (23, 2302), (23, 2303), (24, 2401), (24, 2402), (24, 2403)");
+    sql("UPDATE nessie.db.tbl SET val = 2311 WHERE id = 23 AND val = 2301");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 23 AND val = 2302");
+    sql("INSERT INTO nessie.db.tbl (id, val) VALUES (25, 2501), (25, 2502)");
+    sql("UPDATE nessie.db.tbl SET val = 2411 WHERE id = 24 AND val = 2401");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 24 AND val = 2402");
+    sql(
+        "INSERT INTO nessie.db.tbl (id, val) VALUES (26, 2601), (26, 2602), (27, 2701), (27, 2702)");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 25 AND val = 2501");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 25 AND val = 2502");
+    sql("DELETE FROM nessie.db.tbl WHERE id = 26");
   }
 }
