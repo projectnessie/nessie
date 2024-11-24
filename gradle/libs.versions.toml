@@ -153,7 +153,7 @@ undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow"
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 vertx-core = { module = "io.vertx:vertx-core", version = "4.5.11" }
 wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "3.0.1" }
-zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-7" }
+zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-8" }
 
 [plugins]
 gatling = { id = "io.gatling.gradle", version = "3.13.1" }
