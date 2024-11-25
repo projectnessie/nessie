@@ -19,8 +19,10 @@ import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
-import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateCompressedMetadata;
+import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateCompressedMetadataForTable;
+import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateCompressedMetadataForView;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateSimpleMetadata;
+import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.generateSimpleMetadataForView;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures.objectWriterForPath;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
@@ -48,7 +50,9 @@ import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.local.LocalObjectIO;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergGenerateFixtures;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
+import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.nessie.tasks.async.pool.JavaPoolTasksAsync;
 import org.projectnessie.nessie.tasks.service.TasksServiceConfig;
 import org.projectnessie.nessie.tasks.service.impl.TaskServiceMetrics;
@@ -132,9 +136,49 @@ public class TestIcebergStuff {
   static Stream<Arguments> icebergTableImports() throws Exception {
     IcebergGenerateFixtures.ObjectWriter objectWriter = objectWriterForPath(tempDir);
     return Stream.of(
-        arguments("compressed table-metadata generic", generateCompressedMetadata(objectWriter, 0)),
-        arguments("compressed table-metadata v1", generateCompressedMetadata(objectWriter, 1)),
-        arguments("compressed table-metadata v2", generateCompressedMetadata(objectWriter, 2)),
+        arguments(
+            "compressed table-metadata generic",
+            generateCompressedMetadataForTable(objectWriter, 0)),
+        arguments(
+            "compressed table-metadata v1", generateCompressedMetadataForTable(objectWriter, 1)),
+        arguments(
+            "compressed table-metadata v2", generateCompressedMetadataForTable(objectWriter, 2)),
         arguments("simple table-metadata", generateSimpleMetadata(objectWriter, 2)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("icebergViewImports")
+  public void icebergViewImports(
+      @SuppressWarnings("unused") String testName, String icebergViewMetadata) throws Exception {
+    BackendExceptionMapper exceptionMapper = BackendExceptionMapper.builder().build();
+
+    ObjectIO objectIO = new LocalObjectIO();
+    IcebergStuff icebergStuff =
+        new IcebergStuff(
+            objectIO,
+            persist,
+            tasksService,
+            new EntitySnapshotTaskBehavior(exceptionMapper, Duration.ofMillis(1)),
+            executor);
+
+    ObjId snapshotId = randomObjId();
+    IcebergView icebergView = IcebergView.of("1", icebergViewMetadata, 1, 1);
+
+    CompletionStage<NessieViewSnapshot> stage =
+        icebergStuff.retrieveIcebergSnapshot(snapshotId, icebergView);
+    NessieViewSnapshot snapshot = stage.toCompletableFuture().get(1, TimeUnit.MINUTES);
+    soft.assertThat(snapshot).isNotNull();
+  }
+
+  static Stream<Arguments> icebergViewImports() throws Exception {
+    IcebergGenerateFixtures.ObjectWriter objectWriter = objectWriterForPath(tempDir);
+    return Stream.of(
+        arguments(
+            "compressed view-metadata generic", generateCompressedMetadataForView(objectWriter, 0)),
+        arguments(
+            "compressed view-metadata v1", generateCompressedMetadataForView(objectWriter, 1)),
+        arguments(
+            "compressed view-metadata v2", generateCompressedMetadataForView(objectWriter, 2)),
+        arguments("simple view-metadata", generateSimpleMetadataForView(objectWriter, 2)));
   }
 }

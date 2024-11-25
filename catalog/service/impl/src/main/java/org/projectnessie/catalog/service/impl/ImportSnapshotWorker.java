@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.service.objtypes.EntityObj.entityObjIdFo
 import static org.projectnessie.nessie.tasks.api.TaskState.successState;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.UUID;
@@ -93,12 +94,7 @@ final class ImportSnapshotWorker {
       NessieTable table;
       IcebergTableMetadata tableMetadata;
       try {
-        InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-        if (metadataLocation.requiredPath().endsWith(".gz")
-            || metadataLocation.requiredPath().endsWith(".gz.metadata.json")) {
-          input = new GZIPInputStream(input);
-        }
-        tableMetadata = IcebergJson.objectMapper().readValue(input, IcebergTableMetadata.class);
+        tableMetadata = icebergMetadata(metadataLocation, IcebergTableMetadata.class);
         table = entityObjForContent(content, tableMetadata, entityObjId);
       } catch (Exception e) {
         throw new RuntimeException(
@@ -176,12 +172,7 @@ final class ImportSnapshotWorker {
       IcebergViewMetadata viewMetadata;
       StorageUri metadataLocation = StorageUri.of(content.getMetadataLocation());
       try {
-
-        InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-        if (metadataLocation.requiredPath().endsWith(".gz")) {
-          input = new GZIPInputStream(input);
-        }
-        viewMetadata = IcebergJson.objectMapper().readValue(input, IcebergViewMetadata.class);
+        viewMetadata = icebergMetadata(metadataLocation, IcebergViewMetadata.class);
         view =
             entityObjForContent(
                 content,
@@ -271,5 +262,20 @@ final class ImportSnapshotWorker {
         .entity(entity)
         .versionToken(randomObjId().toString())
         .build();
+  }
+
+  private <T> T icebergMetadata(StorageUri metadataLocation, Class<? extends T> metadataType)
+      throws IOException {
+    InputStream input = metadataInputStream(metadataLocation);
+    return IcebergJson.objectMapper().readValue(input, metadataType);
+  }
+
+  private InputStream metadataInputStream(StorageUri metadataLocation) throws IOException {
+    final InputStream input = taskRequest.objectIO().readObject(metadataLocation);
+    if (metadataLocation.requiredPath().endsWith(".gz")
+        || metadataLocation.requiredPath().endsWith(".gz.metadata.json")) {
+      return new GZIPInputStream(input);
+    }
+    return input;
   }
 }

@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergBlobMetadata;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergNamespace;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionStatisticsFile;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
@@ -57,6 +58,9 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshotLogEntry;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshotRef;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergStatisticsFile;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewHistoryEntry;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewVersion;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergType;
 
 public class IcebergFixtures {
@@ -177,6 +181,26 @@ public class IcebergFixtures {
         .putRef("main", IcebergSnapshotRef.builder().type("branch").snapshotId(11).build())
         .addSnapshotLog(
             IcebergSnapshotLogEntry.builder().snapshotId(11).timestampMs(12345678L).build());
+  }
+
+  public static IcebergViewMetadata.Builder viewMetadataSimple() {
+    IcebergSchema schemaAllTypes = icebergSchemaAllTypes();
+
+    return IcebergViewMetadata.builder()
+        .viewUuid(UUID.randomUUID().toString())
+        .location("view-location")
+        .currentVersionId(11)
+        .putProperty("prop", "value")
+        .addSchemas(schemaAllTypes)
+        .addVersions(
+            IcebergViewVersion.builder()
+                .versionId(11)
+                .schemaId(schemaAllTypes.schemaId())
+                .putSummary("operation", "testing")
+                .timestampMs(12345678L)
+                .defaultNamespace(IcebergNamespace.EMPTY_ICEBERG_NAMESPACE)
+                .build())
+        .addVersionLog(IcebergViewHistoryEntry.icebergViewHistoryEntry(12345678L, 11));
   }
 
   public static IcebergTableMetadata.Builder tableMetadataWithStatistics() {
