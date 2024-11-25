@@ -48,7 +48,7 @@ awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.29.20" }
 azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.29" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
-cassandra-driver-bom = { module = "com.datastax.oss:java-driver-bom", version = "4.17.0" }
+cassandra-driver-bom = { module = "org.apache.cassandra:java-driver-bom", version = "4.18.1" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.1.8" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.5.1" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }

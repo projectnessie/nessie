@@ -37,6 +37,8 @@ val versionIceberg = libs.versions.iceberg.get()
 
 dnsjavaDowngrade()
 
+cassandraDriverTweak()
+
 dependencies {
   implementation(project(":nessie-client"))
   implementation(project(":nessie-model"))

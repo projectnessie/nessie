@@ -21,6 +21,8 @@ plugins {
 
 extra["maven.name"] = "Nessie - Events - SPI Reference Implementation"
 
+cassandraDriverTweak()
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-events-api"))

@@ -46,6 +46,20 @@ import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
 import org.gradle.process.JavaForkOptions
 
+fun Project.cassandraDriverTweak() {
+  configurations.all {
+    resolutionStrategy {
+      eachDependency {
+        if (requested.module.toString() == "com.datastax.oss:java-driver-core") {
+          var libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+          val cstarVersion = libs.findLibrary("cassandra-driver-bom").get().get().version
+          useTarget("org.apache.cassandra:java-driver-core:$cstarVersion")
+        }
+      }
+    }
+  }
+}
+
 /**
  * dnsjava adds itself as the DNS resolver for the whole JVM, which is not something we want in
  * Nessie.

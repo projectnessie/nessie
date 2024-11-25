@@ -30,6 +30,8 @@ val quarkusRunner by
     description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
   }
 
+cassandraDriverTweak()
+
 dependencies {
   implementation(project(":nessie-quarkus-common"))
   implementation(project(":nessie-quarkus-config"))
