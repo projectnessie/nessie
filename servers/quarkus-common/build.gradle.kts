@@ -18,6 +18,8 @@ plugins { id("nessie-conventions-quarkus") }
 
 publishingHelper { mavenName = "Nessie - Quarkus Common" }
 
+cassandraDriverTweak()
+
 dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-common"))
@@ -67,6 +69,7 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-bigtable")
   implementation(enforcedPlatform(libs.quarkus.cassandra.bom))
+  implementation(enforcedPlatform(libs.cassandra.driver.bom))
   implementation("com.datastax.oss.quarkus:cassandra-quarkus-client") {
     // spotbugs-annotations has only a GPL license!
     exclude("com.github.spotbugs", "spotbugs-annotations")

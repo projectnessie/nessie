@@ -21,6 +21,8 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Events - Quarkus" }
 
+cassandraDriverTweak()
+
 dependencies {
   implementation(project(":nessie-versioned-spi"))
   implementation(project(":nessie-events-api"))

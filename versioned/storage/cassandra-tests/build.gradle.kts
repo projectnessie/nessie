@@ -33,7 +33,7 @@ dependencies {
   annotationProcessor(libs.immutables.value.processor)
 
   implementation(platform(libs.cassandra.driver.bom))
-  implementation("com.datastax.oss:java-driver-core")
+  implementation("org.apache.cassandra:java-driver-core")
 
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:cassandra") {
