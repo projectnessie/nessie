@@ -17,7 +17,6 @@ package org.projectnessie.quarkus.providers.storage;
 
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.JDBC;
 
-import io.quarkus.agroal.runtime.UnconfiguredDataSource;
 import io.quarkus.arc.All;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
@@ -108,9 +107,6 @@ public class JdbcBackendBuilder implements BackendBuilder {
             .map(JdbcBackendBuilder::unquoteDataSourceName)
             .orElse(DEFAULT_DATA_SOURCE_NAME);
     DataSource dataSource = findDataSourceByName(dataSourceName);
-    if (dataSource instanceof UnconfiguredDataSource e) {
-      e.throwException();
-    }
     if (dataSourceName.equals(DEFAULT_DATA_SOURCE_NAME)) {
       LOGGER.warn(
           "Using legacy datasource configuration under quarkus.datasource.*: "
