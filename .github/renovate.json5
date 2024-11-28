@@ -23,12 +23,41 @@
       labels: [],
     },
 
+    // Schedule npm + pip on weekends
+    {
+      matchManagers: ["pip_requirements", "pip_setup"],
+      extends: ["schedule:weekends"],
+    },
+
+    //
+    // General update-type rules
+    //
+
+    // Check for updates, merge automatically
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      platformAutomerge: true,
+    },
+
+    // Check for major updates, but do not merge automatically
+    {
+      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
+      matchUpdateTypes: ["major"],
+      automerge: false,
+    },
+
     {
       matchManagers: ["github-actions"],
       matchUpdateTypes: ["major", "minor", "patch", "digest"],
       automerge: true,
       platformAutomerge: true,
     },
+
+    //
+    // Specific rules
+    //
 
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
@@ -51,27 +80,6 @@
       ],
       automerge: true,
       platformAutomerge: true
-    },
-
-    // Check for updates, merge automatically
-    {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
-      platformAutomerge: true,
-    },
-
-    // Schedule npm + pip on weekends
-    {
-      matchManagers: ["pip_requirements", "pip_setup"],
-      extends: ["schedule:weekends"],
-    },
-
-    // Check for major updates, but do not merge automatically
-    {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
-      matchUpdateTypes: ["major"],
-      automerge: false,
     },
 
     // Jandex special
