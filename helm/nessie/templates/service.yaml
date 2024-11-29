@@ -39,7 +39,7 @@ spec:
       protocol: TCP
     {{- end }}
   sessionAffinity: {{ .Values.service.sessionAffinity }}
-  {{- if $svc.clusterIP }}
+  {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
   {{- end -}}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
