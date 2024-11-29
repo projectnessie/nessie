@@ -43,7 +43,7 @@ spec:
   clusterIP: {{ .Values.service.clusterIP }}
   {{- end -}}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
-  {{- if ge .Capabilities.KubeVersion.Minor 31 }}
+  {{- if ge (int .Capabilities.KubeVersion.Minor) 31 }}
   trafficDistribution: {{ .Values.service.trafficDistribution }}
   {{- end -}}
 ---
@@ -106,7 +106,7 @@ spec:
   {{- if $svc.externalTrafficPolicy }}
   externalTrafficPolicy: {{ $svc.externalTrafficPolicy }}
   {{- end -}}
-  {{- if and (ge .Capabilities.KubeVersion.Minor 31) ($svc.trafficDistribution) }}
+  {{- if and (ge (int .Capabilities.KubeVersion.Minor) 31) ($svc.trafficDistribution) }}
   trafficDistribution: {{ $svc.trafficDistribution }}
   {{- end -}}
 {{- end }}
