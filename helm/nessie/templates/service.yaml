@@ -39,6 +39,13 @@ spec:
       protocol: TCP
     {{- end }}
   sessionAffinity: {{ .Values.service.sessionAffinity }}
+  {{- if $svc.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  {{- end -}}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- if ge .Capabilities.KubeVersion.Minor 31 }}
+  trafficDistribution: {{ .Values.service.trafficDistribution }}
+  {{- end -}}
 ---
 apiVersion: v1
 kind: Service
@@ -93,4 +100,13 @@ spec:
   {{- if $svc.sessionAffinity }}
   sessionAffinity: {{ $svc.sessionAffinity }}
   {{- end }}
+  {{- if $svc.clusterIP }}
+  clusterIP: {{ $svc.clusterIP }}
+  {{- end -}}
+  {{- if $svc.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ $svc.externalTrafficPolicy }}
+  {{- end -}}
+  {{- if and (ge .Capabilities.KubeVersion.Minor 31) ($svc.trafficDistribution) }}
+  trafficDistribution: {{ $svc.trafficDistribution }}
+  {{- end -}}
 {{- end }}
