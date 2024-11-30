@@ -845,7 +845,7 @@ ingress:
 # -- Override the strategy for nessie deployment.
 # Valid values for type are: RollingUpdate and Recreate.
 # If you are using the ROCKSDB version store type then you should use Recreate.
-# Max Surge will allow new pods to be created before old ones are culled. Do not use enable this when using ROCKSDB
+# Max Surge will allow new pods to be created before old ones are culled. Do not enable this when using ROCKSDB
 # version store type.
 # Max Unavailable will allow old pods to be culled before replacements are created
 # See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
