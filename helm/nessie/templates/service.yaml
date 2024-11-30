@@ -102,11 +102,11 @@ spec:
   {{- end }}
   {{- if $svc.clusterIP }}
   clusterIP: {{ $svc.clusterIP }}
-  {{- end -}}
+  {{- end }}
   {{- if $svc.externalTrafficPolicy }}
   externalTrafficPolicy: {{ $svc.externalTrafficPolicy }}
-  {{- end -}}
+  {{- end }}
   {{- if and (ge (int .Capabilities.KubeVersion.Minor) 31) ($svc.trafficDistribution) }}
   trafficDistribution: {{ $svc.trafficDistribution }}
-  {{- end -}}
+  {{- end }}
 {{- end }}
