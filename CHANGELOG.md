@@ -14,11 +14,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Add `deploymentStrategy` to Helm deployment configs
+
 ### Changes
 
 ### Deprecations
 
 ### Fixes
+
+- Allow multiple `SetProperties` updates via Iceberg REST.
 
 ### Commits
 
