@@ -118,7 +118,11 @@ dependencies {
 
 val intTest = tasks.named<Test>("intTest")
 
-intTest.configure { systemProperty("aws.region", "us-east-1") }
+intTest.configure {
+  systemProperty("aws.region", "us-east-1")
+  // Java 23 & Hadoop
+  systemProperty("java.security.manager", "allow")
+}
 
 nessieQuarkusApp {
   includeTask(intTest)
