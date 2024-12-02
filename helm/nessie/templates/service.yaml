@@ -41,12 +41,12 @@ spec:
   sessionAffinity: {{ .Values.service.sessionAffinity }}
   {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
-  {{- end -}}
+  {{- end }}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy }}
   {{- if ge (int .Capabilities.KubeVersion.Minor) 31 }}
   trafficDistribution: {{ .Values.service.trafficDistribution }}
-  {{- end -}}
+  {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -110,7 +110,7 @@ spec:
   {{- if $svc.internalTrafficPolicy }}
   internalTrafficPolicy: {{ $svc.internalTrafficPolicy }}
   {{- end }}
-  {{- if and (ge (int .Capabilities.KubeVersion.Minor) 31) ($svc.trafficDistribution) }}
+  {{- if and (ge (int $.Capabilities.KubeVersion.Minor) 31) ($svc.trafficDistribution) }}
   trafficDistribution: {{ $svc.trafficDistribution }}
   {{- end }}
 {{- end }}
