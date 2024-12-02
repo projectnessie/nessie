@@ -14,17 +14,23 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Add `deploymentStrategy` to Helm deployment configs
-
 ### Changes
 
 ### Deprecations
 
 ### Fixes
 
-- Allow multiple `SetProperties` updates via Iceberg REST.
-
 ### Commits
+
+## [0.100.3] Release (2024-12-02)
+
+### New Features
+
+- Add `deploymentStrategy` to Helm deployment configs
+
+### Fixes
+
+- Allow multiple `SetProperties` updates via Iceberg REST.
 
 ## [0.100.1] Release (2024-11-19)
 
@@ -955,7 +961,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.100.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.100.3...HEAD
+[0.100.3]: https://github.com/projectnessie/nessie/compare/nessie-0.100.1...nessie-0.100.3
 [0.100.1]: https://github.com/projectnessie/nessie/compare/nessie-0.100.0...nessie-0.100.1
 [0.100.0]: https://github.com/projectnessie/nessie/compare/nessie-0.99.0...nessie-0.100.0
 [0.99.0]: https://github.com/projectnessie/nessie/compare/nessie-0.97.1...nessie-0.99.0

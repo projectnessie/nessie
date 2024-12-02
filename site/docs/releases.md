@@ -2,6 +2,37 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.100.3 Release (December 02, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.3).
+
+### New Features
+
+- Add `deploymentStrategy` to Helm deployment configs
+
+### Fixes
+
+- Allow multiple `SetProperties` updates via Iceberg REST.
+
+### Commits
+* Ninja: changelog
+* Add deployment strategy to helm deployment configs (#10012)
+* Catalog: Allow multiple `SetProperties` updates (#10024)
+* Build: Allow testing GC with Java 23 (#10023)
+* Renovate: Update config for trino-client (#10004)
+* Quarkus/Agoral: fix deprecation (#10000)
+* Migrate to `org.apache.cassandra:java-driver-bom` and bump to latest version 4.18.1 (#9992)
+* Support v2 iceberg views with gzip (#9982)
+* Snapshot publishing: no build scan (#9976)
+* Nit: Remove antlr-removal left-over (#9977)
+* Spark integrations: enhance tests to use `merge-on-read` for compaction and rewrite-manifests (#9974)
+* Build/release: Fix Git info after #9965 (#9975)
+* Remove "AWS Athena" from the index page (#9972)
+* Nit: fix an "unchecked/unsafe case" warning (#9966)
+* CI: Use a non-rate-limiting docker.io mirror (#9911)
+* Build: tackle Gradle deprecations marked as for-removal in Gradle 9 (#9965)
+* CI: Explicitly configure Scala version (#9970)
+
 ## 0.100.2 Release (November 20, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.2).
