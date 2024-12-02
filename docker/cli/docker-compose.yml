@@ -35,7 +35,7 @@ services:
       retries: 15
 
   nessie-cli:
-    image: ghcr.io/projectnessie/nessie-cli:0.100.2
+    image: ghcr.io/projectnessie/nessie-cli:0.100.3
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     depends_on:
