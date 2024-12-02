@@ -214,6 +214,8 @@ data:
     {{- if not $filesystem.name -}}{{- required ( printf "catalog.storage.adls.filesystems[%d]: missing filesystem name" $i ) $filesystem.name -}}{{- end -}}
     {{- list $filesystem ( printf "nessie.catalog.service.adls.file-systems.filesystem%d." (add $i 1) ) $map | include "nessie.applyCatalogStorageAdlsFileSystemOptions" }}
     {{- end -}}
+    {{- else -}}
+    {{- $_ = set $map "nessie.catalog.object-stores.health-check.enabled" false -}}
     {{- end -}}
 
     {{- list .Values.advancedConfig "" $map | include "nessie.mergeAdvancedConfig" }}
