@@ -34,13 +34,15 @@ public final class CatalogObjIds {
 
   public static ObjId snapshotIdForContent(Content content) {
     if (content.getType().equals(ICEBERG_TABLE) || content.getType().equals(ICEBERG_VIEW)) {
-      IcebergContent icebergContent = (IcebergContent) content;
-      return objIdHasher("ContentSnapshot")
-          .hash(icebergContent.getMetadataLocation())
-          .hash(icebergContent.getVersionId())
-          .generate();
+      var icebergContent = (IcebergContent) content;
+      return snapshotIdForContent(
+          icebergContent.getMetadataLocation(), icebergContent.getVersionId());
     }
     return null;
+  }
+
+  public static ObjId snapshotIdForContent(String metadataLocation, long versionId) {
+    return objIdHasher("ContentSnapshot").hash(metadataLocation).hash(versionId).generate();
   }
 
   public static ObjId entityIdForContent(Content content) {

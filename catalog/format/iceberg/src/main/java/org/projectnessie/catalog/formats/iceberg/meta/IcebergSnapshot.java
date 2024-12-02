@@ -17,6 +17,7 @@ package org.projectnessie.catalog.formats.iceberg.meta;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -30,6 +31,8 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
+import org.projectnessie.catalog.model.snapshot.ImmutableImplicitIcebergSnapshot;
+import org.projectnessie.catalog.model.snapshot.ImplicitIcebergSnapshot;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
@@ -60,6 +63,31 @@ public interface IcebergSnapshot {
         manifests,
         manifestList,
         schemaId);
+  }
+
+  static IcebergSnapshot fromImplicitIcebergSnapshot(
+      ImplicitIcebergSnapshot implicit, Long parentSnapshotId) {
+    return ImmutableIcebergSnapshot.of(
+        implicit.sequenceNumber(),
+        implicit.snapshotId(),
+        parentSnapshotId,
+        implicit.timestampMs(),
+        implicit.summary(),
+        implicit.manifests(),
+        implicit.manifestList(),
+        implicit.schemaId());
+  }
+
+  @JsonIgnore
+  default ImplicitIcebergSnapshot asImplicitIcebergSnapshot() {
+    return ImmutableImplicitIcebergSnapshot.of(
+        snapshotId(),
+        sequenceNumber(),
+        timestampMs(),
+        summary(),
+        manifests(),
+        manifestList(),
+        schemaId());
   }
 
   @Nullable

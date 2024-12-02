@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.service.api;
 
 import jakarta.annotation.Nullable;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.projectnessie.api.v2.params.ParsedReference;
-import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -78,10 +76,7 @@ public interface CatalogService {
       ApiContext apiContext)
       throws BaseNessieClientServerException;
 
-  interface CatalogUriResolver {
-    URI icebergSnapshot(
-        Reference effectiveReference, ContentKey key, NessieEntitySnapshot<?> snapshot);
-  }
+  boolean checkIcebergSnapshotPresent(String metadataLocation, long versionId);
 
   Optional<String> validateStorageLocation(String location);
 

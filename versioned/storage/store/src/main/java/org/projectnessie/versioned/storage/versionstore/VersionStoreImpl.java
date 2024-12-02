@@ -83,22 +83,27 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitConsistency;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Detached;
 import org.projectnessie.model.IdentifiedContentKey;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.RepositoryConfig;
+import org.projectnessie.model.Tag;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.ContentHistoryEntry;
 import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.DetachedRef;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.GetNamedRefsParams.RetrieveOptions;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableContentHistoryEntry;
 import org.projectnessie.versioned.ImmutableReferenceAssignedResult;
 import org.projectnessie.versioned.ImmutableReferenceCreatedResult;
 import org.projectnessie.versioned.ImmutableReferenceDeletedResult;
@@ -134,6 +139,7 @@ import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundExceptio
 import org.projectnessie.versioned.storage.common.exceptions.RetryTimeoutException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
+import org.projectnessie.versioned.storage.common.indexes.StoreIndexes;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.logic.ConsistencyLogic;
@@ -636,6 +642,130 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
+  public Iterator<ContentHistoryEntry> getContentChanges(Ref ref, ContentKey key)
+      throws ReferenceNotFoundException {
+    var refMapping = new RefMapping(persist);
+    var head = refMapping.resolveRefHead(ref);
+    if (head == null) {
+      return emptyOrNotFound(ref, PaginationIterator.empty());
+    }
+
+    var commitLogic = commitLogic(persist);
+    var result = commitLogic.commitLog(commitLogQuery(head.id()));
+    var contentMapping = new ContentMapping(persist);
+    var indexesLogic = indexesLogic(persist);
+
+    // Return the history of a Nessie content object, considering renames
+
+    return new AbstractIterator<>() {
+      UUID contentId;
+      StoreKey storeKey = keyToStoreKey(key);
+      ContentKey contentKey = key;
+      ObjId previousContentObjId;
+
+      @CheckForNull
+      @Override
+      protected ContentHistoryEntry computeNext() {
+        while (true) {
+          if (!result.hasNext()) {
+            return endOfData();
+          }
+          var currentCommit = result.next();
+          var index = indexesLogic.buildCompleteIndex(currentCommit, Optional.empty());
+          var elem = index.get(storeKey);
+          if (elem == null) {
+            if (contentId == null) {
+              // Key not in this commit, no more commits to look into
+              return endOfData();
+            }
+
+            // No index-element for 'storeKey' - check whether it has been renamed
+            var found = false;
+            for (StoreIndexElement<CommitOp> e : index) {
+              if (contentId.equals(e.content().contentId())) {
+                // Found the rename-from element, use it
+                found = true;
+                storeKey = e.key();
+                contentKey = storeKeyToKey(storeKey);
+                elem = e;
+                break;
+              }
+            }
+            if (!found) {
+              // No more commits for this content, not even by looked up by content-ID (rename)
+              return endOfData();
+            }
+          }
+
+          var commitOp = elem.content();
+          if (!commitOp.action().exists()) {
+            // Key marked as removed in this commit, no more commits to look into
+            return endOfData();
+          }
+          // It is rather safe to assume that we have a content ID - this can only be null, if there
+          // was a non-UUID content-ID
+          var cid = requireNonNull(commitOp.contentId());
+          if (contentId == null) {
+            // First occurrence, just memoize the content ID
+            contentId = cid;
+          } else if (!cid.equals(contentId)) {
+            // This may happen, if after a series of renames, when another table (different
+            // content-ID) has "our" content-key.
+            // Try to look up the key by looking up the key by content-ID.
+            var found = false;
+            for (StoreIndexElement<CommitOp> e : index) {
+              if (contentId.equals(e.content().contentId())) {
+                // Found the rename-from element, use it
+                found = true;
+                storeKey = e.key();
+                contentKey = storeKeyToKey(storeKey);
+                break;
+              }
+            }
+            if (!found) {
+              // If not found, then there are no more commits for our content.
+              return endOfData();
+            }
+          }
+
+          try {
+            var contentObjId = requireNonNull(commitOp.value());
+            if (contentObjId.equals(previousContentObjId)) {
+              // Content did not change, continue with next commit - we only report the changes,
+              // latest visible commit with a change.
+              continue;
+            }
+            previousContentObjId = contentObjId;
+            var content = contentMapping.fetchContent(contentObjId);
+            // TODO (follow-up) bulk fetch content objects - it's way more complicated though
+            return ImmutableContentHistoryEntry.builder()
+                .key(contentKey)
+                .content(content)
+                .commitMeta(toCommitMeta(currentCommit))
+                .build();
+          } catch (ObjNotFoundException e) {
+            // This should really never happen - if it does, something is seriously broken in the
+            // backend database.
+            throw new RuntimeException(e);
+          }
+        }
+      }
+    };
+  }
+
+  private static Function<ObjId, org.projectnessie.model.Reference> makeReferenceBuilder(Ref ref) {
+    Function<ObjId, org.projectnessie.model.Reference> referenceBuilder;
+    if (ref instanceof BranchName) {
+      referenceBuilder = oid -> Branch.of(((BranchName) ref).getName(), oid.toString());
+    } else if (ref instanceof TagName) {
+      referenceBuilder = oid -> Tag.of(((TagName) ref).getName(), oid.toString());
+    } else {
+      referenceBuilder = oid -> Detached.of(oid.toString());
+    }
+    return referenceBuilder;
+  }
+
+  @Override
   public PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
@@ -671,12 +801,19 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   @Override
-  public List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
+  public List<IdentifiedContentKey> getIdentifiedKeys(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
     RefMapping refMapping = new RefMapping(persist);
     CommitObj head = refMapping.resolveRefHead(ref);
     if (head == null) {
-      return emptyList();
+      if (!returnNotFound) {
+        return emptyList();
+      }
+      StoreIndex<CommitOp> index = StoreIndexes.emptyImmutableIndex(COMMIT_OP_SERIALIZER);
+      return keys.stream()
+          .map(key -> buildIdentifiedKey(key, index, null, null, x -> null))
+          .collect(Collectors.toList());
     }
     IndexesLogic indexesLogic = indexesLogic(persist);
     StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
@@ -687,7 +824,9 @@ public class VersionStoreImpl implements VersionStore {
               StoreKey storeKey = keyToStoreKey(key);
               StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
               if (indexElement == null) {
-                return null;
+                return returnNotFound
+                    ? buildIdentifiedKey(key, index, null, null, x -> null)
+                    : null;
               }
               CommitOp content = indexElement.content();
               UUID contentId = content.contentId();

@@ -225,7 +225,8 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
               tuple(content23a.identifiedKey(), content23a.content()));
     }
 
-    soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2, key2a, key23, key23a)))
+    soft.assertThat(
+            store.getIdentifiedKeys(commit, newArrayList(key2, key2a, key23, key23a), false))
         .containsExactly(
             content2.identifiedKey(),
             content2a.identifiedKey(),
@@ -264,7 +265,33 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
               tuple(content23a.identifiedKey(), content23a.content()));
     }
 
-    soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2a)))
+    soft.assertThat(store.getIdentifiedKeys(commit, newArrayList(key2a), false))
         .containsOnly(content2a.identifiedKey());
+
+    soft.assertThat(
+            store.getIdentifiedKeys(
+                commit, newArrayList(key2a, ContentKey.of("not-there-1")), true))
+        .containsExactly(
+            content2a.identifiedKey(),
+            IdentifiedContentKey.identifiedContentKeyFromContent(
+                ContentKey.of("not-there-1"), null, null, x -> null));
+
+    soft.assertThat(
+            store.getIdentifiedKeys(
+                commit,
+                newArrayList(ContentKey.of("not-there-1"), ContentKey.of("not-there-2")),
+                true))
+        .containsExactly(
+            IdentifiedContentKey.identifiedContentKeyFromContent(
+                ContentKey.of("not-there-1"), null, null, x -> null),
+            IdentifiedContentKey.identifiedContentKeyFromContent(
+                ContentKey.of("not-there-2"), null, null, x -> null));
+
+    soft.assertThat(
+            store.getIdentifiedKeys(
+                commit,
+                newArrayList(ContentKey.of("not-there-1"), ContentKey.of("not-there-2")),
+                false))
+        .isEmpty();
   }
 }
