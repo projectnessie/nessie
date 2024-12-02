@@ -842,6 +842,20 @@ ingress:
 #        - chart-example2.local
 #      secretName: secret1
 
+# -- Override the strategy for nessie deployment.
+# Valid values for type are: RollingUpdate and Recreate.
+# If you are using the ROCKSDB version store type then you should use Recreate.
+# Max Surge will allow new pods to be created before old ones are culled. Do not enable this when using ROCKSDB
+# version store type.
+# Max Unavailable will allow old pods to be culled before replacements are created
+# See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+deploymentStrategy:
+  {}
+  # type: RollingUpdate
+  # rollingUpdate:
+  #   maxUnavailable: 0
+  #   maxSurge: 1
+
 # -- Configures the resources requests and limits for nessie pods.
 # We usually recommend not to specify default resources and to leave this as a conscious
 # choice for the user. This also increases chances charts run on environments with little
