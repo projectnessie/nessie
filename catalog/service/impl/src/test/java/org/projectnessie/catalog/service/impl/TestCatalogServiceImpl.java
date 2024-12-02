@@ -18,8 +18,12 @@ package org.projectnessie.catalog.service.impl;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.STAGED_PROPERTY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_UPDATE_MULTIPLE;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.service.api.SnapshotReqParams.forSnapshotHttpReq;
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
@@ -40,14 +44,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergCatalogOperation;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableSetLocation;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogService;
@@ -105,6 +115,87 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
         .hasCauseInstanceOf(NessieReferenceConflictException.class);
     soft.assertThat(storedLocations.get()).hasSize(2);
     soft.assertThat(heapStorageBucket.objects()).isEmpty();
+  }
+
+  @Test
+  public void setLocationForCreate() throws Exception {
+    var main = (Branch) api.getReference().refName("main").get();
+    var apiContext = apiContext("Catalog", 0);
+    soft.assertThatCode(
+            () ->
+                catalogService.setLocationForCreate(
+                    main,
+                    IcebergCatalogOperation.builder()
+                        .key(ContentKey.of("my", "table"))
+                        .type(ICEBERG_TABLE)
+                        .build(),
+                    apiContext))
+        .doesNotThrowAnyException();
+
+    soft.assertThatCode(
+            () ->
+                catalogService.setLocationForCreate(
+                    main,
+                    IcebergCatalogOperation.builder()
+                        .key(ContentKey.of("my", "table"))
+                        .type(ICEBERG_TABLE)
+                        .addUpdate(ImmutableSetLocation.of("s3://foo/bar", false))
+                        .build(),
+                    apiContext))
+        .doesNotThrowAnyException();
+
+    soft.assertThatCode(
+            () ->
+                catalogService.setLocationForCreate(
+                    main,
+                    IcebergCatalogOperation.builder()
+                        .key(ContentKey.of("my", "table"))
+                        .type(ICEBERG_TABLE)
+                        .addUpdate(
+                            ImmutableSetLocation.of("s3://" + BUCKET + "/foo/bar/baz/", false))
+                        .build(),
+                    apiContext))
+        .doesNotThrowAnyException();
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                catalogService.setLocationForCreate(
+                    main,
+                    IcebergCatalogOperation.builder()
+                        .key(ContentKey.of("my", "table"))
+                        .type(ICEBERG_TABLE)
+                        .addUpdate(
+                            ImmutableSetLocation.of("meep://" + BUCKET + "/foo/bar/baz/", false))
+                        .build(),
+                    apiContext))
+        .withMessage(
+            "Location for ICEBERG_TABLE 'my.table' cannot be associated with any configured object storage location: Not an S3 URI");
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void pruneCreateUpdates(
+      List<IcebergMetadataUpdate> updates, List<IcebergMetadataUpdate> expected) {
+    soft.assertThat(CatalogServiceImpl.pruneCreateUpdates(updates)).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> pruneCreateUpdates() {
+    return Stream.of(
+        arguments(List.of(), List.of()),
+        arguments(
+            List.of(setDefaultSortOrder(42), setProperties(Map.of("foo", "bar"))),
+            List.of(setDefaultSortOrder(42), setProperties(Map.of("foo", "bar")))),
+        arguments(
+            List.of(setProperties(Map.of("foo", "bar", STAGED_PROPERTY, "true"))),
+            List.of(setProperties(Map.of("foo", "bar")))),
+        arguments(List.of(setProperties(Map.of(STAGED_PROPERTY, "true"))), List.of()),
+        arguments(
+            List.of(
+                setProperties(Map.of("foo", "bar")),
+                setProperties(Map.of(STAGED_PROPERTY, "true")),
+                setDefaultSortOrder(42)),
+            List.of(setProperties(Map.of("foo", "bar")), setDefaultSortOrder(42))));
   }
 
   @ParameterizedTest

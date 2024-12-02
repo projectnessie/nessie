@@ -19,7 +19,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedStage;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.STAGED_PROPERTY;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_COMMIT_REF;
 import static org.projectnessie.catalog.formats.iceberg.nessie.IcebergConstants.NESSIE_CONTENT_ID;
@@ -42,6 +44,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.versioned.RequestMeta.API_READ;
 
+import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -775,42 +778,74 @@ public class CatalogServiceImpl implements CatalogService {
     if (update) {
       return op.updates();
     }
-    List<IcebergMetadataUpdate> prunedUpdates = new ArrayList<>(op.updates());
-    String location = op.getSingleUpdate(SetLocation.class, SetLocation::location).orElse(null);
-    if (op.hasUpdate(SetProperties.class)) {
-      Map<String, String> properties =
-          op.getSingleUpdateValue(SetProperties.class, SetProperties::updates);
-      if (properties.containsKey(IcebergTableMetadata.STAGED_PROPERTY)) {
-        prunedUpdates.removeIf(u -> u instanceof SetProperties);
-        properties = new HashMap<>(properties);
-        properties.remove(IcebergTableMetadata.STAGED_PROPERTY);
-        prunedUpdates.add(setProperties(properties));
-      }
-    }
-    if (location == null) {
-      WarehouseConfig w = lakehouseConfig.catalog().getWarehouse(op.warehouse());
-      location =
-          icebergNewEntityBaseLocation(
-              locationForEntity(
-                      w,
-                      op.getKey(),
-                      op.getType(),
-                      apiContext,
-                      reference.getName(),
-                      reference.getHash())
-                  .toString());
-    } else {
-      validateStorageLocation(location)
-          .ifPresent(
-              msg -> {
-                throw new IllegalArgumentException(
-                    format(
-                        "Location for %s '%s' cannot be associated with any configured object storage location: %s",
-                        op.getType().name(), op.getKey(), msg));
-              });
-    }
+
+    var prunedUpdates = pruneCreateUpdates(op.updates());
+
+    var location = setLocationForCreate(reference, op, apiContext);
     prunedUpdates.add(setTrustedLocation(location));
+
     return prunedUpdates;
+  }
+
+  @VisibleForTesting
+  String setLocationForCreate(Branch reference, IcebergCatalogOperation op, ApiContext apiContext) {
+    return op.updates().stream()
+        .filter(SetLocation.class::isInstance)
+        .map(SetLocation.class::cast)
+        .map(SetLocation::location)
+        // Consider the _last_ SetLocation update, if there are multiple (not meaningful)
+        .reduce((a, b) -> b)
+        .map(
+            l -> {
+              // Validate externally provided storage locations
+              validateStorageLocation(l)
+                  .ifPresent(
+                      msg -> {
+                        throw new IllegalArgumentException(
+                            format(
+                                "Location for %s '%s' cannot be associated with any configured object storage location: %s",
+                                op.getType().name(), op.getKey(), msg));
+                      });
+              return l;
+            })
+        .orElseGet(
+            () -> {
+              // Apply the computed & trusted storage location
+              WarehouseConfig w = lakehouseConfig.catalog().getWarehouse(op.warehouse());
+              return icebergNewEntityBaseLocation(
+                  locationForEntity(
+                          w,
+                          op.getKey(),
+                          op.getType(),
+                          apiContext,
+                          reference.getName(),
+                          reference.getHash())
+                      .toString());
+            });
+  }
+
+  @VisibleForTesting
+  static List<IcebergMetadataUpdate> pruneCreateUpdates(List<IcebergMetadataUpdate> updates) {
+    // Iterate over all updates and tweak the 'SetProperties' updates to remove the
+    // IcebergTableMetadata.STAGED_PROPERTY property, if present.
+    return updates.stream()
+        .map(
+            up -> {
+              if (up instanceof SetProperties) {
+                var properties = ((SetProperties) up).updates();
+                if (properties.containsKey(STAGED_PROPERTY)) {
+                  properties = new HashMap<>(properties);
+                  properties.remove(STAGED_PROPERTY);
+                  if (properties.isEmpty()) {
+                    return null;
+                  }
+                  return setProperties(properties);
+                }
+              }
+              return up;
+            })
+        .filter(Objects::nonNull)
+        .collect(toCollection(ArrayList::new));
   }
 
   private CompletionStage<NessieTableSnapshot> loadExistingTableSnapshot(Content content) {
