@@ -61,3 +61,8 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 }
+
+tasks.withType(Test::class.java).configureEach {
+  // Java 23 & Hadoop
+  systemProperty("java.security.manager", "allow")
+}
