@@ -44,7 +44,7 @@ spec:
   {{- end }}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy }}
-  {{- if ge (int .Capabilities.KubeVersion.Minor) 31 }}
+  {{- if ge (int $.Capabilities.KubeVersion.Minor) 31 }}
   trafficDistribution: {{ .Values.service.trafficDistribution }}
   {{- end }}
 ---
