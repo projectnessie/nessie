@@ -822,6 +822,7 @@ extraServices: []
   #      number: 19121
   #    sessionAffinity: None
   #    clusterIP: ""
+  #    internalTrafficPolicy: Cluster
   #    externalTrafficPolicy: Cluster
   #    trafficDistribution: PreferClose
   #    annotations: {}
