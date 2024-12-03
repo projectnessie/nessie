@@ -42,7 +42,9 @@ spec:
   {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
   {{- end }}
+  {{- if or (eq .Values.service.type "LoadBalancer") (eq .Values.service.type "NodePort") }}
   externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- end }}
   internalTrafficPolicy: {{ .Values.service.internalTrafficPolicy }}
   {{- if ge (int $.Capabilities.KubeVersion.Minor) 31 }}
   trafficDistribution: {{ .Values.service.trafficDistribution }}
@@ -104,7 +106,7 @@ spec:
   {{- if $svc.clusterIP }}
   clusterIP: {{ $svc.clusterIP }}
   {{- end }}
-  {{- if $svc.externalTrafficPolicy }}
+  {{- if and $svc.externalTrafficPolicy (or (eq $svc.type "LoadBalancer") (eq $svc.type "NodePort")) }}
   externalTrafficPolicy: {{ $svc.externalTrafficPolicy }}
   {{- end }}
   {{- if $svc.internalTrafficPolicy }}
