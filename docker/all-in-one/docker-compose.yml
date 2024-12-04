@@ -70,7 +70,7 @@ services:
 
   nessie:
     # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
-    image: ghcr.io/projectnessie/nessie:0.100.2
+    image: ghcr.io/projectnessie/nessie:0.100.3
     ports:
       # API port
       - "19120:19120"
@@ -219,7 +219,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.6
+    image: quay.io/keycloak/keycloak:26.0.7
     depends_on:
       - postgres
     ports:
@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.100.2
+      image: ghcr.io/projectnessie/nessie-cli:0.100.3
       depends_on:
         nessie:
           condition: service_healthy

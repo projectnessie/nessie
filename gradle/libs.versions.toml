@@ -2,7 +2,7 @@
 
 [versions]
 bouncycastle = "1.70"
-checkstyle = "10.20.1"
+checkstyle = "10.20.2"
 errorprone = "2.36.0"
 errorproneSlf4j = "0.1.28"
 gatling = "3.13.1"
@@ -25,10 +25,10 @@ opentelemetry = "1.44.1"
 opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.29.0"
-quarkusPlatform = "3.17.0"
-quarkusPlugin = "3.17.1"
+quarkusPlatform = "3.17.2"
+quarkusPlugin = "3.17.2"
 slf4j = "2.0.16"
-smallryeConfig = "3.10.1"
+smallryeConfig = "3.10.2"
 undertow = "2.3.18.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
@@ -44,7 +44,7 @@ agrona = { module = "org.agrona:agrona", version = "1.22.0" }
 assertj-core = { module = "org.assertj:assertj-core", version = "3.26.3" }
 avro = { module = "org.apache.avro:avro", version = "1.12.0" }
 awaitility = { module = "org.awaitility:awaitility", version = "4.2.2" }
-awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.29.20" }
+awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.29.23" }
 azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.2.29" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
@@ -62,7 +62,7 @@ findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-cloud-bigdataoss-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version.ref = "googleCloudBigdataoss" }
 google-cloud-bigdataoss-gcsio = { module = "com.google.cloud.bigdataoss:gcsio", version.ref = "googleCloudBigdataoss" }
-google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.48.0" }
+google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.49.0" }
 google-cloud-secretmanager-bom = { module = "com.google.cloud:google-cloud-secretmanager-bom", version = "2.54.0" }
 google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.45.0" }
 google-cloud-libraries-bom = { module = "com.google.cloud:libraries-bom", version = "26.50.0" }
@@ -163,5 +163,5 @@ nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version =
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.3" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.4" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.2.1"}

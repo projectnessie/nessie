@@ -111,7 +111,11 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
 }
 
-tasks.named<Test>("test").configure { systemProperty("expectedNessieVersion", project.version) }
+tasks.named<Test>("test").configure {
+  // Java 23 & Hadoop
+  systemProperty("java.security.manager", "allow")
+  systemProperty("expectedNessieVersion", project.version)
+}
 
 val mainClassName = "org.projectnessie.gc.tool.cli.CLI"
 

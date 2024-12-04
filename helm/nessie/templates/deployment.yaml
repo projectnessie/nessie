@@ -33,6 +33,8 @@ spec:
   selector:
     matchLabels:
       {{- include "nessie.selectorLabels" . | nindent 6 }}
+  strategy:
+    {{- tpl (toYaml .Values.deploymentStrategy) . | nindent 4 }}
   template:
     metadata:
       annotations:
