@@ -774,6 +774,24 @@ service:
   # Also, this setting affects only internal clients, not external ones.
   # If Ingress is enabled, it is recommended to set sessionAffinity to None.
   sessionAffinity: None
+  # -- You can specify your own cluster IP address
+  # If you define a Service that has the .spec.clusterIP set to "None" then Kubernetes does not assign an IP address.
+  # Instead, DNS records for the service will return the IP addresses of each pod targeted by the server. This is
+  # called a headless service.
+  # See https://kubernetes.io/docs/concepts/services-networking/service/#headless-services
+  clusterIP: ""
+  # -- The traffic policy fields control how traffic from internal and external sources are routed respectively.
+  # Valid values are Cluster and Local.
+  # Set the field to Cluster to route traffic to all ready endpoints.
+  # Set the field to Local to only route to ready node-local endpoints.
+  # If the traffic policy is Local and there are no node-local endpoints, traffic is dropped by kube-proxy
+  internalTrafficPolicy: Cluster
+  externalTrafficPolicy: Cluster
+  # -- The traffic distribution field provides another way to influence traffic routing within a Kubernetes Service.
+  # While traffic policies focus on strict semantic guarantees, traffic distribution allows you to express preferences
+  # such as routing to topologically closer endpoints.
+  # Valid values are: PreferClose
+  trafficDistribution: PreferClose
   # -- Annotations to add to the service.
   annotations: {}
 
@@ -803,6 +821,10 @@ extraServices: []
   #    - name: nessie-https
   #      number: 19121
   #    sessionAffinity: None
+  #    clusterIP: ""
+  #    internalTrafficPolicy: Cluster
+  #    externalTrafficPolicy: Cluster
+  #    trafficDistribution: PreferClose
   #    annotations: {}
 
 # -- Nessie Ingress settings.
