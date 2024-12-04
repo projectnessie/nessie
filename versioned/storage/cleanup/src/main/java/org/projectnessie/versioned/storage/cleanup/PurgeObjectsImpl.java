@@ -46,7 +46,7 @@ final class PurgeObjectsImpl implements PurgeObjects {
 
   @Override
   public PurgeResult purge() {
-    checkState(used.compareAndSet(false, true), "resolve() has already been called.");
+    checkState(used.compareAndSet(false, true), "purge() has already been called.");
 
     var purgeFilter = purgeObjectsContext.purgeFilter();
     var persist = purgeObjectsContext.persist();
