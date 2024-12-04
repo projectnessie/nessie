@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
   alias(libs.plugins.quarkus)
   id("nessie-conventions-quarkus")
@@ -76,3 +78,8 @@ listOf("checkstyleTest", "compileTestJava").forEach { name ->
 }
 
 tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }
+
+// Issue w/ testcontainers/podman in GH workflows :(
+if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
+  tasks.withType<Test>().configureEach { this.enabled = false }
+}
