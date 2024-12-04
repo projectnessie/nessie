@@ -74,16 +74,17 @@ public class Cleanup {
    * CleanupParams}'s attributes.
    *
    * @param persist the persistence/repository to run against
-   * @param maxObjReferenced only {@link Obj}s with a {@link Obj#referenced()} older than {@code
-   *     maxObjReferenced} will be deleted. Production workloads should set this to something like
-   *     "now minus 7 days" to have the chance to reset branches, just in case. Technically, this
-   *     value must not be greater than "now". "Now" should be inquired using {@code
-   *     Persist.config().clock().instant()}.
+   * @param maxObjReferencedInMicrosSinceEpoch only {@link Obj}s with a {@link Obj#referenced()}
+   *     older than {@code maxObjReferenced} will be deleted. Production workloads should set this
+   *     to something like "now minus 7 days" to have the chance to reset branches, just in case.
+   *     Technically, this value must not be greater than "now". "Now" should be inquired using
+   *     {@code Persist.config().clock().instant()}.
    */
   public ReferencedObjectsContext buildReferencedObjectsContext(
-      Persist persist, long maxObjReferenced) {
+      Persist persist, long maxObjReferencedInMicrosSinceEpoch) {
     var referencedObjects = new ReferencedObjectsFilterImpl(cleanupParams);
-    var purgeFilter = referencedObjectsPurgeFilter(referencedObjects, maxObjReferenced);
+    var purgeFilter =
+        referencedObjectsPurgeFilter(referencedObjects, maxObjReferencedInMicrosSinceEpoch);
     return objectsResolverContext(persist, cleanupParams, referencedObjects, purgeFilter);
   }
 

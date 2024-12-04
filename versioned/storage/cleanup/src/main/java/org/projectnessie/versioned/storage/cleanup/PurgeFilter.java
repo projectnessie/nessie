@@ -55,16 +55,17 @@ public interface PurgeFilter {
   interface ReferencedObjectsPurgeFilter extends PurgeFilter {
     ReferencedObjectsFilter referencedObjects();
 
-    long maxObjReferenced();
+    long maxObjReferencedInMicrosSinceEpoch();
 
     static ReferencedObjectsPurgeFilter referencedObjectsPurgeFilter(
-        ReferencedObjectsFilter referencedObjects, long maxObjReferenced) {
-      return ImmutableReferencedObjectsPurgeFilter.of(referencedObjects, maxObjReferenced);
+        ReferencedObjectsFilter referencedObjects, long maxObjReferencedInMicrosSinceEpoch) {
+      return ImmutableReferencedObjectsPurgeFilter.of(
+          referencedObjects, maxObjReferencedInMicrosSinceEpoch);
     }
 
     @Override
     default boolean mustKeep(Obj obj) {
-      return obj.referenced() > maxObjReferenced()
+      return obj.referenced() > maxObjReferencedInMicrosSinceEpoch()
           || referencedObjects().isProbablyReferenced(obj.id());
     }
   }
