@@ -89,6 +89,7 @@ dependencies {
     api(project(":nessie-versioned-storage-cassandra-tests"))
     api(project(":nessie-versioned-storage-cassandra2"))
     api(project(":nessie-versioned-storage-cassandra2-tests"))
+    api(project(":nessie-versioned-storage-cleanup"))
     api(project(":nessie-versioned-storage-common"))
     api(project(":nessie-versioned-storage-common-proto"))
     api(project(":nessie-versioned-storage-common-serialize"))
