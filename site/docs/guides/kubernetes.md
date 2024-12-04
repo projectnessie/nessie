@@ -52,6 +52,44 @@ It's also useful to create more than one replica of the Nessie server. To do thi
 helm install -n nessie-ns nessie nessie-helm/nessie --set replicaCount=3
 ```
 
+### Configuring memory and CPU
+
+By default, the Helm chart does not set any resource limits. It is generally recommended though
+to set memory requests and limits (usually to the same value), as well as CPU requests.
+
+There are no one-size-fits-all values for these settings, so you should adjust them according to
+your needs. A good starting point for a production deployment is to set the memory request and
+limit to 8Gi or higher, and the CPU request to a minimum of 4.
+
+For example, to set the memory request and limit to 8Gi, and the CPU request to 4 cores, you can
+do this:
+
+```bash
+helm install -n nessie-ns nessie nessie-helm/nessie \
+    --set-string resources.requests.memory=8Gi \
+    --set-string resources.limits.memory=8Gi \
+    --set-string resources.requests.cpu=4
+```
+
+Regarding memory: when a limit is set with `resources.limits.memory`, Nessie will by default use 80%
+of that limit as the maximum heap size. For example, if the limit is 8Gi, then the maximum effective
+heap size will be 6.4Gi. If you want to change this, you can set the `JAVA_MAX_MEM_RATIO`
+environment variable to a different value. For example, to set the maximum heap size to 50% of the
+memory limit, you can do this:
+
+```bash
+helm install -n nessie-ns nessie nessie-helm/nessie \
+    --set-string 'extraEnv[0].name=JAVA_MAX_MEM_RATIO' \
+    --set-string 'extraEnv[0].value=50'
+```
+
+You can also set `JAVA_MAX_MEM_RATIO` to `0`, in which case the maximum heap size will not be
+constrained and will be only bounded by the container's memory limit size itself.
+
+See the server [configuration
+page](../nessie-latest/configuration.md#advanced-docker-image-tuning-java-images-only) for more
+details about memory settings.
+
 ### Configuring database authentication
 
 Nessie supports a variety of version stores, each of which requires different configuration. For
