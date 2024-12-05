@@ -222,6 +222,7 @@ for (cmdArgs in listOf(
       "info",
       "check-content",
       "delete-catalog-tasks",
+      "cleanup-repository",
       "erase-repository",
       "export",
       "import",

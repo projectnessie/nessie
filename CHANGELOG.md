@@ -15,6 +15,8 @@ as necessary. Empty sections will not end in the release notes.
 ### New Features
 
 - Helm: Add clusterIP and traffic policy to helm service config
+- Add functionality to the Nessie server admin tool, the `cleanup-repository` command, to delete
+  unneeded objects from a Nessie repository (backend database).
 
 ### Changes
 
