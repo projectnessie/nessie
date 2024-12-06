@@ -98,17 +98,17 @@ abstract class AbstractContentTests<OutputType> {
     result = launcher.launch(cmdArgs.toArray(new String[0]));
   }
 
-  protected void commit(IcebergTable table) throws Exception {
-    commit(table, true);
+  protected CommitObj commit(IcebergTable table) throws Exception {
+    return commit(table, true);
   }
 
-  protected void commit(Content table, boolean add) throws Exception {
-    commit(table, ContentKey.of("test_namespace", "table_" + table.getId()), add);
+  protected CommitObj commit(Content table, boolean add) throws Exception {
+    return commit(table, ContentKey.of("test_namespace", "table_" + table.getId()), add);
   }
 
-  protected void commit(Content table, ContentKey key, boolean add) throws Exception {
+  protected CommitObj commit(Content table, ContentKey key, boolean add) throws Exception {
     ByteString serialized = DefaultStoreWorker.instance().toStoreOnReferenceState(table);
-    commit(
+    return commit(
         key,
         UUID.fromString(Objects.requireNonNull(table.getId())),
         (byte) payloadForContent(table),
@@ -127,7 +127,7 @@ abstract class AbstractContentTests<OutputType> {
         true);
   }
 
-  protected void commit(
+  protected CommitObj commit(
       ContentKey key,
       UUID contentId,
       byte payload,
@@ -177,6 +177,7 @@ abstract class AbstractContentTests<OutputType> {
         Objects.requireNonNull(commitLogic.doCommit(builder.build(), Collections.emptyList()));
 
     referenceLogic(persist).assignReference(refMain, commit.id());
+    return commit;
   }
 
   protected Hash getMainHead() {
