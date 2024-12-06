@@ -93,7 +93,8 @@ public class CutHistory extends BaseCommand {
         spec.commandLine()
             .getErr()
             .printf(
-                "Encountered root commit '%s'. Full commit history is reserved.%n", commitObj.id());
+                "Encountered root commit '%s'. Full commit history is preserved.%n",
+                commitObj.id());
         return 0;
       }
 
@@ -104,7 +105,10 @@ public class CutHistory extends BaseCommand {
         spec.commandLine().getOut().printf("New root commit '%s'%n", commitObj.id());
         builder.tail(List.of());
       } else {
-        spec.commandLine().getOut().printf("Resetting tail in commit '%s'%n", commitObj.id());
+        spec.commandLine()
+            .getOut()
+            .printf(
+                "Rewriting commit '%s' to update the list of indirect parents.%n", commitObj.id());
         builder.tail(commitObj.tail().subList(0, 1)); // one direct parent for simplicity
       }
 
