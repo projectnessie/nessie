@@ -14,10 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Helm: Add clusterIP and traffic policy to helm service config
-- Add functionality to the Nessie server admin tool, the `cleanup-repository` command, to delete
-  unneeded objects from a Nessie repository (backend database).
-
 ### Changes
 
 ### Deprecations
@@ -25,6 +21,14 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.101.0] Release (2024-12-06)
+
+### New Features
+
+- Helm: Add clusterIP and traffic policy to helm service config
+- Add functionality to the Nessie server admin tool, the `cleanup-repository` command, to delete
+  unneeded objects from a Nessie repository (backend database).
 
 ## [0.100.3] Release (2024-12-02)
 
@@ -965,7 +969,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.100.3...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.101.0...HEAD
+[0.101.0]: https://github.com/projectnessie/nessie/compare/nessie-0.100.3...nessie-0.101.0
 [0.100.3]: https://github.com/projectnessie/nessie/compare/nessie-0.100.1...nessie-0.100.3
 [0.100.1]: https://github.com/projectnessie/nessie/compare/nessie-0.100.0...nessie-0.100.1
 [0.100.0]: https://github.com/projectnessie/nessie/compare/nessie-0.99.0...nessie-0.100.0

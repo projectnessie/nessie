@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.100.3](https://img.shields.io/badge/Version-0.100.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.101.0](https://img.shields.io/badge/Version-0.101.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -328,10 +328,13 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | rocksdb.storageClassName | string | `"standard"` | The storage class name of the persistent volume claim to create. |
 | rocksdb.storageSize | string | `"1Gi"` | The size of the persistent volume claim to create. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsGroup":10001,"runAsNonRoot":true,"runAsUser":10000}` | Security context for the nessie container. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
-| service | object | `{"annotations":{},"ports":[{"name":"nessie-http","number":19120}],"sessionAffinity":"None","type":"ClusterIP"}` | Nessie main service settings. |
+| service | object | `{"annotations":{},"clusterIP":"","externalTrafficPolicy":"Cluster","internalTrafficPolicy":"Cluster","ports":[{"name":"nessie-http","number":19120}],"sessionAffinity":"None","trafficDistribution":"PreferClose","type":"ClusterIP"}` | Nessie main service settings. |
 | service.annotations | object | `{}` | Annotations to add to the service. |
+| service.clusterIP | string | `""` | You can specify your own cluster IP address If you define a Service that has the .spec.clusterIP set to "None" then Kubernetes does not assign an IP address. Instead, DNS records for the service will return the IP addresses of each pod targeted by the server. This is called a headless service. See https://kubernetes.io/docs/concepts/services-networking/service/#headless-services |
+| service.internalTrafficPolicy | string | `"Cluster"` | The traffic policy fields control how traffic from internal and external sources are routed respectively. Valid values are Cluster and Local. Set the field to Cluster to route traffic to all ready endpoints. Set the field to Local to only route to ready node-local endpoints. If the traffic policy is Local and there are no node-local endpoints, traffic is dropped by kube-proxy |
 | service.ports | list | `[{"name":"nessie-http","number":19120}]` | The ports the service will listen on. At least one port is required; the first port implicitly becomes the HTTP port that the application will use for serving API requests. By default, it's 19120. Note: port names must be unique and no more than 15 characters long. |
 | service.sessionAffinity | string | `"None"` | The session affinity for the service. Valid values are: None, ClientIP. ClientIP enables sticky sessions based on the client's IP address. This is generally beneficial to Nessie deployments, but some testing may be required in order to make sure that the load is distributed evenly among the pods. Also, this setting affects only internal clients, not external ones. If Ingress is enabled, it is recommended to set sessionAffinity to None. |
+| service.trafficDistribution | string | `"PreferClose"` | The traffic distribution field provides another way to influence traffic routing within a Kubernetes Service. While traffic policies focus on strict semantic guarantees, traffic distribution allows you to express preferences such as routing to topologically closer endpoints. Valid values are: PreferClose |
 | service.type | string | `"ClusterIP"` | The type of service to create. |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |

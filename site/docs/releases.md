@@ -2,6 +2,26 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.101.0 Release (December 06, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.0).
+
+### New Features
+
+- Helm: Add clusterIP and traffic policy to helm service config
+- Add functionality to the Nessie server admin tool, the `cleanup-repository` command, to delete
+  unneeded objects from a Nessie repository (backend database).
+
+### Commits
+* Server admin tool: add command to purge unreferenced `Obj`s (#9753)
+* Persistence: purge unreferenced `Obj`s (#9688)
+* Disable tests using containers on macOS in CI (#10038)
+* Docs: update environment variables table and add section on Kubernetes memory settings (#10035)
+* Ninja: changelog
+* Add clusterIP and traffic policy to helm service config (#10011)
+* Port some `CatalogTests` updates from Iceberg (#10036)
+* Propagate CDI scopes to health checks (#10026)
+
 ## 0.100.3 Release (December 02, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.100.3).
