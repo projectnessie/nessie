@@ -30,6 +30,7 @@ import picocli.CommandLine.HelpCommand;
       NessieInfo.class,
       HelpCommand.class,
       CleanupRepository.class,
+      CutHistory.class,
       CheckContent.class,
       DeleteCatalogTasks.class,
       EraseRepository.class,
