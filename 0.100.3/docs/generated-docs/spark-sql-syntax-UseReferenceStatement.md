@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `USE` <br>
       ( **ReferenceType**<br>
       | `REFERENCE`<br>
