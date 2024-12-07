@@ -189,6 +189,14 @@ public class AdlsObjectIO implements ObjectIO {
         storageLocations.warehouseLocation());
 
     String storageAccount = storageAccounts.iterator().next();
+    // Iceberg PR https://github.com/apache/iceberg/pull/11504 (since Iceberg 1.7.1) introduced a
+    // behavioral change. Before that PR, the whole storage account including the domain name (e.g.
+    // myaccount.dfs.core.windows.net) was used in Iceberg's `ADLSLocation` as the lookup key in
+    // `AzureProperties.applyClientConfiguration()`. After that PR, only the first part (e.g.
+    // myaccount) is used. This is a breaking change, as it requires changes to user configurations.
+    int dot = storageAccount.indexOf('.');
+    Optional<String> storageAccountShort =
+        dot != -1 ? Optional.of(storageAccount.substring(0, dot)) : Optional.empty();
 
     // We just need one of the locations to resolve the GCS bucket options. Any should work, because
     // it's all for the same table.
@@ -201,7 +209,12 @@ public class AdlsObjectIO implements ObjectIO {
     AdlsNamedFileSystemOptions fileSystemOptions = adlsOptions.resolveOptionsForUri(loc);
     fileSystemOptions
         .endpoint()
-        .ifPresent(e -> config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));
+        .ifPresent(
+            e -> {
+              config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e);
+              storageAccountShort.ifPresent(
+                  account -> config.accept(ADLS_CONNECTION_STRING_PREFIX + account, e));
+            });
     adlsOptions
         .readBlockSize()
         .ifPresent(r -> config.accept(ADLS_READ_BLOCK_SIZE_BYTES, Integer.toString(r)));
@@ -211,7 +224,12 @@ public class AdlsObjectIO implements ObjectIO {
 
     clientSupplier
         .generateUserDelegationSas(storageLocations, fileSystemOptions)
-        .ifPresent(sasToken -> config.accept(ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken));
+        .ifPresent(
+            sasToken -> {
+              config.accept(ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken);
+              storageAccountShort.ifPresent(
+                  account -> config.accept(ADLS_SAS_TOKEN_PREFIX + account, sasToken));
+            });
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {
