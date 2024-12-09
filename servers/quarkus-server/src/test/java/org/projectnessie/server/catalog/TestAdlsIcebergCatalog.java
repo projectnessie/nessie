@@ -19,7 +19,9 @@ import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLife
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import java.util.Map;
 import java.util.UUID;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 @QuarkusTest
 @TestProfile(AdlsUnitTestProfile.class)
@@ -33,5 +35,14 @@ public class TestAdlsIcebergCatalog extends AbstractIcebergCatalogUnitTests {
   @Override
   protected String scheme() {
     return "adls";
+  }
+
+  @Override
+  protected Map<String, String> catalogOptions() {
+    return ImmutableMap.<String, String>builder()
+        .putAll(super.catalogOptions())
+        .put("adls.auth.shared-key.account.name", "account@account.dfs.core.windows.net")
+        .put("adls.auth.shared-key.account.key", "key")
+        .build();
   }
 }
