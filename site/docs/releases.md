@@ -2,6 +2,17 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.101.1 Release (December 09, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.1).
+
+### Fixes
+
+- Fix handling of Iceberg update-requirement "no current snapshot"
+
+### Commits
+* Fix update-requirement check to handle "no current snapshot" requirement properly (#10064)
+
 ## 0.101.0 Release (December 06, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.0).
