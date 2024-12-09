@@ -39,7 +39,6 @@ import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import com.google.common.base.Splitter;
 import io.smallrye.mutiny.Uni;
 import java.io.IOException;
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -57,7 +56,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
-import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
@@ -331,15 +329,6 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     checkArgument(
         reference instanceof Branch, "Can only commit against a branch, but got " + reference);
     return (Branch) reference;
-  }
-
-  protected String snapshotMetadataLocation(SnapshotResponse snap) {
-    // TODO the resolved metadataLocation is wrong !!
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-    URI metadataLocation =
-        catalogUriResolver.icebergSnapshot(
-            snap.effectiveReference(), snap.contentKey(), snap.nessieSnapshot());
-    return metadataLocation.toString();
   }
 
   static Map<String, String> createEntityProperties(Map<String, String> providedProperties) {
