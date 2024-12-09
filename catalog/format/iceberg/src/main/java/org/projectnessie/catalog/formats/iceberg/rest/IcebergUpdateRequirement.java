@@ -16,6 +16,7 @@
 package org.projectnessie.catalog.formats.iceberg.rest;
 
 import static java.lang.String.format;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.NO_SNAPSHOT_ID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -96,7 +97,7 @@ public interface IcebergUpdateRequirement {
     default void check(ContentKey key, NessieEntitySnapshot<?> snapshot) {
       String tableUuid = snapshot.entity().icebergUuid();
       checkState(
-          uuid().equals(tableUuid),
+          Objects.equals(uuid(), tableUuid),
           key,
           "Requirement failed: UUID does not match: expected %s != %s",
           tableUuid,
@@ -172,13 +173,27 @@ public interface IcebergUpdateRequirement {
         NessieTableSnapshot snapshot, boolean tableExists, ContentKey contentKey) {
       // Cannot really check the reference name, because the ref-name in a table-metadata is
       // something very different from Nessie references
-      Long id = snapshotId();
-      if (id != null) {
+      checkState(
+          "main".equals(ref()),
+          contentKey,
+          "Requirement failed: ref must be 'main', but is '%s'",
+          ref());
+
+      Long expectedId = snapshotId();
+      Long currentId = snapshot.icebergSnapshotId();
+      if (expectedId != null) {
         checkState(
-            Objects.equals(id, snapshot.icebergSnapshotId()),
+            Objects.equals(expectedId, currentId),
             contentKey,
             "Requirement failed: snapshot id changed: expected %s != %s",
-            id,
+            expectedId,
+            snapshotId());
+      } else {
+        // 'null' means "no current snapshot"
+        checkState(
+            currentId == null || currentId == NO_SNAPSHOT_ID,
+            contentKey,
+            "Requirement failed: snapshot id mismatch: expected no current snapshot, but has %s",
             snapshotId());
       }
     }
@@ -196,7 +211,7 @@ public interface IcebergUpdateRequirement {
         NessieTableSnapshot snapshot, boolean tableExists, ContentKey contentKey) {
       Integer id = snapshot.icebergLastColumnId();
       checkState(
-          lastAssignedFieldId() == id,
+          Objects.equals(id, lastAssignedFieldId()),
           contentKey,
           "Requirement failed: last assigned field id changed: expected %s != %s",
           id,
@@ -246,7 +261,7 @@ public interface IcebergUpdateRequirement {
         NessieTableSnapshot snapshot, boolean tableExists, ContentKey contentKey) {
       Integer id = snapshot.icebergLastPartitionId();
       checkState(
-          lastAssignedPartitionId() == id,
+          Objects.equals(lastAssignedPartitionId(), id),
           contentKey,
           "Requirement failed: last assigned partition id changed: expected %s != %s",
           id,
