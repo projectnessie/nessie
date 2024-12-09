@@ -702,6 +702,15 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      checkState(
+          "main".equals(refName()) && "branch".equals(type()),
+          "Nessie only supports the current snapshot-ref 'main', use Nessie's branches instead");
+      var currentSnapshotId = state.snapshot().icebergSnapshotId();
+      checkState(
+          Objects.equals(snapshotId(), state.snapshot().icebergSnapshotId()),
+          "Snapshot ID mismatch, must be %s, but is %s",
+          currentSnapshotId,
+          snapshotId());
       state.addCatalogOp(CatalogOps.META_SET_SNAPSHOT_REF);
       // NOP - This class is used for JSON deserialization only.
       // Nessie has catalog-level branches and tags.
@@ -718,6 +727,9 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
+      checkState(
+          "main".equals(refName()),
+          "Nessie only supports the Iceberg snapshot-ref 'main', use Nessie's branches instead");
       state.addCatalogOp(CatalogOps.META_REMOVE_SNAPSHOT_REF);
       // NOP - This class is used for JSON deserialization only.
       // Nessie has catalog-level branches and tags.

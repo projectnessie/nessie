@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fix handling of Iceberg update-requirement "no current snapshot"
+
 ### Commits
 
 ## [0.101.0] Release (2024-12-06)
