@@ -21,13 +21,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
- * TODO: Holds the data structures and parameters that are needed for the {@linkplain PurgeObjects
- * purge operation}.
- *
- * <p>Once the {@linkplain ReferencedObjectsResolver referenced objects have been resolved}, the
- * data structures that are not needed for the purge operation should become eligible for Java GC,
- * which is why this context object exists and holds less information than {@link
- * ReferencedObjectsContext}.
+ * Holds the {@link Persist} object and parameters that are needed for the {@linkplain CutHistory
+ * operation}.
  */
 @NessieImmutable
 public interface CutHistoryParams {
