@@ -15,9 +15,6 @@
  */
 package org.projectnessie.tools.admin.cli;
 
-import static java.util.Objects.requireNonNull;
-import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
 import io.quarkus.test.junit.TestProfile;
@@ -37,7 +34,6 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.VersionStore;
-import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
@@ -54,23 +50,21 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
   }
 
   @Test
-  public void testEmptyRepo(QuarkusMainLauncher launcher) {
-    var launchResult = launcher.launch("cut-history", "--depth", "1");
-    soft.assertThat(launchResult.exitCode()).isEqualTo(0);
-    soft.assertThat(launchResult.getOutputStream()).contains("Updated 0 commits.");
+  public void testInvalidCommitHash(QuarkusMainLauncher launcher) {
+    var launchResult =
+        launcher.launch("cut-history", "--commit", "1122334455667788", "--retry", "1");
+    soft.assertThat(launchResult.exitCode()).isEqualTo(1);
+    soft.assertThat(launchResult.getOutputStream()).contains("Rewrote 0 affected commits.");
+    soft.assertThat(launchResult.getErrorStream())
+        .contains(
+            "Unable to cut history at commit 1122334455667788: "
+                + "org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException: "
+                + "Object with ID 1122334455667788 not found.");
+    soft.assertThat(launchResult.getErrorStream()).contains("Unable to cut history after 2 tries.");
   }
 
   @Test
-  public void testShallowRepo(QuarkusMainLauncher launcher) throws Exception {
-    commit(IcebergTable.of("111", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    commit(IcebergTable.of("222", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    var launchResult = launcher.launch("cut-history", "--ref", "main", "--depth", "10");
-    soft.assertThat(launchResult.exitCode()).isEqualTo(0);
-    soft.assertThat(launchResult.getOutputStream()).contains("Updated 0 commits.");
-  }
-
-  @Test
-  public void testCutMain(QuarkusMainLauncher launcher) throws Exception {
+  public void testCutMainAndCleanup(QuarkusMainLauncher launcher) throws Exception {
     Set<Object> locations = new HashSet<>();
     List<Hash> commitHashes = new ArrayList<>();
     for (int i = 0; i < 100; i++) {
@@ -78,23 +72,29 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
       locations.add(location);
       CommitObj commit =
           commit(IcebergTable.of(location, i, 1, 1, 1, UUID.randomUUID().toString()));
-      commitHashes.addFirst(objIdToHash(commit.id()));
+      commitHashes.add(objIdToHash(commit.id()));
     }
 
-    var launchResult = launcher.launch("cut-history", "--depth", "5");
-    soft.assertThat(launchResult.exitCode()).isEqualTo(0);
+    var cutResult = launcher.launch("cut-history", "--commit", commitHashes.get(50).asString());
+    soft.assertThat(cutResult.exitCode()).isEqualTo(0);
     // 20 commits need rewriting because of the default 20 entries in the commit "tail".
-    soft.assertThat(launchResult.getOutputStream()).contains("Updated 20 commits.");
+    soft.assertThat(cutResult.getOutputStream()).contains("Identified 20 affected commits.");
+    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 20 affected commits.");
+    soft.assertThat(cutResult.getOutputStream())
+        .anyMatch(s -> s.matches("Removed parents from commit .* in PT.*S."));
+
+    var cleanResult = launcher.launch("cleanup-repository");
+    soft.assertThat(cleanResult.exitCode()).isEqualTo(0);
+    soft.assertThat(cleanResult.getOutputStream())
+        .anyMatch(s -> s.matches(".*Scanned .* objects, 50 were deleted.*"));
 
     VersionStoreImpl store = new VersionStoreImpl(persist());
 
-    // 5 preserved commits plus 20 in the commit tail
-    int histDepth = 25;
-    for (int i = 0; i < histDepth; i++) {
+    for (int i = 50; i < commitHashes.size(); i++) {
       Hash start = commitHashes.get(i);
       List<Hash> log = new ArrayList<>();
       store.getCommits(start, false).forEachRemaining(c -> log.add(c.getHash()));
-      soft.assertThat(log).containsExactlyElementsOf(commitHashes.subList(i, histDepth));
+      soft.assertThat(log).containsExactlyElementsOf(commitHashes.subList(50, i + 1).reversed());
     }
 
     Set<String> collectedLocations = new HashSet<>();
@@ -107,34 +107,5 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
               }
             });
     soft.assertThat(collectedLocations).isEqualTo(locations);
-  }
-
-  @Test
-  public void testCutAcrossMerge(QuarkusMainLauncher launcher) throws Exception {
-    CommitLogic commitLogic = commitLogic(persist());
-    commit(IcebergTable.of("111", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    CommitObj commit1 = requireNonNull(commitLogic.fetchCommit(hashToObjId(getMainHead())));
-    commit(IcebergTable.of("222", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    commit(IcebergTable.of("333", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    CommitObj commit3 = requireNonNull(commitLogic.fetchCommit(hashToObjId(getMainHead())));
-    commit(IcebergTable.of("444", 1, 2, 3, 4, UUID.randomUUID().toString()));
-
-    persist()
-        .upsertObj(
-            CommitObj.commitBuilder().from(commit3).addSecondaryParents(commit1.id()).build());
-
-    var launchResult = launcher.launch("cut-history", "--depth", "1");
-    soft.assertThat(launchResult.exitCode()).isEqualTo(1);
-    soft.assertThat(launchResult.getErrorOutput())
-        .contains(String.format("Unable to reset parents in merge commit '%s'", commit3.id()));
-  }
-
-  @Test
-  public void testCutAcrossRoot(QuarkusMainLauncher launcher) throws Exception {
-    commit(IcebergTable.of("111", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    commit(IcebergTable.of("222", 1, 2, 3, 4, UUID.randomUUID().toString()));
-    var launchResult = launcher.launch("cut-history", "--ref", "main", "--depth", "1");
-    soft.assertThat(launchResult.exitCode()).isEqualTo(0);
-    soft.assertThat(launchResult.getErrorOutput()).contains("Encountered root commit");
   }
 }

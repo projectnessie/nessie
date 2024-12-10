@@ -15,46 +15,43 @@
  */
 package org.projectnessie.tools.admin.cli;
 
-import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
+import static org.projectnessie.versioned.storage.cleanup.Cleanup.createCleanup;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
-import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
-import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.projectnessie.versioned.Hash;
-import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.storage.common.logic.CommitLogic;
-import org.projectnessie.versioned.storage.common.logic.Logics;
-import org.projectnessie.versioned.storage.common.logic.PagedResult;
-import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
-import org.projectnessie.versioned.storage.common.persist.Obj;
-import org.projectnessie.versioned.storage.common.persist.ObjId;
-import org.projectnessie.versioned.storage.versionstore.RefMapping;
+import org.projectnessie.versioned.storage.cleanup.CleanupParams;
+import org.projectnessie.versioned.storage.cleanup.UpdateParentsResult;
 import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "cut-history",
     mixinStandardHelpOptions = true,
     description = {
-      "Advanced commit log manipulation command that detaches a number of most recent "
-          + "commits from their parent commit trail. Use with extreme caution. See also the 'cleanup-repository' "
-          + "command."
+      "Advanced commit log manipulation command that removes parents from the specified commit. "
+          + "Use with extreme caution. See also the 'cleanup-repository' command."
     })
 public class CutHistory extends BaseCommand {
   @CommandLine.Option(
-      names = {"-r", "--ref"},
-      description = "Reference name to use (default branch, if not set).")
-  private String ref;
+      names = {"-c", "--commit"},
+      required = true,
+      description = "The hash of the commit that gets detached from its parents.")
+  private String cutPoint;
 
   @CommandLine.Option(
-      names = {"--depth", "-D"},
-      required = true,
-      description = "The number of commits to preserve intact starting from the ref HEAD.")
-  private int depth;
+      names = {"-R", "--retry"},
+      defaultValue = "0",
+      description = "Number of retries for idempotent sub-operations.")
+  private int numRetries;
+
+  @CommandLine.Option(
+      names = {"--dry-run"},
+      description = "Perform all operations, but do not modify any objects.")
+  private boolean dryRun;
 
   @Override
   public Integer call() throws Exception {
@@ -63,70 +60,75 @@ public class CutHistory extends BaseCommand {
       return EXIT_CODE_REPO_DOES_NOT_EXIST;
     }
 
-    CommitLogic commitLogic = Logics.commitLogic(persist);
+    CleanupParams cleanupParams = CleanupParams.builder().dryRun(dryRun).build();
 
-    Hash head = resolveRefHead();
-    List<CommitObj> toStore = new ArrayList<>();
-    Set<ObjId> danglingTail = new HashSet<>(); // commit IDs referenced from direct children
-    int count = depth;
-    PagedResult<CommitObj, ObjId> it = commitLogic.commitLog(commitLogQuery(hashToObjId(head)));
-    while (it.hasNext()) {
-      CommitObj commitObj = it.next();
+    var cleanup = createCleanup(cleanupParams);
+    var params = cleanup.buildCutHistoryParams(persist, hashToObjId(Hash.of(cutPoint)));
+    var cutHistory = cleanup.createCutHistory(params);
 
-      if (count > 0) { // Processing a preserved commit
-        danglingTail.addAll(commitObj.tail());
-        danglingTail.remove(commitObj.id());
-        danglingTail.remove(EMPTY_OBJ_ID);
+    var start = Instant.now();
+    var identifyResult = cutHistory.identifyAffectedCommits();
+    spec.commandLine()
+        .getOut()
+        .printf("Identified %d affected commits.%n", identifyResult.affectedCommitIds().size());
 
-        count--;
-        continue;
-      }
-
-      if (!commitObj.secondaryParents().isEmpty()) {
-        spec.commandLine()
-            .getErr()
-            .printf("ERROR: Unable to reset parents in merge commit '%s'%n", commitObj.id());
-        return EXIT_CODE_GENERIC_ERROR;
-      }
-
-      if (EMPTY_OBJ_ID.equals(commitObj.directParent())) {
-        spec.commandLine()
-            .getErr()
-            .printf(
-                "Encountered root commit '%s'. Full commit history is preserved.%n",
-                commitObj.id());
-        return 0;
-      }
-
-      // Rewriting commit to fixup parents
-      danglingTail.remove(commitObj.id());
-      CommitObj.Builder builder = CommitObj.commitBuilder().from(commitObj);
-      if (danglingTail.isEmpty()) {
-        spec.commandLine().getOut().printf("New root commit '%s'%n", commitObj.id());
-        builder.tail(List.of());
-      } else {
-        spec.commandLine()
-            .getOut()
-            .printf(
-                "Rewriting commit '%s' to update the list of indirect parents.%n", commitObj.id());
-        builder.tail(commitObj.tail().subList(0, 1)); // one direct parent for simplicity
-      }
-
-      toStore.add(builder.build());
-
-      if (danglingTail.isEmpty()) {
-        break;
-      }
+    if (failedWithRetries(
+        () -> cutHistory.rewriteParents(identifyResult),
+        result ->
+            result
+                .failures()
+                .forEach(
+                    (id, e) ->
+                        spec.commandLine()
+                            .getErr()
+                            .printf("Unable to rewrite parents for %s: %s.%n", id, e)))) {
+      spec.commandLine()
+          .getErr()
+          .printf("Unable to rewrite parents after %d tries.%n", numRetries + 1);
+      return EXIT_CODE_GENERIC_ERROR;
     }
 
-    persist.upsertObjs(toStore.toArray(new Obj[0]));
+    spec.commandLine()
+        .getOut()
+        .printf("Rewrote %d affected commits.%n", identifyResult.affectedCommitIds().size());
 
-    spec.commandLine().getOut().printf("Updated %d commits.%n", toStore.size());
+    if (failedWithRetries(
+        cutHistory::cutHistory,
+        result ->
+            result
+                .failures()
+                .forEach(
+                    (id, e) ->
+                        spec.commandLine()
+                            .getErr()
+                            .printf("Unable to cut history at commit %s: %s.%n", id, e)))) {
+      spec.commandLine().getErr().printf("Unable to cut history after %d tries.%n", numRetries + 1);
+      return EXIT_CODE_GENERIC_ERROR;
+    }
+
+    spec.commandLine()
+        .getOut()
+        .printf(
+            "Removed parents from commit %s in %s.%n",
+            cutPoint, Duration.between(start, Instant.now()));
+
     return 0;
   }
 
-  private Hash resolveRefHead() throws ReferenceNotFoundException {
-    String effectiveRef = ref == null ? serverConfig.getDefaultBranch() : ref;
-    return objIdToHash(new RefMapping(persist).resolveNamedRef(effectiveRef).pointer());
+  private boolean failedWithRetries(
+      Supplier<UpdateParentsResult> method, Consumer<UpdateParentsResult> errorHandler) {
+    for (int r = 0; r <= numRetries; r++) {
+      var result = method.get();
+      if (result.failures().isEmpty()) {
+        return false;
+      }
+
+      errorHandler.accept(result);
+
+      if (r < numRetries) {
+        spec.commandLine().getErr().printf("Retrying...%n");
+      }
+    }
+    return true;
   }
 }
