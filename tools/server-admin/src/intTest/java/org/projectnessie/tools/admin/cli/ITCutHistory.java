@@ -15,6 +15,7 @@
  */
 package org.projectnessie.tools.admin.cli;
 
+import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
 import io.quarkus.test.junit.TestProfile;
@@ -34,6 +35,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.quarkus.tests.profiles.BaseConfigProfile;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
@@ -107,5 +109,22 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
               }
             });
     soft.assertThat(collectedLocations).isEqualTo(locations);
+  }
+
+  @Test
+  public void testDryRun(QuarkusMainLauncher launcher) throws Exception {
+    CommitObj c1 = commit(IcebergTable.of("loc1", 1, 1, 1, 1, UUID.randomUUID().toString()));
+    CommitObj c2 = commit(IcebergTable.of("loc2", 1, 1, 1, 1, UUID.randomUUID().toString()));
+    CommitObj c3 = commit(IcebergTable.of("loc3", 1, 1, 1, 1, UUID.randomUUID().toString()));
+
+    var cutResult = launcher.launch("cut-history", "--dry-run", "--commit", c2.id().toString());
+    soft.assertThat(cutResult.exitCode()).isEqualTo(0);
+    soft.assertThat(cutResult.getOutputStream()).noneMatch(s -> s.matches(".*Rewrote.*"));
+    soft.assertThat(cutResult.getOutputStream()).noneMatch(s -> s.matches(".*Removed parents.*"));
+
+    CommitLogic commitLogic = commitLogic(persist());
+    soft.assertThat(commitLogic.fetchCommit(c1.id())).isEqualTo(c1);
+    soft.assertThat(commitLogic.fetchCommit(c2.id())).isEqualTo(c2);
+    soft.assertThat(commitLogic.fetchCommit(c3.id())).isEqualTo(c3);
   }
 }

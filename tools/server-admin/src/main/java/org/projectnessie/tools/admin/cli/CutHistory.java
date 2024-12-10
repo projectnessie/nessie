@@ -33,7 +33,10 @@ import picocli.CommandLine;
     mixinStandardHelpOptions = true,
     description = {
       "Advanced commit log manipulation command that removes parents from the specified commit. "
-          + "Use with extreme caution. See also the 'cleanup-repository' command."
+          + "Use with extreme caution. This command will make Nessie caches inconsistent with persisted data, "
+          + "therefore, it is preferable to run this command when Nessie servers are shut down. At the very least, "
+          + "all Nessie servers should be restarted as soon as possible after this command completes. "
+          + "Subsequently, it may be worth running the `cleanup-repository` command."
     })
 public class CutHistory extends BaseCommand {
   @CommandLine.Option(
@@ -88,9 +91,11 @@ public class CutHistory extends BaseCommand {
       return EXIT_CODE_GENERIC_ERROR;
     }
 
-    spec.commandLine()
-        .getOut()
-        .printf("Rewrote %d affected commits.%n", identifyResult.affectedCommitIds().size());
+    if (!dryRun) {
+      spec.commandLine()
+          .getOut()
+          .printf("Rewrote %d affected commits.%n", identifyResult.affectedCommitIds().size());
+    }
 
     if (failedWithRetries(
         cutHistory::cutHistory,
@@ -106,11 +111,16 @@ public class CutHistory extends BaseCommand {
       return EXIT_CODE_GENERIC_ERROR;
     }
 
-    spec.commandLine()
-        .getOut()
-        .printf(
-            "Removed parents from commit %s in %s.%n",
-            cutPoint, Duration.between(start, Instant.now()));
+    Duration duration = Duration.between(start, Instant.now());
+    if (!dryRun) {
+      spec.commandLine()
+          .getOut()
+          .printf("Removed parents from commit %s in %s.%n", cutPoint, duration);
+    } else {
+      spec.commandLine()
+          .getOut()
+          .printf("Dry run for commit %s completed in %s.%n", cutPoint, duration);
+    }
 
     return 0;
   }
