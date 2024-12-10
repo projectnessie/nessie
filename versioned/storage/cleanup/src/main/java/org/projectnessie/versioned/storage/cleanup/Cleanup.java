@@ -19,6 +19,7 @@ import static org.projectnessie.versioned.storage.cleanup.PurgeFilter.Referenced
 import static org.projectnessie.versioned.storage.cleanup.ReferencedObjectsContext.objectsResolverContext;
 
 import org.projectnessie.versioned.storage.common.persist.Obj;
+import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 
 /**
@@ -108,5 +109,17 @@ public class Cleanup {
    */
   public PurgeObjects createPurgeObjects(PurgeObjectsContext purgeObjectsContext) {
     return new PurgeObjectsImpl(purgeObjectsContext, cleanupParams.rateLimitFactory());
+  }
+
+  public CutHistoryParams buildCutHistoryParams(Persist persist, ObjId newRootCommitId) {
+    return CutHistoryParams.cutHistoryParams(
+        persist,
+        newRootCommitId,
+        cleanupParams.resolveCommitRatePerSecond(),
+        cleanupParams.dryRun());
+  }
+
+  public CutHistory createCutHistory(CutHistoryParams context) {
+    return new CutHistoryImpl(context, cleanupParams.rateLimitFactory());
   }
 }
