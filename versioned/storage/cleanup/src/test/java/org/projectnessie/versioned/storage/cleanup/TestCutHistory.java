@@ -244,12 +244,12 @@ public class TestCutHistory {
     var branchF = store.create(BranchName.of("f"), Optional.ofNullable(c2)).getNamedRef().getName();
     var f1 = commit(store, branchF, List.of("f1"));
 
-    List<String> bKeys = new ArrayList<>();
-    List<Hash> bHashes = new ArrayList<>();
+    List<String> keysB = new ArrayList<>();
+    List<Hash> hashesB = new ArrayList<>();
     for (int i = 0; i < numExtraKeys; i++) {
       String k = "b" + i;
-      bKeys.add(k);
-      bHashes.add(commit(store, main, List.of(k)));
+      keysB.add(k);
+      hashesB.add(commit(store, main, List.of(k)));
     }
 
     var cleanup = createCleanup(CleanupParams.builder().build());
@@ -282,11 +282,11 @@ public class TestCutHistory {
     validateContent(store, f1, c0Keys, "root", "e1", "e2", "g1", "f1");
 
     // Iterate by 5 to save test time
-    for (int i = 0; i < bHashes.size(); i += 5) {
+    for (int i = 0; i < hashesB.size(); i += 5) {
       Set<String> keys = new HashSet<>(c0Keys);
       keys.addAll(Arrays.asList("root", "e1", "e2", "g1"));
-      keys.addAll(bKeys.subList(0, i + 1));
-      validateContent(store, bHashes.get(i), keys);
+      keys.addAll(keysB.subList(0, i + 1));
+      validateContent(store, hashesB.get(i), keys);
     }
   }
 
