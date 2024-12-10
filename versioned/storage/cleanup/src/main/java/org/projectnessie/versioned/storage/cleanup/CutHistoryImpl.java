@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cleanup;
 
-import static org.projectnessie.versioned.storage.cleanup.ImmutableCutHistoryScanResult.*;
+import static org.projectnessie.versioned.storage.cleanup.ImmutableCutHistoryScanResult.Builder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 
