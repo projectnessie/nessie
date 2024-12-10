@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.ri.messaging.nats;
 
-import io.quarkiverse.reactive.messaging.nats.jetstream.JetStreamOutgoingMessageMetadata;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.SubscribeMessageMetadata;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +48,12 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
   protected Message<T> createMessage(Event upstreamEvent, T messagePayload) {
     Map<String, List<String>> headers = new HashMap<>();
     createHeaders(upstreamEvent, (name, value) -> headers.put(name, List.of(value)));
-    JetStreamOutgoingMessageMetadata metadata =
-        JetStreamOutgoingMessageMetadata.of(
-            upstreamEvent.getIdAsText(), headers, subtopic(upstreamEvent));
+    SubscribeMessageMetadata metadata =
+        SubscribeMessageMetadata.builder()
+            .messageId(upstreamEvent.getIdAsText())
+            .headers(headers)
+            .subject(subject(upstreamEvent))
+            .build();
     return Message.of(messagePayload, Metadata.of(metadata));
   }
 
@@ -58,43 +61,35 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
   protected CompletionStage<Void> onWriteAck(Metadata metadata) {
     // Do NOT enable this log statement in production!
     if (LOGGER.isDebugEnabled()) {
-      JetStreamOutgoingMessageMetadata jetStreamMetadata =
-          metadata.get(JetStreamOutgoingMessageMetadata.class).orElseThrow();
+      SubscribeMessageMetadata jetStreamMetadata =
+          metadata.get(SubscribeMessageMetadata.class).orElseThrow();
       String id = jetStreamMetadata.messageId();
-      String subtopic = jetStreamMetadata.subtopic().orElse("<?>");
-      LOGGER.debug("Event written: messageId={}, subtopic={}", id, subtopic);
+      String subject = jetStreamMetadata.subjectOptional().orElse("<?>");
+      LOGGER.debug("Event written: messageId={}, subject={}", id, subject);
     }
     return CompletableFuture.completedFuture(null); // immediate ack
   }
 
   @Override
   protected CompletionStage<Void> onWriteNack(Throwable error, Metadata metadata) {
-    JetStreamOutgoingMessageMetadata jetStreamMetadata =
-        metadata.get(JetStreamOutgoingMessageMetadata.class).orElseThrow();
+    SubscribeMessageMetadata jetStreamMetadata =
+        metadata.get(SubscribeMessageMetadata.class).orElseThrow();
     String id = jetStreamMetadata.messageId();
-    String subtopic = jetStreamMetadata.subtopic().orElse("<?>");
-    LOGGER.error("Failed to write event: messageId={}, subtopic={}", id, subtopic, error);
+    String subject = jetStreamMetadata.subjectOptional().orElse("<?>");
+    LOGGER.error("Failed to write event: messageId={}, subject={}", id, subject, error);
     return CompletableFuture.completedFuture(null); // immediate ack
   }
 
-  /**
-   * Determine the subtopic for the given event. The subtopic is appended to the configured NATS
-   * root subject (see application.properties) to form the final subject to which the event is
-   * published.
-   *
-   * @param event The event for which to determine the subtopic.
-   * @return The subtopic for the given event.
-   */
-  public static String subtopic(Event event) {
+  public static String subject(Event event) {
     return switch (event.getType()) {
-      case MERGE -> "merge";
-      case TRANSPLANT -> "transplant";
-      case COMMIT -> "commit";
-      case CONTENT_STORED -> "commit.content.stored";
-      case CONTENT_REMOVED -> "commit.content.removed";
-      case REFERENCE_CREATED -> "reference.created";
-      case REFERENCE_UPDATED -> "reference.updated";
-      case REFERENCE_DELETED -> "reference.deleted";
+      case MERGE -> "nessie.events.merge";
+      case TRANSPLANT -> "nessie.events.transplant";
+      case COMMIT -> "nessie.events.commit";
+      case CONTENT_STORED -> "nessie.events.commit.content.stored";
+      case CONTENT_REMOVED -> "nessie.events.commit.content.removed";
+      case REFERENCE_CREATED -> "nessie.events.reference.created";
+      case REFERENCE_UPDATED -> "nessie.events.reference.updated";
+      case REFERENCE_DELETED -> "nessie.events.reference.deleted";
     };
   }
 }
