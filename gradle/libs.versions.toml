@@ -54,7 +54,7 @@ cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.5.1" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
 commons-text = { module = "org.apache.commons:commons-text", version = "1.12.0" }
 congocc = { module = "org.congocc:org.congocc.parser.generator", version = "2.0.0-RC8" }
-docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.4.0" }
+docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.4.1" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
