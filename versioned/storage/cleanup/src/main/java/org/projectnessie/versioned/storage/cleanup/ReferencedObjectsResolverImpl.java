@@ -24,6 +24,7 @@ import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLog
 import static org.projectnessie.versioned.storage.common.logic.Logics.referenceLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
+import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.INDEX_SEGMENTS;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.VALUE;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
@@ -38,6 +39,7 @@ import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
+import org.projectnessie.versioned.storage.common.objtypes.IndexSegmentsObj;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -274,6 +276,16 @@ final class ReferencedObjectsResolverImpl implements ReferencedObjectsResolver {
         .commitRelatedObjects(commit)
         .forEach(this::pendingObj);
 
+    commit
+        .referenceIndexStripes()
+        .forEach(
+            indexStripe ->
+                referencedObjectsContext.referencedObjects().markReferenced(indexStripe.segment()));
+
+    if (commit.referenceIndex() != null) {
+      pendingObj(commit.referenceIndex());
+    }
+
     var indexesLogic = indexesLogic(referencedObjectsContext.persist());
     var index = indexesLogic.buildCompleteIndexOrEmpty(commit);
     for (StoreIndexElement<CommitOp> indexElement : index) {
@@ -354,6 +366,11 @@ final class ReferencedObjectsResolverImpl implements ReferencedObjectsResolver {
               .valueFromStore(contentValueObj.payload(), contentValueObj.data());
 
       handleContent(content);
+    } else if (INDEX_SEGMENTS.equals(objType)) {
+      var segments = (IndexSegmentsObj) obj;
+      segments
+          .stripes()
+          .forEach(s -> referencedObjectsContext.referencedObjects().markReferenced(s.segment()));
     }
   }
 
