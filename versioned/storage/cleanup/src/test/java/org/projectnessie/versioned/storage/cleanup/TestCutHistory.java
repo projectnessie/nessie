@@ -201,10 +201,10 @@ public class TestCutHistory {
     //                       \- D1 - D2
     var main =
         requireNonNull(repositoryLogic(persist).fetchRepositoryDescription()).defaultBranchName();
-    VersionStore store = new VersionStoreImpl(persist);
+    var store = new VersionStoreImpl(persist);
     var root = commit(store, main, List.of("root"));
 
-    Set<String> c0Keys =
+    var c0Keys =
         IntStream.rangeClosed(1, numExtraKeys).mapToObj(i -> "k" + i).collect(Collectors.toSet());
     var c0 = commit(store, main, c0Keys); // force index stripes to still out
 
@@ -244,8 +244,8 @@ public class TestCutHistory {
     var branchF = store.create(BranchName.of("f"), Optional.ofNullable(c2)).getNamedRef().getName();
     var f1 = commit(store, branchF, List.of("f1"));
 
-    List<String> keysB = new ArrayList<>();
-    List<Hash> hashesB = new ArrayList<>();
+    var keysB = new ArrayList<String>();
+    var hashesB = new ArrayList<Hash>();
     for (int i = 0; i < numExtraKeys; i++) {
       String k = "b" + i;
       keysB.add(k);
@@ -253,19 +253,19 @@ public class TestCutHistory {
     }
 
     var cleanup = createCleanup(CleanupParams.builder().build());
-    CutHistoryParams ctx = cleanup.buildCutHistoryParams(persist, hashToObjId(requireNonNull(c1)));
-    CutHistory cutHistory = cleanup.createCutHistory(ctx);
-    CutHistoryScanResult identifiedCommits = cutHistory.identifyAffectedCommits();
+    var ctx = cleanup.buildCutHistoryParams(persist, hashToObjId(requireNonNull(c1)));
+    var cutHistory = cleanup.createCutHistory(ctx);
+    var identifiedCommits = cutHistory.identifyAffectedCommits();
 
-    UpdateParentsResult rewriteResult = cutHistory.rewriteParents(identifiedCommits);
+    var rewriteResult = cutHistory.rewriteParents(identifiedCommits);
     soft.assertThat(rewriteResult.failures()).isEmpty();
 
-    UpdateParentsResult cutResult = cutHistory.cutHistory();
+    var cutResult = cutHistory.cutHistory();
     soft.assertThat(cutResult.failures()).isEmpty();
 
-    PaginationIterator<Commit> it = store.getCommits(c1, true);
-    soft.assertThat(it).hasNext();
-    soft.assertThat(it.next())
+    var commits = store.getCommits(c1, true);
+    soft.assertThat(commits).hasNext();
+    soft.assertThat(commits.next())
         .extracting(Commit::getParentHash, c -> c.getCommitMeta().getParentCommitHashes())
         .containsExactly(objIdToHash(EMPTY_OBJ_ID), List.of(EMPTY_OBJ_ID.toString()));
 
