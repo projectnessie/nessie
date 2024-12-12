@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.101.2 Release (December 12, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.2).
+
+### Fixes
+
+- Fix large index processing in the `cleanup-repository` admin command.
+
+### Commits
+* Fix clean-up of reference index objects (#10083)
+* Workaround for CI failures because of missing `vectorized/redpanda` images (#10074)
+
 ## 0.101.1 Release (December 09, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.1).
