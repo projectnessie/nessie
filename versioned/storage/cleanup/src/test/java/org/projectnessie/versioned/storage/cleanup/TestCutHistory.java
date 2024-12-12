@@ -46,7 +46,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
@@ -77,8 +77,8 @@ import org.projectnessie.versioned.storage.testextension.PersistExtension;
 import org.projectnessie.versioned.storage.versionstore.VersionStoreImpl;
 
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
-@NessieStoreConfig(name = CONFIG_MAX_INCREMENTAL_INDEX_SIZE, value = "10000")
-@NessieStoreConfig(name = CONFIG_MAX_SERIALIZED_INDEX_SIZE, value = "10000")
+@NessieStoreConfig(name = CONFIG_MAX_INCREMENTAL_INDEX_SIZE, value = "5000")
+@NessieStoreConfig(name = CONFIG_MAX_SERIALIZED_INDEX_SIZE, value = "5000")
 public class TestCutHistory {
   @InjectSoftAssertions protected SoftAssertions soft;
 
@@ -106,8 +106,9 @@ public class TestCutHistory {
     soft.assertThat(repositoryLogic(persist).repositoryExists()).isTrue();
 
     // Cut point: C1
-    //           /- E2 -----\
-    //          /    /- E1 - E3
+    //               /- E4
+    //           /- E2 ------\
+    //          /     /- E1 - E3
     //  root - C1 - C2
     //  \       \- B0 - ... B24
     //   \- D1 -D2
@@ -122,6 +123,7 @@ public class TestCutHistory {
     var e1 = commit(c2.id(), "e1");
     var e2 = commit(c1.id(), "e2");
     var e3 = commit(e1.id(), "e3", e2);
+    var e4 = commit(e2.id(), "e4");
     var d1 = commit(root.id(), "d1");
     var d2 = commit(d1.id(), "d2");
     List<ObjId> b = new ArrayList<>();
@@ -135,15 +137,16 @@ public class TestCutHistory {
     CutHistory cutHistory = cleanup.createCutHistory(ctx);
     CutHistoryScanResult result = cutHistory.identifyAffectedCommits();
 
-    // 33 test commits from "root" to B24, plus auxiliary commits for reference and repo objects
-    soft.assertThat(result.numScannedObjs()).isEqualTo(33 + baseCommitCount.get());
+    // 34 test commits from "root" to B24, plus auxiliary commits for reference and repo objects
+    soft.assertThat(result.numScannedObjs()).isEqualTo(34 + baseCommitCount.get());
 
     soft.assertThat(result.affectedCommitIds())
         .doesNotContain(c1.id(), root.id(), d1.id(), d2.id());
-    soft.assertThat(result.affectedCommitIds()).contains(c2.id(), e1.id(), e2.id(), e3.id());
+    soft.assertThat(result.affectedCommitIds())
+        .contains(c2.id(), e1.id(), e2.id(), e3.id(), e4.id());
     soft.assertThat(result.affectedCommitIds())
         .containsAll(b.subList(0, persist.config().parentsPerCommit()));
-    soft.assertThat(result.affectedCommitIds()).hasSize(4 + persist.config().parentsPerCommit());
+    soft.assertThat(result.affectedCommitIds()).hasSize(5 + persist.config().parentsPerCommit());
   }
 
   @Test
@@ -190,13 +193,22 @@ public class TestCutHistory {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 10, 100, 500})
-  void cutPreservesContents(int numExtraKeys) throws Exception {
+  @CsvSource({
+    // Note: numExtraKeys and expectIndexStripes work in conjunction with config overrides at the
+    // class level
+    "1, false, false",
+    "1, false, true",
+    "10, false, false",
+    "30, false, true",
+    "100, true, false",
+    "100, true, true",
+  })
+  void cutPreservesContents(int numExtraKeys, boolean expectIndexStripes, boolean withPurge)
+      throws Exception {
     soft.assertThat(repositoryLogic(persist).repositoryExists()).isTrue();
 
     // Cut point: C1
-    //           /- G3 ---------\
-    //          /- E1 - E2 -\    \ /- F1
+    //          /- E1 - E2 -\     /- F1
     //  root - C0 --------- C1 - C2 - B1... Bnn
     //                       \- D1 - D2
     var main =
@@ -206,14 +218,16 @@ public class TestCutHistory {
 
     var c0Keys =
         IntStream.rangeClosed(1, numExtraKeys).mapToObj(i -> "k" + i).collect(Collectors.toSet());
-    var c0 = commit(store, main, c0Keys); // force index stripes to still out
+    var c0 = commit(store, main, c0Keys); // force index stripes to spill out
+
+    CommitObj commitC0 = commitLogic(persist).fetchCommit(hashToObjId(c0));
+    soft.assertThat(requireNonNull(commitC0).referenceIndexStripes().isEmpty())
+        .isNotEqualTo(expectIndexStripes);
 
     var branchE = store.create(BranchName.of("e"), Optional.of(c0)).getNamedRef().getName();
     var e1 = commit(store, branchE, List.of("e1"));
     var e2 = commit(store, branchE, List.of("e2"));
-
-    var branchG = store.create(BranchName.of("g"), Optional.of(c0)).getNamedRef().getName();
-    var g1 = commit(store, branchG, List.of("g1"));
+    store.delete(BranchName.of(branchE), e2);
 
     var c1 =
         store
@@ -226,20 +240,11 @@ public class TestCutHistory {
                     .build())
             .getResultantTargetHash();
 
+    var c2 = commit(store, main, List.of("c2"));
+
     var branchD = store.create(BranchName.of("d"), Optional.ofNullable(c1)).getNamedRef().getName();
     var d1 = commit(store, branchD, List.of("d1"));
     var d2 = commit(store, branchD, List.of("d2"));
-
-    var c2 =
-        store
-            .merge(
-                VersionStore.MergeOp.builder()
-                    .expectedHash(Optional.of(c0))
-                    .fromRef(BranchName.of(branchG))
-                    .fromHash(g1)
-                    .toBranch(BranchName.of(main))
-                    .build())
-            .getResultantTargetHash();
 
     var branchF = store.create(BranchName.of("f"), Optional.ofNullable(c2)).getNamedRef().getName();
     var f1 = commit(store, branchF, List.of("f1"));
@@ -251,6 +256,11 @@ public class TestCutHistory {
       keysB.add(k);
       hashesB.add(commit(store, main, List.of(k)));
     }
+
+    CommitObj commitBLast =
+        commitLogic(persist).fetchCommit(hashToObjId(hashesB.get(hashesB.size() - 1)));
+    soft.assertThat(requireNonNull(commitBLast).referenceIndexStripes().isEmpty())
+        .isNotEqualTo(expectIndexStripes);
 
     var cleanup = createCleanup(CleanupParams.builder().build());
     var ctx = cleanup.buildCutHistoryParams(persist, hashToObjId(requireNonNull(c1)));
@@ -269,22 +279,34 @@ public class TestCutHistory {
         .extracting(Commit::getParentHash, c -> c.getCommitMeta().getParentCommitHashes())
         .containsExactly(objIdToHash(EMPTY_OBJ_ID), List.of(EMPTY_OBJ_ID.toString()));
 
-    validateContent(store, root, List.of(), "root");
-    validateContent(store, c0, c0Keys, "root");
-    validateContent(store, g1, c0Keys, "root", "g1");
-    validateContent(store, e1, c0Keys, "root", "e1");
-    validateContent(store, e2, c0Keys, "root", "e1", "e2");
+    if (withPurge) {
+      var referencedObjectsContext =
+          cleanup.buildReferencedObjectsContext(persist, persist.config().currentTimeMicros());
+      var referencedObjectsResolver =
+          cleanup.createReferencedObjectsResolver(referencedObjectsContext);
+      var resolveResult = referencedObjectsResolver.resolve();
+      var purgeObjects = cleanup.createPurgeObjects(resolveResult.purgeObjectsContext());
+      var purgeResult = purgeObjects.purge();
+      soft.assertThat(purgeResult.stats().numPurgedObjs()).isGreaterThan(0);
+    }
+
+    if (!withPurge) {
+      validateContent(store, root, List.of(), "root");
+      validateContent(store, c0, c0Keys, "root");
+      validateContent(store, e1, c0Keys, "root", "e1");
+      validateContent(store, e2, c0Keys, "root", "e1", "e2");
+    }
+
     validateContent(store, c1, c0Keys, "root", "e1", "e2");
     validateContent(store, c1, c0Keys, "root", "e1", "e2");
     validateContent(store, d1, c0Keys, "root", "e1", "e2", "d1");
     validateContent(store, d2, c0Keys, "root", "e1", "e2", "d1", "d2");
-    validateContent(store, c2, c0Keys, "root", "e1", "e2", "g1");
-    validateContent(store, f1, c0Keys, "root", "e1", "e2", "g1", "f1");
+    validateContent(store, c2, c0Keys, "root", "e1", "e2", "c2");
+    validateContent(store, f1, c0Keys, "root", "e1", "e2", "c2", "f1");
 
-    // Iterate by 5 to save test time
-    for (int i = 0; i < hashesB.size(); i += 5) {
+    for (int i = 0; i < hashesB.size(); i++) {
       Set<String> keys = new HashSet<>(c0Keys);
-      keys.addAll(Arrays.asList("root", "e1", "e2", "g1"));
+      keys.addAll(Arrays.asList("root", "e1", "e2", "c2"));
       keys.addAll(keysB.subList(0, i + 1));
       validateContent(store, hashesB.get(i), keys);
     }
