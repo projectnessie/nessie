@@ -108,9 +108,14 @@ public class CutHistoryImpl implements CutHistory {
       if (commitObj == null) {
         result.putFailure(id, new IllegalAccessException("Commit not found: " + id));
       } else {
+        String msg =
+            String.format(
+                "%s [updated to remove parents on %s]",
+                commitObj.message(), context.persist().config().clock().instant());
         CommitObj updated =
             CommitObj.commitBuilder()
                 .from(commitObj)
+                .message(msg)
                 .secondaryParents(List.of())
                 .tail(List.of())
                 .build();

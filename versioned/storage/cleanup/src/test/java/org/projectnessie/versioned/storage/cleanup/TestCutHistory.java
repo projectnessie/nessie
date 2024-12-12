@@ -174,6 +174,28 @@ public class TestCutHistory {
     soft.assertThat(commitLogic.fetchCommit(c2.id())).isEqualTo(c2);
   }
 
+  @Test
+  void rewrittenCommitProperties() throws Exception {
+    soft.assertThat(repositoryLogic(persist).repositoryExists()).isTrue();
+
+    var root = commit(EMPTY_OBJ_ID, "root");
+    var c1 = commit(root.id(), "c1");
+
+    var cleanup = createCleanup(CleanupParams.builder().build());
+    CutHistoryParams ctx = cleanup.buildCutHistoryParams(persist, c1.id());
+    CutHistory cutHistory = cleanup.createCutHistory(ctx);
+    CutHistoryScanResult scanResult = cutHistory.identifyAffectedCommits();
+    UpdateParentsResult rewriteResult = cutHistory.rewriteParents(scanResult);
+    UpdateParentsResult cutResult = cutHistory.cutHistory();
+    soft.assertThat(rewriteResult.failures()).isEmpty();
+    soft.assertThat(cutResult.failures()).isEmpty();
+
+    CommitLogic commitLogic = commitLogic(persist);
+    CommitObj c1new = commitLogic.fetchCommit(c1.id());
+    soft.assertThat(requireNonNull(c1new).message())
+        .matches(".*\\[updated to remove parents on .*].*");
+  }
+
   private IcebergTable table(String key) {
     return IcebergTable.of(key, 1, 2, 3, 4);
   }
