@@ -15,14 +15,15 @@
  */
 package org.projectnessie.versioned.storage.cleanup;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.projectnessie.versioned.storage.cleanup.ImmutableCutHistoryScanResult.Builder;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.function.IntFunction;
-import org.projectnessie.versioned.storage.common.logic.CommitLogic;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.CloseableIterator;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -44,6 +45,7 @@ public class CutHistoryImpl implements CutHistory {
 
     Persist persist = context.persist();
     ObjId cutPoint = context.cutPoint();
+    result.cutPoint(cutPoint);
 
     long numObjects = 0;
     // Identify commits, whose "tails" overlap the cut point.
@@ -66,53 +68,54 @@ public class CutHistoryImpl implements CutHistory {
   }
 
   @Override
-  public UpdateParentsResult rewriteParents(CutHistoryScanResult scanResult) {
-    ImmutableUpdateParentsResult.Builder result = UpdateParentsResult.builder();
-    CommitLogic commitLogic = commitLogic(context.persist());
+  public CutHistoryResult cutHistory(CutHistoryScanResult scanResult) {
+    var result = CutHistoryResult.builder().input(scanResult);
+    var commitLogic = commitLogic(context.persist());
+
+    result.wasHistoryCut(false);
+    var failed = false;
     for (ObjId id : scanResult.affectedCommitIds()) {
       try {
-        CommitObj commitObj = commitLogic.fetchCommit(id);
-        if (commitObj == null) {
-          result.putFailure(id, new IllegalAccessException("Commit not found: " + id));
+        var commitObj = commitLogic.fetchCommit(id);
+        checkState(commitObj != null, "Commit not found: %s", id);
+
+        if (commitObj.tail().size() <= 1) {
           continue;
         }
 
-        if (commitObj.tail().isEmpty()) {
-          continue;
-        }
-
-        CommitObj updated =
+        var updatedCommitObj =
             CommitObj.commitBuilder()
                 .from(commitObj)
                 .tail(commitObj.tail().subList(0, 1)) // one direct parent for simplicity
                 .build();
 
         if (!context.dryRun()) {
-          context.persist().upsertObj(updated);
+          context.persist().upsertObj(updatedCommitObj);
+          result.addRewrittenCommitId(id);
         }
-
       } catch (Exception e) {
         result.putFailure(id, e);
+        failed = true;
       }
     }
-    return result.build();
-  }
 
-  @Override
-  public UpdateParentsResult cutHistory() {
-    ObjId id = context.cutPoint();
-    ImmutableUpdateParentsResult.Builder result = UpdateParentsResult.builder();
-    CommitLogic commitLogic = commitLogic(context.persist());
+    // Do not attempt cutting history if the affected commit tails could not be rewritten
+    if (failed) {
+      return result.build();
+    }
+
+    var cutPoint = context.cutPoint();
     try {
-      CommitObj commitObj = commitLogic.fetchCommit(id);
-      if (commitObj == null) {
-        result.putFailure(id, new IllegalAccessException("Commit not found: " + id));
-      } else {
-        String msg =
+      var commitObj = commitLogic.fetchCommit(cutPoint);
+      checkState(commitObj != null, "Commit not found: %s", cutPoint);
+
+      if (!EMPTY_OBJ_ID.equals(commitObj.directParent())
+          || !commitObj.secondaryParents().isEmpty()) {
+        var msg =
             String.format(
                 "%s [updated to remove parents on %s]",
                 commitObj.message(), context.persist().config().clock().instant());
-        CommitObj updated =
+        var updatedCommitObj =
             CommitObj.commitBuilder()
                 .from(commitObj)
                 .message(msg)
@@ -121,12 +124,15 @@ public class CutHistoryImpl implements CutHistory {
                 .build();
 
         if (!context.dryRun()) {
-          context.persist().upsertObj(updated);
+          context.persist().upsertObj(updatedCommitObj);
+          result.addRewrittenCommitId(cutPoint);
+          result.wasHistoryCut(true);
         }
       }
     } catch (Exception e) {
-      result.putFailure(id, e);
+      result.putFailure(cutPoint, e);
     }
+
     return result.build();
   }
 }

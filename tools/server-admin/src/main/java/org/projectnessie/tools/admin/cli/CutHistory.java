@@ -21,11 +21,8 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashT
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.storage.cleanup.CleanupParams;
-import org.projectnessie.versioned.storage.cleanup.UpdateParentsResult;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -73,72 +70,47 @@ public class CutHistory extends BaseCommand {
     var identifyResult = cutHistory.identifyAffectedCommits();
     spec.commandLine()
         .getOut()
-        .printf("Identified %d affected commits.%n", identifyResult.affectedCommitIds().size());
+        .printf("Identified %d related commits.%n", identifyResult.affectedCommitIds().size());
 
-    if (failedWithRetries(
-        () -> cutHistory.rewriteParents(identifyResult),
-        result ->
-            result
-                .failures()
-                .forEach(
-                    (id, e) ->
-                        spec.commandLine()
-                            .getErr()
-                            .printf("Unable to rewrite parents for %s: %s.%n", id, e)))) {
-      spec.commandLine()
-          .getErr()
-          .printf("Unable to rewrite parents after %d tries.%n", numRetries + 1);
-      return EXIT_CODE_GENERIC_ERROR;
-    }
+    int exitCode = 0;
+    for (int r = 0; r <= numRetries; r++) {
+      var result = cutHistory.cutHistory(identifyResult);
 
-    if (!dryRun) {
       spec.commandLine()
           .getOut()
-          .printf("Rewrote %d affected commits.%n", identifyResult.affectedCommitIds().size());
-    }
+          .printf("Rewrote %d commits.%n", result.rewrittenCommitIds().size());
 
-    if (failedWithRetries(
-        cutHistory::cutHistory,
-        result ->
-            result
-                .failures()
-                .forEach(
-                    (id, e) ->
-                        spec.commandLine()
-                            .getErr()
-                            .printf("Unable to cut history at commit %s: %s.%n", id, e)))) {
-      spec.commandLine().getErr().printf("Unable to cut history after %d tries.%n", numRetries + 1);
-      return EXIT_CODE_GENERIC_ERROR;
+      if (result.failures().isEmpty()) {
+        exitCode = 0;
+        if (!dryRun && result.wasHistoryCut()) {
+          spec.commandLine().getOut().printf("Removed parents from commit %s.%n", cutPoint);
+        }
+
+        break;
+
+      } else {
+        exitCode = EXIT_CODE_GENERIC_ERROR;
+
+        result
+            .failures()
+            .forEach(
+                (id, e) ->
+                    spec.commandLine()
+                        .getErr()
+                        .printf("Unable to rewrite parents for %s: %s.%n", id, e));
+
+        if (r < numRetries) {
+          spec.commandLine().getErr().printf("Retrying...%n");
+        } else {
+          spec.commandLine()
+              .getErr()
+              .printf("Unable to rewrite all required commits after %d tries.%n", r + 1);
+        }
+      }
     }
 
     Duration duration = Duration.between(start, Instant.now());
-    if (!dryRun) {
-      spec.commandLine()
-          .getOut()
-          .printf("Removed parents from commit %s in %s.%n", cutPoint, duration);
-    } else {
-      spec.commandLine()
-          .getOut()
-          .printf("Dry run for commit %s completed in %s.%n", cutPoint, duration);
-    }
-
-    return 0;
-  }
-
-  private boolean failedWithRetries(
-      Supplier<UpdateParentsResult> method, Consumer<UpdateParentsResult> errorHandler) {
-    for (int r = 0; r <= numRetries; r++) {
-      var result = method.get();
-      if (result.failures().isEmpty()) {
-        return false;
-      }
-
-      errorHandler.accept(result);
-
-      if (r < numRetries) {
-        spec.commandLine().getErr().printf("Retrying...%n");
-      }
-    }
-    return true;
+    spec.commandLine().getOut().printf("Completed in %s.%n", duration);
+    return exitCode;
   }
 }

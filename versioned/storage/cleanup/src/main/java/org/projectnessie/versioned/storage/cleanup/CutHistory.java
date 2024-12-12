@@ -38,25 +38,19 @@ public interface CutHistory {
   CutHistoryScanResult identifyAffectedCommits();
 
   /**
-   * Rewrites commits identifies by the {@link #identifyAffectedCommits()} operation to shorten
-   * their {@link CommitObj#tail() parent} lists so that they will not overlap the cut point.
+   * Rewrites commits identifies by the {@link CutHistoryScanResult} parameter.
+   *
+   * <p>First, commits identified by {@link CutHistoryScanResult#affectedCommitIds()} are rewritten
+   * to shorten their {@link CommitObj#tail() parent} lists so that they will not overlap the cut
+   * point.
+   *
+   * <p>Second, the commit marked as the history {@link CutHistoryScanResult#affectedCommitIds() cut
+   * point} is rewritten to remove all its parents (direct and merge parents). The rewritten commit
+   * will effectively become a "root" commit. The message of the rewritten "cut point" commit is
+   * updated to indicate that its parents got removed.
    *
    * <p>Note: this operation is idempotent and does not affect the logical correctness of the Nessie
-   * commit graph. However, commit traversal may be slower across the rewritten commits due to
-   * shorted parent lists (i.e. more I/O round-trips).
+   * commit graph.
    */
-  UpdateParentsResult rewriteParents(CutHistoryScanResult scanResult);
-
-  /**
-   * Rewrites the commit marked as the history cut point to remove all its parents. The rewritten
-   * commit will effectively become a "root" commit. This operation is idempotent.
-   *
-   * <p>Note: this operation should only be invoked after {@link
-   * #rewriteParents(CutHistoryScanResult)} completed successfully to avoid corrupting the commit
-   * graph.
-   *
-   * <p>Note: this operation will affect merges from base commits that used to be parents of the
-   * history cut point.
-   */
-  UpdateParentsResult cutHistory();
+  CutHistoryResult cutHistory(CutHistoryScanResult scanResult);
 }

@@ -16,17 +16,33 @@
 package org.projectnessie.versioned.storage.cleanup;
 
 import java.util.Map;
+import java.util.Set;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 
 /** Represents results of updating the commit history. */
 @NessieImmutable
-public interface UpdateParentsResult {
+public interface CutHistoryResult {
 
-  /** Update failures by commit ID. */
+  /** Input parameters that drove the cut operation. */
+  CutHistoryScanResult input();
+
+  /** IDs of commits that were actually rewritten by this operation. */
+  Set<ObjId> rewrittenCommitIds();
+
+  /**
+   * Indicates whether the {@link CutHistoryScanResult#cutPoint()} commit was actually rewritten.
+   */
+  boolean wasHistoryCut();
+
+  /**
+   * Update failures by commit ID.
+   *
+   * <p>Note: failures do not break the commit graph's logical consistency.
+   */
   Map<ObjId, Throwable> failures();
 
-  static ImmutableUpdateParentsResult.Builder builder() {
-    return ImmutableUpdateParentsResult.builder();
+  static ImmutableCutHistoryResult.Builder builder() {
+    return ImmutableCutHistoryResult.builder();
   }
 }

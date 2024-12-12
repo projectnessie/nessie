@@ -56,13 +56,14 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
     var launchResult =
         launcher.launch("cut-history", "--commit", "1122334455667788", "--retry", "1");
     soft.assertThat(launchResult.exitCode()).isEqualTo(1);
-    soft.assertThat(launchResult.getOutputStream()).contains("Rewrote 0 affected commits.");
+    soft.assertThat(launchResult.getOutputStream()).contains("Rewrote 0 commits.");
     soft.assertThat(launchResult.getErrorStream())
         .contains(
-            "Unable to cut history at commit 1122334455667788: "
+            "Unable to rewrite parents for 1122334455667788: "
                 + "org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException: "
                 + "Object with ID 1122334455667788 not found.");
-    soft.assertThat(launchResult.getErrorStream()).contains("Unable to cut history after 2 tries.");
+    soft.assertThat(launchResult.getErrorStream())
+        .contains("Unable to rewrite all required commits after 2 tries.");
   }
 
   @Test
@@ -77,13 +78,15 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
       commitHashes.add(objIdToHash(commit.id()));
     }
 
-    var cutResult = launcher.launch("cut-history", "--commit", commitHashes.get(50).asString());
+    Hash cutPoint = commitHashes.get(50);
+    var cutResult = launcher.launch("cut-history", "--commit", cutPoint.asString());
     soft.assertThat(cutResult.exitCode()).isEqualTo(0);
     // 20 commits need rewriting because of the default 20 entries in the commit "tail".
-    soft.assertThat(cutResult.getOutputStream()).contains("Identified 20 affected commits.");
-    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 20 affected commits.");
+    soft.assertThat(cutResult.getOutputStream()).contains("Identified 20 related commits.");
+    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 21 commits.");
     soft.assertThat(cutResult.getOutputStream())
-        .anyMatch(s -> s.matches("Removed parents from commit .* in PT.*S."));
+        .contains("Removed parents from commit " + cutPoint.asString() + ".");
+    soft.assertThat(cutResult.getOutputStream()).anyMatch(s -> s.matches("Completed in PT.*S."));
 
     var cleanResult = launcher.launch("cleanup-repository");
     soft.assertThat(cleanResult.exitCode()).isEqualTo(0);
@@ -119,7 +122,7 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
 
     var cutResult = launcher.launch("cut-history", "--dry-run", "--commit", c2.id().toString());
     soft.assertThat(cutResult.exitCode()).isEqualTo(0);
-    soft.assertThat(cutResult.getOutputStream()).noneMatch(s -> s.matches(".*Rewrote.*"));
+    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 0 commits.");
     soft.assertThat(cutResult.getOutputStream()).noneMatch(s -> s.matches(".*Removed parents.*"));
 
     CommitLogic commitLogic = commitLogic(persist());

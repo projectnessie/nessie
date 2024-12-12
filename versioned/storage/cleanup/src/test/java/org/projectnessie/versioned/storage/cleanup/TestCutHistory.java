@@ -160,13 +160,13 @@ public class TestCutHistory {
     var c2 = commit(c1.id(), "c2");
 
     var cleanup = createCleanup(CleanupParams.builder().dryRun(true).build());
-    CutHistoryParams ctx = cleanup.buildCutHistoryParams(persist, c1.id());
-    CutHistory cutHistory = cleanup.createCutHistory(ctx);
-    CutHistoryScanResult scanResult = cutHistory.identifyAffectedCommits();
-    UpdateParentsResult rewriteResult = cutHistory.rewriteParents(scanResult);
-    UpdateParentsResult cutResult = cutHistory.cutHistory();
-    soft.assertThat(rewriteResult.failures()).isEmpty();
+    var ctx = cleanup.buildCutHistoryParams(persist, c1.id());
+    var cutHistory = cleanup.createCutHistory(ctx);
+    var scanResult = cutHistory.identifyAffectedCommits();
+    var cutResult = cutHistory.cutHistory(scanResult);
     soft.assertThat(cutResult.failures()).isEmpty();
+    soft.assertThat(cutResult.rewrittenCommitIds()).isEmpty();
+    soft.assertThat(cutResult.wasHistoryCut()).isFalse();
 
     CommitLogic commitLogic = commitLogic(persist);
     soft.assertThat(commitLogic.fetchCommit(root.id())).isEqualTo(root);
@@ -175,25 +175,69 @@ public class TestCutHistory {
   }
 
   @Test
-  void rewrittenCommitProperties() throws Exception {
+  void rewrittenCommitMessage() throws Exception {
     soft.assertThat(repositoryLogic(persist).repositoryExists()).isTrue();
 
     var root = commit(EMPTY_OBJ_ID, "root");
     var c1 = commit(root.id(), "c1");
 
     var cleanup = createCleanup(CleanupParams.builder().build());
-    CutHistoryParams ctx = cleanup.buildCutHistoryParams(persist, c1.id());
-    CutHistory cutHistory = cleanup.createCutHistory(ctx);
-    CutHistoryScanResult scanResult = cutHistory.identifyAffectedCommits();
-    UpdateParentsResult rewriteResult = cutHistory.rewriteParents(scanResult);
-    UpdateParentsResult cutResult = cutHistory.cutHistory();
-    soft.assertThat(rewriteResult.failures()).isEmpty();
+    var ctx = cleanup.buildCutHistoryParams(persist, c1.id());
+    var cutHistory = cleanup.createCutHistory(ctx);
+    var scanResult = cutHistory.identifyAffectedCommits();
+    var cutResult = cutHistory.cutHistory(scanResult);
     soft.assertThat(cutResult.failures()).isEmpty();
 
-    CommitLogic commitLogic = commitLogic(persist);
-    CommitObj c1new = commitLogic.fetchCommit(c1.id());
+    var commitLogic = commitLogic(persist);
+    var c1new = commitLogic.fetchCommit(c1.id());
     soft.assertThat(requireNonNull(c1new).message())
         .matches(".*\\[updated to remove parents on .*].*");
+  }
+
+  @Test
+  void idempotency() throws Exception {
+    soft.assertThat(repositoryLogic(persist).repositoryExists()).isTrue();
+
+    var ids = new ArrayList<ObjId>();
+    var root = commit(EMPTY_OBJ_ID, "root");
+    ids.add(root.id());
+    var c1 = commit(root.id(), "c1");
+    ids.add(c1.id());
+    var head = c1.id();
+    for (int i = 0; i < persist.config().parentsPerCommit() + 2; i++) {
+      var c = commit(head, "t" + i);
+      ids.add(c.id());
+      head = c.id();
+    }
+
+    var cleanup = createCleanup(CleanupParams.builder().build());
+    var ctx = cleanup.buildCutHistoryParams(persist, c1.id());
+    var cutHistory = cleanup.createCutHistory(ctx);
+    var scanResult = cutHistory.identifyAffectedCommits();
+    soft.assertThat(scanResult.cutPoint()).isEqualTo(c1.id());
+    soft.assertThat(scanResult.affectedCommitIds()).isNotEmpty();
+
+    var cutResult = cutHistory.cutHistory(scanResult);
+    soft.assertThat(cutResult.wasHistoryCut()).isTrue();
+    soft.assertThat(cutResult.failures()).isEmpty();
+    soft.assertThat(cutResult.input()).isEqualTo(scanResult);
+    soft.assertThat(cutResult.rewrittenCommitIds()).containsAll(scanResult.affectedCommitIds());
+    soft.assertThat(cutResult.rewrittenCommitIds()).contains(c1.id());
+
+    var commitLogic = commitLogic(persist);
+    var commits = new ArrayList<CommitObj>();
+    for (ObjId id : ids) {
+      commits.add(requireNonNull(commitLogic.fetchCommit(id)));
+    }
+
+    // re-invocation does not make any changes
+    cutResult = cutHistory.cutHistory(scanResult);
+    soft.assertThat(cutResult.wasHistoryCut()).isFalse();
+    soft.assertThat(cutResult.rewrittenCommitIds()).isEmpty();
+    soft.assertThat(cutResult.failures()).isEmpty();
+
+    soft.assertThat(persist.fetchObjs(ids.toArray(new ObjId[0])))
+        .containsExactlyInAnyOrderElementsOf(commits);
   }
 
   private IcebergTable table(String key) {
@@ -288,12 +332,13 @@ public class TestCutHistory {
     var ctx = cleanup.buildCutHistoryParams(persist, hashToObjId(requireNonNull(c1)));
     var cutHistory = cleanup.createCutHistory(ctx);
     var identifiedCommits = cutHistory.identifyAffectedCommits();
-
-    var rewriteResult = cutHistory.rewriteParents(identifiedCommits);
-    soft.assertThat(rewriteResult.failures()).isEmpty();
-
-    var cutResult = cutHistory.cutHistory();
+    var cutResult = cutHistory.cutHistory(identifiedCommits);
+    soft.assertThat(cutResult.wasHistoryCut()).isTrue();
     soft.assertThat(cutResult.failures()).isEmpty();
+    soft.assertThat(cutResult.input()).isEqualTo(identifiedCommits);
+    soft.assertThat(cutResult.rewrittenCommitIds())
+        .containsAll(identifiedCommits.affectedCommitIds());
+    soft.assertThat(cutResult.rewrittenCommitIds()).contains(hashToObjId(requireNonNull(c1)));
 
     var commits = store.getCommits(c1, true);
     soft.assertThat(commits).hasNext();
