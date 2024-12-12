@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fix large index processing in the `cleanup-repository` admin command.
+
 ### Commits
 
 ## [0.101.1] Release (2024-12-09)
