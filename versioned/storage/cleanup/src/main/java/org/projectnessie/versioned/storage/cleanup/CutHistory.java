@@ -29,9 +29,9 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
  */
 public interface CutHistory {
   /**
-   * Identifies commits, whose logical correctness would be affected by the {@link #cutHistory()}
-   * operation. These commits have lists {@link CommitObj#tail() parent} that stretch beyond the cut
-   * point.
+   * Identifies commits, whose logical correctness would be affected by the {@link
+   * #cutHistory(CutHistoryScanResult)} operation. These commits have lists {@link CommitObj#tail()
+   * parent} that stretch beyond the cut point.
    *
    * <p>Note: this operation may be time-consuming.
    */
