@@ -120,7 +120,7 @@ public class CutHistoryImpl implements CutHistory {
                 .from(commitObj)
                 .message(msg)
                 .secondaryParents(List.of())
-                .tail(List.of())
+                .tail(List.of(EMPTY_OBJ_ID))
                 .build();
 
         if (!context.dryRun()) {
