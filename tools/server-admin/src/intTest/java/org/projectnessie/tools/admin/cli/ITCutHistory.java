@@ -81,9 +81,11 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
     Hash cutPoint = commitHashes.get(50);
     var cutResult = launcher.launch("cut-history", "--commit", cutPoint.asString());
     soft.assertThat(cutResult.exitCode()).isEqualTo(0);
-    // 20 commits need rewriting because of the default 20 entries in the commit "tail".
-    soft.assertThat(cutResult.getOutputStream()).contains("Identified 20 related commits.");
-    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 21 commits.");
+    // 19 commits need rewriting because of the default 20 entries in the commit "tail".
+    // The commit whole last tail element is the cut point, does not need to be rewritten.
+    soft.assertThat(cutResult.getOutputStream()).contains("Identified 19 related commits.");
+    // 19 tail rewrites plus the cut point
+    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 20 commits.");
     soft.assertThat(cutResult.getOutputStream())
         .contains("Removed parents from commit " + cutPoint.asString() + ".");
     soft.assertThat(cutResult.getOutputStream()).anyMatch(s -> s.matches("Completed in PT.*S."));

@@ -57,7 +57,11 @@ public class CutHistoryImpl implements CutHistory {
 
         CommitObj commit = (CommitObj) scan.next();
         numObjects++;
-        if (commit.tail().contains(cutPoint)) {
+
+        var tail = commit.tail();
+        var cutPointIdx = tail.indexOf(cutPoint);
+        // Commits referencing the cut point as their last parent do not need to be rewritten
+        if (cutPointIdx >= 0 && cutPointIdx < tail.size() - 1) {
           result.addAffectedCommitId(commit.id());
         }
       }
@@ -71,6 +75,7 @@ public class CutHistoryImpl implements CutHistory {
   public CutHistoryResult cutHistory(CutHistoryScanResult scanResult) {
     var result = CutHistoryResult.builder().input(scanResult);
     var commitLogic = commitLogic(context.persist());
+    var cutPoint = context.cutPoint();
 
     result.wasHistoryCut(false);
     var failed = false;
@@ -83,10 +88,18 @@ public class CutHistoryImpl implements CutHistory {
           continue;
         }
 
+        var tail = commitObj.tail();
+        var cutPointIdx = tail.indexOf(cutPoint);
+
+        if (cutPointIdx < 0 || cutPointIdx == tail.size() - 1) {
+          // may happen on re-invocation
+          continue;
+        }
+
         var updatedCommitObj =
             CommitObj.commitBuilder()
                 .from(commitObj)
-                .tail(commitObj.tail().subList(0, 1)) // one direct parent for simplicity
+                .tail(commitObj.tail().subList(0, cutPointIdx + 1))
                 .build();
 
         if (!context.dryRun()) {
@@ -104,7 +117,6 @@ public class CutHistoryImpl implements CutHistory {
       return result.build();
     }
 
-    var cutPoint = context.cutPoint();
     try {
       var commitObj = commitLogic.fetchCommit(cutPoint);
       checkState(commitObj != null, "Commit not found: %s", cutPoint);

@@ -144,9 +144,12 @@ public class TestCutHistory {
         .doesNotContain(c1.id(), root.id(), d1.id(), d2.id());
     soft.assertThat(result.affectedCommitIds())
         .contains(c2.id(), e1.id(), e2.id(), e3.id(), e4.id());
+
+    // Commits referencing the cut point as their last parent do not need to be rewritten
     soft.assertThat(result.affectedCommitIds())
-        .containsAll(b.subList(0, persist.config().parentsPerCommit()));
-    soft.assertThat(result.affectedCommitIds()).hasSize(5 + persist.config().parentsPerCommit());
+        .containsAll(b.subList(0, persist.config().parentsPerCommit() - 1));
+    soft.assertThat(result.affectedCommitIds())
+        .hasSize(5 + persist.config().parentsPerCommit() - 1);
   }
 
   @Test
