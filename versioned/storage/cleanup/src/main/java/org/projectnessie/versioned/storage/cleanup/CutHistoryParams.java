@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.storage.cleanup;
 
-import jakarta.validation.constraints.NotNull;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
@@ -26,10 +25,9 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
  */
 @NessieImmutable
 public interface CutHistoryParams {
-  @NotNull
+
   ObjId cutPoint();
 
-  @NotNull
   Persist persist();
 
   int scanObjRatePerSecond();
