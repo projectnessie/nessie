@@ -53,17 +53,14 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
 
   @Test
   public void testInvalidCommitHash(QuarkusMainLauncher launcher) {
-    var launchResult =
-        launcher.launch("cut-history", "--commit", "1122334455667788", "--retry", "1");
+    var launchResult = launcher.launch("cut-history", "--commit", "1122334455667788");
     soft.assertThat(launchResult.exitCode()).isEqualTo(1);
-    soft.assertThat(launchResult.getOutputStream()).contains("Rewrote 0 commits.");
+    soft.assertThat(launchResult.getOutputStream()).noneMatch(s -> s.matches(".*Rewrote.*"));
     soft.assertThat(launchResult.getErrorStream())
         .contains(
             "Unable to rewrite parents for 1122334455667788: "
                 + "org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException: "
                 + "Object with ID 1122334455667788 not found.");
-    soft.assertThat(launchResult.getErrorStream())
-        .contains("Unable to rewrite all required commits after 2 tries.");
   }
 
   @Test
@@ -124,7 +121,8 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
 
     var cutResult = launcher.launch("cut-history", "--dry-run", "--commit", c2.id().toString());
     soft.assertThat(cutResult.exitCode()).isEqualTo(0);
-    soft.assertThat(cutResult.getOutputStream()).contains("Rewrote 0 commits.");
+    soft.assertThat(cutResult.getOutputStream())
+        .noneMatch(s -> s.matches(".*Rewrote .* commits.*"));
     soft.assertThat(cutResult.getOutputStream()).noneMatch(s -> s.matches(".*Removed parents.*"));
 
     CommitLogic commitLogic = commitLogic(persist());

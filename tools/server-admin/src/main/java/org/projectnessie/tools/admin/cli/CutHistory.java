@@ -43,12 +43,6 @@ public class CutHistory extends BaseCommand {
   private String cutPoint;
 
   @CommandLine.Option(
-      names = {"-R", "--retry"},
-      defaultValue = "0",
-      description = "Number of retries for idempotent sub-operations.")
-  private int numRetries;
-
-  @CommandLine.Option(
       names = {"--dry-run"},
       description = "Perform all operations, but do not modify any objects.")
   private boolean dryRun;
@@ -72,45 +66,29 @@ public class CutHistory extends BaseCommand {
         .getOut()
         .printf("Identified %d related commits.%n", identifyResult.affectedCommitIds().size());
 
-    int exitCode = 0;
-    for (int r = 0; r <= numRetries; r++) {
-      var result = cutHistory.cutHistory(identifyResult);
+    var result = cutHistory.cutHistory(identifyResult);
 
+    result
+        .failures()
+        .forEach(
+            (id, e) ->
+                spec.commandLine()
+                    .getErr()
+                    .printf("Unable to rewrite parents for %s: %s.%n", id, e));
+
+    if (!result.rewrittenCommitIds().isEmpty()) {
       spec.commandLine()
           .getOut()
           .printf("Rewrote %d commits.%n", result.rewrittenCommitIds().size());
+    }
 
-      if (result.failures().isEmpty()) {
-        exitCode = 0;
-        if (!dryRun && result.wasHistoryCut()) {
-          spec.commandLine().getOut().printf("Removed parents from commit %s.%n", cutPoint);
-        }
-
-        break;
-
-      } else {
-        exitCode = EXIT_CODE_GENERIC_ERROR;
-
-        result
-            .failures()
-            .forEach(
-                (id, e) ->
-                    spec.commandLine()
-                        .getErr()
-                        .printf("Unable to rewrite parents for %s: %s.%n", id, e));
-
-        if (r < numRetries) {
-          spec.commandLine().getErr().printf("Retrying...%n");
-        } else {
-          spec.commandLine()
-              .getErr()
-              .printf("Unable to rewrite all required commits after %d tries.%n", r + 1);
-        }
-      }
+    // wasHistoryCut() == true implies that it was _not_ a dry run
+    if (result.wasHistoryCut()) {
+      spec.commandLine().getOut().printf("Removed parents from commit %s.%n", cutPoint);
     }
 
     Duration duration = Duration.between(start, Instant.now());
     spec.commandLine().getOut().printf("Completed in %s.%n", duration);
-    return exitCode;
+    return result.failures().isEmpty() ? 0 : EXIT_CODE_GENERIC_ERROR;
   }
 }
