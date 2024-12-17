@@ -18,10 +18,13 @@ package org.projectnessie.versioned.storage.cleanup;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 
 /**
- * Interface to cut the Nessie commit graph at a certain point by remoting its parents. The cut
- * point is provided by {@link CutHistoryParams#cutPoint()}.
+ * Interface to cut the Nessie commit log at a certain point by remoting its parents. The cut point
+ * is provided by {@link CutHistoryParams#cutPoint()}.
  *
- * <p>This operation is generally meaningful when followed with {@link PurgeObjects}, which will
+ * <p>All references (branches and tags) that contain the cut point will be affected. References
+ * that lose common ancestors with another branch will lose be ability to merge into that branch.
+ *
+ * <p>This operation is generally meaningful when followed by {@link PurgeObjects}, which will
  * removed pieces of the commit graph that are no longer reachable from reference HEADs.
  *
  * @see Cleanup#createCutHistory(CutHistoryParams)
@@ -49,8 +52,7 @@ public interface CutHistory {
    * will effectively become a "root" commit. The message of the rewritten "cut point" commit is
    * updated to indicate that its parents got removed.
    *
-   * <p>Note: this operation is idempotent and does not affect the logical correctness of the Nessie
-   * commit graph.
+   * <p>Note: this operation is idempotent.
    */
   CutHistoryResult cutHistory(CutHistoryScanResult scanResult);
 }

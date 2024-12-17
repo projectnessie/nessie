@@ -24,8 +24,11 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 public interface CutHistoryScanResult {
 
   /**
-   * The ID of the commit whose parents (both direct parents and merge parents) got removed. This is
-   * the commit that is referenced by direct parent "tails" in {@link #affectedCommitIds()}.
+   * The ID of the commit whose parents (both direct parents and merge parents) are intended to be
+   * removed.
+   *
+   * <p>The {@link #affectedCommitIds() "affected"} commits are those commits thar reference this
+   * "cut point" in their direct parent {@link CommitObj#tail() "tails"}.
    */
   ObjId cutPoint();
 

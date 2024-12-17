@@ -38,7 +38,13 @@ public interface CutHistoryResult {
   /**
    * Update failures by commit ID.
    *
-   * <p>Note: failures do not break the commit graph's logical consistency.
+   * <p>Note: failures do not break the commit graph's internal consistency. More specifically, if
+   * failures occurred during the rewriting of the {@link CutHistoryScanResult#affectedCommitIds()
+   * affected child commits}, the commit graph's connectedness remains intact (even if some affected
+   * commits got rewritted and some did not). If failures occurred during the rewriting of the
+   * {@link CutHistoryScanResult#cutPoint() cut point}, either the old data of the "cut point"
+   * commit remains in effect (no logical commit graph change), or the parents of the "cut point"
+   * got removed, which means the commit graph conforms to the state intended by the cut operation.
    */
   Map<ObjId, Throwable> failures();
 
