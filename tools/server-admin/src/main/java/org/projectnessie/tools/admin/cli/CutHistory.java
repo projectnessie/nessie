@@ -30,10 +30,14 @@ import picocli.CommandLine;
     mixinStandardHelpOptions = true,
     description = {
       "Advanced commit log manipulation command that removes parents from the specified commit. "
-          + "Use with extreme caution. This command will make Nessie caches inconsistent with persisted data, "
-          + "therefore, it is preferable to run this command when Nessie servers are shut down. At the very least, "
+          + "Read the full help message before using!",
+      "* Make sure to perform an export of the Nessie repository before running this command!",
+      "* References (branches, tags) may lose common ancestors as a result of running this command. "
+          + "If that happens, the affected references will lose be ability to merge into each other.",
+      "* This command will make Nessie caches inconsistent with persisted data. "
+          + "Therefore, it is preferable to run this command when Nessie servers are shut down. At the very least, "
           + "all Nessie servers should be restarted as soon as possible after this command completes. "
-          + "Subsequently, it may be worth running the `cleanup-repository` command."
+          + "Subsequently, it may be worth running the `cleanup-repository` command.",
     })
 public class CutHistory extends BaseCommand {
   @CommandLine.Option(
