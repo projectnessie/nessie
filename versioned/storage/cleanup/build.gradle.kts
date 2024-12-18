@@ -45,7 +45,9 @@ dependencies {
 
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
+  testImplementation(project(":nessie-versioned-storage-store"))
   testImplementation(project(":nessie-versioned-tests"))
+  testImplementation(project(":nessie-server-store"))
   testImplementation(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

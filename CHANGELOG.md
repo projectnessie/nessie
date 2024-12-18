@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Add the `cut-history` command to the Nessie server admin tool. This command allows advanced users to 
+  detach certain commits from their predecessors (direct and merge parents).
+
 ### Changes
 
 ### Deprecations
