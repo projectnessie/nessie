@@ -14,9 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Add the `cut-history` command to the Nessie server admin tool. This command allows advanced users to 
-  detach certain commits from their predecessors (direct and merge parents).
-
 ### Changes
 
 ### Deprecations
@@ -24,6 +21,13 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.101.3] Release (2024-12-18)
+
+### New Features
+
+- Add the `cut-history` command to the Nessie server admin tool. This command allows advanced users to 
+  detach certain commits from their predecessors (direct and merge parents).
 
 ## [0.101.2] Release (2024-12-12)
 
@@ -984,7 +988,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.101.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.101.3...HEAD
+[0.101.3]: https://github.com/projectnessie/nessie/compare/nessie-0.101.2...nessie-0.101.3
 [0.101.2]: https://github.com/projectnessie/nessie/compare/nessie-0.101.1...nessie-0.101.2
 [0.101.1]: https://github.com/projectnessie/nessie/compare/nessie-0.101.0...nessie-0.101.1
 [0.101.0]: https://github.com/projectnessie/nessie/compare/nessie-0.100.3...nessie-0.101.0

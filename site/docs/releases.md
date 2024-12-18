@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.101.3 Release (December 18, 2024)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.3).
+
+### New Features
+
+- Add the `cut-history` command to the Nessie server admin tool. This command allows advanced users to 
+  detach certain commits from their predecessors (direct and merge parents).
+
+### Commits
+* Add admin tool command to cut commit log at a certain point. (#10048)
+* Revert "Workaround for CI failures because of missing `vectorized/redpanda` images (#10074)" (#10087)
+
 ## 0.101.2 Release (December 12, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.2).
