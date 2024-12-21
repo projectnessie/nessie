@@ -20,6 +20,7 @@ import static org.projectnessie.versioned.DefaultMetadataRewriter.DEFAULT_METADA
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -336,6 +337,22 @@ public interface VersionStore {
   PaginationIterator<Commit> getCommits(Ref ref, boolean fetchAdditionalInfo)
       throws ReferenceNotFoundException;
 
+  /**
+   * Retrieve the <em>changes</em> to the content object with the content key {@code key} on {@code
+   * ref}. This functionality focuses on <em>content</em> changes, neglecting renames.
+   *
+   * <p>The behavior of this function is rather <em>not</em> what an end user would expect, namely
+   * referencing the commits that actually changed the content. The behavior of this function just
+   * focuses on the changes, primarily intended to eventually build the snapshot history of an
+   * Iceberg table.
+   *
+   * <p>The first element returned by the iterator is the current state on the most recent from
+   * (beginning at {@code ref}). Following elements returned by the iterator refer to the content
+   * changes, as seen on the most recent commit(s).
+   */
+  Iterator<ContentHistoryEntry> getContentChanges(Ref ref, ContentKey key)
+      throws ReferenceNotFoundException;
+
   @Value.Immutable
   interface KeyRestrictions {
     KeyRestrictions NO_KEY_RESTRICTIONS = KeyRestrictions.builder().build();
@@ -374,7 +391,8 @@ public interface VersionStore {
       Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException;
 
-  List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
+  List<IdentifiedContentKey> getIdentifiedKeys(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException;
 
   /**

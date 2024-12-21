@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.formats.iceberg.rest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -37,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
@@ -156,8 +158,14 @@ public interface IcebergMetadataUpdate {
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
-      throw new UnsupportedOperationException(
-          "Nessie Catalog does not allow external snapshot management");
+      state.addCatalogOp(CatalogOps.META_REMOVE_SNAPSHOTS);
+      var ids = new HashSet<>(snapshotIds());
+      state
+          .builder()
+          .previousIcebergSnapshotIds(
+              state.snapshot().previousIcebergSnapshotIds().stream()
+                  .filter(id -> !ids.contains(id))
+                  .collect(Collectors.toList()));
     }
   }
 
@@ -475,6 +483,19 @@ public interface IcebergMetadataUpdate {
     default void applyToTable(IcebergTableMetadataUpdateState state) {
       state.addCatalogOp(CatalogOps.META_ADD_SNAPSHOT);
       Map<String, String> summary = snapshot().summary();
+
+      Long currentSnapshotId = state.snapshot().icebergSnapshotId();
+      Long parentSnapshotId = snapshot().parentSnapshotId();
+      checkArgument(
+          parentSnapshotId == null || Objects.equals(currentSnapshotId, parentSnapshotId),
+          "Snapshot to be added must use the parent snapshot ID %s or null, but provided parent snapshot ID is %s",
+          currentSnapshotId,
+          parentSnapshotId);
+      checkArgument(
+          (currentSnapshotId == null || snapshot().snapshotId() != currentSnapshotId)
+              && !state.snapshot().previousIcebergSnapshotIds().contains(snapshot().snapshotId()),
+          "Provided snapshot ID %s is already used",
+          snapshot().snapshotId());
 
       String v = summary.get("added-data-files");
       if (v != null && Long.parseLong(v) > 0) {

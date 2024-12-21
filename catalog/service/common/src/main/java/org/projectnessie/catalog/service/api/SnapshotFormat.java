@@ -25,7 +25,18 @@ public enum SnapshotFormat {
    * The Nessie Catalog main native format includes the entity snapshot information with schemas,
    * partition definitions and sort definitions.
    */
-  NESSIE_SNAPSHOT,
+  NESSIE_SNAPSHOT(false),
   /** Iceberg table metadata. */
-  ICEBERG_TABLE_METADATA,
+  ICEBERG_TABLE_METADATA(true),
+  ;
+
+  private final boolean includeOldSnapshots;
+
+  SnapshotFormat(boolean includeOldSnapshots) {
+    this.includeOldSnapshots = includeOldSnapshots;
+  }
+
+  public boolean includeOldSnapshots() {
+    return includeOldSnapshots;
+  }
 }

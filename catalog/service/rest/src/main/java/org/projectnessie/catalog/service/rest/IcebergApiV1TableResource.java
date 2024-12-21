@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -39,13 +40,13 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
-import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
 import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import static org.projectnessie.versioned.RequestMeta.apiWrite;
 
 import com.google.common.collect.Lists;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.unchecked.Unchecked;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -103,11 +104,11 @@ import org.projectnessie.catalog.service.rest.IcebergErrorMapper.IcebergEntityKi
 import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitResponse;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.FetchOption;
+import org.projectnessie.model.IcebergContent;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
@@ -179,11 +180,16 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       @HeaderParam("X-Iceberg-Access-Delegation") String dataAccess)
       throws IOException {
 
-    return loadTable(prefix, namespace, table, null, dataAccess)
+    TableRef tableRef = decodeTableRef(prefix, namespace, table);
+
+    // TODO should be optimized to not load the old snapshots in a follow-up, at best specialized to
+    //  only retrieve the credentials
+
+    return loadTable(tableRef, prefix, dataAccess, false)
         .map(
             loadTableResponse -> {
               var creds = loadTableResponse.storageCredentials();
-
+              checkState(creds != null, "no storage credentials for {}", tableRef);
               return ImmutableIcebergLoadCredentialsResponse.of(creds);
             });
   }
@@ -354,6 +360,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       IcebergTableMetadata stagedTableMetadata =
           nessieTableSnapshotToIceberg(
               snapshot,
+              List.of(),
               Optional.empty(),
               map -> map.put(IcebergTableMetadata.STAGED_PROPERTY, "true"));
 
@@ -415,106 +422,83 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     ParsedReference reference = requireNonNull(tableRef.reference());
     Branch ref = checkBranch(treeService.getReferenceByName(reference.name(), FetchOption.MINIMAL));
 
-    RequestMetaBuilder requestMeta =
-        apiWrite().addKeyAction(tableRef.contentKey(), CatalogOps.CATALOG_REGISTER_ENTITY.name());
-
-    Optional<TableRef> catalogTableRef =
-        uriInfo.resolveTableFromUri(registerTableRequest.metadataLocation());
-    boolean nessieCatalogUri = uriInfo.isNessieCatalogUri(registerTableRequest.metadataLocation());
-    if (catalogTableRef.isPresent() && nessieCatalogUri) {
-      // In case the metadataLocation in the IcebergRegisterTableRequest contains a URI for _this_
-      // Nessie Catalog, use the existing data/objects.
-
-      // Taking a "shortcut" here, we use the 'old Content object' and re-add it in a Nessie commit.
-
-      TableRef ctr = catalogTableRef.get();
-
-      ContentResponse contentResponse = fetchIcebergTable(ctr, true);
-      // It's technically a new table for Nessie, so need to clear the content-ID.
-      Content newContent = contentResponse.getContent().withId(null);
-
-      Operations ops =
-          ImmutableOperations.builder()
-              .addOperations(Put.of(ctr.contentKey(), newContent))
-              .commitMeta(
-                  updateCommitMeta(
-                      format(
-                          "Register Iceberg table '%s' from '%s'",
-                          ctr.contentKey(), registerTableRequest.metadataLocation())))
-              .build();
-      CommitResponse committed =
-          treeService.commitMultipleOperations(
-              ref.getName(), ref.getHash(), ops, requestMeta.build());
-
-      return this.loadTable(
-          TableRef.tableRef(
-              ctr.contentKey(),
-              ParsedReference.parsedReference(
-                  committed.getTargetBranch().getName(),
-                  committed.getTargetBranch().getHash(),
-                  BRANCH),
-              tableRef.warehouse()),
-          prefix,
-          dataAccess,
-          true);
-    } else if (nessieCatalogUri) {
-      throw new IllegalArgumentException(
-          "Cannot register an Iceberg table using the URI "
-              + registerTableRequest.metadataLocation());
-    }
-
-    // Register table from "external" metadata-location
-
-    IcebergTableMetadata tableMetadata;
-    try (InputStream metadataInput =
-        objectIO.readObject(StorageUri.of(registerTableRequest.metadataLocation()))) {
-      tableMetadata =
-          IcebergJson.objectMapper().readValue(metadataInput, IcebergTableMetadata.class);
-    }
-
-    catalogService
-        .validateStorageLocation(tableMetadata.location())
-        .ifPresent(
-            msg -> {
-              throw new IllegalArgumentException(
-                  format(
-                      "Location for table '%s' to be registered cannot be associated with any configured object storage location: %s",
-                      tableRef.contentKey(), msg));
-            });
-
-    ToIntFunction<Integer> safeUnbox = i -> i != null ? i : 0;
-
-    Content newContent =
-        IcebergTable.of(
-            registerTableRequest.metadataLocation(),
-            tableMetadata.currentSnapshotId(),
-            safeUnbox.applyAsInt(tableMetadata.currentSchemaId()),
-            safeUnbox.applyAsInt(tableMetadata.defaultSpecId()),
-            safeUnbox.applyAsInt(tableMetadata.defaultSortOrderId()));
-    Operations ops =
-        ImmutableOperations.builder()
-            .addOperations(Put.of(tableRef.contentKey(), newContent))
-            .commitMeta(
-                updateCommitMeta(
-                    format(
-                        "Register Iceberg table '%s' from '%s'",
-                        tableRef.contentKey(), registerTableRequest.metadataLocation())))
+    var requestMeta =
+        apiWrite()
+            .addKeyAction(tableRef.contentKey(), CatalogOps.CATALOG_REGISTER_ENTITY.name())
             .build();
-    CommitResponse committed =
-        treeService.commitMultipleOperations(
-            ref.getName(), ref.getHash(), ops, requestMeta.build());
 
-    return this.loadTable(
-        tableRef(
-            tableRef.contentKey(),
-            parsedReference(
-                committed.getTargetBranch().getName(),
-                committed.getTargetBranch().getHash(),
-                committed.getTargetBranch().getType()),
-            tableRef.warehouse()),
-        prefix,
-        dataAccess,
-        true);
+    var fetchTableMetadata =
+        Uni.createFrom()
+            .item(
+                Unchecked.supplier(
+                    () -> {
+                      var metadataLocation = registerTableRequest.metadataLocation();
+                      try (InputStream metadataInput =
+                          objectIO.readObject(StorageUri.of(metadataLocation))) {
+                        var tableMetadata =
+                            IcebergJson.objectMapper()
+                                .readValue(metadataInput, IcebergTableMetadata.class);
+                        return Map.entry(metadataLocation, tableMetadata);
+                      }
+                    }));
+
+    return fetchTableMetadata.chain(
+        Unchecked.function(
+            tableMetadataLocationAndObject -> {
+              var metadataLocation = tableMetadataLocationAndObject.getKey();
+              var tableMetadata = tableMetadataLocationAndObject.getValue();
+              catalogService
+                  .validateStorageLocation(tableMetadata.location())
+                  .ifPresent(
+                      msg -> {
+                        throw new IllegalArgumentException(
+                            format(
+                                "Location for table '%s' to be registered cannot be associated with any configured object storage location: %s",
+                                tableRef.contentKey(), msg));
+                      });
+
+              if (catalogService.checkIcebergSnapshotPresent(
+                  metadataLocation, tableMetadata.currentSnapshotId())) {
+                throw new IllegalArgumentException(
+                    format(
+                        "Table '%s' cannot be registered with this metadata location '%s', because the location is already managed in this Nessie catalog",
+                        tableRef.contentKey(), metadataLocation));
+              }
+
+              ToIntFunction<Integer> safeUnbox = i -> i != null ? i : 0;
+
+              Content newContent =
+                  IcebergTable.of(
+                      metadataLocation,
+                      tableMetadata.currentSnapshotId(),
+                      safeUnbox.applyAsInt(tableMetadata.currentSchemaId()),
+                      safeUnbox.applyAsInt(tableMetadata.defaultSpecId()),
+                      safeUnbox.applyAsInt(tableMetadata.defaultSortOrderId()));
+              Operations ops =
+                  ImmutableOperations.builder()
+                      .addOperations(Put.of(tableRef.contentKey(), newContent))
+                      .commitMeta(
+                          updateCommitMeta(
+                              format(
+                                  "Register Iceberg table '%s' from '%s'",
+                                  tableRef.contentKey(), metadataLocation)))
+                      .build();
+              var committed =
+                  treeService.commitMultipleOperations(
+                      ref.getName(), ref.getHash(), ops, requestMeta);
+
+              return this.loadTable(
+                  tableRef(
+                      tableRef.contentKey(),
+                      parsedReference(
+                          committed.getTargetBranch().getName(),
+                          committed.getTargetBranch().getHash(),
+                          committed.getTargetBranch().getType()),
+                      tableRef.warehouse()),
+                  prefix,
+                  dataAccess,
+                  true);
+            }));
   }
 
   @Operation(operationId = "iceberg.v1.dropTable")
@@ -634,9 +618,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   (IcebergTableMetadata)
                       snap.entityObject()
                           .orElseThrow(() -> new IllegalStateException("entity object missing"));
+              var metadataLocation = ((IcebergContent) snap.content()).getMetadataLocation();
               return IcebergCommitTableResponse.builder()
                   .metadata(tableMetadata)
-                  .metadataLocation(snapshotMetadataLocation(snap))
+                  .metadataLocation(metadataLocation)
                   .build();
             });
   }
