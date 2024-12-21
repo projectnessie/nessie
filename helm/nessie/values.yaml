@@ -713,6 +713,8 @@ serviceMonitor:
   labels:
     {}
     # release: prometheus
+  # -- Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config.
+  metricRelabelings: []
 
 serviceAccount:
   # -- Specifies whether a service account should be created.
