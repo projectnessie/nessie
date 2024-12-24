@@ -41,6 +41,7 @@ import static org.projectnessie.services.cel.CELUtil.VAR_REF;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_META;
 import static org.projectnessie.services.cel.CELUtil.VAR_REF_TYPE;
 import static org.projectnessie.services.impl.RefUtil.toNamedRef;
+import static org.projectnessie.services.impl.RefUtil.toReference;
 import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 
 import com.google.common.base.Strings;
@@ -64,6 +65,7 @@ import java.util.stream.Collectors;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
 import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieContentNotFoundException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceAlreadyExistsException;
 import org.projectnessie.error.NessieReferenceConflictException;
@@ -109,6 +111,8 @@ import org.projectnessie.services.cel.CELUtil;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.hash.HashValidator;
 import org.projectnessie.services.hash.ResolvedHash;
+import org.projectnessie.services.spi.ContentHistory;
+import org.projectnessie.services.spi.ImmutableContentHistory;
 import org.projectnessie.services.spi.PagedResponseHandler;
 import org.projectnessie.services.spi.TreeService;
 import org.projectnessie.versioned.BranchName;
@@ -418,6 +422,55 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
   }
 
   @Override
+  public ContentHistory getContentHistory(
+      ContentKey key,
+      @Nullable String namedRef,
+      @Nullable String hashOnRef,
+      RequestMeta requestMeta)
+      throws NessieNotFoundException {
+    try {
+      var ref =
+          getHashResolver()
+              .resolveHashOnRef(namedRef, hashOnRef, new HashValidator("Expected hash"));
+
+      boolean forWrite = requestMeta.forWrite();
+      Set<String> actions = requestMeta.keyActions(key);
+      var r = ref.getNamedRef();
+      var accessChecks = startAccessCheck().canListCommitLog(r);
+      if (forWrite) {
+        accessChecks.canCommitChangeAgainstReference(r);
+      }
+
+      var identifiedKeys = getStore().getIdentifiedKeys(ref.getHash(), List.of(key), true);
+      var identifiedKey = identifiedKeys.get(0);
+      if (identifiedKey.type() == null) {
+        if (forWrite) {
+          accessChecks
+              .canReadEntityValue(r, identifiedKey, actions)
+              .canCreateEntity(r, identifiedKey, actions);
+        }
+        accessChecks.checkAndThrow();
+
+        throw new NessieContentNotFoundException(key, namedRef);
+      }
+
+      accessChecks.canReadEntityValue(r, identifiedKey, actions);
+      if (forWrite) {
+        accessChecks.canUpdateEntity(r, identifiedKey, actions);
+      }
+      accessChecks.checkAndThrow();
+
+      var contentHistory = getStore().getContentChanges(ref.getHash(), key);
+      return ImmutableContentHistory.builder()
+          .history(contentHistory)
+          .reference(toReference(r, ref.getHash()))
+          .build();
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieReferenceNotFoundException(e.getMessage(), e);
+    }
+  }
+
+  @Override
   public <R> R getCommitLog(
       String namedRef,
       FetchOption fetchOption,
@@ -507,7 +560,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       getStore()
           .getIdentifiedKeys(
               endRef.getHash(),
-              operations.stream().map(Operation::getKey).collect(Collectors.toList()))
+              operations.stream().map(Operation::getKey).collect(Collectors.toList()),
+              false)
           .forEach(entry -> identifiedKeys.put(entry.contentKey(), entry));
     } catch (ReferenceNotFoundException e) {
       throw new RuntimeException(e);
