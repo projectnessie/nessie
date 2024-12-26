@@ -44,6 +44,7 @@ dependencies {
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation("org.testcontainers:junit-jupiter")
   intTestImplementation(libs.lowkey.vault.testcontainers)
+  intTestImplementation(libs.lowkey.vault.client)
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestRuntimeOnly(libs.logback.classic)
 }
