@@ -715,6 +715,12 @@ serviceMonitor:
     # release: prometheus
   # -- Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config.
   metricRelabelings: []
+    # - source_labels: [ __meta_kubernetes_namespace ]
+    #   separator: ;
+    #   regex: (.*)
+    #   target_label: namespace
+    #   replacement: $1
+    #   action: replace
 
 serviceAccount:
   # -- Specifies whether a service account should be created.
