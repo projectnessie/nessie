@@ -22,9 +22,8 @@ import java.time.Duration;
 import org.projectnessie.versioned.storage.cassandra2.Cassandra2Config;
 
 /**
- * When setting {@code nessie.version.store.type=CASSANDRA} which enables Apache Cassandra or
- * ScyllaDB as the version store used by the Nessie server, the following configurations are
- * applicable.
+ * When setting {@code nessie.version.store.type=CASSANDRA} which enables Apache Cassandra as the
+ * version store used by the Nessie server, the following configurations are applicable.
  */
 @StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.cassandra")

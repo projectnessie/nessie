@@ -18,9 +18,9 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins { id("nessie-conventions-server") }
 
-publishingHelper { mavenName = "Nessie - Storage - Cassandra & ScyllaDB" }
+publishingHelper { mavenName = "Nessie - Storage - Apache Cassandra" }
 
-description = "Storage implementation for Cassandra & ScyllaDB."
+description = "Storage implementation for Apache Cassandra."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
