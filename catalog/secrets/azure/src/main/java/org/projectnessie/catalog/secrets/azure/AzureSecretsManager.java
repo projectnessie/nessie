@@ -21,6 +21,7 @@ import com.azure.core.exception.ResourceNotFoundException;
 import com.azure.security.keyvault.secrets.SecretAsyncClient;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -57,7 +58,9 @@ public class AzureSecretsManager extends AbstractStringBasedSecretsManager {
                 });
 
     try {
-      return future.get(timeout, MILLISECONDS).getValue();
+      return Optional.ofNullable(future.get(timeout, MILLISECONDS))
+          .map(KeyVaultSecret::getValue)
+          .orElse(null);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     }

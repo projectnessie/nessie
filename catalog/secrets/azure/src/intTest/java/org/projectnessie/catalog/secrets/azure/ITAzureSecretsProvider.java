@@ -15,25 +15,28 @@
  */
 package org.projectnessie.catalog.secrets.azure;
 
-import static java.lang.String.format;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
-import com.azure.identity.UsernamePasswordCredentialBuilder;
+import com.azure.core.credential.BasicAuthenticationCredential;
+import com.azure.core.credential.TokenCredential;
 import com.azure.security.keyvault.secrets.SecretAsyncClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
+import com.github.nagyesta.lowkeyvault.http.ApacheHttpClient;
+import com.github.nagyesta.lowkeyvault.http.AuthorityOverrideFunction;
 import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainer;
 import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainerBuilder;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.catalog.secrets.BasicCredentials;
@@ -48,8 +51,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @ExtendWith(SoftAssertionsExtension.class)
-@Disabled(
-    "Azure SecretClient requires an SSL connection, verifying the server certificates, which needs to used by the test container and trusted by the client. No way around it.")
 public class ITAzureSecretsProvider {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITAzureSecretsProvider.class);
 
@@ -71,15 +72,23 @@ public class ITAzureSecretsProvider {
 
   @Test
   public void azureSecrets() {
+    final String endpoint = lowkeyVault.getVaultBaseUrl("default");
+    final AuthorityOverrideFunction authorityOverrideFunction =
+        new AuthorityOverrideFunction(
+            lowkeyVault.getVaultAuthority("default"), lowkeyVault.getEndpointAuthority());
+    final TokenCredential credentials =
+        new BasicAuthenticationCredential(lowkeyVault.getUsername(), lowkeyVault.getPassword());
+    final ApacheHttpClient httpClient =
+        new ApacheHttpClient(
+            authorityOverrideFunction,
+            new TrustSelfSignedStrategy(),
+            new DefaultHostnameVerifier());
     SecretAsyncClient client =
         new SecretClientBuilder()
-            .vaultUrl(format("https://%s.localhost:%d", "default", lowkeyVault.getMappedPort(8443)))
-            .credential(
-                new UsernamePasswordCredentialBuilder()
-                    .clientId("ITAzureSecretsSupplier")
-                    .username(lowkeyVault.getUsername())
-                    .password(lowkeyVault.getPassword())
-                    .build())
+            .vaultUrl(endpoint)
+            .credential(credentials)
+            .httpClient(httpClient)
+            .disableChallengeResourceVerification()
             .buildAsyncClient();
 
     String instantStr = "2024-06-05T20:38:16Z";
