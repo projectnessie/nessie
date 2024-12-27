@@ -26,7 +26,7 @@ import static org.projectnessie.events.ri.messaging.MessageHeaders.INITIATOR;
 import static org.projectnessie.events.ri.messaging.MessageHeaders.REPOSITORY_ID;
 import static org.projectnessie.events.ri.messaging.MessageHeaders.SPEC_VERSION;
 
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.PublishMessageMetadata;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.SubscribeMessageMetadata;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -55,8 +55,8 @@ public class TestNatsJsonEventSubscriber extends AbstractMessagingEventSubscribe
 
   @Override
   protected void checkMessage(Message<Event> message, Event expectedPayload) {
-    PublishMessageMetadata metadata =
-        message.getMetadata().get(PublishMessageMetadata.class).orElseThrow();
+    SubscribeMessageMetadata metadata =
+        message.getMetadata().get(SubscribeMessageMetadata.class).orElseThrow();
     assertThat(metadata.messageId()).isEqualTo(expectedPayload.getIdAsText());
     String subject = AbstractNatsEventSubscriber.subject(expectedPayload);
     assertThat(metadata.subject()).isEqualTo(subject);
