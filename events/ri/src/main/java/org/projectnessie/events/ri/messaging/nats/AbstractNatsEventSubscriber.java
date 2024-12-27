@@ -15,7 +15,7 @@
  */
 package org.projectnessie.events.ri.messaging.nats;
 
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.SubscribeMessageMetadata;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.PublishMessageMetadata;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +48,11 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
   protected Message<T> createMessage(Event upstreamEvent, T messagePayload) {
     Map<String, List<String>> headers = new HashMap<>();
     createHeaders(upstreamEvent, (name, value) -> headers.put(name, List.of(value)));
-    SubscribeMessageMetadata metadata =
-        SubscribeMessageMetadata.builder()
+    PublishMessageMetadata metadata =
+        PublishMessageMetadata.builder()
             .messageId(upstreamEvent.getIdAsText())
             .headers(headers)
+            .stream("nessie-events")
             .subject(subject(upstreamEvent))
             .build();
     return Message.of(messagePayload, Metadata.of(metadata));
@@ -61,10 +62,10 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
   protected CompletionStage<Void> onWriteAck(Metadata metadata) {
     // Do NOT enable this log statement in production!
     if (LOGGER.isDebugEnabled()) {
-      SubscribeMessageMetadata jetStreamMetadata =
-          metadata.get(SubscribeMessageMetadata.class).orElseThrow();
+      PublishMessageMetadata jetStreamMetadata =
+          metadata.get(PublishMessageMetadata.class).orElseThrow();
       String id = jetStreamMetadata.messageId();
-      String subject = jetStreamMetadata.subjectOptional().orElse("<?>");
+      String subject = jetStreamMetadata.subject();
       LOGGER.debug("Event written: messageId={}, subject={}", id, subject);
     }
     return CompletableFuture.completedFuture(null); // immediate ack
@@ -72,10 +73,10 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
 
   @Override
   protected CompletionStage<Void> onWriteNack(Throwable error, Metadata metadata) {
-    SubscribeMessageMetadata jetStreamMetadata =
-        metadata.get(SubscribeMessageMetadata.class).orElseThrow();
+    PublishMessageMetadata jetStreamMetadata =
+        metadata.get(PublishMessageMetadata.class).orElseThrow();
     String id = jetStreamMetadata.messageId();
-    String subject = jetStreamMetadata.subjectOptional().orElse("<?>");
+    String subject = jetStreamMetadata.subject();
     LOGGER.error("Failed to write event: messageId={}, subject={}", id, subject, error);
     return CompletableFuture.completedFuture(null); // immediate ack
   }
