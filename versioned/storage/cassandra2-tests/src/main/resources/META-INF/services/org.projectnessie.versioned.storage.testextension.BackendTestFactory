@@ -14,4 +14,3 @@
 # limitations under the License.
 #
 org.projectnessie.versioned.storage.cassandra2tests.CassandraBackendTestFactory
-org.projectnessie.versioned.storage.cassandra2tests.ScyllaDBBackendTestFactory

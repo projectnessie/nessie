@@ -16,9 +16,9 @@
 
 plugins { id("nessie-conventions-server") }
 
-publishingHelper { mavenName = "Nessie - Storage - Cassandra & ScyllaDB - Tests" }
+publishingHelper { mavenName = "Nessie - Storage - Apache Cassandra - Tests" }
 
-description = "Base test code for creating test backends using Cassandra & ScyllaDB."
+description = "Base test code for creating test backends using Apache Cassandra."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-cassandra"))

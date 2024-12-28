@@ -218,8 +218,7 @@ public abstract class AbstractReferenceLogicTests {
             // `DatabaseSpecific.isRetryTransaction()`.
             "ITCockroachDBPersist",
             // Fails due to driver timeouts and LWT issues with Apache Cassandra.
-            "ITCassandraPersist",
-            "ITScyllaDBPersist");
+            "ITCassandraPersist");
 
     IntFunction<String> refName = i -> "refs/heads/branch-" + i + "-" + (i & 7);
 
