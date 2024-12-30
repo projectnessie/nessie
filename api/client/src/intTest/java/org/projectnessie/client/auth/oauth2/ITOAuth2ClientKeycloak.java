@@ -543,6 +543,8 @@ public class ITOAuth2ClientKeycloak {
             .password("s3cr3t")
             // Otherwise Keycloak complains about missing scope, but still issues tokens
             .addScope("openid")
+            // Should be ignored
+            .extraRequestParameters(Map.of("param1", "value1", "custom param 2", "custom value 2"))
             .defaultAccessTokenLifespan(Duration.ofSeconds(10))
             .defaultRefreshTokenLifespan(Duration.ofSeconds(15))
             .refreshSafetyWindow(Duration.ofSeconds(5))

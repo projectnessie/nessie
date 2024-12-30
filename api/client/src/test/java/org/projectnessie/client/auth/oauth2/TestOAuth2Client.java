@@ -578,6 +578,24 @@ class TestOAuth2Client {
     }
   }
 
+  @Test
+  void testExtraRequestParameters() throws Exception {
+
+    try (HttpTestServer server = new HttpTestServer(handler(), true)) {
+
+      OAuth2ClientConfig config =
+          configBuilder(server, false)
+              .grantType(GrantType.CLIENT_CREDENTIALS)
+              .extraRequestParameters(Map.of("key1", "value1", "key2", "value2"))
+              .build();
+
+      try (OAuth2Client client = new OAuth2Client(config)) {
+        Tokens tokens = client.fetchNewTokens();
+        checkInitialResponse(tokens, false);
+      }
+    }
+  }
+
   private class TestRequestHandler implements HttpTestServer.RequestHandler {
 
     private volatile boolean deviceAuthorized = false;
@@ -631,6 +649,10 @@ class TestOAuth2Client {
       if (grantType.equals(GrantType.CLIENT_CREDENTIALS.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, ClientCredentialsTokenRequest.class);
         soft.assertThat(request.getScope()).isEqualTo("test");
+        if (request.extraParameters().size() > 1) {
+          soft.assertThat(request.extraParameters())
+              .contains(entry("key1", "value1"), entry("key2", "value2"));
+        }
         response = getClientCredentialsTokensResponse();
       } else if (grantType.equals(GrantType.PASSWORD.canonicalName())) {
         request = OBJECT_MAPPER.convertValue(data, PasswordTokenRequest.class);

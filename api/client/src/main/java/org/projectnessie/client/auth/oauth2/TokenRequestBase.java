@@ -15,10 +15,12 @@
  */
 package org.projectnessie.client.auth.oauth2;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -63,10 +65,20 @@ interface TokenRequestBase {
   @JsonProperty("scope")
   String getScope();
 
+  /**
+   * Additional parameters to be included in the request. This is useful for custom parameters that
+   * are not covered by the standard OAuth2.0 specification.
+   */
+  @JsonAnyGetter
+  Map<String, String> extraParameters();
+
   interface Builder<T extends TokenRequestBase> {
 
     @CanIgnoreReturnValue
     Builder<T> scope(String scope);
+
+    @CanIgnoreReturnValue
+    Builder<T> extraParameters(Map<String, ? extends String> extraParameters);
 
     T build();
   }

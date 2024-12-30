@@ -14,6 +14,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- When using OAuth authentication, the Nessie client now supports including extra parameters in
+  requests to the token endpoint. This is useful for passing custom parameters that are not covered
+  by the standard OAuth 2.0 specification. See the [Nessie
+  documentation](https://projectnessie.org/tools/client_config/#authentication-settings) for
+  details.
+
 ### Changes
 
 ### Deprecations

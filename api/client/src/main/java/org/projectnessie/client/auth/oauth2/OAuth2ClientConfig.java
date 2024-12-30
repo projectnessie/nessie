@@ -51,6 +51,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
@@ -497,6 +498,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
 
     @Override
     Builder scopes(Iterable<String> scopes);
+
+    @CanIgnoreReturnValue
+    Builder extraRequestParameters(Map<String, ? extends String> extraRequestParameters);
 
     @Override
     Builder tokenExchangeConfig(TokenExchangeConfig tokenExchangeConfig);

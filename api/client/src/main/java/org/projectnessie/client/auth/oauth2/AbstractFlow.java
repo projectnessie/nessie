@@ -55,6 +55,7 @@ abstract class AbstractFlow implements Flow {
 
   <REQ extends TokenRequestBase, RESP extends TokenResponseBase> Tokens invokeTokenEndpoint(
       TokenRequestBase.Builder<REQ> request, Class<? extends RESP> responseClass) {
+    request.extraParameters(config.getExtraRequestParameters());
     getScope().ifPresent(request::scope);
     maybeAddClientId(request);
     return invokeEndpoint(getResolvedTokenEndpoint(), request.build(), responseClass)

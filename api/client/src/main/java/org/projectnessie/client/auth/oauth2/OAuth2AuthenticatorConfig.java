@@ -27,6 +27,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_EXTRA_PARAMS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
@@ -50,12 +51,14 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import org.immutables.value.Value;
 import org.projectnessie.client.NessieConfigConstants;
@@ -143,9 +146,24 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
         builder::deviceCodeFlowPollInterval,
         Duration::parse);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_EXTRA_PARAMS,
+        builder::extraRequestParameters,
+        OAuth2AuthenticatorConfig::parseExtraParams);
     builder.tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config));
     builder.impersonationConfig(ImpersonationConfig.fromConfigSupplier(config));
     return builder.build();
+  }
+
+  static Map<String, String> parseExtraParams(String text) {
+    if (text == null || text.isBlank()) {
+      return Map.of();
+    }
+    return Arrays.stream(text.split(","))
+        .map(s -> s.split("=", 2))
+        .collect(
+            Collectors.toMap(a -> a[0].trim(), a -> a.length > 1 ? a[1].trim() : "", (a, b) -> a));
   }
 
   /**
@@ -251,6 +269,12 @@ public interface OAuth2AuthenticatorConfig {
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SCOPES
    */
   List<String> getScopes();
+
+  /**
+   * Additional parameters to be included in the request. This is useful for custom parameters that
+   * are not covered by the standard OAuth2.0 specification.
+   */
+  Map<String, String> getExtraRequestParameters();
 
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
@@ -469,6 +493,9 @@ public interface OAuth2AuthenticatorConfig {
 
     @CanIgnoreReturnValue
     Builder scopes(Iterable<String> scopes);
+
+    @CanIgnoreReturnValue
+    Builder extraRequestParameters(Map<String, ? extends String> extraRequestParameters);
 
     @Deprecated
     @CanIgnoreReturnValue

@@ -33,6 +33,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_EXTRA_PARAMS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET;
@@ -357,6 +358,9 @@ class TestOAuth2ClientConfig {
                 .put(
                     CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
                     TypedToken.URN_JWT.toString())
+                .put(
+                    CONF_NESSIE_OAUTH2_EXTRA_PARAMS,
+                    " extra1 = param1 , extra2=param 2 , extra3= , = ")
                 .build(),
             OAuth2ClientConfig.builder()
                 .issuerUrl(URI.create("https://example.com/"))
@@ -369,6 +373,8 @@ class TestOAuth2ClientConfig {
                 .username("Alice")
                 .password("s3cr3t")
                 .addScope("test")
+                .extraRequestParameters(
+                    ImmutableMap.of("extra1", "param1", "extra2", "param 2", "extra3", "", "", ""))
                 .defaultAccessTokenLifespan(Duration.ofSeconds(30))
                 .defaultRefreshTokenLifespan(Duration.ofSeconds(30))
                 .refreshSafetyWindow(Duration.ofSeconds(10))
