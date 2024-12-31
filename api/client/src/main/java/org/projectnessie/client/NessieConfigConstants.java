@@ -161,6 +161,13 @@ public final class NessieConfigConstants {
    * <pre>{@code
    * nessie.authentication.oauth2.extra-params = "custom_param1=custom_value1,custom_param2=custom_value2"
    * }</pre>
+   *
+   * For example, Auth0 requires the {@code audience} parameter to be set to the API identifier.
+   * This can be done by setting the following configuration:
+   *
+   * <pre>{@code
+   * nessie.authentication.oauth2.extra-params = "audience=https://nessie-catalog/api"
+   * }</pre>
    */
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_EXTRA_PARAMS =
