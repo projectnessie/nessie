@@ -50,6 +50,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +59,6 @@ import java.util.OptionalInt;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import org.immutables.value.Value;
 import org.projectnessie.client.NessieConfigConstants;
@@ -160,10 +160,20 @@ public interface OAuth2AuthenticatorConfig {
     if (text == null || text.isBlank()) {
       return Map.of();
     }
-    return Arrays.stream(text.split(","))
-        .map(s -> s.split("=", 2))
-        .collect(
-            Collectors.toMap(a -> a[0].trim(), a -> a.length > 1 ? a[1].trim() : "", (a, b) -> a));
+    Map<String, String> map = new HashMap<>();
+    for (String s : text.split(",")) {
+      String[] a = s.split("=", 2);
+      String key = a[0].trim();
+      String value = a.length > 1 ? a[1].trim() : "";
+      if (map.put(key, value) != null) {
+        throw new IllegalArgumentException(
+            String.format(
+                "OAuth2 authentication has configuration errors and could not be initialized: "
+                    + "extra parameter '%s' is defined multiple times (%s)",
+                key, CONF_NESSIE_OAUTH2_EXTRA_PARAMS));
+      }
+    }
+    return map;
   }
 
   /**

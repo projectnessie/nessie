@@ -421,7 +421,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_GRANT_TYPE_TOKEN_EXCHANGE);
     if (!violations.isEmpty()) {
       throw new IllegalArgumentException(
-          "OAuth2 authentication is missing some parameters and could not be initialized: "
+          "OAuth2 authentication has configuration errors and could not be initialized: "
               + join(", ", violations));
     }
   }
