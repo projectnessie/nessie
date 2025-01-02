@@ -33,6 +33,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_EXTRA_PARAMS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_ID;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_IMPERSONATION_CLIENT_SECRET;
@@ -76,7 +77,7 @@ class TestOAuth2ClientConfig {
     assertThatIllegalArgumentException()
         .isThrownBy(config::build)
         .withMessage(
-            "OAuth2 authentication is missing some parameters and could not be initialized: "
+            "OAuth2 authentication has configuration errors and could not be initialized: "
                 + join(", ", expected));
   }
 
@@ -312,12 +313,12 @@ class TestOAuth2ClientConfig {
             ImmutableMap.of(
                 CONF_NESSIE_OAUTH2_TOKEN_ENDPOINT, "https://example.com/token",
                 CONF_NESSIE_OAUTH2_CLIENT_SECRET, "s3cr3t",
-                CONF_NESSIE_OAUTH2_REFRESH_SAFETY_WINDOW, "PT10S",
-                CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN, "PT30S",
-                CONF_NESSIE_OAUTH2_CLIENT_SCOPES, "test"),
+                CONF_NESSIE_OAUTH2_CLIENT_ID, "client1",
+                CONF_NESSIE_OAUTH2_EXTRA_PARAMS, "key1=value1,key1=value2"),
             null,
             new IllegalArgumentException(
-                "OAuth2 authentication is missing some parameters and could not be initialized: client ID must not be empty (nessie.authentication.oauth2.client-id)")),
+                "OAuth2 authentication has configuration errors and could not be initialized: "
+                    + "extra parameter 'key1' is defined multiple times (nessie.authentication.oauth2.extra-params)")),
         Arguments.of(
             ImmutableMap.builder()
                 .put(CONF_NESSIE_OAUTH2_ISSUER_URL, "https://example.com/")
@@ -357,6 +358,9 @@ class TestOAuth2ClientConfig {
                 .put(
                     CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ACTOR_TOKEN_TYPE,
                     TypedToken.URN_JWT.toString())
+                .put(
+                    CONF_NESSIE_OAUTH2_EXTRA_PARAMS,
+                    " extra1 = param1 , extra2=param 2 , extra3= , = ")
                 .build(),
             OAuth2ClientConfig.builder()
                 .issuerUrl(URI.create("https://example.com/"))
@@ -369,6 +373,8 @@ class TestOAuth2ClientConfig {
                 .username("Alice")
                 .password("s3cr3t")
                 .addScope("test")
+                .extraRequestParameters(
+                    ImmutableMap.of("extra1", "param1", "extra2", "param 2", "extra3", "", "", ""))
                 .defaultAccessTokenLifespan(Duration.ofSeconds(30))
                 .defaultRefreshTokenLifespan(Duration.ofSeconds(30))
                 .refreshSafetyWindow(Duration.ofSeconds(10))

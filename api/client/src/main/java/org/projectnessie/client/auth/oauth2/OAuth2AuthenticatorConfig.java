@@ -27,6 +27,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_AUTH_ENDPOINT;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_TIMEOUT;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_EXTRA_PARAMS;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_GRANT_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_ISSUER_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_PASSWORD;
@@ -49,7 +50,9 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -143,9 +146,34 @@ public interface OAuth2AuthenticatorConfig {
         CONF_NESSIE_OAUTH2_DEVICE_CODE_FLOW_POLL_INTERVAL,
         builder::deviceCodeFlowPollInterval,
         Duration::parse);
+    applyConfigOption(
+        config,
+        CONF_NESSIE_OAUTH2_EXTRA_PARAMS,
+        builder::extraRequestParameters,
+        OAuth2AuthenticatorConfig::parseExtraParams);
     builder.tokenExchangeConfig(TokenExchangeConfig.fromConfigSupplier(config));
     builder.impersonationConfig(ImpersonationConfig.fromConfigSupplier(config));
     return builder.build();
+  }
+
+  static Map<String, String> parseExtraParams(String text) {
+    if (text == null || text.isBlank()) {
+      return Map.of();
+    }
+    Map<String, String> map = new HashMap<>();
+    for (String s : text.split(",")) {
+      String[] a = s.split("=", 2);
+      String key = a[0].trim();
+      String value = a.length > 1 ? a[1].trim() : "";
+      if (map.put(key, value) != null) {
+        throw new IllegalArgumentException(
+            String.format(
+                "OAuth2 authentication has configuration errors and could not be initialized: "
+                    + "extra parameter '%s' is defined multiple times (%s)",
+                key, CONF_NESSIE_OAUTH2_EXTRA_PARAMS));
+      }
+    }
+    return map;
   }
 
   /**
@@ -251,6 +279,12 @@ public interface OAuth2AuthenticatorConfig {
    * @see NessieConfigConstants#CONF_NESSIE_OAUTH2_CLIENT_SCOPES
    */
   List<String> getScopes();
+
+  /**
+   * Additional parameters to be included in the request. This is useful for custom parameters that
+   * are not covered by the standard OAuth2.0 specification.
+   */
+  Map<String, String> getExtraRequestParameters();
 
   @SuppressWarnings("DeprecatedIsStillUsed")
   @Deprecated
@@ -469,6 +503,9 @@ public interface OAuth2AuthenticatorConfig {
 
     @CanIgnoreReturnValue
     Builder scopes(Iterable<String> scopes);
+
+    @CanIgnoreReturnValue
+    Builder extraRequestParameters(Map<String, ? extends String> extraRequestParameters);
 
     @Deprecated
     @CanIgnoreReturnValue

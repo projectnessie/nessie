@@ -151,6 +151,29 @@ public final class NessieConfigConstants {
       "nessie.authentication.oauth2.client-secret";
 
   /**
+   * Extra parameters to include in each request to the token endpoint. This is useful for custom
+   * parameters that are not covered by the standard OAuth2.0 specification. Optional, defaults to
+   * empty.
+   *
+   * <p>The format of this field is a comma-separated list of key-value pairs, separated by an equal
+   * sign. The values must NOT be URL-encoded. Example:
+   *
+   * <pre>{@code
+   * nessie.authentication.oauth2.extra-params = "custom_param1=custom_value1,custom_param2=custom_value2"
+   * }</pre>
+   *
+   * For example, Auth0 requires the {@code audience} parameter to be set to the API identifier.
+   * This can be done by setting the following configuration:
+   *
+   * <pre>{@code
+   * nessie.authentication.oauth2.extra-params = "audience=https://nessie-catalog/api"
+   * }</pre>
+   */
+  @ConfigItem(section = "OAuth2 Authentication")
+  public static final String CONF_NESSIE_OAUTH2_EXTRA_PARAMS =
+      "nessie.authentication.oauth2.extra-params";
+
+  /**
    * Username to use when authenticating against the OAuth2 server. Required if using OAuth2
    * authentication and "password" grant type, ignored otherwise.
    */

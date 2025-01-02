@@ -22,6 +22,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -153,6 +154,8 @@ public class ITOAuth2ClientAuthelia {
         .addScope(clientId.equals("nessie-private-cc") ? "profile" : "offline_access")
         .authorizationCodeFlowWebServerPort(NESSIE_CALLBACK_PORT)
         .issuerUrl(issuerUrl)
+        // Should be ignored
+        .extraRequestParameters(Map.of("param1", "value1", "custom param 2", "custom value 2"))
         .sslContext(insecureSslContext());
   }
 
