@@ -181,7 +181,6 @@ Available variables:
 * `role`
 * `roles`
 * `ref`
-* `ref`
 * `api`
 
 #### Checks for Content operations
