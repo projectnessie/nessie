@@ -71,6 +71,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
+import org.projectnessie.model.IcebergContent;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
@@ -288,9 +289,10 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
                   (IcebergViewMetadata)
                       snap.entityObject()
                           .orElseThrow(() -> new IllegalStateException("entity object missing"));
+              var metadataLocation = ((IcebergContent) snap.content()).getMetadataLocation();
               return IcebergLoadViewResponse.builder()
                   .metadata(viewMetadata)
-                  .metadataLocation(snapshotMetadataLocation(snap))
+                  .metadataLocation(metadataLocation)
                   .build();
             });
   }
