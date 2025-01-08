@@ -70,7 +70,9 @@ public abstract class PerContentDeleteExpired {
           }
         };
 
+    long startTimeIdentify = System.currentTimeMillis();
     long identifiedLiveFiles = identifyLiveFiles(filter, addBaseLocation);
+    long endTimeIdentifyLiveFiles = System.currentTimeMillis() - startTimeIdentify;
 
     double expectedFpp = filter.expectedFpp();
     long approximateElementCount = filter.approximateElementCount();
@@ -87,21 +89,35 @@ public abstract class PerContentDeleteExpired {
           identifiedLiveFiles);
       return DeleteSummary.EMPTY;
     }
-
     expireParameters().liveContentSet().associateBaseLocations(contentId(), baseLocations);
-
-    return baseLocations.stream()
+    long startTimeDelete = System.currentTimeMillis();
+    DeleteSummary deleteSummary =
+      baseLocations.stream()
         .map(
-            baseLocation -> {
-              try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
-                return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
-              } catch (Exception e) {
-                String msg = "Failed to expire objects in base location " + baseLocation;
-                LOGGER.error("{}", msg, e);
-                throw new RuntimeException(msg, e);
-              }
-            })
+          baseLocation -> {
+            try (Stream<FileReference> fileObjects =
+                   identifyExpiredFiles(filter, baseLocation)) {
+              return expireParameters()
+                .fileDeleter()
+                .deleteMultiple(baseLocation, fileObjects);
+            } catch (Exception e) {
+              String msg = "Failed to expire objects in base location " + baseLocation;
+              LOGGER.error("{}", msg, e);
+              throw new RuntimeException(msg, e);
+            }
+          })
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
+    long endTimeDelete = System.currentTimeMillis() - startTimeDelete;
+    LOGGER.info(
+      "content#{} finished in #{}ms. Identify took #{}ms, delete took#{}ms. Success delete :#{} and failed #{}",
+      contentId(),
+      endTimeDelete - startTimeIdentify,
+      endTimeIdentifyLiveFiles,
+      endTimeDelete - startTimeDelete,
+      deleteSummary.deleted(),
+      deleteSummary.failures());
+
+    return deleteSummary;
   }
 
   /**
@@ -166,36 +182,43 @@ public abstract class PerContentDeleteExpired {
         contentId(),
         baseLocation);
 
+    long startListing = System.currentTimeMillis();
+
     @SuppressWarnings("MustBeClosedChecker")
     Stream<FileReference> list = expireParameters().filesLister().listRecursively(baseLocation);
+
+    long stopListing = System.currentTimeMillis() - startListing;
+
     return list.filter(
-            f -> {
-              expireStats.totalFiles++;
-              if (filter.mightContain(f.path())) {
-                expireStats.liveFiles++;
-                return false;
-              }
-              if (f.modificationTimeMillisEpoch() > maxFileTime) {
-                expireStats.newFiles++;
-                return false;
-              }
-              expireStats.expiredFiles++;
-              return true;
-            })
-        .onClose(
-            () ->
-                LOGGER.info(
-                    "live-set#{} content#{}: Found {} total files in base location {}, "
-                        + "{} files considered expired, "
-                        + "{} files considered live, "
-                        + "{} files are newer than max-file-modification-time.",
-                    expireParameters().liveContentSet().id(),
-                    contentId(),
-                    expireStats.totalFiles,
-                    baseLocation,
-                    expireStats.expiredFiles,
-                    expireStats.liveFiles,
-                    expireStats.newFiles));
+        f -> {
+          expireStats.totalFiles++;
+          if (filter.mightContain(f.path())) {
+            expireStats.liveFiles++;
+            return false;
+          }
+          if (f.modificationTimeMillisEpoch() > maxFileTime) {
+            expireStats.newFiles++;
+            return false;
+          }
+          expireStats.expiredFiles++;
+          return true;
+        })
+      .onClose(
+        () ->
+          LOGGER.debug(
+            "live-set#{} content#{}: Found {} total files in base location {}, "
+              + "{} files considered expired, "
+              + "{} files considered live, "
+              + "{} files are newer than max-file-modification-time."
+              + "within {} ms ",
+            expireParameters().liveContentSet().id(),
+            contentId(),
+            expireStats.totalFiles,
+            baseLocation,
+            expireStats.expiredFiles,
+            expireStats.liveFiles,
+            expireStats.newFiles,
+            stopListing));
   }
 
   private static final class ExpireStats {

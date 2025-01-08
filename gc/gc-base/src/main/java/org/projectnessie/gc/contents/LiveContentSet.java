@@ -143,6 +143,10 @@ public abstract class LiveContentSet {
     };
   }
 
+  public Integer truncateTable(String tableName) {
+    return persistenceSpi().truncateTable(tableName);
+  }
+
   public enum Status {
     IDENTIFY_IN_PROGRESS,
     IDENTIFY_SUCCESS,

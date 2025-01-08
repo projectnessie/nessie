@@ -89,4 +89,10 @@ public interface PersistenceSpi {
    */
   @MustBeClosed
   Stream<FileReference> fetchFileDeletions(@NotNull UUID liveSetId);
+
+  /**
+   * Returns the number of truncated tables
+   */
+  @MustBeClosed
+  Integer truncateTable(String tableName);
 }

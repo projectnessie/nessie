@@ -248,6 +248,11 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
         .sorted(Comparator.comparing(FileReference::base).thenComparing(FileReference::path));
   }
 
+  @Override
+  public Integer truncateTable(String tableName) {
+    throw new UnsupportedOperationException("Should never be called");
+  }
+
   private static InMemoryLiveContentSet assertStatus(InMemoryLiveContentSet current, Status valid) {
     assertStatus(current.liveContentSet.get(), valid);
     return current;

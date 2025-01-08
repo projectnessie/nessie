@@ -134,29 +134,40 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
       SupportsPrefixOperations fileIo = (SupportsPrefixOperations) resolvingFileIO();
       Iterable<FileInfo> fileInfos;
       try {
-        LOGGER.info("Listing prefixes started: {}", basePath);
+        LOGGER.debug("Listing prefixes started: {}", basePath);
+        long startListPrefix = System.currentTimeMillis();
         fileInfos = fileIo.listPrefix(basePath.toString());
-        LOGGER.info("Listing prefixes completed: {}", basePath);
+        LOGGER.debug(
+          "Listing prefixes completed: {} within: {}ms",
+          basePath,
+          System.currentTimeMillis() - startListPrefix);
       } catch (Exception e) {
         throw new NessieFileIOException("Failed to list prefix of " + path, e);
       }
       return StreamSupport.stream(fileInfos.spliterator(), false)
-          .map(
-              f -> {
-                LOGGER.info("StorageUri.of started: {}", f.location());
-                StorageUri location = StorageUri.of(f.location());
-                LOGGER.info("StorageUri.of completed: {}", f.location());
-                if (!location.isAbsolute()) {
-                  location = basePath.resolve("/").resolve(location);
-                }
-                return FileReference.of(
-                    basePath.relativize(location), basePath, f.createdAtMillis());
-              });
+        .map(
+          f -> {
+            LOGGER.debug("StorageUri.of started: {}", f.location());
+            long startStorageUri = System.currentTimeMillis();
+            StorageUri location = StorageUri.of(f.location());
+            LOGGER.debug(
+              "StorageUri.of completed: {} within: {} ms",
+              f.location(),
+              System.currentTimeMillis() - startStorageUri);
+            if (!location.isAbsolute()) {
+              location = basePath.resolve("/").resolve(location);
+            }
+            return FileReference.of(
+              basePath.relativize(location), basePath, f.createdAtMillis());
+          });
     }
-
-    LOGGER.info("Listing Hadoop started: {}", basePath);
+    LOGGER.debug("Listing Hadoop started: {}", basePath);
+    long startStorageHadoop = System.currentTimeMillis();
     Stream<FileReference> listHadoopReturn = listHadoop(basePath);
-    LOGGER.info("Listing Hadoop completed: {}", basePath);
+    LOGGER.debug(
+      "Listing Hadoop completed: {} within: {}ms",
+      basePath,
+      System.currentTimeMillis() - startStorageHadoop);
     return listHadoopReturn;
   }
 
@@ -170,39 +181,39 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     }
 
     return StreamSupport.stream(
-        new AbstractSpliterator<>(Long.MAX_VALUE, 0) {
-          private RemoteIterator<LocatedFileStatus> iterator;
+      new AbstractSpliterator<>(Long.MAX_VALUE, 0) {
+        private RemoteIterator<LocatedFileStatus> iterator;
 
-          @Override
-          public boolean tryAdvance(Consumer<? super FileReference> action) {
-            try {
-              if (iterator == null) {
-                iterator = fs.listFiles(p, true);
-              }
-
-              if (!iterator.hasNext()) {
-                return false;
-              }
-
-              LocatedFileStatus status = iterator.next();
-
-              if (status.isFile()) {
-                LOGGER.info("Action accept started: {}", status.getPath().toUri().toString());
-                action.accept(
-                    FileReference.of(
-                        basePath.relativize(StorageUri.of(status.getPath().toUri())),
-                        basePath,
-                        status.getModificationTime()));
-                LOGGER.info("Action accept completed: {}", status.getPath().toUri().toString());
-              }
-
-              return true;
-            } catch (IOException e) {
-              throw new RuntimeException("Failed to list (via Hadoop) " + basePath, e);
+        @Override
+        public boolean tryAdvance(Consumer<? super FileReference> action) {
+          try {
+            if (iterator == null) {
+              iterator = fs.listFiles(p, true);
             }
+
+            if (!iterator.hasNext()) {
+              return false;
+            }
+
+            LocatedFileStatus status = iterator.next();
+
+            if (status.isFile()) {
+              LOGGER.info("Action accept started: {}", status.getPath().toUri().toString());
+              action.accept(
+                FileReference.of(
+                  basePath.relativize(StorageUri.of(status.getPath().toUri())),
+                  basePath,
+                  status.getModificationTime()));
+              LOGGER.info("Action accept completed: {}", status.getPath().toUri().toString());
+            }
+
+            return true;
+          } catch (IOException e) {
+            throw new RuntimeException("Failed to list (via Hadoop) " + basePath, e);
           }
-        },
-        false);
+        }
+      },
+      false);
   }
 
   @Override
@@ -249,16 +260,16 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     FileIO fileIo = resolvingFileIO();
 
     return filesAsStrings
-        .map(
-            f -> {
-              try {
-                fileIo.deleteFile(f);
-                return DeleteResult.SUCCESS;
-              } catch (Exception e) {
-                LOGGER.debug("Failed to delete {}", f, e);
-                return DeleteResult.FAILURE;
-              }
-            })
-        .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
+      .map(
+        f -> {
+          try {
+            fileIo.deleteFile(f);
+            return DeleteResult.SUCCESS;
+          } catch (Exception e) {
+            LOGGER.debug("Failed to delete {}", f, e);
+            return DeleteResult.FAILURE;
+          }
+        })
+      .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
   }
 }

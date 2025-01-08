@@ -33,6 +33,7 @@ import org.projectnessie.gc.tool.cli.commands.MarkLive;
 import org.projectnessie.gc.tool.cli.commands.ShowLiveSet;
 import org.projectnessie.gc.tool.cli.commands.Sweep;
 import org.projectnessie.gc.tool.cli.commands.ThirdPartyLicenses;
+import org.projectnessie.gc.tool.cli.commands.CleanGCTables;
 import picocli.CommandLine;
 import picocli.CommandLine.HelpCommand;
 
@@ -57,7 +58,8 @@ import picocli.CommandLine.HelpCommand;
       JdbcDumpSchema.class,
       JdbcCreateSchema.class,
       CompletionScript.class,
-      ThirdPartyLicenses.class
+      ThirdPartyLicenses.class,
+      CleanGCTables.class
     })
 public class CLI {
 

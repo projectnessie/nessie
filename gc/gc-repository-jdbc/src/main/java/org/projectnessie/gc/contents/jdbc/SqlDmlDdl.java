@@ -165,6 +165,9 @@ final class SqlDmlDdl {
           + "    FROM gc_live_set_contents \n"
           + "    WHERE live_set_id = ? AND content_id = ?";
 
+  @Language("SQL")
+  static final String TRUNCATE_TABLE = "truncate table table_name ";
+
   static final Map<String, String> ALL_CREATES =
       ImmutableMap.of(
           "gc_live_sets", CREATE_LIVE_SETS,

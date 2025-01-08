@@ -63,7 +63,7 @@ public abstract class DefaultLocalExpire implements Expire {
 
   @Override
   public DeleteSummary expire() {
-    LOGGER.info("live-set#{}: Starting expiry.", expireParameters().liveContentSet().id());
+    LOGGER.debug("Enrty-Point Sweep - live-set#{}: Starting expiry with number of fork {}.", expireParameters().liveContentSet().id(),parallelism());
     Instant started = clock().instant();
     expireParameters().liveContentSet().startExpireContents(started);
 
@@ -99,14 +99,21 @@ public abstract class DefaultLocalExpire implements Expire {
 
   private DeleteSummary expireSingleContent(String contentId) {
     LOGGER.debug(
-        "live-set#{}: Expiring content ID {}.",
-        expireParameters().liveContentSet().id(),
-        contentId);
-    return PerContentDeleteExpired.builder()
-        .expireParameters(expireParameters())
-        .contentId(contentId)
-        .build()
-        .expire();
+      "live-set#{}: Expiring content ID {}.",
+      expireParameters().liveContentSet().id(),
+      contentId);
+
+    long start = System.currentTimeMillis();
+
+    DeleteSummary summary = PerContentDeleteExpired.builder()
+      .expireParameters(expireParameters())
+      .contentId(contentId)
+      .build()
+      .expire();
+
+    LOGGER.debug("Expire time for contentId:{} is {}ms with Delete Result success: {}, failed {}"
+      ,contentId, System.currentTimeMillis() - start, summary.deleted(), summary.failures());
+    return summary;
   }
 
   abstract ExpireParameters expireParameters();

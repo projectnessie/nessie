@@ -38,6 +38,7 @@ import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.SELECT_FILE_DELETIONS
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.SELECT_LIVE_CONTENT_SET;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.START_EXPIRE;
 import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.START_IDENTIFY;
+import static org.projectnessie.gc.contents.jdbc.SqlDmlDdl.TRUNCATE_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
@@ -331,6 +332,20 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
           return null;
         },
         true);
+  }
+
+  @Override
+  @MustBeClosed
+  public Integer truncateTable(String tableName) {
+    return singleStatement(
+      TRUNCATE_TABLE.replace("table_name", tableName),
+      (conn, stmt) -> {
+        try (ResultSet rs = stmt.executeQuery()) {
+          rs.next();
+          return rs.getInt(1);
+        }
+      },
+      false);
   }
 
   private LiveContentSet currentLiveSet(Connection conn, UUID liveSetId) throws SQLException {
