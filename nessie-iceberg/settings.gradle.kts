@@ -109,7 +109,7 @@ for (sparkVersion in sparkVersions) {
     nessieProject(
         artifactId,
         groupIdIntegrations,
-        file("../integrations/spark-extensions/v${sparkVersion}")
+        file("../integrations/spark-extensions/v${sparkVersion}"),
       )
       .buildFileName = "../build.gradle.kts"
     if (ideSyncActive) {
@@ -122,12 +122,12 @@ for (scalaVersion in allScalaVersions) {
   nessieProject(
     "nessie-spark-extensions-base_$scalaVersion",
     groupIdIntegrations,
-    file("../integrations/spark-extensions-base")
+    file("../integrations/spark-extensions-base"),
   )
   nessieProject(
     "nessie-spark-extensions-basetests_$scalaVersion",
     groupIdIntegrations,
-    file("../integrations/spark-extensions-basetests")
+    file("../integrations/spark-extensions-basetests"),
   )
   if (ideSyncActive) {
     break

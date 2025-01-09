@@ -148,7 +148,7 @@ fun JavaForkOptions.addSparkJvmOptions() {
         "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
         "--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED",
         // Spark 3.4+
-        "-Djdk.reflect.useDirectMethodHandle=false"
+        "-Djdk.reflect.useDirectMethodHandle=false",
       )
 }
 
@@ -224,7 +224,7 @@ fun DependencyHandlerScope.nessieQuarkusServerRunner(): ModuleDependency {
  */
 fun DependencyHandlerScope.nessieProject(
   artifactId: String,
-  configuration: String? = null
+  configuration: String? = null,
 ): ModuleDependency {
   if (artifactId.startsWith(":")) {
     throw IllegalArgumentException("artifactId for nessieProject() must not start with ':'")
@@ -329,14 +329,14 @@ fun Project.useSparkScalaVersionsForProject(sparkMajorVersion: String): SparkSca
 
 fun Project.useSparkScalaVersionsForProject(
   sparkMajorVersion: String,
-  scalaMajorVersion: String
+  scalaMajorVersion: String,
 ): SparkScalaVersions {
   return SparkScalaVersions(
     sparkMajorVersion,
     scalaMajorVersion,
     sparkDependencyVersion(sparkMajorVersion, scalaMajorVersion),
     scalaDependencyVersion(scalaMajorVersion),
-    javaVersionForSpark(sparkMajorVersion)
+    javaVersionForSpark(sparkMajorVersion),
   )
 }
 
@@ -369,7 +369,7 @@ class SparkScalaVersions(
   val scalaMajorVersion: String,
   val sparkVersion: String,
   val scalaVersion: String,
-  val runtimeJavaVersion: Int
+  val runtimeJavaVersion: Int,
 )
 
 class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {

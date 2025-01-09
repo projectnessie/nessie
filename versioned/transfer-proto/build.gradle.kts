@@ -39,7 +39,7 @@ tasks.named<GenerateProtoTask>("generateProto").configure {
   doLast(
     ReplaceInFiles(
       fileTree(project.layout.buildDirectory.dir("generated/source/proto/main")),
-      mapOf("com.google.protobuf" to "org.projectnessie.nessie.relocated.protobuf")
+      mapOf("com.google.protobuf" to "org.projectnessie.nessie.relocated.protobuf"),
     )
   )
 }

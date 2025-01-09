@@ -108,7 +108,7 @@ val generateJsonGrammar by
             genJsonGrammarDir.get().asFile.toString(),
             "-jdk17",
             "-n",
-            sourceDir.get().file("jsonc.ccc").asFile.relativeTo(projectDir).toString()
+            sourceDir.get().file("jsonc.ccc").asFile.relativeTo(projectDir).toString(),
           )
         if (logger.isInfoEnabled) base else (base + listOf("-q"))
       }
@@ -136,7 +136,7 @@ val generateNessieCliSyntax by
         listOf(
           genNessieCliSyntaxDir.get().dir("org/projectnessie/nessie/cli/syntax").asFile.toString(),
           sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString(),
-          "omitSparkSql=true"
+          "omitSparkSql=true",
         )
       }
     )
@@ -163,7 +163,7 @@ val generateNessieSparkSyntax by
             .dir("org/projectnessie/nessie/cli/spark-syntax")
             .asFile
             .toString(),
-          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString()
+          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString(),
         )
       }
     )
@@ -195,7 +195,7 @@ tasks.withType<Checkstyle>().configureEach {
   exclude(
     "org/projectnessie/nessie/cli/grammar/*",
     "org/projectnessie/nessie/cli/sparkgrammar/*",
-    "org/projectnessie/nessie/cli/jsongrammar/*"
+    "org/projectnessie/nessie/cli/jsongrammar/*",
   )
 }
 

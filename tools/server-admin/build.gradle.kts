@@ -145,7 +145,7 @@ artifacts {
     provider {
       if (quarkusFatJar()) quarkusBuild.get().runnerJar
       else quarkusBuild.get().fastJar.resolve("quarkus-run.jar")
-    }
+    },
   ) {
     builtBy(quarkusBuild)
   }

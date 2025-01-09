@@ -103,7 +103,7 @@ class TestVersionTuple {
         VersionTuple::minor,
         VersionTuple::patch,
         VersionTuple::snapshot,
-        VersionTuple::toString
+        VersionTuple::toString,
       )
       .containsExactly(1, 2, 3, false, "1.2.3")
   }
@@ -116,7 +116,7 @@ class TestVersionTuple {
         VersionTuple::minor,
         VersionTuple::patch,
         VersionTuple::snapshot,
-        VersionTuple::toString
+        VersionTuple::toString,
       )
       .containsExactly(1, 2, 3, true, "1.2.3-SNAPSHOT")
   }
@@ -154,7 +154,7 @@ class TestVersionTuple {
         arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 4, true), -1),
         arguments(VersionTuple.create("1.2.3"), VersionTuple(1, 2, 3, false), 0),
         arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 3, true), 0),
-        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 3, false), -1)
+        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 3, false), -1),
       )
   }
 }
