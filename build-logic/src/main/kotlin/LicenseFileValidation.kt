@@ -67,7 +67,7 @@ class LicenseFileValidation : DependencyFilter {
               .joinToString("\n")
             }
             """
-              .trimIndent()
+              .trimIndent(),
           )
         }
       }

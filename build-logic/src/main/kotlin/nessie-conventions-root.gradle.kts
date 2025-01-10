@@ -73,7 +73,7 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
             buildToolsIT.resolve("target"),
             // somehow those are not automatically excluded...
             integrationsDir.resolve("spark-extensions-base/build"),
-            integrationsDir.resolve("spark-extensions-basetests/build")
+            integrationsDir.resolve("spark-extensions-basetests/build"),
           ) +
           allprojects.map { prj -> prj.layout.buildDirectory.asFile.get() } +
           sparkScalaProps

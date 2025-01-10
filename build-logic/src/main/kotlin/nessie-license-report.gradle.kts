@@ -30,9 +30,9 @@ afterEvaluate {
       arrayOf(
         LicenseBundleNormalizer(
           "${rootProject.projectDir}/gradle/license/normalizer-bundle.json",
-          false
+          false,
         ),
-        LicenseFileValidation()
+        LicenseFileValidation(),
       )
     allowedLicensesFile = rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
     renderers =
@@ -42,7 +42,7 @@ afterEvaluate {
       arrayOf(
         "com.google.guava:guava-parent",
         "io.opentelemetry:opentelemetry-bom-alpha",
-        "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha"
+        "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha",
       )
     outputDir = "${project.layout.buildDirectory.get()}/reports/dependency-license"
     excludeGroups = arrayOf("org.projectnessie.nessie", "org.projectnessie.nessie-integrations")
@@ -54,7 +54,7 @@ val generateLicenseReport =
     inputs
       .files(
         rootProject.projectDir.resolve("gradle/license/normalizer-bundle.json"),
-        rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
+        rootProject.projectDir.resolve("gradle/license/allowed-licenses.json"),
       )
       .withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.property("renderersHash", Arrays.hashCode(licenseReport.renderers))

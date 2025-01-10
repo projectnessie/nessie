@@ -248,15 +248,15 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
           attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_API))
           attribute(
             Category.CATEGORY_ATTRIBUTE,
-            project.objects.named(Category::class.java, Category.LIBRARY)
+            project.objects.named(Category::class.java, Category.LIBRARY),
           )
           attribute(
             LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-            project.objects.named(LibraryElements::class.java, LibraryElements.JAR)
+            project.objects.named(LibraryElements::class.java, LibraryElements.JAR),
           )
           attribute(
             Bundling.BUNDLING_ATTRIBUTE,
-            project.objects.named(Bundling::class.java, Bundling.SHADOWED)
+            project.objects.named(Bundling::class.java, Bundling.SHADOWED),
           )
         }
         outgoing.artifact(shadowJar)
@@ -342,7 +342,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
   private fun findDependency(
     config: Configuration?,
     depGroup: String,
-    depName: String
+    depName: String,
   ): DependencyResult? {
     if (config != null) {
       val depResult =

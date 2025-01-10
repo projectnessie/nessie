@@ -120,7 +120,7 @@ tasks.named<Test>("test").configure {
 val mainClassName = "org.projectnessie.gc.tool.cli.CLI"
 
 val generateAutoComplete by
-  tasks.creating(JavaExec::class.java) {
+  tasks.registering(JavaExec::class) {
     group = "build"
     description = "Generates the bash/zsh autocompletion scripts"
 
@@ -140,7 +140,7 @@ val generateAutoComplete by
       "--force",
       "-o",
       completionScriptsDir.get().dir("nessie-gc-completion").asFile.relativeTo(projectDir),
-      mainClassName
+      mainClassName,
     )
 
     inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)

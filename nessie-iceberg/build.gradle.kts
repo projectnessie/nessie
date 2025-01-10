@@ -33,7 +33,7 @@ val versionClientNessie: String =
 mapOf(
     "versionClientNessie" to versionClientNessie,
     "versionIceberg" to versionIceberg,
-    "versionJandex" to libs.versions.jandex.get()
+    "versionJandex" to libs.versions.jandex.get(),
   )
   .plus(loadProperties(file("../integrations/spark-scala.properties")))
   .forEach { (k, v) -> extra[k.toString()] = v }

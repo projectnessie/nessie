@@ -73,7 +73,7 @@ if (
         // - the beginning of a YAML document (key-value pair)
         licenseHeaderFile(
           rootProject.file("codestyle/copyright-header-yaml.txt"),
-          " *(#(?!#)|---|[^:#\\s\\{/]+\\s*:)"
+          " *(#(?!#)|---|[^:#\\s\\{/]+\\s*:)",
         )
         target("helm/nessie/**/*.yaml", "helm/nessie/**/*.yml")
         targetExclude("helm/nessie/templates/**", "helm/nessie/ci/**")
@@ -87,7 +87,7 @@ if (
         // - The sentence "To connect to Nessie" (NOTES.txt)
         licenseHeaderFile(
           rootProject.file("codestyle/copyright-header-helm-template.txt"),
-          "( *\\{\\{(?!/\\*\\*)| *#|---|[^:#\\s\\{/]+\\s*:|To connect to Nessie)"
+          "( *\\{\\{(?!/\\*\\*)| *#|---|[^:#\\s\\{/]+\\s*:|To connect to Nessie)",
         )
         target("helm/nessie/templates/**")
         targetExclude("helm/nessie/templates/tests/**")
@@ -107,7 +107,7 @@ if (
         scalafmt()
         licenseHeaderFile(
           rootProject.file("codestyle/copyright-header-java.txt"),
-          "^(package|import) .*$"
+          "^(package|import) .*$",
         )
         target("src/**/scala/**")
         targetExclude("build-logic/build/**")

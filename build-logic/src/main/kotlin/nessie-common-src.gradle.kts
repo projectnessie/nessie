@@ -152,11 +152,11 @@ plugins.withType<JavaPlugin>().configureEach {
       dependencies {
         add(
           "errorprone",
-          "com.google.errorprone:error_prone_core:${libsRequiredVersion("errorprone")}"
+          "com.google.errorprone:error_prone_core:${libsRequiredVersion("errorprone")}",
         )
         add(
           "errorprone",
-          "jp.skypencil.errorprone.slf4j:errorprone-slf4j:${libsRequiredVersion("errorproneSlf4j")}"
+          "jp.skypencil.errorprone.slf4j:errorprone-slf4j:${libsRequiredVersion("errorproneSlf4j")}",
         )
       }
     }
@@ -215,7 +215,7 @@ class MemoizedGitInfo {
             "Nessie-Build-Git-Describe" to gitDescribe,
             "Nessie-Build-Timestamp" to timestamp,
             "Nessie-Build-System" to system,
-            "Nessie-Build-Java-Version" to javaVersion
+            "Nessie-Build-Java-Version" to javaVersion,
           )
         rootProject.extra["gitReleaseInfo"] = info
         return info

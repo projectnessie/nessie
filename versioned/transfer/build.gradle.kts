@@ -115,6 +115,6 @@ tasks.named("test", Test::class.java) {
       .archiveFile
       .get()
       .asFile
-      .relativeTo(project.layout.projectDirectory.asFile)
+      .relativeTo(project.layout.projectDirectory.asFile),
   )
 }

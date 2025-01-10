@@ -64,14 +64,14 @@ class ReleaseSupportPlugin : Plugin<Project> {
   open class BumpVersionTask : DefaultTask() {
     @Option(
       option = "bumpToRelease",
-      description = "Define whether to bump to a release version, defaults to snapshot release."
+      description = "Define whether to bump to a release version, defaults to snapshot release.",
     )
     @Internal
     var bumpToRelease: Boolean = false
 
     @Option(
       option = "bumpType",
-      description = "Defines which part of the version should be bumped, defaults to 'none'."
+      description = "Defines which part of the version should be bumped, defaults to 'none'.",
     )
     @Internal
     var bumpType: BumpType = BumpType.none
@@ -115,6 +115,6 @@ class ReleaseSupportPlugin : Plugin<Project> {
     none,
     patch,
     minor,
-    major
+    major,
   }
 }
