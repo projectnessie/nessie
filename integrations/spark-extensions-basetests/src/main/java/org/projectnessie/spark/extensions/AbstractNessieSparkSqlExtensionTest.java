@@ -755,8 +755,16 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     String version = spark.version();
     if (version.startsWith("3.3.")) {
       soft.assertThat(rewriteResult.get(0)).startsWith(5, 1);
-    } else {
+    } else if (version.startsWith("3.4.")) {
       soft.assertThat(rewriteResult.get(0)).startsWith(11, 2);
+    } else {
+      // 3.5 onwards
+      soft.assertThat(rewriteResult.get(0))
+          .satisfiesAnyOf(
+              result -> assertThat(result).startsWith(11, 2),
+              // Since https://github.com/apache/iceberg/pull/11478 (Spark: Change Delete
+              // granularity to file for Spark 3.5)
+              result -> assertThat(result).startsWith(8, 2));
     }
 
     validateContentAfterMaintenance(branchName, tableName);
