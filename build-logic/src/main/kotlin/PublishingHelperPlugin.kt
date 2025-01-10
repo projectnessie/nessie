@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
+import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
 import groovy.util.Node
 import groovy.util.NodeList
 import javax.inject.Inject
@@ -62,7 +62,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
               afterEvaluate {
                 // This MUST happen in an 'afterEvaluate' to ensure that the Shadow*Plugin has
                 // been applied.
-                if (project.extensions.findByType(ShadowExtension::class.java) != null) {
+                if (project.plugins.hasPlugin(ShadowPlugin::class.java)) {
                   configureShadowPublishing(project, mavenPublication)
                 } else {
                   from(components.firstOrNull { c -> c.name == "javaPlatform" || c.name == "java" })
