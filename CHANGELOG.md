@@ -19,6 +19,12 @@ as necessary. Empty sections will not end in the release notes.
   by the standard OAuth 2.0 specification. See the [Nessie
   documentation](https://projectnessie.org/tools/client_config/#authentication-settings) for
   details.
+- Add a configuration option `nessie.version.store.persist.cache-enable-soft-references` (defaults to 
+  `true`) to optionally disable the additional caching the constructed Java objects via soft references.
+  Having the already constructed Java object is faster when getting object from the cache, but a Java object
+  tree implies a rather unpredictable heap pressure, hence these object are referenced via Java soft
+  references. This optimization however can cause heap issues in rare scenarios, and disabling this
+  optimization can help there.
 
 ### Changes
 

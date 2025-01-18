@@ -46,19 +46,21 @@ class CaffeineCacheBackend implements CacheBackend {
 
   public static final String CACHE_NAME = "nessie-objects";
   private static final CacheKeyValue NON_EXISTING_SENTINEL =
-      new CacheKeyValue("x", ObjId.EMPTY_OBJ_ID, 0L, new byte[0], null);
+      new CacheKeyValue("x", ObjId.EMPTY_OBJ_ID, 0L, new byte[0], null, false);
 
   private final CacheConfig config;
   final Cache<CacheKeyValue, CacheKeyValue> cache;
 
   private final long refCacheTtlNanos;
   private final long refCacheNegativeTtlNanos;
+  private final boolean enableSoftReferences;
 
   CaffeineCacheBackend(CacheConfig config) {
     this.config = config;
 
     refCacheTtlNanos = config.referenceTtl().orElse(Duration.ZERO).toNanos();
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
+    enableSoftReferences = config.enableSoftReferences().orElse(true);
 
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
@@ -128,7 +130,7 @@ class CaffeineCacheBackend implements CacheBackend {
 
   @Override
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
-    CacheKeyValue key = cacheKey(repositoryId, id);
+    CacheKeyValue key = cacheKeyForRead(repositoryId, id);
     CacheKeyValue value = cache.getIfPresent(key);
     if (value == null) {
       return null;
@@ -159,7 +161,8 @@ class CaffeineCacheBackend implements CacheBackend {
       long expiresAtNanos =
           expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
       CacheKeyValue keyValue =
-          cacheKeyValue(repositoryId, obj.id(), expiresAtNanos, serialized, obj);
+          cacheKeyValue(
+              repositoryId, obj.id(), expiresAtNanos, serialized, obj, enableSoftReferences);
       cache.put(keyValue, keyValue);
     } catch (ObjTooLargeException e) {
       // this should never happen
@@ -179,14 +182,14 @@ class CaffeineCacheBackend implements CacheBackend {
 
     long expiresAtNanos =
         expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
-    CacheKeyValue keyValue = cacheKeyValue(repositoryId, id, expiresAtNanos);
+    CacheKeyValue keyValue = cacheKeyValue(repositoryId, id, expiresAtNanos, enableSoftReferences);
 
     cache.put(keyValue, NON_EXISTING_SENTINEL);
   }
 
   @Override
   public void remove(@Nonnull String repositoryId, @Nonnull ObjId id) {
-    CacheKeyValue key = cacheKey(repositoryId, id);
+    CacheKeyValue key = cacheKeyForRead(repositoryId, id);
     cache.invalidate(key);
   }
 
@@ -205,7 +208,7 @@ class CaffeineCacheBackend implements CacheBackend {
       return;
     }
     ObjId id = refObjId(name);
-    CacheKeyValue key = cacheKey(repositoryId, id);
+    CacheKeyValue key = cacheKeyForRead(repositoryId, id);
     cache.invalidate(key);
   }
 
@@ -226,7 +229,8 @@ class CaffeineCacheBackend implements CacheBackend {
             id,
             config.clockNanos().getAsLong() + refCacheTtlNanos,
             serializeReference(r),
-            r);
+            r,
+            enableSoftReferences);
     cache.put(keyValue, keyValue);
   }
 
@@ -237,7 +241,11 @@ class CaffeineCacheBackend implements CacheBackend {
     }
     ObjId id = refObjId(name);
     CacheKeyValue key =
-        cacheKeyValue(repositoryId, id, config.clockNanos().getAsLong() + refCacheNegativeTtlNanos);
+        cacheKeyValue(
+            repositoryId,
+            id,
+            config.clockNanos().getAsLong() + refCacheNegativeTtlNanos,
+            enableSoftReferences);
     cache.put(key, NON_EXISTING_SENTINEL);
   }
 
@@ -247,7 +255,7 @@ class CaffeineCacheBackend implements CacheBackend {
       return null;
     }
     ObjId id = refObjId(name);
-    CacheKeyValue value = cache.getIfPresent(cacheKey(repositoryId, id));
+    CacheKeyValue value = cache.getIfPresent(cacheKeyForRead(repositoryId, id));
     if (value == null) {
       return null;
     }
@@ -257,18 +265,24 @@ class CaffeineCacheBackend implements CacheBackend {
     return value.getReference();
   }
 
-  static CacheKeyValue cacheKey(String repositoryId, ObjId id) {
-    return new CacheKeyValue(repositoryId, id);
+  static CacheKeyValue cacheKeyForRead(String repositoryId, ObjId id) {
+    return new CacheKeyValue(repositoryId, id, false);
   }
 
   private static CacheKeyValue cacheKeyValue(
-      String repositoryId, ObjId id, long expiresAtNanosEpoch) {
-    return new CacheKeyValue(repositoryId, id, expiresAtNanosEpoch);
+      String repositoryId, ObjId id, long expiresAtNanosEpoch, boolean enableSoftReferences) {
+    return new CacheKeyValue(repositoryId, id, expiresAtNanosEpoch, enableSoftReferences);
   }
 
   private static CacheKeyValue cacheKeyValue(
-      String repositoryId, ObjId id, long expiresAtNanosEpoch, byte[] serialized, Object object) {
-    return new CacheKeyValue(repositoryId, id, expiresAtNanosEpoch, serialized, object);
+      String repositoryId,
+      ObjId id,
+      long expiresAtNanosEpoch,
+      byte[] serialized,
+      Object object,
+      boolean enableSoftReferences) {
+    return new CacheKeyValue(
+        repositoryId, id, expiresAtNanosEpoch, serialized, object, enableSoftReferences);
   }
 
   /**
@@ -288,21 +302,27 @@ class CaffeineCacheBackend implements CacheBackend {
     final byte[] serialized;
     java.lang.ref.Reference<Object> object;
 
-    CacheKeyValue(String repositoryId, ObjId id) {
-      this(repositoryId, id, 0L);
-    }
-
-    CacheKeyValue(String repositoryId, ObjId id, long expiresAtNanosEpoch) {
-      this(repositoryId, id, expiresAtNanosEpoch, null, null);
+    CacheKeyValue(String repositoryId, ObjId id, boolean enableSoftReferences) {
+      this(repositoryId, id, 0L, enableSoftReferences);
     }
 
     CacheKeyValue(
-        String repositoryId, ObjId id, long expiresAtNanosEpoch, byte[] serialized, Object object) {
+        String repositoryId, ObjId id, long expiresAtNanosEpoch, boolean enableSoftReferences) {
+      this(repositoryId, id, expiresAtNanosEpoch, null, null, enableSoftReferences);
+    }
+
+    CacheKeyValue(
+        String repositoryId,
+        ObjId id,
+        long expiresAtNanosEpoch,
+        byte[] serialized,
+        Object object,
+        boolean enableSoftReferences) {
       this.repositoryId = repositoryId;
       this.id = id;
       this.expiresAtNanosEpoch = expiresAtNanosEpoch;
       this.serialized = serialized;
-      this.object = new SoftReference<>(object, null);
+      this.object = enableSoftReferences ? new SoftReference<>(object, null) : null;
     }
 
     int heapSize() {
@@ -340,6 +360,10 @@ class CaffeineCacheBackend implements CacheBackend {
     }
 
     Obj getObj() {
+      var softRef = this.object;
+      if (softRef == null) {
+        return ProtoSerialization.deserializeObj(id, 0L, this.serialized, null);
+      }
       Obj obj = (Obj) this.object.get();
       if (obj == null) {
         obj = ProtoSerialization.deserializeObj(id, 0L, this.serialized, null);
@@ -350,7 +374,11 @@ class CaffeineCacheBackend implements CacheBackend {
     }
 
     Reference getReference() {
-      Reference ref = (Reference) this.object.get();
+      var softRef = this.object;
+      if (softRef == null) {
+        return deserializeReference(this.serialized);
+      }
+      Reference ref = (Reference) softRef.get();
       if (ref == null) {
         ref = deserializeReference(this.serialized);
         // re-create the soft reference - but don't care about JMM side effects

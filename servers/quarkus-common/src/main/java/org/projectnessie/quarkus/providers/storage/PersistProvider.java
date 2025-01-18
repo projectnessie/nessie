@@ -16,6 +16,7 @@
 package org.projectnessie.quarkus.providers.storage;
 
 import static java.lang.String.format;
+import static org.projectnessie.quarkus.config.QuarkusStoreConfig.DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -144,7 +145,15 @@ public class PersistProvider {
     int effectiveCacheSizeMB = cacheSizing.effectiveSizeInMB();
 
     if (effectiveCacheSizeMB > 0) {
-      CacheConfig.Builder cacheConfig = CacheConfig.builder().capacityMb(effectiveCacheSizeMB);
+      var enableSoftReferences =
+          storeConfig
+              .cacheEnableSoftReferences()
+              .orElse(DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES);
+
+      CacheConfig.Builder cacheConfig =
+          CacheConfig.builder()
+              .capacityMb(effectiveCacheSizeMB)
+              .enableSoftReferences(enableSoftReferences);
       if (meterRegistry.isResolvable()) {
         cacheConfig.meterRegistry(meterRegistry.get());
       }
@@ -161,6 +170,8 @@ public class PersistProvider {
       }
 
       String info = format("Using objects cache with %d MB", effectiveCacheSizeMB);
+
+      info += ", with soft-references " + (enableSoftReferences ? "enabled" : "disabled");
 
       CacheBackend cacheBackend = PersistCaches.newBackend(cacheConfig.build());
 
