@@ -32,6 +32,7 @@ import static org.projectnessie.versioned.storage.jdbc.SqlConstants.COL_REPO_ID;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ_CONDITIONAL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ_REFERENCED;
+import static org.projectnessie.versioned.storage.jdbc.SqlConstants.DELETE_OBJ_REFERENCED_NULL;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc.SqlConstants.FIND_OBJS_TYPED;
@@ -414,6 +415,9 @@ abstract class AbstractJdbcPersist implements Persist {
     String objType = rs.getString(COL_OBJ_TYPE);
     String versionToken = rs.getString(COL_OBJ_VERS);
     long referenced = rs.getLong(COL_OBJ_REFERENCED);
+    if (rs.wasNull()) {
+      referenced = -1;
+    }
     ObjType type = objTypeByName(objType);
     ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
     return serializer.deserialize(rs, type, id, referenced, versionToken);
@@ -444,10 +448,16 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   protected final boolean deleteWithReferenced(@Nonnull Connection conn, @Nonnull Obj obj) {
-    try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_REFERENCED)) {
+    var referenced = obj.referenced();
+    var referencedPresent = referenced != -1L && referenced != 0L;
+    try (PreparedStatement ps =
+        conn.prepareStatement(
+            referencedPresent ? DELETE_OBJ_REFERENCED : DELETE_OBJ_REFERENCED_NULL)) {
       ps.setString(1, config.repositoryId());
       serializeObjId(ps, 2, obj.id(), databaseSpecific);
-      ps.setLong(3, obj.referenced());
+      if (referencedPresent) {
+        ps.setLong(3, referenced);
+      }
       return ps.executeUpdate() == 1;
     } catch (SQLException e) {
       throw unhandledSQLException(e);
@@ -561,7 +571,12 @@ abstract class AbstractJdbcPersist implements Persist {
         } else {
           ps.setNull(storeObjSqlParams.get(COL_OBJ_VERS), Types.VARCHAR);
         }
-        ps.setLong(storeObjSqlParams.get(COL_OBJ_REFERENCED), referenced);
+        if (obj.referenced() == -1L) {
+          // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+          ps.setNull(storeObjSqlParams.get(COL_OBJ_REFERENCED), Types.BIGINT);
+        } else {
+          ps.setLong(storeObjSqlParams.get(COL_OBJ_REFERENCED), referenced);
+        }
 
         ObjSerializer<Obj> serializer = ObjSerializers.forType(type);
         serializer.serialize(

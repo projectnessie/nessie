@@ -62,6 +62,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
@@ -668,10 +669,14 @@ public class MongoDBPersist implements Persist {
     ObjId id = obj.id();
 
     try {
+      var referencedBson =
+          obj.referenced() != -1L
+              ? eq(COL_OBJ_REFERENCED, obj.referenced())
+              : Filters.or(
+                  eq(COL_OBJ_REFERENCED, 0L), Filters.not(Filters.exists(COL_OBJ_REFERENCED)));
       return backend
               .objs()
-              .findOneAndDelete(
-                  and(eq(ID_PROPERTY_NAME, idObjDoc(id)), eq(COL_OBJ_REFERENCED, obj.referenced())))
+              .findOneAndDelete(and(eq(ID_PROPERTY_NAME, idObjDoc(id)), referencedBson))
           != null;
     } catch (RuntimeException e) {
       throw unhandledException(e);
@@ -764,7 +769,8 @@ public class MongoDBPersist implements Persist {
     Document inner = doc.get(serializer.fieldName(), Document.class);
     String versionToken = doc.getString(COL_OBJ_VERS);
     Long referenced = doc.getLong(COL_OBJ_REFERENCED);
-    return serializer.docToObj(id, type, referenced != null ? referenced : 0L, inner, versionToken);
+    return serializer.docToObj(
+        id, type, referenced != null ? referenced : -1L, inner, versionToken);
   }
 
   private Document objToDoc(@Nonnull Obj obj, long referenced, boolean ignoreSoftSizeRestrictions)
@@ -779,7 +785,11 @@ public class MongoDBPersist implements Persist {
     Document inner = new Document();
     doc.put(ID_PROPERTY_NAME, idObjDoc(id));
     doc.put(COL_OBJ_TYPE, type.shortName());
-    doc.put(COL_OBJ_REFERENCED, referenced);
+    var objReferenced = obj.referenced();
+    if (objReferenced != -1L) {
+      // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+      doc.put(COL_OBJ_REFERENCED, referenced);
+    }
     UpdateableObj.extractVersionToken(obj).ifPresent(token -> doc.put(COL_OBJ_VERS, token));
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();

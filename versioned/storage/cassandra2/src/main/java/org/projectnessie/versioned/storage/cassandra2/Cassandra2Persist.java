@@ -290,7 +290,8 @@ public class Cassandra2Persist implements Persist {
           ObjId id = deserializeObjId(row.getByteBuffer(COL_OBJ_ID.name()));
           String versionToken = row.getString(COL_OBJ_VERS.name());
           ByteBuffer serialized = row.getByteBuffer(COL_OBJ_VALUE.name());
-          long referenced = row.getLong(COL_OBJ_REFERENCED.name());
+          String colReferenced = COL_OBJ_REFERENCED.name();
+          long referenced = row.isNull(colReferenced) ? -1 : row.getLong(colReferenced);
           return typeClass.cast(deserializeObj(id, referenced, serialized, versionToken));
         };
 
@@ -345,13 +346,27 @@ public class Cassandra2Persist implements Persist {
 
   @Override
   public boolean deleteWithReferenced(@Nonnull Obj obj) {
+    var referenced = obj.referenced();
     BoundStatement stmt =
         backend.buildStatement(
             DELETE_OBJ_REFERENCED,
             false,
             config.repositoryId(),
             serializeObjId(obj.id()),
-            obj.referenced());
+            referenced != -1L ? referenced : null);
+    //    var objIdSerialized = serializeObjId(obj.id());
+    //    var repoId = config.repositoryId();
+    //    BoundStatement stmt =
+    //        referenced != -1L
+    //            ? backend.buildStatement(
+    //                DELETE_OBJ_REFERENCED, false, repoId, objIdSerialized, referenced)
+    //            // We take a risk here in case the given object does _not_ have a referenced()
+    // value
+    //            // (old object).
+    //            // Cassandra's conditional DELETE ... IF doesn't allow us to use "IF col IS NULL"
+    // or "IF
+    //            // (col = 0 OR col IS NULL)".
+    //            : backend.buildStatement(DELETE_OBJ, false, repoId, objIdSerialized);
     return backend.executeCas(stmt);
   }
 
@@ -397,8 +412,13 @@ public class Cassandra2Persist implements Persist {
             .setString(COL_OBJ_TYPE.name() + EXPECTED_SUFFIX, type.shortName())
             .setString(COL_OBJ_VERS.name() + EXPECTED_SUFFIX, expectedVersion)
             .setString(COL_OBJ_VERS.name(), newVersion)
-            .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized))
-            .setLong(COL_OBJ_REFERENCED.name(), referenced);
+            .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized));
+    if (newValue.referenced() != -1L) {
+      // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+      stmt = stmt.setLong(COL_OBJ_REFERENCED.name(), referenced);
+    } else {
+      stmt = stmt.setToNull(COL_OBJ_REFERENCED.name());
+    }
 
     return backend.executeCas(stmt.build());
   }
@@ -538,10 +558,15 @@ public class Cassandra2Persist implements Persist {
             .newBoundStatementBuilder(upsert ? UPSERT_OBJ : STORE_OBJ, upsert)
             .setString(COL_REPO_ID.name(), config.repositoryId())
             .setByteBuffer(COL_OBJ_ID.name(), serializeObjId(id))
-            .setLong(COL_OBJ_REFERENCED.name(), referenced)
             .setString(COL_OBJ_TYPE.name(), type.shortName())
             .setString(COL_OBJ_VERS.name(), versionToken)
             .setByteBuffer(COL_OBJ_VALUE.name(), ByteBuffer.wrap(serialized));
+    if (obj.referenced() != -1L) {
+      // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+      stmt = stmt.setLong(COL_OBJ_REFERENCED.name(), referenced);
+    } else {
+      stmt = stmt.setToNull(COL_OBJ_REFERENCED.name());
+    }
 
     return consumer.apply(stmt.build());
   }

@@ -229,7 +229,8 @@ class InmemoryPersist implements ValidatingPersist {
       verifySoftRestrictions(obj);
     }
 
-    long referenced = config.currentTimeMicros();
+    // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+    long referenced = obj.referenced() != -1L ? config.currentTimeMicros() : -1L;
     Obj withReferenced = obj.withReferenced(referenced);
 
     AtomicBoolean r = new AtomicBoolean(false);
@@ -296,7 +297,8 @@ class InmemoryPersist implements ValidatingPersist {
           if (v == null) {
             // not present
             return null;
-          } else if (v.referenced() != obj.referenced()) {
+          }
+          if (v.referenced() != obj.referenced()) {
             return v;
           }
           result.set(true);

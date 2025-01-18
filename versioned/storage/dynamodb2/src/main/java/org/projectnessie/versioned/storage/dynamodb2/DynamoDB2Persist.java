@@ -92,6 +92,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.ExpectedAttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
@@ -550,16 +551,21 @@ public class DynamoDB2Persist implements Persist {
   public boolean deleteWithReferenced(@Nonnull Obj obj) {
     ObjId id = obj.id();
 
-    Map<String, ExpectedAttributeValue> expectedValues =
-        Map.of(
-            COL_OBJ_REFERENCED,
-            ExpectedAttributeValue.builder().value(fromS(Long.toString(obj.referenced()))).build());
+    var deleteItemRequest =
+        DeleteItemRequest.builder().tableName(backend.tableObjs).key(objKeyMap(id));
+    if (obj.referenced() != -1L) {
+      // We take a risk here in case the given object does _not_ have a referenced() value
+      // (old object). It's not possible in DynamoDB to check for '== 0 OR IS ABSENT/NULL'.
+      deleteItemRequest.expected(
+          Map.of(
+              COL_OBJ_REFERENCED,
+              ExpectedAttributeValue.builder()
+                  .value(fromS(Long.toString(obj.referenced())))
+                  .build()));
+    }
 
     try {
-      backend
-          .client()
-          .deleteItem(
-              b -> b.tableName(backend.tableObjs).key(objKeyMap(id)).expected(expectedValues));
+      backend.client().deleteItem(deleteItemRequest.build());
       return true;
     } catch (ConditionalCheckFailedException checkFailedException) {
       return false;
@@ -663,7 +669,7 @@ public class DynamoDB2Persist implements Persist {
     ByteBuffer bin = item.get(COL_OBJ_VALUE).b().asByteBuffer();
     String versionToken = attributeToString(item, COL_OBJ_VERS);
     String referencedString = attributeToString(item, COL_OBJ_REFERENCED);
-    long referenced = referencedString != null ? Long.parseLong(referencedString) : 0L;
+    long referenced = referencedString != null ? Long.parseLong(referencedString) : -1L;
     Obj obj = deserializeObj(id, referenced, bin, versionToken);
     return typeClass.cast(obj);
   }
@@ -677,7 +683,10 @@ public class DynamoDB2Persist implements Persist {
     Map<String, AttributeValue> item = new HashMap<>();
     item.put(KEY_NAME, objKey(id));
     item.put(COL_OBJ_TYPE, fromS(type.shortName()));
-    item.put(COL_OBJ_REFERENCED, fromS(Long.toString(referenced)));
+    if (obj.referenced() != -1) {
+      // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+      item.put(COL_OBJ_REFERENCED, fromS(Long.toString(referenced)));
+    }
     UpdateableObj.extractVersionToken(obj).ifPresent(token -> item.put(COL_OBJ_VERS, fromS(token)));
     int incrementalIndexSizeLimit =
         ignoreSoftSizeRestrictions ? Integer.MAX_VALUE : effectiveIncrementalIndexSizeLimit();

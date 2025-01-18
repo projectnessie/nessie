@@ -25,6 +25,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LONG;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -139,6 +140,46 @@ public class AbstractBasePersistTests {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   @NessiePersist protected Persist persist;
+
+  @SuppressWarnings("DataFlowIssue")
+  @Test
+  public void deleteWithReferenced() throws Exception {
+    assumeThat(persist.isCaching()).isFalse();
+
+    // Do NOT use any batch store operation here - implementations are only adopted to "respect" the
+    // test-sentinel value -1 for exactly this .storeObj() signature!
+
+    var objWithReferenced = SimpleTestObj.builder().id(randomObjId()).text("foo").build();
+    persist.storeObj(objWithReferenced, true);
+    var readWithReferenced = persist.fetchObj(objWithReferenced.id());
+    soft.assertThat(readWithReferenced).extracting(Obj::referenced, LONG).isGreaterThan(0);
+    soft.assertThat(persist.deleteWithReferenced(objWithReferenced)).isFalse();
+    soft.assertThatCode(() -> persist.fetchObj(objWithReferenced.id())).doesNotThrowAnyException();
+    soft.assertThat(persist.deleteWithReferenced(objWithReferenced.withReferenced(Long.MAX_VALUE)))
+        .isFalse();
+    soft.assertThatCode(() -> persist.fetchObj(objWithReferenced.id())).doesNotThrowAnyException();
+    soft.assertThat(persist.deleteWithReferenced(readWithReferenced)).isTrue();
+    soft.assertThatCode(() -> persist.fetchObj(objWithReferenced.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+
+    var objWithoutReferenced1 =
+        SimpleTestObj.builder().referenced(-1L).id(randomObjId()).text("foo").build();
+    persist.storeObj(objWithoutReferenced1, true);
+    var readWithoutReferenced1 = persist.fetchObj(objWithoutReferenced1.id());
+    soft.assertThat(readWithoutReferenced1).extracting(Obj::referenced, LONG).isEqualTo(-1L);
+    soft.assertThat(persist.deleteWithReferenced(objWithoutReferenced1)).isTrue();
+    soft.assertThatCode(() -> persist.fetchObj(objWithoutReferenced1.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+
+    var objWithoutReferenced2 =
+        SimpleTestObj.builder().referenced(-1L).id(randomObjId()).text("foo").build();
+    persist.storeObj(objWithoutReferenced2, true);
+    var readWithoutReferenced2 = persist.fetchObj(objWithoutReferenced2.id());
+    soft.assertThat(readWithoutReferenced2).extracting(Obj::referenced, LONG).isEqualTo(-1L);
+    soft.assertThat(persist.deleteWithReferenced(objWithoutReferenced2)).isTrue();
+    soft.assertThatCode(() -> persist.fetchObj(objWithoutReferenced2.id()))
+        .isInstanceOf(ObjNotFoundException.class);
+  }
 
   @ParameterizedTest
   @MethodSource

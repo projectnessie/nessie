@@ -26,6 +26,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fix an issue that prevents the Nessie Server Admin tool to purge unreferenced data in the backend
+  database, for data being written before Nessie version 0.101.0.
+
 ### Commits
 
 ## [0.101.3] Release (2024-12-18)

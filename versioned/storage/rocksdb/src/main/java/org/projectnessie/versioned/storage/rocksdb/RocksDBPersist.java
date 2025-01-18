@@ -349,7 +349,9 @@ class RocksDBPersist implements Persist {
         ignoreSoftSizeRestrictions = true;
         r = false;
       } else {
-        obj = obj.withReferenced(referenced);
+        var objReferenced = obj.referenced();
+        // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+        obj = obj.withReferenced(objReferenced != -1L ? referenced : -1L);
         r = true;
       }
 
@@ -461,7 +463,9 @@ class RocksDBPersist implements Persist {
       if (!existing.type().equals(obj.type())) {
         return false;
       }
-      if (existing.referenced() != obj.referenced()) {
+      var referenced = obj.referenced();
+      if (existing.referenced() != referenced && referenced != -1L) {
+        // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
         return false;
       }
 
