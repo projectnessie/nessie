@@ -80,13 +80,17 @@ final class AwsChunkedInputStream extends InputStream {
           chunkLen -= rd;
           return rd;
         case EXPECT_SEPARATOR:
-          String sep = readLine();
-          if (sep == null) {
+          String line = readLine();
+          if (line == null) {
             state = AwsChunkedState.EOF;
             throw new EOFException("Expecting empty separator line, but got EOF");
           }
-          checkArgument(sep.isEmpty(), "Expecting empty separator line, but got '%s'", sep);
-          state = AwsChunkedState.EXPECT_METADATA;
+          if (line.isEmpty()) {
+            // If the line's not empty, it's a trailing header - we ignore it for the
+            // object-storage-mock. Headers can be for example: x-amz-checksum-crc32 or
+            // x-amz-trailer-signature
+            state = AwsChunkedState.EXPECT_METADATA;
+          }
           break;
         default:
           throw new IllegalStateException();
