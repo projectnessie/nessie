@@ -449,7 +449,7 @@ abstract class AbstractJdbcPersist implements Persist {
 
   protected final boolean deleteWithReferenced(@Nonnull Connection conn, @Nonnull Obj obj) {
     var referenced = obj.referenced();
-    var referencedPresent = referenced != -1L && referenced != 0L;
+    var referencedPresent = referenced != -1L;
     try (PreparedStatement ps =
         conn.prepareStatement(
             referencedPresent ? DELETE_OBJ_REFERENCED : DELETE_OBJ_REFERENCED_NULL)) {
