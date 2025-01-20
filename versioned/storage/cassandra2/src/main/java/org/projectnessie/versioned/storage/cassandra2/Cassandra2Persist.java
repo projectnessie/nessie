@@ -348,25 +348,19 @@ public class Cassandra2Persist implements Persist {
   public boolean deleteWithReferenced(@Nonnull Obj obj) {
     var referenced = obj.referenced();
     BoundStatement stmt =
-        backend.buildStatement(
-            DELETE_OBJ_REFERENCED,
-            false,
-            config.repositoryId(),
-            serializeObjId(obj.id()),
-            referenced != -1L ? referenced : null);
-    //    var objIdSerialized = serializeObjId(obj.id());
-    //    var repoId = config.repositoryId();
-    //    BoundStatement stmt =
-    //        referenced != -1L
-    //            ? backend.buildStatement(
-    //                DELETE_OBJ_REFERENCED, false, repoId, objIdSerialized, referenced)
-    //            // We take a risk here in case the given object does _not_ have a referenced()
-    // value
-    //            // (old object).
-    //            // Cassandra's conditional DELETE ... IF doesn't allow us to use "IF col IS NULL"
-    // or "IF
-    //            // (col = 0 OR col IS NULL)".
-    //            : backend.buildStatement(DELETE_OBJ, false, repoId, objIdSerialized);
+        referenced != -1L
+            ? backend.buildStatement(
+                DELETE_OBJ_REFERENCED,
+                false,
+                config.repositoryId(),
+                serializeObjId(obj.id()),
+                referenced)
+            // We take a risk here in case the given object does _not_ have a referenced() value
+            // (old object).
+            // Cassandra's conditional DELETE ... IF doesn't allow us to use "IF col IS NULL" or "IF
+            // (col = 0 OR col IS NULL)".
+            : backend.buildStatement(
+                DELETE_OBJ, false, config.repositoryId(), serializeObjId(obj.id()));
     return backend.executeCas(stmt);
   }
 
