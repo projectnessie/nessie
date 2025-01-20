@@ -568,14 +568,13 @@ public class BigTablePersist implements Persist {
 
   @Override
   public boolean deleteWithReferenced(@Nonnull Obj obj) {
-    Filter exactReferencedFilter =
-        FILTERS
-            .chain()
-            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_REFERENCED))
-            .filter(FILTERS.value().exactMatch(copyFromUtf8(Long.toString(obj.referenced()))));
     Filter condition;
     if (obj.referenced() != -1L) {
-      condition = exactReferencedFilter;
+      condition =
+          FILTERS
+              .chain()
+              .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_REFERENCED))
+              .filter(FILTERS.value().exactMatch(copyFromUtf8(Long.toString(obj.referenced()))));
     } else {
       // We take a risk here in case the given object does _not_ have a referenced() value (old
       // object). It's sadly not possible to check for the _absence_ of a cell.
