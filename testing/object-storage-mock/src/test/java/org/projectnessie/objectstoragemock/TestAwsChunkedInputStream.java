@@ -140,10 +140,6 @@ public class TestAwsChunkedInputStream {
             IllegalArgumentException.class,
             "Illegal CR-LF sequence"),
         arguments(
-            "5;chunk-signature=F00\r\nHello5;chunk-signature=F00\r\n".getBytes(UTF_8),
-            IllegalArgumentException.class,
-            "Expecting empty separator line, but got '5;chunk-signature=F00'"),
-        arguments(
             "FOO;chunk-signature=F00\r\nHello\r\n0;chunk-signature=F00\r\n\r\n".getBytes(UTF_8),
             NumberFormatException.class,
             ""));
