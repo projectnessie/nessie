@@ -125,7 +125,6 @@ final class AwsChunkedInputStream extends InputStream {
           throw new EOFException("Unexpected end of metadata line");
         }
         checkArgument(c == 10, "Illegal CR-LF sequence");
-        System.err.println("readLine: " + line);
         return line.toString();
       }
       line.append((char) c);
