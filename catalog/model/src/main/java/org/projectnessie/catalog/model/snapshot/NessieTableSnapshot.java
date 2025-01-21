@@ -26,19 +26,15 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieTable;
 import org.projectnessie.catalog.model.id.NessieId;
-import org.projectnessie.catalog.model.schema.NessieField;
 import org.projectnessie.catalog.model.schema.NessiePartitionDefinition;
-import org.projectnessie.catalog.model.schema.NessieSchema;
 import org.projectnessie.catalog.model.schema.NessieSortDefinition;
 import org.projectnessie.catalog.model.statistics.NessiePartitionStatisticsFile;
 import org.projectnessie.catalog.model.statistics.NessieStatisticsFile;
@@ -203,18 +199,6 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
   List<NessiePartitionStatisticsFile> partitionStatisticsFiles();
-
-  @Value.Lazy
-  @JsonIgnore
-  default Map<UUID, NessieField> allFieldsById() {
-    Map<UUID, NessieField> allFields = new HashMap<>();
-    for (NessieSchema schema : schemas()) {
-      for (NessieField field : schema.struct().fields()) {
-        allFields.put(field.id(), field);
-      }
-    }
-    return allFields;
-  }
 
   @Value.Check
   default void check() {

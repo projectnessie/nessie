@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -42,6 +44,7 @@ import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
+import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.api.NessieApiV2;
@@ -61,6 +64,40 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
   @BeforeEach
   public void clearBucket() {
     heapStorageBucket.clear();
+  }
+
+  @Test
+  public void partitioningNestedStruct() {
+    @SuppressWarnings("resource")
+    var catalog = catalog();
+
+    var namespace = Namespace.of("test_ns");
+    var table = TableIdentifier.of(namespace, "table");
+
+    catalog.createNamespace(namespace);
+
+    var headersKv =
+        Types.StructType.of(
+            Types.NestedField.of(7, true, "key", Types.BinaryType.get()),
+            Types.NestedField.of(8, true, "value", Types.BinaryType.get()));
+
+    var fieldTimestamp =
+        Types.NestedField.of(4, false, "timestamp", Types.TimestampType.withoutZone());
+    var systemFields =
+        Types.StructType.of(
+            Types.NestedField.of(2, false, "partition", Types.IntegerType.get()),
+            Types.NestedField.of(3, false, "offset", Types.LongType.get()),
+            fieldTimestamp,
+            Types.NestedField.of(5, false, "headers", Types.ListType.ofRequired(6, headersKv)),
+            Types.NestedField.of(9, false, "key", Types.BinaryType.get()));
+
+    var fieldTestSchema = Types.NestedField.of(1, false, "test_schema", systemFields);
+    var schema = new Schema(List.of(fieldTestSchema));
+
+    var sourceName = fieldTestSchema.name() + '.' + fieldTimestamp.name();
+    var spec = PartitionSpec.builderFor(schema).day(sourceName, "daytime_day").build();
+
+    soft.assertThatCode(() -> catalog.createTable(table, schema, spec)).doesNotThrowAnyException();
   }
 
   // Paging tests
