@@ -14,6 +14,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.102.0] Release (2025-01-21)
+
+### New Features
+
 - When using OAuth authentication, the Nessie client now supports including extra parameters in
   requests to the token endpoint. This is useful for passing custom parameters that are not covered
   by the standard OAuth 2.0 specification. See the [Nessie
@@ -26,10 +38,6 @@ as necessary. Empty sections will not end in the release notes.
   references. This optimization however can cause heap issues in rare scenarios, and disabling this
   optimization can help there.
 
-### Changes
-
-### Deprecations
-
 ### Fixes
 
 - Fix an issue that prevents the Nessie Server Admin tool to purge unreferenced data in the backend
@@ -38,8 +46,6 @@ as necessary. Empty sections will not end in the release notes.
   Given a schema having a `struct < field_a, field_b >`, it was not possible to reference
   `field_a` or `field_b` in a partition-spec or sort-order. There was no issue however using fields
   at the "top level" (a schema like `field_a, field_b`).
-
-### Commits
 
 ## [0.101.3] Release (2024-12-18)
 
@@ -1007,7 +1013,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.101.3...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.102.0...HEAD
+[0.102.0]: https://github.com/projectnessie/nessie/compare/nessie-0.101.3...nessie-0.102.0
 [0.101.3]: https://github.com/projectnessie/nessie/compare/nessie-0.101.2...nessie-0.101.3
 [0.101.2]: https://github.com/projectnessie/nessie/compare/nessie-0.101.1...nessie-0.101.2
 [0.101.1]: https://github.com/projectnessie/nessie/compare/nessie-0.101.0...nessie-0.101.1

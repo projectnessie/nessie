@@ -2,6 +2,47 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.0 Release (January 21, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.0).
+
+### New Features
+
+- When using OAuth authentication, the Nessie client now supports including extra parameters in
+  requests to the token endpoint. This is useful for passing custom parameters that are not covered
+  by the standard OAuth 2.0 specification. See the [Nessie
+  documentation](https://projectnessie.org/tools/client_config/#authentication-settings) for
+  details.
+- Add a configuration option `nessie.version.store.persist.cache-enable-soft-references` (defaults to 
+  `true`) to optionally disable the additional caching the constructed Java objects via soft references.
+  Having the already constructed Java object is faster when getting object from the cache, but a Java object
+  tree implies a rather unpredictable heap pressure, hence these object are referenced via Java soft
+  references. This optimization however can cause heap issues in rare scenarios, and disabling this
+  optimization can help there.
+
+### Fixes
+
+- Fix an issue that prevents the Nessie Server Admin tool to purge unreferenced data in the backend
+  database, for data being written before Nessie version 0.101.0.
+- Fix an issue that prevents using nested fields in partition-spec and sort-order.
+  Given a schema having a `struct < field_a, field_b >`, it was not possible to reference
+  `field_a` or `field_b` in a partition-spec or sort-order. There was no issue however using fields
+  at the "top level" (a schema like `field_a, field_b`).
+
+### Commits
+* Fix using nested fields in partition-spec and sort-order (#10237)
+* Fix backwards compatibility issues with Obj.referenced (#10218)
+* Iceberg-update / set-statistics / snapshot-id deprecation (#10234)
+* Cache: add option to disable soft references (#10217)
+* Adopt Object Storage Mock to respect S3 chunked input trailing headers (#10231)
+* Fix NesQuEIT to pass against recent Iceberg changes (#10184)
+* Migrate to maintained shadow plugin (#10183)
+* OAuth client: add support for custom request parameters (#10154)
+* Remove duplicate entry in auth docs (#10157)
+* Remove use of ScyllaDB in Nessie (#10144)
+* Enable Azure Key Vault IT (#10142)
+* Support metrics relabelings in service monitor (#10095)
+
 ## 0.101.3 Release (December 18, 2024)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.101.3).

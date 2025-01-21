@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.101.3](https://img.shields.io/badge/Version-0.101.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.102.0](https://img.shields.io/badge/Version-0.102.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -342,6 +342,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | serviceMonitor.enabled | bool | `true` | Specifies whether a ServiceMonitor for Prometheus operator should be created. |
 | serviceMonitor.interval | string | `""` | The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s. |
 | serviceMonitor.labels | object | `{}` | Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up. |
+| serviceMonitor.metricRelabelings | list | `[]` | Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config. |
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here. |
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |
