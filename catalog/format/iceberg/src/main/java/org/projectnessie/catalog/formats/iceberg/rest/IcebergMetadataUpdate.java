@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -245,7 +246,8 @@ public interface IcebergMetadataUpdate {
   @JsonDeserialize(as = ImmutableSetStatistics.class)
   interface SetStatistics extends IcebergMetadataUpdate {
 
-    long snapshotId();
+    // Becomes deprecated w/ Iceberg 1.8, see https://github.com/apache/iceberg/pull/12010
+    OptionalLong snapshotId();
 
     IcebergStatisticsFile statistics();
 
@@ -253,7 +255,7 @@ public interface IcebergMetadataUpdate {
     default void applyToTable(IcebergTableMetadataUpdateState state) {
       state.addCatalogOp(CatalogOps.META_SET_STATISTICS);
       long snapshotId = Objects.requireNonNull(state.snapshot().icebergSnapshotId());
-      if (snapshotId == snapshotId()) {
+      if (snapshotId == statistics().snapshotId()) {
         state.builder().statisticsFiles(singleton(icebergStatisticsFileToNessie(statistics())));
       }
     }
