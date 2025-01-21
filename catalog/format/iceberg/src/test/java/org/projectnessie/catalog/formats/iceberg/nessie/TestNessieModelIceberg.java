@@ -28,6 +28,12 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField.
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.MIN_PARTITION_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema.INITIAL_SCHEMA_ID;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.collectFieldsByIcebergId;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergPartitionSpecToNessie;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergSchemaToNessieSchema;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergSortOrderToNessie;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessiePartitionDefinitionToIceberg;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieSortDefinitionToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
@@ -51,6 +57,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.PartitionSpecParser;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.SchemaParser;
+import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.SortOrderParser;
+import org.apache.iceberg.types.Types;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -59,6 +72,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
@@ -126,6 +140,114 @@ public class TestNessieModelIceberg {
         arguments(IcebergTransform.year(), NessieFieldTransform.year()),
         arguments(IcebergTransform.truncate(42), NessieFieldTransform.truncate(42)),
         arguments(IcebergTransform.truncate(1), NessieFieldTransform.truncate(1)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void partitioningNestedStruct(boolean firstLevel) throws Exception {
+    var headersKv =
+        Types.StructType.of(
+            Types.NestedField.of(7, true, "key", Types.BinaryType.get()),
+            Types.NestedField.of(8, true, "value", Types.BinaryType.get()));
+
+    var fieldTimestamp =
+        Types.NestedField.of(4, false, "timestamp", Types.TimestampType.withoutZone());
+    var fieldTimestampDeep =
+        Types.NestedField.of(13, false, "deep_timestamp", Types.TimestampType.withZone());
+    var deeplyNestedStruct =
+        Types.NestedField.of(
+            10,
+            false,
+            "deeply",
+            Types.StructType.of(
+                Types.NestedField.of(11, true, "deep_dec", Types.DecimalType.of(10, 3)),
+                Types.NestedField.of(12, true, "deep_time", Types.TimeType.get()),
+                fieldTimestampDeep,
+                Types.NestedField.of(14, true, "deep_bin", Types.BinaryType.get()),
+                Types.NestedField.of(
+                    15,
+                    true,
+                    "deep_string",
+                    Types.ListType.ofRequired(16, Types.StringType.get()))));
+    var systemFields =
+        Types.StructType.of(
+            Types.NestedField.of(2, false, "partition", Types.IntegerType.get()),
+            Types.NestedField.of(3, false, "offset", Types.LongType.get()),
+            fieldTimestamp,
+            Types.NestedField.of(5, false, "headers", Types.ListType.ofRequired(6, headersKv)),
+            Types.NestedField.of(9, false, "key", Types.BinaryType.get()),
+            deeplyNestedStruct);
+
+    var fieldTestSchema = Types.NestedField.of(1, false, "test_schema", systemFields);
+    var schema = new Schema(List.of(fieldTestSchema));
+
+    var sourceName =
+        fieldTestSchema.name()
+            + '.'
+            + (firstLevel
+                ? fieldTimestamp.name()
+                : (deeplyNestedStruct.name() + '.' + fieldTimestampDeep.name()));
+
+    var spec =
+        PartitionSpec.builderFor(schema).withSpecId(42).day(sourceName, "daytime_day").build();
+    var sort = SortOrder.builderFor(schema).withOrderId(43).asc(sourceName).build();
+
+    var schemaJson = SchemaParser.toJson(schema);
+    var specJson = PartitionSpecParser.toJson(spec);
+    var sortJson = SortOrderParser.toJson(sort);
+
+    var nessieMapper = new ObjectMapper().findAndRegisterModules();
+    var icebergSchema = nessieMapper.readValue(schemaJson, IcebergSchema.class);
+    var icebergSpec = nessieMapper.readValue(specJson, IcebergPartitionSpec.class);
+    var icebergSort = nessieMapper.readValue(sortJson, IcebergSortOrder.class);
+
+    var icebergFields = new HashMap<Integer, NessieField>();
+    var nessieSchema = icebergSchemaToNessieSchema(icebergSchema, icebergFields);
+
+    var partitionFields1 = new HashMap<Integer, NessiePartitionField>();
+    soft.assertThatCode(
+            () -> icebergPartitionSpecToNessie(icebergSpec, partitionFields1, icebergFields))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> icebergSortOrderToNessie(icebergSort, icebergFields))
+        .doesNotThrowAnyException();
+
+    var collectedFields = collectFieldsByIcebergId(List.of(nessieSchema));
+    // Remove the fields in the headersKv list (makes no sense to partition-by or sort-by fields in
+    // collections)
+    headersKv.fields().stream().map(Types.NestedField::fieldId).forEach(icebergFields::remove);
+    soft.assertThat(collectedFields).containsExactlyInAnyOrderEntriesOf(icebergFields);
+
+    var partitionFields2 = new HashMap<Integer, NessiePartitionField>();
+    soft.assertThatCode(
+            () -> icebergPartitionSpecToNessie(icebergSpec, partitionFields2, collectedFields))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> icebergSortOrderToNessie(icebergSort, collectedFields))
+        .doesNotThrowAnyException();
+
+    var allFields = new HashMap<UUID, NessieField>();
+    NessieModelIceberg.collectFieldsByNessieId(nessieSchema, allFields);
+
+    var nessiePartDef =
+        icebergPartitionSpecToNessie(icebergSpec, partitionFields2, collectedFields);
+    var nessieSort = icebergSortOrderToNessie(icebergSort, collectedFields);
+    soft.assertThatCode(() -> nessiePartitionDefinitionToIceberg(nessiePartDef, allFields::get))
+        .doesNotThrowAnyException();
+    soft.assertThatCode(() -> nessieSortDefinitionToIceberg(nessieSort, allFields::get))
+        .doesNotThrowAnyException();
+
+    var toIcebergSpec = nessiePartitionDefinitionToIceberg(nessiePartDef, allFields::get);
+    var toIcebergSort = nessieSortDefinitionToIceberg(nessieSort, allFields::get);
+    soft.assertThat(toIcebergSpec).isEqualTo(icebergSpec);
+    soft.assertThat(toIcebergSort).isEqualTo(icebergSort);
+
+    var toIcebergSpecJson = nessieMapper.writeValueAsString(toIcebergSpec);
+    var toIcebergSortJson = nessieMapper.writeValueAsString(toIcebergSort);
+
+    var toSpec = PartitionSpecParser.fromJson(schema, toIcebergSpecJson);
+    var toSort = SortOrderParser.fromJson(schema, toIcebergSortJson);
+
+    soft.assertThat(toSpec).isEqualTo(spec);
+    soft.assertThat(toSort).isEqualTo(sort);
   }
 
   @ParameterizedTest
