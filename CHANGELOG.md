@@ -36,7 +36,7 @@ as necessary. Empty sections will not end in the release notes.
   database, for data being written before Nessie version 0.101.0.
 - Fix an issue that prevents using nested fields in partition-spec and sort-order.
   Given a schema having a `struct < field_a, field_b >`, it was not possible to reference
-  `field_a` or `field_a` in a partition-spec or sort-order. There was no issue however using fields
+  `field_a` or `field_b` in a partition-spec or sort-order. There was no issue however using fields
   at the "top level" (a schema like `field_a, field_b`).
 
 ### Commits
