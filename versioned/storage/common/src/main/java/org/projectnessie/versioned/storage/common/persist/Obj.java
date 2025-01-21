@@ -39,6 +39,18 @@ public interface Obj {
    * <p>The value of this attribute is generated exclusively by the {@link Persist} implementations.
    *
    * <p>This attribute is <em>not</em> consistent when using a caching {@link Persist}.
+   *
+   * <p>When <em>reading</em> an object, this value is either {@code 0}, which means that the object
+   * was written using a Nessie version that did not have this attribute, or a (positive) timestamp
+   * when the object was written.
+   *
+   * <p>When <em>storing</em> an object, this value <em>must</em> be {@code 0}. The only one
+   * exception is for tests that exercise the relevant code paths - those tests do also use {@code
+   * -1} as a sentinel to write "NULL".
+   *
+   * <p>In any case it is <em>illegal</em> to refer to and/or interpret this attribute from code
+   * that does not have to deal explicitly with this value, only code that runs maintenance
+   * operations shall use this value.
    */
   @JsonIgnore
   @JacksonInject(OBJ_REFERENCED_KEY)

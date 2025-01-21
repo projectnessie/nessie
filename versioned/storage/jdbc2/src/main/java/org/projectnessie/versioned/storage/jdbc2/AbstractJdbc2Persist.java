@@ -29,6 +29,7 @@ import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.COL_OBJ_VER
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ_CONDITIONAL;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ_REFERENCED;
+import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.DELETE_OBJ_REFERENCED_NULL;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FETCH_OBJ_TYPE;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FIND_OBJS;
 import static org.projectnessie.versioned.storage.jdbc2.SqlConstants.FIND_OBJS_TYPED;
@@ -379,6 +380,9 @@ abstract class AbstractJdbc2Persist implements Persist {
     String versionToken = rs.getString(COL_OBJ_VERS);
     byte[] serialized = rs.getBytes(COL_OBJ_VALUE);
     long referenced = rs.getLong(COL_OBJ_REFERENCED);
+    if (rs.wasNull()) {
+      referenced = -1;
+    }
     return ProtoSerialization.deserializeObj(id, referenced, serialized, versionToken);
   }
 
@@ -407,10 +411,16 @@ abstract class AbstractJdbc2Persist implements Persist {
   }
 
   protected final boolean deleteWithReferenced(@Nonnull Connection conn, @Nonnull Obj obj) {
-    try (PreparedStatement ps = conn.prepareStatement(DELETE_OBJ_REFERENCED)) {
+    var referenced = obj.referenced();
+    var referencedPresent = referenced != -1L;
+    try (PreparedStatement ps =
+        conn.prepareStatement(
+            referencedPresent ? DELETE_OBJ_REFERENCED : DELETE_OBJ_REFERENCED_NULL)) {
       ps.setString(1, config.repositoryId());
       serializeObjId(ps, 2, obj.id(), databaseSpecific);
-      ps.setLong(3, obj.referenced());
+      if (referencedPresent) {
+        ps.setLong(3, referenced);
+      }
       return ps.executeUpdate() == 1;
     } catch (SQLException e) {
       throw unhandledSQLException(e);
@@ -528,7 +538,12 @@ abstract class AbstractJdbc2Persist implements Persist {
         }
         byte[] serialized = serializeObj(obj, incrementalIndexSizeLimit, indexSizeLimit, false);
         ps.setBytes(5, serialized);
-        ps.setLong(6, referenced);
+        if (obj.referenced() == -1L) {
+          // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+          ps.setNull(6, Types.BIGINT);
+        } else {
+          ps.setLong(6, referenced);
+        }
 
         batchIndexToObjIndex.put(batchIndex++, i);
         ps.addBatch();

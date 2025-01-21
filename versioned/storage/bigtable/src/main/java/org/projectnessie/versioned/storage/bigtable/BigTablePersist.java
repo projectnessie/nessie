@@ -568,11 +568,18 @@ public class BigTablePersist implements Persist {
 
   @Override
   public boolean deleteWithReferenced(@Nonnull Obj obj) {
-    Filter condition =
-        FILTERS
-            .chain()
-            .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_REFERENCED))
-            .filter(FILTERS.value().exactMatch(copyFromUtf8(Long.toString(obj.referenced()))));
+    Filter condition;
+    if (obj.referenced() != -1L) {
+      condition =
+          FILTERS
+              .chain()
+              .filter(FILTERS.qualifier().exactMatch(QUALIFIER_OBJ_REFERENCED))
+              .filter(FILTERS.value().exactMatch(copyFromUtf8(Long.toString(obj.referenced()))));
+    } else {
+      // We take a risk here in case the given object does _not_ have a referenced() value (old
+      // object). It's sadly not possible to check for the _absence_ of a cell.
+      condition = FILTERS.pass();
+    }
 
     ConditionalRowMutation conditionalRowMutation =
         conditionalRowMutation(obj, condition, Mutation.create().deleteRow());
@@ -653,12 +660,15 @@ public class BigTablePersist implements Persist {
     }
     mutation
         .setCell(FAMILY_OBJS, QUALIFIER_OBJS, CELL_TIMESTAMP, unsafeWrap(serialized))
-        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue)
-        .setCell(
-            FAMILY_OBJS,
-            QUALIFIER_OBJ_REFERENCED,
-            CELL_TIMESTAMP,
-            copyFromUtf8(Long.toString(referenced)));
+        .setCell(FAMILY_OBJS, QUALIFIER_OBJ_TYPE, CELL_TIMESTAMP, objTypeValue);
+    if (obj.referenced() != -1L) {
+      // -1 is a sentinel for AbstractBasePersistTests.deleteWithReferenced()
+      mutation.setCell(
+          FAMILY_OBJS,
+          QUALIFIER_OBJ_REFERENCED,
+          CELL_TIMESTAMP,
+          copyFromUtf8(Long.toString(referenced)));
+    }
     UpdateableObj.extractVersionToken(obj)
         .map(ByteString::copyFromUtf8)
         .ifPresent(bs -> mutation.setCell(FAMILY_OBJS, QUALIFIER_OBJ_VERS, CELL_TIMESTAMP, bs));
@@ -756,7 +766,7 @@ public class BigTablePersist implements Persist {
     List<RowCell> objReferenced = row.getCells(FAMILY_OBJS, QUALIFIER_OBJ_REFERENCED);
     long referenced =
         objReferenced.isEmpty()
-            ? 0L
+            ? -1L
             : Long.parseLong(objReferenced.get(0).getValue().toStringUtf8());
     List<RowCell> objCells = row.getCells(FAMILY_OBJS, QUALIFIER_OBJS);
     ByteBuffer obj = objCells.get(0).getValue().asReadOnlyByteBuffer();
