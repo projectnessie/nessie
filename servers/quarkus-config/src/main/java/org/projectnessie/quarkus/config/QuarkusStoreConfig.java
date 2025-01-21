@@ -116,6 +116,8 @@ public interface QuarkusStoreConfig extends StoreConfig {
 
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
 
+  boolean DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES = true;
+
   /**
    * Fixed amount of heap used to cache objects, set to 0 to disable the cache entirely. Must not be
    * used with fractional cache sizing. See description for {@code cache-capacity-fraction-of-heap}
@@ -124,7 +126,19 @@ public interface QuarkusStoreConfig extends StoreConfig {
   @WithName(CONFIG_CACHE_CAPACITY_MB)
   OptionalInt cacheCapacityMB();
 
+  /**
+   * Nessie keeps so called soft-references of the cached Java objects in addition to the serialized
+   * representation around.
+   *
+   * <p>This toggle optionally enables this behavior.
+   */
+  @WithName(CONFIG_CACHE_ENABLE_SOFT_REFERENCES)
+  @WithDefault("" + DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES)
+  Optional<Boolean> cacheEnableSoftReferences();
+
   String CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB = "cache-capacity-fraction-min-size-mb";
+
+  String CONFIG_CACHE_ENABLE_SOFT_REFERENCES = "cache-enable-soft-references";
 
   /** When using fractional cache sizing, this amount in MB is the minimum cache size. */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB)

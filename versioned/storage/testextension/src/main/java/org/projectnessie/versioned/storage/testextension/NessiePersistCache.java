@@ -33,4 +33,6 @@ public @interface NessiePersistCache {
 
   /** The maximum capacity of the cache in MB. Default is 1 MB. */
   long capacityMb() default 1;
+
+  boolean enableSoftReferences() default true;
 }

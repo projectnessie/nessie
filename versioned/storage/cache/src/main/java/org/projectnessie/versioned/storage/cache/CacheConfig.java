@@ -39,6 +39,8 @@ public interface CacheConfig {
 
   Optional<Duration> referenceNegativeTtl();
 
+  Optional<Boolean> enableSoftReferences();
+
   @Value.Default
   default LongSupplier clockNanos() {
     return System::nanoTime;
@@ -75,6 +77,9 @@ public interface CacheConfig {
 
     @CanIgnoreReturnValue
     Builder clockNanos(LongSupplier clockNanos);
+
+    @CanIgnoreReturnValue
+    Builder enableSoftReferences(boolean enableSoftReferences);
 
     CacheConfig build();
   }

@@ -26,8 +26,9 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.versioned.storage.cache.CacheTestObjTypeBundle.NegativeCachingObj;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -42,11 +43,16 @@ public class TestNegativeCaching {
 
   @NessiePersist protected Persist persist;
 
-  @Test
-  public void nonEffectiveNegativeCache() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void nonEffectiveNegativeCache(boolean enableSoftReferences) throws Exception {
     Persist backing = spy(persist);
     CacheBackend cacheBackend =
-        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+        PersistCaches.newBackend(
+            CacheConfig.builder()
+                .capacityMb(16)
+                .enableSoftReferences(enableSoftReferences)
+                .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
     verify(backing).config();
@@ -72,11 +78,16 @@ public class TestNegativeCaching {
     reset(backing, cachedPersist);
   }
 
-  @Test
-  public void negativeCacheFetchTypedObj() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void negativeCacheFetchTypedObj(boolean enableSoftReferences) throws Exception {
     Persist backing = spy(persist);
     CacheBackend cacheBackend =
-        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+        PersistCaches.newBackend(
+            CacheConfig.builder()
+                .capacityMb(16)
+                .enableSoftReferences(enableSoftReferences)
+                .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
     verify(backing).config();
@@ -158,11 +169,16 @@ public class TestNegativeCaching {
     reset(backing, cachedPersist);
   }
 
-  @Test
-  public void negativeCacheFetchTypedObjs() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void negativeCacheFetchTypedObjs(boolean enableSoftReferences) throws Exception {
     Persist backing = spy(persist);
     CacheBackend cacheBackend =
-        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+        PersistCaches.newBackend(
+            CacheConfig.builder()
+                .capacityMb(16)
+                .enableSoftReferences(enableSoftReferences)
+                .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
     verify(backing).config();
@@ -185,11 +201,16 @@ public class TestNegativeCaching {
     negativeCacheFetchRepeat(cachedPersist, backing, id);
   }
 
-  @Test
-  public void negativeCacheFetchTypedObjsIfExist() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void negativeCacheFetchTypedObjsIfExist(boolean enableSoftReferences) throws Exception {
     Persist backing = spy(persist);
     CacheBackend cacheBackend =
-        PersistCaches.newBackend(CacheConfig.builder().capacityMb(16).build());
+        PersistCaches.newBackend(
+            CacheConfig.builder()
+                .capacityMb(16)
+                .enableSoftReferences(enableSoftReferences)
+                .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
     verify(backing).config();
