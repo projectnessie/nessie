@@ -33,8 +33,10 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.mapTyp
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.stringType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.structType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timeType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampNanosType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampNanosTzType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampType;
-import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestamptzType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampTzType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.uuidType;
 
 import java.util.stream.Stream;
@@ -75,7 +77,9 @@ public class TestIcebergTypes {
         arguments(dateType(), "\"date\""),
         arguments(timeType(), "\"time\""),
         arguments(timestampType(), "\"timestamp\""),
-        arguments(timestamptzType(), "\"timestamptz\""),
+        arguments(timestampTzType(), "\"timestamptz\""),
+        arguments(timestampNanosType(), "\"timestamp_ns\""),
+        arguments(timestampNanosTzType(), "\"timestamptz_ns\""),
         arguments(uuidType(), "\"uuid\""),
         arguments(fixedType(42), "\"fixed[42]\""),
         arguments(decimalType(33, 11), "\"decimal(33, 11)\""),
@@ -153,6 +157,8 @@ public class TestIcebergTypes {
         arguments(Types.DecimalType.of(10, 3), decimalType(10, 3)),
         arguments(Types.FixedType.ofLength(42), fixedType(42)),
         arguments(Types.TimestampType.withoutZone(), timestampType()),
-        arguments(Types.TimestampType.withZone(), timestamptzType()));
+        arguments(Types.TimestampType.withZone(), timestampTzType()),
+        arguments(Types.TimestampNanoType.withoutZone(), timestampNanosType()),
+        arguments(Types.TimestampNanoType.withZone(), timestampNanosTzType()));
   }
 }

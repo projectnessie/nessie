@@ -43,6 +43,8 @@ public interface IcebergType {
   String TYPE_BINARY = "binary";
   String TYPE_TIMESTAMP = "timestamp";
   String TYPE_TIMESTAMP_TZ = "timestamptz";
+  String TYPE_TIMESTAMP_NS = "timestamp_ns";
+  String TYPE_TIMESTAMP_NS_TZ = "timestamptz_ns";
   String TYPE_FIXED = "fixed";
   String TYPE_DECIMAL = "decimal";
   String TYPE_STRUCT = "struct";
@@ -89,12 +91,20 @@ public interface IcebergType {
     return IcebergTypes.BINARY;
   }
 
-  static IcebergTimestampType timestamptzType() {
+  static IcebergTimestampType timestampTzType() {
     return IcebergTypes.TIMESTAMPTZ;
   }
 
   static IcebergTimestampType timestampType() {
     return IcebergTypes.TIMESTAMP;
+  }
+
+  static IcebergTimestampNanosType timestampNanosTzType() {
+    return IcebergTypes.TIMESTAMPTZ_NS;
+  }
+
+  static IcebergTimestampNanosType timestampNanosType() {
+    return IcebergTypes.TIMESTAMP_NS;
   }
 
   static IcebergFixedType fixedType(int length) {

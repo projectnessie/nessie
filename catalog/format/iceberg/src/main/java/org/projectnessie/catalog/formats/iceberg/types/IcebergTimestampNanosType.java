@@ -18,22 +18,22 @@ package org.projectnessie.catalog.formats.iceberg.types;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 
-/** Iceberg timestamp, microsecond precision. */
-public final class IcebergTimestampType extends IcebergPrimitiveType {
-  private static final Schema TIMESTAMP_SCHEMA =
-      LogicalTypes.timestampMicros().addToSchema(Schema.create(Schema.Type.LONG));
-  private static final Schema TIMESTAMPTZ_SCHEMA =
-      LogicalTypes.timestampMicros().addToSchema(Schema.create(Schema.Type.LONG));
+/** Iceberg timestamp, nanosecond precision. */
+public final class IcebergTimestampNanosType extends IcebergPrimitiveType {
+  private static final Schema TIMESTAMP_NS_SCHEMA =
+      LogicalTypes.timestampNanos().addToSchema(Schema.create(Schema.Type.LONG));
+  private static final Schema TIMESTAMPTZ_NS_SCHEMA =
+      LogicalTypes.timestampNanos().addToSchema(Schema.create(Schema.Type.LONG));
   public static final String ADJUST_TO_UTC_PROP = "adjust-to-utc";
 
   static {
-    TIMESTAMP_SCHEMA.addProp(ADJUST_TO_UTC_PROP, false);
-    TIMESTAMPTZ_SCHEMA.addProp(ADJUST_TO_UTC_PROP, true);
+    TIMESTAMP_NS_SCHEMA.addProp(ADJUST_TO_UTC_PROP, false);
+    TIMESTAMPTZ_NS_SCHEMA.addProp(ADJUST_TO_UTC_PROP, true);
   }
 
   private final boolean adjustToUTC;
 
-  IcebergTimestampType(boolean adjustToUTC) {
+  IcebergTimestampNanosType(boolean adjustToUTC) {
     this.adjustToUTC = adjustToUTC;
   }
 
@@ -43,12 +43,12 @@ public final class IcebergTimestampType extends IcebergPrimitiveType {
 
   @Override
   public String type() {
-    return adjustToUTC() ? TYPE_TIMESTAMP_TZ : TYPE_TIMESTAMP;
+    return adjustToUTC() ? TYPE_TIMESTAMP_NS_TZ : TYPE_TIMESTAMP_NS;
   }
 
   @Override
   public Schema avroSchema(int fieldId) {
-    return adjustToUTC() ? TIMESTAMPTZ_SCHEMA : TIMESTAMP_SCHEMA;
+    return adjustToUTC() ? TIMESTAMPTZ_NS_SCHEMA : TIMESTAMP_NS_SCHEMA;
   }
 
   @Override
@@ -68,13 +68,13 @@ public final class IcebergTimestampType extends IcebergPrimitiveType {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof IcebergTimestampType)) {
+    if (!(obj instanceof IcebergTimestampNanosType)) {
       return false;
     }
     if (obj == this) {
       return true;
     }
-    IcebergTimestampType o = (IcebergTimestampType) obj;
+    IcebergTimestampNanosType o = (IcebergTimestampNanosType) obj;
     return o.adjustToUTC == adjustToUTC;
   }
 }
