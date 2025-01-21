@@ -743,6 +743,9 @@ public class NessieModelIceberg {
   /**
    * Collects all fields, top-level and nested in structs, from the given struct into the given map.
    *
+   * <p>Does <em>not</em> return fields inside lists or maps, as those cannot be referred from
+   * partition-specs or sort-orders.
+   *
    * <p>Similar to {@link #collectFieldsByIcebergId(NessieStruct, Map)}.
    */
   public static void collectFieldsByNessieId(
@@ -756,6 +759,15 @@ public class NessieModelIceberg {
     }
   }
 
+  /**
+   * Collects all fields, top-level and nested in structs, from the given schemas into the given
+   * map.
+   *
+   * <p>Does <em>not</em> return fields inside lists or maps, as those cannot be referred from
+   * partition-specs or sort-orders.
+   *
+   * <p>Similar to {@link #collectFieldsByNessieId(NessieStruct, Map)}.
+   */
   @VisibleForTesting
   static Map<Integer, NessieField> collectFieldsByIcebergId(List<NessieSchema> schemas) {
     Map<Integer, NessieField> icebergFields = new HashMap<>();
