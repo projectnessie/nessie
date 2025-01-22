@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/ADLS: Fix an issue that prevented the usage of retry-options for ADLS.
+
 ### Commits
 
 ## [0.102.0] Release (2025-01-21)

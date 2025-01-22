@@ -23,9 +23,6 @@ import static org.projectnessie.catalog.files.config.AdlsFileSystemOptions.DELEG
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
-import com.azure.core.http.policy.ExponentialBackoffOptions;
-import com.azure.core.http.policy.FixedDelayOptions;
-import com.azure.core.http.policy.RetryOptions;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.ConfigurationBuilder;
 import com.azure.identity.DefaultAzureCredential;
@@ -189,7 +186,6 @@ public final class AdlsClientSupplier {
             .configuration(clientConfig)
             .endpoint(endpoint);
 
-    buildRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
     buildRequestRetryOptions(fileSystemOptions).ifPresent(clientBuilder::retryOptions);
     AdlsLocation location = adlsLocation(uri);
     location.container().ifPresent(clientBuilder::fileSystemName);
@@ -270,44 +266,6 @@ public final class AdlsClientSupplier {
   private static final class DefaultAzureCredentialsLazy {
     static final DefaultAzureCredential DEFAULT_AZURE_CREDENTIAL =
         new DefaultAzureCredentialBuilder().build();
-  }
-
-  // Both RetryOptions + RequestRetryOptions look redundant, but neither type inherits the other -
-  // so :shrug:
-
-  static Optional<RetryOptions> buildRetryOptions(AdlsFileSystemOptions fileSystemOptions) {
-    return fileSystemOptions
-        .retryPolicy()
-        .flatMap(
-            strategy -> {
-              switch (strategy) {
-                case NONE:
-                  return Optional.empty();
-                case EXPONENTIAL_BACKOFF:
-                  ExponentialBackoffOptions exponentialBackoffOptions =
-                      new ExponentialBackoffOptions();
-                  fileSystemOptions.retryDelay().ifPresent(exponentialBackoffOptions::setBaseDelay);
-                  fileSystemOptions
-                      .maxRetryDelay()
-                      .ifPresent(exponentialBackoffOptions::setMaxDelay);
-                  fileSystemOptions
-                      .maxRetries()
-                      .ifPresent(exponentialBackoffOptions::setMaxRetries);
-                  return Optional.of(new RetryOptions(exponentialBackoffOptions));
-                case FIXED_DELAY:
-                  FixedDelayOptions fixedDelayOptions =
-                      new FixedDelayOptions(
-                          fileSystemOptions
-                              .maxRetries()
-                              .orElseThrow(() -> new IllegalStateException("max-retries missing")),
-                          fileSystemOptions
-                              .retryDelay()
-                              .orElseThrow(() -> new IllegalStateException("max-relay missing")));
-                  return Optional.of(new RetryOptions(fixedDelayOptions));
-                default:
-                  throw new IllegalArgumentException("Invalid retry strategy: " + strategy);
-              }
-            });
   }
 
   static Optional<RequestRetryOptions> buildRequestRetryOptions(

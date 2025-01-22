@@ -39,6 +39,7 @@ public class AzuriteTestResourceLifecycleManager implements QuarkusTestResourceL
                 + "/"
                 + azurite.storageContainer());
     return ImmutableMap.<String, String>builder()
+        .put("nessie.catalog.service.adls.default-options.retry-policy", "EXPONENTIAL_BACKOFF")
         .put("nessie.catalog.service.adls.default-options.auth-type", "STORAGE_SHARED_KEY")
         .put(
             "nessie.catalog.service.adls.default-options.account",
