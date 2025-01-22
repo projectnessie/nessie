@@ -2,6 +2,17 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.1 Release (January 22, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.1).
+
+### Fixes
+
+- Catalog/ADLS: Fix an issue that prevented the usage of retry-options for ADLS.
+
+### Commits
+* Catalog/ADLS: Only use `RequestRetryOptions` (#10255)
+
 ## 0.102.0 Release (January 21, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.0).

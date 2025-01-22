@@ -20,9 +20,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
-- Catalog/ADLS: Fix an issue that prevented the usage of retry-options for ADLS.
-
 ### Commits
+
+## [0.102.1] Release (2025-01-22)
+
+### Fixes
+
+- Catalog/ADLS: Fix an issue that prevented the usage of retry-options for ADLS.
 
 ## [0.102.0] Release (2025-01-21)
 
@@ -1015,7 +1019,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.102.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.102.1...HEAD
+[0.102.1]: https://github.com/projectnessie/nessie/compare/nessie-0.102.0...nessie-0.102.1
 [0.102.0]: https://github.com/projectnessie/nessie/compare/nessie-0.101.3...nessie-0.102.0
 [0.101.3]: https://github.com/projectnessie/nessie/compare/nessie-0.101.2...nessie-0.101.3
 [0.101.2]: https://github.com/projectnessie/nessie/compare/nessie-0.101.1...nessie-0.101.2

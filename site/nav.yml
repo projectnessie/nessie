@@ -53,6 +53,7 @@ nav:
     - Unreleased (nightly): '!include build/versions/nightly/mkdocs.yml'
 # Do NOT change, move or remove the following line!!
 # RELEASE_PLACEHOLDER_MARKER
+    - Nessie 0.102.1: '!include build/versions/0.102.1/mkdocs.yml'
     - Nessie 0.102.0: '!include build/versions/0.102.0/mkdocs.yml'
     - Nessie 0.101.3: '!include build/versions/0.101.3/mkdocs.yml'
     - Nessie 0.101.2: '!include build/versions/0.101.2/mkdocs.yml'

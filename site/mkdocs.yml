@@ -33,7 +33,7 @@ extra_css:
 
 extra:
   versions:
-    nessie: 0.102.0
+    nessie: 0.102.1
     iceberg: 1.5.2
   double_curly: "{{"
   analytics:
