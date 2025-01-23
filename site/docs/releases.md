@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.2 Release (January 23, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.2).
+
+### Fixes
+
+- Nessie re-assigns IDs for new schemas/partition-specs/sort-orders. The check that the provided ID for
+  those must be valid (>= 0) is therefore superfluous, it can actually unnecessarily lead to problems. This
+  change also fixes an issue that the last-added schema/spec/sort ID is set to -1, if the schema/spec/sort
+  already existed. This lets the set-current-schema/set-default-partition-spec/set-default-sort-order
+  updates with `-1` for the last-added one fail, but it should return the ID of the schema/spec/sort ID that
+  already existed.
+
+### Commits
+* Catalog: Allow passing -1 for new schema/partition-spec/sort-order (#10264)
+
 ## 0.102.1 Release (January 22, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.1).

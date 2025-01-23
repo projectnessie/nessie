@@ -20,14 +20,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+### Commits
+
+## [0.102.2] Release (2025-01-23)
+
+### Fixes
+
 - Nessie re-assigns IDs for new schemas/partition-specs/sort-orders. The check that the provided ID for
   those must be valid (>= 0) is therefore superfluous, it can actually unnecessarily lead to problems. This
   change also fixes an issue that the last-added schema/spec/sort ID is set to -1, if the schema/spec/sort
   already existed. This lets the set-current-schema/set-default-partition-spec/set-default-sort-order
   updates with `-1` for the last-added one fail, but it should return the ID of the schema/spec/sort ID that
   already existed.
-
-### Commits
 
 ## [0.102.1] Release (2025-01-22)
 
@@ -1026,7 +1030,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.102.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.102.2...HEAD
+[0.102.2]: https://github.com/projectnessie/nessie/compare/nessie-0.102.1...nessie-0.102.2
 [0.102.1]: https://github.com/projectnessie/nessie/compare/nessie-0.102.0...nessie-0.102.1
 [0.102.0]: https://github.com/projectnessie/nessie/compare/nessie-0.101.3...nessie-0.102.0
 [0.101.3]: https://github.com/projectnessie/nessie/compare/nessie-0.101.2...nessie-0.101.3
