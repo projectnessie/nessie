@@ -412,7 +412,7 @@ public interface IcebergMetadataUpdate {
     @Value.Check
     default void check() {
       int id = spec().specId();
-      checkState(id >= 0, "Illegal spec-ID %s for %s", id);
+      checkState(id >= -1, "Illegal spec-ID %s", id);
     }
 
     static AddPartitionSpec addPartitionSpec(IcebergPartitionSpec spec) {
@@ -435,7 +435,7 @@ public interface IcebergMetadataUpdate {
     @Value.Check
     default void check() {
       for (Integer specId : specIds()) {
-        checkState(specId != null && specId >= 0, "Illegal spec-ID %s for %s", specId);
+        checkState(specId != null && specId >= 0, "Illegal spec-ID %s", specId);
       }
     }
 
@@ -580,7 +580,7 @@ public interface IcebergMetadataUpdate {
       int id = sortOrder().orderId();
       boolean unsorted = sortOrder().isUnsorted();
       checkState(
-          id > 0 || (unsorted && id == 0),
+          id == -1 || id > 0 || (unsorted && id == 0),
           "Illegal order-ID %s for %s",
           id,
           unsorted ? "unsorted" : "sort order");

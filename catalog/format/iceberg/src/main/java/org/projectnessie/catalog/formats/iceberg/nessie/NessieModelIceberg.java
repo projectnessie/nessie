@@ -1197,7 +1197,7 @@ public class NessieModelIceberg {
   public static void addSchema(AddSchema u, IcebergTableMetadataUpdateState state) {
     IcebergSchema schema = u.schema();
 
-    checkArgument(schema.schemaId() >= 0, "Invalid schema-ID %s", u.schema().schemaId());
+    checkArgument(schema.schemaId() >= -1, "Invalid schema-ID %s", u.schema().schemaId());
     NessieTableSnapshot snapshot = state.snapshot();
 
     // TODO check again, carefully, how exactly and when Iceberg does the the following ID
@@ -1209,17 +1209,19 @@ public class NessieModelIceberg {
       schema = icebergInitialSchema(schema, remappedFieldIds);
     }
 
-    checkArgument(
-        !snapshot.schemaByIcebergId(schema.schemaId()).isPresent(),
-        "A schema with ID %s already exists",
-        schema.schemaId());
+    if (schema.schemaId() != -1) {
+      checkArgument(
+          !snapshot.schemaByIcebergId(schema.schemaId()).isPresent(),
+          "A schema with ID %s already exists",
+          schema.schemaId());
+    }
 
     // Check if a similar schema exists, and if so then update the "last added schema ID"
     // accordingly for a following "set-current-schema -1".
     ReuseOrCreate<IcebergSchema> reuseOrCreate = reuseOrCreateNewSchemaId(schema, snapshot);
     schema = schema.withSchemaId(reuseOrCreate.id());
     if (reuseOrCreate.value().isPresent()) {
-      state.schemaAdded(state.isAddedSchema(schema.schemaId()) ? schema.schemaId() : -1);
+      state.schemaAdded(schema.schemaId());
       return;
     }
 
@@ -1356,20 +1358,22 @@ public class NessieModelIceberg {
   public static void addSchema(AddSchema u, IcebergViewMetadataUpdateState state) {
     IcebergSchema schema = u.schema();
 
-    checkArgument(schema.schemaId() >= 0, "Invalid schema-ID %s", u.schema().schemaId());
+    checkArgument(schema.schemaId() >= -1, "Invalid schema-ID %s", u.schema().schemaId());
     NessieViewSnapshot snapshot = state.snapshot();
 
-    checkArgument(
-        !snapshot.schemaByIcebergId(schema.schemaId()).isPresent(),
-        "A schema with ID %s already exists",
-        schema.schemaId());
+    if (schema.schemaId() != -1) {
+      checkArgument(
+          !snapshot.schemaByIcebergId(schema.schemaId()).isPresent(),
+          "A schema with ID %s already exists",
+          schema.schemaId());
+    }
 
     // Check if a similar schema exists, and if so then update the "last added schema ID"
     // accordingly for a following "set-current-schema -1".
     ReuseOrCreate<IcebergSchema> reuseOrCreate = reuseOrCreateNewSchemaId(schema, snapshot);
     schema = schema.withSchemaId(reuseOrCreate.id());
     if (reuseOrCreate.value().isPresent()) {
-      state.schemaAdded(state.isAddedSchema(schema.schemaId()) ? schema.schemaId() : -1);
+      state.schemaAdded(schema.schemaId());
       return;
     }
 
@@ -1425,7 +1429,7 @@ public class NessieModelIceberg {
 
   public static void addPartitionSpec(AddPartitionSpec u, IcebergTableMetadataUpdateState state) {
     IcebergPartitionSpec spec = u.spec();
-    checkArgument(spec.specId() >= 0, "Invalid spec-ID %s", spec.specId());
+    checkArgument(spec.specId() >= -1, "Invalid spec-ID %s", spec.specId());
     NessieTableSnapshot snapshot = state.snapshot();
 
     // TODO re-check this ID-re-assignment block
@@ -1458,7 +1462,7 @@ public class NessieModelIceberg {
     ReuseOrCreate<IcebergPartitionSpec> reuseOrCreate = reuseOrCreateNewSpecId(spec, snapshot);
     spec = spec.withSpecId(reuseOrCreate.id());
     if (reuseOrCreate.value().isPresent()) {
-      state.specAdded(state.isAddedSpec(spec.specId()) ? spec.specId() : -1);
+      state.specAdded(spec.specId());
       return;
     }
 
@@ -1480,7 +1484,7 @@ public class NessieModelIceberg {
         "No Iceberg-ID for NessiePartitionDefinition, retrieved via spec-ID %s",
         u.spec().specId());
     state.builder().addPartitionDefinition(def).icebergLastPartitionId(lastNewFieldId);
-    state.specAdded(u.spec().specId());
+    state.specAdded(spec.specId());
   }
 
   public static void removePartitionSpecs(
@@ -1542,7 +1546,7 @@ public class NessieModelIceberg {
 
   public static void addSortOrder(AddSortOrder u, IcebergTableMetadataUpdateState state) {
     IcebergSortOrder sortOrder = u.sortOrder();
-    checkArgument(sortOrder.orderId() >= 0, "Invalid order-ID %s", u.sortOrder().orderId());
+    checkArgument(sortOrder.orderId() >= -1, "Invalid order-ID %s", u.sortOrder().orderId());
     NessieTableSnapshot snapshot = state.snapshot();
 
     // TODO re-check this ID-re-assignment block
@@ -1564,7 +1568,7 @@ public class NessieModelIceberg {
         reuseOrCreateNewSortOrderId(sortOrder, snapshot);
     sortOrder = sortOrder.withOrderId(reuseOrCreate.id());
     if (reuseOrCreate.value().isPresent()) {
-      state.sortOrderAdded(state.isAddedOrder(sortOrder.orderId()) ? sortOrder.orderId() : -1);
+      state.sortOrderAdded(sortOrder.orderId());
       return;
     }
 
