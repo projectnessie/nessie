@@ -26,8 +26,11 @@ import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataWithStatistics;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField.nestedField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.INITIAL_SPEC_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.MIN_PARTITION_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema.INITIAL_SCHEMA_ID;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortField.sortField;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.INITIAL_SORT_ORDER_ID;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.collectFieldsByIcebergId;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergPartitionSpecToNessie;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergSchemaToNessieSchema;
@@ -35,7 +38,13 @@ import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceber
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessiePartitionDefinitionToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.nessieSortDefinitionToIceberg;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergTableSnapshot;
+import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.newIcebergViewSnapshot;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddPartitionSpec.addPartitionSpec;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSchema.addSchema;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSortOrder.addSortOrder;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema.setCurrentSchema;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultPartitionSpec.setDefaultPartitionSpec;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation.setTrustedLocation;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.binaryType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.integerType;
@@ -46,6 +55,8 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.string
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.structType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestamptzType;
 import static org.projectnessie.catalog.model.id.NessieIdHasher.nessieIdHasher;
+import static org.projectnessie.catalog.model.schema.NessieNullOrder.NULLS_LAST;
+import static org.projectnessie.catalog.model.schema.NessieSortDirection.ASC;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -81,7 +92,6 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTransform;
@@ -98,7 +108,6 @@ import org.projectnessie.catalog.model.schema.NessiePartitionDefinition;
 import org.projectnessie.catalog.model.schema.NessiePartitionField;
 import org.projectnessie.catalog.model.schema.NessieSchema;
 import org.projectnessie.catalog.model.schema.NessieSortDefinition;
-import org.projectnessie.catalog.model.schema.NessieSortDirection;
 import org.projectnessie.catalog.model.schema.types.NessieTypeSpec;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
@@ -321,10 +330,10 @@ public class TestNessieModelIceberg {
         IcebergSortOrder.sortOrder(
             42,
             singletonList(
-                IcebergSortField.sortField(
+                sortField(
                     IcebergTransform.identity().toString(),
                     123,
-                    NessieSortDirection.ASC,
+                    ASC,
                     NessieNullOrder.NULLS_FIRST)));
     soft.assertThat(icebergJsonSerializeDeserialize(icebergSortOrder, IcebergSortOrder.class))
         .isEqualTo(icebergSortOrder);
@@ -615,9 +624,409 @@ public class TestNessieModelIceberg {
   }
 
   @ParameterizedTest
+  @ValueSource(ints = {-1, 1})
+  public void addSchemaTableUpdates(int firstSchemaId) {
+    var firstSchema =
+        IcebergSchema.builder()
+            .schemaId(firstSchemaId)
+            .addFields(nestedField(100, "key", false, binaryType(), null))
+            .build();
+    var snapshot1 =
+        new IcebergTableMetadataUpdateState(
+                newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
+            .applyUpdates(
+                List.of(
+                    addSchema(firstSchema, 0),
+                    setTrustedLocation("foo://bar/"),
+                    setCurrentSchema(-1)))
+            .snapshot();
+    var schemaByIcebergId = snapshot1.schemaByIcebergId();
+    var expectedSchemaId = INITIAL_SCHEMA_ID;
+    soft.assertThat(schemaByIcebergId).hasSize(1).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot1.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var secondSchema =
+        IcebergSchema.builder()
+            .schemaId(10)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot2 =
+        new IcebergTableMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(secondSchema, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot2.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(2).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot2.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var thirdSchema =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null),
+                nestedField(300, "something", false, binaryType(), null))
+            .build();
+    var snapshot3 =
+        new IcebergTableMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(thirdSchema, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot3.schemaByIcebergId();
+    expectedSchemaId = 2;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot3.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var fourthSchemaExisting =
+        IcebergSchema.builder()
+            .schemaId(20)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot4 =
+        new IcebergTableMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(fourthSchemaExisting, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot4.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot4.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var fifthSchemaExisting =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot5 =
+        new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(fifthSchemaExisting, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot5.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot5.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 1})
+  public void addPartitionSpecUpdates(int firstSpecId) {
+    var schema =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(100, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null),
+                nestedField(300, "something", false, binaryType(), null))
+            .build();
+    var firstSpec =
+        IcebergPartitionSpec.builder()
+            .specId(firstSpecId)
+            .addFields(partitionField("p_key", "identity", 1, 1050))
+            .build();
+    var snapshot1 =
+        new IcebergTableMetadataUpdateState(
+                newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
+            .applyUpdates(
+                List.of(
+                    addSchema(schema, 0),
+                    setTrustedLocation("foo://bar/"),
+                    setCurrentSchema(-1),
+                    addPartitionSpec(firstSpec),
+                    setDefaultPartitionSpec(-1)))
+            .snapshot();
+    var specByIcebergId = snapshot1.partitionDefinitionByIcebergId();
+    var expectedSpecId = INITIAL_SPEC_ID;
+    soft.assertThat(specByIcebergId).hasSize(1).containsKey(expectedSpecId);
+    soft.assertThat(snapshot1.currentPartitionDefinitionId())
+        .isEqualTo(specByIcebergId.get(expectedSpecId).id());
+
+    var secondSpec =
+        IcebergPartitionSpec.builder()
+            .specId(10)
+            .addFields(partitionField("p_value", "identity", 2, 1051))
+            .build();
+    var snapshot2 =
+        new IcebergTableMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addPartitionSpec(secondSpec), setDefaultPartitionSpec(-1)))
+            .snapshot();
+    specByIcebergId = snapshot2.partitionDefinitionByIcebergId();
+    expectedSpecId = 1;
+    soft.assertThat(specByIcebergId).hasSize(2).containsKey(expectedSpecId);
+    soft.assertThat(snapshot2.currentPartitionDefinitionId())
+        .isEqualTo(specByIcebergId.get(expectedSpecId).id());
+
+    var thirdSpec =
+        IcebergPartitionSpec.builder()
+            .specId(-1)
+            .addFields(partitionField("p_something", "identity", 3, 1052))
+            .build();
+    var snapshot3 =
+        new IcebergTableMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addPartitionSpec(thirdSpec), setDefaultPartitionSpec(-1)))
+            .snapshot();
+    specByIcebergId = snapshot3.partitionDefinitionByIcebergId();
+    expectedSpecId = 2;
+    soft.assertThat(specByIcebergId).hasSize(3).containsKey(expectedSpecId);
+    soft.assertThat(snapshot3.currentPartitionDefinitionId())
+        .isEqualTo(specByIcebergId.get(expectedSpecId).id());
+
+    var fourthSpecExisting =
+        IcebergPartitionSpec.builder()
+            .specId(20)
+            .addFields(partitionField("p_value", "identity", 2, 1051))
+            .build();
+    var snapshot4 =
+        new IcebergTableMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
+            .applyUpdates(
+                List.of(addPartitionSpec(fourthSpecExisting), setDefaultPartitionSpec(-1)))
+            .snapshot();
+    specByIcebergId = snapshot4.partitionDefinitionByIcebergId();
+    expectedSpecId = 1;
+    soft.assertThat(specByIcebergId).hasSize(3).containsKey(expectedSpecId);
+    soft.assertThat(snapshot4.currentPartitionDefinitionId())
+        .isEqualTo(specByIcebergId.get(expectedSpecId).id());
+
+    var fifthSpecExisting =
+        IcebergPartitionSpec.builder()
+            .specId(-1)
+            .addFields(partitionField("p_value", "identity", 2, 1051))
+            .build();
+    var snapshot5 =
+        new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addPartitionSpec(fifthSpecExisting), setDefaultPartitionSpec(-1)))
+            .snapshot();
+    specByIcebergId = snapshot5.partitionDefinitionByIcebergId();
+    expectedSpecId = 1;
+    soft.assertThat(specByIcebergId).hasSize(3).containsKey(expectedSpecId);
+    soft.assertThat(snapshot5.currentPartitionDefinitionId())
+        .isEqualTo(specByIcebergId.get(expectedSpecId).id());
+
+    var nonExistingField =
+        IcebergPartitionSpec.builder()
+            .specId(-1)
+            .addFields(partitionField("p_value", "identity", 242, 1052))
+            .build();
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+                    .applyUpdates(
+                        List.of(addPartitionSpec(nonExistingField), setDefaultPartitionSpec(-1)))
+                    .snapshot())
+        .withMessage(
+            "Source field with ID 242 not found for partition spec with ID 3 and transform 'identity'");
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 1})
+  public void addSortTableUpdates(int firstSortId) {
+    var schema =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(100, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null),
+                nestedField(300, "something", false, binaryType(), null))
+            .build();
+    var firstSort =
+        IcebergSortOrder.builder()
+            .orderId(firstSortId)
+            .addFields(sortField("identity", 1, ASC, NULLS_LAST))
+            .build();
+    var snapshot1 =
+        new IcebergTableMetadataUpdateState(
+                newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
+            .applyUpdates(
+                List.of(
+                    addSchema(schema, 0),
+                    setTrustedLocation("foo://bar/"),
+                    setCurrentSchema(-1),
+                    addSortOrder(firstSort),
+                    setDefaultSortOrder(-1)))
+            .snapshot();
+    var sortByIcebergId = snapshot1.sortDefinitionByIcebergId();
+    var expectedSortId = INITIAL_SORT_ORDER_ID;
+    soft.assertThat(sortByIcebergId).hasSize(1).containsKey(expectedSortId);
+    soft.assertThat(snapshot1.currentSortDefinitionId())
+        .isEqualTo(sortByIcebergId.get(expectedSortId).id());
+
+    var secondSort =
+        IcebergSortOrder.builder()
+            .orderId(10)
+            .addFields(sortField("identity", 2, ASC, NULLS_LAST))
+            .build();
+    var snapshot2 =
+        new IcebergTableMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSortOrder(secondSort), setDefaultSortOrder(-1)))
+            .snapshot();
+    sortByIcebergId = snapshot2.sortDefinitionByIcebergId();
+    expectedSortId = 2;
+    soft.assertThat(sortByIcebergId).hasSize(2).containsKey(expectedSortId);
+    soft.assertThat(snapshot2.currentSortDefinitionId())
+        .isEqualTo(sortByIcebergId.get(expectedSortId).id());
+
+    var thirdSort =
+        IcebergSortOrder.builder()
+            .orderId(-1)
+            .addFields(sortField("identity", 3, ASC, NULLS_LAST))
+            .build();
+    var snapshot3 =
+        new IcebergTableMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSortOrder(thirdSort), setDefaultSortOrder(-1)))
+            .snapshot();
+    sortByIcebergId = snapshot3.sortDefinitionByIcebergId();
+    expectedSortId = 3;
+    soft.assertThat(sortByIcebergId).hasSize(3).containsKey(expectedSortId);
+    soft.assertThat(snapshot3.currentSortDefinitionId())
+        .isEqualTo(sortByIcebergId.get(expectedSortId).id());
+
+    var fourthSortExisting =
+        IcebergSortOrder.builder()
+            .orderId(20)
+            .addFields(sortField("identity", 2, ASC, NULLS_LAST))
+            .build();
+    var snapshot4 =
+        new IcebergTableMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSortOrder(fourthSortExisting), setDefaultSortOrder(-1)))
+            .snapshot();
+    sortByIcebergId = snapshot4.sortDefinitionByIcebergId();
+    expectedSortId = 2;
+    soft.assertThat(sortByIcebergId).hasSize(3).containsKey(expectedSortId);
+    soft.assertThat(snapshot4.currentSortDefinitionId())
+        .isEqualTo(sortByIcebergId.get(expectedSortId).id());
+
+    var fifthSpecExisting =
+        IcebergSortOrder.builder()
+            .orderId(-1)
+            .addFields(sortField("identity", 2, ASC, NULLS_LAST))
+            .build();
+    var snapshot5 =
+        new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSortOrder(fifthSpecExisting), setDefaultSortOrder(-1)))
+            .snapshot();
+    sortByIcebergId = snapshot5.sortDefinitionByIcebergId();
+    expectedSortId = 2;
+    soft.assertThat(sortByIcebergId).hasSize(3).containsKey(expectedSortId);
+    soft.assertThat(snapshot5.currentSortDefinitionId())
+        .isEqualTo(sortByIcebergId.get(expectedSortId).id());
+
+    var nonExistingField =
+        IcebergSortOrder.builder()
+            .orderId(-1)
+            .addFields(sortField("identity", 42, ASC, NULLS_LAST))
+            .build();
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+                    .applyUpdates(List.of(addSortOrder(nonExistingField), setDefaultSortOrder(-1)))
+                    .snapshot())
+        .withMessage(
+            "Iceberg field with ID 42 for sort order with ID 4 and transform 'identity' does not exist");
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 1})
+  public void addSchemaViewUpdates(int firstSchemaId) {
+    var firstSchema =
+        IcebergSchema.builder()
+            .schemaId(firstSchemaId)
+            .addFields(nestedField(100, "key", false, binaryType(), null))
+            .build();
+    var snapshot1 =
+        new IcebergViewMetadataUpdateState(
+                newIcebergViewSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
+            .applyUpdates(List.of(addSchema(firstSchema, 0), setCurrentSchema(-1)))
+            .snapshot();
+    var schemaByIcebergId = snapshot1.schemaByIcebergId();
+    var expectedSchemaId = INITIAL_SCHEMA_ID;
+    soft.assertThat(schemaByIcebergId).hasSize(1).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot1.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var secondSchema =
+        IcebergSchema.builder()
+            .schemaId(10)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot2 =
+        new IcebergViewMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(secondSchema, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot2.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(2).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot2.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var thirdSchema =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null),
+                nestedField(300, "something", false, binaryType(), null))
+            .build();
+    var snapshot3 =
+        new IcebergViewMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(thirdSchema, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot3.schemaByIcebergId();
+    expectedSchemaId = 2;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot3.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var fourthSchemaExisting =
+        IcebergSchema.builder()
+            .schemaId(20)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot4 =
+        new IcebergViewMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(fourthSchemaExisting, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot4.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot4.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+
+    var fifthSchemaExisting =
+        IcebergSchema.builder()
+            .schemaId(-1)
+            .addFields(
+                nestedField(1, "key", false, binaryType(), null),
+                nestedField(200, "value", false, binaryType(), null))
+            .build();
+    var snapshot5 =
+        new IcebergViewMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+            .applyUpdates(List.of(addSchema(fifthSchemaExisting, 0), setCurrentSchema(-1)))
+            .snapshot();
+    schemaByIcebergId = snapshot5.schemaByIcebergId();
+    expectedSchemaId = 1;
+    soft.assertThat(schemaByIcebergId).hasSize(3).containsKey(expectedSchemaId);
+    soft.assertThat(snapshot5.currentSchemaId())
+        .isEqualTo(schemaByIcebergId.get(expectedSchemaId).id());
+  }
+
+  @ParameterizedTest
   @MethodSource
-  public void icebergNested(IcebergSchema schema, IcebergSchema expected, int expectedLastColumnId)
-      throws Exception {
+  public void icebergNested(
+      IcebergSchema schema, IcebergSchema expected, int expectedLastColumnId) {
     Map<Integer, Integer> remappedFields = new HashMap<>();
     IcebergSchema remapped = NessieModelIceberg.icebergInitialSchema(schema, remappedFields);
 
