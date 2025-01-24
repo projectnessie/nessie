@@ -89,6 +89,7 @@
       automerge: false,
       matchPackageNames: [
         "org.jboss:jandex",
+        "io.smallrye:jandex",
       ]
     },
 
