@@ -73,7 +73,7 @@ hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
 hadoop-azure = { module = "org.apache.hadoop:hadoop-azure", version.ref = "hadoop" }
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }
 hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
-hibernate-validator-cdi = { module = "org.hibernate:hibernate-validator-cdi", version = "8.0.2.Final" }
+hibernate-validator-cdi = { module = "org.hibernate.validator:hibernate-validator-cdi", version = "8.0.2.Final" }
 httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.4.1" }
 iceberg-bom = { module = "org.apache.iceberg:iceberg-bom", version.ref = "iceberg" }
 immutables-builder = { module = "org.immutables:builder", version.ref = "immutables" }
@@ -86,7 +86,7 @@ jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version = "
 jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version = "3.1.0" }
 jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version = "4.0.0" }
-jandex = { module = "org.jboss:jandex", version.ref = "jandex" }
+jandex = { module = "io.smallrye:jandex", version.ref = "jandex" }
 javax-validation-api = { module = "javax.validation:validation-api", version = "2.0.1.Final"}
 javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "4.0.5" }
@@ -153,7 +153,7 @@ trino-client = { module = "io.trino:trino-client", version = "468" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
 vertx-core = { module = "io.vertx:vertx-core", version = "4.5.12" }
-wiremock = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version = "3.0.1" }
+wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.0.1" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-9" }
 
 [plugins]
