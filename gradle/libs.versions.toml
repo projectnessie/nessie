@@ -164,5 +164,5 @@ nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version =
 protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.6" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.7" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.2.1"}
