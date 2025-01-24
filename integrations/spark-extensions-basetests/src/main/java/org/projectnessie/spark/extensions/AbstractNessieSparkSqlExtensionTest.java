@@ -732,8 +732,10 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
                 + "))",
             tableName);
 
-    // re-written files count is 4 and the added files count is 2
-    soft.assertThat(compactionResult.get(0)).startsWith(4, 2);
+    // re-written files count is 4 (up to Iceberg 1.7.x) or 5 (after Iceberg 1.7) and the added
+    // files count is 2
+    soft.assertThat(compactionResult.get(0))
+        .satisfiesAnyOf(l -> assertThat(l).startsWith(4, 2), l -> assertThat(l).startsWith(5, 2));
 
     validateContentAfterMaintenance(branchName, tableName);
   }
