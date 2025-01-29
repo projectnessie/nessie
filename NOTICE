@@ -1,5 +1,5 @@
 Dremio
-Copyright 2015-2017 Dremio Corporation
+Copyright 2015-2025 Dremio Corporation
 
 This product includes software developed at 
 The Apache Software Foundation (http://www.apache.org/).
@@ -25,8 +25,14 @@ Copyright The Apache Software Foundation
 Apache Kerby
 Copyright The Apache Software Foundation
 
+Apache Polaris (incubating)
+Copyright The Apache Software Foundation
+
+Netty
+Copyright The Netty Project
+
 This product includes additional software licensed under the terms
-of the following licenses, see LICENSE file:
+of the following licenses, see LICENSE and LICENSE-BINARY-DIST file:
 * Apache Software License, Version 2.0
 * Creative Commons 1.0 Universal
 * Eclipse Distribution License, Version 1.0
@@ -34,8 +40,10 @@ of the following licenses, see LICENSE file:
 * Eclipse Public License, Version 2.0
 * GNU General Public License, Version 2 with the GNU Classpath Exception
 
----
+The full list of dependencies contained in a Nessie distributions is
+mentioned with their concrete licenses in the LICENSE (source distribution)
+and LICENSE-BINARY-DIST (binary distributions) files.
 
-The main docs page for a particular Nessie release under
-https://projectnessie.org/docs/ contains an aggregated
-license report (since Nessie version 0.83).
+The Nessie web site provides aggregated license reports for recent Nessie
+releases, available at https://projectnessie.org/docs/ and
+https://projectnessie.org/downloads/.

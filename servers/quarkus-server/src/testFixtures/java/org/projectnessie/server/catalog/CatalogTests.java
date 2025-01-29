@@ -15,6 +15,9 @@
  */
 package org.projectnessie.server.catalog;
 
+// Marker for Nessie LICENSE file - keep it
+// CODE_COPIED_TO_NESSIE
+
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.assertj.core.api.Assertions.assertThat;
 

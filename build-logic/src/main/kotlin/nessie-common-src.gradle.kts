@@ -225,9 +225,7 @@ class MemoizedGitInfo {
 }
 
 afterEvaluate {
-  tasks.register("codeChecks").configure {
-    group = "build"
-    description = "Runs code style and license checks"
+  tasks.named("codeChecks").configure {
     dependsOn("spotlessCheck")
     if (!noCheckstyle) {
       dependsOn("checkstyle")

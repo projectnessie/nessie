@@ -16,6 +16,7 @@
 
 // Nessie root project
 
+import copiedcode.CopiedCodeCheckerPlugin
 import java.util.Properties
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.copyright
@@ -166,5 +167,14 @@ abstract class ListChildProjectsTask : DefaultTask() {
         .filter { it.path.startsWith(prefix) }
         .forEach { writer.write("$exclude${it.path}:$task\n") }
     }
+  }
+}
+
+apply<CopiedCodeCheckerPlugin>()
+
+allprojects {
+  tasks.register("codeChecks").configure {
+    group = "build"
+    description = "Runs code style and license checks"
   }
 }
