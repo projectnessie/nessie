@@ -21,28 +21,46 @@ import java.io.File
 import org.gradle.api.GradleException
 
 /**
- * Validates that all dependencies with MIT/BSD/Go/UPL/ISC licenses, which do not have an Apache
- * license, are mentioned in the `LICENSE` file.
+ * Validates that all dependencies with MIT/BSD/Go/UPL/ISC licenses, and Apache license, are
+ * mentioned in the `LICENSE` file.
  */
 class LicenseFileValidation : DependencyFilter {
-  fun needsNoMention(license: String?): Boolean = license != null && (license.contains("Apache"))
+  val needsApacheLicenseMention = setOf("Apache")
 
-  fun needsMention(license: String?): Boolean =
-    license != null &&
-      (license.contains("MIT") ||
-        license.contains("BSD") ||
-        license.contains("Go") ||
-        license.contains("ISC") ||
-        license.contains("Universal Permissive"))
+  val needsFullLicenseMention = setOf("MIT", "BSD", "Go", "ISC", "Universal Permissive")
+
+  fun doesNeedApacheMention(licenses: List<String?>): Boolean {
+    for (license in licenses) {
+      if (license != null) {
+        if (needsApacheLicenseMention.any { license.contains(it) }) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  fun doesNeedFullMention(licenses: List<String?>): Boolean {
+    for (license in licenses) {
+      if (license != null) {
+        if (needsFullLicenseMention.any { license.contains(it) }) {
+          return true
+        }
+      }
+    }
+    // no licenses !
+    return true
+  }
 
   override fun filter(data: ProjectData?): ProjectData {
     data!!
 
-    val rootNoticeFile = data.project.rootProject.file("LICENSE").readText()
+    val rootLicenseFile = data.project.rootProject.file("LICENSE-BINARY-DIST").readText()
 
     val licenseReport = data.project.extensions.getByType(LicenseReportExtension::class.java)
 
-    val missing = mutableMapOf<String, String>()
+    val missingApacheMentions = mutableSetOf<String>()
+    val missingFullMentions = mutableMapOf<String, String>()
 
     data.allDependencies.forEach { mod ->
       val licenses =
@@ -51,31 +69,43 @@ class LicenseFileValidation : DependencyFilter {
             mod.poms.flatMap { it.licenses }.map { it.name })
           .distinct()
 
-      if (!licenses.any { needsNoMention(it) } && licenses.any { needsMention(it) }) {
-        val groupModule = "${mod.group}:${mod.name}"
-        if (!rootNoticeFile.contains(groupModule)) {
-          missing.put(
-            "${mod.group}:${mod.name}",
+      val groupModule = "${mod.group}:${mod.name}"
+      val groupModuleRegex = "^$groupModule$".toRegex(RegexOption.MULTILINE)
+      if (!groupModuleRegex.containsMatchIn(rootLicenseFile)) {
+        if (doesNeedApacheMention(licenses)) {
+          missingApacheMentions.add(groupModule)
+        } else if (doesNeedFullMention(licenses)) {
+          missingFullMentions[groupModule] =
             """
             ---
-            ${mod.group}:${mod.name}
+            $groupModule
 
-            ${mod.licenseFiles.flatMap { it.fileDetails }.filter { it.file != null }.map { it.file }
-              .map { File("${licenseReport.absoluteOutputDir}/$it").readText().trim() }
-              .distinct()
-              .map { "\n\n$it\n" }
-              .joinToString("\n")
+            ${
+              mod.licenseFiles.flatMap { it.fileDetails }.filter { it.file != null }.map { it.file }
+                .map { File("${licenseReport.absoluteOutputDir}/$it").readText().trim() }
+                .distinct().joinToString("\n") { "\n\n$it\n" }
             }
             """
-              .trimIndent(),
-          )
+              .trimIndent()
         }
       }
     }
 
-    if (!missing.isEmpty()) {
+    val missingError = StringBuilder()
+    if (!missingApacheMentions.isEmpty()) {
+      missingError.append("\n\nMissing Apache License mentions:")
+      missingError.append("\n--------------------------------\n")
+      missingApacheMentions.sorted().forEach { missingError.append("\n$it") }
+    }
+    if (!missingFullMentions.isEmpty()) {
+      missingError.append("\n\nMissing full license mentions:")
+      missingError.append("\n------------------------------\n")
+      missingFullMentions.toSortedMap().values.forEach { missingError.append("\n$it") }
+    }
+    if (!missingApacheMentions.isEmpty() || !missingFullMentions.isEmpty()) {
+
       throw GradleException(
-        "License information for the following artifacts is missing in the root LICENSE file: ${missing.map { it.value }.joinToString("\n")}"
+        "License information for the following artifacts is missing in the root LICENSE-BINARY-DIST file: $missingError"
       )
     }
 

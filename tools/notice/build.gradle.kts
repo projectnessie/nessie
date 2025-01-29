@@ -30,9 +30,18 @@ val noticeDir = project.layout.buildDirectory.dir("notice")
 val includeNoticeLicenseFiles by
   tasks.registering(Sync::class) {
     destinationDir = noticeDir.get().asFile
+    inputs.files(rootProject.layout.files("NOTICE*", "LICENSE*", "version.txt"))
+    inputs.property("version", project.version)
     from(rootProject.projectDir) {
-      include("NOTICE", "LICENSE")
-      eachFile { path = "META-INF/resources/" + file.name + ".txt" }
+      include("NOTICE", "LICENSE-BINARY-DIST", "LICENSE")
+      eachFile {
+        val fileName = when (file.name) {
+          "LICENSE" -> "LICENSE-SOURCE"
+          "LICENSE-BINARY-DIST" -> "LICENSE"
+          else -> file.name
+        }
+        path = "META-INF/resources/$fileName.txt"
+      }
     }
   }
 

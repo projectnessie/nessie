@@ -116,7 +116,12 @@ publishingHelper {
 spotless {
   kotlinGradle {
     // Must be repeated :( - there's no "addTarget" or so
-    target("nessie-iceberg/*.gradle.kts", "*.gradle.kts", "build-logic/*.gradle.kts")
+    target(
+      "nessie-iceberg/*.gradle.kts",
+      "*.gradle.kts",
+      "build-logic/*.gradle.kts",
+      "build-logic/src/**/*.kt*",
+    )
   }
 }
 
@@ -140,3 +145,44 @@ changelog {
 }
 
 idea.project.settings { taskTriggers { afterSync(":nessie-protobuf-relocated:jar") } }
+
+copiedCodeChecks {
+  addDefaultContentTypes()
+
+  licenseFile = project.layout.projectDirectory.file("LICENSE")
+
+  scanDirectories {
+    register("build-logic") { srcDir("build-logic/src") }
+    register("misc") {
+      srcDir(".github")
+      srcDir("codestyle")
+      srcDir("design")
+      srcDir("grafana")
+    }
+    register("gradle") {
+      srcDir("gradle")
+      exclude("wrapper/*.jar")
+      exclude("wrapper/*.sha256")
+    }
+    register("helm") {
+      srcDir("helm")
+      exclude("nessie/LICENSE")
+    }
+    register("site") {
+      srcDir("site")
+      exclude("build/**")
+      exclude(".cache/**")
+      exclude("venv/**")
+      exclude("in-dev/generated-docs")
+    }
+    register("root") {
+      srcDir(".")
+      include("*")
+    }
+    register("tools") {
+      srcDir("tools")
+      include("dockerbuild")
+      include("tools/releases")
+    }
+  }
+}

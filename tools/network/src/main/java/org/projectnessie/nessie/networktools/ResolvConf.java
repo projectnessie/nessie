@@ -15,6 +15,12 @@
  */
 package org.projectnessie.nessie.networktools;
 
+// Code mostly copied from io.netty.resolver.dns.ResolvConf, but with the addition to extract
+// the 'search' option values.
+//
+// Marker for Nessie LICENSE file - keep it
+// CODE_COPIED_TO_NESSIE
+
 import static java.util.Collections.unmodifiableList;
 
 import java.io.BufferedReader;
@@ -24,9 +30,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-// Code mostly copied from io.netty.resolver.dns.ResolvConf, but with the addition to extract
-// the 'search' option values.
 
 /**
  * Looks up the {@code nameserver}s and {@code search} domains from the {@code /etc/resolv.conf}
