@@ -208,6 +208,8 @@ public class GcsObjectIO implements ObjectIO {
                                 GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
               });
     }
+
+    bucketOptions.tableConfigOverrides().forEach(config);
   }
 
   @Override

@@ -144,7 +144,9 @@ public class AdlsObjectIO implements ObjectIO {
     }
 
     icebergConfigDefaults(config);
-    icebergConfigOverrides(storageLocations, config);
+    AdlsNamedFileSystemOptions fileSystemOptions = icebergConfigOverrides(storageLocations, config);
+
+    fileSystemOptions.tableConfigOverrides().forEach(config);
   }
 
   @Override
@@ -161,7 +163,7 @@ public class AdlsObjectIO implements ObjectIO {
     }
   }
 
-  void icebergConfigOverrides(
+  AdlsNamedFileSystemOptions icebergConfigOverrides(
       StorageLocations storageLocations, BiConsumer<String, String> config) {
     List<AdlsLocation> allLocations =
         Stream.concat(
@@ -230,6 +232,8 @@ public class AdlsObjectIO implements ObjectIO {
               storageAccountShort.ifPresent(
                   account -> config.accept(ADLS_SAS_TOKEN_PREFIX + account, sasToken));
             });
+
+    return fileSystemOptions;
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {

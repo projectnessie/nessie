@@ -214,6 +214,8 @@ public class S3ObjectIO implements ObjectIO {
       config.accept(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
       s3credentials.sessionToken().ifPresent(t -> config.accept(S3_SESSION_TOKEN, t));
     }
+
+    bucketOptions.tableConfigOverrides().forEach(config);
   }
 
   @Override

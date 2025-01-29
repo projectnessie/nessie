@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Iceberg table configurations overrides.
+
 ### Changes
 
 ### Deprecations
