@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Warehouse configuration overrides can now be applied to tables.
+
 ### Changes
 
 ### Deprecations
