@@ -205,7 +205,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 loadTableResultFromSnapshotResponse(
                     snap,
                     IcebergLoadTableResponse.builder(),
-                    warehouse.location(),
+                    warehouse,
                     prefix,
                     key,
                     dataAccess,
@@ -216,7 +216,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap,
           B builder,
-          String warehouseLocation,
+          WarehouseConfig warehouse,
           String prefix,
           ContentKey contentKey,
           String dataAccess,
@@ -252,7 +252,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     return loadTableResult(
         content.getMetadataLocation(),
         snap.nessieSnapshot(),
-        warehouseLocation,
+        warehouse,
         tableMetadata,
         builder,
         prefix,
@@ -265,7 +265,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       R loadTableResult(
           String metadataLocation,
           NessieEntitySnapshot<?> nessieSnapshot,
-          String warehouseLocation,
+          WarehouseConfig warehouse,
           IcebergTableMetadata tableMetadata,
           B builder,
           String prefix,
@@ -276,7 +276,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     IcebergTableConfig config =
         icebergConfigurer.icebergConfigPerTable(
             nessieSnapshot,
-            warehouseLocation,
+            warehouse,
             tableMetadata,
             prefix,
             contentKey,
@@ -362,7 +362,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
               this.loadTableResult(
                   null,
                   snapshot,
-                  warehouse.location(),
+                  warehouse,
                   stagedTableMetadata,
                   IcebergCreateTableResponse.builder(),
                   prefix,
@@ -384,7 +384,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 this.loadTableResultFromSnapshotResponse(
                     snap,
                     IcebergCreateTableResponse.builder(),
-                    warehouse.location(),
+                    warehouse,
                     prefix,
                     tableRef.contentKey(),
                     dataAccess,

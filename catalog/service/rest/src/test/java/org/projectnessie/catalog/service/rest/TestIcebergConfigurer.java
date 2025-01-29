@@ -21,6 +21,8 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.catalog.files.api.ObjectIO.ICEBERG_FILE_IO_IMPL;
+import static org.projectnessie.catalog.files.api.ObjectIO.PYICEBERG_FILE_IO_IMPL;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
@@ -36,6 +38,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -51,6 +54,8 @@ import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.SignerKeysService;
+import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
+import org.projectnessie.catalog.service.config.WarehouseConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
 
@@ -118,9 +123,10 @@ public class TestIcebergConfigurer {
                     .build())
             .build();
 
+    WarehouseConfig warehouse = ImmutableWarehouseConfig.builder().location("s3://bucket/").build();
     IcebergTableConfig config =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, "s3://bucket/", tm, "main", key, null, true);
+            nessieSnapshot, warehouse, tm, "main", key, null, true);
 
     soft.assertThat(config.updatedMetadataProperties())
         .isPresent()
@@ -141,7 +147,7 @@ public class TestIcebergConfigurer {
                 "s3://other2/",
                 "write.folder-storage.path",
                 "s3://other3/"),
-            Map.of("write.object-storage.enabled", "true", "write.data.path", "s3://bucket/"))
+            Map.of("write.object-storage.enabled", "true", "write.data.path", "s3://bucket"))
         //
         );
   }
@@ -164,15 +170,17 @@ public class TestIcebergConfigurer {
                     .createdTimestamp(Instant.now())
                     .build())
             .build();
-    String warehouseLocation = "s3://bucket/";
+    String warehouseLocation = "s3://bucket";
 
     IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
     when(tm.location()).thenReturn(loc);
     when(tm.properties()).thenReturn(Map.of());
 
+    WarehouseConfig warehouse =
+        ImmutableWarehouseConfig.builder().location(warehouseLocation).build();
     IcebergTableConfig tableConfig =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, warehouseLocation, tm, prefix, key, null, true);
+            nessieSnapshot, warehouse, tm, prefix, key, null, true);
     if (signUri != null) {
       soft.assertThat(tableConfig.config()).containsEntry(S3_SIGNER_URI, signUri);
       soft.assertThat(signUri).endsWith("/");
@@ -233,5 +241,76 @@ public class TestIcebergConfigurer {
             "v1/" + encode(complexPrefix, UTF_8) + "/s3sign/"),
         arguments(
             URI.create("http://foo:12434/some/long/prefix/"), gcs, complexPrefix, key, null, null));
+  }
+
+  @Test
+  public void icebergConfigPerTableWithOverrides() {
+
+    NessieTableSnapshot nessieSnapshot =
+        NessieTableSnapshot.builder()
+            .lastUpdatedTimestamp(Instant.now())
+            .id(NessieId.randomNessieId())
+            .entity(
+                NessieTable.builder()
+                    .nessieContentId(UUID.randomUUID().toString())
+                    .createdTimestamp(Instant.now())
+                    .build())
+            .build();
+    String warehouseLocation = "s3://bucket";
+
+    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
+    when(tm.location()).thenReturn(warehouseLocation);
+    when(tm.properties()).thenReturn(Map.of());
+
+    WarehouseConfig warehouse =
+        ImmutableWarehouseConfig.builder()
+            .icebergConfigOverrides(
+                Map.of("prop1", "override1", PYICEBERG_FILE_IO_IMPL, "fileIoOverride"))
+            .icebergConfigDefaults(Map.of("prop1", "default1"))
+            .location(warehouseLocation)
+            .build();
+
+    ContentKey key = ContentKey.of("foo", "bar");
+    IcebergTableConfig tableConfig =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, warehouse, tm, "main", key, null, true);
+
+    // No overrides by default
+    soft.assertThat(tableConfig.config())
+        .containsEntry(PYICEBERG_FILE_IO_IMPL, "pyiceberg.io.fsspec.FsspecFileIO");
+    soft.assertThat(tableConfig.config())
+        .containsEntry(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+    soft.assertThat(tableConfig.config()).doesNotContainKey("prop1");
+
+    // Override table properties that are defined
+    warehouse =
+        ImmutableWarehouseConfig.builder()
+            .from(warehouse)
+            .applyOverridesToTableConfig(true)
+            .build();
+    tableConfig =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, warehouse, tm, "main", key, null, true);
+
+    soft.assertThat(tableConfig.config()).containsEntry(PYICEBERG_FILE_IO_IMPL, "fileIoOverride");
+    soft.assertThat(tableConfig.config())
+        .containsEntry(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+    soft.assertThat(tableConfig.config()).doesNotContainKey("prop1");
+
+    // Push all overrides into table properties
+    warehouse =
+        ImmutableWarehouseConfig.builder()
+            .from(warehouse)
+            .applyOverridesToTableConfig(true)
+            .forceOverridesIntoTableConfig(true)
+            .build();
+    tableConfig =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, warehouse, tm, "main", key, null, true);
+
+    soft.assertThat(tableConfig.config()).containsEntry(PYICEBERG_FILE_IO_IMPL, "fileIoOverride");
+    soft.assertThat(tableConfig.config())
+        .containsEntry(ICEBERG_FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
+    soft.assertThat(tableConfig.config()).containsEntry("prop1", "override1");
   }
 }

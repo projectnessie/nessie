@@ -215,7 +215,7 @@ public class IcebergConfigurer {
 
   IcebergTableConfig icebergConfigPerTable(
       NessieEntitySnapshot<?> nessieSnapshot,
-      String warehouseLocation,
+      WarehouseConfig warehouse,
       IcebergTableMetadata tableMetadata,
       String prefix,
       ContentKey contentKey,
@@ -227,6 +227,7 @@ public class IcebergConfigurer {
     Set<StorageUri> readOnly = new HashSet<>();
     Set<StorageUri> maybeWriteable = writeAccessGranted ? writeable : readOnly;
     StorageUri locationUri = StorageUri.of(tableMetadata.location());
+    String warehouseLocation = warehouse.location();
     (tableMetadata.location().startsWith(warehouseLocation) ? maybeWriteable : readOnly)
         .add(locationUri);
 
@@ -259,6 +260,19 @@ public class IcebergConfigurer {
             configureS3RequestSigningForTable(
                 locations, accessDelegationPredicate, prefix, contentKey, config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
+
+    if (warehouse.applyOverridesToTableConfig()) {
+      warehouse
+          .icebergConfigOverrides()
+          .forEach(
+              (k, v) -> {
+                if (warehouse.forceOverridesIntoTableConfig()) {
+                  config.put(k, v);
+                } else {
+                  config.computeIfPresent(k, (k1, old) -> v);
+                }
+              });
+    }
 
     return tableConfig.config(config).build();
   }

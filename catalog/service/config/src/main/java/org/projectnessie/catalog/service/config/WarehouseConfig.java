@@ -20,6 +20,7 @@ import static org.projectnessie.catalog.service.config.CatalogConfig.removeTrail
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.smallrye.config.WithConverter;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Map;
 import org.immutables.value.Value;
@@ -47,6 +48,29 @@ public interface WarehouseConfig {
   @ConfigPropertyName("iceberg-property")
   @WithName("iceberg-config-overrides")
   Map<String, String> icebergConfigOverrides();
+
+  /**
+   * Instructs the server to override generated table properties with {@link
+   * #icebergConfigOverrides()}, whenever the same property is present in table properties and
+   * overrides.
+   */
+  @WithName("apply-overrides-to-table-config")
+  @WithDefault("false")
+  @Value.Default
+  default boolean applyOverridesToTableConfig() {
+    return false;
+  }
+
+  /**
+   * Instructs the server to forward all entries from {@link #icebergConfigOverrides()} into table
+   * properties for all tables, overriding any other table properties with matching keys.
+   */
+  @WithName("force-overrides-into-table-config")
+  @WithDefault("false")
+  @Value.Default
+  default boolean forceOverridesIntoTableConfig() {
+    return false;
+  }
 
   /** Location of the warehouse. Used to determine the base location of a table. */
   @WithConverter(TrimTrailingSlash.class)
