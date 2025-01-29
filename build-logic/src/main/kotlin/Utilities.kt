@@ -104,9 +104,8 @@ fun DependencyHandlerScope.forScala(scalaVersion: String) {
   add("implementation", "org.scala-lang:scala-reflect:$scalaVersion!!")
   if (scalaVersion.startsWith("2.12")) {
     // We only need this dependency for Scala 2.12, which does not have
-    // scala.jdk.CollectionConverters,
-    // but the deprecated JavaConverters.
-    add("implementation", "org.scala-lang.modules:scala-collection-compat_2.12:2.12.0!!")
+    // scala.jdk.CollectionConverters, but the deprecated JavaConverters.
+    add("implementation", "org.scala-lang.modules:scala-collection-compat_2.12:2.12.0")
   }
 }
 
