@@ -15,4 +15,10 @@
  */
 package org.projectnessie.catalog.files.config;
 
-public interface BucketOptions {}
+import java.util.Map;
+
+public interface BucketOptions {
+
+  /** Iceberg table configuration overrides for all tables stored in this bucket. */
+  Map<String, String> tableConfigOverrides();
+}

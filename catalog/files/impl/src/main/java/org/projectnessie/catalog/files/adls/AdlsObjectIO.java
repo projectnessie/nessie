@@ -230,6 +230,8 @@ public class AdlsObjectIO implements ObjectIO {
               storageAccountShort.ifPresent(
                   account -> config.accept(ADLS_SAS_TOKEN_PREFIX + account, sasToken));
             });
+
+    fileSystemOptions.tableConfigOverrides().forEach(config);
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {

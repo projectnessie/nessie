@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog: Iceberg table configurations overrides are now available in storage configuration settings.
+  Example: `nessie.catalog.service.s3.default-options.table-config-overrides.py-io-impl=pyiceberg.io.pyarrow.PyArrowFileIO`
+
 ### Changes
 
 ### Deprecations
