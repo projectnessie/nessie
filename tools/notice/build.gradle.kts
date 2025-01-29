@@ -35,11 +35,12 @@ val includeNoticeLicenseFiles by
     from(rootProject.projectDir) {
       include("NOTICE", "LICENSE-BINARY-DIST", "LICENSE")
       eachFile {
-        val fileName = when (file.name) {
-          "LICENSE" -> "LICENSE-SOURCE"
-          "LICENSE-BINARY-DIST" -> "LICENSE"
-          else -> file.name
-        }
+        val fileName =
+          when (file.name) {
+            "LICENSE" -> "LICENSE-SOURCE"
+            "LICENSE-BINARY-DIST" -> "LICENSE"
+            else -> file.name
+          }
         path = "META-INF/resources/$fileName.txt"
       }
     }
