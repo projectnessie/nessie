@@ -135,6 +135,16 @@
       // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
       // see https://github.com/renovatebot/renovate/issues/2438
     },
+
+    // Quarkus platform + plugin together
+    {
+      groupName: "Quarkus Platform and Group",
+      matchManagers: ["gradle"],
+      matchPackageNames: [
+        "io.quarkus.platform:quarkus-bom",
+        "io.quarkus:io.quarkus.gradle.plugin",
+      ],
+    },
   ],
 
   // Max 50 PRs in total, 10 per hour
