@@ -2,6 +2,25 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.3 Release (January 30, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.3).
+
+### New Features
+
+- Catalog: Iceberg table configurations overrides are now available in storage configuration settings.
+  Example: `nessie.catalog.service.s3.default-options.table-config-overrides.py-io-impl=pyiceberg.io.pyarrow.PyArrowFileIO`
+
+### Commits
+* Ninja: add AL2 license for smallrye-certs
+* Renovate: group quarkus-platform + quarkus-plugin together (#10300)
+* Fix build scripts to distribute the right files (#10297)
+* Catalog: Add table config overrides to bucket configuration (#10296)
+* Fix a new failure in NesQuEIT, dependency issue w/ scala-collection-compat (#10298)
+* Fix NesQuEIT for recent Iceberg changes (#10281)
+* Adopt renovate config for #10275 (#10280)
+* Update some Maven coordinates (#10275)
+
 ## 0.102.2 Release (January 23, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.2).
