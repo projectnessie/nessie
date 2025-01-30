@@ -4,28 +4,46 @@ Spark SQL extensions provide an easy way to execute common Nessie commands via S
 
 ## How to use them
 
-{%- for sparkver in [
-  '3.5',
-  '3.4',
-  '3.3',
-] %}
+### Spark
 
-### Spark {{sparkver}}
+Choose your Spark, Iceberg and Scala version below:
 
-In order to be able to use Nessie's custom Spark SQL extensions with Spark {{sparkver}}.x, one needs to configure
-`{{ iceberg_spark_runtime(sparkver).spark_jar_package }}` along with `{{ nessie_spark_extensions(sparkver).spark_jar_package }}`
+{%- for sparkver in spark_versions() %}
 
-Here's an example of how this is done when starting the `spark-sql` shell:
+=== "Spark {{sparkver}}"
 
-``` sh
-bin/spark-sql 
-  --packages "{{ iceberg_spark_runtime(sparkver).spark_jar_package }},{{ nessie_spark_extensions(sparkver).spark_jar_package }}"
-  --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
-  --conf <other settings>
-```
+    {%- for icebergver in iceberg_versions() %}
+
+    === "Iceberg {{icebergver}}"
+
+        {%- for scalaver in spark_scala_versions(sparkver) %}
+
+        === "Scala {{scalaver}}"
+
+            In order to be able to use Nessie's custom Spark SQL extensions with Spark {{sparkver}}.x, one needs to configure
+            `{{ iceberg_spark_runtime(sparkver,icebergver,scalaver).spark_jar_package }}` along with `{{ nessie_spark_extensions_by_iceberg(sparkver,icebergver,scalaver).spark_jar_package }}`
+    
+            Here's an example of how this is done when starting the `spark-sql` shell:
+    
+            ``` sh
+            bin/spark-sql 
+              --packages "{{ iceberg_spark_runtime(sparkver,icebergver,scalaver).spark_jar_package }},{{ nessie_spark_extensions_by_iceberg(sparkver,icebergver,scalaver).spark_jar_package }}"
+              --conf spark.sql.extensions="org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
+              --conf <other settings>
+            ```
+
+        {%- endfor %}
+
+    {%- endfor %}
+
 {%- endfor %}
 
 Additional configuration details can be found in the [Spark via Iceberg](../iceberg/spark.md) docs.
+
+!!! warn
+    Use the version of the Nessie Spark SQL extensions that matches the Nessie version included
+    in the Iceberg version you want to use! See [Nessie Spark SQL Extensions page](/guides/sql/)
+    for details.
 
 ## Grammar *since* Nessie 0.95.0
 
