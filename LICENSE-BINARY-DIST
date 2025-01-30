@@ -478,6 +478,7 @@ io.quarkus.resteasy.reactive:resteasy-reactive-jackson
 io.quarkus.resteasy.reactive:resteasy-reactive-vertx
 io.quarkus.security:quarkus-security
 io.quarkus.vertx.utils:quarkus-vertx-utils
+io.smallrye.certs:smallrye-private-key-pem-parser
 io.smallrye.common:smallrye-common-annotation
 io.smallrye.common:smallrye-common-classloader
 io.smallrye.common:smallrye-common-constraint
