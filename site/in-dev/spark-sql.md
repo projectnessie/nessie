@@ -15,8 +15,13 @@ The commands provided by the Nessie Spark SQL are actually a subset of the comma
 that are available in the [Nessie CLI](cli.md). Nessie Spark SQL commands however
 have the `IN <catalog-name>` clause, which is not needed in the Nessie CLI.
 
+!!! warn
+    Use the version of the Nessie Spark SQL extensions that matches the Nessie version included
+    in the Iceberg version you want to use! See [Nessie Spark SQL Extensions page](/guides/sql/)
+    for details.
+
 !!! info
-`CODE` style means the term is a keyword.
+    `CODE` style means the term is a keyword.
 
     **BoldTerms** mean variable input, see <u>[Descripton of Command Parts below](#command-parts)</u>
 
