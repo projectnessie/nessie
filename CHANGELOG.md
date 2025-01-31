@@ -22,6 +22,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Commits
 
+### Note
+
+- This release has no code changes except NOTICE file(s) clarifications.
+
 ## [0.102.3] Release (2025-01-30)
 
 ### New Features
