@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.4 Release (January 31, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.4).
+
+### Note
+
+- This release has no code changes except NOTICE file(s) clarifications.
+
+### Commits
+* Ninja: CHANGELOG
+* Add separate NOTICE-BINARY-DIST file (#10315)
+* Site: Improve the `Nessie Spark SQL Extensions` page (#10304)
+
 ## 0.102.3 Release (January 30, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.3).
