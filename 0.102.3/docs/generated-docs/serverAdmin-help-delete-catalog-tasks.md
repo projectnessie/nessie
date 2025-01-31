@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 2025-01-30 09:10:53,947 WARN  [io.qua.config] (main) Unrecognized configuration key "quarkus.dynamodb.async-client.tcp-keep-alive" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
 2025-01-30 09:10:53,948 WARN  [io.qua.config] (main) Unrecognized configuration key "quarkus.dynamodb.async-client.connection-max-idle-time" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
