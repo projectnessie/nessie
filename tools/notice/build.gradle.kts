@@ -33,12 +33,14 @@ val includeNoticeLicenseFiles by
     inputs.files(rootProject.layout.files("NOTICE*", "LICENSE*", "version.txt"))
     inputs.property("version", project.version)
     from(rootProject.projectDir) {
-      include("NOTICE", "LICENSE-BINARY-DIST", "LICENSE")
+      include("NOTICE-BINARY-DIST", "NOTICE", "LICENSE-BINARY-DIST", "LICENSE")
       eachFile {
         val fileName =
           when (file.name) {
             "LICENSE" -> "LICENSE-SOURCE"
             "LICENSE-BINARY-DIST" -> "LICENSE"
+            "NOTICE" -> "NOTICE-SOURCE"
+            "NOTICE-BINARY-DIST" -> "NOTICE"
             else -> file.name
           }
         path = "META-INF/resources/$fileName.txt"
