@@ -23,3 +23,45 @@ plugins {
   id("nessie-java")
   id("nessie-testing")
 }
+
+if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
+  /**
+   * Adds convenient, but not strictly necessary information to each generated "main" jar.
+   *
+   * This includes `pom.properties` and `pom.xml` files where Maven places those, in
+   * `META-INF/maven/group-id/artifact-id/`. Also adds the `NOTICE` and `LICENSE` files in
+   * `META-INF`, which makes it easier for license scanners.
+   */
+  plugins.withType(JavaLibraryPlugin::class.java) {
+    val generatePomProperties =
+      tasks.register("generatePomProperties", GeneratePomProperties::class.java) {}
+
+    val additionalJarContent =
+      tasks.register("additionalJarContent", Sync::class.java) {
+        // Have to manually declare the inputs of this task here on top of the from/include below
+        inputs.files(rootProject.layout.files("LICENSE", "NOTICE"))
+        inputs.property("GAV", "${project.group}:${project.name}:${project.version}")
+        dependsOn("generatePomFileForMavenPublication")
+        from(rootProject.rootDir) {
+          include("LICENSE", "NOTICE")
+          eachFile {
+            this.path =
+              "META-INF/licenses/${project.group}/${project.name}-${project.version}/$sourceName"
+          }
+        }
+        from(tasks.named("generatePomFileForMavenPublication")) {
+          include("pom-default.xml")
+          eachFile { this.path = "META-INF/maven/${project.group}/${project.name}/pom.xml" }
+        }
+        into(layout.buildDirectory.dir("license-for-jar"))
+      }
+
+    tasks.named("processResources") { dependsOn(additionalJarContent) }
+
+    val sourceSets: SourceSetContainer by project
+    sourceSets.named("main") {
+      resources.srcDir(additionalJarContent)
+      resources.srcDir(generatePomProperties)
+    }
+  }
+}

@@ -59,6 +59,7 @@ out/
 # gradle
 .gradle/
 build/
+.kotlin
 
 # Ignore Gradle wrapper jar file
 gradle/wrapper/gradle-wrapper.jar
