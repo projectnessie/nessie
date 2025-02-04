@@ -165,7 +165,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-01-20T14-49-07Z
+    image: quay.io/minio/minio:RELEASE.2025-02-03T21-03-04Z
     ports:
       # API port
       - "9002:9000"
@@ -185,7 +185,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2025-01-20T14-49-07Z
+    image: quay.io/minio/minio:RELEASE.2025-02-03T21-03-04Z
     depends_on:
       minio:
         condition: service_healthy
