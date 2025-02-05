@@ -203,8 +203,9 @@
 
 ---
 
-Nessie distributions contain some or all of the following dependencies,
-licensed under Apache License:
+Nessie distributions contain only dependencies licensed under the Apache License.
+The following is the list of all redistributed dependencies unified across all published
+Nessie artifacts. Each Nessie artifact bundles a sub-set of those dependencies.
 
 
 ch.qos.reload4j:reload4j
