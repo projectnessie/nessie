@@ -6,8 +6,8 @@ Currently supported versions are listed below.
 
 | Version  | Supported          |
 |----------|--------------------|
-| 0.102.4   | :white_check_mark: |
-| < 0.102.4 | :x:                |
+| 0.102.5   | :white_check_mark: |
+| < 0.102.5 | :x:                |
 
 All Nessie 0.x.x versions are considered beta or even alpha releases and not supported after
 release of Nessie 1.0.0.

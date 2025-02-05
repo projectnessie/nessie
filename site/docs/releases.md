@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.102.5 Release (February 05, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.5).
+
+### Note
+
+- This release has no code changes.
+- NOTICE and LICENSE files clarifications, included in jars published to Maven Central.
+
+### Commits
+* Include NOTICE+LICENSE in every jar (#10331)
+
 ## 0.102.4 Release (January 31, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.4).
