@@ -1,22 +1,8 @@
-Nessie NOTICE
--------------
 
 Dremio
 Copyright 2015-2025 Dremio Corporation
 
-This product has transitive dependencies to additional software licensed
-under the terms of the following licenses:
-* Apache Software License, Version 2.0
-* Creative Commons 1.0 Universal
-* Eclipse Distribution License, Version 1.0
-* Eclipse Public License, Version 1.0
-* Eclipse Public License, Version 2.0
 
-See also the LICENSE file.
-
-The Nessie web site provides aggregated license reports for recent Nessie
-binary distributions, available at https://projectnessie.org/docs/ and
-https://projectnessie.org/downloads/.
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).

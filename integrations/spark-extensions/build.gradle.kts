@@ -36,6 +36,7 @@ dependencies {
   compileOnly("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
   implementation(nessieClientForIceberg())
+  implementation(nessieProject("nessie-notice"))
 
   if (sparkScala.sparkMajorVersion == "3.3") {
     implementation(platform(libs.jackson.bom))

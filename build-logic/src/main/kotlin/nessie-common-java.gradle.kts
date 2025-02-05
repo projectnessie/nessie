@@ -40,7 +40,10 @@ if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
       tasks.register("additionalJarContent", Sync::class.java) {
         // Have to manually declare the inputs of this task here on top of the from/include below
         inputs.files(rootProject.layout.files("LICENSE", "NOTICE"))
-        inputs.property("GAV", "${project.group}:${project.name}:${project.version}")
+        inputs.property(
+          "groupArtifactVersion",
+          "${project.group}:${project.name}:${project.version}",
+        )
         dependsOn("generatePomFileForMavenPublication")
         from(rootProject.rootDir) {
           include("LICENSE", "NOTICE")

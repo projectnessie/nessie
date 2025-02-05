@@ -55,7 +55,8 @@ class LicenseFileValidation : DependencyFilter {
   override fun filter(data: ProjectData?): ProjectData {
     data!!
 
-    val rootLicenseFile = data.project.rootProject.file("LICENSE-BINARY-DIST").readText()
+    val rootLicenseFile =
+      data.project.rootProject.file("gradle/built-uber-dists/LICENSE-BINARY-DIST").readText()
 
     val licenseReport = data.project.extensions.getByType(LicenseReportExtension::class.java)
 
@@ -105,7 +106,7 @@ class LicenseFileValidation : DependencyFilter {
     if (!missingApacheMentions.isEmpty() || !missingFullMentions.isEmpty()) {
 
       throw GradleException(
-        "License information for the following artifacts is missing in the root LICENSE-BINARY-DIST file: $missingError"
+        "License information for the following artifacts is missing in the gradle/built-uber-dists/LICENSE-BINARY-DIST file: $missingError"
       )
     }
 
