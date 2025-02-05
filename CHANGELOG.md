@@ -22,6 +22,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Commits
 
+### Note
+
+- This release has no code changes.
+- NOTICE and LICENSE files clarifications, included in jars published to Maven Central.
+
 ## [0.102.4] Release (2025-01-31)
 
 ### Note

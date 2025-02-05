@@ -166,7 +166,7 @@ plugins.withType<JavaPlugin>().configureEach {
 // Adds Git/Build/System related information to the generated jars, if the `release` project
 // property is present. Do not add that information in development builds, so that the
 // generated jars are still cachable for Gradle.
-if (project.hasProperty("release")) {
+if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
   tasks.withType<Jar>().configureEach {
     manifest { MemoizedGitInfo.gitInfo(rootProject, attributes) }
   }
@@ -193,7 +193,7 @@ class MemoizedGitInfo {
     }
 
     fun gitInfo(rootProject: Project): Map<String, String> {
-      if (!rootProject.hasProperty("release")) {
+      if (!rootProject.hasProperty("release") && !rootProject.hasProperty("jarWithGitInfo")) {
         return emptyMap()
       }
 
