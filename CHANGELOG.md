@@ -25,9 +25,7 @@ as necessary. Empty sections will not end in the release notes.
 ### Note
 
 - This release has no code changes.
-- NOTICE and NOTICE-BINARY-DIST files clarifications, especially around where dependencies only licensed under
-  "GNU General Public License, Version 2 with the GNU Classpath Exception" are used (included in some binary
-  executable and containers).
+- NOTICE and LICENSE files clarifications, included in jars published to Maven Central.
 
 ## [0.102.4] Release (2025-01-31)
 
