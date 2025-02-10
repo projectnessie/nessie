@@ -152,7 +152,7 @@ threeten-extra = { module = "org.threeten:threeten-extra", version = "1.8.0" }
 trino-client = { module = "io.trino:trino-client", version = "470" }
 undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
-vertx-core = { module = "io.vertx:vertx-core", version = "4.5.12" }
+vertx-core = { module = "io.vertx:vertx-core", version = "4.5.13" }
 wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.11.0" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.6-10" }
 
