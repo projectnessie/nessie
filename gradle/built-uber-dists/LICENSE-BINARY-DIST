@@ -550,6 +550,7 @@ net.minidev:json-smart
 org.agrona:agrona
 org.apache.avro:avro
 org.apache.cassandra:java-driver-core
+org.apache.cassandra:java-driver-guava-shaded
 org.apache.commons:commons-compress
 org.apache.commons:commons-configuration2
 org.apache.commons:commons-lang3
