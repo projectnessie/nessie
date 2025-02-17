@@ -487,7 +487,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     Content newContent =
         IcebergTable.of(
             registerTableRequest.metadataLocation(),
-            tableMetadata.currentSnapshotId(),
+            tableMetadata.currentSnapshotIdAsLong(),
             safeUnbox.applyAsInt(tableMetadata.currentSchemaId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSpecId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSortOrderId()));

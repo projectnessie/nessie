@@ -161,7 +161,7 @@ public class IcebergFixtures {
         .tableUuid(UUID.randomUUID().toString())
         .lastUpdatedMs(111111111L)
         .location("table-location")
-        .currentSnapshotId(11)
+        .currentSnapshotId(11L)
         .lastColumnId(schemaAllTypes.fields().get(schemaAllTypes.fields().size() - 1).id())
         .lastPartitionId(INITIAL_PARTITION_ID)
         .lastSequenceNumber(INITIAL_SEQUENCE_NUMBER)

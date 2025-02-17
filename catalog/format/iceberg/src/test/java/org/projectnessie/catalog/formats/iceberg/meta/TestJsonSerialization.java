@@ -75,7 +75,7 @@ public class TestJsonSerialization {
             .defaultSpecId(3)
             .lastPartitionId(INITIAL_PARTITION_ID)
             .defaultSortOrderId(2)
-            .currentSnapshotId(123456)
+            .currentSnapshotId(123456L)
             .location("file:///blah/blah")
             .lastSequenceNumber(333L)
             .tableUuid(UUID.randomUUID().toString())

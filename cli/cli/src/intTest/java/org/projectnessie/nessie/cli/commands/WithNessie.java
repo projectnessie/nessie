@@ -200,7 +200,7 @@ public abstract class WithNessie {
                       tableOneKey,
                       IcebergTable.of(
                           tableOneMetadataLocation,
-                          tableOneMetadata.currentSnapshotId(),
+                          tableOneMetadata.currentSnapshotIdAsLong(),
                           tableOneMetadata.currentSchemaId(),
                           tableOneMetadata.defaultSpecId(),
                           tableOneMetadata.defaultSortOrderId())))
@@ -217,7 +217,7 @@ public abstract class WithNessie {
                       tableTwoKey,
                       IcebergTable.of(
                           tableTwoMetadataLocation,
-                          tableTwoMetadata.currentSnapshotId(),
+                          tableTwoMetadata.currentSnapshotIdAsLong(),
                           tableTwoMetadata.currentSchemaId(),
                           tableTwoMetadata.defaultSpecId(),
                           tableTwoMetadata.defaultSortOrderId())))
