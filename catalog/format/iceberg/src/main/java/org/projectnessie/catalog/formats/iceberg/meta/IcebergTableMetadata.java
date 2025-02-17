@@ -17,6 +17,7 @@ package org.projectnessie.catalog.formats.iceberg.meta;
 
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec.MIN_PARTITION_ID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -106,7 +107,15 @@ public interface IcebergTableMetadata {
 
   Map<String, String> properties();
 
-  long currentSnapshotId();
+  @Nullable
+  @jakarta.annotation.Nullable
+  Long currentSnapshotId();
+
+  @JsonIgnore
+  default long currentSnapshotIdAsLong() {
+    var snapshotId = currentSnapshotId();
+    return snapshotId != null ? snapshotId : NO_SNAPSHOT_ID;
+  }
 
   @JsonView(IcebergSpec.IcebergSpecV2.class)
   @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -125,8 +134,7 @@ public interface IcebergTableMetadata {
   List<IcebergHistoryEntry> metadataLog();
 
   default Optional<IcebergSnapshot> currentSnapshot() {
-    long id = currentSnapshotId();
-    return snapshotById(id);
+    return snapshotById(currentSnapshotIdAsLong());
   }
 
   default Optional<IcebergSnapshot> snapshotById(long id) {
@@ -251,7 +259,7 @@ public interface IcebergTableMetadata {
     Builder putAllProperties(Map<String, ? extends String> entries);
 
     @CanIgnoreReturnValue
-    Builder currentSnapshotId(long currentSnapshotId);
+    Builder currentSnapshotId(Long currentSnapshotId);
 
     @CanIgnoreReturnValue
     Builder putRef(String key, IcebergSnapshotRef value);

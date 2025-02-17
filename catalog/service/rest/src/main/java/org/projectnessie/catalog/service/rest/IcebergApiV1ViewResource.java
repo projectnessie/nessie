@@ -193,7 +193,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
   }
 
   private ContentResponse fetchIcebergView(TableRef tableRef) throws NessieNotFoundException {
-    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", false);
+    return fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", false, false);
   }
 
   @Operation(operationId = "iceberg.v1.listViews")
@@ -266,7 +266,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
-    fetchIcebergView(tableRef);
+    fetchIcebergEntity(tableRef, ICEBERG_VIEW, "view", false, true);
   }
 
   @Operation(operationId = "iceberg.v1.updateView")

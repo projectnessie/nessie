@@ -97,6 +97,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   // namespace endpoints
   public static final IcebergEndpoint V1_LIST_NAMESPACES = icebergEndpoint("GET", V1_NAMESPACES);
   public static final IcebergEndpoint V1_LOAD_NAMESPACE = icebergEndpoint("GET", V1_NAMESPACE);
+  public static final IcebergEndpoint V1_NAMESPACE_EXISTS = icebergEndpoint("HEAD", V1_NAMESPACE);
   public static final IcebergEndpoint V1_CREATE_NAMESPACE = icebergEndpoint("POST", V1_NAMESPACES);
   public static final IcebergEndpoint V1_UPDATE_NAMESPACE =
       icebergEndpoint("POST", V1_NAMESPACE_PROPERTIES);
@@ -107,6 +108,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   // table endpoints
   public static final IcebergEndpoint V1_LIST_TABLES = icebergEndpoint("GET", V1_TABLES);
   public static final IcebergEndpoint V1_LOAD_TABLE = icebergEndpoint("GET", V1_TABLE);
+  public static final IcebergEndpoint V1_TABLE_EXISTS = icebergEndpoint("HEAD", V1_TABLE);
   public static final IcebergEndpoint V1_CREATE_TABLE = icebergEndpoint("POST", V1_TABLES);
   public static final IcebergEndpoint V1_UPDATE_TABLE = icebergEndpoint("POST", V1_TABLE);
   public static final IcebergEndpoint V1_DELETE_TABLE = icebergEndpoint("DELETE", V1_TABLE);
@@ -118,6 +120,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   // view endpoints
   public static final IcebergEndpoint V1_LIST_VIEWS = icebergEndpoint("GET", V1_VIEWS);
   public static final IcebergEndpoint V1_LOAD_VIEW = icebergEndpoint("GET", V1_VIEW);
+  public static final IcebergEndpoint V1_VIEW_EXISTS = icebergEndpoint("HEAD", V1_VIEW);
   public static final IcebergEndpoint V1_CREATE_VIEW = icebergEndpoint("POST", V1_VIEWS);
   public static final IcebergEndpoint V1_UPDATE_VIEW = icebergEndpoint("POST", V1_VIEW);
   public static final IcebergEndpoint V1_DELETE_VIEW = icebergEndpoint("DELETE", V1_VIEW);
@@ -128,6 +131,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
           // namespace endpoints
           V1_LIST_NAMESPACES,
           V1_LOAD_NAMESPACE,
+          V1_NAMESPACE_EXISTS,
           V1_CREATE_NAMESPACE,
           V1_UPDATE_NAMESPACE,
           V1_DELETE_NAMESPACE,
@@ -136,6 +140,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
           // table endpoints
           V1_LIST_TABLES,
           V1_LOAD_TABLE,
+          V1_TABLE_EXISTS,
           V1_CREATE_TABLE,
           V1_UPDATE_TABLE,
           V1_DELETE_TABLE,
@@ -146,6 +151,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
           // view endpoints
           V1_LIST_VIEWS,
           V1_LOAD_VIEW,
+          V1_VIEW_EXISTS,
           V1_CREATE_VIEW,
           V1_UPDATE_VIEW,
           V1_DELETE_VIEW,

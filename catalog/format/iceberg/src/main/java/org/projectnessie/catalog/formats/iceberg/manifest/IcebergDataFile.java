@@ -116,6 +116,18 @@ public interface IcebergDataFile {
   @jakarta.annotation.Nullable
   Integer specId();
 
+  @Nullable
+  @jakarta.annotation.Nullable
+  String referencedDataFile();
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  Long contentOffset();
+
+  @Nullable
+  @jakarta.annotation.Nullable
+  Long contentSize();
+
   GenericData.Record partition();
 
   @SuppressWarnings("unused")
@@ -249,6 +261,15 @@ public interface IcebergDataFile {
 
     @CanIgnoreReturnValue
     Builder specId(@Nullable Integer specId);
+
+    @CanIgnoreReturnValue
+    Builder referencedDataFile(@Nullable String referencedDataFile);
+
+    @CanIgnoreReturnValue
+    Builder contentOffset(@Nullable Long contentOffset);
+
+    @CanIgnoreReturnValue
+    Builder contentSize(@Nullable Long contentSize);
 
     @CanIgnoreReturnValue
     Builder partition(GenericData.Record partition);

@@ -788,7 +788,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
                     List.of(1, 2),
                     Map.of("a-property", "some-property-value"))));
 
-    table.updateStatistics().setStatistics(snapshotId, statisticsFile).commit();
+    table.updateStatistics().setStatistics(statisticsFile).commit();
 
     PartitionStatisticsFile partitionStatisticsFile =
         ImmutableGenericPartitionStatisticsFile.builder()
@@ -852,7 +852,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
                     List.of(1, 2),
                     Map.of("a-property", "some-property-value"))));
 
-    transaction.updateStatistics().setStatistics(snapshotId, statisticsFile).commit();
+    transaction.updateStatistics().setStatistics(statisticsFile).commit();
 
     PartitionStatisticsFile partitionStatisticsFile =
         ImmutableGenericPartitionStatisticsFile.builder()

@@ -682,13 +682,13 @@ public class NessieModelIceberg {
     }
 
     for (IcebergStatisticsFile statisticsFile : iceberg.statistics()) {
-      if (statisticsFile.snapshotId() == iceberg.currentSnapshotId()) {
+      if (statisticsFile.snapshotId() == iceberg.currentSnapshotIdAsLong()) {
         snapshot.addStatisticsFile(icebergStatisticsFileToNessie(statisticsFile));
       }
     }
 
     for (IcebergPartitionStatisticsFile partitionStatistic : iceberg.partitionStatistics()) {
-      if (partitionStatistic.snapshotId() == iceberg.currentSnapshotId()) {
+      if (partitionStatistic.snapshotId() == iceberg.currentSnapshotIdAsLong()) {
         snapshot.addPartitionStatisticsFile(
             icebergPartitionStatisticsFileToNessie(partitionStatistic));
       }
@@ -1731,7 +1731,7 @@ public class NessieModelIceberg {
       String metadataJsonLocation, IcebergTableMetadata snapshot, String contentId) {
     return IcebergTable.of(
         metadataJsonLocation,
-        snapshot.currentSnapshotId(),
+        snapshot.currentSnapshotIdAsLong(),
         safeUnbox(snapshot.currentSchemaId(), INITIAL_SCHEMA_ID),
         safeUnbox(snapshot.defaultSpecId(), INITIAL_SPEC_ID),
         safeUnbox(snapshot.defaultSortOrderId(), INITIAL_SORT_ORDER_ID),
