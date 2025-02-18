@@ -2,6 +2,29 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.0 Release (February 18, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.0).
+
+### Highlights
+
+- If you are using Iceberg/Java 1.8.0 it is STRONGLY RECOMMENDED to upgrade to this or a newer Nessie release!
+
+### Upgrade notes
+
+- This Nessie version is compatible with Iceberg/Java version 1.8.0 via Iceberg REST.
+  Iceberg 1.8.0 contains changes that breaks compatibility with previous Nessie versions!
+- Iceberg table spec v3 is not supported in Nessie, because it is still under active development.
+
+### Changes
+
+- Dependencies that are only licensed using GPL+CE are no longer included in Nessie CLI, server and admin tool.
+
+### Commits
+* Ban dependencies licensed only as GPL+CE (#10413)
+* Update changelog (#10412)
+* Iceberg 1.8: Adopt remaining changes in CatalogTests + ViewCatalogTests (#10411)
+
 ## 0.102.5 Release (February 05, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.102.5).
