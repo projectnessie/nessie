@@ -250,6 +250,7 @@ License: https://www.apache.org/licenses/LICENSE-2.0
 This product includes code from Apache Iceberg.
 
 * servers/quarkus-server/src/testFixtures/java/org/projectnessie/server/catalog/CatalogTests.java
+* servers/quarkus-server/src/testFixtures/java/org/projectnessie/server/catalog/ViewCatalogTests.java
 
 Copyright: Copyright 2017-2025 The Apache Software Foundation
 Home page: https://iceberg.apache.org
