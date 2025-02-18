@@ -15,7 +15,7 @@
  */
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.projectnessie.client.api.NessieApiV1
+import org.projectnessie.client.api.NessieApiV2
 import org.projectnessie.error.NessieReferenceNotFoundException
 import org.projectnessie.model._
 
@@ -36,7 +36,7 @@ object NessieUtils {
   def calculateRef(
       branch: String,
       tsOrHash: Option[String],
-      api: NessieApiV1
+      api: NessieApiV2
   ): Reference = {
     val refName = unquoteRefName(branch)
 
@@ -76,7 +76,7 @@ object NessieUtils {
   private def findReferenceFromHash(
       branch: String,
       requestedHash: String,
-      api: NessieApiV1
+      api: NessieApiV2
   ) = {
     val commit = Option(
       api.getCommitLog
@@ -105,7 +105,7 @@ object NessieUtils {
 
   private def findReferenceFromTimestamp(
       branch: String,
-      api: NessieApiV1,
+      api: NessieApiV2,
       timestamp: Instant
   ) = {
     val commit = Option(
