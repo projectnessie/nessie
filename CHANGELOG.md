@@ -22,6 +22,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Dependencies that are only licensed using GPL+CE are no longer included in Nessie CLI, server and admin tool.
+
 ### Deprecations
 
 ### Fixes

@@ -1,0 +1,10 @@
+# This file contains the globally banned dependencies.
+# Each banned dependency must be in the form
+#   <group-id> ':' <module>
+# or
+#   <group-id>
+
+# GPL+CE bans
+com.github.pjfanning:jersey-json
+javax.annotation:javax.annotation-api
+javax.servlet:javax.servlet-api
