@@ -68,3 +68,23 @@ if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
     }
   }
 }
+
+configurations.all {
+  rootProject
+    .file("gradle/banned-dependencies.txt")
+    .readText(Charsets.UTF_8)
+    .trim()
+    .lines()
+    .map { it.trim() }
+    .filterNot { it.isBlank() || it.startsWith("#") }
+    .forEach { line ->
+      val idx = line.indexOf(':')
+      if (idx == -1) {
+        exclude(group = line)
+      } else {
+        val group = line.substring(0, idx)
+        val module = line.substring(idx + 1)
+        exclude(group = group, module = module)
+      }
+    }
+}

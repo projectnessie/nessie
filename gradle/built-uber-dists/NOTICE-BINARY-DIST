@@ -11,18 +11,6 @@ source distributions) file:
 * Eclipse Public License, Version 1.0
 * Eclipse Public License, Version 2.0
 
-Some binary executables and containers contain software that is only licensed
-under the terms of the "GNU General Public License, Version 2 with the GNU
-Classpath Exception":
-* nessie-gc-tool contains com.github.pjfanning:jersey-json, transitively
-  via org.apache.hadoop:hadoop-common
-* nessie-quarkus contains javax.annotation:javax.annotation-api, transitively
-  via com.google.cloud:google-cloud-secretmanager
-* nessie-server-admin-tool contains javax.annotation:javax.annotation-api,
-  transitively via com.google.cloud:google-cloud-secretmanager
-* nessie-cli contains javax.annotation:javax.annotation-api, transitively
-  via com.google.cloud:google-cloud-storage
-
 For the full and concrete list of dependencies and code contained in Nessie
 binary distributions is contained in LICENSE for Nessie binary distributions
 (named LICENSE-BINARY-DIST in source distributions).
