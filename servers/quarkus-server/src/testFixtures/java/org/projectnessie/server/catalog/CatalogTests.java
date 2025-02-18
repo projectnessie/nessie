@@ -1627,12 +1627,14 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     updateSchema.commit();
 
     UpdatePartitionSpec updateSpec = create.updateSpec().addField("new_col");
-    PartitionSpec newSpec = updateSpec.apply();
     updateSpec.commit();
 
     ReplaceSortOrder replaceSortOrder = create.replaceSortOrder().asc("new_col");
     SortOrder newSortOrder = replaceSortOrder.apply();
     replaceSortOrder.commit();
+
+    // Get new spec after commit to write new file with new spec
+    PartitionSpec newSpec = create.table().spec();
 
     DataFile anotherFile =
         DataFiles.builder(newSpec)
@@ -1684,7 +1686,9 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
         .as("Table properties should be a superset of the requested properties")
         .containsAll(properties.entrySet());
     if (!overridesRequestedLocation()) {
-      assertThat(table.location()).as("Table location should match requested").isEqualTo(location);
+      assertThat(table.location())
+          .as("Table location should match requested")
+          .isEqualTo("file:/tmp/ns/table");
     }
     assertFiles(table, FILE_A, anotherFile);
     assertFilePartitionSpec(table, FILE_A, initialSpecId);

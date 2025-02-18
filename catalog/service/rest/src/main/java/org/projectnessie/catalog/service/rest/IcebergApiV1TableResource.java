@@ -301,7 +301,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
   private ContentResponse fetchIcebergTable(TableRef tableRef, boolean forWrite)
       throws NessieNotFoundException {
-    return fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table", forWrite);
+    return fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table", forWrite, false);
   }
 
   @Operation(operationId = "iceberg.v1.createTable")
@@ -487,7 +487,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     Content newContent =
         IcebergTable.of(
             registerTableRequest.metadataLocation(),
-            tableMetadata.currentSnapshotId(),
+            tableMetadata.currentSnapshotIdAsLong(),
             safeUnbox.applyAsInt(tableMetadata.currentSchemaId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSpecId()),
             safeUnbox.applyAsInt(tableMetadata.defaultSortOrderId()));
@@ -586,7 +586,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws IOException {
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    fetchIcebergTable(tableRef, false);
+    fetchIcebergEntity(tableRef, ICEBERG_TABLE, "table", false, true);
   }
 
   @Operation(operationId = "iceberg.v1.tableMetrics")
