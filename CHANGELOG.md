@@ -8,7 +8,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- If you are using Iceberg/Java 1.8.0 it is STRONGLY RECOMMENDED to upgrade to this or a newer Nessie release!
+
 ### Upgrade notes
+
+- This Nessie version is compatible with Iceberg/Java version 1.8.0 via Iceberg REST.
+  Iceberg 1.8.0 contains changes that breaks compatibility with previous Nessie versions!
+- Iceberg table spec v3 is not supported in Nessie, because it is still under active development.
 
 ### Breaking changes
 
