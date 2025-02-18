@@ -15,7 +15,6 @@
  */
 package org.projectnessie.server.catalog;
 
-import static java.util.Collections.singletonMap;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
@@ -39,7 +38,13 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
   }
 
   protected Map<String, String> catalogOptions() {
-    return singletonMap(CatalogProperties.WAREHOUSE_LOCATION, WAREHOUSE_NAME);
+    return Map.of(
+        CatalogProperties.WAREHOUSE_LOCATION,
+        WAREHOUSE_NAME,
+        CatalogProperties.VIEW_DEFAULT_PREFIX + "key1",
+        "catalog-default-key1",
+        CatalogProperties.VIEW_DEFAULT_PREFIX + "key2",
+        "catalog-default-key2");
   }
 
   @AfterAll
@@ -94,7 +99,6 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
 
   @Override
   protected boolean overridesRequestedLocation() {
-    // TODO Nessie Catalog should force the metadata location
-    return super.overridesRequestedLocation();
+    return true;
   }
 }

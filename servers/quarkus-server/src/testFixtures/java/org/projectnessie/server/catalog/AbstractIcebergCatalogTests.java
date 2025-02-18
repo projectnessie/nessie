@@ -151,11 +151,6 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   @Override
-  protected boolean supportsNamespaceProperties() {
-    return true;
-  }
-
-  @Override
   protected boolean supportsServerSideRetry() {
     return true;
   }
@@ -171,9 +166,53 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   @Override
+  protected boolean supportsBranches() {
+    return false;
+  }
+
+  @Override
+  protected boolean supportsSpecV3() {
+    return false;
+  }
+
+  @Override
   protected abstract String temporaryLocation();
 
   protected abstract String scheme();
+
+  @Test
+  public void testRemovePartitionSpec() {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    TableIdentifier ident = TableIdentifier.of("ns", "table");
+
+    assertThat(catalog.tableExists(ident)).as("Table should not exist").isFalse();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(ident.namespace());
+    }
+
+    Table table =
+        catalog
+            .buildTable(ident, SCHEMA)
+            .withLocation(temporaryLocation())
+            .withPartitionSpec(SPEC)
+            .withSortOrder(WRITE_ORDER)
+            .create();
+    assertThat(catalog.tableExists(ident)).as("Table should exist").isTrue();
+    assertThat(table.specs()).hasSize(1);
+    int initialSpecId = table.spec().specId();
+
+    table.updateSpec().addField("data").commit();
+
+    table = catalog.loadTable(ident);
+    assertThat(table.specs()).hasSize(2);
+
+    table.updateSpec().commit();
+
+    // TODO there's no API in Iceberg/Java to actually remove a partition spec :(
+  }
 
   @Test
   public void testNewTableLocationFromParentNamespace() {
