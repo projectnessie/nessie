@@ -1091,7 +1091,7 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   }
 
   @Test
-  public void testUUIDValidation() {
+  public void testUuidValidation() {
     C catalog = catalog();
 
     if (requiresNamespaceCreate()) {
