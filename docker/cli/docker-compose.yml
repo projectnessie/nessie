@@ -20,7 +20,7 @@
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.102.5
+    image: ghcr.io/projectnessie/nessie:0.103.0
     ports:
       # API port
       - "19120:19120"
