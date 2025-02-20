@@ -104,16 +104,13 @@
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
     },
 
-    // Run native & docker CI for some dependencies
+    // Run docker CI for some dependencies
     {
       matchManagers: ["maven", "gradle"],
       matchPackageNames: [
         "com.google.guava:guava",
         "com.google.protobuf:protobuf-java",
-        "io.quarkus.platform:quarkus-bom",
-        "io.quarkus.platform:quarkus-amazon-services-bom",
         "org.jboss:jandex",
-        "org.projectnessie.buildsupport:reflection-config",
         "org.projectnessie.cel:cel-bom",
         "org.rocksdb:rocksdbjni",
       ],
@@ -142,8 +139,12 @@
       matchManagers: ["gradle"],
       matchPackageNames: [
         "io.quarkus.platform:quarkus-bom",
+        "io.quarkus.platform:quarkus-amazon-services-bom",
+        "io.quarkus.platform:quarkus-cassandra-bom",
+        "io.quarkus.platform:quarkus-google-cloud-services-bom",
         "io.quarkus:io.quarkus.gradle.plugin",
       ],
+      labels: ["pr-docker"],
     },
   ],
 
