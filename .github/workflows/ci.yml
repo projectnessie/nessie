@@ -944,17 +944,11 @@ jobs:
       - name: Iceberg Nessie test
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
-      - name: Nessie Spark 3.3 / 2.12 Extensions test
-        run: ./gradlew -DscalaVersion=2.12 :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.3_2.12:intTest --scan
-
       - name: Nessie Spark 3.4 / 2.13 Extensions test
         run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
 
-      - name: Nessie Spark 3.5 / 2.12 Extensions test
-        run: ./gradlew -DscalaVersion=2.12 :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.12:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.12:intTest --scan
-      # TODO Revert the change to Scala 2.12 after we have an Iceberg release with https://github.com/apache/iceberg/pull/11520 (Iceberg 1.8 probably)
-      #- name: Nessie Spark 3.5 / 2.13 Extensions test
-      #  run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
+      - name: Nessie Spark 3.5 / 2.13 Extensions test
+        run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
 
       #- name: Publish Nessie + Iceberg to local Maven repo
       #  run: ./gradlew publishLocal --scan
