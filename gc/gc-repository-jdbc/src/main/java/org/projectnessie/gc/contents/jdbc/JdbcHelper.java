@@ -55,6 +55,20 @@ public final class JdbcHelper {
     }
   }
 
+  public static int truncateTable(Connection connection) throws SQLException {
+    int numOfTruncatedTables = 0;
+    try (Statement st = connection.createStatement()) {
+      for (String tableName : SqlDmlDdl.ALL_CREATES.keySet()) {
+        if (tableExists(connection, tableName)) {
+          st.executeUpdate("TRUNCATE TABLE " + tableName);
+          numOfTruncatedTables++;
+        }
+      }
+      connection.commit();
+    }
+    return numOfTruncatedTables;
+  }
+
   private static boolean tableExists(Connection connection, String tableName) throws SQLException {
     DatabaseMetaData meta = connection.getMetaData();
     if (meta.storesUpperCaseIdentifiers()) {
