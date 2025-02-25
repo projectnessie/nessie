@@ -15,13 +15,14 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.JUnitCompat.newDefaultJupiterConfiguration;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
-import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
@@ -50,7 +51,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
   public static final String ENGINE_ID = "nessie-multi-env";
 
-  private static final MultiEnvExtensionRegistry registry = new MultiEnvExtensionRegistry();
+  private static MultiEnvExtensionRegistry registry;
 
   private final ThreadPerTestClassExecutionTestEngine delegate =
       new ThreadPerTestClassExecutionTestEngine();
@@ -73,6 +74,10 @@ public class MultiEnvTestEngine implements TestEngine {
   public TestDescriptor discover(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     try {
 
+      if (registry == null) {
+        registry = new MultiEnvExtensionRegistry(discoveryRequest);
+      }
+
       // Scan for multi-env test extensions
       TestDescriptor preliminaryResult = delegate.discover(discoveryRequest, uniqueId);
       preliminaryResult.accept(
@@ -88,8 +93,7 @@ public class MultiEnvTestEngine implements TestEngine {
       // JupiterEngineDescriptor must be the root, that's what the JUnit Jupiter engine
       // implementation expects.
       JupiterEngineDescriptor multiEnvRootDescriptor =
-          new JupiterEngineDescriptor(
-              uniqueId, new DefaultJupiterConfiguration(configurationParameters));
+          new JupiterEngineDescriptor(uniqueId, newDefaultJupiterConfiguration(discoveryRequest));
 
       // Handle the "multi-env" tests.
       List<String> extensions = new ArrayList<>();
@@ -107,7 +111,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
                   JupiterConfiguration envRootConfiguration =
                       new CachingJupiterConfiguration(
-                          new MultiEnvJupiterConfiguration(configurationParameters, envId));
+                          new MultiEnvJupiterConfiguration(discoveryRequest, envId));
                   JupiterEngineDescriptor discoverResult =
                       new JupiterEngineDescriptor(segment, envRootConfiguration);
                   new DiscoverySelectorResolver()
@@ -138,7 +142,7 @@ public class MultiEnvTestEngine implements TestEngine {
               clazz -> {
                 JupiterConfiguration jupiterConfiguration =
                     new CachingJupiterConfiguration(
-                        new DefaultJupiterConfiguration(configurationParameters));
+                        newDefaultJupiterConfiguration(discoveryRequest));
 
                 JupiterEngineDescriptor discoverResult =
                     new JupiterEngineDescriptor(uniqueId, jupiterConfiguration);

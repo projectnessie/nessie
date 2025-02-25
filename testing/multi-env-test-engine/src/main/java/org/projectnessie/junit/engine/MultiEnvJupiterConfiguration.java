@@ -16,22 +16,20 @@
 package org.projectnessie.junit.engine;
 
 import org.junit.jupiter.api.DisplayNameGenerator;
-import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
-import org.junit.platform.engine.ConfigurationParameters;
+import org.junit.platform.engine.EngineDiscoveryRequest;
 
-public class MultiEnvJupiterConfiguration extends DefaultJupiterConfiguration {
+public class MultiEnvJupiterConfiguration extends MultiEnvDelegatingJupiterConfiguration {
 
   private final String environment;
 
-  public MultiEnvJupiterConfiguration(
-      ConfigurationParameters configurationParameters, String environment) {
-    super(configurationParameters);
+  public MultiEnvJupiterConfiguration(EngineDiscoveryRequest discoveryRequest, String environment) {
+    super(discoveryRequest);
     this.environment = environment;
   }
 
   @Override
   public DisplayNameGenerator getDefaultDisplayNameGenerator() {
-    DisplayNameGenerator delegate = super.getDefaultDisplayNameGenerator();
+    DisplayNameGenerator delegate = super.delegate.getDefaultDisplayNameGenerator();
     return new MultiEnvDisplayNameGenerator(delegate, environment);
   }
 }
