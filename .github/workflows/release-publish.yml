@@ -383,7 +383,7 @@ jobs:
         run: mkdir current-release-artifacts
 
       - name: Get release + OpenAPI + Helm chart artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
         with:
           path: current-release-artifacts
           merge-multiple: true
