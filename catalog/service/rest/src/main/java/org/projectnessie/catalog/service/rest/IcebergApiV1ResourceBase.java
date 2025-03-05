@@ -39,7 +39,6 @@ import static org.projectnessie.versioned.RequestMeta.API_WRITE;
 import com.google.common.base.Splitter;
 import io.smallrye.mutiny.Uni;
 import java.io.IOException;
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -57,7 +56,6 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergRenameTableRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateEntityRequest;
 import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogEntityAlreadyExistsException;
-import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
@@ -71,6 +69,8 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.ContentResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.GetMultipleContentsResponse;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.ImmutableEntriesResponse;
 import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Namespace;
@@ -334,12 +334,15 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   }
 
   protected String snapshotMetadataLocation(SnapshotResponse snap) {
-    // TODO the resolved metadataLocation is wrong !!
-    CatalogService.CatalogUriResolver catalogUriResolver = new CatalogUriResolverImpl(uriInfo);
-    URI metadataLocation =
-        catalogUriResolver.icebergSnapshot(
-            snap.effectiveReference(), snap.contentKey(), snap.nessieSnapshot());
-    return metadataLocation.toString();
+    Content content = snap.content();
+    if (content instanceof IcebergTable) {
+      return ((IcebergTable) content).getMetadataLocation();
+    } else if (content instanceof IcebergView) {
+      return ((IcebergView) content).getMetadataLocation();
+    } else {
+      throw new IllegalArgumentException(
+        "Can only get metadata location for a SnapshotResponse with content of IcebergTable or IcebergView.");
+    }
   }
 
   static Map<String, String> createEntityProperties(Map<String, String> providedProperties) {
