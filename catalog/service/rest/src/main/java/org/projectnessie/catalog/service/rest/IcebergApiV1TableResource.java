@@ -232,7 +232,6 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
               .putProperty(GC_ENABLED, "false")
               .build();
     }
-    IcebergTable content = (IcebergTable) snap.content();
 
     if (!writeAccessValidated) {
       // Check whether the current user has write access to the table, if that hasn't been already
@@ -250,7 +249,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     }
 
     return loadTableResult(
-        content.getMetadataLocation(),
+        snapshotMetadataLocation(snap),
         snap.nessieSnapshot(),
         warehouseLocation,
         tableMetadata,
