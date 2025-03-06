@@ -740,6 +740,9 @@ podLabels: {}
 # -- Additional Labels to apply to nessie configmap.
 configMapLabels: {}
 
+# -- Additional Annotations to apply to nessie configmap.
+configMapAnnotations: {}
+
 # -- Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/.
 podSecurityContext:
   # GID 10001 is compatible with Nessie OSS default images starting with 0.95.1; change this if you
