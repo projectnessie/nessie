@@ -634,9 +634,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   (IcebergTableMetadata)
                       snap.entityObject()
                           .orElseThrow(() -> new IllegalStateException("entity object missing"));
+              IcebergTable content = (IcebergTable) snap.content();
               return IcebergCommitTableResponse.builder()
                   .metadata(tableMetadata)
-                  .metadataLocation(snapshotMetadataLocation(snap))
+                  .metadataLocation(content.getMetadataLocation())
                   .build();
             });
   }
