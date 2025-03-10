@@ -16,6 +16,7 @@
 package org.projectnessie.junit.engine;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import org.junit.jupiter.api.DisplayNameGenerator;
 
 public class MultiEnvDisplayNameGenerator implements DisplayNameGenerator {
@@ -33,13 +34,33 @@ public class MultiEnvDisplayNameGenerator implements DisplayNameGenerator {
     return delegate.generateDisplayNameForClass(testClass) + " [" + environment + "]";
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public String generateDisplayNameForNestedClass(Class<?> nestedClass) {
     return delegate.generateDisplayNameForNestedClass(nestedClass) + " [" + environment + "]";
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public String generateDisplayNameForMethod(Class<?> testClass, Method testMethod) {
     return delegate.generateDisplayNameForMethod(testClass, testMethod) + " [" + environment + "]";
+  }
+
+  @Override
+  public String generateDisplayNameForNestedClass(
+      List<Class<?>> enclosingInstanceTypes, Class<?> nestedClass) {
+    return delegate.generateDisplayNameForNestedClass(enclosingInstanceTypes, nestedClass)
+        + " ["
+        + environment
+        + "]";
+  }
+
+  @Override
+  public String generateDisplayNameForMethod(
+      List<Class<?>> enclosingInstanceTypes, Class<?> testClass, Method testMethod) {
+    return delegate.generateDisplayNameForMethod(enclosingInstanceTypes, testClass, testMethod)
+        + " ["
+        + environment
+        + "]";
   }
 }
