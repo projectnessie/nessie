@@ -62,7 +62,7 @@ findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-cloud-bigdataoss-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version.ref = "googleCloudBigdataoss" }
 google-cloud-bigdataoss-gcsio = { module = "com.google.cloud.bigdataoss:gcsio", version.ref = "googleCloudBigdataoss" }
-google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.54.0" }
+google-cloud-bigtable-bom = { module = "com.google.cloud:google-cloud-bigtable-bom", version = "2.55.0" }
 google-cloud-secretmanager-bom = { module = "com.google.cloud:google-cloud-secretmanager-bom", version = "2.59.0" }
 google-cloud-storage-bom = { module = "com.google.cloud:google-cloud-storage-bom", version = "2.49.0" }
 google-cloud-libraries-bom = { module = "com.google.cloud:libraries-bom", version = "26.56.0" }
