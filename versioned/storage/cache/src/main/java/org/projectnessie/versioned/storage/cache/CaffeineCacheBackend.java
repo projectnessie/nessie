@@ -60,7 +60,7 @@ class CaffeineCacheBackend implements CacheBackend {
 
     refCacheTtlNanos = config.referenceTtl().orElse(Duration.ZERO).toNanos();
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
-    enableSoftReferences = config.enableSoftReferences().orElse(true);
+    enableSoftReferences = config.enableSoftReferences().orElse(false);
 
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
