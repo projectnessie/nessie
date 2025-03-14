@@ -108,6 +108,12 @@ public class ResponseCheckFilter {
       try {
         JsonNode errorData = reader.readTree(capturing);
         error = reader.treeToValue(errorData, NessieError.class);
+        // There's been a behavior change in Jackson between versions 2.18.2 and 2.18.3.
+        // Up to 2.18.2, `error` was non-`null` even if `errorData` is empty,
+        // singe 2.18.3, `error` is `null` if `errorData` is empty.
+        if (error == null) {
+          error = noResponseError(status, "(no response from server)", "");
+        }
       } catch (IOException e) {
         // The error payload is valid JSON (or an empty response), but does not represent a
         // NessieError.
@@ -122,18 +128,22 @@ public class ResponseCheckFilter {
         // example an authentication failure.
         //
         String cap = capturing.captured().trim();
-        error =
-            ImmutableNessieError.builder()
-                .message(
-                    cap.isEmpty()
-                        ? "got empty response body from server"
-                        : ("Could not parse error object in response beginning with: " + cap))
-                .status(status.getCode())
-                .reason(status.getReason())
-                .clientProcessingError(e.toString())
-                .build();
+        error = noResponseError(status, e.toString(), cap);
       }
     }
     return error;
+  }
+
+  private static ImmutableNessieError noResponseError(
+      Status status, String clientProcessingError, String cap) {
+    return ImmutableNessieError.builder()
+        .message(
+            cap.isEmpty()
+                ? "got empty response body from server"
+                : ("Could not parse error object in response beginning with: " + cap))
+        .status(status.getCode())
+        .reason(status.getReason())
+        .clientProcessingError(clientProcessingError)
+        .build();
   }
 }

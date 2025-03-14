@@ -106,6 +106,9 @@ val jacksonTestVersions =
     "2.13.4", // Spark 3.3
     "2.14.2", // Spark 3.4
     "2.15.2", // Spark 3.5
+    // there's been some change from 2.18.2->.3, see #10489 &
+    // org.projectnessie.client.rest.ResponseCheckFilter.decodeErrorObject
+    "2.18.2",
   )
 
 @Suppress("UnstableApiUsage")
