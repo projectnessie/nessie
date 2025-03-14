@@ -612,6 +612,7 @@ org.jboss.narayana.jts:narayana-jts-integration
 org.jboss.slf4j:slf4j-jboss-logmanager
 org.jboss.threads:jboss-threads
 org.jctools:jctools-core
+org.jspecify:jspecify
 org.mongodb:bson
 org.mongodb:bson-record-codec
 org.mongodb:mongodb-crypt

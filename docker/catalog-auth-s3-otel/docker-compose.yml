@@ -149,7 +149,7 @@ services:
 
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:1.66.0
+    image: docker.io/jaegertracing/all-in-one:1.67.0
     ports:
       # Jaeger gRPC collector, used by Nessie
       - "4317:4317"
@@ -165,7 +165,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-02-28T09-55-16Z-cpuv1
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
     ports:
       # API port
       - "9002:9000"
@@ -185,7 +185,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2025-02-28T09-55-16Z-cpuv1
+    image: quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z
     depends_on:
       minio:
         condition: service_healthy
@@ -208,7 +208,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:26.1.3
+    image: quay.io/keycloak/keycloak:26.1.4
     ports:
       - "8080:8080"
       - "9001:9000"

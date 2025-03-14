@@ -8,6 +8,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+* Configuration option `nessie.version.store.persist.cache-enable-soft-references` defaults to 
+  `false` now. Some feedback suggests that using soft references in the Nessie cache may not be
+  optimal with respect to GC overhead in some environments, so defaulting to `false` is safer.
+
 ### Upgrade notes
 
 ### Breaking changes
