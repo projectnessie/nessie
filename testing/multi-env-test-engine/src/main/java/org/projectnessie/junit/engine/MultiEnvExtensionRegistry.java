@@ -15,6 +15,8 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.JUnitCompat.newDefaultJupiterConfiguration;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -23,10 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.Extension;
-import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
 import org.junit.platform.commons.util.AnnotationUtils;
+import org.junit.platform.engine.EngineDiscoveryRequest;
 
 /**
  * A helper class for collecting instances of {@link MultiEnvTestExtension}.
@@ -39,10 +41,10 @@ public class MultiEnvExtensionRegistry {
 
   private final Set<ClassBasedTestDescriptor> probablyNotMultiEnv = new LinkedHashSet<>();
 
-  public MultiEnvExtensionRegistry() {
+  public MultiEnvExtensionRegistry(EngineDiscoveryRequest discoveryRequest) {
     this.registry =
         MutableExtensionRegistry.createRegistryWithDefaultExtensions(
-            new DefaultJupiterConfiguration(new EmptyConfigurationParameters()));
+            newDefaultJupiterConfiguration(new EmptyConfigurationParameters(), discoveryRequest));
   }
 
   public void registerExtensions(ClassBasedTestDescriptor descriptor) {

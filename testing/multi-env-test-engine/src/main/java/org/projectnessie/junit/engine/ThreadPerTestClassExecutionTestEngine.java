@@ -15,9 +15,10 @@
  */
 package org.projectnessie.junit.engine;
 
+import static org.projectnessie.junit.engine.JUnitCompat.newDefaultJupiterConfiguration;
+
 import java.util.Optional;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
-import org.junit.jupiter.engine.config.DefaultJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
 import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
@@ -54,8 +55,7 @@ public class ThreadPerTestClassExecutionTestEngine
   @Override
   public TestDescriptor discover(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     JupiterConfiguration configuration =
-        new CachingJupiterConfiguration(
-            new DefaultJupiterConfiguration(discoveryRequest.getConfigurationParameters()));
+        new CachingJupiterConfiguration(newDefaultJupiterConfiguration(discoveryRequest));
     JupiterEngineDescriptor engineDescriptor = new JupiterEngineDescriptor(uniqueId, configuration);
     new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, engineDescriptor);
     return engineDescriptor;
