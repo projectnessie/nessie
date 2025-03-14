@@ -26,10 +26,10 @@ metadata:
     {{- if .Values.configMapLabels }}
     {{- toYaml .Values.configMapLabels | nindent 4 }}
     {{- end }}
+  {{- if .Values.configMapAnnotations }}
   annotations:
-    {{- if .Values.configMapAnnotations }}
-    {{- toYaml .Values.configMapAnnotations | nindent 4 }}
-    {{- end }}
+    {{- tpl (toYaml .Values.configMapAnnotations) . | nindent 4 }}
+  {{- end }}
 data:
   application.properties: |-
     {{- $map := dict -}}
