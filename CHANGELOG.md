@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+* Catalog: Return consistent metadata-location for Iceberg REST APIs
+
 ### Commits
 
 ## [0.103.0] Release (2025-02-18)
