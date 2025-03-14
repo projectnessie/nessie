@@ -18,6 +18,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+* Helm: Allow annotations on the configmap
+
 ### Changes
 
 ### Deprecations
