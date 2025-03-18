@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.103.0](https://img.shields.io/badge/Version-0.103.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.103.1](https://img.shields.io/badge/Version-0.103.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -233,6 +233,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | catalog.storage.s3.transport.expectContinueEnabled | string | `nil` | Override default behavior whether to expect an HTTP/100-Continue. Must be a valid ISO duration. |
 | catalog.storage.s3.transport.maxHttpConnections | string | `nil` | Override the default maximum number of pooled connections. |
 | catalog.storage.s3.transport.readTimeout | string | `nil` | Override the default connection read timeout. Must be a valid ISO duration. |
+| configMapAnnotations | object | `{}` | Additional Annotations to apply to nessie configmap. |
 | configMapLabels | object | `{}` | Additional Labels to apply to nessie configmap. |
 | deploymentStrategy | object | `{}` | Override the strategy for nessie deployment. Valid values for type are: RollingUpdate and Recreate. If you are using the ROCKSDB version store type then you should use Recreate. Max Surge will allow new pods to be created before old ones are culled. Do not enable this when using ROCKSDB version store type. Max Unavailable will allow old pods to be culled before replacements are created See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy |
 | dynamodb.profile | string | `"default"` | The name of the profile that should be used, when loading AWS credentials from a profile file. Required only if no secret is provided below. |

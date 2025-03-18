@@ -2,6 +2,33 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.1 Release (March 18, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.1).
+
+### Highlights
+
+- Configuration option `nessie.version.store.persist.cache-enable-soft-references` defaults to 
+  `false` now. Some feedback suggests that using soft references in the Nessie cache may not be
+  optimal with respect to GC overhead in some environments, so defaulting to `false` is safer.
+
+### New Features
+
+- Helm: Allow annotations on the configmap
+
+### Fixes
+
+- Catalog: Return consistent metadata-location for Iceberg REST APIs
+
+### Commits
+* Ninja: changelog
+* Helm: Allow annotations on the configmap.  (#10510)
+* Catalog: Return consistent metadata-location for Iceberg REST APIs (#10508)
+* Make `cache-enable-soft-references` default to `false` (#10526)
+* Add `copy` command to the ContentGenerator tool (#10443)
+* Renovate: Quarkus Group (#10435)
+* CI/NesQuEIT: Remove Spark 3.3 + revert workaround #10184 (#10436)
+
 ## 0.103.0 Release (February 18, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.0).

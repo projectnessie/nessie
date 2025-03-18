@@ -8,17 +8,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-* Configuration option `nessie.version.store.persist.cache-enable-soft-references` defaults to 
-  `false` now. Some feedback suggests that using soft references in the Nessie cache may not be
-  optimal with respect to GC overhead in some environments, so defaulting to `false` is safer.
-
 ### Upgrade notes
 
 ### Breaking changes
 
 ### New Features
-
-* Helm: Allow annotations on the configmap
 
 ### Changes
 
@@ -26,9 +20,23 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
-* Catalog: Return consistent metadata-location for Iceberg REST APIs
-
 ### Commits
+
+## [0.103.1] Release (2025-03-18)
+
+### Highlights
+
+- Configuration option `nessie.version.store.persist.cache-enable-soft-references` defaults to 
+  `false` now. Some feedback suggests that using soft references in the Nessie cache may not be
+  optimal with respect to GC overhead in some environments, so defaulting to `false` is safer.
+
+### New Features
+
+- Helm: Allow annotations on the configmap
+
+### Fixes
+
+- Catalog: Return consistent metadata-location for Iceberg REST APIs
 
 ## [0.103.0] Release (2025-02-18)
 
@@ -1074,7 +1082,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.103.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.103.1...HEAD
+[0.103.1]: https://github.com/projectnessie/nessie/compare/nessie-0.103.0...nessie-0.103.1
 [0.103.0]: https://github.com/projectnessie/nessie/compare/nessie-0.102.5...nessie-0.103.0
 [0.102.5]: https://github.com/projectnessie/nessie/compare/nessie-0.102.4...nessie-0.102.5
 [0.102.4]: https://github.com/projectnessie/nessie/compare/nessie-0.102.3...nessie-0.102.4
