@@ -66,7 +66,7 @@ public class TestHttpClients {
 
   static Stream<Arguments> clientByName() {
 
-    if (JRE.currentVersion().ordinal() < JRE.JAVA_11.ordinal()) {
+    if (JRE.currentJre().ordinal() < JRE.JAVA_11.ordinal()) {
       return Stream.of(
           arguments(
               "apachehttp", "org.projectnessie.client.http.impl.apache.ApacheHttpClient", false),
