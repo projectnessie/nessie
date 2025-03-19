@@ -33,7 +33,7 @@ public class TestJavaHttpClient extends BaseTestHttpClient {
 
   @BeforeAll
   public static void checkJava11() {
-    assumeThat(JRE.currentVersion()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
+    assumeThat(JRE.currentJre()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
   }
 
   @Override
