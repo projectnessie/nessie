@@ -26,6 +26,9 @@ authentication_backend:
 access_control:
   default_policy: 'one_factor'
 
+ntp:
+  disable_startup_check: true
+
 session:
   secret: 'insecure_session_secret'
   cookies:
