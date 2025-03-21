@@ -23,8 +23,8 @@ dependencies {
   api(platform(libs.testcontainers.bom))
   api("org.testcontainers:testcontainers")
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(libs.bundles.junit.testing)
 }

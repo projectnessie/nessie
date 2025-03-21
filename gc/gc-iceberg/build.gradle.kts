@@ -23,8 +23,8 @@ dependencies {
   implementation("org.apache.iceberg:iceberg-core")
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   implementation(nessieProject("nessie-model"))
   implementation(nessieProject("nessie-gc-base"))

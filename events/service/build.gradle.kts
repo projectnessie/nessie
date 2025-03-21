@@ -33,9 +33,8 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.jakarta.annotation.api)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
@@ -43,6 +42,7 @@ dependencies {
   testRuntimeOnly(libs.logback.classic)
 
   testCompileOnly(libs.microprofile.openapi)
+  testCompileOnly(libs.jakarta.annotation.api)
 }
 
 tasks.withType(Test::class).configureEach {

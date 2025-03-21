@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Dremio
+ * Copyright (C) 2025 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server") }
+plugins { id("nessie-conventions-client") }
 
-publishingHelper { mavenName = "Nessie - Storage - Inmemory - Tests" }
+publishingHelper { mavenName = "Nessie - Build tool - Immutables without javax annotations" }
 
-description = "Base test code for creating test backends using in-memory backend."
+val processor by configurations.creating
+
+processor.extendsFrom(configurations.api.get())
 
 dependencies {
-  implementation(project(":nessie-versioned-storage-inmemory"))
-  implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(":nessie-versioned-storage-testextension"))
+  api(libs.immutables.builder)
+  api(libs.immutables.value.annotations)
 
-  compileOnly(project(":nessie-immutables-std"))
-  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
+  processor(libs.immutables.value.processor)
+  processor(project)
 }

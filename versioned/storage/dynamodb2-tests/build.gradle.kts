@@ -28,9 +28,8 @@ dependencies {
 
   compileOnly(libs.jakarta.annotation.api)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   implementation(platform(libs.awssdk.bom))
   implementation("software.amazon.awssdk:dynamodb")

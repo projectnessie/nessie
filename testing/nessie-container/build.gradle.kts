@@ -23,12 +23,12 @@ dependencies {
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:testcontainers")
   implementation(project(":nessie-container-spec-helper"))
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 }

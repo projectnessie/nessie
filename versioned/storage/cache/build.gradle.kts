@@ -33,17 +33,15 @@ dependencies {
   implementation(libs.caffeine)
   implementation(libs.micrometer.core)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
 
-  testCompileOnly(libs.immutables.builder)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(platform(libs.jackson.bom))
   testImplementation("com.fasterxml.jackson.core:jackson-annotations")

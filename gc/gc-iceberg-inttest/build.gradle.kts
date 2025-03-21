@@ -116,9 +116,8 @@ dependencies {
   intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
-  intTestCompileOnly(libs.immutables.builder)
-  intTestCompileOnly(libs.immutables.value.annotations)
-  intTestAnnotationProcessor(libs.immutables.value.processor)
+  intTestCompileOnly(nessieProject("nessie-immutables-std"))
+  intTestAnnotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   intTestRuntimeOnly(libs.logback.classic)
 

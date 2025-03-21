@@ -25,15 +25,15 @@ dependencies {
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
 
   compileOnly(project(":nessie-versioned-storage-testextension"))
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(project(":nessie-versioned-storage-common-tests"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))

@@ -29,8 +29,8 @@ dependencies {
   implementation(nessieProject("nessie-gc-tool", "shadow"))
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))

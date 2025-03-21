@@ -31,7 +31,7 @@ dependencies {
   implementation(libs.okhttp3)
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
 
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

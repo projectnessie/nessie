@@ -27,9 +27,8 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.jakarta.inject.api)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   compileOnly(libs.errorprone.annotations)
   implementation(libs.guava)
@@ -52,9 +51,8 @@ dependencies {
   testCompileOnly(libs.jakarta.validation.api)
   testCompileOnly(libs.jakarta.annotation.api)
 
-  testCompileOnly(libs.immutables.builder)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(platform(libs.jackson.bom))
   testImplementation("com.fasterxml.jackson.core:jackson-databind")

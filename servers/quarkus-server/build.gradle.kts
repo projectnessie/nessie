@@ -92,8 +92,8 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   openapiSource(project(":nessie-model")) { isTransitive = false }
 

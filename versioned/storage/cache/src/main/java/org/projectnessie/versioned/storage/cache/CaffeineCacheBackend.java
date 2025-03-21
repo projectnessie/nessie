@@ -33,7 +33,6 @@ import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
 import java.lang.ref.SoftReference;
 import java.time.Duration;
-import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -87,7 +86,7 @@ class CaffeineCacheBackend implements CacheBackend {
                       CacheKeyValue key,
                       CacheKeyValue value,
                       long currentTimeNanos,
-                      @NonNegative long currentDurationNanos) {
+                      long currentDurationNanos) {
                     return expireAfterCreate(key, value, currentTimeNanos);
                   }
 
@@ -96,7 +95,7 @@ class CaffeineCacheBackend implements CacheBackend {
                       CacheKeyValue key,
                       CacheKeyValue value,
                       long currentTimeNanos,
-                      @NonNegative long currentDurationNanos) {
+                      long currentDurationNanos) {
                     return currentDurationNanos;
                   }
                 })

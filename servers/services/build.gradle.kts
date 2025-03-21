@@ -29,9 +29,8 @@ dependencies {
   implementation(platform(libs.cel.bom))
   implementation("org.projectnessie.cel:cel-standalone")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   implementation(libs.guava)
 
   compileOnly(libs.jakarta.validation.api)

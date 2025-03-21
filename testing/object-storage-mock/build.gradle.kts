@@ -38,8 +38,8 @@ dependencies {
   implementation("org.glassfish.jersey.media:jersey-media-json-jackson")
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   implementation(libs.guava)
 
@@ -69,8 +69,8 @@ dependencies {
   testImplementation(platform(libs.google.cloud.storage.bom))
   testImplementation("com.google.cloud:google-cloud-storage")
 
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testCompileOnly(libs.microprofile.openapi)
 

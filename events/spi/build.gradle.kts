@@ -22,9 +22,8 @@ dependencies {
   api(project(":nessie-events-api"))
 
   // Immutables
-  implementation(libs.immutables.builder)
-  implementation(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  implementation(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   // Jackson
   compileOnly(platform(libs.jackson.bom))

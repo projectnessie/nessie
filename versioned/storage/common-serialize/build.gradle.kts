@@ -34,9 +34,8 @@ dependencies {
 
   testImplementation(project(":nessie-versioned-storage-common-tests"))
 
-  testCompileOnly(libs.immutables.builder)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)

@@ -78,9 +78,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   implementation("org.jboss.slf4j:slf4j-jboss-logmanager")
   implementation("io.opentelemetry:opentelemetry-opencensus-shim") // for Google BigTable

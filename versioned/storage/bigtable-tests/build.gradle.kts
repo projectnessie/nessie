@@ -25,7 +25,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-versioned-storage-testextension"))
   implementation(project(":nessie-container-spec-helper"))
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
 
   implementation(libs.slf4j.api)
 

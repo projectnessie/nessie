@@ -36,9 +36,8 @@ dependencies {
   implementation(libs.agrona)
   implementation(libs.slf4j.api)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testFixturesApi(project(":nessie-versioned-storage-jdbc-tests"))
   testFixturesApi(project(":nessie-versioned-storage-common"))

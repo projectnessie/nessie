@@ -41,13 +41,12 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testCompileOnly(libs.microprofile.openapi)
-  testCompileOnly(libs.immutables.value.annotations)
-  testAnnotationProcessor(libs.immutables.value.processor)
+  testCompileOnly(project(":nessie-immutables-std"))
+  testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   testCompileOnly(libs.jakarta.ws.rs.api)
   testCompileOnly(libs.javax.ws.rs)
   testCompileOnly(libs.jakarta.validation.api)
@@ -62,7 +61,7 @@ dependencies {
   intTestImplementation("org.testcontainers:testcontainers")
   intTestImplementation(libs.awaitility)
   intTestImplementation(project(":nessie-container-spec-helper"))
-  intTestCompileOnly(libs.immutables.value.annotations)
+  intTestCompileOnly(project(":nessie-immutables-std"))
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
