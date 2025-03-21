@@ -39,9 +39,8 @@ dependencies {
   implementation("software.amazon.awssdk:dynamodb")
   implementation("software.amazon.awssdk:apache-client")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   intTestImplementation(project(":nessie-versioned-storage-dynamodb2-tests"))
   intTestImplementation(project(":nessie-versioned-storage-common-tests"))

@@ -40,11 +40,11 @@ dependencies {
   implementation(libs.microprofile.openapi)
 
   compileOnly(libs.errorprone.annotations)
-  compileOnly(libs.immutables.value.annotations)
   // This lets Immutables discover the right Guava version, otherwise we end with Guava 16 (from
   // 14), and Immutables uses Objects.toStringHelper instead of MoreObjects.toStringHelper.
   compileOnly(libs.guava)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   implementation(platform(libs.junit.bom))
   implementation(libs.bundles.junit.testing)

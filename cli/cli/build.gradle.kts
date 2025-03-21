@@ -56,8 +56,8 @@ dependencies {
   runtimeOnly(platform(libs.azuresdk.bom))
   runtimeOnly("com.azure:azure-storage-file-datalake")
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.microprofile.openapi)
@@ -65,9 +65,8 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   runtimeOnly(libs.logback.classic)
 
@@ -83,7 +82,7 @@ dependencies {
 
   testImplementation(project(":nessie-versioned-storage-inmemory-tests"))
 
-  testCompileOnly(libs.immutables.value.annotations)
+  testCompileOnly(project(":nessie-immutables-std"))
 
   intTestImplementation(project(":nessie-object-storage-mock"))
   intTestImplementation(project(":nessie-catalog-format-iceberg"))

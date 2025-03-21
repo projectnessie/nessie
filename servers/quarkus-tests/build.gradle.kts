@@ -60,5 +60,5 @@ dependencies {
   implementation(libs.testcontainers.keycloak)
   implementation(libs.keycloak.admin.client)
 
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
 }

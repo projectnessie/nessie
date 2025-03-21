@@ -28,9 +28,8 @@ dependencies {
   compileOnly("io.quarkus:quarkus-core")
   compileOnly("io.smallrye.config:smallrye-config-core")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(nessieProject("nessie-immutables-std"))
+  annotationProcessor(nessieProject("nessie-immutables-std", configuration = "processor"))
 
   implementation(libs.guava)
 

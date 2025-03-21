@@ -34,6 +34,7 @@ dependencies {
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
+  compileOnly(libs.findbugs.jsr305)
 
   compileOnly(libs.microprofile.openapi)
   runtimeOnly(libs.slf4j.api)
@@ -42,9 +43,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.core:jackson-databind")
 
-  compileOnly(libs.immutables.builder)
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   testFixturesImplementation(project(":nessie-client"))
 

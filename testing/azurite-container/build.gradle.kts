@@ -21,7 +21,7 @@ publishingHelper { mavenName = "Nessie - Azurite testcontainer" }
 dependencies {
   implementation(libs.slf4j.api)
   implementation(project(":nessie-container-spec-helper"))
-  compileOnly(libs.immutables.value.annotations)
+  compileOnly(project(":nessie-immutables-std"))
   api(platform(libs.testcontainers.bom))
   api("org.testcontainers:testcontainers")
 
@@ -33,8 +33,8 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.errorprone.annotations)
 
-  compileOnly(libs.immutables.value.annotations)
-  annotationProcessor(libs.immutables.value.processor)
+  compileOnly(project(":nessie-immutables-std"))
+  annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
   compileOnly(platform(libs.junit.bom))
   compileOnly("org.junit.jupiter:junit-jupiter-api")
