@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -29,6 +31,8 @@ public interface S3BucketOptions extends BucketOptions {
 
   /** Default value for {@link #authType()}, being {@link S3AuthType#STATIC}. */
   S3AuthType DEFAULT_SERVER_AUTH_TYPE = S3AuthType.STATIC;
+
+  Duration DEFAULT_SIGN_URL_EXPIRE = Duration.of(3, ChronoUnit.HOURS);
 
   /**
    * Endpoint URI, required for private (non-AWS) clouds, specified either per bucket or in the
@@ -111,8 +115,25 @@ public interface S3BucketOptions extends BucketOptions {
    */
   Optional<URI> accessKey();
 
-  /** Optional parameter to disable S3 request signing. Default is to enable S3 request signing. */
+  /**
+   * Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
+   *
+   * <p>See {@code url-signing-expire}.
+   */
   Optional<Boolean> requestSigningEnabled();
+
+  /**
+   * Defines the validity of the signing endpoint returned to clients, defaults to 3 hours.
+   *
+   * <p>See {@code request-signing-enabled}.
+   */
+  Optional<Duration> urlSigningExpire();
+
+  @Value.NonAttribute
+  @JsonIgnore
+  default Duration effectiveUrlSigningExpire() {
+    return urlSigningExpire().orElse(DEFAULT_SIGN_URL_EXPIRE);
+  }
 
   /**
    * The <a href="https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html">Security Token

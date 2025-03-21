@@ -14,6 +14,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Catalog/S3/request-signing: Add a per-S3-bucket config option `url-signing-expire` to override the default
+  3-hour lifetime of S3-URL-signing URLs.
+
 ### Changes
 
 ### Deprecations

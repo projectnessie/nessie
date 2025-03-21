@@ -126,11 +126,11 @@ class TestObjectIO {
         StorageLocations.storageLocations(whUri, List.of(whUri), List.of());
     Map<String, String> config = new HashMap<>();
 
-    objectIO.configureIcebergTable(storageLocations, config::put, () -> false, false);
+    objectIO.configureIcebergTable(storageLocations, config::put, x -> false, false);
     soft.assertThat(config).containsEntry(propName, expectedValue);
 
     config.clear();
-    objectIO.configureIcebergTable(storageLocations, config::put, () -> true, true);
+    objectIO.configureIcebergTable(storageLocations, config::put, x -> true, true);
     soft.assertThat(config).containsEntry(propName, expectedValue);
   }
 }

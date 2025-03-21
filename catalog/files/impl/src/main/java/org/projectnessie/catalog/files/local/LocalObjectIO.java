@@ -23,11 +23,12 @@ import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.storage.uri.StorageUri;
@@ -89,7 +90,7 @@ public class LocalObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      BooleanSupplier enableRequestSigning,
+      Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {}
 
   @Override
