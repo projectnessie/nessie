@@ -2,6 +2,21 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.2 Release (March 21, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.2).
+
+### New Features
+
+- Catalog/S3/request-signing: Add a per-S3-bucket config option `url-signing-expire` to override the default
+  3-hour lifetime of S3-URL-signing URLs.
+
+### Commits
+* Make S3 signing URL validity configurable (#10582)
+* Adopt to next guava version (#10581)
+* Disable NTP check for Authelia ITs (#10570)
+* Adopt to JUnit deprecation (#10569)
+
 ## 0.103.1 Release (March 18, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.1).

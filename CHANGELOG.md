@@ -14,9 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Catalog/S3/request-signing: Add a per-S3-bucket config option `url-signing-expire` to override the default
-  3-hour lifetime of S3-URL-signing URLs.
-
 ### Changes
 
 ### Deprecations
@@ -24,6 +21,13 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.103.2] Release (2025-03-21)
+
+### New Features
+
+- Catalog/S3/request-signing: Add a per-S3-bucket config option `url-signing-expire` to override the default
+  3-hour lifetime of S3-URL-signing URLs.
 
 ## [0.103.1] Release (2025-03-18)
 
@@ -1085,7 +1089,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.103.1...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.103.2...HEAD
+[0.103.2]: https://github.com/projectnessie/nessie/compare/nessie-0.103.1...nessie-0.103.2
 [0.103.1]: https://github.com/projectnessie/nessie/compare/nessie-0.103.0...nessie-0.103.1
 [0.103.0]: https://github.com/projectnessie/nessie/compare/nessie-0.102.5...nessie-0.103.0
 [0.102.5]: https://github.com/projectnessie/nessie/compare/nessie-0.102.4...nessie-0.102.5
