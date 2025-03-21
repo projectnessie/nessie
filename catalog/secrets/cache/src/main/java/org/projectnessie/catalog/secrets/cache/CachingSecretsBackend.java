@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
-import org.checkerframework.checker.index.qual.NonNegative;
 import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -70,7 +69,7 @@ public class CachingSecretsBackend {
                       CacheKeyValue key,
                       Secret value,
                       long currentTimeNanos,
-                      @NonNegative long currentDurationNanos) {
+                      long currentDurationNanos) {
                     return currentDurationNanos;
                   }
 
@@ -79,7 +78,7 @@ public class CachingSecretsBackend {
                       CacheKeyValue key,
                       Secret value,
                       long currentTimeNanos,
-                      @NonNegative long currentDurationNanos) {
+                      long currentDurationNanos) {
                     return currentDurationNanos;
                   }
                 })
