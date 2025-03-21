@@ -22,12 +22,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -174,7 +175,7 @@ public class S3ObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      BooleanSupplier enableRequestSigning,
+      Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
             storageLocations.writeableLocations().stream(),
@@ -195,9 +196,10 @@ public class S3ObjectIO implements ObjectIO {
     // 'X-Iceberg-Access-Delegation' header (or if the header contains the appropriate value).
     boolean requestSigning = bucketOptions.effectiveRequestSigningEnabled();
     if (requestSigning) {
+      var expireAfter = bucketOptions.effectiveUrlSigningExpire();
       // Calling `enableRequestSigning` must only happen, if `effectiveRequestSigningEnabled()` is
       // true. Making this very clear with this `if`.
-      requestSigning = enableRequestSigning.getAsBoolean();
+      requestSigning = enableRequestSigning.test(expireAfter);
     }
     config.accept(S3_REMOTE_SIGNING_ENABLED, Boolean.toString(requestSigning));
     if (requestSigning) {

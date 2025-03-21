@@ -18,11 +18,12 @@ package org.projectnessie.catalog.files.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import org.projectnessie.storage.uri.StorageUri;
 
 public interface ObjectIO {
@@ -55,7 +56,7 @@ public interface ObjectIO {
   void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      BooleanSupplier enableRequestSigning,
+      Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending);
 
   void trinoSampleConfig(

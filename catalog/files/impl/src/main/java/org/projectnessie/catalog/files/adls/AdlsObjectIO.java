@@ -27,12 +27,13 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.ObjectIO;
@@ -132,7 +133,7 @@ public class AdlsObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
-      BooleanSupplier enableRequestSigning,
+      Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
             storageLocations.writeableLocations().stream(),

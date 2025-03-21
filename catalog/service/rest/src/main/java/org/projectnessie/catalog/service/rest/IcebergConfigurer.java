@@ -32,7 +32,7 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -255,9 +255,14 @@ public class IcebergConfigurer {
     objectIO.configureIcebergTable(
         locations,
         config::put,
-        () ->
+        signUrlExpiration ->
             configureS3RequestSigningForTable(
-                locations, accessDelegationPredicate, prefix, contentKey, config::put),
+                signUrlExpiration,
+                locations,
+                accessDelegationPredicate,
+                prefix,
+                contentKey,
+                config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
     return tableConfig.config(config).build();
@@ -274,6 +279,7 @@ public class IcebergConfigurer {
    * not worth the trouble.
    */
   private boolean configureS3RequestSigningForTable(
+      Duration signUrlExpiration,
       StorageLocations locations,
       Predicate<AccessDelegation> accessDelegationPredicate,
       String prefix,
@@ -317,7 +323,7 @@ public class IcebergConfigurer {
 
     SignerKey signerKey = signerKeysService.currentSignerKey();
 
-    long expirationTimestamp = systemUTC().instant().plus(3, ChronoUnit.HOURS).getEpochSecond();
+    long expirationTimestamp = systemUTC().instant().plus(signUrlExpiration).getEpochSecond();
 
     String contentKeyPathString = contentKey.toPathStringEscaped();
     String pathParam =
