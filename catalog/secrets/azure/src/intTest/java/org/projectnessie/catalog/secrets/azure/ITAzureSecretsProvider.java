@@ -20,20 +20,12 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
-import com.azure.core.credential.BasicAuthenticationCredential;
-import com.azure.core.credential.TokenCredential;
 import com.azure.security.keyvault.secrets.SecretAsyncClient;
-import com.azure.security.keyvault.secrets.SecretClientBuilder;
-import com.github.nagyesta.lowkeyvault.http.ApacheHttpClient;
-import com.github.nagyesta.lowkeyvault.http.AuthorityOverrideFunction;
 import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainer;
 import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainerBuilder;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -65,31 +57,14 @@ public class ITAzureSecretsProvider {
                   .build()
                   .dockerImageName(null)
                   .asCompatibleSubstituteFor("nagyesta/lowkey-vault"))
-          .vaultNames(Set.of("default"))
           .build()
           .withLogConsumer(
               c -> LOGGER.info("[LOWKEY-VAULT] {}", c.getUtf8StringWithoutLineEnding()));
 
   @Test
   public void azureSecrets() {
-    final String endpoint = lowkeyVault.getVaultBaseUrl("default");
-    final AuthorityOverrideFunction authorityOverrideFunction =
-        new AuthorityOverrideFunction(
-            lowkeyVault.getVaultAuthority("default"), lowkeyVault.getEndpointAuthority());
-    final TokenCredential credentials =
-        new BasicAuthenticationCredential(lowkeyVault.getUsername(), lowkeyVault.getPassword());
-    final ApacheHttpClient httpClient =
-        new ApacheHttpClient(
-            authorityOverrideFunction,
-            new TrustSelfSignedStrategy(),
-            new DefaultHostnameVerifier());
-    SecretAsyncClient client =
-        new SecretClientBuilder()
-            .vaultUrl(endpoint)
-            .credential(credentials)
-            .httpClient(httpClient)
-            .disableChallengeResourceVerification()
-            .buildAsyncClient();
+    final SecretAsyncClient client =
+        lowkeyVault.getClientFactory().getSecretClientBuilderForDefaultVault().buildAsyncClient();
 
     String instantStr = "2024-06-05T20:38:16Z";
     Instant instant = Instant.parse(instantStr);
