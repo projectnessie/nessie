@@ -128,6 +128,9 @@ public class TestCLI {
         arguments(
             asList("list-deferred", "--live-set-id=00000000-0000-0000-0000-000000000000"),
             "Error: Missing required argument (specify one of these): ([--inmemory] | [[--jdbc]"),
+        arguments(
+            singletonList("truncate"),
+            "Error: Missing required argument(s): ([--jdbc] --jdbc-url=<url>"),
         // No live-set-id
         arguments(
             asList("sweep", "--jdbc-url", "jdbc:foo//bar"),
@@ -469,5 +472,12 @@ public class TestCLI {
     run = RunCLI.run("completion-script", "--output-file", file.toString());
     soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(1);
     soft.assertThat(run.getErr()).contains("File already exists.");
+  }
+
+  @Test
+  @Order(10)
+  public void truncateTables() throws Exception {
+    RunCLI run = RunCLI.run("truncate", "--jdbc-url", JDBC_URL);
+    soft.assertThat(run.getExitCode()).as(run::getErr).isEqualTo(0);
   }
 }
