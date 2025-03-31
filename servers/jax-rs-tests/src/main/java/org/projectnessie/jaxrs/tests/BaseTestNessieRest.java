@@ -538,12 +538,15 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     return resp.post("trees/{ref}/history/transplant", targetRefAndHash).then();
   }
 
-  Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
+  CommitResponse commitGetResponse(Branch branch, ContentKey key, IcebergTable table) {
     return prepareCommitV2(branch, key, table, 2, true)
         .statusCode(200)
         .extract()
-        .as(CommitResponse.class)
-        .getTargetBranch();
+        .as(CommitResponse.class);
+  }
+
+  Branch commitV2(Branch branch, ContentKey key, IcebergTable table) {
+    return commitGetResponse(branch, key, table).getTargetBranch();
   }
 
   private Content getContentV2(Reference reference, ContentKey key) {

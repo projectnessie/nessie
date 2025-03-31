@@ -16,6 +16,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+* Nessie's REST API endpoints now accept "truncated timestamps" in relative-commit-specs, aka without the
+  second-fraction.
+
 ### Deprecations
 
 ### Fixes
