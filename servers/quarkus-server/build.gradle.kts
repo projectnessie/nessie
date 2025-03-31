@@ -164,7 +164,7 @@ dependencies {
 
   testFixturesApi(platform(libs.awssdk.bom))
   testFixturesApi("software.amazon.awssdk:secretsmanager")
-  testFixturesApi("io.quarkiverse.vault:quarkus-vault-deployment")
+  testFixturesApi(libs.quarkus.vault.deployment)
 
   testFixturesApi(enforcedPlatform(libs.quarkus.azure.services.bom))
   testFixturesApi("io.quarkiverse.azureservices:quarkus-azure-keyvault")
