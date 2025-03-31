@@ -16,7 +16,6 @@
 package org.projectnessie.quarkus.config;
 
 import com.google.api.gax.core.CredentialsProvider;
-import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import java.util.Optional;
@@ -26,7 +25,6 @@ import org.projectnessie.versioned.storage.bigtable.BigTableClientsConfig;
  * When setting {@code nessie.version.store.type=BIGTABLE} which enables Google BigTable as the
  * version store used by the Nessie server, the following configurations are applicable.
  */
-@StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.bigtable")
 public interface QuarkusBigTableConfig extends BigTableClientsConfig {
 

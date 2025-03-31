@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
@@ -27,7 +26,6 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 
-@StaticInitSafe
 @ConfigMapping(prefix = QuarkusStoreConfig.NESSIE_VERSION_STORE_PERSIST)
 public interface QuarkusStoreConfig extends StoreConfig {
 

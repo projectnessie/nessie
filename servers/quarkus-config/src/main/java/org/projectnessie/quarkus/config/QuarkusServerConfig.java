@@ -15,13 +15,11 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import org.projectnessie.services.config.ServerConfig;
 
-@StaticInitSafe
 @ConfigMapping(prefix = "nessie.server")
 public interface QuarkusServerConfig extends ServerConfig {
 
