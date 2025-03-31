@@ -41,6 +41,9 @@ dependencies {
   implementation("software.amazon.awssdk:apache-client") {
     exclude("commons-logging", "commons-logging")
   }
+  runtimeOnly("software.amazon.awssdk:url-connection-client") {
+    exclude("commons-logging", "commons-logging")
+  }
 
   implementation(platform(libs.google.cloud.storage.bom))
   implementation("com.google.cloud:google-cloud-storage")
