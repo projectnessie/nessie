@@ -402,6 +402,7 @@ io.prometheus:simpleclient_common
 io.prometheus:simpleclient_tracer_common
 io.prometheus:simpleclient_tracer_otel
 io.prometheus:simpleclient_tracer_otel_agent
+io.quarkiverse.amazonservices:quarkus-amazon-common-spi
 io.quarkiverse.amazonservices:quarkus-amazon-common
 io.quarkiverse.amazonservices:quarkus-amazon-dynamodb
 io.quarkiverse.amazonservices:quarkus-amazon-secretsmanager
@@ -467,6 +468,7 @@ io.quarkus:quarkus-smallrye-jwt-build
 io.quarkus:quarkus-smallrye-openapi
 io.quarkus:quarkus-swagger-ui
 io.quarkus:quarkus-tls-registry
+io.quarkus:quarkus-tls-registry-spi
 io.quarkus:quarkus-transaction-annotations
 io.quarkus:quarkus-vertx
 io.quarkus:quarkus-vertx-http
