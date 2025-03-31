@@ -15,6 +15,7 @@
  */
 package org.projectnessie.jaxrs.tests;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.error.ErrorCode.BAD_REQUEST;
 import static org.projectnessie.jaxrs.tests.BaseTestNessieRest.rest;
@@ -22,6 +23,7 @@ import static org.projectnessie.jaxrs.tests.BaseTestNessieRest.rest;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -105,6 +107,24 @@ public abstract class AbstractRelativeReferences {
     outer.createTagV2("tag1", etl2);
     etl2 = outer.commitV2(etl2, key5, table5);
     c5 = etl2.getHash();
+  }
+
+  @Test
+  public void withTimestamp() {
+    var c5commit = metaForCommit("etl2@" + c5);
+    var c5timestamp = requireNonNull(c5commit.getCommitTime());
+    assertThat(c5commit.getHash()).isEqualTo(c5);
+
+    var c5plus1 = c5timestamp.plus(1, ChronoUnit.SECONDS);
+
+    assertThat(metaForCommit("etl2*" + c5plus1)).isEqualTo(c5commit);
+
+    var c5rounded = c5plus1.minusNanos(c5plus1.getNano());
+
+    assertThat(metaForCommit("etl2*" + c5rounded.plus(1, ChronoUnit.MILLIS))).isEqualTo(c5commit);
+    assertThat(metaForCommit("etl2*" + c5rounded.plus(1, ChronoUnit.MICROS))).isEqualTo(c5commit);
+    assertThat(metaForCommit("etl2*" + c5rounded.plus(1, ChronoUnit.NANOS))).isEqualTo(c5commit);
+    assertThat(metaForCommit("etl2*" + c5rounded)).isEqualTo(c5commit);
   }
 
   /**
@@ -1511,6 +1531,16 @@ public abstract class AbstractRelativeReferences {
   void getDiffToRefAmbiguousDetached() {
     NessieError error = expectError(rest().get("trees/base@{from}/diff/@{to}", "~1", "~2"), 400);
     checkError(error, BAD_REQUEST, "\"To\" hash must contain a starting commit ID.");
+  }
+
+  static CommitMeta metaForCommit(String commitSpec) {
+    var log =
+        rest()
+            .get("trees/{commitSpec}/history?maxRecords=1", commitSpec)
+            .as(LogResponse.class)
+            .getLogEntries();
+    assertThat(log).describedAs("commit spec '%s' yields no result", commitSpec).isNotEmpty();
+    return log.get(0).getCommitMeta();
   }
 
   private static Branch expectBranch(Response base) {

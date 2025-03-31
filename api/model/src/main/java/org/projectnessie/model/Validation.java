@@ -32,7 +32,7 @@ public final class Validation {
   public static final String HASH_REGEX = "^" + HASH_RAW_REGEX + "$";
 
   public static final String RELATIVE_COMMIT_SPEC_RAW_REGEX =
-      "([~*^])([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{1,9}Z|([0-9]+))";
+      "([~*^])([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]{1,9})?Z|([0-9]+))";
 
   /**
    * Regex with an optional hash and a sequence of relative lookups, which can be by-timestamp,
