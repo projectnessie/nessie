@@ -54,7 +54,7 @@ dependencies {
   implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-secret-manager")
 
-  implementation("io.quarkiverse.vault:quarkus-vault")
+  implementation(libs.quarkus.vault)
 
   implementation(enforcedPlatform(libs.quarkus.azure.services.bom))
   implementation("io.quarkiverse.azureservices:quarkus-azure-keyvault")

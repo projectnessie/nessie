@@ -23,7 +23,7 @@ dependencies {
   implementation(libs.guava)
 
   implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation("io.quarkiverse.vault:quarkus-vault")
+  implementation(libs.quarkus.vault)
 
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))

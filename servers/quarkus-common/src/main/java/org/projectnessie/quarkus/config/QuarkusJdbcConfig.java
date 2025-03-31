@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.config;
 
-import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithName;
 import java.util.Optional;
@@ -79,7 +78,6 @@ import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendBaseConfig;
  * <p>A complete set of JDBC configuration options can be found on <a
  * href="https://quarkus.io/guides/datasource">quarkus.io</a>.
  */
-@StaticInitSafe
 @ConfigMapping(prefix = "nessie.version.store.persist.jdbc")
 public interface QuarkusJdbcConfig extends Jdbc2BackendBaseConfig {
 

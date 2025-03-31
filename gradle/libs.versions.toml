@@ -25,10 +25,10 @@ opentelemetry = "1.48.0"
 opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.30.2"
-quarkusPlatform = "3.19.4"
+quarkusPlatform = "3.21.0"
 quarkusPlugin = "3.21.0"
+quarkusVault = "4.2.1"
 slf4j = "2.0.17"
-smallryeConfig = "3.12.4"
 undertow = "2.3.18.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
@@ -130,6 +130,8 @@ quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quark
 quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkusPlatform" }
 quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.1.2" }
+quarkus-vault = { module = "io.quarkiverse.vault:quarkus-vault", version.ref = "quarkusVault" }
+quarkus-vault-deployment = { module = "io.quarkiverse.vault:quarkus-vault-deployment", version.ref = "quarkusVault" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.1" }
 rocksdb-jni = { module = "org.rocksdb:rocksdbjni", version = "9.10.0" }
 scala-library-v212 = { module = "org.scala-lang:scala-library", version = { strictly = "[2.12, 2.13[", prefer = "2.12.20" }}
@@ -138,7 +140,7 @@ slf4j-api = {  module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { module = "org.slf4j:jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j-over-slf4j = { module = "org.slf4j:log4j-over-slf4j", version.ref = "slf4j" }
 smallrye-mutiny = { module = "io.smallrye.reactive:mutiny", version = "2.8.0" }
-smallrye-config-core = { module = "io.smallrye.config:smallrye-config-core", version.ref = "smallryeConfig" }
+smallrye-config-core = { module = "io.smallrye.config:smallrye-config-core", version = "3.12.4" }
 snappy-java = { module = "org.xerial.snappy:snappy-java", version = "1.1.10.7" }
 spark-sql-v33-v212 = { module = "org.apache.spark:spark-sql_2_12", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
 spark-sql-v33-v213 = { module = "org.apache.spark:spark-sql_2_13", version = { strictly = "[3.3, 3.4[", prefer = "3.3.4"}}
