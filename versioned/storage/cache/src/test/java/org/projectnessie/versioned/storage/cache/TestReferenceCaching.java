@@ -48,6 +48,7 @@ public class TestReferenceCaching {
                 .clockNanos(clockNanos)
                 .referenceTtl(Duration.ofMinutes(1))
                 .referenceNegativeTtl(Duration.ofSeconds(1))
+                .cacheCapacityOvershoot(0.1d)
                 .build())
         .wrap(persist);
   }

@@ -52,6 +52,7 @@ public class TestNegativeCaching {
             CacheConfig.builder()
                 .capacityMb(16)
                 .enableSoftReferences(enableSoftReferences)
+                .cacheCapacityOvershoot(0.1d)
                 .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
@@ -87,6 +88,7 @@ public class TestNegativeCaching {
             CacheConfig.builder()
                 .capacityMb(16)
                 .enableSoftReferences(enableSoftReferences)
+                .cacheCapacityOvershoot(0.1d)
                 .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
@@ -178,6 +180,7 @@ public class TestNegativeCaching {
             CacheConfig.builder()
                 .capacityMb(16)
                 .enableSoftReferences(enableSoftReferences)
+                .cacheCapacityOvershoot(0.1d)
                 .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
@@ -210,6 +213,7 @@ public class TestNegativeCaching {
             CacheConfig.builder()
                 .capacityMb(16)
                 .enableSoftReferences(enableSoftReferences)
+                .cacheCapacityOvershoot(0.1d)
                 .build());
     Persist cachedPersist = spy(cacheBackend.wrap(backing));
 
