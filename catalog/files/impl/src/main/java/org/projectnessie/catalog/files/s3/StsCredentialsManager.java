@@ -20,6 +20,7 @@ import static org.projectnessie.catalog.files.s3.CacheMetrics.statsCounter;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
@@ -70,6 +71,7 @@ public class StsCredentialsManager {
     this.expiryReduction = expiryReduction;
     this.sessions =
         Caffeine.newBuilder()
+            .scheduler(Scheduler.systemScheduler())
             .ticker(() -> TimeUnit.MILLISECONDS.toNanos(systemTimeMillis.getAsLong()))
             .maximumSize(maxSize)
             .recordStats(() -> statsCounter(meterRegistry, CACHE_NAME, maxSize))

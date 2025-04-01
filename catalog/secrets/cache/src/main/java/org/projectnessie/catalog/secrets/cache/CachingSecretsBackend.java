@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
@@ -51,6 +52,7 @@ public class CachingSecretsBackend {
 
     Caffeine<CacheKeyValue, Secret> cacheBuilder =
         Caffeine.newBuilder()
+            .scheduler(Scheduler.systemScheduler())
             .expireAfter(
                 new Expiry<CacheKeyValue, Secret>() {
                   @Override

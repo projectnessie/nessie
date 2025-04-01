@@ -20,6 +20,7 @@ import static org.projectnessie.catalog.files.s3.CacheMetrics.statsCounter;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
@@ -58,6 +59,7 @@ public class StsClientsPool {
     this.clientBuilder = clientBuilder;
     this.clients =
         Caffeine.newBuilder()
+            .scheduler(Scheduler.systemScheduler())
             .maximumSize(maxSize)
             .recordStats(() -> statsCounter(meterRegistry, CACHE_NAME, maxSize))
             .build();

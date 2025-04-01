@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -139,6 +140,7 @@ final class S3IamPolicies {
         Caffeine.newBuilder()
             .maximumSize(2000)
             .expireAfterAccess(Duration.of(1, ChronoUnit.HOURS))
+            .scheduler(Scheduler.systemScheduler())
             .build(ParsedIamStatements::parseStatement);
 
     private static ObjectNode parseStatement(String stmt) {

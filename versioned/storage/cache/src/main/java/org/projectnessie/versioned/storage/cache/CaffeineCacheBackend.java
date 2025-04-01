@@ -28,6 +28,7 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
@@ -63,6 +64,7 @@ class CaffeineCacheBackend implements CacheBackend {
 
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
+            .scheduler(Scheduler.systemScheduler())
             .maximumWeight(config.capacityMb() * 1024L * 1024L)
             .weigher(this::weigher)
             .expireAfter(
