@@ -71,7 +71,9 @@ class CaffeineCacheBackend implements CacheBackend {
                 new Expiry<CacheKeyValue, CacheKeyValue>() {
                   @Override
                   public long expireAfterCreate(
-                      CacheKeyValue key, CacheKeyValue value, long currentTimeNanos) {
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
+                      long currentTimeNanos) {
                     long expire = key.expiresAtNanosEpoch;
                     if (expire == CACHE_UNLIMITED) {
                       return Long.MAX_VALUE;
@@ -85,8 +87,8 @@ class CaffeineCacheBackend implements CacheBackend {
 
                   @Override
                   public long expireAfterUpdate(
-                      CacheKeyValue key,
-                      CacheKeyValue value,
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
                       long currentTimeNanos,
                       long currentDurationNanos) {
                     return expireAfterCreate(key, value, currentTimeNanos);
@@ -94,8 +96,8 @@ class CaffeineCacheBackend implements CacheBackend {
 
                   @Override
                   public long expireAfterRead(
-                      CacheKeyValue key,
-                      CacheKeyValue value,
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
                       long currentTimeNanos,
                       long currentDurationNanos) {
                     return currentDurationNanos;
