@@ -78,13 +78,15 @@ class CaffeineCacheBackend implements CacheBackend {
 
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
+            .executor(config.executor())
             .scheduler(Scheduler.systemScheduler())
+            .ticker(config.clockNanos()::getAsLong)
             .maximumWeight(maxWeight)
             .weigher(this::weigher)
             .removalListener(
                 (k, v, reason) -> currentWeight.addAndGet(-weigher(requireNonNull(k), v)))
             .expireAfter(
-                new Expiry<CacheKeyValue, CacheKeyValue>() {
+                new Expiry<>() {
                   @Override
                   public long expireAfterCreate(
                       @Nonnull CacheKeyValue key,
@@ -118,8 +120,7 @@ class CaffeineCacheBackend implements CacheBackend {
                       long currentDurationNanos) {
                     return currentDurationNanos;
                   }
-                })
-            .ticker(config.clockNanos()::getAsLong);
+                });
     config
         .meterRegistry()
         .ifPresent(
@@ -178,6 +179,11 @@ class CaffeineCacheBackend implements CacheBackend {
   @VisibleForTesting
   long rejectionsWeight() {
     return rejectionsWeight.get();
+  }
+
+  @VisibleForTesting
+  long admitWeight() {
+    return admitWeight;
   }
 
   @Override

@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static java.util.concurrent.CompletableFuture.delayedExecutor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 
@@ -33,27 +34,37 @@ import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 public class TestCacheOvershoot {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @Test
+  @RepeatedTest(5)
   public void testCacheOvershoot() throws Exception {
-    var config = CacheConfig.builder().capacityMb(4).cacheCapacityOvershoot(0.1d).build();
+    var config =
+        CacheConfig.builder()
+            .capacityMb(4)
+            .cacheCapacityOvershoot(0.1d)
+            // Production uses Runnable::run, but that lets this test sometimes run way too
+            // long, so we introduce some delay to simulate the case that eviction cannot keep up.
+            .executor(t -> delayedExecutor(1, TimeUnit.MILLISECONDS).execute(t))
+            .build();
     var cache = new CaffeineCacheBackend(config);
 
     var maxWeight = config.capacityMb() * 1024L * 1024L;
-    var limitWeight = maxWeight + (long) (maxWeight * config.cacheCapacityOvershoot());
+    var admitWeight = cache.admitWeight();
 
     var str = Strings.repeat("a", 4096);
 
     cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
     var objWeight = cache.currentWeightTracked();
 
+    var numThreads = 8;
+    var admitWeightGrace = admitWeight + objWeight * numThreads;
+
     while (cache.currentWeightTracked() < maxWeight - objWeight) {
       cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
     }
 
     soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(maxWeight);
+    soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
     soft.assertThat(cache.rejections()).isEqualTo(0L);
 
-    var numThreads = 8;
     var executor = Executors.newFixedThreadPool(numThreads);
     var seenRejections = false;
     var seenOvershoot = false;
@@ -78,7 +89,7 @@ public class TestCacheOvershoot {
         var w = cache.currentWeightTracked();
         if (w > maxWeight) {
           seenOvershoot = true;
-          if (w > limitWeight) {
+          if (w > admitWeightGrace) {
             seenLimitExceeded = true;
           }
         }
@@ -92,8 +103,10 @@ public class TestCacheOvershoot {
       executor.awaitTermination(10, TimeUnit.MINUTES);
     }
 
-    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(limitWeight);
+    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(admitWeightGrace);
+    soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeightGrace);
     soft.assertThat(cache.rejections()).isGreaterThan(0L);
+    soft.assertThat(cache.rejectionsWeight()).isGreaterThan(0L);
     soft.assertThat(seenRejections).isTrue();
     soft.assertThat(seenOvershoot).isTrue();
     soft.assertThat(seenLimitExceeded).isFalse();
