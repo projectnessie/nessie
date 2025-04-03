@@ -44,13 +44,13 @@ public class TestCacheOvershoot {
     var str = Strings.repeat("a", 4096);
 
     cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
-    var objWeight = cache.currentWeight();
+    var objWeight = cache.currentWeightTracked();
 
-    while (cache.currentWeight() < maxWeight - objWeight) {
+    while (cache.currentWeightTracked() < maxWeight - objWeight) {
       cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
     }
 
-    soft.assertThat(cache.currentWeight()).isLessThanOrEqualTo(maxWeight);
+    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(maxWeight);
     soft.assertThat(cache.rejections()).isEqualTo(0L);
 
     var numThreads = 8;
@@ -75,7 +75,7 @@ public class TestCacheOvershoot {
         if (cache.rejections() > 0) {
           seenRejections = true;
         }
-        var w = cache.currentWeight();
+        var w = cache.currentWeightTracked();
         if (w > maxWeight) {
           seenOvershoot = true;
           if (w > limitWeight) {
@@ -92,7 +92,7 @@ public class TestCacheOvershoot {
       executor.awaitTermination(10, TimeUnit.MINUTES);
     }
 
-    soft.assertThat(cache.currentWeight()).isLessThanOrEqualTo(limitWeight);
+    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(limitWeight);
     soft.assertThat(cache.rejections()).isGreaterThan(0L);
     soft.assertThat(seenRejections).isTrue();
     soft.assertThat(seenOvershoot).isTrue();

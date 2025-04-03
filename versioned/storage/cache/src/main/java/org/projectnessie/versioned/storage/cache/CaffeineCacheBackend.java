@@ -29,6 +29,7 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Policy;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.Tag;
@@ -36,6 +37,7 @@ import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
 import java.lang.ref.SoftReference;
 import java.time.Duration;
+import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicLong;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
@@ -51,6 +53,8 @@ class CaffeineCacheBackend implements CacheBackend {
   private static final CacheKeyValue NON_EXISTING_SENTINEL =
       new CacheKeyValue("x", ObjId.EMPTY_OBJ_ID, 0L, new byte[0], null, false);
 
+  private static final long ONE_MB = 1024L * 1024L;
+
   private final CacheConfig config;
   final Cache<CacheKeyValue, CacheKeyValue> cache;
 
@@ -60,6 +64,7 @@ class CaffeineCacheBackend implements CacheBackend {
   private final AtomicLong currentWeight = new AtomicLong();
   private final long admitWeight;
   private final AtomicLong rejections = new AtomicLong();
+  private final AtomicLong rejectionsWeight = new AtomicLong();
 
   CaffeineCacheBackend(CacheConfig config) {
     this.config = config;
@@ -68,7 +73,7 @@ class CaffeineCacheBackend implements CacheBackend {
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
     enableSoftReferences = config.enableSoftReferences().orElse(false);
 
-    var maxWeight = config.capacityMb() * 1024L * 1024L;
+    var maxWeight = config.capacityMb() * ONE_MB;
     admitWeight = maxWeight + (long) (maxWeight * config.cacheCapacityOvershoot());
 
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
@@ -77,9 +82,7 @@ class CaffeineCacheBackend implements CacheBackend {
             .maximumWeight(maxWeight)
             .weigher(this::weigher)
             .removalListener(
-                (k, v, reason) -> {
-                  currentWeight.addAndGet(-weigher(requireNonNull(k), v));
-                })
+                (k, v, reason) -> currentWeight.addAndGet(-weigher(requireNonNull(k), v)))
             .expireAfter(
                 new Expiry<CacheKeyValue, CacheKeyValue>() {
                   @Override
@@ -128,25 +131,53 @@ class CaffeineCacheBackend implements CacheBackend {
                   "",
                   x -> config.capacityMb());
               meterRegistry.gauge(
-                  "current_weight",
+                  "cache_weight_tracked_mb",
                   singletonList(Tag.of("cache", CACHE_NAME)),
                   "",
-                  x -> currentWeight());
+                  x -> (double) currentWeightTracked() / ONE_MB);
               meterRegistry.gauge(
-                  "rejections", singletonList(Tag.of("cache", CACHE_NAME)), "", x -> rejections());
+                  "cache_weight_reported_mb",
+                  singletonList(Tag.of("cache", CACHE_NAME)),
+                  "",
+                  x -> (double) currentWeightReported() / ONE_MB);
+              meterRegistry.gauge(
+                  "cache_rejected_weight_mb",
+                  singletonList(Tag.of("cache", CACHE_NAME)),
+                  "",
+                  x -> (double) rejectionsWeight() / ONE_MB);
+              meterRegistry.gauge(
+                  "cache_rejections",
+                  singletonList(Tag.of("cache", CACHE_NAME)),
+                  "",
+                  x -> rejections());
             });
 
     this.cache = cacheBuilder.build();
   }
 
   @VisibleForTesting
-  long currentWeight() {
+  long currentWeightReported() {
+    return cache
+        .policy()
+        .eviction()
+        .map(Policy.Eviction::weightedSize)
+        .orElse(OptionalLong.empty())
+        .orElse(0L);
+  }
+
+  @VisibleForTesting
+  long currentWeightTracked() {
     return currentWeight.get();
   }
 
   @VisibleForTesting
   long rejections() {
     return rejections.get();
+  }
+
+  @VisibleForTesting
+  long rejectionsWeight() {
+    return rejectionsWeight.get();
   }
 
   @Override
@@ -183,10 +214,11 @@ class CaffeineCacheBackend implements CacheBackend {
   void cachePut(CacheKeyValue key, CacheKeyValue value) {
     var w = weigher(key, value);
     if (currentWeight.get() + w < admitWeight) {
-      currentWeight.addAndGet(w);
       cache.put(key, value);
+      currentWeight.addAndGet(w);
     } else {
       rejections.incrementAndGet();
+      rejectionsWeight.addAndGet(w);
     }
   }
 
