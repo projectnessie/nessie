@@ -167,11 +167,11 @@ public interface QuarkusStoreConfig extends StoreConfig {
   /**
    * Admitted cache-capacity-overshoot fraction, defaults to {@code 0.1} (10 %).
    *
-   * <p>New elements are admitted to be added to the cache, if the cache's size is less than the
-   * {@code cache-capacity * (1 + cache-capacity-overshoot}.
+   * <p>New elements are admitted to be added to the cache, if the cache's size is less than {@code
+   * cache-capacity * (1 + cache-capacity-overshoot}.
    *
-   * <p>Cache eviction happens in a background task. Situations when eviction cannot keep up with
-   * the amount of data added could lead to out-of-memory situations.
+   * <p>Cache eviction happens asynchronously. Situations when eviction cannot keep up with the
+   * amount of data added could lead to out-of-memory situations.
    *
    * <p>Value must be greater than 0, if present.
    */
