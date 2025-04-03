@@ -179,9 +179,10 @@ class CaffeineCacheBackend implements CacheBackend {
     putLocal(repositoryId, obj);
   }
 
-  private void cachePut(CacheKeyValue key, CacheKeyValue value) {
+  @VisibleForTesting
+  void cachePut(CacheKeyValue key, CacheKeyValue value) {
     var w = weigher(key, value);
-    if (currentWeight() + w < admitWeight) {
+    if (currentWeight.get() + w < admitWeight) {
       currentWeight.addAndGet(w);
       cache.put(key, value);
     } else {
