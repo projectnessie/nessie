@@ -28,11 +28,14 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Policy;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
 import java.lang.ref.SoftReference;
 import java.time.Duration;
+import java.util.List;
+import java.util.OptionalLong;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -105,14 +108,24 @@ class CaffeineCacheBackend implements CacheBackend {
         .ifPresent(
             meterRegistry -> {
               cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
-              meterRegistry.gauge(
-                  "cache_capacity_mb",
-                  singletonList(Tag.of("cache", CACHE_NAME)),
-                  "",
-                  x -> config.capacityMb());
+              List<Tag> tags = singletonList(Tag.of("cache", CACHE_NAME));
+              meterRegistry.gauge("cache_capacity_mb", tags, "", x -> config.capacityMb());
+              meterRegistry.gauge("cache_weight_mb", tags, "", x -> weightedSizeMb());
             });
 
     this.cache = cacheBuilder.build();
+  }
+
+  private double weightedSizeMb() {
+    // Note: calling Policy.Eviction::weightedSize may actually perform evictions.
+    long w =
+        cache
+            .policy()
+            .eviction()
+            .map(Policy.Eviction::weightedSize)
+            .orElse(OptionalLong.empty())
+            .orElse(0L);
+    return (double) w / 1024L / 1024L;
   }
 
   @Override
