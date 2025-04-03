@@ -41,6 +41,8 @@ public interface CacheConfig {
 
   Optional<Boolean> enableSoftReferences();
 
+  double cacheCapacityOvershoot();
+
   @Value.Default
   default LongSupplier clockNanos() {
     return System::nanoTime;
@@ -80,6 +82,9 @@ public interface CacheConfig {
 
     @CanIgnoreReturnValue
     Builder enableSoftReferences(boolean enableSoftReferences);
+
+    @CanIgnoreReturnValue
+    Builder cacheCapacityOvershoot(double cacheCapacityOvershoot);
 
     CacheConfig build();
   }
