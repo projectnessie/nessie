@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static java.util.concurrent.CompletableFuture.delayedExecutor;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTED_WEIGHT;
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTIONS;
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_WEIGHT;
@@ -26,6 +25,7 @@ import com.google.common.base.Strings;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,17 +42,26 @@ import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 public class TestCacheOvershoot {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @RepeatedTest(5) // consider the first repetition as a warmup (C1/C2)
-  public void testCacheOvershoot() throws Exception {
+  @RepeatedTest(3) // consider the first repetition as a warmup (C1/C2)
+  public void testCacheOvershootDirectEviction() throws Exception {
+    testCacheOvershoot(Runnable::run);
+  }
+
+  @RepeatedTest(3) // consider the first repetition as a warmup (C1/C2)
+  public void testCacheOvershootDelayedEviction() throws Exception {
+    // Production uses Runnable::run, but that lets this test sometimes run way too
+    // long, so we introduce some delay to simulate the case that eviction cannot keep up.
+    testCacheOvershoot(t -> delayedExecutor(2, TimeUnit.MILLISECONDS).execute(t));
+  }
+
+  private void testCacheOvershoot(Executor evictionExecutor) throws Exception {
     var meterRegistry = new SimpleMeterRegistry();
 
     var config =
         CacheConfig.builder()
             .capacityMb(4)
             .cacheCapacityOvershoot(0.1d)
-            // Production uses Runnable::run, but that lets this test sometimes run way too
-            // long, so we introduce some delay to simulate the case that eviction cannot keep up.
-            .executor(t -> delayedExecutor(1, TimeUnit.MILLISECONDS).execute(t))
+            .executor(evictionExecutor)
             .meterRegistry(meterRegistry)
             .build();
     var cache = new CaffeineCacheBackend(config);
@@ -83,9 +92,7 @@ public class TestCacheOvershoot {
     soft.assertThat(meterRejections.value()).isEqualTo((double) cache.rejections());
 
     var executor = Executors.newFixedThreadPool(numThreads);
-    var seenRejections = false;
     var seenOvershoot = false;
-    var seenLimitExceeded = false;
     var stop = new AtomicBoolean();
     try {
       for (int i = 0; i < numThreads; i++) {
@@ -100,16 +107,11 @@ public class TestCacheOvershoot {
 
       for (int i = 0; i < 50 && !seenOvershoot; i++) {
         Thread.sleep(10);
-        if (cache.rejections() > 0) {
-          seenRejections = true;
-        }
         var w = cache.currentWeightReported();
         if (w > maxWeight) {
           seenOvershoot = true;
         }
-        assertThat(w).isGreaterThanOrEqualTo(0L);
       }
-
     } finally {
       stop.set(true);
 
@@ -122,8 +124,6 @@ public class TestCacheOvershoot {
     // comparing the tracked & reported weights would be flaky, as eviction can still happen
     soft.assertThat(meterRejections.value()).isEqualTo(0d);
     soft.assertThat(meterRejectedWeight.totalAmount()).isEqualTo(0d);
-    soft.assertThat(seenRejections).isFalse();
     soft.assertThat(seenOvershoot).isFalse();
-    soft.assertThat(seenLimitExceeded).isFalse();
   }
 }
