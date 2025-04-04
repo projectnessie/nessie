@@ -17,12 +17,20 @@ package org.projectnessie.versioned.storage.cache;
 
 import static java.util.concurrent.CompletableFuture.delayedExecutor;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTED_WEIGHT;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTIONS;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_WEIGHT;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import com.google.common.base.Strings;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -34,8 +42,10 @@ import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 public class TestCacheOvershoot {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @RepeatedTest(5)
+  @RepeatedTest(5) // consider the first repetition as a warmup (C1/C2)
   public void testCacheOvershoot() throws Exception {
+    var meterRegistry = new SimpleMeterRegistry();
+
     var config =
         CacheConfig.builder()
             .capacityMb(4)
@@ -43,27 +53,34 @@ public class TestCacheOvershoot {
             // Production uses Runnable::run, but that lets this test sometimes run way too
             // long, so we introduce some delay to simulate the case that eviction cannot keep up.
             .executor(t -> delayedExecutor(1, TimeUnit.MILLISECONDS).execute(t))
+            .meterRegistry(meterRegistry)
             .build();
     var cache = new CaffeineCacheBackend(config);
+
+    var metersByName =
+        meterRegistry.getMeters().stream()
+            .collect(Collectors.toMap(m -> m.getId().getName(), Function.identity(), (a, b) -> a));
+    soft.assertThat(metersByName)
+        .containsKeys(METER_CACHE_WEIGHT, METER_CACHE_REJECTIONS, METER_CACHE_REJECTED_WEIGHT);
+    var meterWeightReported = (Gauge) metersByName.get(METER_CACHE_WEIGHT);
+    var meterRejections = (Gauge) metersByName.get(METER_CACHE_REJECTIONS);
+    var meterRejectedWeight = (DistributionSummary) metersByName.get(METER_CACHE_REJECTED_WEIGHT);
 
     var maxWeight = config.capacityMb() * 1024L * 1024L;
     var admitWeight = cache.admitWeight();
 
     var str = Strings.repeat("a", 4096);
 
-    cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
-    var objWeight = cache.currentWeightTracked();
-
     var numThreads = 8;
-    var admitWeightGrace = admitWeight + objWeight * numThreads;
 
-    while (cache.currentWeightTracked() < maxWeight - objWeight) {
+    for (int i = 0; i < maxWeight / 5000; i++) {
       cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
     }
 
-    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(maxWeight);
     soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
     soft.assertThat(cache.rejections()).isEqualTo(0L);
+    soft.assertThat(meterWeightReported.value()).isGreaterThan(0d);
+    soft.assertThat(meterRejections.value()).isEqualTo((double) cache.rejections());
 
     var executor = Executors.newFixedThreadPool(numThreads);
     var seenRejections = false;
@@ -81,17 +98,14 @@ public class TestCacheOvershoot {
             });
       }
 
-      for (int i = 0; i < 10000 && (!seenRejections || !seenOvershoot); i++) {
+      for (int i = 0; i < 50 && !seenOvershoot; i++) {
         Thread.sleep(10);
         if (cache.rejections() > 0) {
           seenRejections = true;
         }
-        var w = cache.currentWeightTracked();
+        var w = cache.currentWeightReported();
         if (w > maxWeight) {
           seenOvershoot = true;
-          if (w > admitWeightGrace) {
-            seenLimitExceeded = true;
-          }
         }
         assertThat(w).isGreaterThanOrEqualTo(0L);
       }
@@ -103,12 +117,13 @@ public class TestCacheOvershoot {
       executor.awaitTermination(10, TimeUnit.MINUTES);
     }
 
-    soft.assertThat(cache.currentWeightTracked()).isLessThanOrEqualTo(admitWeightGrace);
-    soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeightGrace);
-    soft.assertThat(cache.rejections()).isGreaterThan(0L);
-    soft.assertThat(cache.rejectionsWeight()).isGreaterThan(0L);
-    soft.assertThat(seenRejections).isTrue();
-    soft.assertThat(seenOvershoot).isTrue();
+    soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
+    soft.assertThat(cache.rejections()).isEqualTo(0L);
+    // comparing the tracked & reported weights would be flaky, as eviction can still happen
+    soft.assertThat(meterRejections.value()).isEqualTo(0d);
+    soft.assertThat(meterRejectedWeight.totalAmount()).isEqualTo(0d);
+    soft.assertThat(seenRejections).isFalse();
+    soft.assertThat(seenOvershoot).isFalse();
     soft.assertThat(seenLimitExceeded).isFalse();
   }
 }
