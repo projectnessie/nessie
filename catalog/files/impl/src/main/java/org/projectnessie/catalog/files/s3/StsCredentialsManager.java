@@ -20,8 +20,10 @@ import static org.projectnessie.catalog.files.s3.CacheMetrics.statsCounter;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.Nonnull;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -70,6 +72,7 @@ public class StsCredentialsManager {
     this.expiryReduction = expiryReduction;
     this.sessions =
         Caffeine.newBuilder()
+            .scheduler(Scheduler.systemScheduler())
             .ticker(() -> TimeUnit.MILLISECONDS.toNanos(systemTimeMillis.getAsLong()))
             .maximumSize(maxSize)
             .recordStats(() -> statsCounter(meterRegistry, CACHE_NAME, maxSize))
@@ -119,7 +122,8 @@ public class StsCredentialsManager {
   private class StsSessionsExpiry implements Expiry<SessionKey, Credentials> {
 
     @Override
-    public long expireAfterCreate(SessionKey key, Credentials value, long currentTimeNanos) {
+    public long expireAfterCreate(
+        @Nonnull SessionKey key, @Nonnull Credentials value, long currentTimeNanos) {
       Instant expiration = value.expiration();
       long currentTimeMillis = TimeUnit.NANOSECONDS.toMillis(currentTimeNanos);
       currentTimeMillis += expiryReduction.toMillis();
@@ -131,13 +135,19 @@ public class StsCredentialsManager {
 
     @Override
     public long expireAfterUpdate(
-        SessionKey key, Credentials value, long currentTime, @NonNegative long currentDuration) {
+        @Nonnull SessionKey key,
+        @Nonnull Credentials value,
+        long currentTime,
+        @NonNegative long currentDuration) {
       return currentDuration;
     }
 
     @Override
     public long expireAfterRead(
-        SessionKey key, Credentials value, long currentTime, @NonNegative long currentDuration) {
+        @Nonnull SessionKey key,
+        @Nonnull Credentials value,
+        long currentTime,
+        @NonNegative long currentDuration) {
       return currentDuration;
     }
   }

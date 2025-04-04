@@ -14,6 +14,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+* Introduces a hard objects-cache capacity limit to ensure that the cache does never consume more than
+  the configured cache-capacity plus a configurable "overshoot" (defaults to 10%). New cache entries are
+  admitted as long as the current cache size is less than the "cache-capacity + overshoot". The
+  "overshoot" is necessary to eventually trigger the cache eviction.
+
 ### Changes
 
 * Nessie's REST API endpoints now accept "truncated timestamps" in relative-commit-specs, aka without the

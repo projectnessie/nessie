@@ -15,8 +15,10 @@
  */
 package org.projectnessie.quarkus.providers.storage;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static org.projectnessie.quarkus.config.QuarkusStoreConfig.DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES;
+import static org.projectnessie.quarkus.config.QuarkusStoreConfig.DEFAULT_CONFIG_CAPACITY_OVERSHOOT;
 import static org.projectnessie.versioned.storage.common.logic.Logics.repositoryLogic;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -150,9 +152,13 @@ public class PersistProvider {
               .cacheEnableSoftReferences()
               .orElse(DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES);
 
+      var cacheCapacityOvershoot =
+          storeConfig.cacheCapacityOvershoot().orElse(DEFAULT_CONFIG_CAPACITY_OVERSHOOT);
+      checkArgument(cacheCapacityOvershoot > 0d && cacheCapacityOvershoot <= 1d);
       CacheConfig.Builder cacheConfig =
           CacheConfig.builder()
               .capacityMb(effectiveCacheSizeMB)
+              .cacheCapacityOvershoot(cacheCapacityOvershoot)
               .enableSoftReferences(enableSoftReferences);
       if (meterRegistry.isResolvable()) {
         cacheConfig.meterRegistry(meterRegistry.get());

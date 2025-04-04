@@ -115,6 +115,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
 
   boolean DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES = true;
+  double DEFAULT_CONFIG_CAPACITY_OVERSHOOT = 0.1d;
 
   /**
    * Fixed amount of heap used to cache objects, set to 0 to disable the cache entirely. Must not be
@@ -160,6 +161,22 @@ public interface QuarkusStoreConfig extends StoreConfig {
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
   OptionalInt cacheCapacityFractionAdjustMB();
+
+  String CONFIG_CACHE_CAPACITY_OVERSHOOT = "cache-capacity-overshoot";
+
+  /**
+   * Admitted cache-capacity-overshoot fraction, defaults to {@code 0.1} (10 %).
+   *
+   * <p>New elements are admitted to be added to the cache, if the cache's size is less than {@code
+   * cache-capacity * (1 + cache-capacity-overshoot}.
+   *
+   * <p>Cache eviction happens asynchronously. Situations when eviction cannot keep up with the
+   * amount of data added could lead to out-of-memory situations.
+   *
+   * <p>Value must be greater than 0, if present.
+   */
+  @WithName(CONFIG_CACHE_CAPACITY_OVERSHOOT)
+  OptionalDouble cacheCapacityOvershoot();
 
   @WithName(CONFIG_REFERENCE_CACHE_TTL)
   @Override

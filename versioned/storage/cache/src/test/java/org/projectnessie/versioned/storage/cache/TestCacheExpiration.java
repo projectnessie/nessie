@@ -45,6 +45,7 @@ public class TestCacheExpiration {
                 .capacityMb(8)
                 .clockNanos(() -> MICROSECONDS.toNanos(currentTime.get()))
                 .enableSoftReferences(enableSoftReferences)
+                .cacheCapacityOvershoot(0.1d)
                 .build());
 
     CacheTestObjTypeBundle.DefaultCachingObj defaultCachingObj =

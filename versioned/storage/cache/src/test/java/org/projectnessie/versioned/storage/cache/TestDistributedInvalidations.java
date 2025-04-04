@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -43,10 +44,10 @@ public class TestDistributedInvalidations {
 
   protected AtomicLong clockNanos;
 
-  protected CacheBackend backend1noSpy;
-  protected CacheBackend backend2noSpy;
-  protected CacheBackend backend1;
-  protected CacheBackend backend2;
+  CaffeineCacheBackend backend1noSpy;
+  CaffeineCacheBackend backend2noSpy;
+  CaffeineCacheBackend backend1;
+  CaffeineCacheBackend backend2;
 
   protected CacheBackend distributed1;
   protected CacheBackend distributed2;
@@ -59,21 +60,25 @@ public class TestDistributedInvalidations {
     clockNanos = new AtomicLong();
 
     backend1noSpy =
-        PersistCaches.newBackend(
-            CacheConfig.builder()
-                .capacityMb(32)
-                .referenceTtl(Duration.ofMinutes(1))
-                .referenceNegativeTtl(Duration.ofSeconds(1))
-                .clockNanos(clockNanos::get)
-                .build());
+        (CaffeineCacheBackend)
+            PersistCaches.newBackend(
+                CacheConfig.builder()
+                    .capacityMb(32)
+                    .referenceTtl(Duration.ofMinutes(1))
+                    .referenceNegativeTtl(Duration.ofSeconds(1))
+                    .clockNanos(clockNanos::get)
+                    .cacheCapacityOvershoot(0.1d)
+                    .build());
     backend2noSpy =
-        PersistCaches.newBackend(
-            CacheConfig.builder()
-                .capacityMb(32)
-                .referenceTtl(Duration.ofMinutes(1))
-                .referenceNegativeTtl(Duration.ofSeconds(1))
-                .clockNanos(clockNanos::get)
-                .build());
+        (CaffeineCacheBackend)
+            PersistCaches.newBackend(
+                CacheConfig.builder()
+                    .capacityMb(32)
+                    .referenceTtl(Duration.ofMinutes(1))
+                    .referenceNegativeTtl(Duration.ofSeconds(1))
+                    .clockNanos(clockNanos::get)
+                    .cacheCapacityOvershoot(0.1d)
+                    .build());
 
     backend1 = spy(backend1noSpy);
     backend2 = spy(backend2noSpy);
@@ -109,6 +114,7 @@ public class TestDistributedInvalidations {
 
     distributed1.put("", obj1);
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putLocal("", obj1);
     verify(backend2).remove("", obj1.id());
     verify(sender1).evictObj("", obj1.id());
@@ -128,6 +134,7 @@ public class TestDistributedInvalidations {
     distributed1.put("", obj2);
     soft.assertThat(backend2noSpy.get("", obj1.id())).isNull();
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putLocal("", obj2);
     verify(backend2).remove("", obj1.id());
     verify(sender1).evictObj("", obj2.id());
@@ -145,6 +152,7 @@ public class TestDistributedInvalidations {
 
     distributed1.put("", obj2);
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putLocal("", obj2);
     verify(backend2).remove("", obj2.id());
     verify(sender1).evictObj("", obj2.id());
@@ -178,11 +186,10 @@ public class TestDistributedInvalidations {
 
     distributed1.putReference("", ref1);
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putReferenceLocal("", ref1);
     verify(backend2).removeReference("", ref1.name());
     verify(sender1).evictReference("", ref1.name());
-    verifyNoMoreInteractions(backend1);
-    verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
     verifyNoMoreInteractions(sender2);
     resetAll();
@@ -197,12 +204,11 @@ public class TestDistributedInvalidations {
     distributed1.putReference("", ref2);
     soft.assertThat(backend2noSpy.getReference("", ref1.name())).isNull();
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putReferenceLocal("", ref2);
     verify(backend2).removeReference("", ref1.name());
     verify(backend2).removeReference("", ref1.name());
     verify(sender1).evictReference("", ref2.name());
-    verifyNoMoreInteractions(backend1);
-    verifyNoMoreInteractions(backend2);
     verifyNoMoreInteractions(sender1);
     verifyNoMoreInteractions(sender2);
     resetAll();
@@ -215,6 +221,7 @@ public class TestDistributedInvalidations {
 
     distributed1.putReference("", ref2);
 
+    verify(backend1).cachePut(any(), any());
     verify(backend1).putReferenceLocal("", ref2);
     verify(backend2).removeReference("", ref2.name());
     verify(sender1).evictReference("", ref2.name());

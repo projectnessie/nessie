@@ -21,6 +21,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 import org.immutables.value.Value;
 
@@ -41,9 +42,21 @@ public interface CacheConfig {
 
   Optional<Boolean> enableSoftReferences();
 
+  double cacheCapacityOvershoot();
+
   @Value.Default
   default LongSupplier clockNanos() {
     return System::nanoTime;
+  }
+
+  /**
+   * Executor used by Caffeine, see {@link
+   * com.github.benmanes.caffeine.cache.Caffeine#executor(Executor)}, only present for targeted
+   * tests.
+   */
+  @Value.Default
+  default Executor executor() {
+    return Runnable::run;
   }
 
   static Builder builder() {
@@ -80,6 +93,12 @@ public interface CacheConfig {
 
     @CanIgnoreReturnValue
     Builder enableSoftReferences(boolean enableSoftReferences);
+
+    @CanIgnoreReturnValue
+    Builder cacheCapacityOvershoot(double cacheCapacityOvershoot);
+
+    @CanIgnoreReturnValue
+    Builder executor(Executor executor);
 
     CacheConfig build();
   }
