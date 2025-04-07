@@ -16,9 +16,11 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static java.util.concurrent.CompletableFuture.delayedExecutor;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_ADMIT_CAPACITY;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_CAPACITY;
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTED_WEIGHT;
-import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_REJECTIONS;
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.METER_CACHE_WEIGHT;
+import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.ONE_MB;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import com.google.common.base.Strings;
@@ -70,9 +72,10 @@ public class TestCacheOvershoot {
         meterRegistry.getMeters().stream()
             .collect(Collectors.toMap(m -> m.getId().getName(), Function.identity(), (a, b) -> a));
     soft.assertThat(metersByName)
-        .containsKeys(METER_CACHE_WEIGHT, METER_CACHE_REJECTIONS, METER_CACHE_REJECTED_WEIGHT);
+        .containsKeys(METER_CACHE_WEIGHT, METER_CACHE_ADMIT_CAPACITY, METER_CACHE_REJECTED_WEIGHT);
     var meterWeightReported = (Gauge) metersByName.get(METER_CACHE_WEIGHT);
-    var meterRejections = (Gauge) metersByName.get(METER_CACHE_REJECTIONS);
+    var meterAdmittedCapacity = (Gauge) metersByName.get(METER_CACHE_ADMIT_CAPACITY);
+    var meterCapacity = (Gauge) metersByName.get(METER_CACHE_CAPACITY);
     var meterRejectedWeight = (DistributionSummary) metersByName.get(METER_CACHE_REJECTED_WEIGHT);
 
     var maxWeight = config.capacityMb() * 1024L * 1024L;
@@ -89,7 +92,8 @@ public class TestCacheOvershoot {
     soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
     soft.assertThat(cache.rejections()).isEqualTo(0L);
     soft.assertThat(meterWeightReported.value()).isGreaterThan(0d);
-    soft.assertThat(meterRejections.value()).isEqualTo((double) cache.rejections());
+    soft.assertThat(meterAdmittedCapacity.value()).isEqualTo((double) admitWeight);
+    soft.assertThat(meterCapacity.value()).isEqualTo((double) config.capacityMb() * ONE_MB);
 
     var executor = Executors.newFixedThreadPool(numThreads);
     var seenOvershoot = false;
@@ -121,8 +125,6 @@ public class TestCacheOvershoot {
 
     soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
     soft.assertThat(cache.rejections()).isEqualTo(0L);
-    // comparing the tracked & reported weights would be flaky, as eviction can still happen
-    soft.assertThat(meterRejections.value()).isEqualTo(0d);
     soft.assertThat(meterRejectedWeight.totalAmount()).isEqualTo(0d);
     soft.assertThat(seenOvershoot).isFalse();
   }

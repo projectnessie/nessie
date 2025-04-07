@@ -56,8 +56,8 @@ class CaffeineCacheBackend implements CacheBackend {
   static final long ONE_MB = 1024L * 1024L;
   public static final String METER_CACHE_CAPACITY_MB = "cache_capacity_mb";
   public static final String METER_CACHE_CAPACITY = "cache.capacity";
+  public static final String METER_CACHE_ADMIT_CAPACITY = "cache.capacity.admitted";
   public static final String METER_CACHE_WEIGHT = "cache.weight";
-  public static final String METER_CACHE_REJECTIONS = "cache.rejections";
   public static final String METER_CACHE_REJECTED_WEIGHT = "cache.rejected-weight";
 
   private final CacheConfig config;
@@ -145,13 +145,13 @@ class CaffeineCacheBackend implements CacheBackend {
                       .tag("cache", CACHE_NAME)
                       .baseUnit(BaseUnits.BYTES)
                       .register(reg);
-                  Gauge.builder(METER_CACHE_WEIGHT, "", x -> (double) currentWeightReported())
-                      .description("Current reported weight of the objects cache in bytes.")
+                  Gauge.builder(METER_CACHE_ADMIT_CAPACITY, "", x -> admitWeight)
+                      .description("Admitted capacity of the objects cache in bytes.")
                       .tag("cache", CACHE_NAME)
                       .baseUnit(BaseUnits.BYTES)
                       .register(reg);
-                  Gauge.builder(METER_CACHE_REJECTIONS, "", x -> rejections.get())
-                      .description("Number of cache-puts that have been rejected.")
+                  Gauge.builder(METER_CACHE_WEIGHT, "", x -> (double) currentWeightReported())
+                      .description("Current reported weight of the objects cache in bytes.")
                       .tag("cache", CACHE_NAME)
                       .baseUnit(BaseUnits.BYTES)
                       .register(reg);
