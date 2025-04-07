@@ -145,7 +145,10 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                           "scm:git:https://github.com/projectnessie/$nessieRepoName"
                         )
                         url.set("https://github.com/projectnessie/$nessieRepoName/tree/main")
-                        tag.set("main")
+                        val version = project.version.toString()
+                        if (!version.endsWith("-SNAPSHOT")) {
+                          tag.set("nessie-$version")
+                        }
                       }
                       issueManagement {
                         system.set("Github")
