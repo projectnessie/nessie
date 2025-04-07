@@ -16,19 +16,21 @@
 package org.projectnessie.catalog.secrets.cache;
 
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.annotations.VisibleForTesting;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
-import java.util.function.LongSupplier;
 import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -38,51 +40,21 @@ public class CachingSecretsBackend {
   private static final Secret CACHE_NEGATIVE_SENTINEL = Map::of;
 
   public static final String CACHE_NAME = "nessie-secrets";
-  private static final long NOT_CACHED = 0L;
 
   @VisibleForTesting final Cache<CacheKeyValue, Secret> cache;
   private final long ttlNanos;
-  private final LongSupplier clock;
 
   public CachingSecretsBackend(SecretsCacheConfig config) {
     OptionalLong ttl = config.ttlMillis();
     this.ttlNanos = ttl.isPresent() ? TimeUnit.MILLISECONDS.toNanos(ttl.getAsLong()) : 0L;
-    this.clock = config.clockNanos();
 
     Caffeine<CacheKeyValue, Secret> cacheBuilder =
         Caffeine.newBuilder()
             .expireAfter(
-                new Expiry<CacheKeyValue, Secret>() {
-                  @Override
-                  public long expireAfterCreate(
-                      CacheKeyValue key, Secret value, long currentTimeNanos) {
-                    long expire = key.expiresAtNanosEpoch;
-                    if (expire == NOT_CACHED) {
-                      return 0L;
-                    }
-                    long remaining = expire - currentTimeNanos;
-                    return Math.max(0L, remaining);
-                  }
-
-                  @Override
-                  public long expireAfterUpdate(
-                      CacheKeyValue key,
-                      Secret value,
-                      long currentTimeNanos,
-                      long currentDurationNanos) {
-                    return currentDurationNanos;
-                  }
-
-                  @Override
-                  public long expireAfterRead(
-                      CacheKeyValue key,
-                      Secret value,
-                      long currentTimeNanos,
-                      long currentDurationNanos) {
-                    return currentDurationNanos;
-                  }
-                })
-            .ticker(clock::getAsLong)
+                Expiry.<CacheKeyValue, Secret>creating(
+                    (key, value) -> Duration.ofNanos(key.expireAfterNanos)))
+            .scheduler(Scheduler.systemScheduler())
+            .ticker(config.clockNanos()::getAsLong)
             .maximumSize(config.maxElements());
     config
         .meterRegistry()
@@ -110,10 +82,7 @@ public class CachingSecretsBackend {
       URI name,
       SecretType secretType,
       Class<S> secretJavaType) {
-    long ttl = ttlNanos;
-    long expires = ttl != 0L ? clock.getAsLong() + ttl : 0L;
-
-    CacheKeyValue key = new CacheKeyValue(repositoryId, name, expires);
+    CacheKeyValue key = new CacheKeyValue(repositoryId, name, ttlNanos);
 
     Secret fromCache =
         cache.get(
@@ -124,6 +93,9 @@ public class CachingSecretsBackend {
                   (Optional<Secret>) backend.getSecret(name, secretType, secretJavaType);
               return loaded.orElse(CACHE_NEGATIVE_SENTINEL);
             });
+    // cannot be null (just make IDE happy)
+    requireNonNull(fromCache);
+
     if (fromCache == CACHE_NEGATIVE_SENTINEL) {
       return Optional.empty();
     }
@@ -136,13 +108,12 @@ public class CachingSecretsBackend {
     final String repositoryId;
     final String name;
 
-    // Revisit this field before 2262-04-11T23:47:16.854Z (64-bit signed long overflow) ;) ;)
-    final long expiresAtNanosEpoch;
+    final long expireAfterNanos;
 
-    CacheKeyValue(String repositoryId, URI name, long expiresAtNanosEpoch) {
+    CacheKeyValue(String repositoryId, URI name, long expireAfterNanos) {
       this.repositoryId = repositoryId;
       this.name = name.toString();
-      this.expiresAtNanosEpoch = expiresAtNanosEpoch;
+      this.expireAfterNanos = expireAfterNanos;
     }
 
     @Override

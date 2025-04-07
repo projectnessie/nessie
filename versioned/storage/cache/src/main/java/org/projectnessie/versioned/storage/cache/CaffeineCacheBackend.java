@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.projectnessie.versioned.storage.common.persist.ObjType.CACHE_UNLIMITED;
@@ -28,11 +27,18 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
-import io.micrometer.core.instrument.Tag;
+import com.github.benmanes.caffeine.cache.Scheduler;
+import com.google.common.annotations.VisibleForTesting;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.binder.BaseUnits;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import jakarta.annotation.Nonnull;
 import java.lang.ref.SoftReference;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.IntConsumer;
+import java.util.function.LongSupplier;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
@@ -47,12 +53,23 @@ class CaffeineCacheBackend implements CacheBackend {
   private static final CacheKeyValue NON_EXISTING_SENTINEL =
       new CacheKeyValue("x", ObjId.EMPTY_OBJ_ID, 0L, new byte[0], null, false);
 
+  static final long ONE_MB = 1024L * 1024L;
+  public static final String METER_CACHE_CAPACITY_MB = "cache_capacity_mb";
+  public static final String METER_CACHE_CAPACITY = "cache.capacity";
+  public static final String METER_CACHE_ADMIT_CAPACITY = "cache.capacity.admitted";
+  public static final String METER_CACHE_WEIGHT = "cache.weight";
+  public static final String METER_CACHE_REJECTED_WEIGHT = "cache.rejected-weight";
+
   private final CacheConfig config;
   final Cache<CacheKeyValue, CacheKeyValue> cache;
 
   private final long refCacheTtlNanos;
   private final long refCacheNegativeTtlNanos;
   private final boolean enableSoftReferences;
+  private final long admitWeight;
+  private final AtomicLong rejections = new AtomicLong();
+  private final IntConsumer rejectionsWeight;
+  private final LongSupplier weightSupplier;
 
   CaffeineCacheBackend(CacheConfig config) {
     this.config = config;
@@ -61,15 +78,23 @@ class CaffeineCacheBackend implements CacheBackend {
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
     enableSoftReferences = config.enableSoftReferences().orElse(false);
 
+    var maxWeight = config.capacityMb() * ONE_MB;
+    admitWeight = maxWeight + (long) (maxWeight * config.cacheCapacityOvershoot());
+
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
-            .maximumWeight(config.capacityMb() * 1024L * 1024L)
+            .executor(config.executor())
+            .scheduler(Scheduler.systemScheduler())
+            .ticker(config.clockNanos()::getAsLong)
+            .maximumWeight(maxWeight)
             .weigher(this::weigher)
             .expireAfter(
-                new Expiry<CacheKeyValue, CacheKeyValue>() {
+                new Expiry<>() {
                   @Override
                   public long expireAfterCreate(
-                      CacheKeyValue key, CacheKeyValue value, long currentTimeNanos) {
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
+                      long currentTimeNanos) {
                     long expire = key.expiresAtNanosEpoch;
                     if (expire == CACHE_UNLIMITED) {
                       return Long.MAX_VALUE;
@@ -83,8 +108,8 @@ class CaffeineCacheBackend implements CacheBackend {
 
                   @Override
                   public long expireAfterUpdate(
-                      CacheKeyValue key,
-                      CacheKeyValue value,
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
                       long currentTimeNanos,
                       long currentDurationNanos) {
                     return expireAfterCreate(key, value, currentTimeNanos);
@@ -92,27 +117,73 @@ class CaffeineCacheBackend implements CacheBackend {
 
                   @Override
                   public long expireAfterRead(
-                      CacheKeyValue key,
-                      CacheKeyValue value,
+                      @Nonnull CacheKeyValue key,
+                      @Nonnull CacheKeyValue value,
                       long currentTimeNanos,
                       long currentDurationNanos) {
                     return currentDurationNanos;
                   }
+                });
+    rejectionsWeight =
+        config
+            .meterRegistry()
+            .map(
+                reg -> {
+                  cacheBuilder.recordStats(() -> new CaffeineStatsCounter(reg, CACHE_NAME));
+                  // legacy gauge (using mb)
+                  Gauge.builder(METER_CACHE_CAPACITY_MB, "", x -> config.capacityMb())
+                      .description(
+                          "Total capacity of the objects cache in megabytes (x1024), prefer the new "
+                              + METER_CACHE_CAPACITY
+                              + " metric.")
+                      .tag("cache", CACHE_NAME)
+                      .register(reg);
+
+                  // new gauges (providing base unit)
+                  Gauge.builder(METER_CACHE_CAPACITY, "", x -> maxWeight)
+                      .description("Total capacity of the objects cache in bytes.")
+                      .tag("cache", CACHE_NAME)
+                      .baseUnit(BaseUnits.BYTES)
+                      .register(reg);
+                  Gauge.builder(METER_CACHE_ADMIT_CAPACITY, "", x -> admitWeight)
+                      .description("Admitted capacity of the objects cache in bytes.")
+                      .tag("cache", CACHE_NAME)
+                      .baseUnit(BaseUnits.BYTES)
+                      .register(reg);
+                  Gauge.builder(METER_CACHE_WEIGHT, "", x -> (double) currentWeightReported())
+                      .description("Current reported weight of the objects cache in bytes.")
+                      .tag("cache", CACHE_NAME)
+                      .baseUnit(BaseUnits.BYTES)
+                      .register(reg);
+                  var rejectedWeightSummary =
+                      DistributionSummary.builder(METER_CACHE_REJECTED_WEIGHT)
+                          .description("Weight of of rejected cache-puts in bytes.")
+                          .tag("cache", CACHE_NAME)
+                          .baseUnit(BaseUnits.BYTES)
+                          .register(reg);
+                  return (IntConsumer) rejectedWeightSummary::record;
                 })
-            .ticker(config.clockNanos()::getAsLong);
-    config
-        .meterRegistry()
-        .ifPresent(
-            meterRegistry -> {
-              cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
-              meterRegistry.gauge(
-                  "cache_capacity_mb",
-                  singletonList(Tag.of("cache", CACHE_NAME)),
-                  "",
-                  x -> config.capacityMb());
-            });
+            .orElse(x -> {});
 
     this.cache = cacheBuilder.build();
+
+    var eviction = cache.policy().eviction().orElseThrow();
+    weightSupplier = () -> eviction.weightedSize().orElse(0L);
+  }
+
+  @VisibleForTesting
+  long currentWeightReported() {
+    return weightSupplier.getAsLong();
+  }
+
+  @VisibleForTesting
+  long rejections() {
+    return rejections.get();
+  }
+
+  @VisibleForTesting
+  long admitWeight() {
+    return admitWeight;
   }
 
   @Override
@@ -121,7 +192,7 @@ class CaffeineCacheBackend implements CacheBackend {
     return new CachingPersistImpl(persist, cache);
   }
 
-  private int weigher(CacheKeyValue key, CacheKeyValue value) {
+  private int weigher(CacheKeyValue key, CacheKeyValue ignoredValue) {
     int size = key.heapSize();
     size += CAFFEINE_OBJ_OVERHEAD;
     return size;
@@ -145,6 +216,17 @@ class CaffeineCacheBackend implements CacheBackend {
     putLocal(repositoryId, obj);
   }
 
+  @VisibleForTesting
+  void cachePut(CacheKeyValue key, CacheKeyValue value) {
+    var w = weigher(key, value);
+    if (weightSupplier.getAsLong() + w < admitWeight) {
+      cache.put(key, value);
+    } else {
+      rejections.incrementAndGet();
+      rejectionsWeight.accept(w);
+    }
+  }
+
   @Override
   public void putLocal(@Nonnull String repositoryId, @Nonnull Obj obj) {
     long expiresAt =
@@ -162,7 +244,7 @@ class CaffeineCacheBackend implements CacheBackend {
       CacheKeyValue keyValue =
           cacheKeyValue(
               repositoryId, obj.id(), expiresAtNanos, serialized, obj, enableSoftReferences);
-      cache.put(keyValue, keyValue);
+      cachePut(keyValue, keyValue);
     } catch (ObjTooLargeException e) {
       // this should never happen
       throw new RuntimeException(e);
@@ -183,7 +265,7 @@ class CaffeineCacheBackend implements CacheBackend {
         expiresAt == CACHE_UNLIMITED ? CACHE_UNLIMITED : MICROSECONDS.toNanos(expiresAt);
     CacheKeyValue keyValue = cacheKeyValue(repositoryId, id, expiresAtNanos, enableSoftReferences);
 
-    cache.put(keyValue, NON_EXISTING_SENTINEL);
+    cachePut(keyValue, NON_EXISTING_SENTINEL);
   }
 
   @Override
@@ -230,7 +312,7 @@ class CaffeineCacheBackend implements CacheBackend {
             serializeReference(r),
             r,
             enableSoftReferences);
-    cache.put(keyValue, keyValue);
+    cachePut(keyValue, keyValue);
   }
 
   @Override
@@ -245,7 +327,7 @@ class CaffeineCacheBackend implements CacheBackend {
             id,
             config.clockNanos().getAsLong() + refCacheNegativeTtlNanos,
             enableSoftReferences);
-    cache.put(key, NON_EXISTING_SENTINEL);
+    cachePut(key, NON_EXISTING_SENTINEL);
   }
 
   @Override

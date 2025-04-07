@@ -73,6 +73,6 @@ public class TestCacheConfig {
   }
 
   private static CacheConfig.Builder defaultBuilder() {
-    return CacheConfig.builder().capacityMb(1);
+    return CacheConfig.builder().capacityMb(1).cacheCapacityOvershoot(0.1d);
   }
 }

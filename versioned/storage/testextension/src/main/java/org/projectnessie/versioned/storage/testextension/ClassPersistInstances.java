@@ -61,6 +61,7 @@ final class ClassPersistInstances {
                     .referenceTtl(Duration.ofMinutes(1))
                     .referenceNegativeTtl(Duration.ofMinutes(1))
                     .enableSoftReferences(nessiePersistCache.enableSoftReferences())
+                    .cacheCapacityOvershoot(0.1d)
                     .build())
             : null;
 
