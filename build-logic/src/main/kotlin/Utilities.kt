@@ -19,24 +19,23 @@ import java.io.File
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.Properties
-import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.UnknownProjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileTree
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.resources.TextResource
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
@@ -52,6 +51,7 @@ import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
 import org.gradle.process.JavaForkOptions
+import org.gradle.work.DisableCachingByDefault
 
 fun Project.cassandraDriverTweak() {
   configurations.all {
@@ -378,15 +378,22 @@ class SparkScalaVersions(
   val runtimeJavaVersion: Int,
 )
 
-class ReplaceInFiles(val files: FileTree, val replacements: Map<String, String>) : Action<Task> {
-  override fun execute(task: Task) {
-    files.forEach { f ->
+@DisableCachingByDefault
+abstract class ReplaceInFiles : DefaultTask() {
+  @get:InputDirectory abstract val files: DirectoryProperty
+  @get:Input abstract val replacements: MapProperty<String, String>
+
+  @TaskAction
+  fun execute() {
+    files.asFileTree.forEach { f ->
       val src = f.readText()
       var txt = src
-      for (e in replacements.entries) {
+      for (e in replacements.get().entries) {
+        logger.info("Replacing '${e.key}' with '${e.value}' in '$f'")
         txt = txt.replace(e.key, e.value)
       }
       if (txt != src) {
+        logger.info("Writing $f")
         f.writeText(txt)
       }
     }

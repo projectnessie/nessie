@@ -23,7 +23,6 @@ import java.nio.file.Files
 import java.util.regex.Pattern
 import javax.inject.Inject
 import kotlin.collections.joinToString
-import kotlin.io.path.name
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin

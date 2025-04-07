@@ -38,12 +38,12 @@ extensions.configure<ProtobufExtension> {
 }
 
 tasks.named<GenerateProtoTask>("generateProto").configure {
-  doLast(
-    ReplaceInFiles(
-      fileTree(project.layout.buildDirectory.dir("generated/source/proto/main")),
-      mapOf("com.google.protobuf" to "org.projectnessie.nessie.relocated.protobuf"),
-    )
-  )
+  finalizedBy("updateGeneratedProtoFiles")
+}
+
+tasks.register<ReplaceInFiles>("updateGeneratedProtoFiles") {
+  files.set(project.layout.buildDirectory.dir("generated/sources/proto/main"))
+  replacements.put("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
 }
 
 // The protobuf-plugin should ideally do this
