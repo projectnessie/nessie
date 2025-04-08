@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.3 Release (April 08, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.3).
+
+### New Features
+
+- Introduces a hard objects-cache capacity limit to ensure that the cache does never consume more than
+  the configured cache-capacity plus a configurable "overshoot" (defaults to 10%). New cache entries are
+  admitted as long as the current cache size is less than the "cache-capacity + overshoot".
+
+### Changes
+
+- Nessie's REST API endpoints now accept "truncated timestamps" in relative-commit-specs, aka without the
+  second-fraction.
+
+### Commits
+* Introduce a hard capacity limit for the objects cache (#10629)
+* Maven publication: Produce correct `<scm><tag>` in `pom.xml` (#10656)
+* Relax Nessie REST API relative-commit-spec timestamp rules (#10623)
+* Simplify Lowkey Vault configuration (#10591)
+
 ## 0.103.2 Release (March 21, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.2).
