@@ -114,9 +114,6 @@ public interface QuarkusStoreConfig extends StoreConfig {
 
   String CONFIG_CACHE_CAPACITY_MB = "cache-capacity-mb";
 
-  boolean DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES = true;
-  double DEFAULT_CONFIG_CAPACITY_OVERSHOOT = 0.1d;
-
   /**
    * Fixed amount of heap used to cache objects, set to 0 to disable the cache entirely. Must not be
    * used with fractional cache sizing. See description for {@code cache-capacity-fraction-of-heap}
@@ -141,6 +138,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
 
   /** When using fractional cache sizing, this amount in MB is the minimum cache size. */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB)
+  @WithDefault("" + DEFAULT_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB)
   OptionalInt cacheCapacityFractionMinSizeMb();
 
   String CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP = "cache-capacity-fraction-of-heap";
@@ -151,6 +149,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
    * of {@code .6} (60%) is assumed.
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_OF_HEAP)
+  @WithDefault("" + DEFAULT_CACHE_CAPACITY_FRACTION_OF_HEAP)
   OptionalDouble cacheCapacityFractionOfHeap();
 
   String CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB = "cache-capacity-fraction-adjust-mb";
@@ -160,6 +159,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
    * when calculating the cache size.
    */
   @WithName(CONFIG_CACHE_CAPACITY_FRACTION_ADJUST_MB)
+  @WithDefault("" + DEFAULT_CACHE_CAPACITY_FRACTION_ADJUST_MB)
   OptionalInt cacheCapacityFractionAdjustMB();
 
   String CONFIG_CACHE_CAPACITY_OVERSHOOT = "cache-capacity-overshoot";
@@ -176,6 +176,7 @@ public interface QuarkusStoreConfig extends StoreConfig {
    * <p>Value must be greater than 0, if present.
    */
   @WithName(CONFIG_CACHE_CAPACITY_OVERSHOOT)
+  @WithDefault("" + DEFAULT_CONFIG_CAPACITY_OVERSHOOT)
   OptionalDouble cacheCapacityOvershoot();
 
   @WithName(CONFIG_REFERENCE_CACHE_TTL)
