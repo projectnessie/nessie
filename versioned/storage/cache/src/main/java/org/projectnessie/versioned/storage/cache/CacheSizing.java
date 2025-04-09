@@ -16,6 +16,9 @@
 package org.projectnessie.versioned.storage.cache;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.DEFAULT_CACHE_CAPACITY_FRACTION_ADJUST_MB;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.DEFAULT_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.DEFAULT_CACHE_CAPACITY_FRACTION_OF_HEAP;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.OptionalDouble;
@@ -25,9 +28,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface CacheSizing {
 
-  int DEFAULT_HEAP_SIZE_KEEP_FREE = 256;
-  int DEFAULT_MIN_SIZE_MB = 64;
-  double DEFAULT_HEAP_FRACTION = 0.6d;
+  int DEFAULT_HEAP_SIZE_KEEP_FREE = DEFAULT_CACHE_CAPACITY_FRACTION_ADJUST_MB;
+  int DEFAULT_MIN_SIZE_MB = DEFAULT_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB;
+  double DEFAULT_HEAP_FRACTION = DEFAULT_CACHE_CAPACITY_FRACTION_OF_HEAP;
 
   OptionalInt fixedSizeInMB();
 

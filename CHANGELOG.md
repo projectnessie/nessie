@@ -16,6 +16,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+* Change default of `nessie.version.store.persist.cache-enable-soft-references` to `false`
+
 ### Deprecations
 
 ### Fixes

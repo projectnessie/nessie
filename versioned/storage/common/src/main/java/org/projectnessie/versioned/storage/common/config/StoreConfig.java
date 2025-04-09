@@ -73,6 +73,12 @@ public interface StoreConfig {
 
   String CONFIG_REFERENCE_NEGATIVE_CACHE_TTL = "reference-cache-negative-ttl";
 
+  boolean DEFAULT_CONFIG_CACHE_ENABLE_SOFT_REFERENCES = false;
+  int DEFAULT_CACHE_CAPACITY_FRACTION_MIN_SIZE_MB = 64;
+  int DEFAULT_CACHE_CAPACITY_FRACTION_ADJUST_MB = 256;
+  double DEFAULT_CACHE_CAPACITY_FRACTION_OF_HEAP = 0.6d;
+  double DEFAULT_CONFIG_CAPACITY_OVERSHOOT = 0.1d;
+
   /**
    * Whether namespace validation is enabled, changing this to false will break the Nessie
    * specification!
