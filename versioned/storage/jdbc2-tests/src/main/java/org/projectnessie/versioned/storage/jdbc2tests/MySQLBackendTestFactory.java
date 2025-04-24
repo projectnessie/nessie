@@ -51,6 +51,7 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
 
     MariaDBDriverMySQLContainer(DockerImageName dockerImage) {
       super(dockerImage.asCompatibleSubstituteFor("mysql"));
+      addParameter("TC_MY_CNF", "mysql-conf");
     }
 
     @Override
