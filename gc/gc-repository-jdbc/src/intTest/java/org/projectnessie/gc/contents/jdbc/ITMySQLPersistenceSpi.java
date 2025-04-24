@@ -46,6 +46,7 @@ public class ITMySQLPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
     MariaDBDriverMySQLContainer(DockerImageName dockerImage) {
       super(dockerImage);
+      addParameter("TC_MY_CNF", "mysql-conf");
     }
 
     @Override
