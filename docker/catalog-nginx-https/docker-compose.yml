@@ -83,7 +83,7 @@ services:
       retries: 15
 
   nginx:
-    image: docker.io/nginx:1.27.5
+    image: docker.io/nginx:1.28.0
     ports:
       # http://nessie-nginx.localhost.localdomain:8080/nessie/ ...
       #   redirected to https
