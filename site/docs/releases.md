@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.4 Release (April 24, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.4).
+
+### Changes
+
+- Change default of `nessie.version.store.persist.cache-enable-soft-references` to `false`
+
+### Commits
+* Add PDB support to helm chart (#10709)
+* Cache-config: fix default for "soft references" to `false` (#10668)
+
 ## 0.103.3 Release (April 08, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.3).
