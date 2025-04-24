@@ -985,3 +985,11 @@ extraInitContainers: []
     #   image: your-image
     #   imagePullPolicy: Always
     #   command: ['sh', '-c', 'echo "hello world"']
+
+# -- Add a PodDisruptionBudget. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/.
+podDisruptionBudget:
+  enabled: false
+  policy: {}
+    #  maxUnavailable: 50%
+    #  minAvailable: 50%
+    #  unhealthyPodEvictionPolicy: AlwaysAllow

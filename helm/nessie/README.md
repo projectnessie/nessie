@@ -315,6 +315,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | mongodb.secret.username | string | `"mongodb_username"` | The secret key storing the MongoDB username. |
 | nodeSelector | object | `{}` | Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector. |
 | podAnnotations | object | `{}` | Annotations to apply to nessie pods. |
+| podDisruptionBudget | object | `{"enabled":false,"policy":{}}` | Add a PodDisruptionBudget. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/. |
 | podLabels | object | `{}` | Additional Labels to apply to nessie pods. |
 | podSecurityContext | object | `{"fsGroup":10001,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
 | readinessProbe | object | `{"failureThreshold":3,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}` | Configures the readiness probe for nessie pods. |
