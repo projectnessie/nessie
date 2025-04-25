@@ -131,7 +131,8 @@ public abstract class AbstractTrino {
         """;
     assertThat(trinoContainer.queryResults(showSchemas))
         .extracting(l -> l.get(0).toString())
-        .containsExactlyInAnyOrder("information_schema", "my_namespace");
+        // Trino 475 added the 'system' schema
+        .contains("information_schema", "my_namespace");
 
     @Language("SQL")
     String createTable =
