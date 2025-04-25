@@ -261,14 +261,6 @@ jobs:
           helm package helm/nessie --version ${RELEASE_VERSION}
           mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
 
-      - name: Publish Nessie Helm chart to Helm Repo
-        run: |
-          wget https://raw.githubusercontent.com/projectnessie/charts.projectnessie.org/main/index.yaml
-          helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
-          echo ${{ secrets.CI_REPORTS_TOKEN }} | gh auth login --with-token
-          index_sha=$(gh api -X GET /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --jq '.sha')
-          gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml -f message="Publishing Nessie Helm chart ${RELEASE_VERSION}" -f content=$(base64 -w0 index.yaml) -f sha=${index_sha} || true
-
       - name: Archive Helm chart artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -276,6 +268,30 @@ jobs:
           path: ./nessie-helm-*.tgz
           if-no-files-found: error
 
+      - name: helm repo index merge
+        run: |
+          wget https://raw.githubusercontent.com/projectnessie/charts.projectnessie.org/main/index.yaml
+          helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
+
+      - name: Archive Helm chart index.yaml
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nessie-release-helm-index.yaml
+          path: index.yaml
+          if-no-files-found: error
+
+      - name: Publish Nessie Helm chart to Helm Repo
+        run: |
+          echo ${{ secrets.CI_REPORTS_TOKEN }} | gh auth login --with-token
+          index_sha="$(gh api -X GET /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --jq '.sha')"
+          cat <<EOF > put_body
+          {
+            "message": "Publishing Nessie Helm chart ${RELEASE_VERSION}",
+            "sha": "${index_sha}",
+            "content": "$(base64 -w0 index.yaml)"
+          }
+          EOF
+          gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --input put_body
 
   publish-openapi:
     runs-on: ubuntu-24.04
