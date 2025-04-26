@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Add PDB support to helm chart
+
 ### Changes
 
 ### Deprecations
