@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.103.5 Release (April 26, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.5).
+
+### New Features
+
+- Add PDB support to helm chart
+
+### Commits
+* Ninja: changelog
+* Release: Fix Helm chart publication (#10730)
+
 ## 0.103.4 Release (April 24, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.4).
