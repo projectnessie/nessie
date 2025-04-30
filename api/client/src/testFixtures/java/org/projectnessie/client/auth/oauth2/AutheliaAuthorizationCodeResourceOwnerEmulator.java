@@ -23,10 +23,12 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
+import org.projectnessie.client.http.impl.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,15 +76,27 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
   @Override
   protected URI login(URI loginPageUrl, Set<String> cookies) throws Exception {
     LOGGER.info("Performing login...");
+    loginPageUrl = readRedirectUrl(openConnection(loginPageUrl), cookies);
     String loginHtml = getHtmlPage(loginPageUrl, cookies);
     assertThat(loginHtml).contains("Login - Authelia");
+    Map<String, String> params = HttpUtils.parseQueryString(loginPageUrl.getRawQuery());
+    String workflowId = params.get("workflow_id");
     URI loginActionUrl = loginPageUrl.resolve("/api/firstfactor");
     HttpURLConnection loginActionConn =
         openConnection(loginActionUrl, "application/json, text/plain, */*");
     String data =
         String.format(
-            "{\"username\":\"%s\",\"password\":\"%s\",\"targetURL\":\"%s\",\"keepMeLoggedIn\":false,\"workflow\":\"openid_connect\"}",
-            username, password, authUrl.toString());
+            "{\"username\":\"%s\","
+                + "\"password\":\"%s\","
+                + "\"targetURL\":\"%s\","
+                + "\"keepMeLoggedIn\":false,"
+                + "\"workflow\":\"openid_connect\","
+                + "\"workflowID\":\""
+                + workflowId
+                + "\"}",
+            username,
+            password,
+            authUrl.toString());
     postJson(loginActionConn, data, cookies);
     int responseCode = loginActionConn.getResponseCode();
     assertThat(responseCode).isEqualTo(HTTP_OK);
