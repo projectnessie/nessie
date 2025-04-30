@@ -11,7 +11,6 @@ Project Nessie is a Transactional Catalog for Data Lakes with Git-like semantics
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg?label=PyPI&logo=python&color=3f6ec6&style=for-the-badge&logoColor=white)](https://pypi.python.org/pypi/pynessie)
 [![quay.io Docker](https://img.shields.io/maven-central/v/org.projectnessie.nessie/nessie?label=quay.io+Docker&logo=docker&color=3f6ec6&style=for-the-badge&logoColor=white)](https://quay.io/repository/projectnessie/nessie?tab=tags)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/nessie&color=3f6ec6&labelColor=&style=for-the-badge&logoColor=white)](https://artifacthub.io/packages/search?repo=nessie)
-[![Swagger Hub](https://img.shields.io/badge/swagger%20hub-nessie-3f6ec6?style=for-the-badge&logo=swagger&link=https%3A%2F%2Fapp.swaggerhub.com%2Fapis%2Fprojectnessie%2Fnessie)](https://app.swaggerhub.com/apis/projectnessie/nessie)
 
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/projectnessie/nessie/ci.yml?branch=main&label=Main%20CI&logo=Github&style=flat-square)](https://github.com/projectnessie/nessie/actions/workflows/ci.yml?query=branch%3Amain)

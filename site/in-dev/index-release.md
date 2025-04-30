@@ -169,8 +169,6 @@ Nessie repository.
 
 ## Nessie REST API
 
-=== "View on Swagger Hub"
-    [![Swagger Hub](https://img.shields.io/badge/swagger%20hub-nessie-3f6ec6?style=for-the-badge&logo=swagger&link=https%3A%2F%2Fapp.swaggerhub.com%2Fapis%2Fprojectnessie%2Fnessie)](https://app.swaggerhub.com/apis/projectnessie/nessie/::NESSIE_VERSION::)
 === "Download"
     [OpenAPI Download](https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-openapi-::NESSIE_VERSION::.yaml)
 

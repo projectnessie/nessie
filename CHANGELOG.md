@@ -16,6 +16,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- OpenAPI specs are no longer published to swaggerhub.
+
 ### Deprecations
 
 ### Fixes

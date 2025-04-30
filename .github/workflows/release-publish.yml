@@ -358,6 +358,7 @@ jobs:
 
       - name: Update SwaggerHub
         uses: smartbear/swaggerhub-cli@cb7bb25da5a6885e491660a9747b4969e15ab295 # v0.9.1
+        continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
