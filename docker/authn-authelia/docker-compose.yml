@@ -48,7 +48,7 @@ services:
       retries: 15
 
   authelia:
-    image: authelia/authelia:4.38
+    image: authelia/authelia:4.39
     ports:
       - "9091:9091"
     volumes:
