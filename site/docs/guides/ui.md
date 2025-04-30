@@ -7,8 +7,3 @@ The UI automatically runs as part of starting the Nessie service. If running loc
 you can find the UI at [localhost:19120](http://localhost:19120/).
 
 ![Screenshot](../img/uidemo.gif){.bordered}
-
-### Swagger UI
-
-The Swagger UI allows for testing the REST API and reading the API docs. It is available
-at [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).

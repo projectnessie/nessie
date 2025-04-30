@@ -33,8 +33,6 @@ Clients built in `java` should build against the API of the `client` module.
 Clients build in other languages can generate language-specific bindings from the published OpenAPI specification of
 the Nessie API.
 
-The published version of the Nessie OpenAPI specification is available on [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).
-
 The current development version is available from a running Nessie server at http://localhost:9000/q/swagger-ui.
 
 # Migrating from API v1 to v2

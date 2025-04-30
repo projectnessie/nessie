@@ -540,10 +540,6 @@ The request could not be executed. Full error message: Failed to connect to loca
 This means that the server is unable to connect to the collector. Check that the collector is
 running and that the URL is correct.
 
-### Swagger UI
-The Swagger UI allows for testing the REST API and reading the API docs. It is available 
-at [SwaggerHub](https://app.swaggerhub.com/apis/projectnessie/nessie).
-
 ## Docker image options
 
 By default, Nessie listens on port 19120. To expose that port on the host, use `-p 19120:19120`. 
