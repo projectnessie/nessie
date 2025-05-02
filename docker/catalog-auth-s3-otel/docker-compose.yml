@@ -117,7 +117,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: docker.io/prom/prometheus:v3.3.0
+    image: docker.io/prom/prometheus:v3.3.1
     ports:
       # Prometheus UI, browse to http://localhost:9093 to view metrics
       - "9093:9090"
