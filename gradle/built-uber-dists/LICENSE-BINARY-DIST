@@ -277,6 +277,7 @@ com.google.cloud.opentelemetry:shared-resourcemapping
 com.google.code.findbugs:jsr305
 com.google.code.gson:gson
 com.google.errorprone:error_prone_annotations
+com.google.errorprone:error_prone_type_annotations
 com.google.flogger:flogger
 com.google.flogger:flogger-system-backend
 com.google.flogger:google-extensions
