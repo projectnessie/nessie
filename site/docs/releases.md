@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.104.0 Release (May 06, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.104.0).
+
+### Changes
+
+- OpenAPI specs are no longer published to swaggerhub.
+
+### Commits
+* Update Sonatype publishing URLs (#10758)
+* Bump iceberg to 1.9 (#10773)
+
 ## 0.103.6 Release (May 01, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.103.6).
