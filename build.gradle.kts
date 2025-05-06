@@ -66,7 +66,13 @@ nexusPublishing {
     // default 10s
     delayBetween = java.time.Duration.ofSeconds(10)
   }
-  repositories { sonatype() }
+  repositories {
+    // see https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
+    sonatype {
+      nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+    }
+  }
 }
 
 val buildToolIntegrationGradle by
