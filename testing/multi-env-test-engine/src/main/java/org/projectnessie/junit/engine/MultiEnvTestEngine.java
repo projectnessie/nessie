@@ -16,6 +16,7 @@
 package org.projectnessie.junit.engine;
 
 import static org.projectnessie.junit.engine.JUnitCompat.newDefaultJupiterConfiguration;
+import static org.projectnessie.junit.engine.MultiEnvExtensionRegistry.isMultiEnvClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,12 +81,7 @@ public class MultiEnvTestEngine implements TestEngine {
 
       // Scan for multi-env test extensions
       TestDescriptor preliminaryResult = delegate.discover(discoveryRequest, uniqueId);
-      preliminaryResult.accept(
-          descriptor -> {
-            if (descriptor instanceof ClassBasedTestDescriptor) {
-              registry.registerExtensions(((ClassBasedTestDescriptor) descriptor));
-            }
-          });
+      preliminaryResult.accept(registry::registerExtensions);
 
       ConfigurationParameters configurationParameters =
           discoveryRequest.getConfigurationParameters();
@@ -126,7 +122,7 @@ public class MultiEnvTestEngine implements TestEngine {
                     // Must check whether the test class is a multi-env test, because discovery
                     // returns all test classes.
                     ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
-                    boolean multi = registry().isMultiEnvClass(classBased);
+                    boolean multi = isMultiEnvClass(classBased);
                     if (multi) {
                       envRoot.addChild(child);
                     }
@@ -139,7 +135,7 @@ public class MultiEnvTestEngine implements TestEngine {
       registry()
           .probablyNotMultiEnv()
           .forEach(
-              clazz -> {
+              td -> {
                 JupiterConfiguration jupiterConfiguration =
                     new CachingJupiterConfiguration(
                         newDefaultJupiterConfiguration(discoveryRequest));
@@ -154,7 +150,7 @@ public class MultiEnvTestEngine implements TestEngine {
                   // Must check whether the test class is not a multi-env test here, as the
                   // `multiEnvNotDetected` contains some actual multi-env tests.
                   ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
-                  boolean multi = registry().isMultiEnvClass(classBased);
+                  boolean multi = isMultiEnvClass(classBased);
                   if (!multi) {
                     discoverResult.removeChild(child);
                     multiEnvRootDescriptor.addChild(child);
