@@ -120,8 +120,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
   @Test
   public void icebergApiTable() {
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var apiContext = apiContext("Iceberg", 1);
     var branch = BranchName.of("main");
@@ -202,8 +201,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
   @Test
   public void icebergApiNamespaces() {
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var myNamespace = ContentKey.of("iceberg_namespaces");
     var myNamespaceIceberg = Namespace.of("iceberg_namespaces");
@@ -355,8 +353,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
 
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var branch = BranchName.of("main");
 

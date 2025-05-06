@@ -192,7 +192,7 @@ public abstract class AbstractAssumeRoleIceberg {
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("S3Exception: Access Denied")
         // make sure the error comes from the Catalog Server
-        .hasStackTraceContaining("org.apache.iceberg.rest.RESTClient");
+        .hasStackTraceContaining("org.apache.iceberg.rest.HTTPClient");
   }
 
   @Test

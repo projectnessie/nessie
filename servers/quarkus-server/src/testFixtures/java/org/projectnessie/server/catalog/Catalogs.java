@@ -39,11 +39,11 @@ public class Catalogs implements AutoCloseable {
                   config -> {
                     var builder = HTTPClient.builder(config).uri(config.get(CatalogProperties.URI));
                     config.entrySet().stream()
-                        .filter(e -> e.getKey().startsWith("http.header."))
+                        .filter(e -> e.getKey().startsWith("header."))
                         .forEach(
                             e ->
                                 builder.withHeader(
-                                    e.getKey().substring("http.header.".length()), e.getValue()));
+                                    e.getKey().substring("header.".length()), e.getValue()));
                     return builder.build();
                   });
           c.setConf(new Configuration());
