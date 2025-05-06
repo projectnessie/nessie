@@ -16,8 +16,8 @@
 package org.apache.iceberg;
 
 import java.util.Collections;
-import org.apache.avro.generic.IndexedRecord;
-import org.apache.iceberg.V2Metadata.IndexedDataFile;
+import org.apache.iceberg.V2Metadata.DataFileWrapper;
+import org.apache.iceberg.avro.AvroSchemaUtil;
 import org.apache.iceberg.types.Types.StructType;
 
 /** Uses package-private classes and functions from Iceberg, only for testing purposes. */
@@ -36,13 +36,14 @@ public final class BridgeToIceberg {
   public static DataFile dummyDataFile(String filePath, StructType partitionType) {
     PartitionData partitionData = new PartitionData(partitionType);
     return new GenericDataFile(
-        0, filePath, FileFormat.PARQUET, partitionData, 42L, DUMMY_METRICS, null, null, 0);
+        0, filePath, FileFormat.PARQUET, partitionData, 42L, DUMMY_METRICS, null, null, 0, null);
   }
 
-  public static IndexedRecord dummyIndexedDataFile(String filePath, StructType partitionType) {
+  public static StructLike dummyIndexedDataFile(String filePath, StructType partitionType) {
     DataFile dataFile = dummyDataFile(filePath, partitionType);
-    IndexedDataFile<?> indexed = new IndexedDataFile<>(partitionType);
+    DataFileWrapper<?> indexed = new DataFileWrapper<>();
     indexed.wrap(dataFile);
-    return indexed;
+    var avroSchema = AvroSchemaUtil.convert(partitionType);
+    return new IndexedStructLike(avroSchema).wrap(indexed);
   }
 }
