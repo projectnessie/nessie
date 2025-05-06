@@ -151,6 +151,7 @@ public class TestNessieModelIceberg {
         arguments(IcebergTransform.truncate(1), NessieFieldTransform.truncate(1)));
   }
 
+  @SuppressWarnings("deprecation") // NestedField.of removed in Iceberg 2.0
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   public void partitioningNestedStruct(boolean firstLevel) throws Exception {

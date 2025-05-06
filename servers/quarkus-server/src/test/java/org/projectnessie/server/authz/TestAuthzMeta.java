@@ -50,7 +50,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.assertj.core.api.SoftAssertions;
@@ -120,8 +120,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
   @Test
   public void icebergApiTable() {
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var apiContext = apiContext("Iceberg", 1);
     var branch = BranchName.of("main");
@@ -202,8 +201,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
   @Test
   public void icebergApiNamespaces() {
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var myNamespace = ContentKey.of("iceberg_namespaces");
     var myNamespaceIceberg = Namespace.of("iceberg_namespaces");
@@ -285,7 +283,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
     // not empty
     mockedAuthorizer.reset();
     soft.assertThatThrownBy(() -> catalog.dropNamespace(myNamespaceIceberg))
-        .isInstanceOf(AlreadyExistsException.class);
+        .isInstanceOf(NamespaceNotEmptyException.class);
     soft.assertThat(mockedAuthorizer.checksWithoutIdentifiedKey())
         .containsExactly(
             authzCheck( // 'getEntries' in 'IcebergApiV1NamespaceResource.dropNamespace'
@@ -355,8 +353,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
         c -> c.withAuthentication(BasicAuthenticationProvider.create("admin_user", "test123")));
 
     var catalog =
-        catalog(
-            Map.of("http.header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
+        catalog(Map.of("header.Authorization", basicAuthorizationHeader("admin_user", "test123")));
 
     var branch = BranchName.of("main");
 

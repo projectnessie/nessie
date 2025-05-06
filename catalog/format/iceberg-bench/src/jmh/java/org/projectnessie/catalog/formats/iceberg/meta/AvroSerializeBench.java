@@ -498,6 +498,8 @@ public class AvroSerializeBench {
         .build();
   }
 
+  @SuppressWarnings({"DataFlowIssue", "deprecation"})
+  // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;
     return new GenericManifestFile(
@@ -520,6 +522,7 @@ public class AvroSerializeBench {
         file.keyMetadata() != null ? ByteBuffer.wrap(file.keyMetadata()) : null);
   }
 
+  @SuppressWarnings("DataFlowIssue")
   static ManifestFile.PartitionFieldSummary toPartitionFieldSummary(
       IcebergPartitionFieldSummary summary) {
     return new GenericPartitionFieldSummary(

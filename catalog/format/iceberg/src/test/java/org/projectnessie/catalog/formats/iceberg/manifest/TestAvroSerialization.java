@@ -255,6 +255,8 @@ public class TestAvroSerialization {
         field.containsNaN());
   }
 
+  @SuppressWarnings({"DataFlowIssue", "deprecation"})
+  // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;
     return new GenericManifestFile(
@@ -277,6 +279,7 @@ public class TestAvroSerialization {
         toByteBuffer(file.keyMetadata()));
   }
 
+  @SuppressWarnings("DataFlowIssue")
   static ManifestFile.PartitionFieldSummary toPartitionFieldSummary(
       IcebergPartitionFieldSummary summary) {
     return new GenericPartitionFieldSummary(
@@ -640,7 +643,8 @@ public class TestAvroSerialization {
         .build();
   }
 
-  @SuppressWarnings("DataFlowIssue")
+  @SuppressWarnings({"DataFlowIssue", "deprecation"})
+  // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toGenericManifestFile(
       Path realFile,
       IcebergManifestFile icebergManifestFile,
