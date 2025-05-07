@@ -34,7 +34,7 @@ extra_css:
 extra:
   versions:
     # updated by the Nessie release workflow
-    nessie: 0.104.0
+    nessie: 0.104.1
     # set in site/bin/setup_env.sh from gradle/libs.versions.toml
     iceberg: !ENV ICEBERG_VERSION
   double_curly: "{{"
