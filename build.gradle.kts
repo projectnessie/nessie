@@ -94,6 +94,9 @@ mavenCentralPortal {
   }
 }
 
+// The following code aggregates the publishable parts of every module into a single zip.
+// This is necessary to have an "atomic" release of all modules.
+
 val mavenCentralDeploymentZipAggregation by configurations.creating
 
 mavenCentralDeploymentZipAggregation.isTransitive = true
