@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+import io.github.zenhelix.gradle.plugin.MavenCentralUploaderPlugin.Companion.MAVEN_CENTRAL_PORTAL_NAME
+import io.github.zenhelix.gradle.plugin.extension.MavenCentralUploaderExtension
+import io.github.zenhelix.gradle.plugin.extension.PublishingType
+import io.github.zenhelix.gradle.plugin.task.PublishBundleMavenCentralTask
+import io.github.zenhelix.gradle.plugin.task.ZipDeploymentTask
+import java.time.Duration
+import org.gradle.api.publish.plugins.PublishingPlugin.PUBLISH_TASK_GROUP
+import org.gradle.kotlin.dsl.mavenCentralPortal
 import org.jetbrains.changelog.date
 import org.jetbrains.gradle.ext.settings
 import org.jetbrains.gradle.ext.taskTriggers
@@ -21,7 +29,7 @@ import org.jetbrains.gradle.ext.taskTriggers
 plugins {
   eclipse
   id("nessie-conventions-root")
-  alias(libs.plugins.nexus.publish.plugin)
+  alias(libs.plugins.maven.central.publish)
   alias(libs.plugins.jetbrains.changelog)
 }
 
@@ -53,24 +61,140 @@ tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.Distribut
 // Pass environment variables:
 //    ORG_GRADLE_PROJECT_sonatypeUsername
 //    ORG_GRADLE_PROJECT_sonatypePassword
-// OR in ~/.gradle/gradle.properties set
-//    sonatypeUsername
-//    sonatypePassword
-// Call targets:
-//    publishToSonatype
-//    closeAndReleaseSonatypeStagingRepository
-nexusPublishing {
-  transitionCheckOptions {
-    // default==60 (10 minutes), wait up to 120 minutes
-    maxRetries = 720
-    // default 10s
-    delayBetween = java.time.Duration.ofSeconds(10)
+// Gradle targets:
+//    publishAggregateMavenCentralDeployment
+//    (zipAggregateMavenCentralDeployment to just generate the single, aggregated deployment zip)
+// Ref: Maven Central Publisher API:
+//    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
+mavenCentralPortal {
+  credentials {
+    username.value(provider { System.getenv("ORG_GRADLE_PROJECT_sonatypeUsername") })
+    password.value(provider { System.getenv("ORG_GRADLE_PROJECT_sonatypePassword") })
   }
-  repositories {
-    // see https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
-    sonatype {
-      nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-      snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+
+  deploymentName = "${project.name}-$version"
+
+  // publishingType
+  //   AUTOMATIC = fully automatic release
+  //   USER_MANAGED = user has to manually publish/drop
+  publishingType =
+    if (System.getenv("CI") != null) PublishingType.AUTOMATIC else PublishingType.USER_MANAGED
+  // baseUrl = "https://central.sonatype.com"
+  uploader {
+    // 2 seconds * 3600 = 7200 seconds = 2hrs
+    delayRetriesStatusCheck = Duration.ofSeconds(2)
+    maxRetriesStatusCheck = 3600
+
+    aggregate {
+      // Aggregate submodules into a single archive
+      modules = true
+      // Aggregate publications into a single archive for each module
+      modulePublications = true
+    }
+  }
+}
+
+val mavenCentralDeploymentZipAggregation by configurations.creating
+
+mavenCentralDeploymentZipAggregation.isTransitive = true
+
+val zipAggregateMavenCentralDeployment by
+  tasks.registering(Zip::class) {
+    group = PUBLISH_TASK_GROUP
+    description = "Generates the aggregated Maven publication zip file."
+
+    inputs.files(mavenCentralDeploymentZipAggregation)
+    from(mavenCentralDeploymentZipAggregation.map { zipTree(it) })
+    // archiveFileName = mavenCentralPortal.deploymentName.orElse(project.name)
+    destinationDirectory.set(layout.buildDirectory.dir("aggregatedDistribution"))
+    doLast { logger.lifecycle("Built aggregated distribution ${archiveFile.get()}") }
+  }
+
+val publishAggregateMavenCentralDeployment by
+  tasks.registering(PublishBundleMavenCentralTask::class) {
+    group = PUBLISH_TASK_GROUP
+    description =
+      "Publishes the aggregated Maven publications $MAVEN_CENTRAL_PORTAL_NAME repository."
+
+    val task = this
+
+    dependsOn(zipAggregateMavenCentralDeployment)
+    inputs.file(zipAggregateMavenCentralDeployment.flatMap { it.archiveFile })
+
+    project.extensions.configure<MavenCentralUploaderExtension> {
+      val ext = this
+      task.baseUrl.set(ext.baseUrl)
+      task.credentials.set(
+        ext.credentials.username.flatMap { username ->
+          ext.credentials.password.map { password ->
+            io.github.zenhelix.gradle.plugin.client.model.Credentials.UsernamePasswordCredentials(
+              username,
+              password,
+            )
+          }
+        }
+      )
+
+      task.publishingType.set(
+        ext.publishingType.map {
+          when (it) {
+            PublishingType.AUTOMATIC ->
+              io.github.zenhelix.gradle.plugin.client.model.PublishingType.AUTOMATIC
+            PublishingType.USER_MANAGED ->
+              io.github.zenhelix.gradle.plugin.client.model.PublishingType.USER_MANAGED
+          }
+        }
+      )
+      task.deploymentName.set(ext.deploymentName)
+
+      task.maxRetriesStatusCheck.set(ext.uploader.maxRetriesStatusCheck)
+      task.delayRetriesStatusCheck.set(ext.uploader.delayRetriesStatusCheck)
+
+      task.zipFile.set(zipAggregateMavenCentralDeployment.flatMap { it.archiveFile })
+    }
+  }
+
+// Configure the 'io.github.zenhelix.maven-central-publish' plugin to all projects
+allprojects.forEach { p ->
+  p.pluginManager.withPlugin("maven-publish") {
+    p.pluginManager.apply("io.github.zenhelix.maven-central-publish")
+    p.extensions.configure<MavenCentralUploaderExtension> {
+      val aggregatedMavenCentralDeploymentZipPart by p.configurations.creating
+      aggregatedMavenCentralDeploymentZipPart.description = "Maven central publication zip"
+      val aggregatedMavenCentralDeploymentZipPartElements by p.configurations.creating
+      aggregatedMavenCentralDeploymentZipPartElements.description =
+        "Elements for the Maven central publication zip"
+      aggregatedMavenCentralDeploymentZipPartElements.isCanBeResolved = false
+      aggregatedMavenCentralDeploymentZipPartElements.extendsFrom(
+        aggregatedMavenCentralDeploymentZipPart
+      )
+      aggregatedMavenCentralDeploymentZipPartElements.attributes {
+        attribute(
+          Usage.USAGE_ATTRIBUTE,
+          project.getObjects().named(Usage::class.java, "publication"),
+        )
+      }
+
+      val aggregatemavenCentralDeployment by
+        p.tasks.registering {
+          val zip = p.tasks.findByName("zipDeploymentMavenPublication") as ZipDeploymentTask
+          dependsOn(zip)
+          outputs.file(zip.archiveFile.get().asFile)
+        }
+
+      val artifact =
+        p.artifacts.add(
+          aggregatedMavenCentralDeploymentZipPart.name,
+          aggregatemavenCentralDeployment,
+        ) {
+          builtBy(aggregatemavenCentralDeployment)
+        }
+      aggregatedMavenCentralDeploymentZipPart.outgoing.artifact(artifact)
+
+      rootProject.dependencies.add(
+        mavenCentralDeploymentZipAggregation.name,
+        rootProject.dependencies.project(p.path, aggregatedMavenCentralDeploymentZipPart.name),
+      )
     }
   }
 }

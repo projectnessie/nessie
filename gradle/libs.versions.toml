@@ -161,8 +161,8 @@ zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-3" }
 [plugins]
 gatling = { id = "io.gatling.gradle", version = "3.13.5.4" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
+maven-central-publish = { id = "io.github.zenhelix.maven-central-publish", version = "0.8.0" }
 nessie-run = { id = "org.projectnessie", version = "0.32.2" }
-nexus-publish-plugin = { id = "io.github.gradle-nexus.publish-plugin", version = "2.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
