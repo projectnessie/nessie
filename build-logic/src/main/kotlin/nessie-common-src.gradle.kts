@@ -210,7 +210,7 @@ class MemoizedGitInfo {
         val info =
           mapOf(
             "Nessie-Version" to
-              rootProject.layout.projectDirectory.file("version.txt").asFile.readText(),
+              rootProject.layout.projectDirectory.file("version.txt").asFile.readText().trim(),
             "Nessie-Build-Git-Head" to gitHead,
             "Nessie-Build-Git-Describe" to gitDescribe,
             "Nessie-Build-Timestamp" to timestamp,

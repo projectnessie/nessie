@@ -127,15 +127,13 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
-          # To release commits that used Maven to build
-          MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-          MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        # Ref: Maven Central Publisher API:
+        #    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
         run: |
           # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease -Puber-jar --no-scan --stacktrace
+          ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace
 
       - name: Generate changelog
         run: ./gradlew --no-scan --quiet --console=plain getChangelog --no-header --no-links > "${ARTIFACTS}/nessie-changelog-${RELEASE_VERSION}.md"

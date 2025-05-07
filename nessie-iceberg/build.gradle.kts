@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-root")
-  alias(libs.plugins.nexus.publish.plugin)
-}
+plugins { id("nessie-conventions-root") }
 
 publishingHelper { mavenName = "Nessie-Iceberg" }
 

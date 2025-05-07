@@ -15,9 +15,11 @@
  */
 
 plugins {
-  id("nessie-conventions-client")
+  id("nessie-conventions-unpublished-tool")
   alias(libs.plugins.nessie.run)
 }
+
+tasks.withType<JavaCompile>().configureEach { options.release = 11 }
 
 publishingHelper { mavenName = "Nessie - GC - CLI integration test" }
 
