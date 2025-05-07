@@ -16,7 +16,6 @@
 
 plugins {
   id("nessie-conventions-root")
-  alias(libs.plugins.nexus.publish.plugin)
 }
 
 publishingHelper { mavenName = "Nessie-Iceberg" }
