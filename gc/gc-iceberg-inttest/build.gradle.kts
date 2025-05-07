@@ -19,6 +19,8 @@ plugins {
   alias(libs.plugins.nessie.run)
 }
 
+tasks.withType<JavaCompile>().configureEach { options.release = 11 }
+
 publishingHelper { mavenName = "Nessie - GC - Integration tests" }
 
 val sparkScala = useSparkScalaVersionsForProject("3.5", "2.12")
