@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-plugins {
-  id("nessie-conventions-root")
-}
+plugins { id("nessie-conventions-root") }
 
 publishingHelper { mavenName = "Nessie-Iceberg" }
 
