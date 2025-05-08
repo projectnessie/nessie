@@ -47,7 +47,7 @@ services:
       retries: 15
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.2.3
+    image: quay.io/keycloak/keycloak:26.2.4
     ports:
       - "8080:8080"
       - "9001:9000"
