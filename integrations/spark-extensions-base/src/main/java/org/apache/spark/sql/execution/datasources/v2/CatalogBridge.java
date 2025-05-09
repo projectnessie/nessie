@@ -16,14 +16,14 @@
 package org.apache.spark.sql.execution.datasources.v2;
 
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieReferenceNotFoundException;
 import org.projectnessie.model.Reference;
 
 public interface CatalogBridge extends AutoCloseable {
   CatalogPlugin currentCatalog();
 
-  NessieApiV1 api();
+  NessieApiV2 api();
 
   void setCurrentRefForSpark(Reference ref, boolean configureRefAtHash);
 
