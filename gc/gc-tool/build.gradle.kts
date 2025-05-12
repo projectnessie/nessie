@@ -72,7 +72,9 @@ dependencies {
   runtimeOnly("com.google.cloud:google-cloud-storage")
   runtimeOnly("com.google.cloud:google-cloud-nio")
   runtimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
-  runtimeOnly(libs.google.cloud.bigdataoss.gcsio)
+  runtimeOnly(libs.google.cloud.bigdataoss.gcsio) {
+    exclude("io.grpc", "grpc-testing")
+  }
 
   implementation(platform(libs.azuresdk.bom))
   runtimeOnly("com.azure:azure-storage-file-datalake")
