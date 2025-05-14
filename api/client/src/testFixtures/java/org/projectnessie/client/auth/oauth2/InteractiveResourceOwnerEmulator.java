@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +91,17 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
         Executors.newFixedThreadPool(
             2, r -> new Thread(r, getClass().getSimpleName() + COUNTER.getAndIncrement()));
     standardOut = System.out;
-    executor.submit(this::readConsole);
+    submitAndRecordFailure(this::readConsole);
+  }
+
+  protected void submitAndRecordFailure(Runnable runnable) {
+    CompletableFuture.runAsync(runnable, executor)
+        .whenComplete(
+            (r, ex) -> {
+              if (ex != null) {
+                recordFailure(ex);
+              }
+            });
   }
 
   @Override
@@ -127,7 +138,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
         standardOut.flush();
         Runnable flow = processLine(line);
         if (flow != null) {
-          executor.submit(flow);
+          submitAndRecordFailure(flow);
         }
       }
     } catch (IOException ignored) {
@@ -175,6 +186,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
   }
 
   protected void recordFailure(Throwable t) {
+    LOGGER.error("Logging failure, closing={}", closing, t);
     if (!closing) {
       Consumer<Throwable> errorListener = this.errorListener;
       if (errorListener != null) {
