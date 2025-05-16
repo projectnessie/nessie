@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Dremio
+ * Copyright (C) 2025 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest // because the tests need @Inject'd fields
 @WithTestResource(LocalstackTestResourceLifecycleManager.class)
-public class ITSecretsAWS extends AbstractSecretsSuppliers {
+public class TestSecretsAWS extends AbstractSecretsSuppliers {
   @Override
   protected String providerName() {
     return AMAZON.toLowerCase(ROOT);
