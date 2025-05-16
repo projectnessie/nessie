@@ -127,6 +127,8 @@ public abstract class ObjectStorageMock {
       this.server = JettyHttpContainerFactory.createServer(initUri, config, true);
       customizeUriCompliance();
       this.baseUri = baseUri(server, initUri);
+
+      LOGGER.info("Object storage mock started started at {}", baseUri);
     }
 
     /**
@@ -196,6 +198,8 @@ public abstract class ObjectStorageMock {
     @Override
     public void close() throws Exception {
       if (server != null) {
+        LOGGER.info("Stopping object storage mock server at {}", baseUri);
+
         server.stop();
       }
     }
