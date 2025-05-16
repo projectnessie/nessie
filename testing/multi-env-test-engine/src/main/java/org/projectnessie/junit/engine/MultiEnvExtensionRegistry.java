@@ -29,6 +29,7 @@ import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.engine.EngineDiscoveryRequest;
+import org.junit.platform.engine.TestDescriptor;
 
 /**
  * A helper class for collecting instances of {@link MultiEnvTestExtension}.
@@ -39,7 +40,7 @@ import org.junit.platform.engine.EngineDiscoveryRequest;
 public class MultiEnvExtensionRegistry {
   private final MutableExtensionRegistry registry;
 
-  private final Set<ClassBasedTestDescriptor> probablyNotMultiEnv = new LinkedHashSet<>();
+  private final Set<TestDescriptor> probablyNotMultiEnv = new LinkedHashSet<>();
 
   public MultiEnvExtensionRegistry(EngineDiscoveryRequest discoveryRequest) {
     this.registry =
@@ -47,7 +48,7 @@ public class MultiEnvExtensionRegistry {
             newDefaultJupiterConfiguration(new EmptyConfigurationParameters(), discoveryRequest));
   }
 
-  public void registerExtensions(ClassBasedTestDescriptor descriptor) {
+  public void registerExtensions(TestDescriptor descriptor) {
     AtomicBoolean multiEnv = new AtomicBoolean(false);
 
     findMultiEnvExtensions(descriptor)
@@ -59,19 +60,23 @@ public class MultiEnvExtensionRegistry {
     }
   }
 
-  public boolean isMultiEnvClass(ClassBasedTestDescriptor descriptor) {
+  public static boolean isMultiEnvClass(TestDescriptor descriptor) {
     return findMultiEnvExtensions(descriptor).findFirst().isPresent();
   }
 
-  private Stream<Class<? extends Extension>> findMultiEnvExtensions(
-      ClassBasedTestDescriptor descriptor) {
-    Class<?> testClass = descriptor.getTestClass();
-    return AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
-        .flatMap(e -> Arrays.stream(e.value()))
-        .filter(MultiEnvTestExtension.class::isAssignableFrom);
+  private static Stream<Class<? extends Extension>> findMultiEnvExtensions(
+      TestDescriptor descriptor) {
+    if (descriptor instanceof ClassBasedTestDescriptor) {
+      var classBased = (ClassBasedTestDescriptor) descriptor;
+      var testClass = classBased.getTestClass();
+      return AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
+          .flatMap(e -> Arrays.stream(e.value()))
+          .filter(MultiEnvTestExtension.class::isAssignableFrom);
+    }
+    return Stream.empty();
   }
 
-  public Stream<ClassBasedTestDescriptor> probablyNotMultiEnv() {
+  public Stream<TestDescriptor> probablyNotMultiEnv() {
     return probablyNotMultiEnv.stream();
   }
 
