@@ -26,7 +26,7 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 
 @QuarkusTest
 @TestProfile(TestMetricsTags.Profile.class)
-class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
+public class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
 
   @Test
   void smokeTestMetricsWithTags() {

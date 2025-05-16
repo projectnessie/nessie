@@ -25,7 +25,7 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
-class TestSinglePageApplicationRouting {
+public class TestSinglePageApplicationRouting {
 
   @Test
   public void makeSureNonHomePathServesHtml() {

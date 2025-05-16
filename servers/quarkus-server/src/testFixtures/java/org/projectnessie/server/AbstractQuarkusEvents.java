@@ -70,7 +70,9 @@ public abstract class AbstractQuarkusEvents {
   private URI clientUri;
   private NessieApiV1 api;
 
-  @Inject MockEventSubscriber subscriber;
+  @SuppressWarnings("CdiInjectionPointsInspection")
+  @Inject
+  public MockEventSubscriber subscriber;
 
   @BeforeAll
   void startRecording() {
