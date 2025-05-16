@@ -99,14 +99,15 @@ public final class AddressResolver {
     checkState(!nameservers.isEmpty(), "No nameserver configured in /etc/resolv.conf");
     InetSocketAddress nameserver = nameservers.get(0);
     LOGGER.info(
-        "Using nameserver {} with search list {}",
+        "Using nameserver {}/{} with search list {}",
         nameserver.getHostName(),
+        nameserver.getAddress().getHostAddress(),
         ResolvConf.system().getSearchList());
     return vertx.createDnsClient(
         new DnsClientOptions()
             // 5 seconds should be enough to resolve
             .setQueryTimeout(5000)
-            .setHost(nameserver.getHostName())
+            .setHost(nameserver.getAddress().getHostAddress())
             .setPort(nameserver.getPort()));
   }
 
