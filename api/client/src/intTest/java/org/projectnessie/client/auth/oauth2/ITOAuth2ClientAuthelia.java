@@ -31,6 +31,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -110,6 +111,8 @@ public class ITOAuth2ClientAuthelia {
 
   @Test
   @Timeout(15)
+  @Disabled(
+      "Disabled for now, see https://github.com/projectnessie/nessie/pull/10818#issuecomment-2880103972")
   void testOAuth2AuthorizationCode() throws Exception {
     try (InteractiveResourceOwnerEmulator resourceOwner =
         new AutheliaAuthorizationCodeResourceOwnerEmulator(
