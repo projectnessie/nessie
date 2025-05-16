@@ -125,10 +125,10 @@ public class TestIcebergTypes {
         arguments(Types.DateType.get(), dateType()),
         arguments(Types.TimeType.get(), timeType()),
         arguments(
-            Types.StructType.of(Types.NestedField.of(11, false, "field11", Types.StringType.get())),
+            Types.StructType.of(Types.NestedField.required(11, "field11", Types.StringType.get())),
             structType(singletonList(nestedField(11, "field11", true, stringType(), null)), null)),
         arguments(
-            Types.StructType.of(Types.NestedField.of(11, true, "field11", Types.StringType.get())),
+            Types.StructType.of(Types.NestedField.optional(11, "field11", Types.StringType.get())),
             structType(singletonList(nestedField(11, "field11", false, stringType(), null)), null)),
         arguments(
             Types.ListType.ofRequired(1, Types.StringType.get()), listType(1, stringType(), true)),

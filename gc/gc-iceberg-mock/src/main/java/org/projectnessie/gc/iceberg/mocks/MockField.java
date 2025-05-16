@@ -54,6 +54,11 @@ public abstract class MockField {
 
   @Value.Auxiliary
   public NestedField toNestedField() {
-    return NestedField.of(id(), !required(), name(), Types.fromPrimitiveString(type()));
+    return NestedField.builder()
+        .withId(id())
+        .isOptional(!required())
+        .withName(name())
+        .ofType(Types.fromPrimitiveString(type()))
+        .build();
   }
 }

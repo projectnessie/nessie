@@ -100,8 +100,7 @@ public class TestIcebergContentToFiles {
     String viewId = UUID.randomUUID().toString();
     String viewMetaLocation = viewMetadataLocation(viewId, 42);
     Schema viewSchema =
-        new Schema(
-            1, singletonList(Types.NestedField.of(1, false, "foo", Types.IntegerType.get())));
+        new Schema(1, singletonList(Types.NestedField.required(1, "foo", Types.IntegerType.get())));
     ViewMetadata viewMetadata =
         ViewMetadata.builder()
             .assignUUID(viewId)
