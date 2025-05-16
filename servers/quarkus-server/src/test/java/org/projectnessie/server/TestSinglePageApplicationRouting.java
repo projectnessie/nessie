@@ -16,6 +16,7 @@
 package org.projectnessie.server;
 
 import static io.restassured.RestAssured.given;
+import static java.lang.String.format;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -29,6 +30,12 @@ class TestSinglePageApplicationRouting {
 
   @Test
   public void makeSureNonHomePathServesHtml() {
-    given().when().get("/tree/123").then().contentType(ContentType.HTML).statusCode(200);
+    given()
+        .when()
+        .baseUri(format("http://localhost:%d/", Integer.getInteger("quarkus.http.port")))
+        .get("/tree/123")
+        .then()
+        .contentType(ContentType.HTML)
+        .statusCode(200);
   }
 }
