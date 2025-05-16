@@ -19,7 +19,6 @@ import static java.lang.Thread.currentThread;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -31,8 +30,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
 import java.time.Duration;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Flow;
-import java.util.concurrent.ForkJoinPool;
 import org.projectnessie.client.http.HttpClient.Method;
 import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.ResponseContext;
@@ -43,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Implements Nessie HTTP request processing using Java's new {@link HttpClient}. */
-@SuppressWarnings("Since15") // IntelliJ warns about new APIs. 15 is misleading, it means 11
 final class JavaRequest extends BaseHttpRequest {
 
   /**
@@ -67,10 +63,16 @@ final class JavaRequest extends BaseHttpRequest {
   private static final Logger LOGGER = LoggerFactory.getLogger(JavaRequest.class);
 
   private final HttpExchange<InputStream> exchange;
+  private final Executor writerPool;
 
-  JavaRequest(HttpRuntimeConfig config, URI baseUri, HttpExchange<InputStream> exchange) {
+  JavaRequest(
+      HttpRuntimeConfig config,
+      URI baseUri,
+      HttpExchange<InputStream> exchange,
+      Executor writerPool) {
     super(config, baseUri);
     this.exchange = exchange;
+    this.writerPool = writerPool;
   }
 
   @Override
@@ -103,6 +105,7 @@ final class JavaRequest extends BaseHttpRequest {
         () -> {
           try {
             Pipe pipe = Pipe.open();
+
             writerPool.execute(
                 () -> {
                   ClassLoader restore = currentThread().getContextClassLoader();
@@ -124,19 +127,4 @@ final class JavaRequest extends BaseHttpRequest {
           }
         });
   }
-
-  /**
-   * Executor used to serialize the response object to JSON.
-   *
-   * <p>Java's new {@link HttpClient} uses the {@link Flow.Publisher}/{@link Flow.Subscriber}/{@link
-   * Flow.Subscription} mechanism to write and read request and response data. We have to use that
-   * protocol. Since none of the implementations must block, writes and reads run in a separate
-   * pool.
-   *
-   * <p>Jackson has no "reactive" serialization mechanism, which means that we have to provide a
-   * custom {@link OutputStream}, which delegates {@link Flow.Subscriber#onNext(Object) writes} to
-   * the subscribing code.
-   */
-  private static final Executor writerPool =
-      new ForkJoinPool(Math.max(8, ForkJoinPool.getCommonPoolParallelism()));
 }
