@@ -24,11 +24,13 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +64,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
 
   private final PrintStream console;
   private final String state;
-  private final HttpServer server;
+  private final List<HttpServer> servers;
   private final String redirectUri;
   private final URI authorizationUri;
   private final Duration flowTimeout;
@@ -105,11 +107,11 @@ class AuthorizationCodeFlow extends AbstractFlow {
             .thenApply(this::fetchNewTokens)
             .whenComplete((tokens, error) -> log(error));
     closeFuture.thenRun(this::doClose);
-    server =
+    servers =
         createServer(config.getAuthorizationCodeFlowWebServerPort().orElse(0), this::doRequest);
     state = OAuth2Utils.randomAlphaNumString(STATE_LENGTH);
     redirectUri =
-        String.format("http://localhost:%d%s", server.getAddress().getPort(), CONTEXT_PATH);
+        String.format("http://localhost:%d%s", servers.get(0).getAddress().getPort(), CONTEXT_PATH);
     URI authEndpoint = config.getResolvedAuthEndpoint();
     authorizationUri =
         new UriBuilder(authEndpoint.resolve("/"))
@@ -132,7 +134,9 @@ class AuthorizationCodeFlow extends AbstractFlow {
   private void doClose() {
     inflightRequestsPhaser.arriveAndAwaitAdvance();
     LOGGER.debug("Authorization Code Flow: closing");
-    server.stop(0);
+    for (var server : servers) {
+      server.stop(0);
+    }
     // don't close the HTTP client nor the console, they are not ours
   }
 
@@ -238,22 +242,41 @@ class AuthorizationCodeFlow extends AbstractFlow {
     }
   }
 
-  private static HttpServer createServer(int port, HttpHandler handler) {
-    final HttpServer server;
+  private static List<HttpServer> createServer(int port, HttpHandler handler) {
+    var serversDispose = new ArrayList<HttpServer>();
     try {
-      server = HttpServer.create();
+      for (var networkInterfaces = NetworkInterface.getNetworkInterfaces();
+          networkInterfaces.hasMoreElements(); ) {
+        var networkInterface = networkInterfaces.nextElement();
+        if (!networkInterface.isLoopback()) {
+          continue;
+        }
+        for (var inetAddresses = networkInterface.getInetAddresses();
+            inetAddresses.hasMoreElements(); ) {
+          var inetAddress = inetAddresses.nextElement();
+          var server = HttpServer.create(new InetSocketAddress(inetAddress, port), 0);
+          serversDispose.add(server);
+          server.createContext(CONTEXT_PATH, handler);
+          server.start();
+          LOGGER.debug("Local http server started at {}", server.getAddress());
+          if (port == 0) {
+            port = server.getAddress().getPort();
+          }
+        }
+      }
+
+      var servers = List.copyOf(serversDispose);
+      serversDispose.clear();
+      return servers;
     } catch (IOException e) {
       throw new UncheckedIOException(e);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    } finally {
+      for (var httpServer : serversDispose) {
+        httpServer.stop(0);
+      }
     }
-    server.createContext(CONTEXT_PATH, handler);
-    InetAddress local = InetAddress.getLoopbackAddress();
-    try {
-      server.bind(new InetSocketAddress(local, port), 0);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    server.start();
-    return server;
   }
 
   private static void writeResponse(
