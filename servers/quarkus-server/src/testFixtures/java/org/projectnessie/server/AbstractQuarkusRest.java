@@ -28,7 +28,7 @@ import org.projectnessie.versioned.storage.common.persist.Persist;
 @ExtendWith(QuarkusNessieClientResolver.class)
 public abstract class AbstractQuarkusRest extends BaseTestNessieRest {
 
-  @Inject Instance<Persist> persist;
+  @Inject public Instance<Persist> persist;
 
   @Override
   @AfterEach

@@ -29,7 +29,7 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
-class TestBasicOperations extends AbstractTestBasicOperations {
+public class TestBasicOperations extends AbstractTestBasicOperations {
 
   @Inject QuarkusStoreConfig storeConfig;
 

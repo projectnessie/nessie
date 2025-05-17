@@ -23,4 +23,4 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
 @NessieApiVersions // all versions
-class TestQuarkusRestInMemoryPersist extends AbstractQuarkusRestWithMetrics {}
+public class TestQuarkusRestInMemoryPersist extends AbstractQuarkusRestWithMetrics {}

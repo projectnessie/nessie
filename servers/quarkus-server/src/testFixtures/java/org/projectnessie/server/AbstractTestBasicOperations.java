@@ -37,7 +37,7 @@ import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 
 @ExtendWith(QuarkusNessieClientResolver.class)
-abstract class AbstractTestBasicOperations {
+public abstract class AbstractTestBasicOperations {
 
   private NessieApiV1 api;
 
