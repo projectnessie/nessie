@@ -94,25 +94,48 @@ final class JavaHttpClient implements org.projectnessie.client.http.HttpClient {
   @SuppressWarnings({"DataFlowIssue", "ResultOfMethodCallIgnored"})
   @Override
   public void close() {
+    Exception fail = null;
     try {
       if (client instanceof AutoCloseable) {
         ((AutoCloseable) client).close();
       }
     } catch (Exception e) {
-      // ignore
+      fail = e;
     } finally {
       client = null;
     }
+
     try {
       config.close();
-    } finally {
-      writerPool.shutdown();
-      try {
-        writerPool.awaitTermination(10, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        // populate
-        Thread.currentThread().interrupt();
+    } catch (Exception e) {
+      if (fail == null) {
+        fail = e;
+      } else {
+        fail.addSuppressed(e);
       }
+    } finally {
+      try {
+        writerPool.shutdown();
+        try {
+          writerPool.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          // populate
+          Thread.currentThread().interrupt();
+        }
+      } catch (Exception e) {
+        if (fail == null) {
+          fail = e;
+        } else {
+          fail.addSuppressed(e);
+        }
+      }
+    }
+
+    if (fail instanceof RuntimeException) {
+      throw (RuntimeException) fail;
+    }
+    if (fail != null) {
+      throw new RuntimeException(fail);
     }
   }
 }
