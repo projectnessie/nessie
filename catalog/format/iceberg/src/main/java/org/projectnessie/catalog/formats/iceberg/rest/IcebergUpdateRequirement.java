@@ -187,14 +187,14 @@ public interface IcebergUpdateRequirement {
             contentKey,
             "Requirement failed: snapshot id changed: expected %s != %s",
             expectedId,
-            snapshotId());
+            currentId);
       } else {
         // 'null' means "no current snapshot"
         checkState(
             currentId == null || currentId == NO_SNAPSHOT_ID,
             contentKey,
             "Requirement failed: snapshot id mismatch: expected no current snapshot, but has %s",
-            snapshotId());
+            currentId);
       }
     }
   }
