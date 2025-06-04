@@ -150,6 +150,38 @@ non-obvious platform differences.
 
 TL;DR It is fine to build code on macOS and Windows, but the reference platform is Linux.
 
+#### Development Container (Recommended)
+
+For a consistent development experience across all platforms, Nessie provides a development container
+configuration that creates an isolated Linux environment with all required tools pre-installed.
+
+**Quick Start:**
+1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Open the project in VS Code
+3. When prompted, click "Reopen in Container" or use `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
+4. Wait for the container to build and start developing!
+
+**What's included:**
+- Java 21 JDK with proper toolchain configuration
+- Gradle build environment (automatically downloaded)
+- Git, Docker CLI, and essential development tools
+- VS Code Java extensions pre-configured
+- Non-root user with sudo access
+- Port forwarding for the Nessie server (19120)
+
+**Benefits:**
+- ✅ Consistent Linux environment on any platform (Windows, macOS, Linux)
+- ✅ No platform-specific setup issues or Podman conflicts
+- ✅ Isolated from your host system - no "development on the metal"
+- ✅ All dependencies pre-installed and configured
+- ✅ Works identically for all team members
+
+For detailed instructions and manual Docker usage, see [`.devcontainer/README.md`](.devcontainer/README.md).
+
+**Alternative: Manual platform setup**
+
+If you prefer to set up your development environment manually, continue reading the platform-specific sections below.
+
 #### Running tests on macOS
 
 In our CI we use Podman for macOS, initialized using the following sequence of commands,
