@@ -1,0 +1,50 @@
+{
+  "name": "Nessie Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "redhat.java",
+        "vscjava.vscode-gradle",
+        "ms-vscode.vscode-json",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-21",
+            "path": "/usr/local/openjdk-21"
+          }
+        ],
+        "java.compile.nullAnalysis.mode": "automatic"
+      }
+    }
+  },
+  "containerEnv": {
+    "JAVA_HOME": "/usr/local/openjdk-21"
+  },
+  "remoteUser": "nessie",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "forwardPorts": [19120],
+  "portsAttributes": {
+    "19120": {
+      "label": "Nessie Server",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "./gradlew --version",
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/usr/local/openjdk-21/bin"
+  }
+}
