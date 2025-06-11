@@ -66,7 +66,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-  id("com.gradle.develocity") version ("4.0.1")
+  id("com.gradle.develocity") version ("4.0.2")
   if (System.getenv("CI") != null || System.getProperty("allow-java-download").toBoolean()) {
     // Enable automatic Java toolchain download in CI or when explicitly requested by the user.
     // If in doubt, install the required Java toolchain manually, preferably using a "proper"
