@@ -166,5 +166,5 @@ nessie-run = { id = "org.projectnessie", version = "0.32.2" }
 protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.10" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "4.0.11" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.2.1"}
