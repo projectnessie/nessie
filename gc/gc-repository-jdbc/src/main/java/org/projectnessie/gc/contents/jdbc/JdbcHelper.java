@@ -104,6 +104,7 @@ public final class JdbcHelper {
 
   static final class ResultSetSplit<R> extends AbstractSpliterator<R> {
     private final Supplier<Connection> connectionSupplier;
+    private final int fetchSize;
     private final Consumer<AutoCloseable> closeables;
     private final String sql;
     private final Prepare prepare;
@@ -112,12 +113,14 @@ public final class JdbcHelper {
 
     ResultSetSplit(
         Supplier<Connection> connectionSupplier,
+        int fetchSize,
         Consumer<AutoCloseable> closeables,
         String sql,
         Prepare prepare,
         FromRow<R> fromRow) {
       super(Long.MAX_VALUE, 0);
       this.connectionSupplier = connectionSupplier;
+      this.fetchSize = fetchSize;
       this.closeables = closeables;
       this.sql = sql;
       this.prepare = prepare;
@@ -131,9 +134,11 @@ public final class JdbcHelper {
           Connection conn = connectionSupplier.get();
           closeables.accept(conn);
           PreparedStatement stmt = conn.prepareStatement(sql);
+          stmt.setFetchSize(fetchSize);
           closeables.accept(stmt);
           prepare.prepare(stmt);
           resultSet = stmt.executeQuery();
+          resultSet.setFetchSize(fetchSize);
           closeables.accept(resultSet);
         }
 

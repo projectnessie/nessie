@@ -53,7 +53,7 @@ public abstract class AbstractJdbcPersistenceSpi extends AbstractPersistenceSpi 
 
   @Override
   protected PersistenceSpi createPersistenceSpi() {
-    return JdbcPersistenceSpi.builder().dataSource(dataSource).build();
+    return JdbcPersistenceSpi.builder().dataSource(dataSource).fetchSize(10).build();
   }
 
   @BeforeEach

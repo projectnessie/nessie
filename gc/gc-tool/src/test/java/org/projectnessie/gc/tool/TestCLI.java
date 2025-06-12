@@ -349,7 +349,7 @@ public class TestCLI {
         AgroalJdbcDataSourceProvider.builder().jdbcUrl(JDBC_URL).build().dataSource();
     try {
       JdbcPersistenceSpi persistenceSpi =
-          JdbcPersistenceSpi.builder().dataSource(dataSource).build();
+          JdbcPersistenceSpi.builder().dataSource(dataSource).fetchSize(10).build();
       persistenceSpi.addIdentifiedLiveContent(
           id,
           Stream.of(
@@ -425,7 +425,7 @@ public class TestCLI {
         AgroalJdbcDataSourceProvider.builder().jdbcUrl(JDBC_URL).build().dataSource();
     try {
       JdbcPersistenceSpi persistenceSpi =
-          JdbcPersistenceSpi.builder().dataSource(dataSource).build();
+          JdbcPersistenceSpi.builder().dataSource(dataSource).fetchSize(10).build();
       persistenceSpi.addFileDeletions(
           id,
           Stream.of(

@@ -16,6 +16,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- JDBC: Previously, the JDBC backends and Nessie GC left the fetch-size to its default, which is to fetch
+  all rows when a `SELECT` statement is executed. This is changed to default to a fetch-size of 100 rows.
+  To revert to the old behavior, set the corresponding configuration option to `0` (not recommended).
+  A corresponding, new command line option for Nessie GC has been introduced as well.
+
 ### Deprecations
 
 ### Fixes

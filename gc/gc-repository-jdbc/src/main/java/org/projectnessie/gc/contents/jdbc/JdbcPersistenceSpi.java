@@ -89,6 +89,8 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   public interface Builder {
     Builder dataSource(DataSource dataSource);
 
+    Builder fetchSize(int fetchSize);
+
     JdbcPersistenceSpi build();
   }
 
@@ -355,7 +357,9 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   private LiveContentSet queryLiveContentSet(UUID liveSetId, PreparedStatement stmt)
       throws SQLException {
     stmt.setString(1, liveSetId.toString());
+    stmt.setFetchSize(fetchSize());
     try (ResultSet rs = stmt.executeQuery()) {
+      rs.setFetchSize(fetchSize());
       if (!rs.next()) {
         throw new IllegalStateException(new LiveContentSetNotFoundException(liveSetId));
       }
@@ -480,7 +484,7 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
     List<AutoCloseable> closeables = new ArrayList<>();
 
     ResultSetSplit<R> split =
-        new ResultSetSplit<>(this::connection, closeables::add, sql, prepare, fromRow);
+        new ResultSetSplit<>(this::connection, fetchSize(), closeables::add, sql, prepare, fromRow);
 
     return StreamSupport.stream(split, false)
         .onClose(
@@ -496,4 +500,6 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
   }
 
   abstract DataSource dataSource();
+
+  abstract int fetchSize();
 }

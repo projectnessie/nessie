@@ -85,9 +85,11 @@ abstract class AbstractJdbc2Persist implements Persist {
 
   private final StoreConfig config;
   private final DatabaseSpecific databaseSpecific;
+  private final int fetchSize;
 
-  AbstractJdbc2Persist(DatabaseSpecific databaseSpecific, StoreConfig config) {
+  AbstractJdbc2Persist(DatabaseSpecific databaseSpecific, int fetchSize, StoreConfig config) {
     this.config = config;
+    this.fetchSize = fetchSize;
     this.databaseSpecific = databaseSpecific;
   }
 
@@ -132,7 +134,9 @@ abstract class AbstractJdbc2Persist implements Persist {
       for (String key : keys) {
         ps.setString(idx++, key);
       }
+      ps.setFetchSize(fetchSize);
       try (ResultSet rs = ps.executeQuery()) {
+        rs.setFetchSize(fetchSize);
         while (rs.next()) {
           Reference ref = Jdbc2Serde.deserializeReference(rs);
           int i = nameToIndex.getValue(ref.name());
@@ -702,8 +706,10 @@ abstract class AbstractJdbc2Persist implements Persist {
 
       try {
         ps = conn.prepareStatement(sql);
+        ps.setFetchSize(fetchSize);
         preparer.accept(ps);
         rs = ps.executeQuery();
+        rs.setFetchSize(fetchSize);
       } catch (SQLException e) {
         try {
           close();
