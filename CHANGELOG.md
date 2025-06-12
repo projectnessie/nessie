@@ -16,16 +16,20 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
-- JDBC: Previously, the JDBC backends and Nessie GC left the fetch-size to its default, which is to fetch
-  all rows when a `SELECT` statement is executed. This is changed to default to a fetch-size of 100 rows.
-  To revert to the old behavior, set the corresponding configuration option to `0` (not recommended).
-  A corresponding, new command line option for Nessie GC has been introduced as well.
-
 ### Deprecations
 
 ### Fixes
 
 ### Commits
+
+## [0.104.2] Release (2025-06-12)
+
+### Changes
+
+- JDBC: Previously, the JDBC backends and Nessie GC left the fetch-size to its default, which is to fetch
+  all rows when a `SELECT` statement is executed. This is changed to default to a fetch-size of 100 rows.
+  To revert to the old behavior, set the corresponding configuration option to `0` (not recommended).
+  A corresponding, new command line option for Nessie GC has been introduced as well.
 
 ## [0.103.6] Release (2025-05-01)
 
@@ -1125,7 +1129,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.103.6...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.104.2...HEAD
+[0.104.2]: https://github.com/projectnessie/nessie/compare/nessie-0.103.6...nessie-0.104.2
 [0.103.6]: https://github.com/projectnessie/nessie/compare/nessie-0.103.5...nessie-0.103.6
 [0.103.5]: https://github.com/projectnessie/nessie/compare/nessie-0.103.4...nessie-0.103.5
 [0.103.4]: https://github.com/projectnessie/nessie/compare/nessie-0.103.3...nessie-0.103.4
