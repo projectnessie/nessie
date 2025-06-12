@@ -102,7 +102,10 @@ dependencies {
   intTestRuntimeOnly("com.google.cloud:google-cloud-storage")
   intTestRuntimeOnly("com.google.cloud:google-cloud-nio")
   intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
-  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio)
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio) {
+    // brings junit:junit + hamcrest :(
+    exclude("io.grpc", "grpc-testing")
+  }
 
   intTestRuntimeOnly(platform(libs.azuresdk.bom))
   intTestRuntimeOnly("com.azure:azure-storage-file-datalake")
