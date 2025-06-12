@@ -53,6 +53,8 @@ public class JdbcOptions {
 
   @CommandLine.Option(
       names = "--jdbc-fetch-size",
+      arity = "0..1",
+      defaultValue = "100",
       description = "JDBC fetch size, defaults to 100.")
   int fetchSize = 100;
 
