@@ -475,6 +475,7 @@ io.quarkus:quarkus-vertx
 io.quarkus:quarkus-vertx-http
 io.quarkus:quarkus-vertx-latebound-mdc-provider
 io.quarkus:quarkus-virtual-threads
+io.quarkus:quarkus-websockets-next-spi
 io.quarkus.resteasy.reactive:resteasy-reactive
 io.quarkus.resteasy.reactive:resteasy-reactive-common
 io.quarkus.resteasy.reactive:resteasy-reactive-common-types
