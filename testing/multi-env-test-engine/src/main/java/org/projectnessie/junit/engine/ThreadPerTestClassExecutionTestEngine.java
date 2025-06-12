@@ -21,10 +21,12 @@ import java.util.Optional;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
+import org.junit.jupiter.engine.descriptor.LauncherStoreFacade;
 import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext;
 import org.junit.jupiter.engine.support.JupiterThrowableCollectorFactory;
 import org.junit.platform.engine.EngineDiscoveryRequest;
+import org.junit.platform.engine.EngineExecutionListener;
 import org.junit.platform.engine.ExecutionRequest;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.UniqueId;
@@ -68,8 +70,33 @@ public class ThreadPerTestClassExecutionTestEngine
 
   @Override
   protected JupiterEngineExecutionContext createExecutionContext(ExecutionRequest request) {
+    try {
+      // since 5.13
+      Class.forName("org.junit.jupiter.engine.descriptor.LauncherStoreFacade");
+      return createExecutionContext513(request);
+    } catch (ClassNotFoundException e) {
+      return createExecutionContext512(request);
+    }
+  }
+
+  @SuppressWarnings("JavaReflectionMemberAccess")
+  private JupiterEngineExecutionContext createExecutionContext512(ExecutionRequest request) {
+    try {
+      var ctor =
+          JupiterEngineExecutionContext.class.getDeclaredConstructor(
+              EngineExecutionListener.class, JupiterConfiguration.class);
+      return JupiterEngineExecutionContext.class.cast(
+          ctor.newInstance(request.getEngineExecutionListener(), getJupiterConfiguration(request)));
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private JupiterEngineExecutionContext createExecutionContext513(ExecutionRequest request) {
     return new JupiterEngineExecutionContext(
-        request.getEngineExecutionListener(), getJupiterConfiguration(request));
+        request.getEngineExecutionListener(),
+        getJupiterConfiguration(request),
+        new LauncherStoreFacade(request.getStore()));
   }
 
   @Override

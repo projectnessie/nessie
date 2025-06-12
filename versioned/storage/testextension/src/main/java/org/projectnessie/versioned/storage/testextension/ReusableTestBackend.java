@@ -17,13 +17,12 @@ package org.projectnessie.versioned.storage.testextension;
 
 import java.util.Objects;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.BackendFactory;
 import org.projectnessie.versioned.storage.common.persist.PersistLoader;
 
 /** Allows a test class to reuse the test container used by the previous test class. */
-final class ReusableTestBackend implements CloseableResource {
+final class ReusableTestBackend implements AutoCloseable {
 
   private Class<? extends BackendTestFactory> backendType;
   private String backendName;

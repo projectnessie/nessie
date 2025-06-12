@@ -30,9 +30,9 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
+import org.junit.platform.engine.support.store.Namespace;
 import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -49,9 +49,9 @@ class TestNessieApiHolder {
 
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getRoot()).thenReturn(ctx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
 
-      CurrentNessieApiHolder apiHolder =
+      try (CurrentNessieApiHolder apiHolder =
           new CurrentNessieApiHolder(
               new ClientKey(
                   Version.CURRENT,
@@ -59,28 +59,25 @@ class TestNessieApiHolder {
                   NessieApiV1.class,
                   ImmutableMap.of(
                       "nessie.uri", "http://127.42.42.42:19120",
-                      "nessie.enable-api-compatibility-check", "false")));
-      try {
+                      "nessie.enable-api-compatibility-check", "false")))) {
         soft.assertThat(apiHolder)
             .extracting(AbstractNessieApiHolder::getApiInstance)
             .extracting(Object::getClass)
             .extracting(Class::getClassLoader)
             .isSameAs(Thread.currentThread().getContextClassLoader());
-      } finally {
-        apiHolder.close();
       }
     }
   }
 
   @Test
   void oldVersionServer() {
-    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+    try (NamespacedHierarchicalStore<Namespace> valuesStore =
         new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getRoot()).thenReturn(ctx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
 
       OldNessieApiHolder apiHolder =
           new OldNessieApiHolder(

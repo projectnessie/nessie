@@ -228,7 +228,7 @@ final class OldNessieServer implements NessieServer {
   }
 
   @Override
-  public void close() throws Throwable {
+  public void close() throws Exception {
     if (jerseyServer != null) {
       jerseyServer.close();
     }

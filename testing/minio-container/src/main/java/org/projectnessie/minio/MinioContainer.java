@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 public final class MinioContainer extends GenericContainer<MinioContainer>
-    implements MinioAccess, CloseableResource {
+    implements MinioAccess, AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MinioContainer.class);
 

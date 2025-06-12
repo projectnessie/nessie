@@ -24,11 +24,10 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.Version;
 
-interface NessieServer extends CloseableResource {
+interface NessieServer extends AutoCloseable {
 
   static NessieServer nessieServerExisting(ExtensionContext context, ServerKey serverKey) {
     return Objects.requireNonNull(

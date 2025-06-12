@@ -19,11 +19,10 @@ import static org.projectnessie.tools.compatibility.internal.Configurations.back
 import static org.projectnessie.tools.compatibility.internal.Util.withClassLoader;
 
 import java.util.function.Consumer;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class OldServerConnectionProvider implements CloseableResource {
+class OldServerConnectionProvider implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(OldServerConnectionProvider.class);
 
   private final ServerKey serverKey;
@@ -106,7 +105,7 @@ class OldServerConnectionProvider implements CloseableResource {
   }
 
   @Override
-  public void close() throws Throwable {
+  public void close() throws Exception {
     if (connectionProvider != null) {
       LOGGER.info(
           "Closing connection provider for Nessie version {} with {} using {}",

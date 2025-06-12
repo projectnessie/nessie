@@ -32,9 +32,9 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
+import org.junit.platform.engine.support.store.Namespace;
 import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 
 @SuppressWarnings({"Convert2Lambda", "unchecked", "rawtypes"})
@@ -44,13 +44,13 @@ class TestGlobalForClass {
 
   @Test
   void globalForClass() {
-    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+    try (NamespacedHierarchicalStore<Namespace> valuesStore =
         new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getRoot()).thenReturn(ctx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
 
       GlobalForClass first = GlobalForClass.globalForClass(ctx);
@@ -69,7 +69,7 @@ class TestGlobalForClass {
       verify(listCreator).apply("my-key");
 
       when(ctx.getRoot()).thenReturn(ctx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.MyClass]");
 
       GlobalForClass second = GlobalForClass.globalForClass(ctx);
@@ -89,7 +89,7 @@ class TestGlobalForClass {
       verifyNoInteractions(listCreator);
 
       when(ctx.getRoot()).thenReturn(ctx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       when(ctx.getUniqueId()).thenReturn("[engine:meep]/[class:hello.world.AnotherClass]");
 
       GlobalForClass forOtherClass = GlobalForClass.globalForClass(ctx);

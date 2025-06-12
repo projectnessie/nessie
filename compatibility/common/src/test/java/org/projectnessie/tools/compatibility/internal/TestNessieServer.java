@@ -27,11 +27,11 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.engine.execution.NamespaceAwareStore;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.platform.engine.support.store.Namespace;
 import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 import org.projectnessie.client.api.NessieApiV1;
 import org.projectnessie.tools.compatibility.api.Version;
@@ -43,16 +43,16 @@ class TestNessieServer {
   @Test
   void currentVersionServer() {
     NessieServer server;
-    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+    try (NamespacedHierarchicalStore<Namespace> valuesStore =
         new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
 
       ExtensionContext ctx = mock(ExtensionContext.class);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
 
       ServerKey key = new ServerKey(Version.CURRENT, "In-Memory", Collections.emptyMap());
 
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
@@ -63,7 +63,7 @@ class TestNessieServer {
           .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       soft.assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
     }
 
@@ -76,21 +76,21 @@ class TestNessieServer {
   @ValueSource(strings = {"0.55.0"})
   void oldNessieVersionServer(String nessieVersion) {
     NessieServer server;
-    try (NamespacedHierarchicalStore<ExtensionContext.Namespace> valuesStore =
+    try (NamespacedHierarchicalStore<Namespace> valuesStore =
         new NamespacedHierarchicalStore<>(null, CLOSE_RESOURCES)) {
       Store rootStore = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
       ExtensionContext rootCtx = mock(ExtensionContext.class);
-      when(rootCtx.getStore(any(Namespace.class))).thenReturn(rootStore);
+      when(rootCtx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(rootStore);
 
       Store store = new NamespaceAwareStore(valuesStore, Util.NAMESPACE);
       ExtensionContext ctx = mock(ExtensionContext.class);
       when(ctx.getRoot()).thenReturn(rootCtx);
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
 
       ServerKey key =
           new ServerKey(Version.parseVersion(nessieVersion), "In-Memory", Collections.emptyMap());
 
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       soft.assertThatThrownBy(() -> NessieServer.nessieServerExisting(ctx, key))
           .isInstanceOf(NullPointerException.class)
           .hasMessageStartingWith("No Nessie server for ");
@@ -101,7 +101,7 @@ class TestNessieServer {
           .extracting(s -> s.getUri(NessieApiV1.class))
           .isNotNull();
 
-      when(ctx.getStore(any(Namespace.class))).thenReturn(store);
+      when(ctx.getStore(any(ExtensionContext.Namespace.class))).thenReturn(store);
       soft.assertThat(NessieServer.nessieServerExisting(ctx, key)).isSameAs(server);
     }
 

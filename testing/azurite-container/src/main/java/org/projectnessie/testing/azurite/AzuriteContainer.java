@@ -24,14 +24,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.Base58;
 
 public class AzuriteContainer extends GenericContainer<AzuriteContainer>
-    implements AzuriteAccess, CloseableResource {
+    implements AzuriteAccess, AutoCloseable {
 
   private static final int DEFAULT_PORT = 10000; // default blob service port
   private static final String LOG_WAIT_REGEX =
