@@ -112,7 +112,10 @@ dependencies {
   intTestImplementation("com.google.cloud:google-cloud-storage")
   intTestRuntimeOnly("com.google.cloud:google-cloud-nio")
   intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
-  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio)
+  intTestRuntimeOnly(libs.google.cloud.bigdataoss.gcsio) {
+    // brings junit:junit + hamcrest :(
+    exclude("io.grpc", "grpc-testing")
+  }
 
   intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
   intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
