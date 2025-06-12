@@ -2,6 +2,7 @@
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
     'config:recommended',
+    // Required to not pin dependencies to _exact_ versions (pip)
     ':preserveSemverRanges',
     'group:monorepos',
     'helpers:pinGitHubActionDigests',
@@ -10,6 +11,7 @@
   ],
   pip_requirements: {
     managerFilePatterns: [
+      // default: (^|/)([\\w-]*)requirements\\.(txt|pip)$
       '/(^|/)([\\w-]*)requirements.*\\.txt$/',
     ],
   },
@@ -26,8 +28,12 @@
         'docker-compose',
         'github-actions',
       ],
+      // do not add any labels, because that conflicts with CI job restarts, causing the wrong CI run
+      // to be cancelled in GitHub actions when the `labeled` type is used in e.g. `on.pull_request.types`.
       labels: [],
     },
+
+    // Schedule npm + pip on weekends
     {
       matchManagers: [
         'pip_requirements',
@@ -37,6 +43,12 @@
         'schedule:weekends',
       ],
     },
+
+    //
+    // General update-type rules
+    //
+
+    // Check for updates, merge automatically
     {
       matchManagers: [
         'maven',
@@ -55,6 +67,8 @@
       automerge: true,
       platformAutomerge: true,
     },
+
+    // Check for major updates, but do not merge automatically
     {
       matchManagers: [
         'maven',
@@ -68,6 +82,7 @@
       ],
       automerge: false,
     },
+
     {
       matchManagers: [
         'github-actions',
@@ -81,6 +96,12 @@
       automerge: true,
       platformAutomerge: true,
     },
+
+    //
+    // Specific rules
+    //
+
+    // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
       matchManagers: [
         'dockerfile',
@@ -98,6 +119,8 @@
       automerge: true,
       platformAutomerge: true,
     },
+
+    // Trino specials
     {
       matchManagers: [
         'maven',
@@ -118,6 +141,8 @@
       automerge: true,
       platformAutomerge: true,
     },
+
+    // Jandex special
     {
       matchManagers: [
         'maven',
@@ -136,6 +161,8 @@
         'io.smallrye:jandex',
       ],
     },
+
+    // Exclude a couple packages that are known to break Nessie and/or downstream users
     {
       matchManagers: [
         'maven',
@@ -153,6 +180,8 @@
         'digest',
       ],
     },
+
+    // Run docker CI for some dependencies
     {
       matchManagers: [
         'maven',
@@ -169,6 +198,8 @@
         'pr-docker',
       ],
     },
+
+    // Reduce awssdk update frequency (which has daily releases)
     {
       matchManagers: [
         'maven',
@@ -181,6 +212,8 @@
         'software.amazon.awssdk{/,}**',
       ],
     },
+
+    // Special versioning for Minio
     {
       matchManagers: [
         'dockerfile',
@@ -191,6 +224,8 @@
       matchPackageNames: [
         '/^quay.io/minio/minio/',
       ],
+      // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
+      // see https://github.com/renovatebot/renovate/issues/2438
     },
     {
       groupName: 'Quarkus Platform and Group',
@@ -209,6 +244,8 @@
       ],
     },
   ],
+
+  // Max 50 PRs in total, 10 per hour
   prConcurrentLimit: 50,
-  prHourlyLimit: 2,
+  prHourlyLimit: 10,
 }
