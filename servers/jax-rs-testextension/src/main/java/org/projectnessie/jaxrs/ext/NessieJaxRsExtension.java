@@ -37,7 +37,6 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -184,7 +183,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
     return getEnv(extensionContext).jerseyTest.target().getUri();
   }
 
-  private static class EnvHolder implements CloseableResource {
+  private static class EnvHolder implements AutoCloseable {
     private final Weld weld;
     private final JerseyTest jerseyTest;
     private SecurityContext securityContext;
@@ -264,7 +263,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
     }
 
     @Override
-    public void close() throws Throwable {
+    public void close() throws Exception {
       jerseyTest.tearDown();
       weld.shutdown();
     }

@@ -128,4 +128,9 @@ public class MultiEnvDelegatingJupiterConfiguration implements JupiterConfigurat
   public OutputDirectoryProvider getOutputDirectoryProvider() {
     return delegate.getOutputDirectoryProvider();
   }
+
+  @Override
+  public boolean isClosingStoredAutoCloseablesEnabled() {
+    return delegate.isClosingStoredAutoCloseablesEnabled();
+  }
 }

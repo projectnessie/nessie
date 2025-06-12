@@ -16,13 +16,18 @@
 package org.projectnessie.tools.compatibility.internal;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.engine.support.store.Namespace;
 import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 
 final class Helper {
-  static final NamespacedHierarchicalStore.CloseAction<ExtensionContext.Namespace> CLOSE_RESOURCES =
+  @SuppressWarnings("deprecation")
+  static final NamespacedHierarchicalStore.CloseAction<Namespace> CLOSE_RESOURCES =
       (namespace, key, value) -> {
         if (value instanceof ExtensionContext.Store.CloseableResource) {
           ((ExtensionContext.Store.CloseableResource) value).close();
+        }
+        if (value instanceof AutoCloseable) {
+          ((AutoCloseable) value).close();
         }
       };
 }

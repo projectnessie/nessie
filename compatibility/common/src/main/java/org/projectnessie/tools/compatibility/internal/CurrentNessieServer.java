@@ -65,7 +65,7 @@ final class CurrentNessieServer implements NessieServer {
   }
 
   @Override
-  public void close() throws Throwable {
+  public void close() throws Exception {
     try {
       if (jersey != null) {
         jersey.close();

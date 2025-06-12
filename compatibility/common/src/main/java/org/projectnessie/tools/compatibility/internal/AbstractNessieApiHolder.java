@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.client.api.NessieApi;
 import org.projectnessie.tools.compatibility.api.NessieAPI;
 import org.projectnessie.tools.compatibility.api.NessieApiBuilderProperty;
@@ -36,7 +35,7 @@ import org.projectnessie.tools.compatibility.api.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class AbstractNessieApiHolder implements CloseableResource {
+abstract class AbstractNessieApiHolder implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractNessieApiHolder.class);
 
   protected final ClientKey clientKey;
@@ -56,7 +55,7 @@ abstract class AbstractNessieApiHolder implements CloseableResource {
           .getApiInstance();
     } else {
       return context
-          .getStore(Util.NAMESPACE)
+          .getStore(Util.EXTENSION_CONTEXT_NAMESPACE)
           .getOrComputeIfAbsent(
               clientKey, k -> new OldNessieApiHolder(context, k), OldNessieApiHolder.class)
           .getApiInstance();

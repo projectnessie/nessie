@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,7 @@ import org.testcontainers.utility.Base58;
  * Host} header.
  */
 public class GcsContainer extends GenericContainer<GcsContainer>
-    implements GcsAccess, CloseableResource {
+    implements GcsAccess, AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GcsContainer.class);
   public static final int PORT = 4443;

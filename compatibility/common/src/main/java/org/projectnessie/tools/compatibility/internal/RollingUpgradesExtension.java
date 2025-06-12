@@ -21,14 +21,12 @@ import static org.projectnessie.tools.compatibility.internal.NessieServer.nessie
 import static org.projectnessie.tools.compatibility.internal.NessieServer.nessieServerExisting;
 import static org.projectnessie.tools.compatibility.internal.Util.extensionStore;
 
-import java.io.Closeable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.projectnessie.tools.compatibility.api.TargetVersion;
 import org.projectnessie.tools.compatibility.api.Version;
 import org.projectnessie.versioned.storage.mongodbtests.MongoDBBackendTestFactory;
@@ -85,8 +83,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
                     .loadClass("com.mongodb.client.MongoClients")
                     .getMethod("create", String.class)
                     .invoke(null, mongo.mongo.getConnectionString());
-            extensionStore(context)
-                .put("mongo-client", (CloseableResource) () -> ((Closeable) mongoClient).close());
+            extensionStore(context).put("mongo-client", mongoClient);
 
             setClient.invoke(c, mongoClient);
           } catch (Exception e) {
@@ -150,7 +147,7 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
         field -> apiInstanceForField(context, field, version, nessieServerSupplier));
   }
 
-  static class MongoHolder implements CloseableResource {
+  static class MongoHolder implements AutoCloseable {
     final MongoDBBackendTestFactory mongo = new MongoDBBackendTestFactory();
 
     boolean started;
