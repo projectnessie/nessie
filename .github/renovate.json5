@@ -1,155 +1,214 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
-    "config:base",
-    // Required to not pin dependencies to _exact_ versions (pip)
-    ":preserveSemverRanges",
-    "group:monorepos",
-    "helpers:pinGitHubActionDigests",
-    ":semanticPrefixFixDepsChoreOthers",
-    ":dependencyDashboard",
+    'config:recommended',
+    ':preserveSemverRanges',
+    'group:monorepos',
+    'helpers:pinGitHubActionDigests',
+    ':semanticPrefixFixDepsChoreOthers',
+    ':dependencyDashboard',
   ],
-
   pip_requirements: {
-    // fileMatch default: (^|/)([\\w-]*)requirements\\.(txt|pip)$
-    "fileMatch": ["(^|/)([\\w-]*)requirements.*\\.txt$"],
+    managerFilePatterns: [
+      '/(^|/)([\\w-]*)requirements.*\\.txt$/',
+    ],
   },
-
   packageRules: [
-    // do not add any labels, because that conflicts with CI job restarts, causing the wrong CI run
-    // to be cancelled in GitHub actions when the `labeled` type is used in e.g. `on.pull_request.types`.
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose", "github-actions"],
+      matchManagers: [
+        'maven',
+        'gradle',
+        'gradle-wrapper',
+        'pip_requirements',
+        'pip_setup',
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+        'github-actions',
+      ],
       labels: [],
     },
-
-    // Schedule npm + pip on weekends
     {
-      matchManagers: ["pip_requirements", "pip_setup"],
-      extends: ["schedule:weekends"],
+      matchManagers: [
+        'pip_requirements',
+        'pip_setup',
+      ],
+      extends: [
+        'schedule:weekends',
+      ],
     },
-
-    //
-    // General update-type rules
-    //
-
-    // Check for updates, merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup", "dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchManagers: [
+        'maven',
+        'gradle',
+        'gradle-wrapper',
+        'pip_requirements',
+        'pip_setup',
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
       automerge: true,
       platformAutomerge: true,
     },
-
-    // Check for major updates, but do not merge automatically
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
-      matchUpdateTypes: ["major"],
+      matchManagers: [
+        'maven',
+        'gradle',
+        'gradle-wrapper',
+        'pip_requirements',
+        'pip_setup',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
       automerge: false,
     },
-
     {
-      matchManagers: ["github-actions"],
-      matchUpdateTypes: ["major", "minor", "patch", "digest"],
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'major',
+        'minor',
+        'patch',
+        'digest',
+      ],
       automerge: true,
       platformAutomerge: true,
     },
-
-    //
-    // Specific rules
-    //
-
-    // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
-      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["major", "minor", "patch"],
+      matchManagers: [
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+      ],
+      matchUpdateTypes: [
+        'major',
+        'minor',
+        'patch',
+      ],
       matchPackageNames: [
-        "gcr.io/google.com/cloudsdktool/google-cloud-cli"
+        'gcr.io/google.com/cloudsdktool/google-cloud-cli',
       ],
       automerge: true,
-      platformAutomerge: true
+      platformAutomerge: true,
     },
-
-    // Trino specials
     {
-      matchManagers: ["maven", "gradle", "dockerfile", "devcontainer", "docker-compose"],
-      matchUpdateTypes: ["major", "minor", "patch"],
+      matchManagers: [
+        'maven',
+        'gradle',
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+      ],
+      matchUpdateTypes: [
+        'major',
+        'minor',
+        'patch',
+      ],
       matchPackageNames: [
-        "io.trino:trino-client",
-        "docker.io/trinodb/trino"
+        'io.trino:trino-client',
+        'docker.io/trinodb/trino',
       ],
       automerge: true,
-      platformAutomerge: true
+      platformAutomerge: true,
     },
-
-    // Jandex special
     {
-      matchManagers: ["maven", "gradle", "gradle-wrapper", "pip_requirements", "pip_setup"],
-      matchUpdateTypes: ["major", "minor"],
+      matchManagers: [
+        'maven',
+        'gradle',
+        'gradle-wrapper',
+        'pip_requirements',
+        'pip_setup',
+      ],
+      matchUpdateTypes: [
+        'major',
+        'minor',
+      ],
       automerge: false,
       matchPackageNames: [
-        "org.jboss:jandex",
-        "io.smallrye:jandex",
-      ]
-    },
-
-    // Exclude a couple packages that are known to break Nessie and/or downstream users
-    {
-      matchManagers: ["maven", "gradle"],
-      matchPackageNames: [
-        "jakarta.validation:jakarta.validation-api",
-        "jakarta.enterprise:jakarta.enterprise.cdi-api",
-        "org.glassfish.jersey:jersey-bom",
+        'org.jboss:jandex',
+        'io.smallrye:jandex',
       ],
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
     },
-
-    // Run docker CI for some dependencies
     {
-      matchManagers: ["maven", "gradle"],
-      matchPackageNames: [
-        "com.google.guava:guava",
-        "com.google.protobuf:protobuf-java",
-        "org.jboss:jandex",
-        "org.projectnessie.cel:cel-bom",
-        "org.rocksdb:rocksdbjni",
+      matchManagers: [
+        'maven',
+        'gradle',
       ],
-      labels: ["pr-docker"],
-    },
-
-    // Reduce awssdk update frequency (which has daily releases)
-    {
-      matchManagers: ["maven", "gradle"],
-      matchPackagePrefixes: ["software.amazon.awssdk"],
-      extends: ["schedule:weekly"],
-    },
-
-    // Special versioning for Minio
-    {
-      matchManagers: ["dockerfile", "devcontainer", "docker-compose"],
-      packagePatterns: ["^quay.io/minio/minio"],
-      versioning: "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2})-(?<revision>\\d{2})-\\d{2}Z",
-      // see https://docs.renovatebot.com/modules/versioning/#regular-expression-versioning
-      // see https://github.com/renovatebot/renovate/issues/2438
-    },
-
-    // Quarkus platform + plugin together
-    {
-      groupName: "Quarkus Platform and Group",
-      matchManagers: ["gradle"],
       matchPackageNames: [
-        "io.quarkus.platform:quarkus-bom",
-        "io.quarkus.platform:quarkus-amazon-services-bom",
-        "io.quarkus.platform:quarkus-cassandra-bom",
-        "io.quarkus.platform:quarkus-google-cloud-services-bom",
-        "io.quarkus:io.quarkus.gradle.plugin",
+        'jakarta.validation:jakarta.validation-api',
+        'jakarta.enterprise:jakarta.enterprise.cdi-api',
+        'org.glassfish.jersey:jersey-bom',
       ],
-      labels: ["pr-docker"],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+        'pin',
+        'digest',
+      ],
+    },
+    {
+      matchManagers: [
+        'maven',
+        'gradle',
+      ],
+      matchPackageNames: [
+        'com.google.guava:guava',
+        'com.google.protobuf:protobuf-java',
+        'org.jboss:jandex',
+        'org.projectnessie.cel:cel-bom',
+        'org.rocksdb:rocksdbjni',
+      ],
+      labels: [
+        'pr-docker',
+      ],
+    },
+    {
+      matchManagers: [
+        'maven',
+        'gradle',
+      ],
+      extends: [
+        'schedule:weekly',
+      ],
+      matchPackageNames: [
+        'software.amazon.awssdk{/,}**',
+      ],
+    },
+    {
+      matchManagers: [
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+      ],
+      versioning: 'regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>\\d{2})-(?<revision>\\d{2})-\\d{2}Z',
+      matchPackageNames: [
+        '/^quay.io/minio/minio/',
+      ],
+    },
+    {
+      groupName: 'Quarkus Platform and Group',
+      matchManagers: [
+        'gradle',
+      ],
+      matchPackageNames: [
+        'io.quarkus.platform:quarkus-bom',
+        'io.quarkus.platform:quarkus-amazon-services-bom',
+        'io.quarkus.platform:quarkus-cassandra-bom',
+        'io.quarkus.platform:quarkus-google-cloud-services-bom',
+        'io.quarkus:io.quarkus.gradle.plugin',
+      ],
+      labels: [
+        'pr-docker',
+      ],
     },
   ],
-
-  // Max 50 PRs in total, 10 per hour
   prConcurrentLimit: 50,
   prHourlyLimit: 2,
 }
-
