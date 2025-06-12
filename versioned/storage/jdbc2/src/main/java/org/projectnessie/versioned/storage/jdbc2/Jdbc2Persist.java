@@ -39,7 +39,7 @@ class Jdbc2Persist extends AbstractJdbc2Persist {
   private final Jdbc2Backend backend;
 
   Jdbc2Persist(Jdbc2Backend backend, StoreConfig config) {
-    super(backend.databaseSpecific(), config);
+    super(backend.databaseSpecific(), backend.fetchSize(), config);
     this.backend = backend;
   }
 

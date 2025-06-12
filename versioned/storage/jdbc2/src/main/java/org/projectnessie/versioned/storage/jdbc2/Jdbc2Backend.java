@@ -75,12 +75,14 @@ public final class Jdbc2Backend implements Backend {
   private final boolean closeDataSource;
   private final String createTableRefsSql;
   private final String createTableObjsSql;
+  private final int fetchSize;
 
   public Jdbc2Backend(
       @Nonnull Jdbc2BackendConfig config,
       @Nonnull DatabaseSpecific databaseSpecific,
       boolean closeDataSource) {
     this.dataSource = config.dataSource();
+    this.fetchSize = config.fetchSize().orElse(Jdbc2BackendBaseConfig.DEFAULT_FETCH_SIZE);
     this.databaseSpecific = databaseSpecific;
     this.closeDataSource = closeDataSource;
     createTableRefsSql = buildCreateTableRefsSql(databaseSpecific);
@@ -184,6 +186,10 @@ public final class Jdbc2Backend implements Backend {
   @Override
   public PersistFactory createFactory() {
     return new Jdbc2PersistFactory(this);
+  }
+
+  int fetchSize() {
+    return fetchSize;
   }
 
   Connection borrowConnection() throws SQLException {

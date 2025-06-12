@@ -85,6 +85,6 @@ public class LiveContentSetsStorageOptions {
         schemaCreateStrategy.apply(conn);
       }
     }
-    return JdbcPersistenceSpi.builder().dataSource(dataSource).build();
+    return JdbcPersistenceSpi.builder().dataSource(dataSource).fetchSize(jdbc.fetchSize).build();
   }
 }

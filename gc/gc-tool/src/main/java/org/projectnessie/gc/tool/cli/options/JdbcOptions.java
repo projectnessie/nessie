@@ -52,6 +52,11 @@ public class JdbcOptions {
   String password;
 
   @CommandLine.Option(
+      names = "--jdbc-fetch-size",
+      description = "JDBC fetch size, defaults to 100.")
+  int fetchSize = 100;
+
+  @CommandLine.Option(
       names = "--jdbc-schema",
       description =
           "How to create the database schema. "

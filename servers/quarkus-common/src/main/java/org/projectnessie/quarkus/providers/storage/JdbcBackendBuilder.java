@@ -68,6 +68,7 @@ public class JdbcBackendBuilder implements BackendBuilder {
     JdbcBackendConfig c =
         JdbcBackendConfig.builder()
             .datasourceName(config.datasourceName())
+            .fetchSize(config.fetchSize())
             .dataSource(dataSource)
             .build();
     return new JdbcBackendFactory().buildBackend(c);

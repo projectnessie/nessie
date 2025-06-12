@@ -16,8 +16,14 @@
 package org.projectnessie.versioned.storage.jdbc;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 
 public interface JdbcBackendBaseConfig {
 
+  String DEFAULT_FETCH_SIZE_STRING = "100";
+  int DEFAULT_FETCH_SIZE = Integer.parseInt(DEFAULT_FETCH_SIZE_STRING);
+
   Optional<String> datasourceName();
+
+  OptionalInt fetchSize();
 }

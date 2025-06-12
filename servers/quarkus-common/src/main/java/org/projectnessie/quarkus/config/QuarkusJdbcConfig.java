@@ -16,8 +16,10 @@
 package org.projectnessie.quarkus.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendBaseConfig;
 
 /**
@@ -93,4 +95,12 @@ public interface QuarkusJdbcConfig extends Jdbc2BackendBaseConfig {
   @WithName("datasource")
   @Override
   Optional<String> datasourceName();
+
+  /**
+   * The JDBC fetch size, defaults to {@code 100}. Must be a value {@code >=0}, where {@code 0}
+   * means fetching all rows in advance.
+   */
+  @Override
+  @WithDefault(DEFAULT_FETCH_SIZE_STRING)
+  OptionalInt fetchSize();
 }

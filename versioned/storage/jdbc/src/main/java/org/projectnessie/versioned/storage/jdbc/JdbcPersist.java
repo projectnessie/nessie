@@ -39,7 +39,7 @@ class JdbcPersist extends AbstractJdbcPersist {
   private final JdbcBackend backend;
 
   JdbcPersist(JdbcBackend backend, StoreConfig config) {
-    super(backend.databaseSpecific(), config);
+    super(backend.databaseSpecific(), backend.fetchSize(), config);
     this.backend = backend;
   }
 
