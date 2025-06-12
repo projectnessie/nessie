@@ -239,12 +239,15 @@ public class GcsResource {
                   .build();
             case media:
               StreamingOutput stream = output -> obj.writer().write(range, output);
-              return Response.ok(stream)
-                  .tag(obj.etag())
-                  .type(obj.contentType())
-                  .header(CONTENT_LENGTH, obj.contentLength())
-                  .lastModified(new Date(obj.lastModified()))
-                  .build();
+              Response.ResponseBuilder responseBuilder =
+                  Response.ok(stream)
+                      .tag(obj.etag())
+                      .type(obj.contentType())
+                      .lastModified(new Date(obj.lastModified()));
+              if (range == null) {
+                responseBuilder.header(CONTENT_LENGTH, obj.contentLength());
+              }
+              return responseBuilder.build();
             default:
               throw new IllegalArgumentException("alt = " + alt);
           }

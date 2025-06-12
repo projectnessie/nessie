@@ -191,7 +191,9 @@ public class AdlsGen2Resource {
   @Path("/{filesystem:[$a-z0-9](?!.*--)[-a-z0-9]{1,61}[a-z0-9]}/{path:.*}")
   @Produces(MediaType.WILDCARD)
   public Response getProperties(
-      @PathParam("filesystem") String filesystem, @PathParam("path") String path) {
+      @PathParam("filesystem") String filesystem,
+      @PathParam("path") String path,
+      @HeaderParam(RANGE) Range range) {
 
     String normalizedPath = stripLeadingSlash(path);
 
@@ -204,12 +206,15 @@ public class AdlsGen2Resource {
             return keyNotFound();
           }
 
-          return Response.ok()
-              .tag(obj.etag())
-              .type(obj.contentType())
-              .header(CONTENT_LENGTH, obj.contentLength())
-              .lastModified(new Date(obj.lastModified()))
-              .build();
+          Response.ResponseBuilder responseBuilder =
+              Response.ok()
+                  .tag(obj.etag())
+                  .type(obj.contentType())
+                  .lastModified(new Date(obj.lastModified()));
+          if (range == null) {
+            responseBuilder.header(CONTENT_LENGTH, obj.contentLength());
+          }
+          return responseBuilder.build();
         });
   }
 
