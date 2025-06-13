@@ -28,7 +28,7 @@ This directory contains a development container configuration for Project Nessie
 docker build -f .devcontainer/Dockerfile -t nessie-dev .
 
 # Run a shell in the container
-docker run -it --rm -v $(pwd):/workspace -w /workspace nessie-dev bash
+docker run -it --rm -v $(pwd):/workspace -w /workspace nessie-dev /bin/bash
 
 # Test the setup
 ./gradlew --version
@@ -37,22 +37,7 @@ java --version
 
 ## Development Workflow
 
-Once in the container, you can use all the standard Nessie development commands:
-
-```bash
-# Basic smoke test
-./gradlew sAp compileAll jar codeChecks
-
-# Run tests
-./gradlew test
-
-# Run integration tests  
-./gradlew intTest
-
-# Build and run the server
-./gradlew :nessie-quarkus:quarkusBuild
-java -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar
-```
+Once in the container, you can use all the standard Nessie [development commands](../CONTRIBUTING.md):
 
 The Nessie server will be available at http://localhost:19120 (automatically forwarded in VS Code).
 
@@ -61,31 +46,12 @@ The Nessie server will be available at http://localhost:19120 (automatically for
 This addresses the common issues mentioned in Nessie's contributing docs:
 
 - ✅ **No "development on the metal"** - Everything runs in a safe, isolated container
-- ✅ **Linux-first environment** - Even on macOS/Windows, you get a consistent Linux environment  
+- ✅ **Linux-first environment** - Even on macOS/Windows, you get a consistent Linux environment
 - ✅ **No Podman conflicts** - Uses Docker with a standard Debian base
 - ✅ **Pre-configured toolchain** - Java 21, Gradle, and all dependencies ready to go
 - ✅ **VS Code integration** - Full IDE support with proper Java language server setup
 
-## Container Details
-
-- **Base Image**: `openjdk:21-jdk-slim` (Debian-based)
-- **User**: `nessie` (UID 10000, GID 10001) 
-- **Working Directory**: `/workspace`
-- **Port Forwarding**: 19120 (Nessie server)
-- **Java Home**: `/usr/local/openjdk-21`
-
-## Customization
-
-You can modify the configuration by editing:
-- `.devcontainer/devcontainer.json` - VS Code settings, extensions, port forwarding
-- `.devcontainer/Dockerfile` - Container image, installed packages, environment
 
 ## Troubleshooting
 
-**Container won't start**: Ensure Docker is running and you have sufficient disk space.
-
-**Gradle issues**: The container automatically downloads Gradle via the wrapper. Make sure you have network access.
-
-**Permission errors**: The container runs as user `nessie` with sudo access. Files should be automatically owned correctly.
-
-**VS Code Java issues**: The container includes proper Java language server configuration. Reload VS Code if needed.
+**Container build fails with "At least one invalid signature was encountered."**: You are likely out of disk space (in docker at least), or you have no network connection. Clean out unused containers and images, and try again.

@@ -14,8 +14,7 @@
         "vscjava.vscode-java-pack",
         "redhat.java",
         "vscjava.vscode-gradle",
-        "ms-vscode.vscode-json",
-        "streetsidesoftware.code-spell-checker"
+        "ms-vscode.vscode-json"
       ],
       "settings": {
         "java.configuration.runtimes": [
