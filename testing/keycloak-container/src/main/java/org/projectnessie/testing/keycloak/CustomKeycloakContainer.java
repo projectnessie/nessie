@@ -82,8 +82,13 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     client.setStandardFlowEnabled(true);
     client.setRedirectUris(List.of("http://localhost:*"));
 
-    // required for device code grant
-    client.setAttributes(Map.of("oauth2.device.authorization.grant.enabled", "true"));
+    // required for device code and token exchange grants
+    client.setAttributes(
+        Map.of(
+            "oauth2.device.authorization.grant.enabled",
+            "true",
+            "standard.token.exchange.enabled",
+            "true"));
 
     client.setEnabled(true);
 
@@ -157,7 +162,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
     @Value.Default
     public List<String> featuresEnabled() {
-      return List.of("token-exchange", "preview");
+      return List.of();
     }
 
     @Nullable
@@ -230,7 +235,9 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     this.config = config;
 
     withNetworkAliases("keycloak");
-    withFeaturesEnabled(config.featuresEnabled().toArray(new String[0]));
+    if (!config.featuresEnabled().isEmpty()) {
+      withFeaturesEnabled(config.featuresEnabled().toArray(new String[0]));
+    }
     withStartupAttempts(3);
 
     // Don't use withNetworkMode, or aliases won't work!
