@@ -144,6 +144,7 @@ dependencies {
 
       val ideSyncActive =
         System.getProperty("idea.sync.active").toBoolean() ||
+          System.getProperty("idea.active").toBoolean() ||
           System.getProperty("eclipse.product") != null ||
           gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
       val sparkVersions = rootProject.extra["sparkVersions"].toString().split(",").map { it.trim() }

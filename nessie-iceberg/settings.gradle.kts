@@ -88,6 +88,7 @@ fun loadProjects(file: String, groupId: String) =
 
 val ideSyncActive =
   System.getProperty("idea.sync.active").toBoolean() ||
+    System.getProperty("idea.active").toBoolean() ||
     System.getProperty("eclipse.product") != null ||
     gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
 
