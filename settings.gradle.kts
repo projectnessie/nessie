@@ -154,6 +154,7 @@ loadProjects("gradle/projects.main.properties", groupIdMain)
 
 val ideSyncActive =
   System.getProperty("idea.sync.active").toBoolean() ||
+    System.getProperty("idea.active").toBoolean() ||
     System.getProperty("eclipse.product") != null ||
     gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
 
