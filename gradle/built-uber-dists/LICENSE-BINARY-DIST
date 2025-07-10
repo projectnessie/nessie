@@ -392,6 +392,7 @@ io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi
 io.opentelemetry:opentelemetry-sdk-logs
 io.opentelemetry:opentelemetry-sdk-metrics
 io.opentelemetry:opentelemetry-sdk-trace
+io.opentelemetry.instrumentation:opentelemetry-jdbc
 io.opentelemetry.semconv:opentelemetry-semconv
 io.opentelemetry.semconv:opentelemetry-semconv-incubating
 io.perfmark:perfmark-api
