@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-gc.jar create-sql-schema [-hV] ([--jdbc] --jdbc-url=<url> [--jdbc-properties
                                        [=<String=String>[,<String=String>...]...]]...
