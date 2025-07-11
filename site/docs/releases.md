@@ -2,6 +2,21 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.104.3 Release (July 11, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.104.3).
+
+### Changes
+
+- JDBC: Previously, the JDBC backends and Nessie GC left the fetch-size to its default, which is to fetch
+  all rows when a `SELECT` statement is executed. This is changed to default to a fetch-size of 100 rows.
+  To revert to the old behavior, set the corresponding configuration option to `0` (not recommended).
+  A corresponding, new command line option for Nessie GC has been introduced as well.
+
+### Commits
+* Switch Keycloak container to standard token exchange (#10963)
+* Respect `idea.active` in addition to `idea.sync.active` (#10980)
+
 ## 0.104.2 Release (June 12, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.104.2).
