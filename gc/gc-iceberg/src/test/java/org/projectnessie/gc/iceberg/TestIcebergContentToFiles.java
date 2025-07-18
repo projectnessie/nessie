@@ -32,9 +32,11 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -245,29 +247,70 @@ public class TestIcebergContentToFiles {
   }
 
   @Test
-  public void elementaryUrisFromSnapshot() {
+  public void collectSnapshotsToKeep() {
+    var latestSnapshot = mock(Snapshot.class);
+    when(latestSnapshot.snapshotId()).thenReturn(1L);
+    when(latestSnapshot.parentId()).thenReturn(10L);
+    var snap1 = mock(Snapshot.class);
+    when(snap1.snapshotId()).thenReturn(10L);
+    when(snap1.operation()).thenReturn(DataOperations.APPEND);
+    when(snap1.parentId()).thenReturn(20L);
+    var snap2 = mock(Snapshot.class);
+    when(snap2.snapshotId()).thenReturn(20L);
+    when(snap2.operation()).thenReturn(DataOperations.OVERWRITE);
+    when(snap2.parentId()).thenReturn(30L);
+    var snap3 = mock(Snapshot.class);
+    when(snap3.snapshotId()).thenReturn(30L);
+    when(snap3.operation()).thenReturn(DataOperations.APPEND);
+    when(snap3.parentId()).thenReturn(40L);
+    var snap4 = mock(Snapshot.class);
+    when(snap4.snapshotId()).thenReturn(40L);
+    when(snap4.operation()).thenReturn(DataOperations.REPLACE);
+    when(snap4.parentId()).thenReturn(50L);
+    var snap5 = mock(Snapshot.class);
+    when(snap5.snapshotId()).thenReturn(50L);
+    when(snap5.operation()).thenReturn(DataOperations.APPEND);
+    when(snap5.parentId()).thenReturn(60L);
+    var snap6 = mock(Snapshot.class);
+    when(snap6.snapshotId()).thenReturn(60L);
+    when(snap6.operation()).thenReturn(DataOperations.DELETE);
+
+    var tableMetadata = mock(TableMetadata.class);
+    when(tableMetadata.snapshot(10L)).thenReturn(snap1);
+    when(tableMetadata.snapshot(20L)).thenReturn(snap2);
+    when(tableMetadata.snapshot(30L)).thenReturn(snap3);
+    when(tableMetadata.snapshot(40L)).thenReturn(snap4);
+    when(tableMetadata.snapshot(50L)).thenReturn(snap5);
+    when(tableMetadata.snapshot(60L)).thenReturn(snap6);
+
+    var result = IcebergContentToFiles.collectSnapshotsToKeep(tableMetadata, latestSnapshot);
+    soft.assertThat(result)
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                1L, latestSnapshot,
+                20L, snap2,
+                40L, snap4,
+                60L, snap6));
+  }
+
+  @Test
+  public void manifestListUri() {
     ContentReference contentReference =
         icebergContent(ICEBERG_TABLE, "cid", "abcd", ContentKey.of("abc"), "/table-metadata", 42L);
 
-    soft.assertThat(IcebergContentToFiles.elementaryUrisFromSnapshot(null, contentReference))
-        .containsExactly(StorageUri.of("file:///table-metadata"));
-
     Snapshot snapshot = mock(Snapshot.class);
     when(snapshot.manifestListLocation()).thenReturn(null);
-    soft.assertThat(IcebergContentToFiles.elementaryUrisFromSnapshot(snapshot, contentReference))
-        .containsExactly(StorageUri.of("file:///table-metadata"));
+    soft.assertThat(IcebergContentToFiles.manifestListUri(snapshot, contentReference)).isEmpty();
 
     snapshot = mock(Snapshot.class);
     when(snapshot.manifestListLocation()).thenReturn("/manifest-list");
-    soft.assertThat(IcebergContentToFiles.elementaryUrisFromSnapshot(snapshot, contentReference))
-        .containsExactlyInAnyOrder(
-            StorageUri.of("file:///table-metadata"), StorageUri.of("file:///manifest-list"));
+    soft.assertThat(IcebergContentToFiles.manifestListUri(snapshot, contentReference))
+        .containsExactly(StorageUri.of("file:///manifest-list"));
 
     snapshot = mock(Snapshot.class);
     when(snapshot.manifestListLocation()).thenReturn("meep://manifest-list");
-    soft.assertThat(IcebergContentToFiles.elementaryUrisFromSnapshot(snapshot, contentReference))
-        .containsExactlyInAnyOrder(
-            StorageUri.of("file:///table-metadata"), StorageUri.of("meep://manifest-list"));
+    soft.assertThat(IcebergContentToFiles.manifestListUri(snapshot, contentReference))
+        .containsExactly(StorageUri.of("meep://manifest-list"));
   }
 
   @Test
