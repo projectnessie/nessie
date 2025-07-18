@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import com.google.common.collect.Maps
 import io.gatling.gradle.GatlingRunTask
+import java.util.Map.entry as mapEntry
 
 plugins {
   id("nessie-conventions-scala")
@@ -54,7 +54,7 @@ nessieQuarkusApp {
     jvmArgumentsNonInput.add("-XX:SelfDestructTimer=30")
     systemProperties.put("nessie.server.send-stacktrace-to-client", "true")
     System.getProperties()
-      .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
+      .map { e -> mapEntry(e.key.toString(), e.value.toString()) }
       .filter { e -> e.key.startsWith("nessie.") || e.key.startsWith("quarkus.") }
       .forEach { e -> systemProperties.put(e.key, e.value) }
   }
@@ -69,7 +69,7 @@ gatling {
 
   jvmArgs =
     System.getProperties()
-      .map { e -> Maps.immutableEntry(e.key.toString(), e.value.toString()) }
+      .map { e -> mapEntry(e.key.toString(), e.value.toString()) }
       .filter { e ->
         e.key.startsWith("nessie.") || e.key.startsWith("gatling.") || e.key.startsWith("sim.")
       }
