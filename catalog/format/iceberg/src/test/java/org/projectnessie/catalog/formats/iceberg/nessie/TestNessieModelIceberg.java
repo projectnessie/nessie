@@ -23,6 +23,7 @@ import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataBare;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataBareWithSchema;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataSimple;
+import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataThreeSnapshots;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataWithStatistics;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField.nestedField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField.partitionField;
@@ -92,6 +93,7 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshotLogEntry;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTransform;
@@ -375,11 +377,21 @@ public class TestNessieModelIceberg {
     NessieTableSnapshot nessie =
         NessieModelIceberg.icebergTableSnapshotToNessie(
             snapshotId, null, table, icebergTableMetadata, IcebergSnapshot::manifestList);
+
+    soft.assertThat(nessie.previousIcebergSnapshotIds())
+        .hasSize(Math.max(icebergTableMetadata.snapshotLog().size() - 1, 0))
+        .containsExactlyElementsOf(
+            icebergTableMetadata.snapshotLog().stream()
+                .map(IcebergSnapshotLogEntry::snapshotId)
+                .filter(id -> id != icebergTableMetadata.currentSnapshotId())
+                .collect(Collectors.toList()));
+
     soft.assertThat(icebergJsonSerializeDeserialize(nessie, NessieTableSnapshot.class))
         .isEqualTo(nessie);
 
     IcebergTableMetadata iceberg =
-        NessieModelIceberg.nessieTableSnapshotToIceberg(nessie, Optional.empty(), properties -> {});
+        NessieModelIceberg.nessieTableSnapshotToIceberg(
+            nessie, List.of(), Optional.empty(), properties -> {});
     IcebergTableMetadata icebergWithCatalogProps =
         IcebergTableMetadata.builder()
             .from(icebergTableMetadata)
@@ -387,12 +399,28 @@ public class TestNessieModelIceberg {
                 iceberg.properties().entrySet().stream()
                     .filter(e -> e.getKey().startsWith("nessie."))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+            .snapshots(
+                iceberg.snapshots().stream()
+                    .filter(s -> s.snapshotId() == iceberg.currentSnapshotId())
+                    .collect(Collectors.toList()))
+            .snapshotLog(
+                iceberg.snapshotLog().stream()
+                    .filter(s -> s.snapshotId() == iceberg.currentSnapshotId())
+                    .collect(Collectors.toList()))
             .schema(
                 icebergTableMetadata.formatVersion() > 1
                     ? null
                     : iceberg.schemas().isEmpty() ? null : iceberg.schemas().get(0))
             .build();
-    soft.assertThat(iceberg).isEqualTo(icebergWithCatalogProps);
+    IcebergTableMetadata icebergCurrentSnapshotOnly =
+        IcebergTableMetadata.builder()
+            .from(iceberg)
+            .snapshots(
+                iceberg.snapshots().stream()
+                    .filter(s -> s.snapshotId() == iceberg.currentSnapshotId())
+                    .collect(Collectors.toList()))
+            .build();
+    soft.assertThat(icebergCurrentSnapshotOnly).isEqualTo(icebergWithCatalogProps);
 
     NessieTableSnapshot nessieAgain =
         NessieModelIceberg.icebergTableSnapshotToNessie(
@@ -410,7 +438,9 @@ public class TestNessieModelIceberg {
             // snapshot
             tableMetadataSimple(),
             // statistics
-            tableMetadataWithStatistics())
+            tableMetadataWithStatistics(),
+            // 3 snapshots
+            tableMetadataThreeSnapshots())
         .flatMap(
             builder ->
                 Stream.of(
@@ -1045,7 +1075,8 @@ public class TestNessieModelIceberg {
         .isEqualTo(expectedLastColumnId);
 
     IcebergTableMetadata icebergMetadata =
-        NessieModelIceberg.nessieTableSnapshotToIceberg(snapshot, Optional.empty(), m -> {});
+        NessieModelIceberg.nessieTableSnapshotToIceberg(
+            snapshot, List.of(), Optional.empty(), m -> {});
     soft.assertThat(icebergMetadata)
         .extracting(IcebergTableMetadata::lastColumnId)
         .isEqualTo(expectedLastColumnId);

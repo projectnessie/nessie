@@ -19,7 +19,6 @@ import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +55,7 @@ public class IcebergTableMetadataUpdateState {
   private int lastAddedSchemaId = -1;
   private int lastAddedSpecId = -1;
   private int lastAddedOrderId = -1;
-  private final List<IcebergSnapshot> addedSnapshots = new ArrayList<>();
+  private IcebergSnapshot previouslyAddedSnapshot = null;
   private final Set<Integer> addedSchemaIds = new HashSet<>();
   private final Set<Integer> addedSpecIds = new HashSet<>();
   private final Set<Integer> addedOrderIds = new HashSet<>();
@@ -86,12 +85,12 @@ public class IcebergTableMetadataUpdateState {
     return snapshot;
   }
 
-  public List<IcebergSnapshot> addedSnapshots() {
-    return addedSnapshots;
+  public IcebergSnapshot previouslyAddedSnapshot() {
+    return previouslyAddedSnapshot;
   }
 
   public void snapshotAdded(IcebergSnapshot snapshot) {
-    addedSnapshots.add(snapshot);
+    previouslyAddedSnapshot = snapshot;
   }
 
   public int lastAddedSchemaId() {
