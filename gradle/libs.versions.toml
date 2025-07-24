@@ -27,7 +27,7 @@ picocli = "4.7.6"
 protobuf = "4.31.1"
 quarkusPlatform = "3.24.5"
 quarkusPlugin = "3.25.0"
-quarkusVault = "4.3.0"
+quarkusVault = "4.4.0"
 slf4j = "2.0.17"
 undertow = "2.3.18.Final"
 
