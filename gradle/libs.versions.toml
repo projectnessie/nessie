@@ -167,4 +167,4 @@ protobuf = { id = "com.google.protobuf", version = "0.9.5" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
 smallrye-openapi = { id = "io.smallrye.openapi", version = "4.1.1" }
-jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.2.1"}
+jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.3.0"}
