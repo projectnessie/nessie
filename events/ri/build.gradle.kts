@@ -39,7 +39,7 @@ dependencies {
 
   // Quarkus - NATS
   implementation(
-    "io.quarkiverse.reactivemessaging.nats-jetstream:quarkus-messaging-nats-jetstream:3.23.0"
+    "io.quarkiverse.reactivemessaging.nats-jetstream:quarkus-messaging-nats-jetstream:3.24.3"
   )
 
   // Avro serialization
