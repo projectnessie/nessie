@@ -93,7 +93,7 @@ jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "4.0.5" }
 jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "3.1.10" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.0.2" }
 jetty-bom = { module = "org.eclipse.jetty:jetty-bom", version = "12.0.23" }
-jline = { module = "org.jline:jline", version = "3.30.4" }
+jline = { module = "org.jline:jline", version = "3.30.5" }
 jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
