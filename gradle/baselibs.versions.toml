@@ -1,7 +1,7 @@
 # Dependencies needed by build-logic/
 
 [libraries]
-assertj-core = { module = "org.assertj:assertj-core", version = "3.27.3" }
+assertj-core = { module = "org.assertj:assertj-core", version = "3.27.4" }
 errorprone = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version = "4.3.0" }
 idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version = "1.2" }
 jandex = { module = "com.github.vlsi.gradle:jandex-plugin", version = "2.0.0" }
