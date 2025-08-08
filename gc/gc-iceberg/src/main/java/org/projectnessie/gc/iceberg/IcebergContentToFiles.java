@@ -25,10 +25,13 @@ import com.google.errorprone.annotations.MustBeClosed;
 import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ManifestReaderUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -105,6 +108,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   }
 
   private Stream<FileReference> extractViewFiles(ContentReference contentReference) {
+    //noinspection resource
     FileIO io = io();
 
     ViewMetadata viewMetadata;
@@ -136,29 +140,37 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
             contentReference.snapshotId(),
             "Iceberg content is expected to have a non-null snapshot-ID");
 
-    Snapshot snapshot =
+    Snapshot currentSnapshot =
         snapshotId < 0L ? tableMetadata.currentSnapshot() : tableMetadata.snapshot(snapshotId);
 
-    Stream<StorageUri> allFiles = elementaryUrisFromSnapshot(snapshot, contentReference);
+    var metadataLoc = metadataStorageUri(contentReference);
+    var allFiles =
+        Stream.concat(Stream.of(metadataLoc), manifestListUri(currentSnapshot, contentReference));
 
-    if (snapshot != null) {
-      long effectiveSnapshotId = snapshot.snapshotId();
-      allFiles =
-          Stream.concat(
-              allFiles,
-              tableMetadata.statisticsFiles().stream()
-                  .filter(s -> s.snapshotId() == effectiveSnapshotId)
-                  .map(StatisticsFile::path)
-                  .map(StorageUri::of));
-      allFiles =
-          Stream.concat(
-              allFiles,
-              tableMetadata.partitionStatisticsFiles().stream()
-                  .filter(s -> s.snapshotId() == effectiveSnapshotId)
-                  .map(PartitionStatisticsFile::path)
-                  .map(StorageUri::of));
+    // Collect the _relevant_ snapshots, which is the latest snapshot and all snapshots that
+    // resulted from non-append org.apache.iceberg.DataOperations, see
+    // org.apache.iceberg.MergingSnapshotProducer.validateDataFilesExist.
+    var snapshotsToKeep = collectSnapshotsToKeep(tableMetadata, currentSnapshot);
 
-      Map<Integer, PartitionSpec> specsById = tableMetadata.specsById();
+    // Keep statistics + partition-statistics files for all _relevant_ snapshots
+    allFiles =
+        Stream.concat(
+            allFiles,
+            tableMetadata.statisticsFiles().stream()
+                .filter(s -> snapshotsToKeep.containsKey(s.snapshotId()))
+                .map(StatisticsFile::path)
+                .map(StorageUri::of));
+    allFiles =
+        Stream.concat(
+            allFiles,
+            tableMetadata.partitionStatisticsFiles().stream()
+                .filter(s -> snapshotsToKeep.containsKey(s.snapshotId()))
+                .map(PartitionStatisticsFile::path)
+                .map(StorageUri::of));
+
+    var partitionSpecsById = tableMetadata.specsById();
+
+    for (var snapshot : snapshotsToKeep.values()) {
       allFiles =
           Stream.concat(
               allFiles,
@@ -169,7 +181,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
                         try {
                           @SuppressWarnings("MustBeClosedChecker")
                           Stream<StorageUri> r =
-                              allManifestsAndDataFiles(io, snapshot, specsById, contentReference);
+                              allManifestsAndDataFiles(
+                                  io, snapshot, partitionSpecsById, contentReference);
                           return r;
                         } catch (Exception e) {
                           String msg =
@@ -354,36 +367,54 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return loc;
   }
 
-  static Stream<StorageUri> elementaryUrisFromSnapshot(
-      Snapshot snapshot, ContentReference contentReference) {
-    StorageUri metadataLoc = metadataStorageUri(contentReference);
-
-    if (snapshot == null) {
-      return Stream.of(metadataLoc);
-    }
-
-    String manifestListLocation = snapshot.manifestListLocation();
-    if (manifestListLocation == null) {
+  static Stream<StorageUri> manifestListUri(Snapshot snapshot, ContentReference contentReference) {
+    if (snapshot == null || snapshot.manifestListLocation() == null) {
       // Iceberg spec v1 has the manifest files embedded in the table-metadata, Iceberg spec v2
       // has a separate manifest list file.
-      return Stream.of(metadataLoc);
+      return Stream.empty();
     }
 
-    StorageUri manifestListLoc =
-        checkUri("manifest list", snapshot.manifestListLocation(), contentReference);
-
-    return Stream.of(metadataLoc, manifestListLoc);
+    return Stream.of(checkUri("manifest list", snapshot.manifestListLocation(), contentReference));
   }
 
-  private static StorageUri metadataStorageUri(ContentReference contentReference) {
+  // From org.apache.iceberg.MergingSnapshotProducer.validateDataFilesExist
+  private static final Set<String> VALIDATE_DATA_FILES_EXIST_OPERATIONS =
+      Set.of(DataOperations.OVERWRITE, DataOperations.REPLACE, DataOperations.DELETE);
+
+  static Map<Long, Snapshot> collectSnapshotsToKeep(TableMetadata tableMetadata, Snapshot latest) {
+    var snapshots = new HashMap<Long, Snapshot>();
+
+    if (latest != null) {
+      // always validate the "latest" snapshot
+      snapshots.put(latest.snapshotId(), latest);
+
+      for (var current = latest; ; ) {
+        var parent = current.parentId();
+        if (parent == null) {
+          break;
+        }
+        current = tableMetadata.snapshot(parent);
+        if (current == null) {
+          break;
+        }
+
+        if (VALIDATE_DATA_FILES_EXIST_OPERATIONS.contains(current.operation())) {
+          snapshots.put(current.snapshotId(), current);
+        }
+      }
+    }
+
+    return snapshots;
+  }
+
+  private static StorageUri metadataStorageUri(@Nonnull ContentReference contentReference) {
     String metadataLocation =
         Preconditions.checkNotNull(
             contentReference.metadataLocation(),
             "Iceberg content is expected to have a non-null metadata-location for content-key %s on commit %s",
             contentReference.contentKey(),
             contentReference.commitId());
-    StorageUri metadataLoc = checkUri("metadata", metadataLocation, contentReference);
-    return metadataLoc;
+    return checkUri("metadata", metadataLocation, contentReference);
   }
 
   static StorageUri baseUri(
