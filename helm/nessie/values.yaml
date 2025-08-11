@@ -776,6 +776,10 @@ service:
   ports:
     - name: nessie-http
       number: 19120
+      # -- The port on each node on which this service is exposed.
+      # Only meaningful when service type is NodePort or LoadBalancer.
+      # Leave empty (~) to let Kubernetes assign a random port.
+      nodePort: ~
     # - name: nessie-https
     #  number: 19121
   # -- The session affinity for the service. Valid values are: None, ClientIP.
