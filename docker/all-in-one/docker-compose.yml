@@ -147,7 +147,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:12.1.0
+    image: docker.io/grafana/grafana:12.1.1
     depends_on:
       - prometheus
     ports:
@@ -248,7 +248,7 @@ services:
       retries: 15
 
   postgres:
-    image: postgres:17.5
+    image: postgres:17.6
     ports:
       - "5432:5432"
     # set shared memory limit when using docker-compose
