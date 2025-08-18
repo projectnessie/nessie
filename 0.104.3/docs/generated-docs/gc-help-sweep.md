@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-gc.jar sweep [-hV] [--[no-]defer-deletes]
                            [--allowed-fpp=<allowedFalsePositiveProbability>]
