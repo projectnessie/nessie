@@ -38,7 +38,8 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_L
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_MAP;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.TYPE_STRUCT;
 import static org.projectnessie.catalog.model.id.NessieId.transientNessieId;
-import static org.projectnessie.catalog.model.schema.types.NessieType.DEFAULT_TIME_PRECISION;
+import static org.projectnessie.catalog.model.schema.types.NessieType.MICROS_TIME_PRECISION;
+import static org.projectnessie.catalog.model.schema.types.NessieType.NANOS_TIME_PRECISION;
 import static org.projectnessie.catalog.model.snapshot.NessieViewRepresentation.NessieViewSQLRepresentation.nessieViewSQLRepresentation;
 import static org.projectnessie.catalog.model.snapshot.TableFormat.ICEBERG;
 import static org.projectnessie.catalog.model.statistics.NessiePartitionStatisticsFile.partitionStatisticsFile;
@@ -316,18 +317,25 @@ public class NessieModelIceberg {
         return IcebergType.dateType();
       case TIME:
         NessieTimeTypeSpec time = (NessieTimeTypeSpec) type;
-        if (time.precision() != DEFAULT_TIME_PRECISION || time.withTimeZone()) {
+        if (time.precision() != MICROS_TIME_PRECISION || time.withTimeZone()) {
           throw new IllegalArgumentException("Data type not supported in Iceberg: " + type);
         }
         return IcebergType.timeType();
       case TIMESTAMP:
         NessieTimestampTypeSpec timestamp = (NessieTimestampTypeSpec) type;
-        if (timestamp.precision() != DEFAULT_TIME_PRECISION) {
-          throw new IllegalArgumentException("Data type not supported in Iceberg: " + type);
+        switch (timestamp.precision()) {
+          case MICROS_TIME_PRECISION:
+            return timestamp.withTimeZone()
+                ? IcebergType.timestampTzType()
+                : IcebergType.timestampType();
+          case NANOS_TIME_PRECISION:
+            return timestamp.withTimeZone()
+                ? IcebergType.timestampNanosTzType()
+                : IcebergType.timestampNanosType();
+          default:
+            break;
         }
-        return timestamp.withTimeZone()
-            ? IcebergType.timestamptzType()
-            : IcebergType.timestampType();
+        throw new IllegalArgumentException("Data type not supported in Iceberg: " + type);
       case BINARY:
         return IcebergType.binaryType();
       case DECIMAL:
@@ -378,9 +386,13 @@ public class NessieModelIceberg {
       IcebergType type, Map<Integer, NessieField> icebergFields) {
     switch (type.type()) {
       case IcebergType.TYPE_TIMESTAMP_TZ:
-        return NessieType.timestampType(true);
+        return NessieType.timestampType(MICROS_TIME_PRECISION, true);
       case IcebergType.TYPE_TIMESTAMP:
-        return NessieType.timestampType(false);
+        return NessieType.timestampType(MICROS_TIME_PRECISION, false);
+      case IcebergType.TYPE_TIMESTAMP_NS_TZ:
+        return NessieType.timestampType(NANOS_TIME_PRECISION, true);
+      case IcebergType.TYPE_TIMESTAMP_NS:
+        return NessieType.timestampType(NANOS_TIME_PRECISION, false);
       case IcebergType.TYPE_BOOLEAN:
         return NessieType.booleanType();
       case IcebergType.TYPE_UUID:

@@ -39,8 +39,10 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.mapTyp
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.stringType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.structType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timeType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampNanosType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampNanosTzType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampType;
-import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestamptzType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampTzType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.uuidType;
 
 import java.util.Iterator;
@@ -98,7 +100,9 @@ public class IcebergFixtures {
         decimalType(10, 3),
         fixedType(42),
         timestampType(),
-        timestamptzType());
+        timestampTzType(),
+        timestampNanosType(),
+        timestampNanosTzType());
   }
 
   public static IcebergSchema icebergSchemaAllTypes() {
