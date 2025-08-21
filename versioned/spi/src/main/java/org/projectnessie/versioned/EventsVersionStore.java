@@ -17,6 +17,7 @@ package org.projectnessie.versioned;
 
 import jakarta.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -156,6 +157,12 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
+  public Iterator<ContentHistoryEntry> getContentChanges(Ref ref, ContentKey key)
+      throws ReferenceNotFoundException {
+    return delegate.getContentChanges(ref, key);
+  }
+
+  @Override
   public PaginationIterator<KeyEntry> getKeys(
       Ref ref, String pagingToken, boolean withContent, KeyRestrictions keyRestrictions)
       throws ReferenceNotFoundException {
@@ -163,9 +170,10 @@ public class EventsVersionStore implements VersionStore {
   }
 
   @Override
-  public List<IdentifiedContentKey> getIdentifiedKeys(Ref ref, Collection<ContentKey> keys)
+  public List<IdentifiedContentKey> getIdentifiedKeys(
+      Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
-    return delegate.getIdentifiedKeys(ref, keys);
+    return delegate.getIdentifiedKeys(ref, keys, returnNotFound);
   }
 
   @Override

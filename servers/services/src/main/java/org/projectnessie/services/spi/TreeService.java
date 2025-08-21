@@ -45,6 +45,7 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Reference.ReferenceType;
 import org.projectnessie.model.ReferenceHistoryResponse;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.RequestMeta;
 import org.projectnessie.versioned.WithHash;
 
@@ -109,6 +110,34 @@ public interface TreeService {
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String expectedHash)
       throws NessieConflictException, NessieNotFoundException;
+
+  /**
+   * Retrieve the <em>changes</em> to the content object with the content key {@code key} on a
+   * reference. This functionality focuses on <em>content</em> changes, neglecting renames.
+   *
+   * <p>The behavior of this function is rather <em>not</em> what an end user would expect, namely
+   * referencing the commits that actually changed the content. The behavior of this function just
+   * focuses on the changes, primarily intended to eventually build the snapshot history of an
+   * Iceberg table.
+   *
+   * <p>The first element returned by the iterator is the current state on the most recent from
+   * (beginning at {@code ref}). Following elements returned by the iterator refer to the content
+   * changes, as seen on the most recent commit(s).
+   *
+   * @see org.projectnessie.versioned.VersionStore#getContentChanges(Ref, ContentKey)
+   */
+  ContentHistory getContentHistory(
+      @Valid ContentKey key,
+      @Valid @Nullable @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE)
+          String namedRef,
+      @Valid
+          @Nullable
+          @Pattern(
+              regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
+              message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
+          String hashOnRef,
+      RequestMeta requestMeta)
+      throws NessieNotFoundException;
 
   <R> R getCommitLog(
       @Valid @NotNull @Pattern(regexp = REF_NAME_REGEX, message = REF_NAME_MESSAGE) String namedRef,
