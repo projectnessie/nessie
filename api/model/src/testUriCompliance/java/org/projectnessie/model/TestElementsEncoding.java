@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.eclipse.jetty.http.UriCompliance.Violation.AMBIGUOUS_PATH_ENCODING;
 import static org.eclipse.jetty.http.UriCompliance.Violation.AMBIGUOUS_PATH_SEPARATOR;
+import static org.eclipse.jetty.http.UriCompliance.Violation.FRAGMENT;
 import static org.eclipse.jetty.http.UriCompliance.Violation.SUSPICIOUS_PATH_CHARACTERS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -74,7 +75,7 @@ public class TestElementsEncoding {
             ContentKey::getElementCount)
         .containsExactly(
             elements,
-            elements.get(elements.size() - 1),
+            elements.getLast(),
             Namespace.of(elements.subList(0, elements.size() - 1)),
             elements.size());
     soft.assertThat(Namespace.fromPathString(encoded))
@@ -203,10 +204,13 @@ public class TestElementsEncoding {
         .containsExactlyInAnyOrderElementsOf(expectedViolations);
     soft.assertThat(uri.getPath().split("/")[2]).describedAs(uri.getPath()).isEqualTo(uriEncoded);
 
+    var expectedViolationsWithFragment = new ArrayList<>(expectedViolations);
+    expectedViolationsWithFragment.add(FRAGMENT);
+
     uri = HttpURI.from(format("http://hostname/foo/%s#fragment", uriEncoded));
     soft.assertThat(uri.getViolations())
         .describedAs("path-end+fragment: %s", uriEncoded)
-        .containsExactlyInAnyOrderElementsOf(expectedViolations);
+        .containsExactlyInAnyOrderElementsOf(expectedViolationsWithFragment);
     soft.assertThat(uri.getPath().split("/")[2]).describedAs(uri.getPath()).isEqualTo(uriEncoded);
 
     uri = HttpURI.from(format("http://hostname/foo/%s/bar", uriEncoded));
@@ -222,7 +226,9 @@ public class TestElementsEncoding {
         .isEqualTo(uriEncoded);
 
     uri = HttpURI.from(format("http://hostname/bar?foo=%s#fragment", uriEncoded));
-    soft.assertThat(uri.getViolations()).describedAs("query+fragment: %s", uriEncoded).isEmpty();
+    soft.assertThat(uri.getViolations())
+        .describedAs("query+fragment: %s", uriEncoded)
+        .containsExactly(FRAGMENT);
     soft.assertThat(uri.getQuery().split("&")[0].split("=")[1])
         .describedAs(uri.getQuery())
         .isEqualTo(uriEncoded);
@@ -268,7 +274,9 @@ public class TestElementsEncoding {
     soft.assertThat(uri.getPath().split("/")[2]).describedAs(uri.getPath()).isEqualTo(uriEncoded);
 
     uri = HttpURI.from(format("http://hostname/foo/%s#fragment", uriEncoded));
-    soft.assertThat(uri.getViolations()).describedAs("path-end+fragment: %s", uriEncoded).isEmpty();
+    soft.assertThat(uri.getViolations())
+        .describedAs("path-end+fragment: %s", uriEncoded)
+        .containsExactly(FRAGMENT);
     soft.assertThat(uri.getPath().split("/")[2]).describedAs(uri.getPath()).isEqualTo(uriEncoded);
 
     uri = HttpURI.from(format("http://hostname/foo/%s/bar", uriEncoded));
@@ -282,7 +290,9 @@ public class TestElementsEncoding {
         .isEqualTo(uriEncoded);
 
     uri = HttpURI.from(format("http://hostname/bar?foo=%s#fragment", uriEncoded));
-    soft.assertThat(uri.getViolations()).describedAs("query+fragment: %s", uriEncoded).isEmpty();
+    soft.assertThat(uri.getViolations())
+        .describedAs("query+fragment: %s", uriEncoded)
+        .containsExactly(FRAGMENT);
     soft.assertThat(uri.getQuery().split("&")[0].split("=")[1])
         .describedAs(uri.getQuery())
         .isEqualTo(uriEncoded);
@@ -554,6 +564,6 @@ public class TestElementsEncoding {
       sb.append((char) i);
     }
     HttpURI uri = HttpURI.from(format("http://hostname/foo?%s", sb));
-    soft.assertThat(uri.getViolations()).isEmpty();
+    soft.assertThat(uri.getViolations()).containsExactly(FRAGMENT);
   }
 }
