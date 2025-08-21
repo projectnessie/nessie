@@ -31,6 +31,9 @@ dependencies {
   implementation(libs.guava)
 
   implementation(libs.rocksdb.jni)
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "linux64" } }
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "linux64-musl" } }
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "osx" } }
 
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))

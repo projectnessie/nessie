@@ -26,4 +26,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-testextension"))
 
   implementation(libs.rocksdb.jni)
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "linux64" } }
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "linux64-musl" } }
+  runtimeOnly(libs.rocksdb.jni) { artifact { classifier = "osx" } }
 }
