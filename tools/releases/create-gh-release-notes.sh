@@ -83,7 +83,7 @@ fi
 NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD^1 | wc -l | xargs)
 
 git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} > ./raw-log
-grep -v '^\* \[release\] .*$' ./raw-log || true > ./release-log
+(grep -v '^\* \[release\] .*$' ./raw-log || true) > ./release-log
 
 Q_CLI_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-cli-${RELEASE_VERSION}.jar"
 Q_GC_TOOL_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-gc-${RELEASE_VERSION}.jar"
