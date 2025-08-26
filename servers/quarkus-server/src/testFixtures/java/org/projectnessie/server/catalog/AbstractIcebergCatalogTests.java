@@ -56,6 +56,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateSchema;
@@ -591,6 +592,9 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
             .create();
 
     originalTable.newFastAppend().appendFile(FILE_A).commit();
+    originalTable.newFastAppend().appendFile(FILE_B).commit();
+    originalTable.newDelete().deleteFile(FILE_A).commit();
+    originalTable.newFastAppend().appendFile(FILE_C).commit();
 
     TableOperations ops = ((BaseTable) originalTable).operations();
 
@@ -618,6 +622,9 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     assertThat(registeredTable.sortOrders())
         .as("Sort orders must match")
         .isEqualTo(originalTable.sortOrders());
+    assertThat(registeredTable.currentSnapshot().parentId())
+        .as("Current snapshot's parent-ID must match")
+        .isEqualTo(originalTable.currentSnapshot().parentId());
     assertThat(registeredTable.currentSnapshot())
         .as("Current snapshot must match")
         .isEqualTo(originalTable.currentSnapshot());
@@ -627,6 +634,12 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     assertThat(registeredTable.history())
         .as("History must match")
         .isEqualTo(originalTable.history());
+
+    TestHelpers.assertSameSchemaMap(registeredTable.schemas(), originalTable.schemas());
+    assertFiles(registeredTable, FILE_B, FILE_C);
+
+    registeredTable.newFastAppend().appendFile(FILE_A).commit();
+    assertFiles(registeredTable, FILE_B, FILE_C, FILE_A);
 
     assertThat(catalog.loadTable(TABLE)).isNotNull();
     assertThat(catalog.dropTable(TABLE)).isTrue();
