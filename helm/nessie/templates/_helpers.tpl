@@ -197,7 +197,7 @@ Apply S3 catalog options.
 {{- if .serverIam -}}
 {{- include "nessie.addConfigOption" (list .serverIam.enabled $map ( print $prefix "server-iam.enabled" )) -}}
 {{- include "nessie.addConfigOption" (list .serverIam.policy $map ( print $prefix "server-iam.policy" )) -}}
-{{- include "nessie.addConfigOption" (list .serverIam.roleArn $map ( print $prefix "server-iam.ssume-role" )) -}}
+{{- include "nessie.addConfigOption" (list .serverIam.roleArn $map ( print $prefix "server-iam.assume-role" )) -}}
 {{- include "nessie.addConfigOption" (list .serverIam.roleSessionName $map ( print $prefix "server-iam.role-session-name" )) -}}
 {{- include "nessie.addConfigOption" (list .serverIam.externalId $map ( print $prefix "server-iam.external-id" )) -}}
 {{- include "nessie.addConfigOption" (list .serverIam.sessionDuration $map ( print $prefix "server-iam.session-duration" )) -}}
