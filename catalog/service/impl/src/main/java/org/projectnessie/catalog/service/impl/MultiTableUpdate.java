@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
+import org.projectnessie.catalog.model.snapshot.ImplicitIcebergSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -128,16 +129,19 @@ final class MultiTableUpdate {
 
   static final class SingleTableUpdate {
     final NessieEntitySnapshot<?> snapshot;
+    final List<ImplicitIcebergSnapshot> history;
     final Content content;
     final ContentKey key;
     final Set<CatalogOps> catalogOps;
 
     SingleTableUpdate(
         NessieEntitySnapshot<?> snapshot,
+        List<ImplicitIcebergSnapshot> history,
         Content content,
         ContentKey key,
         Set<CatalogOps> catalogOps) {
       this.snapshot = snapshot;
+      this.history = history;
       this.content = content;
       this.key = key;
       this.catalogOps = catalogOps;

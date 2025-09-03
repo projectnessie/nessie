@@ -26,6 +26,7 @@ import static org.projectnessie.services.authz.Check.CheckType.DELETE_ENTITY;
 import static org.projectnessie.services.authz.Check.CheckType.READ_ENTITY_VALUE;
 import static org.projectnessie.services.authz.Check.CheckType.UPDATE_ENTITY;
 import static org.projectnessie.services.authz.Check.canCommitChangeAgainstReference;
+import static org.projectnessie.services.authz.Check.canListCommitLog;
 import static org.projectnessie.services.authz.Check.canReadContentKey;
 import static org.projectnessie.services.authz.Check.canReadEntries;
 import static org.projectnessie.services.authz.Check.canViewReference;
@@ -168,6 +169,15 @@ public class TestAuthzMeta extends BaseClientAuthTest {
                     canCommitChangeAgainstReference(branch),
                     check(READ_ENTITY_VALUE, branch, tableKey, Set.of("CATALOG_CREATE_ENTITY")),
                     check(CREATE_ENTITY, branch, tableKey, Set.of("CATALOG_CREATE_ENTITY"))),
+                Map.of()),
+            authzCheck(
+                apiContext,
+                List.of(
+                    canViewReference(branch),
+                    canListCommitLog(branch),
+                    canCommitChangeAgainstReference(branch),
+                    check(READ_ENTITY_VALUE, branch, tableKey),
+                    check(CREATE_ENTITY, branch, tableKey)),
                 Map.of()),
             // actual 'commit'
             authzCheck(
