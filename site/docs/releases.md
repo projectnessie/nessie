@@ -2,6 +2,20 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.0 Release (September 03, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.0).
+
+### Fixes
+
+- A bug has been resolved in the OAuth2 Authorization Code grant type. This fix addresses an issue
+  where the `extra-params` configuration option was not being properly included in the authorization
+  URI. Consequently, users, particularly Auth0 users passing the `audience` parameter, were receiving
+  opaque tokens instead of JWTs.
+
+### Commits
+* OAuth2 (Authorization Code): Include extra parameters in authorization URI (#11239)
+
 ## 0.104.10 Release (August 27, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.104.10).
