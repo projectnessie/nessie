@@ -20,6 +20,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- A bug has been resolved in the OAuth2 Authorization Code grant type. This fix addresses an issue
+  where the `extra-params` configuration option was not being properly included in the authorization
+  URI. Consequently, users, particularly Auth0 users passing the `audience` parameter, were receiving
+  opaque tokens instead of JWTs.
+
 ### Commits
 
 ## [0.104.2] Release (2025-06-12)
