@@ -111,7 +111,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
     redirectUri =
         String.format("http://localhost:%d%s", server.getAddress().getPort(), CONTEXT_PATH);
     URI authEndpoint = config.getResolvedAuthEndpoint();
-    authorizationUri =
+    UriBuilder uriBuilder =
         new UriBuilder(authEndpoint.resolve("/"))
             .path(authEndpoint.getPath())
             .queryParam("response_type", "code")
@@ -119,8 +119,9 @@ class AuthorizationCodeFlow extends AbstractFlow {
             .queryParam(
                 "scope", config.getScopes().stream().reduce((a, b) -> a + " " + b).orElse(null))
             .queryParam("redirect_uri", redirectUri)
-            .queryParam("state", state)
-            .build();
+            .queryParam("state", state);
+    config.getExtraRequestParameters().forEach(uriBuilder::queryParam);
+    authorizationUri = uriBuilder.build();
     LOGGER.debug("Authorization Code Flow: started, redirect URI: {}", redirectUri);
   }
 
