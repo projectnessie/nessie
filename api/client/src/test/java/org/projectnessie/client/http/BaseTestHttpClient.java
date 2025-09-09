@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Splitter;
+import com.google.common.io.CountingInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -225,8 +226,17 @@ public abstract class BaseTestHttpClient {
   }
 
   @ParameterizedTest
-  @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-  void testWriteWithVariousSizes(boolean ssl, boolean http2) {
+  @CsvSource({
+    "false, false, false",
+    "false, false, true",
+    "false, true, false",
+    "false, true, true",
+    "true, false, false",
+    "true, false, true",
+    "true, true, false",
+    "true, true, true"
+  })
+  void testWriteWithVariousSizes(boolean ssl, boolean http2, boolean disableCompression) {
     // Old URLConnection based client cannot handle HTTP/2
     assumeThat(!http2 || supportsHttp2()).isTrue();
 
@@ -237,7 +247,14 @@ public abstract class BaseTestHttpClient {
             case "PUT":
             case "POST":
               try (InputStream in = req.getInputStream()) {
-                input = MAPPER.readValue(in, ArrayBean.class);
+                var counting = new CountingInputStream(in);
+                try {
+                  input = MAPPER.readValue(counting, ArrayBean.class);
+                } catch (IOException e) {
+                  System.err.println("READ " + counting.getCount());
+                  e.printStackTrace();
+                  throw e;
+                }
               }
               break;
             case "GET":
@@ -257,66 +274,67 @@ public abstract class BaseTestHttpClient {
 
           try (OutputStream os = resp.getOutputStream()) {
             MAPPER.writeValue(os, input);
+          } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
           }
         });
 
     HttpTestServer server = ssl ? httpsServer : httpServer;
 
-    for (boolean disableCompression : new boolean[] {false, true}) {
-      try (HttpClient client =
-          createClient(
-              server.getUri(),
-              b -> {
-                b.setDisableCompression(disableCompression).setHttp2Upgrade(http2);
-                if (ssl) {
-                  b.setSslContext(server.getSslContext());
-                }
-              })) {
+    try (HttpClient client =
+        createClient(
+            server.getUri(),
+            b -> {
+              b.setDisableCompression(disableCompression).setHttp2Upgrade(http2);
+              if (ssl) {
+                b.setSslContext(server.getSslContext());
+              }
+            })) {
 
-        // Intentionally repeat a bunch of requests as fast as possible to validate that the
-        // server/client combination works fine.
-        for (int i = 0; i < 5; i++) {
-          for (int num : new int[] {1, 10, 20, 100}) {
-            int len = 10_000;
+      // Intentionally repeat a bunch of requests as fast as possible to validate that the
+      // server/client combination works fine.
+      for (int i = 0; i < 5; i++) {
+        for (int num : new int[] {1, 10, 20, 100}) {
+          int len = 10_000;
 
-            ArrayBean inputBean = ArrayBean.construct(10_000, num);
+          ArrayBean inputBean = ArrayBean.construct(10_000, num);
 
-            Supplier<HttpRequest> newRequest =
-                () ->
-                    client
-                        .newRequest()
-                        .queryParam("len", Integer.toString(len))
-                        .queryParam("num", Integer.toString(num))
-                        .queryParam("disableCompression", Boolean.toString(disableCompression));
+          Supplier<HttpRequest> newRequest =
+              () ->
+                  client
+                      .newRequest()
+                      .queryParam("len", Integer.toString(len))
+                      .queryParam("num", Integer.toString(num))
+                      .queryParam("disableCompression", Boolean.toString(disableCompression));
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().get().readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(newRequest.get().get().readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
+              .describedAs("GET, disableCompression:%s, num:%d", disableCompression, num)
+              .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().delete().readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(newRequest.get().delete().readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
+              .describedAs("DELETE, disableCompression:%s, num:%d", disableCompression, num)
+              .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().put(inputBean).readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
+          soft.assertThatCode(
+                  () ->
+                      assertThat(newRequest.get().put(inputBean).readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
+              .describedAs("PUT, disableCompression:%s, num:%d", disableCompression, num)
+              .doesNotThrowAnyException();
 
-            soft.assertThatCode(
-                    () ->
-                        assertThat(newRequest.get().post(inputBean).readEntity(ArrayBean.class))
-                            .isEqualTo(inputBean))
-                .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
-                .doesNotThrowAnyException();
-          }
+          soft.assertThatCode(
+                  () ->
+                      assertThat(newRequest.get().post(inputBean).readEntity(ArrayBean.class))
+                          .isEqualTo(inputBean))
+              .describedAs("POST, disableCompression:%s, num:%d", disableCompression, num)
+              .doesNotThrowAnyException();
         }
       }
     }
