@@ -210,6 +210,23 @@ git config core.eol lf
 git checkout main
 ```
 
+#### Testing custom/newer Quarkus versions
+
+Nessie releases use the Quarkus version defined in the `libs` version catalog using Gradle's `enforcedPlatform`
+dependency constraint mechanism. This means that the Quarkus version used by default is fixed and the dependencies
+defined by the Quarkus platform are enforced.
+
+For testing purposes, it is possible to use a different Quarkus version by setting the `quarkus.custom.version`
+system property.
+It is also possible to not enforce the Quarkus platform versions, i.e. using Gradle's `platform` dependency
+constraint mechanism, by setting the `quarkus.custom.noEnforcePlatform` system property to `true`.
+
+Example, to test against a pre-release Quarkus 3.28.0.CR1 version:
+```bash
+./gradlew -Dquarkus.custom.version=3.28.0.CR1 -Dquarkus.custom.noEnforcedPlatform=true test
+./gradlew -Dquarkus.custom.version=3.28.0.CR1 -Dquarkus.custom.noEnforcedPlatform=true intTest
+```
+
 ### Style guide
 
 Changes must adhere to the style guide and this will be verified by the continuous integration build.
