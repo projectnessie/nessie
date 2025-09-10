@@ -40,6 +40,7 @@ plugins.withType<JandexPlugin>().configureEach {
   }
 
   tasks.withType<Javadoc>().configureEach { dependsOn("jandex") }
+  tasks.named("checkstyleMain").configure { dependsOn("jandex") }
 }
 
 // Disable Jandex if a shadow jar is being built

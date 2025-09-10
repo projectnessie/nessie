@@ -63,9 +63,9 @@ if (noCheckstyle) {
   tasks.withType<Checkstyle>().configureEach {
     if (plugins.hasPlugin("io.quarkus")) {
       when (name) {
-        "checkstyleMain" -> dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava"))
-        "checkstyleTestFixtures" -> dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava"))
-        "checkstyleTest" -> dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava"))
+        "checkstyleMain" -> dependsOn("compileQuarkusGeneratedSourcesJava")
+        "checkstyleTestFixtures" -> dependsOn("compileQuarkusTestGeneratedSourcesJava")
+        "checkstyleTest" -> dependsOn("compileQuarkusTestGeneratedSourcesJava")
         else -> {}
       }
     }
@@ -79,8 +79,7 @@ if (noCheckstyle) {
 
     sourceSets.withType(SourceSet::class.java).configureEach {
       val sourceSet = this
-      val checkstyleTask = tasks.named(sourceSet.getTaskName("checkstyle", null))
-      checkstyleTask.configure { dependsOn(sourceSet.getTaskName("process", "jandexIndex")) }
+      val checkstyleTask = sourceSet.getTaskName("checkstyle", null)
       checkstyleAll.configure { dependsOn(checkstyleTask) }
     }
   }
