@@ -40,5 +40,3 @@ shadowJar.configure {
 tasks.named("compileJava").configure { finalizedBy(shadowJar) }
 
 tasks.named("processResources").configure { finalizedBy(shadowJar) }
-
-tasks.named("jar").configure { dependsOn("processJandexIndex") }

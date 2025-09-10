@@ -98,7 +98,7 @@ dependencies {
   intTestCompileOnly(project(":nessie-immutables-std"))
 }
 
-jandex { skipDefaultProcessing() }
+tasks.named("jandex") { enabled = false }
 
 val jacksonTestVersions =
   setOf(

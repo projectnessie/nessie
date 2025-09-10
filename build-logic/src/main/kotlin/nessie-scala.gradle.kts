@@ -22,7 +22,7 @@ tasks.withType<ScalaCompile>().configureEach {
 val scaladoc = tasks.named<ScalaDoc>("scaladoc")
 
 if (extensions.findByName("jandex") != null) {
-  scaladoc.configure { dependsOn(tasks.named("processJandexIndex")) }
+  scaladoc.configure { dependsOn(tasks.named("jandex")) }
 }
 
 val scaladocJar = tasks.register<Jar>("scaladocJar")

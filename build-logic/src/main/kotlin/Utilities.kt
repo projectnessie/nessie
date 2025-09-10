@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.github.vlsi.jandex.JandexProcessResources
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
@@ -37,7 +36,6 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -48,8 +46,6 @@ import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.project
-import org.gradle.kotlin.dsl.provideDelegate
-import org.gradle.kotlin.dsl.withType
 import org.gradle.process.JavaForkOptions
 import org.gradle.work.DisableCachingByDefault
 
@@ -278,19 +274,6 @@ fun loadProperties(file: File): Properties {
   return props
 }
 
-/** Hack for Jandex-Plugin (removed later). */
-fun Project.useBuildSubDirectory(buildSubDir: String) {
-  project.layout.buildDirectory.set(layout.buildDirectory.dir(buildSubDir).get())
-
-  // TODO open an issue for the Jandex plugin - it configures the task's output directory too
-  //  early, so re-assigning the output directory (project.buildDir=...) to a different path
-  //  isn't reflected in the Jandex output.
-  tasks.withType<JandexProcessResources>().configureEach {
-    val sourceSets: SourceSetContainer by project
-    sourceSets.all { destinationDir = this.output.resourcesDir!! }
-  }
-}
-
 /** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
@@ -298,7 +281,7 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.5"
   val scalaMajorVersion = sparkScala[1]
 
-  useBuildSubDirectory(scalaMajorVersion)
+  project.layout.buildDirectory.set(layout.buildDirectory.dir(scalaMajorVersion).get())
 
   return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
 }

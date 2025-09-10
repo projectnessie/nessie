@@ -108,7 +108,7 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
             .resolve("gradle.properties")
             .reader()
             .use {
-              val rules = java.util.Properties()
+              val rules = Properties()
               rules.load(it)
               rules
             }

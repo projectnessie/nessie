@@ -199,10 +199,6 @@ tasks.withType<Checkstyle>().configureEach {
   )
 }
 
-tasks.named("processJmhJandexIndex").configure { enabled = false }
-
-tasks.named("processTestJandexIndex").configure { enabled = false }
-
 jmh { jmhVersion = libs.versions.jmh.get() }
 
 tasks.named<Jar>("jmhJar") { manifest { attributes["Multi-Release"] = "true" } }
