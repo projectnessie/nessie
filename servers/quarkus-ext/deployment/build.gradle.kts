@@ -19,7 +19,7 @@ plugins { id("nessie-conventions-java21") }
 publishingHelper { mavenName = "Nessie - Quarkus Extension (Deployment)" }
 
 dependencies {
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-arc-deployment")
   implementation("io.quarkus:quarkus-core-deployment")
   annotationProcessor("io.quarkus:quarkus-extension-processor")

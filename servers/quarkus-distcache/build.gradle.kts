@@ -24,7 +24,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-common"))
   implementation(project(":nessie-network-tools"))
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-core")
   implementation("io.quarkus:quarkus-rest")
 

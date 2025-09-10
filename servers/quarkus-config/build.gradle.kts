@@ -24,7 +24,7 @@ dependencies {
 
   compileOnly(project(":nessie-doc-generator-annotations"))
 
-  compileOnly(enforcedPlatform(libs.quarkus.bom))
+  compileOnly(quarkusPlatform(project))
   compileOnly("io.quarkus:quarkus-core")
   compileOnly("io.smallrye.config:smallrye-config-core")
 
@@ -36,7 +36,7 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi(quarkusPlatform(project))
   testFixturesApi("io.quarkus:quarkus-core")
 
   testRuntimeOnly(libs.logback.classic)

@@ -22,7 +22,7 @@ plugins {
 publishingHelper { mavenName = "Nessie - Quarkus Extension (Runtime)" }
 
 dependencies {
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-arc")
 }
 

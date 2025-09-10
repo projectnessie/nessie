@@ -35,7 +35,7 @@ dependencies {
   implementation(project(":nessie-versioned-storage-testextension"))
   implementation(project(":nessie-container-spec-helper"))
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-junit5")
 
   implementation(platform(libs.testcontainers.bom))
@@ -54,7 +54,7 @@ dependencies {
     exclude("software.amazon.awssdk", "apache-client")
   }
 
-  implementation(platform(libs.quarkus.amazon.services.bom))
+  implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 
   implementation(libs.testcontainers.keycloak)

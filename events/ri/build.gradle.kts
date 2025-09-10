@@ -31,7 +31,7 @@ dependencies {
   implementation(project(":nessie-events-spi"))
 
   // Quarkus
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-core")
 
   // Quarkus - Kafka
@@ -60,7 +60,7 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.awaitility)
-  testImplementation(enforcedPlatform(libs.quarkus.bom))
+  testImplementation(quarkusPlatform(project))
   testImplementation("io.quarkus:quarkus-junit5")
 
   testCompileOnly(libs.microprofile.openapi)
