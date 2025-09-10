@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-client") }
+plugins { id("nessie-conventions-java11") }
 
 publishingHelper { mavenName = "Nessie - GC - JDBC live-contents-set persistence" }
 

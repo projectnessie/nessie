@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   alias(libs.plugins.nessie.run)
-  id("nessie-conventions-client")
+  id("nessie-conventions-java11")
   id("nessie-shadow-jar")
   id("nessie-license-report")
 }

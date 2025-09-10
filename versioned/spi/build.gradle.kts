@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server") }
+plugins { id("nessie-conventions-java11") }
 
 publishingHelper { mavenName = "Nessie - Versioned Store SPI" }
 

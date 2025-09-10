@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-server") }
+plugins { id("nessie-conventions-java11") }
 
 extra["maven.name"] =
   "Code to generate markdown documentation files for 'properties' and smallrye-config"

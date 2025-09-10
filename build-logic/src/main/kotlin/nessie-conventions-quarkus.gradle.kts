@@ -16,6 +16,14 @@
 
 // Conventions for project being built for/with Quarkus.
 
-plugins { id("nessie-common-java") }
+plugins { id("nessie-conventions-java21") }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 21 }
+// This can likely be removed with Quarkus 3.26.3 (or newer)
+listOf("compileJava", "javadoc", "sourcesJar").forEach { name ->
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
+}
+
+// This can likely be removed with Quarkus 3.26.3 (or newer)
+listOf("compileTestJava", "checkstyleTest", "compileTestJava").forEach { name ->
+  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
+}

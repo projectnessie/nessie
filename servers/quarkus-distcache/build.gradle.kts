@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-quarkus") }
+plugins { id("nessie-conventions-java21") }
 
 publishingHelper { mavenName = "Nessie - Quarkus Dist-Cache" }
 
