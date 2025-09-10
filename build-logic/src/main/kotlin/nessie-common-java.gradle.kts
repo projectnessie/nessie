@@ -14,15 +14,41 @@
  * limitations under the License.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
+import org.kordamp.gradle.plugin.jandex.JandexExtension
+import org.kordamp.gradle.plugin.jandex.JandexPlugin
+import org.kordamp.gradle.plugin.jandex.tasks.JandexTask
+
 plugins {
   `java-library`
   `maven-publish`
   signing
+  id("org.kordamp.gradle.jandex")
   id("nessie-common-base")
   id("nessie-common-src")
   id("nessie-java")
   id("nessie-testing")
 }
+
+// Jandex
+
+plugins.withType<JandexPlugin>().configureEach {
+  extensions.getByType(JandexExtension::class).run {
+    version = libsRequiredVersion("jandex")
+    // https://smallrye.io/jandex/jandex/3.4.0/index.html#persistent_index_format_versions
+    indexVersion = 11
+  }
+
+  tasks.withType<Javadoc>().configureEach { dependsOn("jandex") }
+  tasks.named("checkstyleMain").configure { dependsOn("jandex") }
+}
+
+// Disable Jandex if a shadow jar is being built
+plugins.withType<ShadowPlugin>().configureEach {
+  tasks.withType<JandexTask>().configureEach { enabled = false }
+}
+
+//
 
 if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
   /**

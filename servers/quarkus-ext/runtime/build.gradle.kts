@@ -16,7 +16,7 @@
 
 plugins {
   alias(libs.plugins.quarkus.extension)
-  id("nessie-conventions-quarkus")
+  id("nessie-conventions-java21")
 }
 
 publishingHelper { mavenName = "Nessie - Quarkus Extension (Runtime)" }

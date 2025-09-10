@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   id("com.gradleup.shadow")
-  id("nessie-conventions-client")
+  id("nessie-conventions-java11")
   id("nessie-shadow-jar")
   id("nessie-license-report")
 }
@@ -153,7 +153,7 @@ val generateAutoComplete by
 // generateAutoComplete writes the bash/zsh completion script into the main resource output,
 // which is a bit ugly, but works. But the following tasks need a dependency to that task so that
 // Gradle can properly evaluate the dependencies.
-listOf("compileTestJava", "jandexMain", "jar", "shadowJar").forEach { t ->
+listOf("compileTestJava", "jandex", "jar", "shadowJar").forEach { t ->
   tasks.named(t).configure { dependsOn(generateAutoComplete) }
 }
 

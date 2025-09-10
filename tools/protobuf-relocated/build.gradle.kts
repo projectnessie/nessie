@@ -17,7 +17,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-java11")
   id("nessie-shadow-jar")
 }
 
@@ -40,5 +40,3 @@ shadowJar.configure {
 tasks.named("compileJava").configure { finalizedBy(shadowJar) }
 
 tasks.named("processResources").configure { finalizedBy(shadowJar) }
-
-tasks.named("jar").configure { dependsOn("processJandexIndex") }

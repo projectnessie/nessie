@@ -69,16 +69,6 @@ dependencies {
 
 tasks.withType<Checkstyle> { exclude("**/generated/**") }
 
-listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name).configure { dependsOn("compileQuarkusGeneratedSourcesJava") }
-}
-
-listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name).configure { dependsOn("compileQuarkusTestGeneratedSourcesJava") }
-}
-
-tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }
-
 // Issue w/ testcontainers/podman in GH workflows :(
 if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.withType<Test>().configureEach { this.enabled = false }

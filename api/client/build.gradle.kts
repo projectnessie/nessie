@@ -16,7 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins { id("nessie-conventions-client") }
+plugins { id("nessie-conventions-java11") }
 
 publishingHelper { mavenName = "Nessie - Client" }
 
@@ -98,7 +98,7 @@ dependencies {
   intTestCompileOnly(project(":nessie-immutables-std"))
 }
 
-jandex { skipDefaultProcessing() }
+tasks.named("jandex") { enabled = false }
 
 val jacksonTestVersions =
   setOf(

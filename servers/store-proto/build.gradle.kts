@@ -19,7 +19,7 @@ import com.google.protobuf.gradle.ProtobufExtension
 import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-java11")
   alias(libs.plugins.protobuf)
 }
 
@@ -51,8 +51,8 @@ tasks.named<Jar>("sourcesJar").configure { dependsOn("generateProto") }
 
 tasks.withType(ProtobufExtract::class).configureEach {
   when (name) {
-    "extractIncludeTestProto" -> dependsOn(tasks.named("processJandexIndex"))
-    "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("processJandexIndex"))
-    "extractIncludeIntTestProto" -> dependsOn(tasks.named("processJandexIndex"))
+    "extractIncludeTestProto" -> dependsOn(tasks.named("jandex"))
+    "extractIncludeTestFixturesProto" -> dependsOn(tasks.named("jandex"))
+    "extractIncludeIntTestProto" -> dependsOn(tasks.named("jandex"))
   }
 }

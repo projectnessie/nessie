@@ -16,7 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins { id("nessie-conventions-server") }
+plugins { id("nessie-conventions-java11") }
 
 publishingHelper { mavenName = "Nessie - Storage - MongoDB2" }
 

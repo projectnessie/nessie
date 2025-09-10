@@ -61,13 +61,3 @@ dependencies {
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testCompileOnly(libs.microprofile.openapi)
 }
-
-listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name).configure { dependsOn("compileQuarkusGeneratedSourcesJava") }
-}
-
-listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name).configure { dependsOn("compileQuarkusTestGeneratedSourcesJava") }
-}
-
-tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }

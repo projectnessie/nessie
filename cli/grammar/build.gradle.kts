@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-client")
+  id("nessie-conventions-java11")
   alias(libs.plugins.jmh)
 }
 
@@ -198,10 +198,6 @@ tasks.withType<Checkstyle>().configureEach {
     "org/projectnessie/nessie/cli/jsongrammar/*",
   )
 }
-
-tasks.named("processJmhJandexIndex").configure { enabled = false }
-
-tasks.named("processTestJandexIndex").configure { enabled = false }
 
 jmh { jmhVersion = libs.versions.jmh.get() }
 

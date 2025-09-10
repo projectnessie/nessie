@@ -14,31 +14,9 @@
  * limitations under the License.
  */
 
-import com.github.vlsi.jandex.JandexBuildAction
-import com.github.vlsi.jandex.JandexProcessResources
-
-plugins {
-  id("com.github.vlsi.jandex")
-  id("com.diffplug.spotless")
-}
+plugins { id("com.diffplug.spotless") }
 
 apply<PublishingHelperPlugin>()
-
-jandex { toolVersion = libsRequiredVersion("jandex") }
-
-val sourceSets: SourceSetContainer? by project
-
-sourceSets?.withType(SourceSet::class.java)?.configureEach {
-  val sourceSet = this
-  if ("main" != sourceSet.name) {
-    val jandexTaskName = sourceSet.getTaskName("process", "jandexIndex")
-    tasks.named(jandexTaskName, JandexProcessResources::class.java).configure {
-      // No Jandex for non-main
-      jandexBuildAction = JandexBuildAction.NONE
-      enabled = false
-    }
-  }
-}
 
 //
 

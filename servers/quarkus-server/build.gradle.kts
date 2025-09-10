@@ -258,11 +258,7 @@ quarkus {
   )
 }
 
-val quarkusAppPartsBuild = tasks.named("quarkusAppPartsBuild")
-val quarkusDependenciesBuild = tasks.named("quarkusDependenciesBuild")
 val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")
-
-quarkusDependenciesBuild.configure { dependsOn("processJandexIndex") }
 
 // Expose runnable jar via quarkusRunner configuration for integration-tests that require the
 // server.
@@ -292,14 +288,6 @@ if (quarkusFatJar()) {
       }
     }
   }
-}
-
-listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
-}
-
-listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
 
 // Testcontainers is not supported on Windows :(

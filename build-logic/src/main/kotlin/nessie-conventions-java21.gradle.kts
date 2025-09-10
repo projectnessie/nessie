@@ -18,4 +18,4 @@
 
 plugins { id("nessie-common-java") }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 11 }
+tasks.withType<JavaCompile>().configureEach { options.release = 21 }

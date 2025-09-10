@@ -166,16 +166,6 @@ if (quarkusFatJar()) {
   }
 }
 
-listOf("javadoc", "sourcesJar").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusGeneratedSourcesJava")) }
-}
-
-listOf("checkstyleTest", "compileTestJava").forEach { name ->
-  tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
-}
-
-tasks.named("quarkusDependenciesBuild").configure { dependsOn("processJandexIndex") }
-
 // Testcontainers is not supported on Windows :(
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
   tasks.named<Test>("intTest").configure { this.enabled = false }

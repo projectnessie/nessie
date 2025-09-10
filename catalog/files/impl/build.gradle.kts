@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-java11")
   alias(libs.plugins.jmh)
 }
 
@@ -74,10 +74,6 @@ dependencies {
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
   jmhImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
 }
-
-tasks.named("processJmhJandexIndex").configure { enabled = false }
-
-tasks.named("processTestJandexIndex").configure { enabled = false }
 
 jmh { jmhVersion = libs.versions.jmh.get() }
 

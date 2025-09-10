@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-server")
+  id("nessie-conventions-java11")
   alias(libs.plugins.jmh)
 }
 
@@ -63,9 +63,5 @@ dependencies {
   jmhImplementation(project(":nessie-versioned-storage-common-tests"))
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
 }
-
-tasks.named("processJmhJandexIndex").configure { enabled = false }
-
-tasks.named("processTestJandexIndex").configure { enabled = false }
 
 jmh { jmhVersion = libs.versions.jmh.get() }
