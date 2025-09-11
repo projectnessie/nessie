@@ -41,7 +41,7 @@ dependencies {
 
   implementation(libs.smallrye.mutiny)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-rest-common")
   implementation("io.quarkus:quarkus-rest")
 

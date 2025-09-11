@@ -16,6 +16,11 @@
 
 plugins {
   alias(libs.plugins.quarkus)
+    .version(
+      libs.plugins.quarkus.asProvider().map {
+        System.getProperty("quarkus.custom.version", it.version.requiredVersion)
+      }
+    )
   id("nessie-conventions-quarkus")
 }
 
@@ -31,7 +36,7 @@ dependencies {
   implementation(project(":nessie-quarkus-config"))
 
   // Quarkus
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-vertx")
 
   // Metrics
@@ -45,7 +50,7 @@ dependencies {
 
   testImplementation(project(":nessie-model"))
 
-  testImplementation(enforcedPlatform(libs.quarkus.bom))
+  testImplementation(quarkusPlatform(project))
   testImplementation("io.quarkus:quarkus-opentelemetry")
   testImplementation("io.quarkus:quarkus-micrometer")
   testImplementation("io.quarkus:quarkus-micrometer-registry-prometheus")

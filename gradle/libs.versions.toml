@@ -124,11 +124,8 @@ picocli = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
 picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.7" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
-quarkus-amazon-services-bom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkusPlatform" }
 quarkus-azure-services-bom = { module = "io.quarkiverse.azureservices:quarkus-azure-services-bom", version = "1.1.9" }
 quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkusPlatform" }
-quarkus-cassandra-bom = { module = "io.quarkus.platform:quarkus-cassandra-bom", version.ref = "quarkusPlatform" }
-quarkus-google-cloud-services-bom = { module = "io.quarkus.platform:quarkus-google-cloud-services-bom", version.ref = "quarkusPlatform" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.1.8" }
 quarkus-vault = { module = "io.quarkiverse.vault:quarkus-vault", version.ref = "quarkusVault" }
 quarkus-vault-deployment = { module = "io.quarkiverse.vault:quarkus-vault-deployment", version.ref = "quarkusVault" }

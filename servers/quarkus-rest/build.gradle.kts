@@ -22,7 +22,7 @@ dependencies {
   implementation(project(":nessie-model"))
   implementation(project(":nessie-rest-common"))
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-core")
   implementation("io.quarkus:quarkus-rest")
   implementation("io.quarkus:quarkus-rest-jackson")

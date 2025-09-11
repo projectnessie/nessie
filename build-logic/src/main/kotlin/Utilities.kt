@@ -19,13 +19,16 @@ import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.Properties
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.UnknownProjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.LogLevel
@@ -49,13 +52,41 @@ import org.gradle.kotlin.dsl.project
 import org.gradle.process.JavaForkOptions
 import org.gradle.work.DisableCachingByDefault
 
+fun Project.libs(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+fun DependencyHandler.quarkusPlatform(project: Project): Dependency =
+  quarkusBom(project, "quarkus-bom")
+
+fun DependencyHandler.quarkusExtension(project: Project, extension: String): Dependency =
+  quarkusBom(project, "quarkus-$extension-bom")
+
+fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependency {
+  val noQuarkusEnforcedPlatform =
+    System.getProperty("quarkus.custom.noEnforcedPlatform").toBoolean()
+  val quarkusCustomVersion = System.getProperty("quarkus.custom.version")
+
+  if (project.hasProperty("release") && (noQuarkusEnforcedPlatform || quarkusCustomVersion != null))
+    throw GradleException(
+      "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed"
+    )
+
+  val quarkusVersion =
+    quarkusCustomVersion ?: project.libs().findVersion("quarkusPlatform").get().requiredVersion
+
+  val group =
+    if (noQuarkusEnforcedPlatform && extension == "quarkus-bom") "io.quarkus"
+    else "io.quarkus.platform"
+  val notation = "$group:$extension:$quarkusVersion"
+
+  return if (noQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+}
+
 fun Project.cassandraDriverTweak() {
   configurations.all {
     resolutionStrategy {
       eachDependency {
         if (requested.module.toString() == "com.datastax.oss:java-driver-core") {
-          var libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-          val cstarVersion = libs.findLibrary("cassandra-driver-bom").get().get().version
+          val cstarVersion = libs().findLibrary("cassandra-driver-bom").get().get().version
           useTarget("org.apache.cassandra:java-driver-core:$cstarVersion")
         }
       }
@@ -165,8 +196,7 @@ fun Test.useJavaVersion(requestedJavaVersion: Int) {
 }
 
 fun Project.libsRequiredVersion(name: String): String {
-  val libVer =
-    extensions.getByType<VersionCatalogsExtension>().named("libs").findVersion(name).get()
+  val libVer = libs().findVersion(name).get()
   val reqVer = libVer.requiredVersion
   check(reqVer.isNotEmpty()) {
     "libs-version for '$name' is empty, but must not be empty, version. strict: ${libVer.strictVersion}, required: ${libVer.requiredVersion}, preferred: ${libVer.preferredVersion}"
@@ -233,7 +263,7 @@ fun DependencyHandlerScope.nessieProject(
   }
   return try {
     project(":$artifactId", configuration)
-  } catch (e: UnknownProjectException) {
+  } catch (_: UnknownProjectException) {
     val groupId = NessieProjects.groupIdForArtifact(artifactId)
     create(groupId, artifactId, configuration = configuration)
   }
@@ -287,21 +317,19 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
 }
 
 fun Project.scalaDependencyVersion(scalaMajorVersion: String): String {
-  val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
   val scalaDepName = "scala-library-v${scalaMajorVersion.replace("[.]".toRegex(), "")}"
   val scalaDep =
-    versionCatalog.findLibrary(scalaDepName).orElseThrow {
+    libs().findLibrary(scalaDepName).orElseThrow {
       IllegalStateException("No library '$scalaDepName' defined in version catalog 'libs'")
     }
   return scalaDep.get().versionConstraint.preferredVersion
 }
 
 fun Project.sparkDependencyVersion(sparkMajorVersion: String, scalaMajorVersion: String): String {
-  val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
   val sparkDepName =
     "spark-sql-v${sparkMajorVersion.replace("[.]".toRegex(), "")}-v${scalaMajorVersion.replace("[.]".toRegex(), "")}"
   val sparkDep =
-    versionCatalog.findLibrary(sparkDepName).orElseThrow {
+    libs().findLibrary(sparkDepName).orElseThrow {
       IllegalStateException("No library '$sparkDepName' defined in version catalog 'libs'")
     }
   return sparkDep.get().versionConstraint.preferredVersion

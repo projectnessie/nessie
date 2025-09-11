@@ -19,6 +19,11 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   alias(libs.plugins.quarkus)
+    .version(
+      libs.plugins.quarkus.asProvider().map {
+        System.getProperty("quarkus.custom.version", it.version.requiredVersion)
+      }
+    )
   id("nessie-conventions-quarkus")
   id("nessie-license-report")
 }
@@ -66,8 +71,8 @@ dependencies {
   compileOnly(project(":nessie-quarkus-ext-deployment"))
   implementation(project(":nessie-quarkus-ext"))
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation(quarkusPlatform(project))
+  implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkus:quarkus-rest")
   implementation("io.quarkus:quarkus-rest-jackson")
   implementation("io.quarkus:quarkus-reactive-routes")
@@ -133,7 +138,7 @@ dependencies {
     // [com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava(compile)]
     exclude("com.google.guava")
   }
-  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi(quarkusPlatform(project))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")

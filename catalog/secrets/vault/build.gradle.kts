@@ -22,7 +22,7 @@ dependencies {
   implementation(project(":nessie-catalog-secrets-api"))
   implementation(libs.guava)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation(libs.quarkus.vault)
 
   compileOnly(project(":nessie-immutables"))

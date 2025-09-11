@@ -35,8 +35,8 @@ dependencies {
   implementation(project(":nessie-catalog-secrets-vault"))
   implementation(project(":nessie-quarkus-config"))
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation(quarkusPlatform(project))
+  implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkus:quarkus-core")
   implementation("io.quarkus:quarkus-jackson")
   implementation("io.micrometer:micrometer-core")
@@ -48,10 +48,10 @@ dependencies {
     exclude("commons-logging", "commons-logging")
   }
 
-  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-secretsmanager")
 
-  implementation(enforcedPlatform(libs.quarkus.google.cloud.services.bom))
+  implementation(quarkusExtension(project, "google-cloud-services"))
   implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-secret-manager")
 
   implementation(libs.quarkus.vault)
@@ -67,7 +67,7 @@ dependencies {
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
-  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi(quarkusPlatform(project))
   testFixturesApi("io.quarkus:quarkus-core")
 
   testRuntimeOnly(libs.logback.classic)

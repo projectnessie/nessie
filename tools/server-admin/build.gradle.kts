@@ -19,6 +19,11 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
   alias(libs.plugins.quarkus)
+    .version(
+      libs.plugins.quarkus.asProvider().map {
+        System.getProperty("quarkus.custom.version", it.version.requiredVersion)
+      }
+    )
   id("nessie-conventions-quarkus")
   id("nessie-license-report")
 }
@@ -67,8 +72,8 @@ dependencies {
 
   implementation(libs.guava)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
-  implementation(enforcedPlatform(libs.quarkus.amazon.services.bom))
+  implementation(quarkusPlatform(project))
+  implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkus:quarkus-picocli")
 
   implementation(platform(libs.jackson.bom))
@@ -100,7 +105,7 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-dynamodb2-tests"))
   intTestImplementation(project(":nessie-multi-env-test-engine"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
-  testFixturesApi(enforcedPlatform(libs.quarkus.bom))
+  testFixturesApi(quarkusPlatform(project))
   testFixturesApi("io.quarkus:quarkus-junit5")
   testFixturesApi(libs.microprofile.openapi)
 

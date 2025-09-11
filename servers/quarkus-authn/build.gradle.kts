@@ -27,7 +27,7 @@ dependencies {
 
   implementation(libs.guava)
 
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-security")
   implementation("io.quarkus:quarkus-vertx-http")
 

@@ -16,13 +16,18 @@
 
 plugins {
   alias(libs.plugins.quarkus.extension)
+    .version(
+      libs.plugins.quarkus.extension.map {
+        System.getProperty("quarkus.custom.version", it.version.requiredVersion)
+      }
+    )
   id("nessie-conventions-java21")
 }
 
 publishingHelper { mavenName = "Nessie - Quarkus Extension (Runtime)" }
 
 dependencies {
-  implementation(enforcedPlatform(libs.quarkus.bom))
+  implementation(quarkusPlatform(project))
   implementation("io.quarkus:quarkus-arc")
 }
 
