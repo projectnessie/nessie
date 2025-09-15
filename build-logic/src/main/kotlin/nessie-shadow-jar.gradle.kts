@@ -34,4 +34,5 @@ tasks.named<Jar>("jar").configure {
 tasks.withType<ShadowJar>().configureEach {
   exclude("META-INF/jandex.idx")
   isZip64 = true
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
