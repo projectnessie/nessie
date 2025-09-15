@@ -59,7 +59,6 @@ import org.apache.avro.io.Encoder;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.GenericManifestFile;
 import org.apache.iceberg.GenericPartitionFieldSummary;
 import org.apache.iceberg.IcebergBridge;
 import org.apache.iceberg.ManifestContent;
@@ -85,6 +84,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.formats.iceberg.GenManifestFile;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.LocalFileIO;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionFieldSummary;
@@ -259,7 +259,7 @@ public class TestAvroSerialization {
   // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;
-    return new GenericManifestFile(
+    return new GenManifestFile(
         file.manifestPath(),
         file.manifestLength(),
         file.partitionSpecId(),
@@ -275,8 +275,7 @@ public class TestAvroSerialization {
         file.deletedRowsCount(),
         file.partitions().stream()
             .map(TestAvroSerialization::toPartitionFieldSummary)
-            .collect(Collectors.toList()),
-        toByteBuffer(file.keyMetadata()));
+            .collect(Collectors.toList()));
   }
 
   @SuppressWarnings("DataFlowIssue")
@@ -649,7 +648,7 @@ public class TestAvroSerialization {
       Path realFile,
       IcebergManifestFile icebergManifestFile,
       List<ManifestFile.PartitionFieldSummary> partitions) {
-    return new GenericManifestFile(
+    return new GenManifestFile(
         realFile.toUri().toString(),
         icebergManifestFile.manifestLength(),
         icebergManifestFile.partitionSpecId(),
@@ -663,8 +662,7 @@ public class TestAvroSerialization {
         icebergManifestFile.existingRowsCount(),
         icebergManifestFile.deletedFilesCount(),
         icebergManifestFile.deletedRowsCount(),
-        partitions,
-        toByteBuffer(icebergManifestFile.keyMetadata()));
+        partitions);
   }
 
   private static byte[] toByteArray(ByteBuffer byteBuffer) {
