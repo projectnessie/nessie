@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -158,7 +157,7 @@ public class NessieServerAdminTestExtension
       Backend backend,
       BackendTestFactory factory,
       Map<String, String> config)
-      implements CloseableResource {
+      implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
