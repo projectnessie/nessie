@@ -78,20 +78,20 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
 
     var headersKv =
         Types.StructType.of(
-            Types.NestedField.of(7, true, "key", Types.BinaryType.get()),
-            Types.NestedField.of(8, true, "value", Types.BinaryType.get()));
+            Types.NestedField.optional(7, "key", Types.BinaryType.get()),
+            Types.NestedField.optional(8, "value", Types.BinaryType.get()));
 
     var fieldTimestamp =
-        Types.NestedField.of(4, false, "timestamp", Types.TimestampType.withoutZone());
+        Types.NestedField.required(4, "timestamp", Types.TimestampType.withoutZone());
     var systemFields =
         Types.StructType.of(
-            Types.NestedField.of(2, false, "partition", Types.IntegerType.get()),
-            Types.NestedField.of(3, false, "offset", Types.LongType.get()),
+            Types.NestedField.required(2, "partition", Types.IntegerType.get()),
+            Types.NestedField.required(3, "offset", Types.LongType.get()),
             fieldTimestamp,
-            Types.NestedField.of(5, false, "headers", Types.ListType.ofRequired(6, headersKv)),
-            Types.NestedField.of(9, false, "key", Types.BinaryType.get()));
+            Types.NestedField.required(5, "headers", Types.ListType.ofRequired(6, headersKv)),
+            Types.NestedField.required(9, "key", Types.BinaryType.get()));
 
-    var fieldTestSchema = Types.NestedField.of(1, false, "test_schema", systemFields);
+    var fieldTestSchema = Types.NestedField.required(1, "test_schema", systemFields);
     var schema = new Schema(List.of(fieldTestSchema));
 
     var sourceName = fieldTestSchema.name() + '.' + fieldTimestamp.name();
@@ -294,7 +294,7 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
   }
 
   @Test
-  void testStorageWriteFailure() throws Exception {
+  void testStorageWriteFailure() {
     @SuppressWarnings("resource")
     RESTCatalog catalog = catalog();
 
