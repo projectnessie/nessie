@@ -48,7 +48,6 @@ import org.apache.avro.generic.GenericData;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.GenericManifestFile;
 import org.apache.iceberg.GenericPartitionFieldSummary;
 import org.apache.iceberg.IcebergBridge;
 import org.apache.iceberg.ManifestContent;
@@ -78,6 +77,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.projectnessie.catalog.formats.iceberg.GenManifestFile;
 import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.LocalFileIO;
 import org.projectnessie.catalog.formats.iceberg.manifest.IcebergDataContent;
@@ -502,7 +502,7 @@ public class AvroSerializeBench {
   // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;
-    return new GenericManifestFile(
+    return new GenManifestFile(
         file.manifestPath(),
         file.manifestLength(),
         file.partitionSpecId(),
@@ -518,8 +518,7 @@ public class AvroSerializeBench {
         file.deletedRowsCount(),
         file.partitions().stream()
             .map(AvroSerializeBench::toPartitionFieldSummary)
-            .collect(Collectors.toList()),
-        file.keyMetadata() != null ? ByteBuffer.wrap(file.keyMetadata()) : null);
+            .collect(Collectors.toList()));
   }
 
   @SuppressWarnings("DataFlowIssue")
