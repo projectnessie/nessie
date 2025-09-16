@@ -28,6 +28,8 @@ import jakarta.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -38,8 +40,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.iceberg.aws.s3.signer.S3V4RestSignerClient;
 import org.apache.iceberg.exceptions.RESTException;
 import org.apache.iceberg.rest.RESTCatalog;
+import org.apache.iceberg.rest.RESTClient;
+import org.apache.iceberg.rest.auth.AuthManager;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.projectnessie.client.NessieClientBuilder;
@@ -154,6 +159,8 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
             // PropertyNamingStrategy.KebabCaseStrategy ...' message
             icebergClient = new RESTCatalog();
             icebergClient.initialize("iceberg", icebergProperties);
+
+            cleanupS3V4RestSignerClient(cli);
           } finally {
             System.setOut(out);
             System.setErr(err);
@@ -291,5 +298,48 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
   @Override
   public List<List<Node.NodeType>> matchesNodeTypes() {
     return List.of(List.of(Token.TokenType.CONNECT));
+  }
+
+  /**
+   * Clean up the {@link S3V4RestSignerClient} static fields which keep auth information, which
+   * breaks running with different auth setups. This is caused by <a
+   * href="https://github.com/apache/iceberg/pull/13215">PR 13215</a> since Iceberg 1.10.
+   */
+  static void cleanupS3V4RestSignerClient(@Nonnull BaseNessieCli cli) {
+    try {
+      Class<S3V4RestSignerClient> c = S3V4RestSignerClient.class;
+
+      Field f = c.getDeclaredField("authManager");
+      if (f.getModifiers() == java.lang.reflect.Modifier.STATIC) {
+        f.setAccessible(true);
+        AuthManager authManager = (AuthManager) f.get(null);
+        if (authManager != null) {
+          f.set(null, null);
+          authManager.close();
+        }
+      }
+
+      f = c.getDeclaredField("httpClient");
+      if (f.getModifiers() == java.lang.reflect.Modifier.STATIC) {
+        f.setAccessible(true);
+        RESTClient httpClient = (RESTClient) f.get(null);
+        if (httpClient != null) {
+          f.set(null, null);
+          httpClient.close();
+        }
+      }
+
+      f = c.getDeclaredField("SIGNED_COMPONENT_CACHE");
+      f.setAccessible(true);
+      Object cache = f.get(null);
+      if (cache != null) {
+        Method invalidateAllMethod = f.getType().getDeclaredMethod("invalidateAll");
+        invalidateAllMethod.invoke(cache);
+      }
+    } catch (Exception e) {
+      PrintWriter writer = cli.writer();
+      writer.printf("Failed to cleaned up " + S3V4RestSignerClient.class.getName());
+      e.printStackTrace(writer);
+    }
   }
 }
