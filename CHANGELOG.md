@@ -8,6 +8,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+* Bump Iceberg from version 1.9.2 to 1.10.0
+
 ### Upgrade notes
 
 ### Breaking changes
