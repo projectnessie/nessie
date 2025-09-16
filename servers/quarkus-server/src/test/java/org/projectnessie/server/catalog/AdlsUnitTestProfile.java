@@ -29,7 +29,7 @@ public class AdlsUnitTestProfile implements QuarkusTestProfile {
   public List<TestResourceEntry> testResources() {
     return List.of(
         new TestResourceEntry(ObjectStorageMockTestResourceLifecycleManager.class),
-        new TestResourceEntry(IcebergResourceLifecycleManager.class));
+        new TestResourceEntry(IcebergResourceLifecycleManager.ForUnitTests.class));
   }
 
   @Override

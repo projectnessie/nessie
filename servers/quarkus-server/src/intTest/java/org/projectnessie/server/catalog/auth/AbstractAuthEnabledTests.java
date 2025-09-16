@@ -34,11 +34,11 @@ import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleMan
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakClientId;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakClientSecret;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakTokenEndpointUri;
-import org.projectnessie.server.catalog.AbstractIcebergCatalogTests;
+import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager;
 
 @WithTestResource(parallel = true, value = KeycloakTestResourceLifecycleManager.class)
-public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogTests {
+public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogIntTests {
 
   @KeycloakTokenEndpointUri protected URI tokenEndpoint;
 

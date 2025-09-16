@@ -19,10 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
 import java.net.URL;
 import org.junit.jupiter.api.Test;
 
+@WithTestResource(IcebergResourceLifecycleManager.ForIntegrationTests.class)
 public abstract class AbstractIcebergCatalogIntTests extends AbstractIcebergCatalogTests {
 
   @Test
