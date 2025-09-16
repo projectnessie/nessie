@@ -19,6 +19,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.iceberg.rest.auth.AuthProperties;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 import org.projectnessie.client.auth.oauth2.AccessToken;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider;
@@ -44,6 +45,8 @@ public class ITBearerTokenIcebergCatalogS3N extends AbstractAuthEnabledTests {
     }
 
     Map<String, String> options = new HashMap<>();
+    options.put(AuthProperties.AUTH_TYPE, AuthProperties.AUTH_TYPE_OAUTH2);
+    options.put(OAuth2Properties.OAUTH2_SERVER_URI, tokenEndpoint.toString());
     options.put(OAuth2Properties.SCOPE, "email");
     options.put(OAuth2Properties.TOKEN, accessToken.getPayload());
     options.put(OAuth2Properties.TOKEN_REFRESH_ENABLED, "false");
