@@ -229,10 +229,7 @@ fun Project.nessieClientForIceberg(): Dependency {
   val dependencyHandlerScope = DependencyHandlerScope.of(dependencies)
   return if (!isIncludedInNesQuEIT()) {
     val clientVersion = libsRequiredVersion("nessieClientVersion")
-    dependencies.create(
-      if (clientVersion >= "0.50.1") "org.projectnessie.nessie:nessie-client:$clientVersion"
-      else "org.projectnessie:nessie-client:$clientVersion"
-    )
+    dependencies.create("org.projectnessie.nessie:nessie-client:$clientVersion")
   } else {
     dependencyHandlerScope.nessieProject("nessie-client")
   }
