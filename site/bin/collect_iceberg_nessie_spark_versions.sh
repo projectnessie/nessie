@@ -19,7 +19,7 @@ done
 echo "\"iceberg_nessie\": {"
 curl --silent --location -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/apache/iceberg/releases \
  | jq --raw-output '.[].tag_name' \
- | grep --invert-match --extended-regexp '^apache-iceberg-(0[.].*|[1](\.[0-3]+)+)$' \
+ | grep --invert-match --extended-regexp '^apache-iceberg-(0[.].*|[1](\.[0-3])+)$' \
  | while read iceberg_release ; do
   iceberg_version="$(echo "${iceberg_release}" | sed 's/apache-iceberg-//')"
   nessie_version="$(curl --silent --location "https://raw.githubusercontent.com/apache/iceberg/refs/tags/${iceberg_release}/gradle/libs.versions.toml" \
