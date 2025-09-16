@@ -45,7 +45,7 @@ import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleMa
 import org.projectnessie.server.catalog.S3UnitTestProfiles;
 
 @WithTestResource(ObjectStorageMockTestResourceLifecycleManager.class)
-@WithTestResource(IcebergResourceLifecycleManager.class)
+@WithTestResource(IcebergResourceLifecycleManager.ForUnitTests.class)
 @QuarkusTest
 @TestProfile(TestVendedS3CredentialsExpiry.Profile.class)
 public class TestVendedS3CredentialsExpiry {

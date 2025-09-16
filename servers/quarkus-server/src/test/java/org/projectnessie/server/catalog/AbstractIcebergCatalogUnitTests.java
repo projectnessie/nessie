@@ -55,7 +55,7 @@ import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.AccessCheckHandlerHolder;
 
-@WithTestResource(IcebergResourceLifecycleManager.class)
+@WithTestResource(IcebergResourceLifecycleManager.ForUnitTests.class)
 public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCatalogTests {
 
   HeapStorageBucket heapStorageBucket;

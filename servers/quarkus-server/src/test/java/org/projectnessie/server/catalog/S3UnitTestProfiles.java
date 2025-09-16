@@ -53,7 +53,7 @@ public abstract class S3UnitTestProfiles implements QuarkusTestProfile {
         new TestResourceEntry(
             ObjectStorageMockTestResourceLifecycleManager.class,
             ImmutableMap.of(INIT_ADDRESS, "localhost")),
-        new TestResourceEntry(IcebergResourceLifecycleManager.class));
+        new TestResourceEntry(IcebergResourceLifecycleManager.ForUnitTests.class));
   }
 
   @Override

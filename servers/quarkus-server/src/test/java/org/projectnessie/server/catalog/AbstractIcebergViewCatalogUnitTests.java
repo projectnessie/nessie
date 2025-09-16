@@ -19,7 +19,7 @@ import io.quarkus.test.common.WithTestResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 
-@WithTestResource(IcebergResourceLifecycleManager.class)
+@WithTestResource(IcebergResourceLifecycleManager.ForUnitTests.class)
 public abstract class AbstractIcebergViewCatalogUnitTests extends AbstractIcebergViewCatalogTests {
 
   HeapStorageBucket heapStorageBucket;
