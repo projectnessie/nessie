@@ -678,6 +678,7 @@ software.amazon.awssdk:http-client-spi
 software.amazon.awssdk:iam-policy-builder
 software.amazon.awssdk:identity-spi
 software.amazon.awssdk:json-utils
+software.amazon.awssdk:kms
 software.amazon.awssdk:metrics-spi
 software.amazon.awssdk:netty-nio-client
 software.amazon.awssdk:profiles
