@@ -8,8 +8,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
-* Bump Iceberg from version 1.9.2 to 1.10.0
-
 ### Upgrade notes
 
 ### Breaking changes
@@ -23,6 +21,12 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.105.1] Release (2025-09-16)
+
+### Highlights
+
+- Bump Iceberg from version 1.9.2 to 1.10.0
 
 ## [0.105.0] Release (2025-09-03)
 
@@ -1140,7 +1144,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.105.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.105.1...HEAD
+[0.105.1]: https://github.com/projectnessie/nessie/compare/nessie-0.105.0...nessie-0.105.1
 [0.105.0]: https://github.com/projectnessie/nessie/compare/nessie-0.104.2...nessie-0.105.0
 [0.104.2]: https://github.com/projectnessie/nessie/compare/nessie-0.103.6...nessie-0.104.2
 [0.103.6]: https://github.com/projectnessie/nessie/compare/nessie-0.103.5...nessie-0.103.6

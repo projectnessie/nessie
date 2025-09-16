@@ -2,6 +2,30 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.1 Release (September 16, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.1).
+
+### Highlights
+
+- Bump Iceberg from version 1.9.2 to 1.10.0
+
+### Commits
+* Ninja: changelog
+* Iceberg 1.10: Adopt Nessie CLI for Iceberg 1.10 S3 remote signing reconfiguration (#11305)
+* Site-build: do not exclude 1.10 (#11302)
+* Iceberg 1.10: S3 remote signing can no longer be "reconfigured" (#11303)
+* Add AWSSDK kms dependency, required w/ Iceberg 1.10 (#11300)
+* Iceberg 1.10: Adopt to oauth changes (#11304)
+* Adopt Iceberg 1.10 GenericManifestFile restrictions (#11299)
+* build: Nessie 0.10x is less than 0.50.* (#11301)
+* Nit: fix deprecation warning in NessieServerAdminTestExtension (#11293)
+* Nit: tackle deprecation warnings (#11294)
+* Build/Shadow: handle duplicate files (no warnings) (#11292)
+* Build/local-testing: Allow using custom Quarkus versions and not enforce Quarkus platform versions (#11276)
+* Migrate from VLSI Jandex plugin to Kordamp Jandex plugin (#11268)
+* Ninja: bump site-build timeout
+
 ## 0.105.0 Release (September 03, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.0).
