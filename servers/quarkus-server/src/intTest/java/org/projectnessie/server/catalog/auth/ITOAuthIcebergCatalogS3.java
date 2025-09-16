@@ -19,6 +19,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.iceberg.rest.auth.AuthProperties;
 import org.apache.iceberg.rest.auth.OAuth2Properties;
 
 @QuarkusIntegrationTest
@@ -28,8 +29,9 @@ public class ITOAuthIcebergCatalogS3 extends AbstractAuthEnabledTests {
   @Override
   protected Map<String, String> catalogOptions() {
     Map<String, String> options = new HashMap<>();
-    options.put(OAuth2Properties.SCOPE, "email");
+    options.put(AuthProperties.AUTH_TYPE, AuthProperties.AUTH_TYPE_OAUTH2);
     options.put(OAuth2Properties.OAUTH2_SERVER_URI, tokenEndpoint.toString());
+    options.put(OAuth2Properties.SCOPE, "email");
     options.put(OAuth2Properties.CREDENTIAL, clientId + ":" + clientSecret);
     options.put(OAuth2Properties.TOKEN_REFRESH_ENABLED, "false");
     return options;
