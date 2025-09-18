@@ -31,7 +31,6 @@ runs:
             -path './[0-9]*/kotlin-dsl/*' -or \
             -path './jars-*/*' -or \
             -path './modules-*/files-*/*' -or \
-            -path './modules-*/files-*/*' -or \
             -path './build-cache-*/*' \
             ')' | grep -v '[.]lock$'  > ~/ci-gradle-caches-diff || true
           echo "Identified $(wc -l < ~/ci-gradle-caches-diff) changed/added files in caches/"
@@ -45,7 +44,7 @@ runs:
           fi
           echo "::endgroup::"
         fi
-    - name: Archive code-checks incremental
+    - name: Archive incremental Gradle caches
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: ci-gradle-caches-${{ inputs.job-name }}-${{ inputs.java-version }}
