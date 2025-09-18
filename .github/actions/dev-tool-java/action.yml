@@ -36,17 +36,3 @@ runs:
         # See https://www.testcontainers.org/features/configuration/#disabling-the-startup-checks
         checks.disable=true
         !
-    - name: Setup gradle.properties
-      shell: bash
-      run: |
-        mkdir -p ~/.gradle/init.d
-        cat > ~/.gradle/init.d/cache-settings.gradle.kts <<!
-        beforeSettings {
-          caches {
-            releasedWrappers.setRemoveUnusedEntriesAfterDays(2)
-            snapshotWrappers.setRemoveUnusedEntriesAfterDays(1)
-            downloadedResources.setRemoveUnusedEntriesAfterDays(5)
-            createdResources.setRemoveUnusedEntriesAfterDays(2)
-          }
-        }
-        !
