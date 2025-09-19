@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.2 Release (September 19, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.2).
+
+### Highlights
+
+- Nessie UI: CSS + fonts are now fetched from Nessie instead of external sources (CDNs).
+
+### Commits
+* Updates for Nessie-UI merge (#11323)
+* CI/Caching: Fix Gradle cache retention (#11318)
+
 ## 0.105.1 Release (September 16, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.1).
