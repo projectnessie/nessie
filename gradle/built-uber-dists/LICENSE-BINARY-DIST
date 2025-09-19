@@ -207,6 +207,7 @@ Nessie distributions contain only dependencies licensed under the Apache License
 The following is the list of all redistributed dependencies unified across all published
 Nessie artifacts. Each Nessie artifact bundles a sub-set of those dependencies.
 
+Google Material Icons font in Nessie UI, from https://github.com/google/material-design-icons
 
 ch.qos.reload4j:reload4j
 com.aayushatharva.brotli4j:brotli4j
