@@ -8,6 +8,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- Nessie UI: CSS + fonts are now fetched from Nessie instead of external sources (CDNs).
+
 ### Upgrade notes
 
 ### Breaking changes
