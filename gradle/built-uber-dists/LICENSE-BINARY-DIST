@@ -694,6 +694,7 @@ software.amazon.awssdk:sts
 software.amazon.awssdk:third-party-jackson-core
 software.amazon.awssdk:url-connection-client
 software.amazon.awssdk:utils
+software.amazon.awssdk:utils-lite
 software.amazon.eventstream:eventstream
 
 ---
