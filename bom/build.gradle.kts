@@ -54,6 +54,7 @@ dependencies {
     api(project(":nessie-minio-testcontainer"))
     api(project(":nessie-nessie-testcontainer"))
     api(project(":nessie-network-tools"))
+    api(project(":nessie-object-storage-mock"))
     api(project(":nessie-quarkus-authn"))
     api(project(":nessie-quarkus-authz"))
     api(project(":nessie-quarkus-catalog"))
