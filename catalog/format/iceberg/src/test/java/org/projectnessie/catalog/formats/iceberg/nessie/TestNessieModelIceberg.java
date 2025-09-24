@@ -637,9 +637,7 @@ public class TestNessieModelIceberg {
                 newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
             .applyUpdates(
                 List.of(
-                    addSchema(firstSchema, 0),
-                    setTrustedLocation("foo://bar/"),
-                    setCurrentSchema(-1)))
+                    addSchema(firstSchema), setTrustedLocation("foo://bar/"), setCurrentSchema(-1)))
             .snapshot();
     var schemaByIcebergId = snapshot1.schemaByIcebergId();
     var expectedSchemaId = INITIAL_SCHEMA_ID;
@@ -656,7 +654,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot2 =
         new IcebergTableMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(secondSchema, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(secondSchema), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot2.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -674,7 +672,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot3 =
         new IcebergTableMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(thirdSchema, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(thirdSchema), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot3.schemaByIcebergId();
     expectedSchemaId = 2;
@@ -691,7 +689,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot4 =
         new IcebergTableMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(fourthSchemaExisting, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(fourthSchemaExisting), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot4.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -708,7 +706,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot5 =
         new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(fifthSchemaExisting, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(fifthSchemaExisting), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot5.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -738,7 +736,7 @@ public class TestNessieModelIceberg {
                 newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
             .applyUpdates(
                 List.of(
-                    addSchema(schema, 0),
+                    addSchema(schema),
                     setTrustedLocation("foo://bar/"),
                     setCurrentSchema(-1),
                     addPartitionSpec(firstSpec),
@@ -848,7 +846,7 @@ public class TestNessieModelIceberg {
                 newIcebergTableSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
             .applyUpdates(
                 List.of(
-                    addSchema(schema, 0),
+                    addSchema(schema),
                     setTrustedLocation("foo://bar/"),
                     setCurrentSchema(-1),
                     addSortOrder(firstSort),
@@ -946,7 +944,7 @@ public class TestNessieModelIceberg {
     var snapshot1 =
         new IcebergViewMetadataUpdateState(
                 newIcebergViewSnapshot(UUID.randomUUID().toString()), ContentKey.of("foo"), false)
-            .applyUpdates(List.of(addSchema(firstSchema, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(firstSchema), setCurrentSchema(-1)))
             .snapshot();
     var schemaByIcebergId = snapshot1.schemaByIcebergId();
     var expectedSchemaId = INITIAL_SCHEMA_ID;
@@ -963,7 +961,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot2 =
         new IcebergViewMetadataUpdateState(snapshot1, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(secondSchema, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(secondSchema), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot2.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -981,7 +979,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot3 =
         new IcebergViewMetadataUpdateState(snapshot2, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(thirdSchema, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(thirdSchema), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot3.schemaByIcebergId();
     expectedSchemaId = 2;
@@ -998,7 +996,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot4 =
         new IcebergViewMetadataUpdateState(snapshot3, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(fourthSchemaExisting, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(fourthSchemaExisting), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot4.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -1015,7 +1013,7 @@ public class TestNessieModelIceberg {
             .build();
     var snapshot5 =
         new IcebergViewMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
-            .applyUpdates(List.of(addSchema(fifthSchemaExisting, 0), setCurrentSchema(-1)))
+            .applyUpdates(List.of(addSchema(fifthSchemaExisting), setCurrentSchema(-1)))
             .snapshot();
     schemaByIcebergId = snapshot5.schemaByIcebergId();
     expectedSchemaId = 1;
@@ -1038,7 +1036,7 @@ public class TestNessieModelIceberg {
     NessieTableSnapshot snapshot =
         new IcebergTableMetadataUpdateState(
                 newIcebergTableSnapshot(uuid), ContentKey.of("foo"), false)
-            .applyUpdates(List.of(addSchema(schema, 0), setTrustedLocation("foo://bar/")))
+            .applyUpdates(List.of(addSchema(schema), setTrustedLocation("foo://bar/")))
             .snapshot();
     soft.assertThat(snapshot)
         .extracting(NessieTableSnapshot::icebergLastColumnId)

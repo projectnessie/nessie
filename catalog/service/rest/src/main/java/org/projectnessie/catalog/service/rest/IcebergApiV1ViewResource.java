@@ -130,7 +130,7 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
         Lists.newArrayList(
             assignUUID(randomUUID().toString()),
             upgradeFormatVersion(1),
-            addSchema(createViewRequest.schema(), 0),
+            addSchema(createViewRequest.schema()),
             setCurrentSchema(-1),
             setProperties(properties),
             addViewVersion(createViewRequest.viewVersion()),

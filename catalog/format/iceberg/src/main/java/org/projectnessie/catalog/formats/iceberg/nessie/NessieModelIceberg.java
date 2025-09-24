@@ -1242,7 +1242,7 @@ public class NessieModelIceberg {
     state.remappedFields(remappedFieldIds);
 
     int schemaMaxFieldId = icebergSchemaMaxFieldId(schema);
-    int newLastColumnId = Math.max(u.lastColumnId(), schemaMaxFieldId);
+    int newLastColumnId = Math.max(u.lastColumnId().orElse(0), schemaMaxFieldId);
     Integer lastColumnId = snapshot.icebergLastColumnId();
     if (lastColumnId == null || newLastColumnId > lastColumnId) {
       state.builder().icebergLastColumnId(newLastColumnId);

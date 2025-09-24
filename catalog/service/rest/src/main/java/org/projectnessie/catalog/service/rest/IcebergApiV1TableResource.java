@@ -334,7 +334,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         Lists.newArrayList(
             assignUUID(uuid),
             upgradeFormatVersion(2),
-            addSchema(createTableRequest.schema(), 0),
+            addSchema(createTableRequest.schema()),
             setCurrentSchema(-1),
             addPartitionSpec(spec),
             setDefaultPartitionSpec(-1),
