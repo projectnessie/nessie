@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -350,7 +351,7 @@ public interface IcebergMetadataUpdate {
   interface AddSchema extends IcebergMetadataUpdate {
     IcebergSchema schema();
 
-    int lastColumnId();
+    OptionalInt lastColumnId();
 
     @Override
     default void applyToTable(IcebergTableMetadataUpdateState state) {
@@ -364,8 +365,8 @@ public interface IcebergMetadataUpdate {
       NessieModelIceberg.addSchema(this, state);
     }
 
-    static AddSchema addSchema(IcebergSchema schema, int lastColumnId) {
-      return ImmutableAddSchema.of(schema, lastColumnId);
+    static AddSchema addSchema(IcebergSchema schema) {
+      return ImmutableAddSchema.of(schema, OptionalInt.empty());
     }
   }
 

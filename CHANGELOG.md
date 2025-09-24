@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Iceberg REST: adapt the deprecation of `lastColumnId` in `AddSchema` table metadata update, fiel field is optional now
+
 ### Commits
 
 ## [0.105.2] Release (2025-09-19)

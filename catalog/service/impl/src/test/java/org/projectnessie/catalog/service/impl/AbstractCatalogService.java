@@ -150,7 +150,7 @@ public abstract class AbstractCatalogService {
                   .addUpdates(
                       assignUUID(UUID.randomUUID().toString()),
                       upgradeFormatVersion(2),
-                      addSchema(IcebergSchema.builder().build(), 0),
+                      addSchema(IcebergSchema.builder().build()),
                       setCurrentSchema(-1),
                       addPartitionSpec(IcebergPartitionSpec.UNPARTITIONED_SPEC),
                       setDefaultPartitionSpec(-1),
