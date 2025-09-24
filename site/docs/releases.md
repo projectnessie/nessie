@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.3 Release (September 24, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.3).
+
+### Fixes
+
+- Iceberg REST: adapt the deprecation of `lastColumnId` in `AddSchema` table metadata update, fiel field is optional now
+
+### Commits
+* IRC: Make AddSchema.lastColumnId optional (#11352)
+* Add `nessie-object-storage-mock` to `nessie-bom` (#11343)
+* Fix maxOS CI (#11329)
+
 ## 0.105.2 Release (September 19, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.2).
