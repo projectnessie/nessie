@@ -7,5 +7,5 @@ idea-ext = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle
 jandex = { module = "org.kordamp.gradle:jandex-gradle-plugin", version = "2.3.0" }
 junit-bom = { module = "org.junit:junit-bom", version = "5.13.4" }
 license-report = { module = "com.github.jk1:gradle-license-report", version = "2.9" }
-shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "9.2.1" }
+shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version = "9.2.2" }
 spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "8.0.0" }
