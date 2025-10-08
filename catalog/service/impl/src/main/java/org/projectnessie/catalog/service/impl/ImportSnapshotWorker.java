@@ -17,6 +17,7 @@ package org.projectnessie.catalog.service.impl;
 
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergTableSnapshotToNessie;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergViewSnapshotToNessie;
+import static org.projectnessie.catalog.service.files.MetadataUtil.readMetadata;
 import static org.projectnessie.catalog.service.impl.Util.nessieIdToObjId;
 import static org.projectnessie.catalog.service.impl.Util.objIdToNessieId;
 import static org.projectnessie.catalog.service.objtypes.EntityObj.entityObjIdForContent;
@@ -29,7 +30,6 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.LongSupplier;
-import java.util.zip.GZIPInputStream;
 import org.projectnessie.catalog.formats.iceberg.manifest.IcebergFileFormat;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
@@ -266,16 +266,7 @@ final class ImportSnapshotWorker {
 
   private <T> T icebergMetadata(StorageUri metadataLocation, Class<? extends T> metadataType)
       throws IOException {
-    InputStream input = metadataInputStream(metadataLocation);
+    InputStream input = readMetadata(taskRequest.objectIO(), metadataLocation);
     return IcebergJson.objectMapper().readValue(input, metadataType);
-  }
-
-  private InputStream metadataInputStream(StorageUri metadataLocation) throws IOException {
-    final InputStream input = taskRequest.objectIO().readObject(metadataLocation);
-    if (metadataLocation.requiredPath().endsWith(".gz")
-        || metadataLocation.requiredPath().endsWith(".gz.metadata.json")) {
-      return new GZIPInputStream(input);
-    }
-    return input;
   }
 }
