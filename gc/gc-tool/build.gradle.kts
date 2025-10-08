@@ -66,6 +66,7 @@ dependencies {
   runtimeOnly("software.amazon.awssdk:s3")
   runtimeOnly("software.amazon.awssdk:url-connection-client")
   runtimeOnly("software.amazon.awssdk:sts")
+  runtimeOnly("software.amazon.awssdk:kms")
 
   implementation(platform(libs.google.cloud.storage.bom))
   implementation(platform(libs.google.cloud.libraries.bom))
