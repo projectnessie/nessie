@@ -25,6 +25,9 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OB
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteStreams;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
@@ -39,6 +42,7 @@ import java.util.function.ToLongFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.BaseTransaction;
@@ -56,6 +60,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateSchema;
@@ -921,5 +927,77 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     metadata = ((HasTableOperations) table).operations().current();
     assertThat(metadata.statisticsFiles()).isEmpty();
     assertThat(metadata.partitionStatisticsFiles()).isEmpty();
+  }
+
+  /** This test is based on {@link #testRegisterTable()} but uses a compressed metadata file. */
+  @Test
+  public void testRegisterCompressedTable() throws IOException {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    catalog.createNamespace(TABLE.namespace());
+
+    Map<String, String> properties = Map.of(TableProperties.METADATA_COMPRESSION, "gzip");
+    Table originalTable =
+        catalog
+            .buildTable(TABLE, SCHEMA)
+            .withPartitionSpec(SPEC)
+            .withSortOrder(WRITE_ORDER)
+            .withProperties(properties)
+            .create();
+
+    originalTable.newFastAppend().appendFile(FILE_A).commit();
+    originalTable.newFastAppend().appendFile(FILE_B).commit();
+    originalTable.newDelete().deleteFile(FILE_A).commit();
+    originalTable.newFastAppend().appendFile(FILE_C).commit();
+
+    catalog.dropTable(TABLE, false /* do not purge */);
+
+    TableOperations ops = ((BaseTable) originalTable).operations();
+    String metadataLocation = ops.current().metadataFileLocation();
+
+    String compressedLocation = metadataLocation + ".gz";
+    try (FileIO io = originalTable.io()) {
+      try (OutputStream os = io.newOutputFile(compressedLocation).create();
+          GZIPOutputStream gzos = new GZIPOutputStream(os)) {
+        try (InputStream is = io.newInputFile(metadataLocation).newStream()) {
+          ByteStreams.copy(is, gzos);
+        }
+      }
+    }
+
+    Table registeredTable = catalog.registerTable(TABLE, compressedLocation);
+
+    assertThat(registeredTable).isNotNull();
+    assertThat(catalog.tableExists(TABLE)).as("Table must exist").isTrue();
+    assertThat(registeredTable.properties())
+        .as("Props must match")
+        .containsAllEntriesOf(properties);
+    assertThat(registeredTable.schema().asStruct())
+        .as("Schema must match")
+        .isEqualTo(originalTable.schema().asStruct());
+    assertThat(registeredTable.specs()).as("Specs must match").isEqualTo(originalTable.specs());
+    assertThat(registeredTable.sortOrders())
+        .as("Sort orders must match")
+        .isEqualTo(originalTable.sortOrders());
+    assertThat(registeredTable.currentSnapshot())
+        .as("Current snapshot must match")
+        .isEqualTo(originalTable.currentSnapshot());
+    assertThat(registeredTable.snapshots())
+        .as("Snapshots must match")
+        .isEqualTo(originalTable.snapshots());
+    assertThat(registeredTable.history())
+        .as("History must match")
+        .isEqualTo(originalTable.history());
+
+    TestHelpers.assertSameSchemaMap(registeredTable.schemas(), originalTable.schemas());
+    assertFiles(registeredTable, FILE_B, FILE_C);
+
+    registeredTable.newFastAppend().appendFile(FILE_A).commit();
+    assertFiles(registeredTable, FILE_B, FILE_C, FILE_A);
+
+    assertThat(catalog.loadTable(TABLE)).isNotNull();
+    assertThat(catalog.dropTable(TABLE)).isTrue();
+    assertThat(catalog.tableExists(TABLE)).isFalse();
   }
 }
