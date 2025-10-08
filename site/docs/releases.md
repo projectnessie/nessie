@@ -2,6 +2,17 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.4 Release (October 08, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.4).
+
+### Fixes
+
+- Iceberg REST: adapt the deprecation of `lastColumnId` in `AddSchema` table metadata update, fiel field is optional now
+
+### Commits
+* Add KMS to GC tool (#11433)
+
 ## 0.105.3 Release (September 24, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.3).
