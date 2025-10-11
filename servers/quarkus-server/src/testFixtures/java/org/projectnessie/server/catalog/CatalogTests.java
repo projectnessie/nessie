@@ -2820,7 +2820,7 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   }
 
   @Test
-  public void testRegisterTable() {
+  public void testRegisterTable() throws Exception {
     C catalog = catalog();
 
     if (requiresNamespaceCreate()) {
@@ -2847,7 +2847,14 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
 
     catalog.dropTable(TABLE, false /* do not purge */);
 
-    Table registeredTable = catalog.registerTable(TABLE, metadataLocation);
+    var newMetadataLocation = metadataLocation + "-duplicated.metadata.json";
+    try (var input = ops.io().newInputFile(metadataLocation).newStream()) {
+      try (var output = ops.io().newOutputFile(newMetadataLocation).create()) {
+        input.transferTo(output);
+      }
+    }
+
+    Table registeredTable = catalog.registerTable(TABLE, newMetadataLocation);
 
     assertThat(registeredTable).isNotNull();
     assertThat(catalog.tableExists(TABLE)).as("Table must exist").isTrue();
@@ -2861,6 +2868,9 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     assertThat(registeredTable.sortOrders())
         .as("Sort orders must match")
         .isEqualTo(originalTable.sortOrders());
+    assertThat(registeredTable.currentSnapshot().parentId())
+        .as("Current snapshot's parent-ID must match")
+        .isEqualTo(originalTable.currentSnapshot().parentId());
     assertThat(registeredTable.currentSnapshot())
         .as("Current snapshot must match")
         .isEqualTo(originalTable.currentSnapshot());

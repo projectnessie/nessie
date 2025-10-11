@@ -177,10 +177,60 @@ public class IcebergFixtures {
                 .putSummary("operation", "testing")
                 .sequenceNumber(123L)
                 .timestampMs(12345678L)
+                .manifestList("s3://this-does-not-exist/anywhere/")
                 .build())
         .putRef("main", IcebergSnapshotRef.builder().type("branch").snapshotId(11).build())
         .addSnapshotLog(
             IcebergSnapshotLogEntry.builder().snapshotId(11).timestampMs(12345678L).build());
+  }
+
+  public static IcebergTableMetadata.Builder tableMetadataThreeSnapshots() {
+    IcebergSchema schemaAllTypes = icebergSchemaAllTypes();
+
+    return IcebergTableMetadata.builder()
+        .tableUuid(UUID.randomUUID().toString())
+        .lastUpdatedMs(111111111L)
+        .location("table-location")
+        .currentSnapshotId(13L)
+        .lastColumnId(schemaAllTypes.fields().get(schemaAllTypes.fields().size() - 1).id())
+        .lastPartitionId(INITIAL_PARTITION_ID)
+        .lastSequenceNumber(INITIAL_SEQUENCE_NUMBER)
+        .currentSchemaId(schemaAllTypes.schemaId())
+        .defaultSortOrderId(INITIAL_SORT_ORDER_ID)
+        .defaultSpecId(INITIAL_SPEC_ID)
+        .putProperty("prop", "value")
+        .addSchemas(schemaAllTypes)
+        .addSnapshots(
+            IcebergSnapshot.builder()
+                .snapshotId(11)
+                .schemaId(schemaAllTypes.schemaId())
+                .putSummary("operation", "testing1")
+                .sequenceNumber(123L)
+                .timestampMs(12345676L)
+                .build())
+        .addSnapshots(
+            IcebergSnapshot.builder()
+                .snapshotId(12)
+                .schemaId(schemaAllTypes.schemaId())
+                .putSummary("operation", "testing2")
+                .sequenceNumber(124L)
+                .timestampMs(12345677L)
+                .build())
+        .addSnapshots(
+            IcebergSnapshot.builder()
+                .snapshotId(13)
+                .schemaId(schemaAllTypes.schemaId())
+                .putSummary("operation", "testing3")
+                .sequenceNumber(125L)
+                .timestampMs(12345678L)
+                .build())
+        .putRef("main", IcebergSnapshotRef.builder().type("branch").snapshotId(13).build())
+        .addSnapshotLog(
+            IcebergSnapshotLogEntry.builder().snapshotId(11).timestampMs(12345676L).build())
+        .addSnapshotLog(
+            IcebergSnapshotLogEntry.builder().snapshotId(12).timestampMs(12345677L).build())
+        .addSnapshotLog(
+            IcebergSnapshotLogEntry.builder().snapshotId(13).timestampMs(12345678L).build());
   }
 
   public static IcebergViewMetadata.Builder viewMetadataSimple() {

@@ -249,7 +249,7 @@ public class TestNessieCore {
         .isNotEmpty()
         .get()
         .extracting(IcebergSnapshot::manifestList, IcebergSnapshot::manifests)
-        .containsExactly(null, emptyList());
+        .containsExactly("s3://this-does-not-exist/anywhere/", emptyList());
   }
 
   private static String httpRequestString(URI uri) throws Exception {

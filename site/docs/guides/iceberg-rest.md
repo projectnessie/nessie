@@ -256,9 +256,14 @@ Both S3 request signing and credentials vending ("assume role") work with `write
 * The (base) location of tables created via Iceberg REST are mandated by Nessie, which will choose
   the table's location underneath the location of the warehouse.
 * Changes to the table base location are ignored.
-* Nessie will always return only the Iceberg table snapshot that corresponds to the Nessie commit.
-  This solves the mismatch between Nessie commits and Iceberg snapshot history. Similarly Nessie
-  returns the Iceberg view version corresponding to the Nessie commit.
+* Returned snapshots
+  * **Since Nessie version 0.101.0**:
+    Nessie returns the Iceberg snapshot history for changes that are committed to Nessie via Iceberg
+    REST - but only for commits using Nessie 0.101.0 or newer!
+  * Nessie versions **before** 0.101.0:
+    Nessie will always return only the Iceberg table snapshot that corresponds to the Nessie commit.
+    This solves the mismatch between Nessie commits and Iceberg snapshot history. Similarly Nessie
+    returns the Iceberg view version corresponding to the Nessie commit.
 
 ## Nessie CLI
 

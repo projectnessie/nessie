@@ -336,6 +336,7 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     IcebergTableMetadata icebergMetadata =
         NessieModelIceberg.nessieTableSnapshotToIceberg(
             (NessieTableSnapshot) snap.nessieSnapshot(),
+            List.of(),
             Optional.empty(),
             m -> m.putAll(icebergMetadataEntity.properties()));
 

@@ -164,12 +164,12 @@ public class ITSparkIcebergNessieLocal extends SparkSqlTestBase {
               NessieRepositoryConnector.nessie(api));
       // ... and sweep
       DeleteSummary deleteSummary = expire(icebergFiles, liveContentSet, maxFileModificationTime);
-      soft.assertThat(deleteSummary.deleted()).isEqualTo(13L);
+      soft.assertThat(deleteSummary.deleted()).isEqualTo(7L);
       Set<StorageUri> filesAfter = allFiles(icebergFiles);
       Set<StorageUri> removedFiles = new HashSet<>(filesBefore);
       removedFiles.removeAll(filesAfter);
-      // make sure expired delete file (parquet) is also removed from GC.
-      soft.assertThat(removedFiles).anyMatch(u -> u.location().endsWith("-deletes.parquet"));
+      // make sure delete file (parquet) although it has expired, is not removed by GC.
+      soft.assertThat(removedFiles).noneMatch(u -> u.location().endsWith("-deletes.parquet"));
     }
   }
 

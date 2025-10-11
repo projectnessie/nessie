@@ -21,6 +21,7 @@ import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -185,6 +186,15 @@ public class ObservingVersionStore implements VersionStore {
   @Override
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
+  public Iterator<ContentHistoryEntry> getContentChanges(Ref ref, ContentKey key)
+      throws ReferenceNotFoundException {
+    return delegate.getContentChanges(ref, key);
+  }
+
+  @WithSpan
+  @Override
+  @Counted(PREFIX)
+  @Timed(value = PREFIX, histogram = true)
   public PaginationIterator<KeyEntry> getKeys(
       @SpanAttribute(TAG_REF) Ref ref,
       String pagingToken,
@@ -199,9 +209,9 @@ public class ObservingVersionStore implements VersionStore {
   @Counted(PREFIX)
   @Timed(value = PREFIX, histogram = true)
   public List<IdentifiedContentKey> getIdentifiedKeys(
-      @SpanAttribute(TAG_REF) Ref ref, Collection<ContentKey> keys)
+      @SpanAttribute(TAG_REF) Ref ref, Collection<ContentKey> keys, boolean returnNotFound)
       throws ReferenceNotFoundException {
-    return delegate.getIdentifiedKeys(ref, keys);
+    return delegate.getIdentifiedKeys(ref, keys, returnNotFound);
   }
 
   @WithSpan

@@ -66,6 +66,10 @@ public interface EntitySnapshotObj extends TaskObj {
           TaskObj.taskDefaultCacheExpire(),
           c -> ObjType.NOT_CACHED);
 
+  static ObjId snapshotObjIdForContent(String metadataLocation, long versionId) {
+    return snapshotIdForContent(metadataLocation, versionId);
+  }
+
   static ObjId snapshotObjIdForContent(Content content) {
     ObjId id = snapshotIdForContent(content);
     if (id != null) {
