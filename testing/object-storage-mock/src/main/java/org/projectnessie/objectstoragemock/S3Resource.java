@@ -334,10 +334,6 @@ public class S3Resource {
       @HeaderParam(IF_NONE_MATCH) List<String> noneMatch,
       @HeaderParam(IF_MODIFIED_SINCE) Date modifiedSince,
       @HeaderParam(IF_UNMODIFIED_SINCE) Date unmodifiedSince) {
-    if (range != null) {
-      // TODO Iceberg does this :(    return notImplemented();
-    }
-
     return withBucketObject(
         bucketName,
         objectName,

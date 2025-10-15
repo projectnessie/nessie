@@ -179,11 +179,11 @@ public class HeapStorageBucket {
           // .storageClass(StorageClass.STANDARD)
           .writer(
               ((range, output) -> {
-                if (range == null) {
+                if (range == null || range.everything()) {
                   output.write(newData);
                 } else {
                   int offset = (int) range.start();
-                  long len = Math.min(newData.length - offset, range.end() - range.start());
+                  long len = Math.min(newData.length - offset, range.length());
                   output.write(newData, offset, (int) len);
                 }
               }));

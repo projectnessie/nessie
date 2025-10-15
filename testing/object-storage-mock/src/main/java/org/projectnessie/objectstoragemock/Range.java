@@ -39,6 +39,15 @@ public interface Range {
 
   OptionalLong total();
 
+  default boolean everything() {
+    return start() == 0 && end() == Long.MAX_VALUE;
+  }
+
+  default long length() {
+    var len = end() - start() + 1L;
+    return len < 0 ? Long.MAX_VALUE : len;
+  }
+
   /** Can parse AWS style and "standard" {@code Range} header values. */
   @SuppressWarnings("unused") // JAX-RS factory function
   static Range fromString(String rangeString) {
