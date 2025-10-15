@@ -270,7 +270,7 @@ public interface VersionStore {
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**
-   * Delete the provided NamedRef
+   * Delete the provided {@link NamedRef}.
    *
    * <p>Throws exception if the optional hash does not match the provided ref.
    *

@@ -26,7 +26,7 @@ import org.projectnessie.model.FetchOption;
 
 /**
  * The purpose of this class is to include optional parameters that can be passed to {@link
- * HttpTreeApi#getAllReferences(ReferencesParams)}
+ * HttpTreeApi#getAllReferences(ReferencesParams)}.
  *
  * <p>For easier usage of this class, there is {@link ReferencesParams#builder()}, which allows
  * configuring/setting the different parameters.
