@@ -131,9 +131,9 @@ jobs:
         #    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
         run: |
           # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
-          ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace
+          ./gradlew publishAllModulesToMavenCentralPortalRepository -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAllModulesToMavenCentralPortalRepository -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAllModulesToMavenCentralPortalRepository -Prelease -Puber-jar --no-scan --stacktrace
 
       - name: Generate changelog
         run: ./gradlew --no-scan --quiet --console=plain getChangelog --no-header --no-links > "${ARTIFACTS}/nessie-changelog-${RELEASE_VERSION}.md"
