@@ -81,28 +81,31 @@ jobs:
             -x :nessie-server-admin-tool:compileAll \
             -x :nessie-events-quarkus:compileAll \
             -x :nessie-events-ri:compileAll \
+            --continue \
             --scan
 
       - name: Gradle / Compile Quarkus
         run: |
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan || \
-            ./gradlew :nessie-quarkus:compileAll :nessie-server-admin-tool:compileAll :nessie-events-quarkus:compileAll :nessie-events-ri:compileAll --scan
+          ./gradlew :nessie-quarkus:compileAll \
+            :nessie-server-admin-tool:compileAll \
+            :nessie-events-quarkus:compileAll \
+            :nessie-events-ri:compileAll \
+            --continue \
+            --scan
 
       - name: Gradle / Code checks
-        run: ./gradlew codeChecks --scan
+        run: ./gradlew codeChecks --continue --scan
 
       - name: Gradle / Assemble
-        run: ./gradlew assemble --scan
+        run: ./gradlew assemble --continue --scan
 
       - name: Gradle / Publish to Maven local
-        run: ./gradlew publishToMavenLocal --scan
+        run: ./gradlew publishToMavenLocal --continue --scan
 
       # This is a rather quick one and uses the output of 'publishToMavenLocal', which uses the
       # outputs of 'assemble'
       - name: Gradle / build tools integration tests
-        run: ./gradlew buildToolsIntegrationTest
+        run: ./gradlew buildToolsIntegrationTest --continue
 
       - name: Save partial Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-save
@@ -125,7 +128,17 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Gradle / test
-        run: ./gradlew test :nessie-client:check -x :nessie-client:intTest -x :nessie-quarkus:test -x :nessie-server-admin-tool:test -x :nessie-events-quarkus:test -x :nessie-events-ri:test --scan
+        run: |
+          ./gradlew \
+            test \
+            :nessie-client:check \
+            -x :nessie-client:intTest \
+            -x :nessie-quarkus:test \
+            -x :nessie-server-admin-tool:test \
+            -x :nessie-events-quarkus:test \
+            -x :nessie-events-ri:test \
+            --continue \
+            --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -159,24 +172,15 @@ jobs:
 
       - name: Gradle / Test Quarkus Server
         run: |
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:test --scan || \
-            ./gradlew :nessie-quarkus:test --scan || \
-            ./gradlew :nessie-quarkus:test --scan
+          ./gradlew :nessie-quarkus:test --scan
 
       - name: Gradle / Test Quarkus Events
         run: |
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-events-quarkus:test --scan || \
-            ./gradlew :nessie-events-quarkus:test --scan || \
-            ./gradlew :nessie-events-quarkus:test --scan
+          ./gradlew :nessie-events-quarkus:test --scan
 
       - name: Gradle / Test Quarkus Events RI
         run: |
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-events-ri:test --scan || \
-            ./gradlew :nessie-events-ri:test --scan || \
-            ./gradlew :nessie-events-ri:test --scan
+          ./gradlew :nessie-events-ri:test --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -241,6 +245,7 @@ jobs:
             $(cat ../persist-prjs.txt) \
             $(cat ../storage-prjs.txt) \
             $(cat ../spark-prjs.txt) \
+            --continue \
             --scan
 
       - name: Capture Test Reports
@@ -283,7 +288,7 @@ jobs:
           ./gradlew :listProjectsWithPrefix --prefix :nessie-versioned-persist- --output ../persist-prjs.txt
           echo "::endgroup::"
 
-          ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --scan
+          ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -326,7 +331,7 @@ jobs:
           ./gradlew :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt
           echo "::endgroup::"
 
-          ./gradlew $(cat ../spark-prjs.txt) --scan
+          ./gradlew $(cat ../spark-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -360,10 +365,7 @@ jobs:
 
       - name: Gradle / intTest Quarkus Server
         run:
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-quarkus:intTest --scan || \
-            ./gradlew :nessie-quarkus:intTest --scan || \
-            ./gradlew :nessie-quarkus:intTest --scan
+          ./gradlew :nessie-quarkus:intTest --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -407,10 +409,7 @@ jobs:
 
       - name: Gradle / intTest Admin Tool
         run:
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-server-admin-tool:intTest --scan || \
-            ./gradlew :nessie-server-admin-tool:intTest --scan || \
-            ./gradlew :nessie-server-admin-tool:intTest --scan
+          ./gradlew :nessie-server-admin-tool:intTest --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -454,10 +453,7 @@ jobs:
 
       - name: Gradle / intTest Quarkus Events
         run:
-          # 2 Retries - to mitigate https://github.com/gradle/gradle/issues/25751
-          ./gradlew :nessie-events-quarkus:intTest --scan || \
-            ./gradlew :nessie-events-quarkus:intTest --scan || \
-            ./gradlew :nessie-events-quarkus:intTest --scan
+          ./gradlew :nessie-events-quarkus:intTest --scan
 
       - name: Dump quarkus.log
         if: ${{ failure() }}
@@ -945,10 +941,22 @@ jobs:
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
       - name: Nessie Spark 3.4 / 2.13 Extensions test
-        run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest --scan
+        run: |
+          ./gradlew \
+            -DscalaVersion=2.13 \
+            :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test \
+            :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest \
+            --continue \
+            --scan
 
       - name: Nessie Spark 3.5 / 2.13 Extensions test
-        run: ./gradlew -DscalaVersion=2.13 :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest --scan
+        run: |
+          ./gradlew \
+            -DscalaVersion=2.13 \
+            :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:test \
+            :nessie:nessie-iceberg:nessie-spark-extensions-3.5_2.13:intTest \
+            --continue \
+            --scan
 
       #- name: Publish Nessie + Iceberg to local Maven repo
       #  run: ./gradlew publishLocal --scan
@@ -967,7 +975,7 @@ jobs:
       #    !
 
       - name: Tools & Integrations tests
-        run: ./gradlew intTest --scan
+        run: ./gradlew intTest --continue --scan
 
   site:
     name: CI Website

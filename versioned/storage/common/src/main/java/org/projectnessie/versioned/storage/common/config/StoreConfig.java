@@ -81,7 +81,7 @@ public interface StoreConfig {
 
   /**
    * Whether namespace validation is enabled, changing this to false will break the Nessie
-   * specification!
+   * specification.
    *
    * <p>Committing operations by default enforce that all (parent) namespaces exist.
    *

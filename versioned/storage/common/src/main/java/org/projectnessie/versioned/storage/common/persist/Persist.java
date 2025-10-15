@@ -369,7 +369,7 @@ public interface Persist {
   void deleteObj(@Nonnull ObjId id);
 
   /**
-   * Deletes multiple objects,
+   * Deletes multiple objects.
    *
    * <p>In case an object failed to be deleted, it is undefined whether other objects have been
    * deleted or not.
