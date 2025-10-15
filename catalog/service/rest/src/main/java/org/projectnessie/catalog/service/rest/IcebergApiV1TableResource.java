@@ -37,6 +37,7 @@ import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpda
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetDefaultSortOrder.setDefaultSortOrder;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties.setProperties;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.UpgradeFormatVersion.upgradeFormatVersion;
+import static org.projectnessie.catalog.service.files.MetadataUtil.readMetadata;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
@@ -467,7 +468,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     IcebergTableMetadata tableMetadata;
     try (InputStream metadataInput =
-        objectIO.readObject(StorageUri.of(registerTableRequest.metadataLocation()))) {
+        readMetadata(objectIO, StorageUri.of(registerTableRequest.metadataLocation()))) {
       tableMetadata =
           IcebergJson.objectMapper().readValue(metadataInput, IcebergTableMetadata.class);
     }
