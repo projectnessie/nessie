@@ -236,6 +236,7 @@ com.github.jnr:jnr-ffi
 com.github.stephenc.jcip:jcip-annotations
 com.google.android:annotations
 com.google.api:api-common
+com.google.api.grpc:proto-google-cloud-logging-v2
 com.google.api-client:google-api-client
 com.google.api-client:google-api-client-gson
 com.google.api:gax
@@ -267,6 +268,7 @@ com.google.cloud:google-cloud-bigtable
 com.google.cloud:google-cloud-core
 com.google.cloud:google-cloud-core-grpc
 com.google.cloud:google-cloud-core-http
+com.google.cloud:google-cloud-logging
 com.google.cloud:google-cloud-monitoring
 com.google.cloud:google-cloud-nio
 com.google.cloud:google-cloud-secretmanager
