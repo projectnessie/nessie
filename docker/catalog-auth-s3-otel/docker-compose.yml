@@ -61,7 +61,7 @@ services:
   ##      SELECT * FROM city;
   ##
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.105.4
+    image: ghcr.io/projectnessie/nessie:0.105.5
     ports:
       # API port
       - "19120:19120"
