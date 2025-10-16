@@ -2,6 +2,19 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.5 Release (October 16, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.5).
+
+### Fixes
+
+- Iceberg REST: adapt the deprecation of `lastColumnId` in `AddSchema` table metadata update, fiel field is optional now
+
+### Commits
+* Fix javadocs for checkstyle, add `--continue` to CI jobs, remove retries (#11464)
+* Object-storage-mock: Fix off-by-1 for HTTP range requests (#11465)
+* Support parsing compressed metadata files in registerTable (#11435)
+
 ## 0.105.4 Release (October 08, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.4).
