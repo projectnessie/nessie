@@ -21,9 +21,9 @@ import java.util.Optional;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
-import org.junit.jupiter.engine.descriptor.LauncherStoreFacade;
 import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext;
+import org.junit.jupiter.engine.execution.LauncherStoreFacade;
 import org.junit.jupiter.engine.support.JupiterThrowableCollectorFactory;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.EngineExecutionListener;
@@ -33,6 +33,7 @@ import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine;
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutorService;
 import org.junit.platform.engine.support.hierarchical.ThrowableCollector;
+import org.junit.platform.engine.support.store.NamespacedHierarchicalStore;
 
 public class ThreadPerTestClassExecutionTestEngine
     extends HierarchicalTestEngine<JupiterEngineExecutionContext> {
@@ -71,32 +72,34 @@ public class ThreadPerTestClassExecutionTestEngine
   @Override
   protected JupiterEngineExecutionContext createExecutionContext(ExecutionRequest request) {
     try {
-      // since 5.13
-      Class.forName("org.junit.jupiter.engine.descriptor.LauncherStoreFacade");
       return createExecutionContext513(request);
-    } catch (ClassNotFoundException e) {
-      return createExecutionContext512(request);
+    } catch (Exception e) {
+      return createExecutionContext514(request);
     }
   }
 
-  @SuppressWarnings("JavaReflectionMemberAccess")
-  private JupiterEngineExecutionContext createExecutionContext512(ExecutionRequest request) {
-    try {
-      var ctor =
-          JupiterEngineExecutionContext.class.getDeclaredConstructor(
-              EngineExecutionListener.class, JupiterConfiguration.class);
-      return JupiterEngineExecutionContext.class.cast(
-          ctor.newInstance(request.getEngineExecutionListener(), getJupiterConfiguration(request)));
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private JupiterEngineExecutionContext createExecutionContext513(ExecutionRequest request) {
+  private JupiterEngineExecutionContext createExecutionContext514(ExecutionRequest request) {
+    // LauncherStoreFacade moved to a different package in JUnit 5.14.
     return new JupiterEngineExecutionContext(
         request.getEngineExecutionListener(),
         getJupiterConfiguration(request),
         new LauncherStoreFacade(request.getStore()));
+  }
+
+  private JupiterEngineExecutionContext createExecutionContext513(ExecutionRequest request)
+      throws Exception {
+    var classLauncherStoreFacade =
+        Class.forName("org.junit.jupiter.engine.descriptor.LauncherStoreFacade");
+    var ctorLauncherStoreFacade =
+        classLauncherStoreFacade.getDeclaredConstructor(NamespacedHierarchicalStore.class);
+    var launcherStoreFacade = ctorLauncherStoreFacade.newInstance(request.getStore());
+    var ctorJupiterEngineExecutionContext =
+        JupiterEngineExecutionContext.class.getDeclaredConstructor(
+            EngineExecutionListener.class, JupiterConfiguration.class, classLauncherStoreFacade);
+    return ctorJupiterEngineExecutionContext.newInstance(
+        request.getEngineExecutionListener(),
+        getJupiterConfiguration(request),
+        launcherStoreFacade);
   }
 
   @Override
