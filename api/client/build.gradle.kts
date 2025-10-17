@@ -89,7 +89,7 @@ dependencies {
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
-  intTestImplementation("org.testcontainers:junit-jupiter")
+  intTestImplementation("org.testcontainers:testcontainers-junit-jupiter")
   intTestImplementation(libs.keycloak.admin.client)
   intTestImplementation(libs.testcontainers.keycloak) {
     exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet

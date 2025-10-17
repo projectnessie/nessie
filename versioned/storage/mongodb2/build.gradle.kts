@@ -45,7 +45,7 @@ dependencies {
   intTestImplementation(project(":nessie-versioned-storage-testextension"))
   intTestImplementation(project(":nessie-versioned-tests"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
-  intTestRuntimeOnly("org.testcontainers:mongodb")
+  intTestRuntimeOnly("org.testcontainers:testcontainers-mongodb")
   intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)

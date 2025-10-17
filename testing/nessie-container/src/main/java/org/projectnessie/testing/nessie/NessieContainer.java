@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -263,11 +261,6 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
 
     public ExternalNetwork(String networkId) {
       this.networkId = networkId;
-    }
-
-    @Override
-    public Statement apply(Statement var1, Description var2) {
-      return null;
     }
 
     public String getId() {

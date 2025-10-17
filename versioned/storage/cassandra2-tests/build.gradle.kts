@@ -35,7 +35,7 @@ dependencies {
   implementation("org.apache.cassandra:java-driver-core")
 
   implementation(platform(libs.testcontainers.bom))
-  implementation("org.testcontainers:cassandra") {
+  implementation("org.testcontainers:testcontainers-cassandra") {
     exclude("com.datastax.cassandra", "cassandra-driver-core")
   }
 }

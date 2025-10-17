@@ -19,15 +19,15 @@ import static org.projectnessie.gc.contents.jdbc.ITPostgresPersistenceSpi.docker
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 public class ITMariaDBPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
-  private static MariaDBContainer<?> container;
+  private static MariaDBContainer container;
 
   @BeforeAll
   static void createDataSource() throws Exception {
-    container = new MariaDBContainer<>(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"));
+    container = new MariaDBContainer(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"));
     container.start();
     initDataSource(container.getJdbcUrl());
   }

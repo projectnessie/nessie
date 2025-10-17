@@ -16,7 +16,6 @@
 package org.projectnessie.server.secrets;
 
 import static java.lang.String.format;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager.TestInjector.AnnotatedAndMatchesType;
@@ -35,7 +34,7 @@ import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -80,11 +79,11 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
                     .asCompatibleSubstituteFor("localstack/localstack"))
             .withLogConsumer(
                 c -> LOGGER.info("[LOCALSTACK] {}", c.getUtf8StringWithoutLineEnding()))
-            .withServices(SECRETSMANAGER);
+            .withServices("secretsmanager");
 
     localstack.start();
 
-    URI secretsManagerEndpoint = localstack.getEndpointOverride(SECRETSMANAGER);
+    URI secretsManagerEndpoint = localstack.getEndpoint();
 
     try {
       secretsManagerClient =
@@ -170,7 +169,7 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
   @Override
   public void inject(TestInjector testInjector) {
     testInjector.injectIntoFields(
-        localstack.getEndpointOverride(SECRETSMANAGER),
+        localstack.getEndpoint(),
         new AnnotatedAndMatchesType(AwsSecretsManagerEndpoint.class, URI.class));
     testInjector.injectIntoFields(
         localstack.getRegion(),

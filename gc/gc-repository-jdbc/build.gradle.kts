@@ -62,9 +62,9 @@ dependencies {
 
   intTestImplementation(libs.postgresql)
   intTestImplementation(platform(libs.testcontainers.bom))
-  intTestImplementation("org.testcontainers:postgresql")
-  intTestImplementation("org.testcontainers:mariadb")
-  intTestImplementation("org.testcontainers:mysql")
+  intTestImplementation("org.testcontainers:testcontainers-postgresql")
+  intTestImplementation("org.testcontainers:testcontainers-mariadb")
+  intTestImplementation("org.testcontainers:testcontainers-mysql")
   intTestRuntimeOnly(libs.docker.java.api)
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestCompileOnly(project(":nessie-immutables-std"))
