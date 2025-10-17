@@ -21,17 +21,18 @@ import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.reporting.OutputDirectoryProvider;
 
+@SuppressWarnings("deprecation")
 final class JUnitCompat {
   private JUnitCompat() {}
 
-  static Class<?> CLASS_OUTPUT_DIRECTORY_PROVIDER;
+  static Class<?> CLASS_OUTPUT_DIRECTORY_CREATOR;
 
   static {
     try {
-      CLASS_OUTPUT_DIRECTORY_PROVIDER =
-          Class.forName("org.junit.platform.engine.reporting.OutputDirectoryProvider");
+      CLASS_OUTPUT_DIRECTORY_CREATOR =
+          Class.forName("org.junit.platform.engine.OutputDirectoryCreator");
     } catch (ClassNotFoundException e) {
-      CLASS_OUTPUT_DIRECTORY_PROVIDER = null;
+      CLASS_OUTPUT_DIRECTORY_CREATOR = null;
     }
   }
 
@@ -42,24 +43,24 @@ final class JUnitCompat {
   static JupiterConfiguration newDefaultJupiterConfiguration(
       ConfigurationParameters configurationParameters, EngineDiscoveryRequest request) {
     try {
-      if (CLASS_OUTPUT_DIRECTORY_PROVIDER != null) {
-        return newDefaultJupiterConfiguration512(configurationParameters, request);
+      if (CLASS_OUTPUT_DIRECTORY_CREATOR != null) {
+        return newDefaultJupiterConfiguration514(configurationParameters, request);
       }
 
-      var ctorBefore512 =
-          DefaultJupiterConfiguration.class.getDeclaredConstructor(ConfigurationParameters.class);
-      return ctorBefore512.newInstance(configurationParameters);
+      var ctorBefore514 =
+          DefaultJupiterConfiguration.class.getDeclaredConstructor(
+              ConfigurationParameters.class, OutputDirectoryProvider.class);
+      return ctorBefore514.newInstance(
+          configurationParameters, request.getOutputDirectoryProvider());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static JupiterConfiguration newDefaultJupiterConfiguration512(
+  private static JupiterConfiguration newDefaultJupiterConfiguration514(
       ConfigurationParameters configurationParameters, EngineDiscoveryRequest request)
       throws Exception {
-    var ctorSince512 =
-        DefaultJupiterConfiguration.class.getDeclaredConstructor(
-            ConfigurationParameters.class, OutputDirectoryProvider.class);
-    return ctorSince512.newInstance(configurationParameters, request.getOutputDirectoryProvider());
+    return new DefaultJupiterConfiguration(
+        configurationParameters, request.getOutputDirectoryCreator());
   }
 }
