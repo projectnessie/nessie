@@ -19,7 +19,7 @@ import jakarta.annotation.Nonnull;
 import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.mariadb.MariaDBContainer;
 
 public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
 
@@ -32,7 +32,7 @@ public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
   @Override
   @SuppressWarnings("resource")
   protected JdbcDatabaseContainer<?> createContainer() {
-    return new MariaDBContainer<>(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
+    return new MariaDBContainer(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
         .withUrlParam("useBulkStmtsForInserts", "false");
   }
 

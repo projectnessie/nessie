@@ -23,15 +23,15 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 public class ITJdbcHelper extends AbstractJdbcHelper {
 
-  private static PostgreSQLContainer<?> container;
+  private static PostgreSQLContainer container;
 
   @BeforeAll
   static void createDataSource() throws Exception {
-    container = new PostgreSQLContainer<>(dockerImage("postgres"));
+    container = new PostgreSQLContainer(dockerImage("postgres"));
     container.start();
     initDataSource(container.getJdbcUrl());
   }

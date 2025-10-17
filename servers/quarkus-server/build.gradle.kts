@@ -154,8 +154,8 @@ dependencies {
     // Don't use resteasy-classic (and prevent the Quarkus warning)
     exclude(group = "org.jboss.resteasy")
   }
-  testFixturesApi("org.testcontainers:localstack")
-  testFixturesApi("org.testcontainers:vault")
+  testFixturesApi("org.testcontainers:testcontainers-localstack")
+  testFixturesApi("org.testcontainers:testcontainers-vault")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))

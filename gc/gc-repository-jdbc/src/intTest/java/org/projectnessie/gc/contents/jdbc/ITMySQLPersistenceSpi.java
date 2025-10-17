@@ -19,12 +19,12 @@ import static org.projectnessie.gc.contents.jdbc.ITPostgresPersistenceSpi.docker
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 public class ITMySQLPersistenceSpi extends AbstractJdbcPersistenceSpi {
 
-  private static MySQLContainer<?> container;
+  private static MySQLContainer container;
 
   @BeforeAll
   static void createDataSource() throws Exception {
@@ -41,8 +41,7 @@ public class ITMySQLPersistenceSpi extends AbstractJdbcPersistenceSpi {
     }
   }
 
-  private static class MariaDBDriverMySQLContainer
-      extends MySQLContainer<MariaDBDriverMySQLContainer> {
+  private static class MariaDBDriverMySQLContainer extends MySQLContainer {
 
     MariaDBDriverMySQLContainer(DockerImageName dockerImage) {
       super(dockerImage);

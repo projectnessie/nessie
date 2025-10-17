@@ -19,7 +19,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredentials;
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SECRETSMANAGER;
 
 import java.net.URI;
 import java.time.Instant;
@@ -35,9 +34,9 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -61,11 +60,11 @@ public class ITAwsSecretsProvider {
                   .dockerImageName(null)
                   .asCompatibleSubstituteFor("localstack/localstack"))
           .withLogConsumer(c -> LOGGER.info("[LOCALSTACK] {}", c.getUtf8StringWithoutLineEnding()))
-          .withServices(SECRETSMANAGER);
+          .withServices("secretsmanager");
 
   @Test
   public void awsSecretsManager() {
-    URI secretsManagerEndpoint = localstack.getEndpointOverride(SECRETSMANAGER);
+    URI secretsManagerEndpoint = localstack.getEndpoint();
     try (SecretsManagerClient client =
         SecretsManagerClient.builder()
             .endpointOverride(secretsManagerEndpoint)

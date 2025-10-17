@@ -37,7 +37,7 @@ dependencies {
   intTestRuntimeOnly(project(":nessie-versioned-storage-mongodb-tests"))
   intTestRuntimeOnly(project(":nessie-versioned-storage-testextension"))
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
-  intTestRuntimeOnly("org.testcontainers:mongodb")
+  intTestRuntimeOnly("org.testcontainers:testcontainers-mongodb")
   intTestRuntimeOnly(libs.mongodb.driver.sync)
 }
 

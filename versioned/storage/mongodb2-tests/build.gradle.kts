@@ -34,5 +34,5 @@ dependencies {
   implementation(libs.mongodb.driver.sync)
 
   implementation(platform(libs.testcontainers.bom))
-  implementation("org.testcontainers:mongodb")
+  implementation("org.testcontainers:testcontainers-mongodb")
 }

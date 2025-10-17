@@ -34,10 +34,9 @@ dependencies {
   implementation(libs.agroal.pool)
 
   implementation(platform(libs.testcontainers.bom))
-  implementation("org.testcontainers:postgresql")
-  implementation("org.testcontainers:mysql")
-  implementation("org.testcontainers:mariadb")
-  implementation("org.testcontainers:cockroachdb")
-  implementation("org.testcontainers:mariadb")
-  implementation("org.testcontainers:mysql")
+  implementation("org.testcontainers:testcontainers-postgresql")
+  implementation("org.testcontainers:testcontainers-mysql")
+  implementation("org.testcontainers:testcontainers-cockroachdb")
+  implementation("org.testcontainers:testcontainers-mariadb")
+  implementation("org.testcontainers:testcontainers-mysql")
 }

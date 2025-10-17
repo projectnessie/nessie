@@ -40,8 +40,8 @@ dependencies {
 
   intTestImplementation(platform(libs.testcontainers.bom))
   intTestImplementation("org.testcontainers:testcontainers")
-  intTestImplementation("org.testcontainers:vault")
-  intTestImplementation("org.testcontainers:junit-jupiter")
+  intTestImplementation("org.testcontainers:testcontainers-vault")
+  intTestImplementation("org.testcontainers:testcontainers-junit-jupiter")
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestImplementation(libs.smallrye.config.core)
   intTestCompileOnly(libs.immutables.value.annotations)

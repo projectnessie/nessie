@@ -19,7 +19,7 @@ import jakarta.annotation.Nonnull;
 import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
@@ -46,8 +46,7 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
         jdbcPass());
   }
 
-  private static class MariaDBDriverMySQLContainer
-      extends MySQLContainer<MariaDBDriverMySQLContainer> {
+  private static class MariaDBDriverMySQLContainer extends MySQLContainer {
 
     MariaDBDriverMySQLContainer(DockerImageName dockerImage) {
       super(dockerImage.asCompatibleSubstituteFor("mysql"));

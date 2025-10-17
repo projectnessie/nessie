@@ -19,7 +19,7 @@ import io.agroal.api.configuration.AgroalConnectionFactoryConfiguration;
 import jakarta.annotation.Nonnull;
 import java.util.Map;
 import org.projectnessie.versioned.storage.jdbc.JdbcBackendFactory;
-import org.testcontainers.containers.CockroachContainer;
+import org.testcontainers.cockroachdb.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 public class CockroachBackendTestFactory extends ContainerBackendTestFactory {

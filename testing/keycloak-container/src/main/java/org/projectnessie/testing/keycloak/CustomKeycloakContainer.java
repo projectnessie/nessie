@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -407,11 +405,6 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
     public ExternalNetwork(String networkId) {
       this.networkId = networkId;
-    }
-
-    @Override
-    public Statement apply(Statement var1, Description var2) {
-      return null;
     }
 
     public String getId() {
