@@ -103,6 +103,9 @@ class TestS3Utils {
     "https://user@s3.region1.private.com:9000/mybucket/mydir/myfile, s3://mybucket/mydir/myfile",
     "http://127.0.0.1:9000/mybucket/mydir/myfile                   , s3://mybucket/mydir/myfile",
     "http://s3.localhost.localdomain:9000/mybucket/mydir/myfile    , s3://mybucket/mydir/myfile",
+    "http://mybucket.s3.us-east-1.amazonaws.com/                   , s3://mybucket/",
+    "http://s3.localhost.localdomain:9000/mybucket                 , s3://mybucket",
+    "http://127.0.0.1:9000/mybucket                                , s3://mybucket",
   })
   void asS3Location(String location, String expected) {
     assertThat(S3Utils.asS3Location(location)).isEqualTo(expected);
