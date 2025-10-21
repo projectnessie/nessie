@@ -41,7 +41,7 @@ public final class S3Utils {
   //   /bucket/path
   // but not
   //   /bucket/
-  private static final Pattern S3_PATH_PATTERN = Pattern.compile("^/([^/]+)(/.+|)$");
+  private static final Pattern S3_PATH_PATTERN = Pattern.compile("^/([^/]+)(/.+|$)");
 
   private S3Utils() {}
 
