@@ -36,7 +36,12 @@ public final class S3Utils {
 
   private static final Pattern S3_HOST_PATTERN =
       Pattern.compile("^((.+)\\.)?s3[.-]([a-z0-9-]+)\\..*");
-  private static final Pattern S3_PATH_PATTERN = Pattern.compile("^/([^/]+)/.*");
+  // This matches any of
+  //   /bucket
+  //   /bucket/path
+  // but not
+  //   /bucket/
+  private static final Pattern S3_PATH_PATTERN = Pattern.compile("^/([^/]+)(/.+|)$");
 
   private S3Utils() {}
 
@@ -119,10 +124,11 @@ public final class S3Utils {
       key = httpUri.getPath();
     } else {
       // path-style access style
-      matcher = S3_PATH_PATTERN.matcher(httpUri.getPath());
+      String httpUriPath = httpUri.getPath();
+      matcher = S3_PATH_PATTERN.matcher(httpUriPath);
       checkArgument(matcher.matches(), "Invalid S3 URI: '%s'", httpUri);
       bucket = matcher.group(1);
-      key = httpUri.getPath().substring(bucket.length() + 1);
+      key = httpUriPath.substring(bucket.length() + 1);
     }
     return "s3://" + bucket + key;
   }

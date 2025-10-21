@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fixes an issue where Iceberg batch deletions did not work with Nessie remote S3 signing.
+
 ### Commits
 
 ## [0.105.3] Release (2025-09-24)
