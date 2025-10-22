@@ -921,6 +921,10 @@ jobs:
           patch-branch: ${{env.ICEBERG_PATCH_BRANCH}}
           work-branch: iceberg-integration-patched
 
+      - name: Gradle 9 prereq
+        # Gradle 9 requires a project's directory to exist, even if it's empty.
+        run: mkdir "${{env.ICEBERG_DIR}}/bom"
+
       - name: Setup JDK
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5
         with:
