@@ -25,10 +25,10 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.type.ArrayType;
 import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -178,18 +178,6 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     mapper.setPropertyNamingStrategy(new PropertyNamingStrategies.KebabCaseStrategy());
     RESTSerializers.registerAll(mapper);
 
-    Function<URI, ObjectNode> httpGet =
-        uri -> {
-          try {
-            return mapper.readValue(uri.toURL(), ObjectNode.class);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        };
-
-    ArrayType namespacesType = mapper.getTypeFactory().constructArrayType(Namespace.class);
-    ArrayType tablesType = mapper.getTypeFactory().constructArrayType(TableIdentifier.class);
-
     List<Namespace> namespaces = new ArrayList<>();
     List<TableIdentifier> tables = new ArrayList<>();
     List<TableIdentifier> views = new ArrayList<>();
@@ -199,7 +187,7 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
 
     for (String token = ""; true; ) {
       ListNamespacesResponse resp =
-          mapper.readValue(listNamespaces.apply(token).toURL(), ListNamespacesResponse.class);
+          readValue(mapper, listNamespaces.apply(token).toURL(), ListNamespacesResponse.class);
       namespaces.addAll(resp.namespaces());
       String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
@@ -210,7 +198,7 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
 
     for (String token = ""; true; ) {
       ListTablesResponse resp =
-          mapper.readValue(listTables.apply(token).toURL(), ListTablesResponse.class);
+          readValue(mapper, listTables.apply(token).toURL(), ListTablesResponse.class);
       tables.addAll(resp.identifiers());
       String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
@@ -221,7 +209,7 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
 
     for (String token = ""; true; ) {
       ListTablesResponse resp =
-          mapper.readValue(listViews.apply(token).toURL(), ListTablesResponse.class);
+          readValue(mapper, listViews.apply(token).toURL(), ListTablesResponse.class);
       views.addAll(resp.identifiers());
       String nextToken = resp.nextPageToken();
       if (nextToken == null || nextToken.isEmpty()) {
@@ -305,5 +293,13 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     assertThatThrownBy(() -> catalog.buildTable(id1, SCHEMA).create())
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("table_access_denied");
+  }
+
+  // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
+  static <T> T readValue(ObjectMapper mapper, URL url, Class<T> clazz) throws Exception {
+    URLConnection conn = url.openConnection();
+    try (var input = conn.getInputStream()) {
+      return mapper.readValue(input, clazz);
+    }
   }
 }

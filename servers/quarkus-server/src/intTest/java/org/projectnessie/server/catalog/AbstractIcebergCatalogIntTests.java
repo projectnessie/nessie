@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import org.junit.jupiter.api.Test;
 
 @WithTestResource(IcebergResourceLifecycleManager.ForIntegrationTests.class)
@@ -31,12 +32,15 @@ public abstract class AbstractIcebergCatalogIntTests extends AbstractIcebergCata
   public void objectStoreReadiness() throws Exception {
     int managementPort = Integer.getInteger("quarkus.management.port", 9000);
     URL health = URI.create(String.format("http://127.0.0.1:%d/q/health", managementPort)).toURL();
-    JsonNode healthDoc = new ObjectMapper().readTree(health);
-    JsonNode checks = healthDoc.get("checks");
-    for (JsonNode check : checks) {
-      if (ObjectStoresHealthCheck.NAME.equals(check.get("name").asText())) {
-        assertThat(check.get("status").asText()).isEqualTo("UP");
-        break;
+    URLConnection conn = health.openConnection();
+    try (var input = conn.getInputStream()) {
+      JsonNode healthDoc = new ObjectMapper().readTree(input);
+      JsonNode checks = healthDoc.get("checks");
+      for (JsonNode check : checks) {
+        if (ObjectStoresHealthCheck.NAME.equals(check.get("name").asText())) {
+          assertThat(check.get("status").asText()).isEqualTo("UP");
+          break;
+        }
       }
     }
   }

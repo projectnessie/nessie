@@ -43,6 +43,9 @@ public final class S3Utils {
   //   /bucket/
   private static final Pattern S3_PATH_PATTERN = Pattern.compile("^/([^/]+)(/.+|$)");
 
+  private static final AwsCredentialsProvider DEFAULT_CREDENTIALS_PROVIDER =
+      DefaultCredentialsProvider.builder().build();
+
   private S3Utils() {}
 
   public static Optional<String> extractBucketName(URI uri) {
@@ -157,7 +160,7 @@ public final class S3Utils {
       S3AuthType authType, S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
     switch (authType) {
       case APPLICATION_GLOBAL:
-        return DefaultCredentialsProvider.create(); // actually a singleton
+        return DEFAULT_CREDENTIALS_PROVIDER;
       case STATIC:
         URI secretName =
             bucketOptions

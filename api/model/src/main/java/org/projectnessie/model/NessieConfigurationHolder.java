@@ -15,9 +15,12 @@
  */
 package org.projectnessie.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Loads the externally defined {@link NessieConfiguration template} defining the min and max API
@@ -34,7 +37,11 @@ final class NessieConfigurationHolder {
   static {
     try {
       URL src = NessieConfiguration.class.getResource("NessieConfiguration.json");
-      NESSIE_API_SPEC = new ObjectMapper().readValue(src, NessieConfiguration.class);
+      URLConnection conn =
+          requireNonNull(src, "NessieConfiguration.json not found").openConnection();
+      try (var input = conn.getInputStream()) {
+        NESSIE_API_SPEC = new ObjectMapper().readValue(input, NessieConfiguration.class);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

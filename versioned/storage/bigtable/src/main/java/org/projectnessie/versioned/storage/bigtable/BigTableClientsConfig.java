@@ -56,8 +56,13 @@ public interface BigTableClientsConfig {
     return 8086;
   }
 
-  /** Google BigTable JWT audience mappings (if necessary). */
+  /**
+   * Was a setting for Google BigTable JWT audience mappings, but it is actually a no-op.
+   *
+   * @deprecated Audience is always set to bigtable service name.
+   */
   @ConfigPropertyName("mapping")
+  @Deprecated(forRemoval = true)
   Map<String, String> jwtAudienceMapping();
 
   /** Initial retry delay. */
