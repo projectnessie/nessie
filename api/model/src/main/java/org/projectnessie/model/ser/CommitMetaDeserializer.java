@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
 import org.projectnessie.model.CommitMeta;
 
@@ -52,8 +51,7 @@ public class CommitMetaDeserializer extends StdDeserializer<CommitMeta> {
       ObjectNode mapOfLists = node.putObject(arrayAttr);
       if (node.has(singleAttr) && node.get(singleAttr).isObject()) {
         ObjectNode map = (ObjectNode) node.get(singleAttr);
-        for (Iterator<Map.Entry<String, JsonNode>> it = map.fields(); it.hasNext(); ) {
-          Map.Entry<String, JsonNode> entry = it.next();
+        for (Map.Entry<String, JsonNode> entry : map.properties()) {
           mapOfLists.putArray(entry.getKey()).add(entry.getValue());
         }
       }
@@ -63,7 +61,7 @@ public class CommitMetaDeserializer extends StdDeserializer<CommitMeta> {
 
   @Override
   public CommitMeta deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-    // First parse the serialized data as a generic object
+    // First, parse the serialized data as a generic object
     ObjectNode node = p.readValueAs(ObjectNode.class);
     // Convert old properties to new, array-based variants
     toArray(node, "author", "authors");

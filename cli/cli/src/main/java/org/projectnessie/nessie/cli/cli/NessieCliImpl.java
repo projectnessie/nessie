@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.cli.cli;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.nessie.cli.commands.CommandsFactory.buildCommandInstance;
 
@@ -27,6 +28,7 @@ import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -246,10 +248,16 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
               .toAnsi(terminal));
     } else {
       try {
-        URL url = new URL("https://api.github.com/repos/projectnessie/nessie/releases/latest");
-        ObjectNode latestRelease = new ObjectMapper().readValue(url, ObjectNode.class);
-        String latestReleaseVersion = latestRelease.get("tag_name").asText().replace("nessie-", "");
+        String latestNessieReleaseUrl =
+            "https://api.github.com/repos/projectnessie/nessie/releases/latest";
+        URL url = new URL(latestNessieReleaseUrl);
+        URLConnection conn = requireNonNull(url, latestNessieReleaseUrl).openConnection();
+        ObjectNode latestRelease;
+        try (var input = conn.getInputStream()) {
+          latestRelease = new ObjectMapper().readValue(input, ObjectNode.class);
+        }
 
+        String latestReleaseVersion = latestRelease.get("tag_name").asText().replace("nessie-", "");
         if (!version.equals(latestReleaseVersion)) {
           writer.println(
               new AttributedString(

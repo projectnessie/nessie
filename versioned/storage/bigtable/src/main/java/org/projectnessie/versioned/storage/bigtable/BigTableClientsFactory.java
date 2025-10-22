@@ -41,8 +41,7 @@ public final class BigTableClientsFactory {
       throws IOException {
 
     if (config.enableTelemetry()) {
-      BigtableDataSettings.enableOpenCensusStats();
-      BigtableDataSettings.enableGfeOpenCensusStats();
+      enableOpenCensus();
     }
 
     BigtableDataSettings.Builder dataSettings =
@@ -56,9 +55,6 @@ public final class BigTableClientsFactory {
     config.mtlsEndpoint().ifPresent(dataSettings.stubSettings()::setMtlsEndpoint);
     config.quotaProjectId().ifPresent(dataSettings.stubSettings()::setQuotaProjectId);
     config.endpoint().ifPresent(dataSettings.stubSettings()::setEndpoint);
-    if (!config.jwtAudienceMapping().isEmpty()) {
-      dataSettings.stubSettings().setJwtAudienceMapping(config.jwtAudienceMapping());
-    }
 
     ChannelPoolSettings defaultPoolSettings = ChannelPoolSettings.builder().build();
 
@@ -107,6 +103,13 @@ public final class BigTableClientsFactory {
     applyCommonDataClientSettings(dataSettings);
 
     return BigtableDataClient.create(dataSettings.build());
+  }
+
+  // OpenCensus is deprecated in BT for removal
+  @SuppressWarnings("deprecation")
+  private static void enableOpenCensus() {
+    BigtableDataSettings.enableOpenCensusStats();
+    BigtableDataSettings.enableGfeOpenCensusStats();
   }
 
   /**
