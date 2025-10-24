@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.6 Release (October 24, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.6).
+
+### Fixes
+
+- Fixes an issue where Iceberg batch deletions did not work with Nessie remote S3 signing.
+
+### Commits
+* Build: fix some Java deprecation warnings (#11516)
+* Gradle 9 prep - create iceberg/bom directory (#11515)
+* Bugfix: S3 remote signing for batch deletions does not work (#11493)
+* Prepare for Gradle 9 (#11491)
+* Quarkus: Tackle some more deprecated/changed configs (#11492)
+* CI/Test: Tackle deprecated otel config property (#11490)
+
 ## 0.105.5 Release (October 16, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.5).
