@@ -49,7 +49,7 @@ azuresdk-bom = { module = "com.azure:azure-sdk-bom", version = "1.3.2" }
 bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 cassandra-driver-bom = { module = "org.apache.cassandra:java-driver-bom", version = "4.19.1" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.2" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.3" }
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.5.3" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
 commons-text = { module = "org.apache.commons:commons-text", version = "1.14.0" }
@@ -99,6 +99,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit-pioneer = { module = "org.junit-pioneer:junit-pioneer", version = "2.3.0" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
