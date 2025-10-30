@@ -84,7 +84,7 @@ class CaffeineCacheBackend implements CacheBackend {
     Caffeine<CacheKeyValue, CacheKeyValue> cacheBuilder =
         Caffeine.newBuilder()
             .executor(config.executor())
-            .scheduler(Scheduler.systemScheduler())
+            .scheduler(Scheduler.disabledScheduler())
             .ticker(config.clockNanos()::getAsLong)
             .maximumWeight(maxWeight)
             .weigher(this::weigher)
@@ -224,6 +224,7 @@ class CaffeineCacheBackend implements CacheBackend {
     } else {
       rejections.incrementAndGet();
       rejectionsWeight.accept(w);
+      cache.cleanUp();
     }
   }
 
