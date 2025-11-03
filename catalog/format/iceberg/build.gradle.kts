@@ -80,6 +80,7 @@ val generateAvroSchemas by
     mainClass.set("org.projectnessie.catalog.formats.iceberg.GenerateAvroSchemas")
     args("$generatedAvroSchemas/org/projectnessie/catalog/formats/iceberg")
 
+    outputs.cacheIf { true }
     outputs.dir(generatedAvroSchemas)
 
     doFirst { delete(generatedAvroSchemas) }

@@ -148,6 +148,7 @@ val generateAutoComplete by
     )
 
     inputs.files("src/main").withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.cacheIf { true }
     outputs.dir(completionScriptsDir)
   }
 

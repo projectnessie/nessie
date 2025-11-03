@@ -83,6 +83,7 @@ val generatedMarkdownDocs = tasks.register<JavaExec>("generatedMarkdownDocs") {
 
   mainClass = "org.projectnessie.nessie.docgen.DocGenTool"
 
+  outputs.cacheIf { true }
   outputs.dir(generatedMarkdownDocsDir)
   inputs.files(doclet)
   inputs.files(genProjects)
@@ -144,6 +145,7 @@ val cliHelp by tasks.registering(JavaExec::class) {
   mainClass = "-jar"
 
   inputs.files(cliRunner)
+  outputs.cacheIf { true }
   outputs.dir(cliHelpDir)
 
   classpath(cliRunner)
@@ -190,6 +192,7 @@ for (cmdArgs in listOf(
   t.configure {
     inputs.files(gcRunner)
     val dir = layout.buildDirectory.dir("gc-$name")
+    outputs.cacheIf { true }
     outputs.dir(dir)
 
     classpath(gcRunner)
@@ -233,6 +236,7 @@ for (cmdArgs in listOf(
   t.configure {
     inputs.files(serverAdminRunner)
     val dir = layout.buildDirectory.dir("serverAdmin-$name")
+    outputs.cacheIf { true }
     outputs.dir(dir)
 
     classpath(serverAdminRunner)
