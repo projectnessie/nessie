@@ -51,6 +51,10 @@ dependencies {
 }
 
 abstract class Generate : JavaExec() {
+  init {
+    outputs.cacheIf { true }
+  }
+
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val sourceDir: DirectoryProperty
