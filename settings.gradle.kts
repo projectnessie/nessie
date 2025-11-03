@@ -108,6 +108,7 @@ develocity {
         link("Summary", "$ghUrl/$ghRepo/actions/runs/$ghRunId")
         link("PRs", "$ghUrl/$ghRepo/pulls")
       }
+      buildScan { publishing { onlyIf { true } } }
     }
   } else {
     val isBuildScan = gradle.startParameter.isBuildScan
