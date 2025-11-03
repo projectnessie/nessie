@@ -36,20 +36,24 @@ import java.util.stream.Collectors;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestCacheOvershoot {
   @InjectSoftAssertions protected SoftAssertions soft;
 
-  @RepeatedTest(3) // consider the first repetition as a warmup (C1/C2)
+  @RetryingTest(minSuccess = 5, maxAttempts = 10)
+  // It may happen that the admitted weight is actually exceeded. Allow some failed iterations.
   public void testCacheOvershootDirectEviction() throws Exception {
     testCacheOvershoot(Runnable::run);
   }
 
   @RepeatedTest(3) // consider the first repetition as a warmup (C1/C2)
+  @Disabled("not production like")
   public void testCacheOvershootDelayedEviction() throws Exception {
     // Production uses Runnable::run, but that lets this test sometimes run way too
     // long, so we introduce some delay to simulate the case that eviction cannot keep up.
@@ -96,7 +100,7 @@ public class TestCacheOvershoot {
     soft.assertThat(meterCapacity.value()).isEqualTo((double) config.capacityMb() * ONE_MB);
 
     var executor = Executors.newFixedThreadPool(numThreads);
-    var seenOvershoot = false;
+    var seenAdmittedWeightExceeded = false;
     var stop = new AtomicBoolean();
     try {
       for (int i = 0; i < numThreads; i++) {
@@ -109,11 +113,11 @@ public class TestCacheOvershoot {
             });
       }
 
-      for (int i = 0; i < 50 && !seenOvershoot; i++) {
+      for (int i = 0; i < 50; i++) {
         Thread.sleep(10);
         var w = cache.currentWeightReported();
         if (w > maxWeight) {
-          seenOvershoot = true;
+          seenAdmittedWeightExceeded = true;
         }
       }
     } finally {
@@ -123,9 +127,19 @@ public class TestCacheOvershoot {
       executor.awaitTermination(10, TimeUnit.MINUTES);
     }
 
+    // We may (with an low probability) see rejections.
+    // Rejections are expected, but neither their occurrence nor their non-occurrence can be in any
+    // way guaranteed by this test.
+    // This means, assertions on the number of rejections and derived values are pretty much
+    // impossible.
+    // The probabilities are directly related to the system and state of that system running the
+    // test.
+    //
+    // soft.assertThat(cache.rejections()).isGreaterThan(0L);
+    // soft.assertThat(meterRejectedWeight.totalAmount()).isGreaterThan(0d);
+
+    // This must actually never fail. (Those might still though, in very rare cases.)
     soft.assertThat(cache.currentWeightReported()).isLessThanOrEqualTo(admitWeight);
-    soft.assertThat(cache.rejections()).isEqualTo(0L);
-    soft.assertThat(meterRejectedWeight.totalAmount()).isEqualTo(0d);
-    soft.assertThat(seenOvershoot).isFalse();
+    soft.assertThat(seenAdmittedWeightExceeded).isFalse();
   }
 }

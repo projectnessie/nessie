@@ -99,6 +99,7 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit-pioneer = { module = "org.junit-pioneer:junit-pioneer", version = "2.3.0" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
