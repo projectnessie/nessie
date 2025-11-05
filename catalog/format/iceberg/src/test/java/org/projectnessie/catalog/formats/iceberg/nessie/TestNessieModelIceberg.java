@@ -108,6 +108,8 @@ import org.projectnessie.catalog.model.schema.NessiePartitionDefinition;
 import org.projectnessie.catalog.model.schema.NessiePartitionField;
 import org.projectnessie.catalog.model.schema.NessieSchema;
 import org.projectnessie.catalog.model.schema.NessieSortDefinition;
+import org.projectnessie.catalog.model.schema.NessieStruct;
+import org.projectnessie.catalog.model.schema.types.NessieType;
 import org.projectnessie.catalog.model.schema.types.NessieTypeSpec;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
@@ -1170,5 +1172,67 @@ public class TestNessieModelIceberg {
     soft.assertThat(snap4.icebergLocation()).isEqualTo(location3);
     soft.assertThat(snap4.additionalKnownLocations())
         .containsExactlyInAnyOrder(location1, location2);
+  }
+
+  @Test
+  public void testNessieSchemaToIcebergSchemaWithNestedIdentifier() {
+    // Test for the fix: nested fields used as identifiers should not cause NullPointerException
+    UUID topLevelFieldId = UUID.randomUUID();
+    UUID nestedFieldId = UUID.randomUUID();
+    UUID anotherNestedFieldId = UUID.randomUUID();
+
+    // Create a schema with nested struct field
+    NessieStruct struct =
+        NessieStruct.nessieStruct(
+            List.of(
+                NessieField.builder()
+                    .id(topLevelFieldId)
+                    .icebergId(1)
+                    .name("id")
+                    .type(NessieType.intType())
+                    .nullable(false)
+                    .build(),
+                NessieField.builder()
+                    .id(UUID.randomUUID())
+                    .icebergId(2)
+                    .name("person")
+                    .type(
+                        NessieType.structType(
+                            NessieStruct.nessieStruct(
+                                List.of(
+                                    NessieField.builder()
+                                        .id(nestedFieldId)
+                                        .icebergId(3)
+                                        .name("name")
+                                        .type(NessieType.stringType())
+                                        .nullable(false)
+                                        .build(),
+                                    NessieField.builder()
+                                        .id(anotherNestedFieldId)
+                                        .icebergId(4)
+                                        .name("age")
+                                        .type(NessieType.intType())
+                                        .nullable(true)
+                                        .build()),
+                                null)))
+                    .nullable(false)
+                    .build()),
+            null);
+
+    // Create schema with nested field as identifier (field ID 3 = person.name)
+    NessieSchema nessieSchema =
+        NessieSchema.nessieSchema(
+            struct,
+            0,
+            List.of(topLevelFieldId, nestedFieldId)); // id and person.name as identifiers
+
+    // Convert to Iceberg schema - this should not throw NullPointerException
+    IcebergSchema icebergSchema = NessieModelIceberg.nessieSchemaToIcebergSchema(nessieSchema);
+
+    // Verify identifier field IDs are correctly mapped
+    soft.assertThat(icebergSchema.identifierFieldIds())
+        .containsExactly(1, 3); // Iceberg field IDs for id and person.name
+    soft.assertThat(icebergSchema.schemaId()).isEqualTo(0);
+    soft.assertThat(icebergSchema.fields()).hasSize(2); // id and person
   }
 }
