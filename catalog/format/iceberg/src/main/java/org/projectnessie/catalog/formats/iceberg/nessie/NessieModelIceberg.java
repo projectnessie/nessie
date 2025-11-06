@@ -259,11 +259,12 @@ public class NessieModelIceberg {
 
   public static IcebergSchema nessieSchemaToIcebergSchema(NessieSchema schema) {
     Map<UUID, Integer> idMap = new HashMap<>();
+    collectNessieToIcebergFieldMappings(schema.struct(), idMap);
+
     List<IcebergNestedField> fields =
         schema.struct().fields().stream()
             .map(
                 f -> {
-                  idMap.put(f.id(), f.icebergId());
                   return IcebergNestedField.nestedField(
                       f.icebergId(),
                       f.name(),
@@ -277,6 +278,25 @@ public class NessieModelIceberg {
         schema.identifierFields().stream().map(idMap::get).collect(Collectors.toList());
 
     return IcebergSchema.schema(schema.icebergId(), identifierFieldIds, fields);
+  }
+
+  private static void collectNessieToIcebergFieldMappings(
+      NessieStruct struct, Map<UUID, Integer> idMap) {
+    for (NessieField field : struct.fields()) {
+      collectNessieToIcebergFieldMappings(field, idMap);
+    }
+  }
+
+  private static void collectNessieToIcebergFieldMappings(
+      NessieField field, Map<UUID, Integer> idMap) {
+    if (field.icebergId() != NessieField.NO_COLUMN_ID) {
+      idMap.put(field.id(), field.icebergId());
+      var type = field.type();
+      if (requireNonNull(type.type()) == NessieType.STRUCT) {
+        var structType = (NessieStructTypeSpec) type;
+        collectNessieToIcebergFieldMappings(structType.struct(), idMap);
+      }
+    }
   }
 
   public static NessieSchema icebergSchemaToNessieSchema(
