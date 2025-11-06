@@ -2,6 +2,20 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.105.7 Release (November 06, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.7).
+
+### Fixes
+
+- Fixes an issue when defining a nested schema field as an identifier field of an Iceberg schema.
+
+### Commits
+* Ninja: changelog
+* Fix: nested schema fields used as identifier field causes NPE (#11569)
+* CI: Fix build scans (#11565)
+* Build: improve caching (#11563)
+
 ## 0.105.6 Release (October 24, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.6).
