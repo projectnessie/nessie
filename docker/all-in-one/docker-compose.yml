@@ -176,7 +176,7 @@ services:
 
   # MinIO
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: ghcr.io/snazy/maxio-release:RELEASE.2025-10-15T17-29-55Z
     ports:
       # API port
       - "9002:9000"
@@ -196,7 +196,7 @@ services:
 
   # Create MinIO bucket
   minio-setup:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: ghcr.io/snazy/maxio-release:RELEASE.2025-10-15T17-29-55Z
     depends_on:
       minio:
         condition: service_healthy

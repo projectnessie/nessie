@@ -71,7 +71,7 @@ For this example, start a local Minio server using Docker:
 ```shell
 docker run -p 9000:9000 -p 9001:9001 --name minio \
  -e "MINIO_ROOT_USER=datauser" -e "MINIO_ROOT_PASSWORD=minioSecret" \
- quay.io/minio/minio:latest server /data --console-address ":9001"
+ ghcr.io/snazy/maxio-release:latest server /data --console-address ":9001"
 ```
 
 Configure AWS SDK crendetials the same way you would configure them for Amazon S3 (refer to the section above)
