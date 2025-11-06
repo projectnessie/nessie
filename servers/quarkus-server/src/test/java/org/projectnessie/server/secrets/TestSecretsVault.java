@@ -20,9 +20,12 @@ import static org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecr
 
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 @QuarkusTest // because the tests need @Inject'd fields
 @WithTestResource(VaultTestResourceLifecycleManager.class)
+@DisabledOnOs(OS.MAC) // test doesn't work on MacOS
 public class TestSecretsVault extends AbstractSecretsSuppliers {
   @Override
   protected String providerName() {
