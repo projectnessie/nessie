@@ -31,7 +31,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.jetty.JettyHttpContainerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.immutables.value.Value;
@@ -207,7 +207,6 @@ public abstract class ObjectStorageMock {
 
   public MockServer start() {
     ResourceConfig config = new ResourceConfig();
-
     config.register(
         new AbstractBinder() {
           @Override
