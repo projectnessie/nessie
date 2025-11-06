@@ -20,6 +20,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Fixes an issue when defining a nested schema field as an identifier field of an Iceberg schema.
+ 
 ### Commits
 
 ## [0.105.6] Release (2025-10-24)
