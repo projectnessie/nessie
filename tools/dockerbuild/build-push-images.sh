@@ -155,7 +155,7 @@ fi
 # Gradle Build
 #
 gh_group "Build Java"
-./gradlew "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:build" -x "${GRADLE_PROJECT}:check"
+./gradlew $CUSTOM_GRADLE_ARGS "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:build" -x "${GRADLE_PROJECT}:check"
 gh_endgroup
 
 if [[ ${LOCAL} == 1 ]] ; then
