@@ -807,6 +807,6 @@ jobs:
 
       - name: Tools & Integrations tests
         run: |
-          ./gradlew 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             intTest --continue --scan
