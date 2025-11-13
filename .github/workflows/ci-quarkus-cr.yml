@@ -308,7 +308,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Gradle / intTest Quarkus Server
-        run:
+        run: |
           ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-quarkus:intTest --scan
@@ -348,7 +348,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Gradle / intTest Admin Tool
-        run:
+        run: |
           ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-server-admin-tool:intTest --scan
@@ -388,7 +388,7 @@ jobs:
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
       - name: Gradle / intTest Quarkus Events
-        run:
+        run: |
           ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-events-quarkus:intTest --scan
