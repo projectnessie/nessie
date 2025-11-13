@@ -154,7 +154,7 @@ jobs:
           retention-days: 7
 
   int-test:
-    name: CI intTest
+    name: Quarkus CR - intTest
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -172,19 +172,19 @@ jobs:
       - name: Gradle / intTest
         run: |
           echo "::group::Collect :nessie-versioned-storage projects"
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :listProjectsWithPrefix --prefix :nessie-versioned-persist- --output ../persist-prjs.txt --exclude
           echo "::endgroup::"
 
           echo "::group::Collect :nessie-versioned-persist projects"
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :listProjectsWithPrefix --prefix :nessie-versioned-storage- --output ../storage-prjs.txt --exclude
           echo "::endgroup::"
 
           echo "::group::Collect :nessie-spark-extensions projects"
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt --exclude
           echo "::endgroup::"
@@ -211,7 +211,7 @@ jobs:
           retention-days: 7
 
   int-test-stores:
-    name: CI intTest versioned/stores
+    name: Quarkus CR - intTest versioned/stores
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -227,7 +227,7 @@ jobs:
       - name: Gradle / intTest versioned/stores
         run: |
           echo "::group::Collect :nessie-versioned-storage projects"
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :listProjectsWithPrefix --prefix :nessie-versioned-storage- --output ../storage-prjs.txt
           echo "::endgroup::"
@@ -253,7 +253,7 @@ jobs:
           retention-days: 7
 
   int-test-integrations:
-    name: CI intTest integrations
+    name: Quarkus CR - intTest integrations
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
@@ -274,12 +274,12 @@ jobs:
       - name: Gradle / intTest integrations
         run: |
           echo "::group::Collect :nessie-spark-extensions projects"
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :listProjectsWithPrefix --prefix :nessie-spark-ext --output ../spark-prjs.txt
           echo "::endgroup::"
 
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             $(cat ../spark-prjs.txt) --continue --scan
 
@@ -294,7 +294,7 @@ jobs:
           retention-days: 7
 
   int-test-quarkus-server:
-    name: CI intTest Quarkus Server
+    name: Quarkus CR - intTest Quarkus Server
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -309,7 +309,7 @@ jobs:
 
       - name: Gradle / intTest Quarkus Server
         run:
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-quarkus:intTest --scan
 
@@ -334,7 +334,7 @@ jobs:
           retention-days: 7
 
   int-test-quarkus-tool:
-    name: CI intTest Admin Tool
+    name: Quarkus CR - intTest Admin Tool
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -349,7 +349,7 @@ jobs:
 
       - name: Gradle / intTest Admin Tool
         run:
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-server-admin-tool:intTest --scan
 
@@ -374,7 +374,7 @@ jobs:
           retention-days: 7
 
   int-test-quarkus-events:
-    name: CI intTest Quarkus Events
+    name: Quarkus CR - intTest Quarkus Events
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -389,7 +389,7 @@ jobs:
 
       - name: Gradle / intTest Quarkus Events
         run:
-          ./gradlew \ 
+          ./gradlew \
             -Dquarkus.custom.version=${{ inputs.quarkusVersion }} -Dquarkus.custom.noEnforcedPlatform=true \
             :nessie-events-quarkus:intTest --scan
 
@@ -414,7 +414,7 @@ jobs:
           retention-days: 7
 
   docker-testing:
-    name: CI Docker and Helm checks
+    name: Quarkus CR - Docker and Helm checks
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -687,7 +687,7 @@ jobs:
             --debug --charts ./helm/nessie
 
   nesqueit:
-    name: CI NesQuEIT
+    name: Quarkus CR - NesQuEIT
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     # Only run NesQuEIT tests for PRs, if requested. This job can easily run for 30+ minutes.
