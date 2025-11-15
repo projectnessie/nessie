@@ -30,7 +30,7 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.client.NessieConfigConstants;
-import org.projectnessie.client.api.NessieApiV1;
+import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.client.config.NessieClientConfigSource;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.error.NessieReferenceNotFoundException;
@@ -41,7 +41,7 @@ import scala.Tuple2;
 
 final class RestCatalogBridge implements CatalogBridge {
   private final SparkContext sparkContext;
-  private final NessieApiV1 api;
+  private final NessieApiV2 api;
   private final CatalogPlugin currentCatalog;
   private final String catalogName;
   private final String confPrefix;
@@ -188,7 +188,7 @@ final class RestCatalogBridge implements CatalogBridge {
   }
 
   @Override
-  public NessieApiV1 api() {
+  public NessieApiV2 api() {
     return api;
   }
 
