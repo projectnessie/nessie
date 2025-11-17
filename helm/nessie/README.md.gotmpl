@@ -107,40 +107,43 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 The chart now supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) as an
 alternative to the traditional Ingress resource. Enable it by toggling `gatewayApi.enabled` and
 supplying a `gateway.gatewayClassName`. The chart will render a `Gateway` and one or more
-`HTTPRoute` objects that target the main Nessie Service by default.
+`HTTPRoute` objects that target the main Nessie Service by default. Only the GA
+`gateway.networking.k8s.io/v1` resources are rendered; make sure the v1 CRDs are installed in the
+cluster.
 
 Example configuration:
 
-```yaml
 gatewayApi:
-	enabled: true
-	gateway:
-		gatewayClassName: envoy
-		listeners:
-			- name: https
-				port: 443
-				protocol: HTTPS
-				hostname: nessie.example.com
-				tls:
-					enabled: true
-					certificateRefs:
-						- name: nessie-cert
-	httpRoutes:
-		- hostnames: [ nessie.example.com ]
-			rules:
-				- matches:
-						- path:
-								type: PathPrefix
-								value: /
-					backendRefs:
-						- service:
+  enabled: true
+  gateway:
+    gatewayClassName: envoy
+    listeners:
+      - name: https
+        port: 443
+        protocol: HTTPS
+        hostname: nessie.example.com
+        tls:
+          enabled: true
+          certificateRefs:
+            - name: nessie-cert
+  httpRoutes:
+    - hostnames: [ nessie.example.com ]
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          backendRefs:
+            - service:
+                port: 19120
 								port: 19120
 ```
 
 If `gatewayApi.enabled` remains `false`, no Gateway API objects are rendered and the existing
-Ingress configuration stays unchanged.
-
 Make sure the Gateway API CRDs (and a compatible controller such as Envoy Gateway or Istio) are
+installed in the cluster before enabling this feature; the chart will fail fast if the resources
+are unavailable. A more advanced sample configuration can be found in
+`helm/nessie/ci/gateway-api-values.yaml`, which is also used by the chart unit tests.
 installed in the cluster before enabling this feature; the chart will fail fast if the resources
 are unavailable.
 
