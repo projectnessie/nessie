@@ -518,3 +518,56 @@ https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/quantity/
 {{- end -}}
 {{- end -}}
 
+{{/*
+Detect supported Gateway API versions for Gateway resources.
+*/}}
+{{- define "nessie.gateway.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "gateway.networking.k8s.io/v1/Gateway" -}}
+gateway.networking.k8s.io/v1
+{{- end -}}
+{{- end -}}
+
+{{/*
+Detect supported Gateway API versions for HTTPRoute resources.
+*/}}
+{{- define "nessie.httpRoute.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "gateway.networking.k8s.io/v1/HTTPRoute" -}}
+gateway.networking.k8s.io/v1
+{{- end -}}
+{{- end -}}
+
+{{/*
+Resolve the name of the Gateway resource.
+*/}}
+{{- define "nessie.gateway.name" -}}
+{{- $gateway := .Values.gatewayApi.gateway | default (dict) -}}
+{{- $fullName := include "nessie.fullname" . -}}
+{{- $name := default "" $gateway.name -}}
+{{- if $name -}}
+{{- $name -}}
+{{- else -}}
+{{- $suffix := default "" $gateway.nameSuffix -}}
+{{- printf "%s%s" $fullName $suffix -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Resolve the namespace of the Gateway resource.
+*/}}
+{{- define "nessie.gateway.namespace" -}}
+{{- $gateway := .Values.gatewayApi.gateway | default (dict) -}}
+{{- default .Release.Namespace $gateway.namespace -}}
+{{- end -}}
+
+{{/*
+Expose the first service port number defined in values.
+*/}}
+{{- define "nessie.service.primaryPort" -}}
+{{- $ports := .Values.service.ports -}}
+{{- if and $ports (gt (len $ports) 0) -}}
+{{- (index $ports 0).number -}}
+{{- else -}}
+19120
+{{- end -}}
+{{- end -}}
+

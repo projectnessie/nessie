@@ -1,0 +1,39 @@
+gatewayApi:
+  enabled: true
+  gateway:
+    name: public-gateway
+    namespace: edge
+    gatewayClassName: envoy-gateway
+    listeners:
+      - name: https
+        hostname: nessie.example.com
+        port: 443
+        protocol: HTTPS
+        allowedRoutes:
+          namespaces:
+            from: All
+        tls:
+          enabled: true
+          mode: Terminate
+          certificateRefs:
+            - name: nessie-cert
+              kind: Secret
+  httpRoutes:
+    - name: public-route
+      namespace: edge
+      hostnames:
+        - nessie.example.com
+      parentRefs:
+        - name: infra-gateway
+          namespace: infra
+          sectionName: https
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /api
+          backendRefs:
+            - name: external-service
+              namespace: data
+              port: 8080
+              weight: 2

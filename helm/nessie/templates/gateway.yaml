@@ -1,0 +1,82 @@
+{{/**
+  Gateway API support for exposing Nessie via Gateway resources.
+**/}}
+
+{{- $gatewayApiVersion := include "nessie.gateway.apiVersion" . | trim -}}
+{{- if and .Values.gatewayApi.enabled (not $gatewayApiVersion) }}
+{{- fail "gatewayApi.enabled=true but no supported Gateway API version was detected for Gateway" -}}
+{{- end }}
+{{- if and .Values.gatewayApi.enabled $gatewayApiVersion }}
+{{- $gatewayValues := .Values.gatewayApi.gateway | default (dict) -}}
+{{- $gatewayName := include "nessie.gateway.name" . -}}
+{{- $gatewayNamespace := include "nessie.gateway.namespace" . -}}
+apiVersion: {{ $gatewayApiVersion }}
+kind: Gateway
+metadata:
+  name: {{ $gatewayName }}
+  namespace: {{ $gatewayNamespace }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+    {{- with $gatewayValues.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $gatewayValues.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ required "gatewayApi.gateway.gatewayClassName is required when gatewayApi is enabled" $gatewayValues.gatewayClassName }}
+  {{- with $gatewayValues.addresses }}
+  addresses:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- $listeners := $gatewayValues.listeners | default (list) -}}
+  {{- if not (gt (len $listeners) 0) -}}
+  {{- fail "gatewayApi.gateway.listeners must contain at least one listener" -}}
+  {{- end -}}
+  listeners:
+    {{- range $listener := $listeners }}
+    - name: {{ required "gatewayApi.gateway.listeners[].name is required" $listener.name }}
+      port: {{ default 80 $listener.port }}
+      protocol: {{ default "HTTP" $listener.protocol }}
+      {{- if $listener.hostname }}
+      hostname: {{ $listener.hostname | quote }}
+      {{- end }}
+      {{- if $listener.allowedRoutes }}
+      allowedRoutes:
+        {{- toYaml $listener.allowedRoutes | nindent 8 }}
+      {{- else }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+      {{- end }}
+      {{- $tls := $listener.tls | default (dict) -}}
+      {{- if $tls.enabled }}
+      tls:
+        mode: {{ default "Terminate" $tls.mode }}
+        {{- with $tls.certificateRefs }}
+        certificateRefs:
+          {{- range $ref := . }}
+          - name: {{ required "gatewayApi.gateway.listeners[].tls.certificateRefs[] requires name" $ref.name }}
+            {{- if $ref.kind }}
+            kind: {{ $ref.kind }}
+            {{- end }}
+            {{- if $ref.group }}
+            group: {{ $ref.group }}
+            {{- end }}
+            {{- if $ref.namespace }}
+            namespace: {{ $ref.namespace }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- with $tls.options }}
+        options:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with $listener.timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}
