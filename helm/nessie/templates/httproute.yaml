@@ -12,7 +12,7 @@
 {{- $defaultBackendPort := ((include "nessie.service.primaryPort" .) | trim) | int -}}
 {{- $routes := .Values.gatewayApi.httpRoutes | default (list) -}}
 {{- range $idx, $route := $routes }}
-{{- $routeName := default (printf "%s%s" (include "nessie.fullname" $) (default "-httproute" $route.nameSuffix)) $route.name -}}
+{{- $routeName := default (printf "%s%s" (include "nessie.fullname" $) (default "" $route.nameSuffix)) $route.name -}}
 {{- $routeNamespace := default $.Release.Namespace $route.namespace -}}
 {{- $rules := $route.rules | default (list) -}}
 {{- if not (gt (len $rules) 0) -}}
@@ -74,8 +74,12 @@ spec:
         {{- $serviceNamespace := default $routeNamespace $service.namespace -}}
         {{- $backendNamespace := default $serviceNamespace $backend.namespace -}}
         {{- $port := default (default $service.port $defaultBackendPort) $backend.port -}}
-        {{- $serviceKindDefault := ternary "Service" "" (or (ne (default "" $service.name) "") (ne (default "" $service.nameSuffix) "")) -}}
-        {{- $kind := default $serviceKindDefault $backend.kind }}
+        {{- $kind := "" -}}
+        {{- if hasKey $backend "kind" -}}
+        {{- $kind = $backend.kind -}}
+        {{- else -}}
+        {{- $kind = "Service" -}}
+        {{- end }}
         - name: {{ $name }}
           {{- if $backendNamespace }}
           namespace: {{ $backendNamespace }}

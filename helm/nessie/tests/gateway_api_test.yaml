@@ -50,47 +50,68 @@ tests:
         gateway:
           gatewayClassName: shared-gateway
     asserts:
-      - containsDocument:
-          kind: Gateway
-          apiVersion: gateway.networking.k8s.io/v1
-          name: nessie
-          namespace: nessie-ns
       - equal:
+          documentIndex: 0
+          path: kind
+          value: Gateway
+        template: gateway.yaml
+      - equal:
+          documentIndex: 0
+          path: metadata.name
+          value: nessie
+        template: gateway.yaml
+      - equal:
+          documentIndex: 0
           path: spec.listeners[0].allowedRoutes.namespaces.from
           value: Same
-      - containsDocument:
-          kind: HTTPRoute
-          apiVersion: gateway.networking.k8s.io/v1
-          name: nessie-httproute
-          namespace: nessie-ns
+        template: gateway.yaml
       - equal:
+          documentIndex: 0
+          path: kind
+          value: HTTPRoute
+        template: httproute.yaml
+      - equal:
+          documentIndex: 0
+          path: metadata.name
+          value: nessie-httproute
+        template: httproute.yaml
+      - equal:
+          documentIndex: 0
           path: spec.rules[0].backendRefs[0].port
           value: 19120
+        template: httproute.yaml
       - equal:
+          documentIndex: 0
           path: spec.rules[0].backendRefs[0].kind
           value: Service
+        template: httproute.yaml
 
   - it: should allow custom TLS listener and explicit parentRefs/backends
     values:
-      - ci/gateway-api-values.yaml
+      - ../ci/gateway-api-values.yaml
     asserts:
       - equal:
           documentIndex: 0
           path: spec.listeners[0].tls.certificateRefs[0].name
           value: nessie-cert
+        template: gateway.yaml
       - equal:
-          documentIndex: 1
+          documentIndex: 0
           path: spec.parentRefs[0].name
-          value: default
+          value: infra-gateway
+        template: httproute.yaml
       - equal:
-          documentIndex: 1
+          documentIndex: 0
           path: spec.rules[0].backendRefs[0].namespace
           value: default
+        template: httproute.yaml
       - equal:
-          documentIndex: 1
+          documentIndex: 0
           path: spec.rules[0].backendRefs[0].port
           value: 8080
+        template: httproute.yaml
       - equal:
-          documentIndex: 1
+          documentIndex: 0
           path: spec.rules[0].backendRefs[0].weight
           value: 2
+        template: httproute.yaml
