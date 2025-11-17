@@ -14,6 +14,10 @@
 {{- range $idx, $route := $routes }}
 {{- $routeName := default (printf "%s%s" (include "nessie.fullname" $) (default "-httproute" $route.nameSuffix)) $route.name -}}
 {{- $routeNamespace := default $.Release.Namespace $route.namespace -}}
+{{- $rules := $route.rules | default (list) -}}
+{{- if not (gt (len $rules) 0) -}}
+{{- fail "gatewayApi.httpRoutes[].rules must contain at least one rule" -}}
+{{- end -}}
 {{- if gt $idx 0 }}
 ---
 {{- end }}
@@ -46,12 +50,8 @@ spec:
     - name: {{ $gatewayName }}
       namespace: {{ $gatewayNamespace }}
   {{- end }}
-  {{- $rules := $route.rules | default (list) }}
-  {{- if not (gt (len $rules) 0) -}}
-  {{- fail "gatewayApi.httpRoutes[].rules must contain at least one rule" -}}
-  {{- end -}}
   rules:
-    {{- range $rule := $rules }}
+{{- range $rule := $rules }}
     - {{- if $rule.matches }}
       matches:
         {{- toYaml $rule.matches | nindent 8 }}
@@ -65,7 +65,7 @@ spec:
       {{- fail "gatewayApi.httpRoutes[].rules[].backendRefs must contain at least one backend" -}}
       {{- end }}
       backendRefs:
-        {{- range $backend := $backends }}
+{{- range $backend := $backends }}
         {{- $service := $backend.service | default (dict) -}}
         {{- $computedServiceName := default (printf "%s%s" (include "nessie.fullname" $) (default "" $service.nameSuffix)) $service.name -}}
         {{- $explicitName := default "" $backend.name -}}
@@ -75,7 +75,7 @@ spec:
         {{- $backendNamespace := default $serviceNamespace $backend.namespace -}}
         {{- $port := default (default $service.port $defaultBackendPort) $backend.port -}}
         {{- $serviceKindDefault := ternary "Service" "" (or (ne (default "" $service.name) "") (ne (default "" $service.nameSuffix) "")) -}}
-        {{- $kind := default $serviceKindDefault $backend.kind -}}
+        {{- $kind := default $serviceKindDefault $backend.kind }}
         - name: {{ $name }}
           {{- if $backendNamespace }}
           namespace: {{ $backendNamespace }}
@@ -90,7 +90,7 @@ spec:
           {{- with $backend.weight }}
           weight: {{ . }}
           {{- end }}
-        {{- end }}
-    {{- end }}
-{{- end }}
-{{- end }}
+{{- end }}{{/* range $backend */}}
+{{- end }}{{/* range $rule */}}
+{{- end }}{{/* range $routes */}}
+{{- end }}{{/* if gateway api enabled */}}

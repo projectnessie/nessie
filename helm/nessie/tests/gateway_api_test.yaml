@@ -81,11 +81,11 @@ tests:
       - equal:
           documentIndex: 1
           path: spec.parentRefs[0].name
-          value: infra-gateway
+          value: default
       - equal:
           documentIndex: 1
           path: spec.rules[0].backendRefs[0].namespace
-          value: data
+          value: default
       - equal:
           documentIndex: 1
           path: spec.rules[0].backendRefs[0].port
