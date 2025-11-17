@@ -93,6 +93,10 @@ To test the charts against a local running minikube cluster, first create the na
 
 ```bash
 kubectl create namespace nessie-ns
+# Install Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
+helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
+# Install other fixtures
 kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
 ```
 
@@ -101,5 +105,49 @@ Then run the tests with `ct install`:
 ```bash
 ct install --charts ./helm/nessie --namespace nessie-ns --debug
 ```
+
+## Exposing Nessie via the Gateway API
+
+The chart now supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) as an
+alternative to the traditional Ingress resource. Enable it by toggling `gatewayApi.enabled` and
+supplying a `gateway.gatewayClassName`. The chart will render a `Gateway` and one or more
+`HTTPRoute` objects that target the main Nessie Service by default. Only the GA
+`gateway.networking.k8s.io/v1` resources are rendered; make sure the v1 CRDs are installed in the
+cluster.
+
+Example configuration:
+
+```yaml
+gatewayApi:
+  enabled: true
+  gateway:
+    gatewayClassName: envoy
+    listeners:
+      - name: https
+        port: 443
+        protocol: HTTPS
+        hostname: nessie.example.com
+        tls:
+          enabled: true
+          certificateRefs:
+            - name: nessie-cert
+  httpRoutes:
+    - hostnames: [ nessie.example.com ]
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          backendRefs:
+            - service:
+                port: 19120
+```
+
+If `gatewayApi.enabled` remains `false`, no Gateway API objects are rendered. Make sure the Gateway API CRDs (and a compatible controller such as Envoy Gateway or Istio) are
+installed in the cluster before enabling this feature; the chart will fail fast if the resources
+are unavailable. A more advanced sample configuration can be found in
+`helm/nessie/ci/gateway-api-values.yaml`, which is also used by the chart unit tests.
+installed in the cluster before enabling this feature; the chart will fail fast if the resources
+are unavailable.
 
 {{ template "chart.valuesSection" . }}

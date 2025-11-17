@@ -1,0 +1,38 @@
+gatewayApi:
+  enabled: true
+  gateway:
+    create: true
+    name: nessie-gateway
+    gatewayClassName: envoy  # we just choose a common gatewayClass here
+    listeners:
+    - name: https
+      hostname: chart-example.local
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        enabled: true
+        mode: Terminate
+        certificateRefs:
+        - name: nessie-cert
+          kind: Secret
+  httpRoutes:
+  - name: nessie-httproute
+    hostnames:
+    - chart-example.local
+    parentRefs:
+    - name: nessie-gateway
+      namespace: nessie-ns
+      sectionName: https
+    rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+      - name: release-name-nessie
+        namespace: default
+        port: 8080
+        weight: 2
