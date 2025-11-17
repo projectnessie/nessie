@@ -2,11 +2,11 @@ gatewayApi:
   enabled: true
   gateway:
     name: public-gateway
-    namespace: edge
-    gatewayClassName: envoy-gateway
+    namespace: default
+    gatewayClassName: traefik # we just choose a common gatewayClass here
     listeners:
       - name: https
-        hostname: nessie.example.com
+        hostname: chart-example.local
         port: 443
         protocol: HTTPS
         allowedRoutes:
@@ -22,10 +22,10 @@ gatewayApi:
     - name: public-route
       namespace: edge
       hostnames:
-        - nessie.example.com
+        - chart-example.local
       parentRefs:
         - name: infra-gateway
-          namespace: infra
+          namespace: default
           sectionName: https
       rules:
         - matches:
@@ -33,7 +33,7 @@ gatewayApi:
                 type: PathPrefix
                 value: /api
           backendRefs:
-            - name: external-service
-              namespace: data
+            - name: release-name-nessie
+              namespace: default
               port: 8080
               weight: 2

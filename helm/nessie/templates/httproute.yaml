@@ -32,7 +32,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with $route.hostnames }}
+  {{ with $route.hostnames }}
   hostnames:
     {{- range . }}
     - {{ . | quote }}
@@ -40,13 +40,13 @@ spec:
   {{- end }}
   {{- if $route.parentRefs }}
   parentRefs:
-    {{- toYaml $route.parentRefs | nindent 4 }}
+    {{ toYaml $route.parentRefs | nindent 4 }}
   {{- else }}
   parentRefs:
     - name: {{ $gatewayName }}
       namespace: {{ $gatewayNamespace }}
   {{- end }}
-  {{- $rules := $route.rules | default (list) -}}
+  {{- $rules := $route.rules | default (list) }}
   {{- if not (gt (len $rules) 0) -}}
   {{- fail "gatewayApi.httpRoutes[].rules must contain at least one rule" -}}
   {{- end -}}
@@ -56,14 +56,14 @@ spec:
       matches:
         {{- toYaml $rule.matches | nindent 8 }}
       {{- end }}
-      {{- with $rule.filters }}
+      {{ with $rule.filters }}
       filters:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- $backends := $rule.backendRefs | default (list) -}}
+      {{- $backends := $rule.backendRefs | default (list) }}
       {{- if not (gt (len $backends) 0) -}}
       {{- fail "gatewayApi.httpRoutes[].rules[].backendRefs must contain at least one backend" -}}
-      {{- end -}}
+      {{- end }}
       backendRefs:
         {{- range $backend := $backends }}
         {{- $service := $backend.service | default (dict) -}}

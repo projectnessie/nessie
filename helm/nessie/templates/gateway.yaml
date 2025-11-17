@@ -26,14 +26,14 @@ metadata:
   {{- end }}
 spec:
   gatewayClassName: {{ required "gatewayApi.gateway.gatewayClassName is required when gatewayApi is enabled" $gatewayValues.gatewayClassName }}
-  {{- with $gatewayValues.addresses }}
+  {{ with $gatewayValues.addresses }}
   addresses:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- $listeners := $gatewayValues.listeners | default (list) -}}
-  {{- if not (gt (len $listeners) 0) -}}
+  {{- $listeners := $gatewayValues.listeners | default (list) }}
+  {{- if not (gt (len $listeners) 0) }}
   {{- fail "gatewayApi.gateway.listeners must contain at least one listener" -}}
-  {{- end -}}
+  {{- end }}
   listeners:
     {{- range $listener := $listeners }}
     - name: {{ required "gatewayApi.gateway.listeners[].name is required" $listener.name }}
