@@ -62,6 +62,8 @@ dependencies {
   intTestImplementation(libs.awaitility)
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestCompileOnly(project(":nessie-immutables-std"))
+  intTestImplementation("com.github.docker-java:docker-java-api:3.7.0")
+  intTestImplementation("com.github.docker-java:docker-java-transport-zerodep:3.7.0")
 }
 
 extensions.configure<SmallryeOpenApiExtension> {
