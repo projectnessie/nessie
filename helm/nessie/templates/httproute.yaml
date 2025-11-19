@@ -87,12 +87,7 @@ spec:
         {{- $serviceNamespace := default $routeNamespace $service.namespace -}}
         {{- $backendNamespace := default $serviceNamespace $backend.namespace -}}
         {{- $port := default (default $service.port $defaultBackendPort) $backend.port -}}
-        {{- $kind := "" -}}
-        {{- if hasKey $backend "kind" -}}
-        {{- $kind = $backend.kind -}}
-        {{- else -}}
-        {{- $kind = "Service" -}}
-        {{- end }}
+        {{- $kind := dig "kind" "Service" $backend }}
         - name: {{ $name }}
           {{- if $backendNamespace }}
           namespace: {{ $backendNamespace }}
