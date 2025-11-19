@@ -1,8 +1,6 @@
 gatewayApi:
   enabled: true
   gateway:
-    name: public-gateway
-    namespace: default
     gatewayClassName: traefik # we just choose a common gatewayClass here
     listeners:
       - name: https
@@ -11,7 +9,7 @@ gatewayApi:
         protocol: HTTPS
         allowedRoutes:
           namespaces:
-            from: All
+            from: Same
         tls:
           enabled: true
           mode: Terminate
@@ -19,8 +17,7 @@ gatewayApi:
             - name: nessie-cert
               kind: Secret
   httpRoutes:
-    - name: public-route
-      namespace: edge
+    - name: nessie-httproute
       hostnames:
         - chart-example.local
       parentRefs:
@@ -31,7 +28,7 @@ gatewayApi:
         - matches:
             - path:
                 type: PathPrefix
-                value: /api
+                value: /
           backendRefs:
             - name: release-name-nessie
               namespace: default

@@ -82,8 +82,8 @@ spec:
 {{- range $backend := $backends }}
         {{- $service := $backend.service | default (dict) -}}
         {{- $computedServiceName := default (printf "%s%s" (include "nessie.fullname" $) (default "" $service.nameSuffix)) $service.name -}}
-        {{- $name := default $computedServiceName $backend.name -}}
-        {{- $name = required "gatewayApi.httpRoutes[].rules[].backendRefs[] requires a backend name" $name -}}
+        {{- $explicitName := default "" $backend.name -}}
+        {{- $name := default $computedServiceName $explicitName -}}
         {{- $serviceNamespace := default $routeNamespace $service.namespace -}}
         {{- $backendNamespace := default $serviceNamespace $backend.namespace -}}
         {{- $port := default (default $service.port $defaultBackendPort) $backend.port -}}
@@ -95,9 +95,7 @@ spec:
           {{- with $backend.group }}
           group: {{ . }}
           {{- end }}
-          {{- if $kind }}
           kind: {{ $kind }}
-          {{- end }}
           port: {{ required "gatewayApi.httpRoutes[].rules[].backendRefs[] requires a port" $port }}
           {{- with $backend.weight }}
           weight: {{ . }}

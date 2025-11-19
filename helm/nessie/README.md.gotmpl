@@ -138,8 +138,7 @@ gatewayApi:
                 port: 19120
 ```
 
-If `gatewayApi.enabled` remains `false`, no Gateway API objects are rendered and the existing
-Make sure the Gateway API CRDs (and a compatible controller such as Envoy Gateway or Istio) are
+If `gatewayApi.enabled` remains `false`, no Gateway API objects are rendered. Make sure the Gateway API CRDs (and a compatible controller such as Envoy Gateway or Istio) are
 installed in the cluster before enabling this feature; the chart will fail fast if the resources
 are unavailable. A more advanced sample configuration can be found in
 `helm/nessie/ci/gateway-api-values.yaml`, which is also used by the chart unit tests.

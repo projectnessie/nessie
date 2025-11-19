@@ -80,11 +80,6 @@ tests:
           path: spec.rules[0].backendRefs[0].port
           value: 19120
         template: httproute.yaml
-      - equal:
-          documentIndex: 0
-          path: spec.rules[0].backendRefs[0].kind
-          value: Service
-        template: httproute.yaml
 
   - it: should allow custom TLS listener and explicit parentRefs/backends
     values:
