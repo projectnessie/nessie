@@ -82,8 +82,7 @@ spec:
 {{- range $backend := $backends }}
         {{- $service := $backend.service | default (dict) -}}
         {{- $computedServiceName := default (printf "%s%s" (include "nessie.fullname" $) (default "" $service.nameSuffix)) $service.name -}}
-        {{- $explicitName := default "" $backend.name -}}
-        {{- $name := default $computedServiceName $explicitName -}}
+        {{- $name := default $computedServiceName $backend.name -}}
         {{- $name = required "gatewayApi.httpRoutes[].rules[].backendRefs[] requires a backend name" $name -}}
         {{- $serviceNamespace := default $routeNamespace $service.namespace -}}
         {{- $backendNamespace := default $serviceNamespace $backend.namespace -}}
