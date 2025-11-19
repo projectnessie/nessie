@@ -16,15 +16,11 @@
 
 **/}}
 
-{{- $gatewayApiVersion := include "nessie.gateway.apiVersion" . | trim -}}
-{{- if and .Values.gatewayApi.enabled (not $gatewayApiVersion) }}
-{{- fail "gatewayApi.enabled=true but no supported Gateway API version was detected for Gateway" -}}
-{{- end }}
-{{- if and .Values.gatewayApi.enabled $gatewayApiVersion }}
+{{- if .Values.gatewayApi.enabled }}
 {{- $gatewayValues := .Values.gatewayApi.gateway | default (dict) -}}
 {{- $gatewayName := include "nessie.gateway.name" . -}}
 {{- $gatewayNamespace := include "nessie.gateway.namespace" . -}}
-apiVersion: {{ $gatewayApiVersion }}
+apiVersion: gateway.networking.k8s.io/v1 
 kind: Gateway
 metadata:
   name: {{ $gatewayName }}
