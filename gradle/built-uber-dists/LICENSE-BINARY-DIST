@@ -381,6 +381,7 @@ io.opentelemetry.instrumentation:opentelemetry-runtime-telemetry-java17
 io.opentelemetry.instrumentation:opentelemetry-runtime-telemetry-java8
 io.opentelemetry:opentelemetry-api
 io.opentelemetry:opentelemetry-api-incubator
+io.opentelemetry:opentelemetry-common
 io.opentelemetry:opentelemetry-context
 io.opentelemetry:opentelemetry-exporter-common
 io.opentelemetry:opentelemetry-exporter-otlp
