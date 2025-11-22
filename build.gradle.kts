@@ -74,6 +74,10 @@ mavenCentralPortal {
 
   deploymentName = "${project.name}-$version"
 
+  if (version.toString().endsWith("-SNAPSHOT")) {
+    baseUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+  }
+
   // publishingType
   //   AUTOMATIC = fully automatic release
   //   USER_MANAGED = user has to manually publish/drop
