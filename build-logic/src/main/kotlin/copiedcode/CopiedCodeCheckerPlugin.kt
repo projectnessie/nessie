@@ -156,7 +156,7 @@ abstract class CheckCopiedCodeMentionsExistTask : DefaultTask() {
       logger.error(
         """
         The following {} files mentioned in {} do not exist, fix the {} file.
-        
+
         {}
         """
           .trimIndent(),
