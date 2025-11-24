@@ -92,10 +92,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -164,10 +164,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -241,10 +241,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -302,10 +302,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -382,12 +382,12 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'push' }}
         with:
           fetch-depth: 0
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           fetch-depth: 0
