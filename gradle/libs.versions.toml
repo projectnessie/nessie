@@ -126,7 +126,7 @@ postgresql = { module = "org.postgresql:postgresql", version = "42.7.8" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 quarkus-azure-services-bom = { module = "io.quarkiverse.azureservices:quarkus-azure-services-bom", version = "1.2.0" }
 quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkusPlatform" }
-quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.2.0" }
+quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.3.0" }
 quarkus-vault = { module = "io.quarkiverse.vault:quarkus-vault", version.ref = "quarkusVault" }
 quarkus-vault-deployment = { module = "io.quarkiverse.vault:quarkus-vault-deployment", version.ref = "quarkusVault" }
 rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.6" }
