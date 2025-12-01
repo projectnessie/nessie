@@ -302,6 +302,10 @@ catalog:
         authType: ~  # STATIC
         # --Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
         requestSigningEnabled: ~  # true
+        # -- Controls whether the AWS SDK uses chunked transfer encoding when uploading payloads. Set
+        # to false for S3-compatible services (for example Oracle Cloud Infrastructure) that reject
+        # chunked payload signatures (x-amz-content-sha256). Defaults to true.
+        chunkedEncodingEnabled: ~  # true
         # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
         # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
         # sessions (e.g. to use the "assume role" functionality).

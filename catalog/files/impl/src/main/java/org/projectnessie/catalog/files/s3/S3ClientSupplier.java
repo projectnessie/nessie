@@ -38,6 +38,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.S3Request.Builder;
 
@@ -83,13 +84,13 @@ public class S3ClientSupplier {
   public S3Client getClient(S3NamedBucketOptions bucketOptions) {
     S3ClientBuilder builder =
         S3Client.builder()
-            .httpClient(sdkClient)
-            .credentialsProvider(
-                serverCredentialsProvider(bucketOptions, sessions, secretsProvider))
-            .overrideConfiguration(
-                override -> override.defaultProfileFileSupplier(() -> EMPTY_PROFILE_FILE))
-            .serviceConfiguration(
-                serviceConfig -> serviceConfig.profileFile(() -> EMPTY_PROFILE_FILE));
+          .httpClient(sdkClient)
+          .credentialsProvider(
+            serverCredentialsProvider(bucketOptions, sessions, secretsProvider))
+          .overrideConfiguration(
+            override -> override.defaultProfileFileSupplier(() -> EMPTY_PROFILE_FILE))
+          .serviceConfiguration(
+            serviceConfig -> configureServiceConfiguration(bucketOptions, serviceConfig));
 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace(
@@ -114,6 +115,14 @@ public class S3ClientSupplier {
     }
 
     return s3Client;
+  }
+
+  static void configureServiceConfiguration(
+      S3BucketOptions bucketOptions, S3Configuration.Builder serviceConfig) {
+    serviceConfig.profileFile(() -> EMPTY_PROFILE_FILE);
+    bucketOptions
+        .chunkedEncodingEnabled()
+        .ifPresent(serviceConfig::chunkedEncodingEnabled);
   }
 
   private static String toLogString(S3BucketOptions options) {

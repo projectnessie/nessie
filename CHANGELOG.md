@@ -20,6 +20,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/S3: Add a per-bucket configuration option `chunked-encoding-enabled` (defaults to `true`)
+  so deployments targeting Oracle Cloud Infrastructure (OCI) or other S3-compatible stores that
+  reject chunked payload signatures can disable AWS SDK chunked encoding without downgrading
+  Nessie. Fixes [#11441](https://github.com/projectnessie/nessie/issues/11441).
+
 ### Commits
 
 ## [0.105.7] Release (2025-11-06)
