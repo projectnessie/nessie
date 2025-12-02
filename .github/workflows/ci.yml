@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -215,7 +215,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -269,7 +269,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -313,7 +313,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -354,7 +354,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -398,7 +398,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -442,7 +442,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -595,7 +595,7 @@ jobs:
     if: needs.determine-jobs.outputs.docker == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
       - name: Setup runner
@@ -887,7 +887,7 @@ jobs:
           git config --global user.name "Integrations Testing [Bot]"
 
       - name: Checkout NeQuEIT repo
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: ${{env.NESQUEIT_REPOSITORY}}
           ref: ${{env.NESQUEIT_BRANCH}}
@@ -986,7 +986,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
@@ -1034,7 +1034,7 @@ jobs:
       - int-test-quarkus-tool
       - int-test-quarkus-events
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Setup runner
         uses: ./.github/actions/setup-runner
       - name: Setup Java, Gradle
