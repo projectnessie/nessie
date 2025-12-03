@@ -133,8 +133,8 @@ public interface S3BucketOptions extends BucketOptions {
    * Controls whether the AWS SDK uses chunked transfer encoding for payload uploads.
    *
    * <p>Disable chunked encoding for S3-compatible services such as Oracle Cloud Infrastructure
-   * (OCI) that reject chunked payload signatures ({@code x-amz-content-sha256}). Defaults to
-   * {@code true} to maintain AWS parity.
+   * (OCI) that reject chunked payload signatures ({@code x-amz-content-sha256}). Defaults to {@code
+   * true} to maintain AWS parity.
    */
   Optional<Boolean> chunkedEncodingEnabled();
 
@@ -175,12 +175,6 @@ public interface S3BucketOptions extends BucketOptions {
   @JsonIgnore
   default boolean effectiveRequestSigningEnabled() {
     return requestSigningEnabled().orElse(true);
-  }
-
-  @Value.NonAttribute
-  @JsonIgnore
-  default boolean effectiveChunkedEncodingEnabled() {
-    return chunkedEncodingEnabled().orElse(true);
   }
 
   @Value.NonAttribute
