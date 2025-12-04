@@ -748,7 +748,7 @@ jobs:
         run: mkdir "${{env.ICEBERG_DIR}}/bom"
 
       - name: Setup JDK
-        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5
+        uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5
         with:
           distribution: 'temurin'
           # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto
