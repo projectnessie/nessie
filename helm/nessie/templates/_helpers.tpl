@@ -179,6 +179,7 @@ Apply S3 catalog options.
 {{- include "nessie.addConfigOption" (list .accessPoint $map ( print $prefix "access-point" )) -}}
 {{- include "nessie.addConfigOption" (list .allowCrossRegionAccessPoint $map ( print $prefix "allow-cross-region-access-point" )) -}}
 {{- include "nessie.addConfigOption" (list .requestSigningEnabled $map ( print $prefix "request-signing-enabled" )) -}}
+{{- include "nessie.addConfigOption" (list .urlSigningExpire $map ( print $prefix "url-signing-expire" )) -}}
 {{- include "nessie.addConfigOption" (list .chunkedEncodingEnabled $map ( print $prefix "chunked-encoding-enabled" )) -}}
 {{- include "nessie.addConfigOption" (list .authType $map ( print $prefix "auth-type" )) -}}
 {{- include "nessie.addConfigOption" (list .stsEndpoint $map ( print $prefix "sts-endpoint" )) -}}
