@@ -319,6 +319,7 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | podDisruptionBudget | object | `{"enabled":false,"policy":{}}` | Add a PodDisruptionBudget. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/. |
 | podLabels | object | `{}` | Additional Labels to apply to nessie pods. |
 | podSecurityContext | object | `{"fsGroup":10001,"seccompProfile":{"type":"RuntimeDefault"}}` | Security context for the nessie pod. See https://kubernetes.io/docs/tasks/configure-pod-container/security-context/. |
+| priorityClassName | string | `""` | The priority class name to associate with Nessie pods. Leave empty to keep the default priority. |
 | readinessProbe | object | `{"failureThreshold":3,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}` | Configures the readiness probe for nessie pods. |
 | readinessProbe.failureThreshold | int | `3` | Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1. |
 | readinessProbe.initialDelaySeconds | int | `5` | Number of seconds after the container has started before readiness probes are initiated. Minimum value is 0. |
