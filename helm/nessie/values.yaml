@@ -924,6 +924,9 @@ autoscaling:
   # -- Optional; set to zero or empty to disable.
   targetMemoryUtilizationPercentage:
 
+# -- The priority class name to associate with Nessie pods. Leave empty to keep the default priority.
+priorityClassName: ""
+
 # -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
 nodeSelector:
   {}
