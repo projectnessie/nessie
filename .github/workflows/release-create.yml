@@ -235,4 +235,4 @@ jobs:
         # Push changes to docs to site-docs branch
         (cd site/build/site-docs ; git push --no-verify origin HEAD:site-docs)
 
-        git push --no-verify origin ${GIT_TAG}
+        git push --no-verify origin HEAD:main ${GIT_TAG}
