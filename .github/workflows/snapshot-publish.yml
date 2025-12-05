@@ -43,7 +43,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_ACCESS_ID }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_TOKEN }}
-        run: ./gradlew --no-scan publishAggregateMavenCentralDeployment -Prelease -Puber-jar
+        run: ./gradlew --no-scan publishAggregationToCentralPortalSnapshots -Prelease -Puber-jar
 
   publish-images:
     name: Publish Images
