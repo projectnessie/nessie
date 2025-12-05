@@ -26,10 +26,6 @@
 # while the release workflow runs. In case the git history would not be linear, this workflow will
 # fail without having uploaded/pushed any release artifacts.
 
-# Secrets:
-#   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
-#                   bypassing the required commit-hooks + review.
-
 name: Create Release
 
 on:
@@ -54,6 +50,8 @@ jobs:
     env:
       RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}
+    permissions:
+      contents: write
 
     steps:
 
@@ -229,16 +227,7 @@ jobs:
     # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
     - name: Push tag + branch
       run: |
-        # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
-        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
-
-        # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
-        git config --rename-section http.https://github.com/ http.https://save.github.com/
-
         # Push changes to docs to site-docs branch
-        (cd site/build/site-docs ; git push --no-verify "${UPSTREAM}" HEAD:site-docs)
+        (cd site/build/site-docs ; git push --no-verify HEAD:site-docs)
 
-        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF} ${GIT_TAG}
-
-        # Move the default auth settings in ~/.gitconfig back
-        git config --rename-section http.https://save.github.com/ http.https://github.com/
+        git push --no-verify origin ${GIT_TAG}
