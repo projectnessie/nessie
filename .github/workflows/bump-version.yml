@@ -19,10 +19,6 @@
 # Manually triggered workflow, takes the optional "bumpType" and "bumpBranch" arguments.
 # This workflow creates a Git commit to bump the development version.
 
-# Secrets:
-#   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
-#                   bypassing the required commit-hooks + review.
-
 name: Bump version
 
 on:
@@ -48,6 +44,8 @@ jobs:
     env:
       BUMP_ON_BRANCH: ${{ github.event.inputs.bumpBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}
+    permissions:
+      contents: write
 
     steps:
 
@@ -106,13 +104,4 @@ jobs:
     # 'main' branch and break the linear history for the Nessie git repo.
     - name: Push Git commit
       run: |
-        # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
-        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
-
-        # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
-        git config --rename-section http.https://github.com/ http.https://save.github.com/
-
-        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF}
-
-        # Move the default auth settings in ~/.gitconfig back
-        git config --rename-section http.https://save.github.com/ http.https://github.com/
+        git push --no-verify origin
