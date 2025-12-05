@@ -228,6 +228,6 @@ jobs:
     - name: Push tag + branch
       run: |
         # Push changes to docs to site-docs branch
-        (cd site/build/site-docs ; git push --no-verify HEAD:site-docs)
+        (cd site/build/site-docs ; git push --no-verify origin HEAD:site-docs)
 
         git push --no-verify origin ${GIT_TAG}
