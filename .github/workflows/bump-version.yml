@@ -19,6 +19,10 @@
 # Manually triggered workflow, takes the optional "bumpType" and "bumpBranch" arguments.
 # This workflow creates a Git commit to bump the development version.
 
+# Secrets:
+#   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
+#                   bypassing the required commit-hooks + review.
+
 name: Bump version
 
 on:
@@ -54,6 +58,7 @@ jobs:
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         ref: ${{ env.BUMP_ON_BRANCH }}
+        token: ${{ secrets.NESSIE_BUILDER }}
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
     ### END runner setup
