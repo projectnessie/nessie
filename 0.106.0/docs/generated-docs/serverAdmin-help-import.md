@@ -1,0 +1,25 @@
+```
+2025-12-05 15:26:49,600 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
+2025-12-05 15:26:50,045 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
+Usage: nessie-server-admin-tool-runner.jar import [-ehV]
+       [--commit-batch-size=<commitBatchSize>]
+       [--input-buffer-size=<inputBufferSize>] -p=<import-from>
+Imports a Nessie repository from the local file system.
+      --commit-batch-size=<commitBatchSize>
+                             Batch size when writing commits, defaults to 20.
+  -e, --erase-before-import  Erase an existing repository before the import is
+                               started.
+                             This will delete all previously existing Nessie
+                               data.
+                             Using this option has no effect, if the Nessie
+                               repository does not already exist.
+  -h, --help                 Show this help message and exit.
+      --input-buffer-size=<inputBufferSize>
+                             Input buffer size, defaults to 32768.
+  -p, --path=<import-from>   The ZIP file or directory to read the export from.
+                             If this parameter refers to a file, the import
+                               will assume that it is a ZIP file, otherwise a
+                               directory.
+  -V, --version              Print version information and exit.
+
+```
