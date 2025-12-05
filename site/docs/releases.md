@@ -2,6 +2,33 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.106.0 Release (December 05, 2025)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.106.0).
+
+### Fixes
+
+- Catalog/S3: Add a per-bucket configuration option `chunked-encoding-enabled` (defaults to `true`)
+  so deployments targeting Oracle Cloud Infrastructure (OCI) or other S3-compatible stores that
+  reject chunked payload signatures can disable AWS SDK chunked encoding without downgrading
+  Nessie. Fixes [#11441](https://github.com/projectnessie/nessie/issues/11441).
+
+### Commits
+* Ninja... one more
+* ninja-fix previous PR
+* Fix create-release workflow (#11691)
+* Support configuration of S3 signing URL validity via chart (#11690)
+* feat(helm): add priority class support (#11689)
+* Add OCI friendly S3 chunked encoding toggle (#11676)
+* Get back snapshot publications - take 2 (#11653)
+* Attempt to get snapshot publishing back (#11629)
+* Ninja (last one!): fix new Quarkus-CR workflow
+* Ninja: fix run of Quarkus CR workflow
+* Ninja: remove conditional
+* Ninja: fix dangling whitespace in Quarkus CR workflow + align names
+* CI: Add a workflow to verify that Quarkus CR versions pass Nessie CI (#11605)
+* Fix a test issue in macOS CI (#11575)
+
 ## 0.105.7 Release (November 06, 2025)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.105.7).
