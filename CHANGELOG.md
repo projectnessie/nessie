@@ -16,6 +16,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Changes
 
+- Migrate from the MinIO docker image repository to latest MinIO release w/ the recent security fix(es?).
+
 ### Deprecations
 
 ### Fixes
