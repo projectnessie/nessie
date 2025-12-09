@@ -30,6 +30,7 @@ import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
@@ -65,7 +66,17 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
                 if (project.plugins.hasPlugin(ShadowPlugin::class.java)) {
                   configureShadowPublishing(project, mavenPublication)
                 } else {
-                  from(components.firstOrNull { c -> c.name == "javaPlatform" || c.name == "java" })
+                  val component =
+                    components.firstOrNull { c -> c.name == "javaPlatform" || c.name == "java" }
+                  if (component is AdhocComponentWithVariants) {
+                    listOf("testFixturesApiElements", "testFixturesRuntimeElements").forEach { cfg
+                      ->
+                      configurations.findByName(cfg)?.apply {
+                        component.addVariantsFromConfiguration(this) { skip() }
+                      }
+                    }
+                  }
+                  from(component)
                 }
 
                 suppressPomMetadataWarningsFor("testApiElements")
