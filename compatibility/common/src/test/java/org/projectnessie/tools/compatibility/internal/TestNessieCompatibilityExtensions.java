@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -192,6 +193,7 @@ class TestNessieCompatibilityExtensions {
   @DisabledOnOs(
       value = OS.MAC,
       disabledReason = "Uses NessieUpgradesExtension, which is not compatible with macOS")
+  @Disabled("https://github.com/projectnessie/nessie/issues/11197")
   void upgrade() {
     EngineExecutionResults results =
         EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
