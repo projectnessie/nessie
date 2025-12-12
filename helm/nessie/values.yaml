@@ -78,7 +78,7 @@ log:
       # The suffix must be in a date-time format that is understood by DateTimeFormatter. If the
       # suffix ends with .gz or .zip, the rotated files will also be compressed using the
       # corresponding algorithm.
-      fileSuffix: ~  # .yyyy-MM-dd.gz
+      fileSuffix: ~ # .yyyy-MM-dd.gz
     # -- The log storage configuration. A persistent volume claim will be created using these
     # settings.
     storage:
@@ -97,7 +97,7 @@ log:
     # -- Whether to enable the Sentry appender.
     enabled: false
     # -- The Sentry DSN. Required.
-    dsn: ~  # "https://abcd@sentry.io/1234"
+    dsn: ~ # "https://abcd@sentry.io/1234"
     # -- The log level of the Sentry appender.
     level: ERROR
     # -- The environment to report to Sentry. Optional.
@@ -113,11 +113,11 @@ log:
     # Useful to debug configuration issues:
     # io.smallrye.config: DEBUG
 
-# -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2, BIGTABLE.
-# Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2.
-# Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2.
-# Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2.
-# Note: the version store type MONGODB is deprecated, please use the Nessie Server Admin Tool to migrate to MONGODB2.
+    # -- Which type of version store to use: IN_MEMORY, ROCKSDB, DYNAMODB2, MONGODB2, CASSANDRA2, JDBC2, BIGTABLE.
+    # Note: the version store type JDBC is deprecated, please use the Nessie Server Admin Tool to migrate to JDBC2.
+    # Note: the version store type CASSANDRA is deprecated, please use the Nessie Server Admin Tool to migrate to CASSANDRA2.
+    # Note: the version store type DYNAMODB is deprecated, please use the Nessie Server Admin Tool to migrate to DYNAMODB2.
+    # Note: the version store type MONGODB is deprecated, please use the Nessie Server Admin Tool to migrate to MONGODB2.
 versionStoreType: IN_MEMORY
 
 # Cassandra settings. Only required when using CASSANDRA version store type; ignored otherwise.
@@ -143,8 +143,7 @@ rocksdb:
   storageSize: 1Gi
   # -- Labels to add to the persistent volume claim spec selector; a persistent volume with matching labels must exist.
   # Leave empty if using dynamic provisioning.
-  selectorLabels:
-    {}
+  selectorLabels: {}
     # app.kubernetes.io/name: nessie
     # app.kubernetes.io/instance: RELEASE-NAME
 
@@ -230,7 +229,7 @@ catalog:
 
     # -- The default warehouse name. Required. This is just a symbolic name; it must refer to a
     # declared warehouse below.
-    defaultWarehouse: ~  # warehouse1
+    defaultWarehouse: ~ # warehouse1
 
     # -- Iceberg config defaults applicable to all clients and warehouses. Any properties that are
     # common to all iceberg clients should be included here. They will be passed to all clients on
@@ -250,12 +249,12 @@ catalog:
     # warehouse has a name, a location, and optional config defaults and overrides. At least one
     # warehouse must be defined.
     warehouses:
-      # -- Symbolic name of the warehouse. Required.
-    - name: ~  # warehouse1
+    # -- Symbolic name of the warehouse. Required.
+    - name: ~ # warehouse1
       # -- Location of the warehouse. Required. Used to determine the base location of a table.
       # Scheme must be either s3 (Amazon S3), gs (Google GCS) or abfs / abfss (Azure ADLS). Storage
       # properties for each location can be defined below.
-      location: ~  # s3://bucket1/
+      location: ~ # s3://bucket1/
       # -- Iceberg config defaults specific to this warehouse. They override any defaults specified
       # above in catalog.iceberg.configDefaults.
       configDefaults: {}
@@ -276,10 +275,10 @@ catalog:
       # Global S3 settings. Can be overridden on a per-bucket basis below.
       defaultOptions:
         # -- DNS name of the region, required for AWS.
-        region: ~  # us-west-2
+        region: ~ # us-west-2
         # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
         # used.
-        endpoint: ~  # "https://bucket1.s3.amazonaws.com"
+        endpoint: ~ # "https://bucket1.s3.amazonaws.com"
         # -- Endpoint URI, required for private clouds. Optional; if not provided, the default is
         # used. If the endpoint URIs for the Nessie server and clients differ, this one defines the
         # endpoint used for the Nessie server.
@@ -299,30 +298,30 @@ catalog:
         # - APPLICATION_GLOBAL: Use the default AWS credentials provider chain.
         # - STATIC: Static credentials provided through the accessKeySecret option.
         # The default is STATIC.
-        authType: ~  # STATIC
+        authType: ~ # STATIC
         # --Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
-        requestSigningEnabled: ~  # true
+        requestSigningEnabled: ~ # true
         # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
         # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
         # sessions (e.g. to use the "assume role" functionality).
-        stsEndpoint: ~  # "https://sts.amazonaws.com"
+        stsEndpoint: ~ # "https://sts.amazonaws.com"
 
         clientIam:
           # -- Whether to enable vended credentials functionality. If this option is enabled, the
           # server will temporarily assume the configured role, then pass the returned session
           # credentials down to the client, for each table that is created, updated or registered.
           # Vended credentials are not cached server-side.
-          enabled: ~  # false
+          enabled: ~ # false
           # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
           # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
           # at all).
-          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          roleArn: ~ # "arn:aws:iam::123456789012:role/role-name"
           # -- The IAM policy in JSON format to be used as an inline session policy when calling the
           # assume-role endpoint. Optional.
-          policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+          policy: ~ # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
           # -- An identifier for the assumed role session. This parameter is most important in cases
           # when the same role is assumed by different principals in different use cases.
-          roleSessionName: ~  # nessie
+          roleSessionName: ~ # nessie
           # -- An identifier for the party assuming the role. This parameter must match the external
           # ID configured in IAM rules that govern the assume role process for the specified roleArn.
           externalId: ~
@@ -346,22 +345,22 @@ catalog:
           #     "Resource": "arn:aws:s3:::bucket1.{{ .Release.Namespace }}/*"
           #   }
 
-        # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
+          # -- Settings only relevant when clientAuthenticationMode is ASSUME_ROLE.
         serverIam:
           # -- Whether to enable server assume-role functionality. If this option is enabled, the
           # server will attempt to assume the configured role at startup and cache the returned
           # session credentials.
-          enabled: ~  # false
+          enabled: ~ # false
           # -- The ARN of the role to assume for accessing S3 data. This parameter is required for
           # Amazon S3, but may not be required for other storage providers (e.g. Minio does not use it
           # at all).
-          roleArn: ~  # "arn:aws:iam::123456789012:role/role-name"
+          roleArn: ~ # "arn:aws:iam::123456789012:role/role-name"
           # -- The IAM policy in JSON format to be used as an inline session policy when calling the
           # assume-role endpoint. Optional.
-          policy: ~  # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
+          policy: ~ # "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\" } ] }"
           # -- An identifier for the assumed role session. This parameter is most important in cases
           # when the same role is assumed by different principals in different use cases.
-          roleSessionName: ~  # nessie
+          roleSessionName: ~ # nessie
           # -- An identifier for the party assuming the role. This parameter must match the external
           # ID configured in IAM rules that govern the assume role process for the specified roleArn.
           externalId: ~
@@ -414,13 +413,13 @@ catalog:
         # -- The time period to subtract from the S3 session credentials (assumed role credentials)
         # expiry time to define the time when those credentials become eligible for refreshing.
         # Not overridable on a per-bucket basis. The default is PT5M (5 minutes).
-        sessionCredentialRefreshGracePeriod: ~  # PT5M
+        sessionCredentialRefreshGracePeriod: ~ # PT5M
         # -- Maximum number of entries to keep in the session credentials cache (assumed role
         # credentials). Not overridable on a per-bucket basis. The default is 1000.
-        sessionCredentialCacheMaxEntries: ~  # 1000
+        sessionCredentialCacheMaxEntries: ~ # 1000
         # -- Maximum number of entries to keep in the STS clients cache. Not overridable on a
         # per-bucket basis. The default is 50.
-        stsClientsCacheMaxEntries: ~  # 50
+        stsClientsCacheMaxEntries: ~ # 50
 
     gcs:
 
@@ -597,13 +596,11 @@ catalog:
       # Not overridable on a per-filesystem basis.
       advancedConfig: {}
 
-
 # -- Advanced configuration.
 # You can pass here any valid Nessie or Quarkus configuration property.
 # Any property that is defined here takes precedence over all the other configuration values generated by this chart.
 # Properties can be passed "flattened" or as nested YAML objects (see examples below).
-advancedConfig:
-  {}
+advancedConfig: {}
 # Nessie version store settings
 # -----------------------------
 #
@@ -644,8 +641,7 @@ advancedConfig:
 # You can pass here any valid EnvVar object:
 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core
 # This can be useful to get configuration values from Kubernetes secrets or config maps.
-extraEnv:
-  []
+extraEnv: []
 #  - name: QUARKUS_MONGODB_APPLICATION_NAME
 #    value: my-app
 #  - name: QUARKUS_MONGODB_TLS
@@ -658,7 +654,7 @@ authentication:
   # -- Specifies whether authentication for the nessie server should be enabled.
   enabled: false
   # -- Sets the base URL of the OpenID Connect (OIDC) server. Required if authentication is enabled (unless local token introspection is enforced through advanced configuration).
-  oidcAuthServerUrl: ~  # http://example.com:8080/auth/realms/master
+  oidcAuthServerUrl: ~ # http://example.com:8080/auth/realms/master
   # -- Set the OIDC client ID. If Nessie must contact the OIDC server, this is the client ID that will be used to identify the application.
   oidcClientId: nessie
   # -- Set the OIDC client secret. Whether the client secret is required depends on the OIDC server configuration.
@@ -672,8 +668,7 @@ authorization:
   # -- Specifies whether authorization for the nessie server should be enabled.
   enabled: false
   # -- The authorization rules when authorization.enabled=true. Example rules can be found at https://projectnessie.org/features/metadata_authorization/#authorization-rules
-  rules:
-    {}
+  rules: {}
     # allowViewingBranch: op=='VIEW_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
     # allowCommits: op=='COMMIT_CHANGE_AGAINST_REFERENCE' && role.startsWith('test_user') && ref.startsWith('allowedBranch')
 
@@ -691,16 +686,13 @@ tracing:
   # -- Resource attributes to identify the nessie service among other tracing sources.
   # See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service.
   # If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here.
-  attributes:
-    {}
-    # service.name: my-nessie
+  attributes: {} # service.name: my-nessie
 
 metrics:
   # -- Specifies whether metrics for the nessie server should be enabled.
   enabled: true
   # -- Additional tags (dimensional labels) to add to the metrics.
-  tags:
-    {}
+  tags: {}
     # service: nessie
     # environment: production
 
@@ -710,9 +702,7 @@ serviceMonitor:
   # -- The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s.
   interval: ""
   # -- Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up.
-  labels:
-    {}
-    # release: prometheus
+  labels: {} # release: prometheus
   # -- Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config.
   metricRelabelings: []
     # - source_labels: [ __meta_kubernetes_namespace ]
@@ -763,7 +753,7 @@ securityContext:
   readOnlyRootFilesystem: true
   capabilities:
     drop:
-      - ALL
+    - ALL
 
 # -- Nessie main service settings.
 service:
@@ -774,14 +764,14 @@ service:
   # application will use for serving API requests. By default, it's 19120.
   # Note: port names must be unique and no more than 15 characters long.
   ports:
-    - name: nessie-http
-      number: 19120
-      # -- The port on each node on which this service is exposed.
-      # Only meaningful when service type is NodePort or LoadBalancer.
-      # Leave empty (~) to let Kubernetes assign a random port.
-      nodePort: ~
-    # - name: nessie-https
-    #  number: 19121
+  - name: nessie-http
+    number: 19120
+    # -- The port on each node on which this service is exposed.
+    # Only meaningful when service type is NodePort or LoadBalancer.
+    # Leave empty (~) to let Kubernetes assign a random port.
+    nodePort: ~
+  # - name: nessie-https
+  #  number: 19121
   # -- The session affinity for the service. Valid values are: None, ClientIP.
   # ClientIP enables sticky sessions based on the client's IP address.
   # This is generally beneficial to Nessie deployments, but some testing may be
@@ -854,23 +844,21 @@ ingress:
   # -- Specifies the ingressClassName; leave empty if you don't want to customize it.
   className: ""
   # -- Annotations to add to the ingress.
-  annotations: {
-    # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
-  }
+  annotations: {} # nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
   # -- Specifies the path type of host paths. Valid values are: "Prefix", "Exact" or "ImplementationSpecific".
   pathType: ImplementationSpecific
   # -- A list of host paths used to configure the ingress.
   hosts:
-    - host: chart-example.local
-      paths: []
-      # -- The service target for the ingress.
-      service:
-        # -- The port name to route traffic to. Must match one of the ports in service.ports or in
-        # extraServices.ports. Optional; if not provided, the first port in service.ports will be used.
-        portName: nessie-http
-        # -- The target service name suffix. Optional; if not provided, the main service will be
-        # targeted. Change this only if you are targeting a service defined in extraServices.
-        nameSuffix: ""
+  - host: chart-example.local
+    paths: []
+    # -- The service target for the ingress.
+    service:
+      # -- The port name to route traffic to. Must match one of the ports in service.ports or in
+      # extraServices.ports. Optional; if not provided, the first port in service.ports will be used.
+      portName: nessie-http
+      # -- The target service name suffix. Optional; if not provided, the main service will be
+      # targeted. Change this only if you are targeting a service defined in extraServices.
+      nameSuffix: ""
   # -- A list of TLS certificates; each entry has a list of hosts in the certificate,
   # along with the secret name used to terminate TLS traffic on port 443.
   tls: []
@@ -886,6 +874,8 @@ gatewayApi:
   # -- Specifies whether Gateway/HTTPRoute resources should be created.
   enabled: false
   gateway:
+    # -- Specifies whether a Gateway resource should be created. Set to false to reference an existing Gateway.
+    create: true
     # -- Optional explicit name for the Gateway. If empty, the chart fullname plus nameSuffix is used.
     name: ""
     # -- Optional suffix appended to the autogenerated name when `name` is not set.
@@ -904,77 +894,77 @@ gatewayApi:
     #    value: shared-gateway
     # -- Listeners describe how traffic enters the Gateway.
     listeners:
-      - # -- Listener name. Must be unique per Gateway.
-        name: nessie-http
-        # -- Optional hostname (wildcard supported, e.g. "nessie.example.com"). Leave empty to accept all hostnames.
-        hostname: ""
-        # -- Listener port.
-        port: 80
-        # -- Protocol handled by the listener. Typically HTTP or HTTPS.
-        protocol: HTTP
-        # -- Allowed routes constraints for this listener. Defaults to namespaces.from=Same when omitted.
-        allowedRoutes:
-          namespaces:
-            from: Same
-        tls:
-          # -- Whether TLS should be configured for this listener.
-          enabled: false
-          # -- TLS mode (Terminate, Passthrough, etc.).
-          mode: Terminate
-          # -- List of certificate references for this listener.
-          certificateRefs: []
-          #    - name: nessie-cert
-          #      kind: Secret
-          #      group: ""
-          #      namespace: ""
-          # -- Optional TLS options map.
-          options: {}
+    # -- Listener name. Must be unique per Gateway.
+    - name: nessie-http
+      # -- Optional hostname (wildcard supported, e.g. "nessie.example.com"). Leave empty to accept all hostnames.
+      hostname: ""
+      # -- Listener port.
+      port: 80
+      # -- Protocol handled by the listener. Typically HTTP or HTTPS.
+      protocol: HTTP
+      # -- Allowed routes constraints for this listener. Defaults to namespaces.from=Same when omitted.
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        # -- Whether TLS should be configured for this listener.
+        enabled: false
+        # -- TLS mode (Terminate, Passthrough, etc.).
+        mode: Terminate
+        # -- List of certificate references for this listener.
+        certificateRefs: []
+        #    - name: nessie-cert
+        #      kind: Secret
+        #      group: ""
+        #      namespace: ""
+        # -- Optional TLS options map.
+        options: {}
   httpRoutes:
-    - # -- Optional explicit name for the HTTPRoute.
-      name: ""
-      # -- Optional suffix appended to the autogenerated name when `name` is not set.
-      nameSuffix: "-httproute"
-      # -- Optional namespace override for the HTTPRoute (defaults to the release namespace).
-      namespace: ""
-      # -- Labels to add to the HTTPRoute metadata.
-      labels: {}
-      # -- Annotations to add to the HTTPRoute metadata.
-      annotations: {}
-      # -- Hostnames handled by this route. Leave empty to match all hostnames.
-      hostnames: []
-      # -- Parent references attached to the route. When empty, the chart-generated Gateway is referenced automatically.
-      parentRefs: []
-      # -- Rules evaluated by the HTTPRoute.
-      rules:
-        - matches:
-            - path:
-                type: PathPrefix
-                value: /
-              headers: []
-          filters: []
-          backendRefs:
-            - # -- Optionally reference a Service managed by this chart.
-              service:
-                # -- Optional explicit service name. If empty, fullname plus nameSuffix is used.
-                name: ""
-                # -- Optional suffix appended to the release fullname when service.name is empty.
-                nameSuffix: ""
-                # -- Optional namespace override for the backend Service.
-                namespace: ""
-                # -- Optional port override for the backend Service. When empty, the first service port is used.
-                port: ~
-              # -- Explicit backend name. Takes precedence over service.* if set.
-              name: ""
-              # -- Optional backend namespace. Defaults to the HTTPRoute namespace when unset.
-              namespace: ""
-              # -- Optional backend group override.
-              group: ""
-              # -- Optional backend kind override (defaults to Service when using service.* helper).
-              kind: ""
-              # -- Optional backend port. When unset, the service port or chart default is used.
-              port: ~
-              # -- Optional backend weight.
-              weight: 1
+  # -- Optional explicit name for the HTTPRoute.
+  - name: ""
+    # -- Optional suffix appended to the autogenerated name when `name` is not set.
+    nameSuffix: "-httproute"
+    # -- Optional namespace override for the HTTPRoute (defaults to the release namespace).
+    namespace: ""
+    # -- Labels to add to the HTTPRoute metadata.
+    labels: {}
+    # -- Annotations to add to the HTTPRoute metadata.
+    annotations: {}
+    # -- Hostnames handled by this route. Leave empty to match all hostnames.
+    hostnames: []
+    # -- Parent references attached to the route. When empty, the chart-generated Gateway is referenced automatically.
+    parentRefs: []
+    # -- Rules evaluated by the HTTPRoute.
+    rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+        headers: []
+      filters: []
+      backendRefs:
+      # -- Optionally reference a Service managed by this chart.
+      - service:
+          # -- Optional explicit service name. If empty, fullname plus nameSuffix is used.
+          name: ""
+          # -- Optional suffix appended to the release fullname when service.name is empty.
+          nameSuffix: ""
+          # -- Optional namespace override for the backend Service.
+          namespace: ""
+          # -- Optional port override for the backend Service. When empty, the first service port is used.
+          port: ~
+        # -- Explicit backend name. Takes precedence over service.* if set.
+        name: ""
+        # -- Optional backend namespace. Defaults to the HTTPRoute namespace when unset.
+        namespace: ""
+        # -- Optional backend group override.
+        group: ""
+        # -- Optional backend kind override (defaults to Service when using service.* helper).
+        kind: ""
+        # -- Optional backend port. When unset, the service port or chart default is used.
+        port: ~
+        # -- Optional backend weight.
+        weight: 1
 
 # -- Override the strategy for nessie deployment.
 # Valid values for type are: RollingUpdate and Recreate.
@@ -983,8 +973,7 @@ gatewayApi:
 # version store type.
 # Max Unavailable will allow old pods to be culled before replacements are created
 # See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
-deploymentStrategy:
-  {}
+deploymentStrategy: {}
   # type: RollingUpdate
   # rollingUpdate:
   #   maxUnavailable: 0
@@ -995,8 +984,7 @@ deploymentStrategy:
 # choice for the user. This also increases chances charts run on environments with little
 # resources, such as Minikube. If you do want to specify resources, uncomment the following
 # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-resources:
-  {}
+resources: {}
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -1017,10 +1005,8 @@ autoscaling:
   # -- Optional; set to zero or empty to disable.
   targetMemoryUtilizationPercentage:
 
-# -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
-nodeSelector:
-  {}
-  # kubernetes.io/os: linux
+    # -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
+nodeSelector: {} # kubernetes.io/os: linux
 
 # -- A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/.
 tolerations: []
@@ -1072,20 +1058,20 @@ readinessProbe:
 
 # -- Extra volumes to add to the nessie pod. See https://kubernetes.io/docs/concepts/storage/volumes/.
 extraVolumes: []
-    # - name: extra-volume
-    #   emptyDir: {}
+  # - name: extra-volume
+  #   emptyDir: {}
 
 # -- Extra volume mounts to add to the nessie container. See https://kubernetes.io/docs/concepts/storage/volumes/.
 extraVolumeMounts: []
-    # - name: extra-volume
-    #   mountPath: /usr/share/extra-volume
+  # - name: extra-volume
+  #   mountPath: /usr/share/extra-volume
 
 # -- Add additional init containers to the nessie pod(s) See https://kubernetes.io/docs/concepts/workloads/pods/init-containers/.
 extraInitContainers: []
-    # - name: your-image-name
-    #   image: your-image
-    #   imagePullPolicy: Always
-    #   command: ['sh', '-c', 'echo "hello world"']
+  # - name: your-image-name
+  #   image: your-image
+  #   imagePullPolicy: Always
+  #   command: ['sh', '-c', 'echo "hello world"']
 
 # -- Add a PodDisruptionBudget. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/.
 podDisruptionBudget:
