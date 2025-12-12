@@ -300,7 +300,13 @@ catalog:
         # The default is STATIC.
         authType: ~ # STATIC
         # --Optional parameter to disable S3 request signing. Default is to enable S3 request signing.
-        requestSigningEnabled: ~ # true
+        requestSigningEnabled: ~  # true
+        # -- Defines the validity of the signing endpoint returned to clients, defaults to 3 hours.
+        urlSigningExpire: ~  # PT3H
+        # -- Controls whether the AWS SDK uses chunked transfer encoding when uploading payloads. Set
+        # to false for S3-compatible services (for example Oracle Cloud Infrastructure) that reject
+        # chunked payload signatures (x-amz-content-sha256). Defaults to true.
+        chunkedEncodingEnabled: ~  # true
         # -- The STS endpoint. Optional; if not provided, the default is used. This parameter must
         # be set if the cloud provider is not AMAZON and the catalog is configured to use S3
         # sessions (e.g. to use the "assume role" functionality).
@@ -1005,8 +1011,13 @@ autoscaling:
   # -- Optional; set to zero or empty to disable.
   targetMemoryUtilizationPercentage:
 
-    # -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
-nodeSelector: {} # kubernetes.io/os: linux
+# -- The priority class name to associate with Nessie pods. Leave empty to keep the default priority.
+priorityClassName: ""
+
+# -- Node labels which must match for the nessie pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
+nodeSelector:
+  {}
+  # kubernetes.io/os: linux
 
 # -- A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/.
 tolerations: []

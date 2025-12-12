@@ -502,7 +502,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   }
 
   void handleParseException(String input, ParseException e) {
-    Node.TerminalNode t = e.getToken();
+    Node t = e.getToken();
     AttributedStringBuilder errMsg = new AttributedStringBuilder();
 
     errMsg

@@ -129,6 +129,15 @@ public interface S3BucketOptions extends BucketOptions {
    */
   Optional<Duration> urlSigningExpire();
 
+  /**
+   * Controls whether the AWS SDK uses chunked transfer encoding for payload uploads.
+   *
+   * <p>Disable chunked encoding for S3-compatible services such as Oracle Cloud Infrastructure
+   * (OCI) that reject chunked payload signatures ({@code x-amz-content-sha256}). Defaults to {@code
+   * true} to maintain AWS parity.
+   */
+  Optional<Boolean> chunkedEncodingEnabled();
+
   @Value.NonAttribute
   @JsonIgnore
   default Duration effectiveUrlSigningExpire() {

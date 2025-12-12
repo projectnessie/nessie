@@ -26,8 +26,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>8</maven.compiler.release>
-    <versionMavenResolver>1.9.24</versionMavenResolver>
-    <nessie.version>0.105.7</nessie.version>
+    <versionMavenResolver>1.9.25</versionMavenResolver>
+    <nessie.version>0.106.0</nessie.version>
   </properties>
 
   <dependencyManagement>

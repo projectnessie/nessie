@@ -70,7 +70,7 @@ services:
 
   nessie:
     # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
-    image: ghcr.io/projectnessie/nessie:0.105.7
+    image: ghcr.io/projectnessie/nessie:0.106.0
     ports:
       # API port
       - "19120:19120"
@@ -128,7 +128,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: docker.io/prom/prometheus:v3.7.3
+    image: docker.io/prom/prometheus:v3.8.0
     ports:
       # Prometheus UI, browse to http://localhost:9093 to view metrics
       - "9093:9090"
@@ -147,7 +147,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:12.2.1
+    image: docker.io/grafana/grafana:12.3.0
     depends_on:
       - prometheus
     ports:
@@ -160,7 +160,7 @@ services:
 
   # Jaeger (OpenTelemetry traces collector)
   jaeger:
-    image: docker.io/jaegertracing/all-in-one:1.74.0
+    image: docker.io/jaegertracing/all-in-one:1.76.0
     ports:
       # Jaeger gRPC collector, used by Nessie
       - "4317:4317"
@@ -219,7 +219,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4.5
+    image: quay.io/keycloak/keycloak:26.4.7
     depends_on:
       - postgres
     ports:
@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.105.7
+      image: ghcr.io/projectnessie/nessie-cli:0.106.0
       depends_on:
         nessie:
           condition: service_healthy

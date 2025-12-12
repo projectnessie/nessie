@@ -92,10 +92,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -131,9 +131,9 @@ jobs:
         #    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
         run: |
           # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
-          ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregateMavenCentralDeployment -Prelease -Puber-jar --no-scan --stacktrace
+          ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace || \
+            ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace
 
       - name: Generate changelog
         run: ./gradlew --no-scan --quiet --console=plain getChangelog --no-header --no-links > "${ARTIFACTS}/nessie-changelog-${RELEASE_VERSION}.md"
@@ -164,10 +164,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -241,10 +241,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -302,10 +302,10 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'push' }}
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           ref: refs/tags/${{ github.event.inputs.releaseTag }}
@@ -382,12 +382,12 @@ jobs:
     steps:
       ### BEGIN runner setup
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'push' }}
         with:
           fetch-depth: 0
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           fetch-depth: 0

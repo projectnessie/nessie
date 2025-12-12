@@ -48,14 +48,17 @@ jobs:
     env:
       BUMP_ON_BRANCH: ${{ github.event.inputs.bumpBranch }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}
+    permissions:
+      contents: write
 
     steps:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         ref: ${{ env.BUMP_ON_BRANCH }}
+        token: ${{ secrets.NESSIE_BUILDER }}
     - name: Setup Java, Gradle
       uses: ./.github/actions/dev-tool-java
     ### END runner setup
@@ -106,13 +109,4 @@ jobs:
     # 'main' branch and break the linear history for the Nessie git repo.
     - name: Push Git commit
       run: |
-        # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
-        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
-
-        # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
-        git config --rename-section http.https://github.com/ http.https://save.github.com/
-
-        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF}
-
-        # Move the default auth settings in ~/.gitconfig back
-        git config --rename-section http.https://save.github.com/ http.https://github.com/
+        git push --no-verify origin
