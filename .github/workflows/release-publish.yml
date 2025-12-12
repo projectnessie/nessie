@@ -147,7 +147,7 @@ jobs:
           cp tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip "${ARTIFACTS}"
 
       - name: Archive release artifacts
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: nessie-release-artifacts
           path: build-artifacts
@@ -260,7 +260,7 @@ jobs:
           mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
 
       - name: Archive Helm chart artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: nessie-release-helm
           path: ./nessie-helm-*.tgz
@@ -272,7 +272,7 @@ jobs:
           helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
 
       - name: Archive Helm chart index.yaml
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: nessie-release-helm-index.yaml
           path: index.yaml
@@ -324,7 +324,7 @@ jobs:
         run: cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml ./nessie-openapi-${RELEASE_VERSION}.yaml
 
       - name: Archive OpenAPI artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: nessie-release-openapi
           path: ./nessie-openapi-*.yaml
@@ -398,7 +398,7 @@ jobs:
         run: mkdir current-release-artifacts
 
       - name: Get release + OpenAPI + Helm chart artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           path: current-release-artifacts
           merge-multiple: true
