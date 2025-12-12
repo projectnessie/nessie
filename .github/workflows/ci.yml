@@ -845,9 +845,13 @@ jobs:
       - name: Show pods
         run: kubectl get pods -A
 
-      - name: Install secrets
+      - name: Install fixtures
         run: |
           kubectl create namespace nessie-ns
+          # Install Gateway API CRDs
+          kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
+          helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
+          # Install other fixtures
           kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;) 
 
       - name: Run chart-testing (install)
