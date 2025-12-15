@@ -91,6 +91,10 @@ To test the charts against a local running minikube cluster, first create the na
 
 ```bash
 kubectl create namespace nessie-ns
+# Install Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
+helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
+# Install other fixtures
 kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
 ```
 
@@ -111,6 +115,7 @@ cluster.
 
 Example configuration:
 
+```yaml
 gatewayApi:
   enabled: true
   gateway:

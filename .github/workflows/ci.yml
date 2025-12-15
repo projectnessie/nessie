@@ -830,7 +830,7 @@ jobs:
           cd helm/nessie
           for f in values.yaml ci/*.yaml; do
             echo "::group::helm template $f"
-            helm template --debug --namespace nessie-ns --values $f .
+            helm template --debug --namespace nessie-ns --api-versions gateway.networking.k8s.io/v1/HTTPRoute --values $f .
             echo "::endgroup::"
           done
 
