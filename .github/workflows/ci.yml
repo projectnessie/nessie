@@ -649,8 +649,8 @@ jobs:
 
           echo "::group::Update buildkitd_conf for 'docker buildx build'"
           # Use 'http' instead of 'https' during 'docker buildx build' in 'tools/dockerbuild/build-push-images.sh'
-          cat <<EOF > ../buildkitd.toml                                                                                                                                                                                                                                                                                            
-          [registry."${DOCKER_REGISTRY}:5000"]                                                                                                                                                                                                                                                                                 
+          cat <<EOF > ../buildkitd.toml
+          [registry."${DOCKER_REGISTRY}:5000"]
             http = true
           EOF
           buildkitd_conf="$(pwd)/../buildkitd.toml"
@@ -662,7 +662,7 @@ jobs:
           echo "::endgroup::"
 
           # minikube restart, because:
-          #   1. required after docker daemon restart 
+          #   1. required after docker daemon restart
           #   2. tweak the "registry addon" into the start command
           #   3. tweak the "insecure-registry" setting into the start command
           # Must delete the minikube cluster to let the insecure-registry setting take effect.
@@ -670,7 +670,7 @@ jobs:
           echo "::group::Stop minikube"
           minikube stop
           echo "::endgroup::"
-          echo "::group::Delete minikube" 
+          echo "::group::Delete minikube"
           minikube delete
           echo "::endgroup::"
           echo "::group::Restart docker daemon"
@@ -740,7 +740,7 @@ jobs:
           docker pull ${DOCKER_CLI_IMAGE}:${DOCKER_VERSION}-java
           cat <<! >> $GITHUB_STEP_SUMMARY
           ## Docker images
-          
+
           \`\`\`
           $(docker images)
           \`\`\`
@@ -766,14 +766,14 @@ jobs:
             fi
             sleep 1
           done
-          echo "## Nessie Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+          echo "## Nessie Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY
           echo "Nessie Java Docker image smoke test: PASSED"
           docker stop nessie
 
       - name: Check if GC Tool Docker Java image works
         run: |
           if docker run --rm --name nessie-gc ${DOCKER_GC_IMAGE}:latest-java --help | grep -q "Usage: nessie-gc.jar"; then
-            echo "## GC Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "## GC Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY
             echo "GC Tool Java Docker image smoke test: PASSED"
           else
            echo "GC Tool Java Docker image smoke test: FAILED" > /dev/stderr
@@ -790,7 +790,7 @@ jobs:
       - name: Check if Server Admin Tool Docker Java image works
         run: |
           if docker run --rm --name nessie-server-admin ${DOCKER_SERVER_ADMIN_IMAGE}:latest-java --help | grep -q "Usage: nessie-server-admin"; then
-            echo "## Server Admin Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "## Server Admin Tool Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY
             echo "Server Admin Tool Java Docker image smoke test: PASSED"
           else
            echo "Server Admin Tool Java Docker image smoke test: FAILED" > /dev/stderr
@@ -807,7 +807,7 @@ jobs:
       - name: Check if CLI Docker Java image works
         run: |
           if docker run --rm --name nessie-cli ${DOCKER_CLI_IMAGE}:latest-java --help | grep -q "Usage: nessie-cli.jar"; then
-            echo "## CLI Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY  
+            echo "## CLI Java Docker image smoke test: PASSED" >> $GITHUB_STEP_SUMMARY
             echo "CLI Java Docker image smoke test: PASSED"
           else
            echo "CLI Java Docker image smoke test: FAILED" > /dev/stderr
@@ -830,7 +830,7 @@ jobs:
           cd helm/nessie
           for f in values.yaml ci/*.yaml; do
             echo "::group::helm template $f"
-            helm template --debug --namespace nessie-ns --api-versions gateway.networking.k8s.io/v1/HTTPRoute --values $f .
+            helm template --debug --namespace nessie-ns --api-versions gateway.networking.k8s.io/v1/Gateway --api-versions gateway.networking.k8s.io/v1/HTTPRoute --values $f .
             echo "::endgroup::"
           done
 
@@ -852,7 +852,7 @@ jobs:
           kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
           helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
           # Install other fixtures
-          kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;) 
+          kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
 
       - name: Run chart-testing (install)
         run: |
@@ -934,7 +934,7 @@ jobs:
         with:
           distribution: 'temurin'
           # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto
-          java-version: | 
+          java-version: |
             11
             17
             21
