@@ -92,7 +92,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-test-reports
@@ -143,7 +143,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
@@ -201,7 +201,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-reports
@@ -243,7 +243,7 @@ jobs:
             $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-stores-reports
@@ -284,7 +284,7 @@ jobs:
             $(cat ../spark-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-integrations-reports
@@ -323,7 +323,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-server-reports
@@ -363,7 +363,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-tool-reports
@@ -403,7 +403,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-events-reports
@@ -454,7 +454,7 @@ jobs:
           python-version: '3.14'
 
       - name: Setup & Start Minikube
-        uses: medyagh/setup-minikube@e3c7f79eb1e997eabccc536a6cf318a2b0fe19d9 # v0.0.20
+        uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
         with:
           # If required, use the matrix strategy against this option to test against multiple Kubernetes versions:
           kubernetes-version: stable
