@@ -6,7 +6,7 @@ checkstyle = "12.3.0"
 errorprone = "2.45.0"
 errorproneSlf4j = "0.1.29"
 gatling = "3.14.9"
-googleCloudBigdataoss = "3.1.11"
+googleCloudBigdataoss = "4.0.0"
 googleJavaFormat = "1.33.0"
 hadoop = "3.4.2"
 iceberg = "1.10.0" # While bumping this version, 'nessieClientVersion' must also be updated.
@@ -26,7 +26,7 @@ opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.33.2"
 quarkusPlatform = "3.30.3"
-quarkusPlugin = "3.30.3"
+quarkusPlugin = "3.30.4"
 quarkusVault = "4.4.0"
 slf4j = "2.0.17"
 undertow = "2.3.20.Final"
@@ -156,7 +156,7 @@ wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.13.2" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-6" }
 
 [plugins]
-gatling = { id = "io.gatling.gradle", version = "3.14.9.1" }
+gatling = { id = "io.gatling.gradle", version = "3.14.9.2" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
 nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.3.0" }
