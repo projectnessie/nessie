@@ -91,6 +91,10 @@ To test the charts against a local running minikube cluster, first create the na
 
 ```bash
 kubectl create namespace nessie-ns
+# Install Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
+helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
+# Install other fixtures
 kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
 ```
 
@@ -99,6 +103,50 @@ Then run the tests with `ct install`:
 ```bash
 ct install --charts ./helm/nessie --namespace nessie-ns --debug
 ```
+
+## Exposing Nessie via the Gateway API
+
+The chart now supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) as an
+alternative to the traditional Ingress resource. Enable it by toggling `gatewayApi.enabled` and
+supplying a `gateway.gatewayClassName`. The chart will render a `Gateway` and one or more
+`HTTPRoute` objects that target the main Nessie Service by default. Only the GA
+`gateway.networking.k8s.io/v1` resources are rendered; make sure the v1 CRDs are installed in the
+cluster.
+
+Example configuration:
+
+```yaml
+gatewayApi:
+  enabled: true
+  gateway:
+    gatewayClassName: envoy
+    listeners:
+      - name: https
+        port: 443
+        protocol: HTTPS
+        hostname: nessie.example.com
+        tls:
+          enabled: true
+          certificateRefs:
+            - name: nessie-cert
+  httpRoutes:
+    - hostnames: [ nessie.example.com ]
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          backendRefs:
+            - service:
+                port: 19120
+```
+
+If `gatewayApi.enabled` remains `false`, no Gateway API objects are rendered. Make sure the Gateway API CRDs (and a compatible controller such as Envoy Gateway or Istio) are
+installed in the cluster before enabling this feature; the chart will fail fast if the resources
+are unavailable. A more advanced sample configuration can be found in
+`helm/nessie/ci/gateway-api-values.yaml`, which is also used by the chart unit tests.
+installed in the cluster before enabling this feature; the chart will fail fast if the resources
+are unavailable.
 
 ## Values
 
@@ -248,6 +296,45 @@ ct install --charts ./helm/nessie --namespace nessie-ns --debug
 | extraServices | list | `[]` | Additional service definitions. All service definitions always select all Nessie pods. Use this if you need to expose specific ports with different configurations. |
 | extraVolumeMounts | list | `[]` | Extra volume mounts to add to the nessie container. See https://kubernetes.io/docs/concepts/storage/volumes/. |
 | extraVolumes | list | `[]` | Extra volumes to add to the nessie pod. See https://kubernetes.io/docs/concepts/storage/volumes/. |
+| gatewayApi | object | `{"enabled":false,"gateway":{"addresses":[],"annotations":{},"create":true,"gatewayClassName":"","labels":{},"listeners":[{"allowedRoutes":{"namespaces":{"from":"Same"}},"hostname":"","name":"nessie-http","port":80,"protocol":"HTTP","tls":{"certificateRefs":[],"enabled":false,"mode":"Terminate","options":{}}}],"name":"","nameSuffix":"","namespace":""},"httpRoutes":[{"annotations":{},"hostnames":[],"labels":{},"name":"","nameSuffix":"-httproute","namespace":"","parentRefs":[],"rules":[{"backendRefs":[{"group":"","kind":"","name":"","namespace":"","port":null,"service":{"name":"","nameSuffix":"","namespace":"","port":null},"weight":1}],"filters":[],"matches":[{"headers":[],"path":{"type":"PathPrefix","value":"/"}}]}]}]}` | Gateway API support (Gateway + HTTPRoute resources) Use this section to expose Nessie through the Kubernetes Gateway API instead of the traditional Ingress resource. |
+| gatewayApi.enabled | bool | `false` | Specifies whether Gateway/HTTPRoute resources should be created. |
+| gatewayApi.gateway.addresses | list | `[]` | Optional addresses block passed directly to the Gateway spec. |
+| gatewayApi.gateway.annotations | object | `{}` | Annotations to add to the Gateway metadata. |
+| gatewayApi.gateway.create | bool | `true` | Specifies whether a Gateway resource should be created. Set to false to reference an existing Gateway. |
+| gatewayApi.gateway.gatewayClassName | string | `""` | The GatewayClass to target. Required when gatewayApi is enabled. |
+| gatewayApi.gateway.labels | object | `{}` | Labels to add to the Gateway metadata. |
+| gatewayApi.gateway.listeners | list | `[{"allowedRoutes":{"namespaces":{"from":"Same"}},"hostname":"","name":"nessie-http","port":80,"protocol":"HTTP","tls":{"certificateRefs":[],"enabled":false,"mode":"Terminate","options":{}}}]` | Listeners describe how traffic enters the Gateway. |
+| gatewayApi.gateway.listeners[0].allowedRoutes | object | `{"namespaces":{"from":"Same"}}` | Allowed routes constraints for this listener. Defaults to namespaces.from=Same when omitted. |
+| gatewayApi.gateway.listeners[0].hostname | string | `""` | Optional hostname (wildcard supported, e.g. "nessie.example.com"). Leave empty to accept all hostnames. |
+| gatewayApi.gateway.listeners[0].name | string | `"nessie-http"` | Listener name. Must be unique per Gateway. |
+| gatewayApi.gateway.listeners[0].port | int | `80` | Listener port. |
+| gatewayApi.gateway.listeners[0].protocol | string | `"HTTP"` | Protocol handled by the listener. Typically HTTP or HTTPS. |
+| gatewayApi.gateway.listeners[0].tls.certificateRefs | list | `[]` | List of certificate references for this listener. |
+| gatewayApi.gateway.listeners[0].tls.enabled | bool | `false` | Whether TLS should be configured for this listener. |
+| gatewayApi.gateway.listeners[0].tls.mode | string | `"Terminate"` | TLS mode (Terminate, Passthrough, etc.). |
+| gatewayApi.gateway.listeners[0].tls.options | object | `{}` | Optional TLS options map. |
+| gatewayApi.gateway.name | string | `""` | Optional explicit name for the Gateway. If empty, the chart fullname plus nameSuffix is used. |
+| gatewayApi.gateway.nameSuffix | string | `""` | Optional suffix appended to the autogenerated name when `name` is not set. |
+| gatewayApi.gateway.namespace | string | `""` | Optional namespace override for the Gateway resource (defaults to the release namespace). |
+| gatewayApi.httpRoutes[0].annotations | object | `{}` | Annotations to add to the HTTPRoute metadata. |
+| gatewayApi.httpRoutes[0].hostnames | list | `[]` | Hostnames handled by this route. Leave empty to match all hostnames. |
+| gatewayApi.httpRoutes[0].labels | object | `{}` | Labels to add to the HTTPRoute metadata. |
+| gatewayApi.httpRoutes[0].name | string | `""` | Optional explicit name for the HTTPRoute. |
+| gatewayApi.httpRoutes[0].nameSuffix | string | `"-httproute"` | Optional suffix appended to the autogenerated name when `name` is not set. |
+| gatewayApi.httpRoutes[0].namespace | string | `""` | Optional namespace override for the HTTPRoute (defaults to the release namespace). |
+| gatewayApi.httpRoutes[0].parentRefs | list | `[]` | Parent references attached to the route. When empty, the chart-generated Gateway is referenced automatically. |
+| gatewayApi.httpRoutes[0].rules | list | `[{"backendRefs":[{"group":"","kind":"","name":"","namespace":"","port":null,"service":{"name":"","nameSuffix":"","namespace":"","port":null},"weight":1}],"filters":[],"matches":[{"headers":[],"path":{"type":"PathPrefix","value":"/"}}]}]` | Rules evaluated by the HTTPRoute. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].group | string | `""` | Optional backend group override. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].kind | string | `""` | Optional backend kind override (defaults to Service when using service.* helper). |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].name | string | `""` | Explicit backend name. Takes precedence over service.* if set. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].namespace | string | `""` | Optional backend namespace. Defaults to the HTTPRoute namespace when unset. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].port | string | `nil` | Optional backend port. When unset, the service port or chart default is used. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service | object | `{"name":"","nameSuffix":"","namespace":"","port":null}` | Optionally reference a Service managed by this chart. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.name | string | `""` | Optional explicit service name. If empty, fullname plus nameSuffix is used. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.nameSuffix | string | `""` | Optional suffix appended to the release fullname when service.name is empty. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.namespace | string | `""` | Optional namespace override for the backend Service. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.port | string | `nil` | Optional port override for the backend Service. When empty, the first service port is used. |
+| gatewayApi.httpRoutes[0].rules[0].backendRefs[0].weight | int | `1` | Optional backend weight. |
 | image.configDir | string | `"/deployments/config"` | The path to the directory where the application.properties file should be mounted. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |

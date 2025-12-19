@@ -1,0 +1,95 @@
+{{/**
+
+  Copyright (C) 2024 Dremio
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+**/}}
+
+{{- if .Values.gatewayApi.enabled }}
+{{- $gatewayValues := .Values.gatewayApi.gateway | default (dict) -}}
+{{- $shouldCreate := default true $gatewayValues.create -}}
+{{- if $shouldCreate }}
+{{- $gatewayName := include "nessie.gateway.name" . -}}
+{{- $gatewayNamespace := include "nessie.gateway.namespace" . -}}
+apiVersion: gateway.networking.k8s.io/v1 
+kind: Gateway
+metadata:
+  name: {{ $gatewayName }}
+  namespace: {{ $gatewayNamespace }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+    {{- with $gatewayValues.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $gatewayValues.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ required "gatewayApi.gateway.gatewayClassName is required when gatewayApi is enabled" $gatewayValues.gatewayClassName }}
+  {{ with $gatewayValues.addresses }}
+  addresses:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- $listeners := $gatewayValues.listeners | default (list) }}
+  {{- if not (gt (len $listeners) 0) }}
+  {{- fail "gatewayApi.gateway.listeners must contain at least one listener" -}}
+  {{- end }}
+  listeners:
+    {{- range $listener := $listeners }}
+    - name: {{ required "gatewayApi.gateway.listeners[].name is required" $listener.name }}
+      port: {{ default 80 $listener.port }}
+      protocol: {{ default "HTTP" $listener.protocol }}
+      {{- if $listener.hostname }}
+      hostname: {{ $listener.hostname | quote }}
+      {{- end }}
+      {{- if $listener.allowedRoutes }}
+      allowedRoutes:
+        {{- toYaml $listener.allowedRoutes | nindent 8 }}
+      {{- else }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+      {{- end }}
+      {{- $tls := $listener.tls | default (dict) -}}
+      {{- if $tls.enabled }}
+      tls:
+        mode: {{ default "Terminate" $tls.mode }}
+        {{- with $tls.certificateRefs }}
+        certificateRefs:
+          {{- range $ref := . }}
+          - name: {{ required "gatewayApi.gateway.listeners[].tls.certificateRefs[] requires name" $ref.name }}
+            {{- if $ref.kind }}
+            kind: {{ $ref.kind }}
+            {{- end }}
+            {{- if $ref.group }}
+            group: {{ $ref.group }}
+            {{- end }}
+            {{- if $ref.namespace }}
+            namespace: {{ $ref.namespace }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- with $tls.options }}
+        options:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with $listener.timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
