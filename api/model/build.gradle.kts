@@ -62,6 +62,7 @@ dependencies {
   intTestImplementation(libs.awaitility)
   intTestImplementation(project(":nessie-container-spec-helper"))
   intTestCompileOnly(project(":nessie-immutables-std"))
+  intTestRuntimeOnly(libs.logback.classic)
 }
 
 extensions.configure<SmallryeOpenApiExtension> {

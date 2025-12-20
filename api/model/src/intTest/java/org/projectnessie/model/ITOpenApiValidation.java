@@ -20,7 +20,6 @@ import static java.lang.System.getProperty;
 import static java.nio.file.Files.copy;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -33,7 +32,6 @@ import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.PullResponseItem;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +39,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.DockerClientFactory;
+import org.testcontainers.images.RemoteDockerImage;
+import org.testcontainers.utility.DockerImageName;
 
 public class ITOpenApiValidation {
   @Test
@@ -69,25 +69,12 @@ public class ITOpenApiValidation {
     // Intentionally a StringBuffer, because it's synchronized
     StringBuffer buffer = new StringBuffer();
 
-    String image = dockerImage("redocly");
-
-    if (dockerClient.listImagesCmd().withImageNameFilter(image).exec().isEmpty()) {
-      dockerClient
-          .pullImageCmd(image)
-          .exec(
-              new ResultCallback.Adapter<>() {
-                @Override
-                public void onNext(PullResponseItem pullResponse) {
-                  // Just print something
-                  System.out.println(pullResponse);
-                }
-              })
-          .awaitCompletion(5, MINUTES);
-    }
+    // Pulls the image, if necessary.
+    String remoteDockerImage = new RemoteDockerImage(dockerImage("redocly")).get();
 
     CreateContainerResponse exec =
         dockerClient
-            .createContainerCmd(image)
+            .createContainerCmd(remoteDockerImage)
             .withCmd(asList("lint", "openapi.yaml"))
             .withHostConfig(
                 HostConfig.newHostConfig()
@@ -132,12 +119,11 @@ public class ITOpenApiValidation {
     }
   }
 
-  protected static String dockerImage(String name) {
+  protected static DockerImageName dockerImage(String name) {
     return ContainerSpecHelper.builder()
         .name(name)
         .containerClass(ITOpenApiValidation.class)
         .build()
-        .dockerImageName(null)
-        .toString();
+        .dockerImageName(null);
   }
 }
