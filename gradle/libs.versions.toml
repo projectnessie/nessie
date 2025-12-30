@@ -159,7 +159,7 @@ zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-6" }
 gatling = { id = "io.gatling.gradle", version = "3.14.9.4" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
-nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.0" }
+nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.1" }
 protobuf = { id = "com.google.protobuf", version = "0.9.6" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
