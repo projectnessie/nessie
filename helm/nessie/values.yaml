@@ -1105,8 +1105,3 @@ podDisruptionBudget:
     #  maxUnavailable: 50%
     #  minAvailable: 50%
     #  unhealthyPodEvictionPolicy: AlwaysAllow
-
-# -- Chart test configuration.
-tests:
-  # -- Specifies whether chart tests should be enabled.
-  enabled: true

@@ -436,8 +436,6 @@ are unavailable.
 | serviceMonitor.interval | string | `""` | The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s. |
 | serviceMonitor.labels | object | `{}` | Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up. |
 | serviceMonitor.metricRelabelings | list | `[]` | Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config. |
-| tests | object | `{"enabled":true}` | Chart test configuration. |
-| tests.enabled | bool | `true` | Specifies whether chart tests should be enabled. |
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here. |
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |

@@ -1,4 +1,4 @@
-{{- if .Values.tests.enabled }}
+{{- if not (and .Values.tests .Values.tests.disabled) }}
 apiVersion: v1
 kind: Pod
 metadata:
