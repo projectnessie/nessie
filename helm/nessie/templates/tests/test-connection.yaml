@@ -1,3 +1,4 @@
+{{- if not (and .Values.tests .Values.tests.disabled) }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -18,3 +19,4 @@ spec:
       image: busybox
       command: [ 'sleep', '10' ]
   restartPolicy: Never
+{{- end }}
