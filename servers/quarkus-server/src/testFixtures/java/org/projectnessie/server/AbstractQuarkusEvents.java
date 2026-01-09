@@ -50,7 +50,7 @@ import org.projectnessie.events.api.ReferenceUpdatedEvent;
 import org.projectnessie.events.api.TransplantEvent;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.MergeResponse;
@@ -330,7 +330,7 @@ public abstract class AbstractQuarkusEvents {
             eventInitiator(),
             ImmutableMap.of("foo", "bar"),
             "key1",
-            Type.ICEBERG_TABLE);
+            Content.Type.ICEBERG_TABLE);
   }
 
   private void checkReferenceCreatedEvent(List<Event> events, Branch branch) {

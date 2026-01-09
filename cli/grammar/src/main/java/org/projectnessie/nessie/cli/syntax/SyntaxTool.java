@@ -127,7 +127,7 @@ public class SyntaxTool {
           }
 
           @Override
-          public void write(Type type, String str) {
+          public void write(SyntaxPrinter.Type type, String str) {
             String pre = "";
             String post = "";
             switch (type) {
@@ -192,7 +192,7 @@ public class SyntaxTool {
           }
 
           @Override
-          public void write(Type type, String str) {
+          public void write(SyntaxPrinter.Type type, String str) {
             sb.append(str, styleMap.get(type));
           }
         };
@@ -224,7 +224,7 @@ public class SyntaxTool {
           }
 
           @Override
-          public void write(Type type, String str) {
+          public void write(SyntaxPrinter.Type type, String str) {
             sb.append(str);
           }
         };
@@ -255,6 +255,8 @@ public class SyntaxTool {
           @Override
           public void write(Type type, String str) {
             if (type == Type.NON_TERMINAL) {
+          public void write(SyntaxPrinter.Type type, String str) {
+            if (type == SyntaxPrinter.Type.NON_TERMINAL) {
               if (seen.add(str)) {
                 sb.append(str).append('\n');
               }

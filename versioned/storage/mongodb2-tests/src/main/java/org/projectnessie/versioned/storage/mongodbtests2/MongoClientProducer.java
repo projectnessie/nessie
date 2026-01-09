@@ -18,12 +18,11 @@ package org.projectnessie.versioned.storage.mongodbtests2;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.mongodbtests2.ImmutableMongoClientProducer.Builder;
 
 @Value.Immutable
 public abstract class MongoClientProducer {
 
-  static Builder builder() {
+  static ImmutableMongoClientProducer.Builder builder() {
     return ImmutableMongoClientProducer.builder();
   }
 

@@ -45,7 +45,6 @@ import org.projectnessie.versioned.MetadataRewriter;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TransplantResult;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
@@ -170,7 +169,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
     return createCommitBuilder.build();
   }
 
-  MergeTransplantContext loadSourceCommitsForTransplant(VersionStore.TransplantOp transplantOp)
+  MergeTransplantContext loadSourceCommitsForTransplant(TransplantOp transplantOp)
       throws ReferenceNotFoundException {
     List<Hash> commitHashes = transplantOp.sequenceToTransplant();
 

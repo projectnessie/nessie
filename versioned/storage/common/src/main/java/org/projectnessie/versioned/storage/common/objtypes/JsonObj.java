@@ -18,8 +18,6 @@ package org.projectnessie.versioned.storage.common.objtypes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -69,7 +67,10 @@ public interface JsonObj extends Obj {
     String type();
 
     @JsonProperty("o")
-    @JsonTypeInfo(use = Id.CLASS, include = As.EXTERNAL_PROPERTY, property = "t")
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
+        property = "t")
     @Nullable
     Object object();
   }

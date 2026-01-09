@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.projectnessie.cel.tools.ScriptException;
-import org.projectnessie.model.Content.Type;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.RepositoryConfig;
 import org.projectnessie.services.authz.AbstractBatchAccessChecker;
@@ -132,7 +132,8 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   private void canPerformOpOnPath(Check check, Map<Check, String> failed) {
     String role = roleName();
     String op = check.type().name();
-    String contentType = Optional.ofNullable(check.contentType()).map(Type::name).orElse("");
+    String contentType =
+        Optional.ofNullable(check.contentType()).map(Content.Type::name).orElse("");
     String path = Optional.ofNullable(check.key()).map(ContentKey::toPathString).orElse("");
     String ref = Optional.ofNullable(check.ref()).map(NamedRef::getName).orElse("");
     Map<String, Object> arguments =

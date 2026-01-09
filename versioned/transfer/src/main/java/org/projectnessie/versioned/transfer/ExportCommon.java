@@ -169,7 +169,7 @@ abstract class ExportCommon {
         exporter.repositoryLogic().fetchRepositoryDescription();
     if (repositoryDescription != null) {
       writeRepositoryDescription(
-          TransferTypes.RepositoryDescriptionProto.newBuilder()
+          RepositoryDescriptionProto.newBuilder()
               .putAllProperties(repositoryDescription.properties())
               .setRepositoryId(exporter.persist().config().repositoryId())
               .setRepositoryCreatedTimestampMillis(

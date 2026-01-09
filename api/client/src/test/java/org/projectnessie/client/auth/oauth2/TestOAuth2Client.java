@@ -541,7 +541,7 @@ class TestOAuth2Client {
 
   @Test
   void testRefreshTokenExpired() throws Exception {
-    HttpTestServer.RequestHandler handler = (req, resp) -> {};
+    RequestHandler handler = (req, resp) -> {};
     try (HttpTestServer server = new HttpTestServer(handler, false)) {
 
       OAuth2ClientConfig config = configBuilder(server, false).build();
@@ -596,7 +596,7 @@ class TestOAuth2Client {
     }
   }
 
-  private class TestRequestHandler implements HttpTestServer.RequestHandler {
+  private class TestRequestHandler implements RequestHandler {
 
     private volatile boolean deviceAuthorized = false;
 
@@ -805,7 +805,7 @@ class TestOAuth2Client {
     }
   }
 
-  private HttpTestServer.RequestHandler handler() {
+  private RequestHandler handler() {
     return new TestRequestHandler();
   }
 

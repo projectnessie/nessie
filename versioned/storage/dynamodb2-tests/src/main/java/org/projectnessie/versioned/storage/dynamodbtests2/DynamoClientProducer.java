@@ -17,7 +17,6 @@ package org.projectnessie.versioned.storage.dynamodbtests2;
 
 import java.net.URI;
 import org.immutables.value.Value;
-import org.projectnessie.versioned.storage.dynamodbtests2.ImmutableDynamoClientProducer.Builder;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -27,7 +26,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 @Value.Immutable
 abstract class DynamoClientProducer {
 
-  static Builder builder() {
+  static ImmutableDynamoClientProducer.Builder builder() {
     return ImmutableDynamoClientProducer.builder();
   }
 

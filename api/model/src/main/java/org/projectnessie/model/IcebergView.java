@@ -55,14 +55,14 @@ public abstract class IcebergView extends IcebergContent {
   @jakarta.validation.constraints.NotBlank
   @Nullable
   @jakarta.annotation.Nullable
-  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonInclude(Include.NON_NULL)
   @Deprecated
   @SuppressWarnings("DeprecatedIsStillUsed")
   public abstract String getSqlText();
 
   @Nullable
   @jakarta.annotation.Nullable
-  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonInclude(Include.NON_NULL)
   @Deprecated
   @SuppressWarnings("DeprecatedIsStillUsed")
   public abstract String getDialect();

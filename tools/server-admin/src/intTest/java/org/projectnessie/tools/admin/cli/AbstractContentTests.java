@@ -44,7 +44,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.storage.common.logic.CommitLogic;
-import org.projectnessie.versioned.storage.common.logic.CreateCommit.Builder;
+import org.projectnessie.versioned.storage.common.logic.CreateCommit;
 import org.projectnessie.versioned.storage.common.logic.CreateCommit.Remove;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
@@ -137,7 +137,7 @@ abstract class AbstractContentTests<OutputType> {
       throws Exception {
 
     Reference refMain = referenceLogic(persist).getReference("refs/heads/main");
-    Builder builder =
+    CreateCommit.Builder builder =
         newCommitBuilder()
             .parentCommitId(refMain.pointer())
             .message(contentId.toString())

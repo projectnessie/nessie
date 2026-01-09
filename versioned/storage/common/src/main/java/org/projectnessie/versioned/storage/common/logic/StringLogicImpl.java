@@ -38,7 +38,6 @@ import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundExceptio
 import org.projectnessie.versioned.storage.common.indexes.StoreIndex;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexElement;
 import org.projectnessie.versioned.storage.common.indexes.StoreKey;
-import org.projectnessie.versioned.storage.common.logic.CreateCommit.Builder;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
@@ -90,7 +89,7 @@ final class StringLogicImpl implements StringLogic {
   public StringValue updateStringOnRef(
       Reference reference,
       StoreKey storeKey,
-      Consumer<Builder> commitEnhancer,
+      Consumer<CreateCommit.Builder> commitEnhancer,
       String contentType,
       byte[] stringValueUtf8)
       throws ObjNotFoundException,
