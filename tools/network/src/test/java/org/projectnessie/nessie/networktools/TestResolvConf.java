@@ -35,6 +35,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(SoftAssertionsExtension.class)
+@SuppressWarnings("AddressSelection")
 public class TestResolvConf {
   @InjectSoftAssertions protected SoftAssertions soft;
 

@@ -78,6 +78,7 @@ public final class MinioContainer extends GenericContainer<MinioContainer>
       name = "localhost";
     } else {
       try {
+        @SuppressWarnings("AddressSelection")
         InetAddress ignored = InetAddress.getByName(MINIO_DOMAIN_NIP);
         name = MINIO_DOMAIN_NIP;
       } catch (UnknownHostException x) {
