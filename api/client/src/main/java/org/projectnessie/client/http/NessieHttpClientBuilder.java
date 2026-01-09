@@ -184,7 +184,7 @@ public interface NessieHttpClientBuilder extends NessieClientBuilder {
     }
 
     @Override
-    @SuppressWarnings("DeprecatedIsStillUsed")
+    @SuppressWarnings({"DeprecatedIsStillUsed", "InlineMeSuggester"})
     @Deprecated
     public NessieHttpClientBuilder withForceUrlConnectionClient(boolean forceUrlConnectionClient) {
       return this;
