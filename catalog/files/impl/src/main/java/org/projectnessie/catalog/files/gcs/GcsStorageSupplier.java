@@ -135,9 +135,11 @@ public final class GcsStorageSupplier {
 
     try {
       AccessToken token = downscopedCredentials.refreshAccessToken();
+      @SuppressWarnings("JavaUtilDate")
+      long expirationTimeMillis = token.getExpirationTime().getTime();
       return Optional.of(
           TokenSecret.tokenSecret(
-              token.getTokenValue(), Instant.ofEpochMilli(token.getExpirationTime().getTime())));
+              token.getTokenValue(), Instant.ofEpochMilli(expirationTimeMillis)));
     } catch (IOException e) {
       LOGGER.error(
           "Failed refresh access token for downscoped credentials for warehouse {}",

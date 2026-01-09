@@ -181,7 +181,15 @@ public final class GcsClients {
           AccessToken accessToken =
               new AccessToken(
                   oauth2token.token(),
-                  oauth2token.expiresAt().map(i -> new Date(i.toEpochMilli())).orElse(null));
+                  oauth2token
+                      .expiresAt()
+                      .map(
+                          i -> {
+                            @SuppressWarnings("JavaUtilDate")
+                            Date d = new Date(i.toEpochMilli());
+                            return d;
+                          })
+                      .orElse(null));
           return OAuth2Credentials.create(accessToken);
         }
       case APPLICATION_DEFAULT:

@@ -215,43 +215,48 @@ public class GcsResource {
       // TODO Iceberg does this :(    return notImplemented();
     }
 
-    return withBucketObject(
-        bucketName,
-        objectName,
-        obj -> {
-          if (unmodifiedSince != null && unmodifiedSince.getTime() > obj.lastModified()) {
-            return preconditionFailed();
-          }
-          if (modifiedSince != null && modifiedSince.getTime() > obj.lastModified()) {
-            return notModified(obj.etag());
-          }
-          if (!match.isEmpty() && !match.contains(obj.etag())) {
-            return preconditionFailed();
-          }
-          if (!noneMatch.isEmpty() && noneMatch.contains(obj.etag())) {
-            return notModified(obj.etag());
-          }
-
-          switch (alt) {
-            case json:
-              return Response.ok(
-                      storageObject(bucketName, objectName, obj), MediaType.APPLICATION_JSON_TYPE)
-                  .build();
-            case media:
-              StreamingOutput stream = output -> obj.writer().write(range, output);
-              Response.ResponseBuilder responseBuilder =
-                  Response.ok(stream)
-                      .tag(obj.etag())
-                      .type(obj.contentType())
-                      .lastModified(new Date(obj.lastModified()));
-              if (range == null) {
-                responseBuilder.header(CONTENT_LENGTH, obj.contentLength());
+    @SuppressWarnings("JavaUtilDate")
+    Response r =
+        withBucketObject(
+            bucketName,
+            objectName,
+            obj -> {
+              if (unmodifiedSince != null && unmodifiedSince.getTime() > obj.lastModified()) {
+                return preconditionFailed();
               }
-              return responseBuilder.build();
-            default:
-              throw new IllegalArgumentException("alt = " + alt);
-          }
-        });
+              if (modifiedSince != null && modifiedSince.getTime() > obj.lastModified()) {
+                return notModified(obj.etag());
+              }
+              if (!match.isEmpty() && !match.contains(obj.etag())) {
+                return preconditionFailed();
+              }
+              if (!noneMatch.isEmpty() && noneMatch.contains(obj.etag())) {
+                return notModified(obj.etag());
+              }
+
+              switch (alt) {
+                case json:
+                  return Response.ok(
+                          storageObject(bucketName, objectName, obj),
+                          MediaType.APPLICATION_JSON_TYPE)
+                      .build();
+                case media:
+                  StreamingOutput stream = output -> obj.writer().write(range, output);
+                  @SuppressWarnings("JavaUtilDate")
+                  Response.ResponseBuilder responseBuilder =
+                      Response.ok(stream)
+                          .tag(obj.etag())
+                          .type(obj.contentType())
+                          .lastModified(new Date(obj.lastModified()));
+                  if (range == null) {
+                    responseBuilder.header(CONTENT_LENGTH, obj.contentLength());
+                  }
+                  return responseBuilder.build();
+                default:
+                  throw new IllegalArgumentException("alt = " + alt);
+              }
+            });
+    return r;
   }
 
   @PUT

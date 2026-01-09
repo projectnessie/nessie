@@ -177,13 +177,16 @@ public class AdlsGen2Resource {
           long end =
               range != null ? Math.min(range.end(), obj.contentLength()) : obj.contentLength();
 
-          return Response.ok(stream)
-              .tag(obj.etag())
-              .type(contentType)
-              .header(CONTENT_LENGTH, obj.contentLength())
-              .header(CONTENT_RANGE, "bytes " + start + "-" + end + "/" + obj.contentLength())
-              .lastModified(new Date(obj.lastModified()))
-              .build();
+          @SuppressWarnings("JavaUtilDate")
+          Response r =
+              Response.ok(stream)
+                  .tag(obj.etag())
+                  .type(contentType)
+                  .header(CONTENT_LENGTH, obj.contentLength())
+                  .header(CONTENT_RANGE, "bytes " + start + "-" + end + "/" + obj.contentLength())
+                  .lastModified(new Date(obj.lastModified()))
+                  .build();
+          return r;
         });
   }
 
@@ -206,6 +209,7 @@ public class AdlsGen2Resource {
             return keyNotFound();
           }
 
+          @SuppressWarnings("JavaUtilDate")
           Response.ResponseBuilder responseBuilder =
               Response.ok()
                   .tag(obj.etag())
