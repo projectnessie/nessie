@@ -72,7 +72,7 @@ public abstract class AbstractClients {
       }
       String response1;
       try (InputStream input = objectIO.readObject(uri)) {
-        response1 = new String(input.readAllBytes());
+        response1 = new String(input.readAllBytes(), UTF_8);
       }
       soft.assertThat(response1).isEqualTo("hello world");
 
@@ -134,10 +134,10 @@ public abstract class AbstractClients {
       String response1;
       String response2;
       try (InputStream input = objectIO.readObject(buildURI(BUCKET_1, key1))) {
-        response1 = new String(input.readAllBytes());
+        response1 = new String(input.readAllBytes(), UTF_8);
       }
       try (InputStream input = objectIO.readObject(buildURI(BUCKET_2, key2))) {
-        response2 = new String(input.readAllBytes());
+        response2 = new String(input.readAllBytes(), UTF_8);
       }
       soft.assertThat(response1).isEqualTo(answer1 + key1);
       soft.assertThat(response2).isEqualTo(answer2 + key2);

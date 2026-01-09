@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +56,7 @@ public final class ResolvConf {
    * syntax of the {@code /etc/resolv.conf} file, see {@code man resolv.conf}.
    */
   public static ResolvConf fromFile(String file) throws IOException {
-    try (FileReader fileReader = new FileReader(file);
+    try (FileReader fileReader = new FileReader(file, StandardCharsets.US_ASCII);
         BufferedReader reader = new BufferedReader(fileReader)) {
       return fromReader(reader);
     }

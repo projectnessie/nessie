@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -172,7 +173,7 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
   }
 
   private static String asEnvVar(String key) {
-    return key.replaceAll("[.\\-\"]", "_").toUpperCase();
+    return key.replaceAll("[.\\-\"]", "_").toUpperCase(Locale.ROOT);
   }
 
   private static void initArgs(
