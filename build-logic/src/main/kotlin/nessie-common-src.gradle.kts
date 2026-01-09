@@ -106,6 +106,7 @@ tasks.withType<JavaCompile>().configureEach {
   if (!project.extra.has("duplicated-project-sources")) {
     options.errorprone.disableAllChecks = true
   } else {
+    options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
     options.errorprone.disableWarningsInGeneratedCode = true
 
     val errorproneRules = rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
