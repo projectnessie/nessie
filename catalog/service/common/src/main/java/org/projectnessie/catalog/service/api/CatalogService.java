@@ -48,7 +48,6 @@ public interface CatalogService {
    * @param key content key of the table or view
    * @param expectedType The expected content-type.
    * @param requestMeta additional information for access checks
-   * @param apiContext
    * @return The response is either a response object or callback to produce the result. The latter
    *     is useful to return results that are quite big, for example Iceberg manifest lists or
    *     manifest files.

@@ -58,12 +58,8 @@ import javax.sql.DataSource;
 import org.projectnessie.versioned.storage.common.exceptions.UnknownOperationResultException;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.common.persist.PersistFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class JdbcBackend implements Backend {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(JdbcBackend.class);
 
   private static final int MAX_CREATE_TABLE_RECURSION_DEPTH = 3;
 

@@ -27,7 +27,6 @@ import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionFieldSumma
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
 import org.projectnessie.catalog.formats.iceberg.types.IcebergType;
-import org.projectnessie.catalog.model.manifest.BooleanArray;
 
 public class IcebergColumnStatsCollector {
   private final IcebergPartitionSpec partitionSpec;
@@ -122,6 +121,7 @@ public class IcebergColumnStatsCollector {
         .existingFilesCount(existingDataFilesCount);
   }
 
+  @SuppressWarnings("UnusedVariable")
   private static final class PartitionFieldSummaryBuilder {
     final IcebergType type;
     final int fieldId;
@@ -147,33 +147,6 @@ public class IcebergColumnStatsCollector {
 
     private Boolean containsNan() {
       return nanValueCount > 0 ? true : null;
-    }
-
-    public void intoNessieFieldSummaries(
-        int i,
-        int[] fieldIds,
-        BooleanArray containsNan,
-        BooleanArray containsNull,
-        long[] nanValueCount,
-        long[] nullValueCount,
-        byte[][] upperBound,
-        byte[][] lowerBound,
-        long[] valueCount) {
-      fieldIds[i] = this.fieldId;
-      containsNan.set(i, this.nanValueCount > 0 ? Boolean.TRUE : null);
-      containsNull.set(i, this.nullValueCount > 0);
-      nanValueCount[i] = this.nanValueCount;
-      nullValueCount[i] = this.nullValueCount;
-      upperBound[i] = this.upperBoundBytes();
-      lowerBound[i] = this.lowerBoundBytes();
-      valueCount[i] = this.valueCount;
-    }
-
-    static byte encodeNullableBoolean(Boolean b) {
-      if (b == null) {
-        return 0;
-      }
-      return (byte) (b ? 1 : 2);
     }
 
     private byte[] lowerBoundBytes() {

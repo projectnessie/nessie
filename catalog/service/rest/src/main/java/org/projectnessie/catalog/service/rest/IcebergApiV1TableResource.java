@@ -608,6 +608,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     pushMetrics(tableRef, reportMetricsRequest);
   }
 
+  @SuppressWarnings({"UnusedVariable", "unused"})
   private void pushMetrics(TableRef tableRef, IcebergMetricsReport report) {
     // TODO push metrics to "somewhere".
     // TODO note that metrics for "staged tables" are also received, even if those do not yet exist

@@ -114,7 +114,6 @@ public class TestSecretsValidation {
   static Stream<Arguments> lakehouseConfig() {
     URI noManager = URI.create("urn:nessie-secret:foo:bar");
     URI notFound = URI.create("urn:nessie-secret:plain:bar");
-    URI fail = URI.create("urn:nessie-secret:plain:fail");
 
     Supplier<ImmutableLakehouseConfig.Builder> builder =
         () ->
