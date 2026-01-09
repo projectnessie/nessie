@@ -53,6 +53,7 @@ public class HttpResponse {
     }
   }
 
+  @SuppressWarnings("TypeParameterUnusedInFormals")
   private <V> V decodeEntity(ObjectReader reader, InputStream is) throws IOException {
     if (is != null) {
       CapturingInputStream capturing = new CapturingInputStream(is);
