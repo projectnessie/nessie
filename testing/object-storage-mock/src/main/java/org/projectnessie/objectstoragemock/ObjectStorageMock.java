@@ -123,7 +123,7 @@ public abstract class ObjectStorageMock {
 
     private final URI baseUri;
 
-    public MockServerImpl(URI initUri, ResourceConfig config) {
+    MockServerImpl(URI initUri, ResourceConfig config) {
       this.server = JettyHttpContainerFactory.createServer(initUri, config, true);
       customizeUriCompliance();
       this.baseUri = baseUri(server, initUri);

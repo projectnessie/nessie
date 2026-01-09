@@ -791,7 +791,7 @@ public class DynamoDBPersist implements Persist {
     private final Iterator<ScanResponse> iter;
     private Iterator<Map<String, AttributeValue>> pageIter = emptyListIterator();
 
-    public ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
+    ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
 
       Map<String, Condition> scanFilter = new HashMap<>();
       scanFilter.put(KEY_NAME, condition(BEGINS_WITH, fromS(keyPrefix)));

@@ -183,7 +183,7 @@ public final class CELUtil {
     }
 
     @Override
-    protected ContentKey key() {
+    ContentKey key() {
       return contentKey;
     }
 
@@ -208,7 +208,7 @@ public final class CELUtil {
     }
 
     @Override
-    protected ContentKey key() {
+    ContentKey key() {
       return key;
     }
 
@@ -249,7 +249,7 @@ public final class CELUtil {
     }
 
     @Override
-    protected ContentKey key() {
+    ContentKey key() {
       return op.getKey();
     }
 
@@ -279,7 +279,7 @@ public final class CELUtil {
   }
 
   private abstract static class AbstractKeyedEntity implements KeyedEntityForCel {
-    protected abstract ContentKey key();
+    abstract ContentKey key();
 
     @Override
     public List<String> getKeyElements() {

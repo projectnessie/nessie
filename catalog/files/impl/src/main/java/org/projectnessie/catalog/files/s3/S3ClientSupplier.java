@@ -137,7 +137,7 @@ public class S3ClientSupplier {
 
     private final String accessPoint;
 
-    public AccessPointAwareS3Client(S3Client s3Client, String accessPoint) {
+    AccessPointAwareS3Client(S3Client s3Client, String accessPoint) {
       super(s3Client);
       this.accessPoint = accessPoint;
     }

@@ -64,7 +64,7 @@ final class OAuth2TokenRefreshExecutor extends ScheduledThreadPoolExecutor
     private final String clientName;
     private final AtomicInteger threadCounter = new AtomicInteger();
 
-    public OAuth2TokenRefreshThreadFactory(String clientName) {
+    OAuth2TokenRefreshThreadFactory(String clientName) {
       this.clientName = clientName;
     }
 

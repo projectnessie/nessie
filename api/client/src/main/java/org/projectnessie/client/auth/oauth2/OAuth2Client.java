@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  */
 class OAuth2Client implements OAuth2Authenticator, Closeable {
 
-  static final Logger LOGGER = LoggerFactory.getLogger(OAuth2Client.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(OAuth2Client.class);
   private static final Duration MIN_WARN_INTERVAL = Duration.ofSeconds(10);
 
   private final OAuth2ClientConfig config;

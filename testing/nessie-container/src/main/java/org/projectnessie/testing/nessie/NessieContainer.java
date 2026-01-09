@@ -259,7 +259,7 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
 
     private final String networkId;
 
-    public ExternalNetwork(String networkId) {
+    ExternalNetwork(String networkId) {
       this.networkId = networkId;
     }
 

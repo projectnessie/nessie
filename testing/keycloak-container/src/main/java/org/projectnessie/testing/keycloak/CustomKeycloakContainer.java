@@ -403,7 +403,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
     private final String networkId;
 
-    public ExternalNetwork(String networkId) {
+    ExternalNetwork(String networkId) {
       this.networkId = networkId;
     }
 
