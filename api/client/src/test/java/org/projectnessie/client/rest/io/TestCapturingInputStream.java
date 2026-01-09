@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.google.common.base.Strings;
 import java.io.ByteArrayInputStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,7 +58,7 @@ class TestCapturingInputStream {
   }
 
   static Stream<Arguments> capturingInputStream() {
-    String longString = Strings.repeat("hello world", 500);
+    String longString = "hello world".repeat(500);
     return Stream.of(
         arguments(0, new byte[0], ""),
         arguments(16, new byte[0], ""),

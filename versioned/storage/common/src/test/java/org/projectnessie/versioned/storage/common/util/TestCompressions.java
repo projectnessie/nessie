@@ -36,7 +36,7 @@ public class TestCompressions {
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 40, KEEP_UNCOMPRESSED - 1, KEEP_UNCOMPRESSED})
   public void keepUncompressed(int len) {
-    byte[] data = ("x".repeat(len)).getBytes(UTF_8);
+    byte[] data = "x".repeat(len).getBytes(UTF_8);
     AtomicReference<Compression> compression = new AtomicReference<>();
     byte[] compressed = Compressions.compressDefault(data, compression::set);
     soft.assertThat(compressed).isSameAs(data);
@@ -46,7 +46,7 @@ public class TestCompressions {
   @ParameterizedTest
   @ValueSource(ints = {KEEP_UNCOMPRESSED + 1, 32768})
   public void doCompress(int len) {
-    byte[] data = ("x".repeat(len)).getBytes(UTF_8);
+    byte[] data = "x".repeat(len).getBytes(UTF_8);
     AtomicReference<Compression> compression = new AtomicReference<>();
     byte[] compressed = Compressions.compressDefault(data, compression::set);
     soft.assertThat(compressed.length).isLessThan(data.length);
@@ -58,7 +58,7 @@ public class TestCompressions {
       value = Compression.class,
       names = {"NONE", "SNAPPY", "DEFLATE", "GZIP"})
   public void supportedCompression(Compression compression) {
-    byte[] data = ("x".repeat(10)).getBytes(UTF_8);
+    byte[] data = "x".repeat(10).getBytes(UTF_8);
     byte[] compressed = Compressions.compress(compression, data);
     byte[] uncompressed = Compressions.uncompress(compression, compressed);
     soft.assertThat(uncompressed).containsExactly(data);
@@ -69,7 +69,7 @@ public class TestCompressions {
   public void unsupportedCompression(Compression compression) {
     assumeThat(compression)
         .isNotIn(Compression.NONE, Compression.SNAPPY, Compression.DEFLATE, Compression.GZIP);
-    byte[] data = ("x".repeat(10)).getBytes(UTF_8);
+    byte[] data = "x".repeat(10).getBytes(UTF_8);
     soft.assertThatIllegalArgumentException()
         .isThrownBy(() -> Compressions.compress(compression, data))
         .withMessage("Compression %s not implemented", compression.name());
