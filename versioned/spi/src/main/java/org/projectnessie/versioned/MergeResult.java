@@ -33,6 +33,7 @@ public interface MergeResult extends MergeTransplantResultBase {
     @CanIgnoreReturnValue
     Builder sourceHash(Hash sourceHash);
 
+    @Override
     MergeResult build();
   }
 

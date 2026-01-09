@@ -502,6 +502,7 @@ public interface NessieClientBuilder {
       return this;
     }
 
+    @Override
     public NessieClientBuilder withHttpHeader(String header, String value) {
       return this;
     }

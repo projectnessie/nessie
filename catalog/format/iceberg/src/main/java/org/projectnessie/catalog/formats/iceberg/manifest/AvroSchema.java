@@ -171,6 +171,7 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
     }
   }
 
+  @Override
   public AvroField field(int index) {
     return fields[index];
   }

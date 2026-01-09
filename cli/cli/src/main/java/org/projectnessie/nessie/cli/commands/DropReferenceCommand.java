@@ -79,10 +79,12 @@ public class DropReferenceCommand extends NessieCommand<DropReferenceCommandSpec
             .append(deleted.getHash(), STYLE_FAINT));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.DROP + " " + Token.TokenType.BRANCH + "/" + Token.TokenType.TAG;
   }
 
+  @Override
   public String description() {
     return "Delete a branch or tag.";
   }

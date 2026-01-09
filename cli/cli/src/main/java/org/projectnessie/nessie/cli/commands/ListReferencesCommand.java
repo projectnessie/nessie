@@ -67,10 +67,12 @@ public class ListReferencesCommand extends NessieListingCommand<ListReferencesCo
                         .toAnsi(cli.terminal())));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.LIST + " " + Token.TokenType.REFERENCES;
   }
 
+  @Override
   public String description() {
     return "List named references (branches and tags).";
   }

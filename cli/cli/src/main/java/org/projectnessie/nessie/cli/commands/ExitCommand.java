@@ -30,10 +30,12 @@ public class ExitCommand extends NessieCommand<ExitCommandSpec> {
     cli.exitRepl(0);
   }
 
+  @Override
   public String name() {
     return Token.TokenType.EXIT.name();
   }
 
+  @Override
   public String description() {
     return "Exit the Nessie REPL.";
   }

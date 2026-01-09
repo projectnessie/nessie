@@ -70,10 +70,12 @@ public class ShowReferenceCommand extends NessieCommand<ShowReferenceCommandSpec
                 .toAnsi(terminal));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.SHOW + " " + Token.TokenType.REFERENCE;
   }
 
+  @Override
   public String description() {
     return "Information about a reference.";
   }

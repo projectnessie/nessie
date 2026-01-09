@@ -102,6 +102,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
   protected final SoftAssertions soft = new SoftAssertions();
 
+  @Override
   protected RESTCatalog catalog() {
     return CATALOGS.getCatalog(catalogOptions());
   }

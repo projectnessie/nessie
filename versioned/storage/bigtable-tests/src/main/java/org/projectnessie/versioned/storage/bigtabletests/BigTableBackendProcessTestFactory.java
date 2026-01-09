@@ -61,10 +61,12 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
     return BigTableBackendFactory.NAME + "Process";
   }
 
+  @Override
   public String getEmulatorHost() {
     return emulatorHost;
   }
 
+  @Override
   public int getEmulatorPort() {
     return emulatorPort;
   }

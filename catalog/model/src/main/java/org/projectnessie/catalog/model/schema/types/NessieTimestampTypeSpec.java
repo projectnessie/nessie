@@ -38,6 +38,7 @@ public interface NessieTimestampTypeSpec extends NessieTypeSpec {
     return NessieType.TIMESTAMP;
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     return targetBuffer
         .append("timestamp(")

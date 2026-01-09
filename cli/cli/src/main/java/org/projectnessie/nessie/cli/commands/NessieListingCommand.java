@@ -31,6 +31,7 @@ import org.projectnessie.nessie.cli.cmdspec.CommandSpec;
 
 public abstract class NessieListingCommand<SPEC extends CommandSpec> extends NessieCommand<SPEC> {
 
+  @Override
   public void execute(@Nonnull BaseNessieCli cli, SPEC spec) throws Exception {
     Terminal terminal = cli.terminal();
     PrintStream ps = new PrintStream(terminal.output());

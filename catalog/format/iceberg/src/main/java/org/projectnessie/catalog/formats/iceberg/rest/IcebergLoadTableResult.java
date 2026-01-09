@@ -77,9 +77,11 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
     B from(IcebergLoadTableResult instance);
 
     @CanIgnoreReturnValue
+    @Override
     B metadataLocation(@Nullable String metadataLocation);
 
     @CanIgnoreReturnValue
+    @Override
     B metadata(IcebergTableMetadata metadata);
 
     @CanIgnoreReturnValue
@@ -106,6 +108,7 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
     @CanIgnoreReturnValue
     B putAllConfig(Map<String, ? extends String> entries);
 
+    @Override
     R build();
   }
 }

@@ -83,10 +83,12 @@ public class AlterNamespaceCommand extends NessieCommittingCommand<AlterNamespac
     return committed;
   }
 
+  @Override
   public String name() {
     return Token.TokenType.ALTER + " " + Token.TokenType.NAMESPACE;
   }
 
+  @Override
   public String description() {
     return "Changes a new namespace.";
   }

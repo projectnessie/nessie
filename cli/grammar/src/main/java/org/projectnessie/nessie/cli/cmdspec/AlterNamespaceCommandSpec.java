@@ -23,6 +23,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface AlterNamespaceCommandSpec extends RefCommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.ALTER_NAMESPACE;
   }

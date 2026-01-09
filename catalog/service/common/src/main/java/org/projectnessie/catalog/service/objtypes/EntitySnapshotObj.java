@@ -90,6 +90,7 @@ public interface EntitySnapshotObj extends TaskObj {
     Builder from(EntitySnapshotObj obj);
 
     @CanIgnoreReturnValue
+    @Override
     Builder id(ObjId id);
 
     @CanIgnoreReturnValue
@@ -102,8 +103,10 @@ public interface EntitySnapshotObj extends TaskObj {
     Builder content(Content content);
 
     @CanIgnoreReturnValue
+    @Override
     Builder taskState(TaskState taskState);
 
+    @Override
     EntitySnapshotObj build();
   }
 }

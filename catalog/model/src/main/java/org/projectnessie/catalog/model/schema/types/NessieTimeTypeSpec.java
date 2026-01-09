@@ -40,6 +40,7 @@ public interface NessieTimeTypeSpec extends NessieTypeSpec {
     idHasher.hash(type().lowerCaseName()).hash(precision()).hash(withTimeZone());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     return targetBuffer
         .append("time(")

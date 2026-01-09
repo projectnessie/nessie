@@ -46,6 +46,7 @@ public interface NessieListTypeSpec extends NessieTypeSpec {
         .hash(elementsNullable());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     targetBuffer.append("list<");
     elementType().asString(targetBuffer);

@@ -154,6 +154,7 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
     return Arrays.stream(sw.toString().split("\n"));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.SHOW
         + " "
@@ -164,6 +165,7 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
         + Token.TokenType.NAMESPACE;
   }
 
+  @Override
   public String description() {
     return "Show content.";
   }

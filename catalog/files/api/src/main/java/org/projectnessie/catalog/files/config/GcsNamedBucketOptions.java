@@ -28,6 +28,7 @@ public interface GcsNamedBucketOptions extends GcsBucketOptions, PerBucket {
 
   @Value.NonAttribute
   @JsonIgnore
+  @Override
   default GcsNamedBucketOptions deepClone() {
     return ImmutableGcsNamedBucketOptions.builder()
         .from(GcsBucketOptions.super.deepClone())

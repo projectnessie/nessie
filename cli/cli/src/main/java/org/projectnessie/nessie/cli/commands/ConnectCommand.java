@@ -287,10 +287,12 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
     return false;
   }
 
+  @Override
   public String name() {
     return Token.TokenType.CONNECT.name();
   }
 
+  @Override
   public String description() {
     return "Connect to a Nessie repository.";
   }

@@ -213,10 +213,12 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     }
   }
 
+  @Override
   public String name() {
     return Token.TokenType.HELP.name();
   }
 
+  @Override
   public String description() {
     return "Prints help information.";
   }

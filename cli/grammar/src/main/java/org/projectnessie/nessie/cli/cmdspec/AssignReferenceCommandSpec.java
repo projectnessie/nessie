@@ -22,6 +22,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 @Value.Immutable
 public interface AssignReferenceCommandSpec
     extends RefWithTypeCommandSpec, RefWithHashCommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.ASSIGN_REFERENCE;
   }

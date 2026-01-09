@@ -38,6 +38,7 @@ public interface BasicTaskRequest extends TaskRequest<BasicTaskObj, BasicTaskObj
   String taskParameter();
 
   @Value.Parameter(order = 2)
+  @Override
   ObjId objId();
 
   @Value.Parameter(order = 3)

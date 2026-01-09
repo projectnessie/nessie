@@ -21,6 +21,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface ListReferencesCommandSpec extends CommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.LIST_REFERENCES;
   }

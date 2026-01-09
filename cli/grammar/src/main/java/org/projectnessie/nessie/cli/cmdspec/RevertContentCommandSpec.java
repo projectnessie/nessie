@@ -22,6 +22,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface RevertContentCommandSpec extends RefWithTypeCommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.REVERT_CONTENT;
   }
@@ -52,6 +53,7 @@ public interface RevertContentCommandSpec extends RefWithTypeCommandSpec, Catalo
   String getRef();
 
   @Nullable
+  @Override
   String getRefType();
 
   @Nullable
