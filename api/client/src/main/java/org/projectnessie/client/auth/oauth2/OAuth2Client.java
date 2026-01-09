@@ -115,6 +115,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
     }
   }
 
+  @SuppressWarnings("EmptyCatch")
   private Tokens getCurrentTokensIfAvailable() {
     try {
       return currentTokensStage.toCompletableFuture().getNow(null);
