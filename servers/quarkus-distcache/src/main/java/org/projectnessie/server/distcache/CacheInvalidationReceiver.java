@@ -130,19 +130,18 @@ public class CacheInvalidationReceiver implements DistributedCacheInvalidationCo
     if (cacheInvalidation != null) {
       for (CacheInvalidations.CacheInvalidation invalidation : invs) {
         switch (invalidation.type()) {
-          case CacheInvalidations.CacheInvalidationEvictObj.TYPE:
+          case CacheInvalidations.CacheInvalidationEvictObj.TYPE -> {
             CacheInvalidations.CacheInvalidationEvictObj putObj =
                 (CacheInvalidations.CacheInvalidationEvictObj) invalidation;
             cacheInvalidation.evictObj(putObj.repoId(), objIdFromByteArray(putObj.id()));
-            break;
-          case CacheInvalidations.CacheInvalidationEvictReference.TYPE:
+          }
+          case CacheInvalidationEvictReference.TYPE -> {
             CacheInvalidationEvictReference putReference =
-                (CacheInvalidations.CacheInvalidationEvictReference) invalidation;
+                (CacheInvalidationEvictReference) invalidation;
             cacheInvalidation.evictReference(putReference.repoId(), putReference.refName());
-            break;
-          default:
+          }
+          default -> {}
             // nothing we can do about a new invalidation type here
-            break;
         }
       }
     }
