@@ -178,7 +178,7 @@ public class HeapStorageBucket {
           // .etag("etag")
           // .storageClass(StorageClass.STANDARD)
           .writer(
-              ((range, output) -> {
+              (range, output) -> {
                 if (range == null || range.everything()) {
                   output.write(newData);
                 } else {
@@ -186,7 +186,7 @@ public class HeapStorageBucket {
                   long len = Math.min(newData.length - offset, range.length());
                   output.write(newData, offset, (int) len);
                 }
-              }));
+              });
 
       return this;
     }

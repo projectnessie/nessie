@@ -70,7 +70,7 @@ public abstract class ObjectStorageMock {
 
   @Value.Default
   public AssumeRoleHandler assumeRoleHandler() {
-    return ((action,
+    return (action,
         version,
         roleArn,
         roleSessionName,
@@ -88,7 +88,7 @@ public abstract class ObjectStorageMock {
             .sourceIdentity("source-identity")
             .assumedRoleUser(
                 ImmutableRoleUser.builder().arn("arn").assumedRoleId("assumedRoleId").build())
-            .build());
+            .build();
   }
 
   @Value.Default
