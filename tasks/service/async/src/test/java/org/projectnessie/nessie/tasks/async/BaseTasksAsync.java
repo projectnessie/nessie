@@ -208,6 +208,7 @@ public abstract class BaseTasksAsync {
   @Test
   @Disabled(
       "Disabled because this test would run for a long time and the value of this test is questionable.")
+  @SuppressWarnings("VoidUsed")
   public void cancelReallyWorks() throws InterruptedException {
     TasksAsync async = tasksAsync();
 
