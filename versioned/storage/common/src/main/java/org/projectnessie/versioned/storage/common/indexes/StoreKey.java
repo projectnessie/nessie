@@ -171,6 +171,7 @@ public final class StoreKey implements Comparable<StoreKey> {
                 || bufferPut.bufferPut(buffer, (byte) (0x80 | (0x3f & c)));
       } else if (isSurrogate(c)) {
         char c2;
+        @SuppressWarnings("AssignmentExpression")
         int codePoint =
             i < l - 1 && isSurrogatePair(c, c2 = s.charAt(i + 1)) ? toCodePoint(c, c2) : -1;
         if (codePoint < 0) {

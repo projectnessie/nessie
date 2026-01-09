@@ -845,7 +845,8 @@ public class VersionStoreImpl implements VersionStore {
 
       @Override
       public KeyEntry next() {
-        ContentKeyWithCommitOp c = current = fetchContent.next();
+        ContentKeyWithCommitOp c = fetchContent.next();
+        current = c;
 
         if (c.content != null) {
           return KeyEntry.of(buildIdentifiedKey(c.key, index, c.content, x -> null), c.content);

@@ -137,7 +137,9 @@ public final class Status {
     if (l.length < code100 + 1) {
       l = lines[line] = Arrays.copyOf(l, code100 + 1);
     }
-    return l[code100] = new Status(code, reason);
+    Status s = new Status(code, reason);
+    l[code100] = s;
+    return s;
   }
 
   private Status(int statusCode, String reason) {

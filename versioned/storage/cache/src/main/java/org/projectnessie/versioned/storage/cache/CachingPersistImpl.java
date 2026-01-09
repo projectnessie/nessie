@@ -383,7 +383,8 @@ class CachingPersistImpl implements Persist {
   public Reference addReference(@Nonnull Reference reference) throws RefAlreadyExistsException {
     Reference r = null;
     try {
-      return r = persist.addReference(reference);
+      r = persist.addReference(reference);
+      return r;
     } finally {
       if (r != null) {
         cache.putReference(r);
@@ -399,7 +400,8 @@ class CachingPersistImpl implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     Reference r = null;
     try {
-      return r = persist.markReferenceAsDeleted(reference);
+      r = persist.markReferenceAsDeleted(reference);
+      return r;
     } finally {
       if (r != null) {
         cache.putReference(r);
@@ -426,6 +428,8 @@ class CachingPersistImpl implements Persist {
     Reference r = null;
     try {
       return r = persist.updateReferencePointer(reference, newPointer);
+      r = persist.updateReferencePointer(reference, newPointer);
+      return r;
     } finally {
       if (r != null) {
         cache.putReference(r);
