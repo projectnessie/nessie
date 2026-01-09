@@ -45,6 +45,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @ConfigMapping(prefix = "nessie.catalog")
 @NessieImmutable
+@SuppressWarnings("AlmostJavadoc")
 public interface SmallryeConfigs {
   /**
    * Flag whether the lakehouse config is managed (persisted in Nessie) or static (retrieved from
@@ -54,6 +55,7 @@ public interface SmallryeConfigs {
    */
   @WithName("advanced.persist-config")
   @WithDefault("false")
+  @SuppressWarnings("InvalidBlockTag")
   boolean usePersistedLakehouseConfig();
 
   @WithName("service.s3")

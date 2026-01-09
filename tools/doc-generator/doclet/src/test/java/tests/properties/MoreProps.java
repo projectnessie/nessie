@@ -29,7 +29,9 @@ public class MoreProps {
    *
    * @hidden hidden thingy
    */
-  @ConfigItem public static final String FOUR = "four";
+  @SuppressWarnings("InvalidBlockTag")
+  @ConfigItem
+  public static final String FOUR = "four";
 
   @ConfigItem @Deprecated public static final String FIVE = "five";
 }

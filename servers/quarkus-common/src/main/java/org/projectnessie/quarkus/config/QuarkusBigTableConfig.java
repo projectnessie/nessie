@@ -52,6 +52,7 @@ public interface QuarkusBigTableConfig extends BigTableClientsConfig {
    *
    * @hidden
    */
+  @SuppressWarnings("InvalidBlockTag")
   @WithDefault("false")
   boolean disableCredentialsLookupForTests();
 }

@@ -37,6 +37,7 @@ public interface QuarkusNessieAuthenticationConfig {
    * @hidden Not present in docs on web-site.
    */
   @WithName("anonymous-paths")
+  @SuppressWarnings("InvalidBlockTag")
   Optional<Set<String>> anonymousPaths();
 
   /**
@@ -47,5 +48,6 @@ public interface QuarkusNessieAuthenticationConfig {
    * @hidden Not present in docs on web-site.
    */
   @WithName("anonymous-path-prefixes")
+  @SuppressWarnings("InvalidBlockTag")
   Optional<Set<String>> anonymousPathPrefixes();
 }
