@@ -296,6 +296,7 @@ final class TransformParser {
     }
   }
 
+  @SuppressWarnings("JavaLangClash")
   static final class Void implements IcebergTransform {
     @Override
     public String toString() {
