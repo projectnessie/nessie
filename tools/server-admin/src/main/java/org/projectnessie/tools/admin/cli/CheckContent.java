@@ -209,8 +209,8 @@ public class CheckContent extends BaseCommand {
       }
     }
 
-    if (showContent && (content instanceof Content)) {
-      builder.content((Content) content);
+    if (showContent && content instanceof Content c) {
+      builder.content(c);
     }
 
     try {
@@ -218,8 +218,8 @@ public class CheckContent extends BaseCommand {
 
       // Write a new line after each object to make monitoring I/O more pleasant and predictable
       Object out = generator.getOutputTarget();
-      if (out instanceof PrintWriter) {
-        ((PrintWriter) out).println();
+      if (out instanceof PrintWriter pw) {
+        pw.println();
       }
       generator.flush();
 

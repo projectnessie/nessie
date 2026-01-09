@@ -98,8 +98,8 @@ public abstract class AbstractKafkaEventSubscriber<T> extends AbstractMessagingE
   public static String recordKey(Event event) {
     String repositoryId = event.getRepositoryId();
     String reference;
-    if (event instanceof ReferenceEvent) {
-      reference = ((ReferenceEvent) event).getReference().getName();
+    if (event instanceof ReferenceEvent re) {
+      reference = re.getReference().getName();
     } else {
       assert event instanceof MultiReferenceEvent;
       reference = ((MultiReferenceEvent) event).getTargetReference().getName();
