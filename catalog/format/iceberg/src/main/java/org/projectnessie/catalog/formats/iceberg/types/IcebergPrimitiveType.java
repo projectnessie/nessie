@@ -42,6 +42,7 @@ public abstract class IcebergPrimitiveType implements IcebergType {
   }
 
   @Override
+  @SuppressWarnings("EqualsGetClass")
   public boolean equals(Object obj) {
     if (obj == null) {
       return false;

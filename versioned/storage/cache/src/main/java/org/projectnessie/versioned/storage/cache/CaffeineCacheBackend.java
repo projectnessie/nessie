@@ -199,6 +199,7 @@ class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public Obj get(@Nonnull String repositoryId, @Nonnull ObjId id) {
     CacheKeyValue key = cacheKeyForRead(repositoryId, id);
     CacheKeyValue value = cache.getIfPresent(key);
@@ -331,6 +332,7 @@ class CaffeineCacheBackend implements CacheBackend {
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public Reference getReference(@Nonnull String repositoryId, @Nonnull String name) {
     if (refCacheTtlNanos <= 0L) {
       return null;
