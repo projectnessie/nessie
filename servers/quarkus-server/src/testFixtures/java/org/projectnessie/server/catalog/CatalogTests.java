@@ -916,9 +916,9 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     Set<String> expectedMetadataFileLocations =
         ReachableFileUtil.metadataFileLocations(table, false);
     assertThat(actualMetadataFileLocations)
+        .as("Should have one metadata file")
         .hasSameElementsAs(expectedMetadataFileLocations)
-        .hasSize(1)
-        .as("Should have one metadata file");
+        .hasSize(1);
   }
 
   @Test
