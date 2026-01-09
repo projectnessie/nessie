@@ -17,7 +17,7 @@ package org.projectnessie.services.authz;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 public final class RetriableAccessChecker {
   private final Supplier<BatchAccessChecker> validator;
   private final ApiContext apiContext;
-  private Collection<Check> validatedChecks;
+  private List<Check> validatedChecks;
   private Map<Check, String> result;
 
   public RetriableAccessChecker(Supplier<BatchAccessChecker> validator, ApiContext apiContext) {
@@ -61,7 +61,7 @@ public final class RetriableAccessChecker {
       // Shallow collection copy to ensure that we use what was current at the time of check
       // in the equals call below (in case checks are added to this instance later, for whatever
       // reason). Note that elements are immutable.
-      Collection<Check> currentChecks = new ArrayList<>(getChecks());
+      List<Check> currentChecks = new ArrayList<>(getChecks());
 
       if (validatedChecks != null && result != null && validatedChecks.equals(currentChecks)) {
         return result;
