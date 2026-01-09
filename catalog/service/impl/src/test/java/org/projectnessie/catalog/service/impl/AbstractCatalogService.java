@@ -200,6 +200,7 @@ public abstract class AbstractCatalogService {
             TasksServiceConfig.tasksServiceConfig("t", 1L, 20L));
   }
 
+  @SuppressWarnings("UnnecessaryAssignment")
   private void setupCatalogService() {
     catalogService = new CatalogServiceImpl();
     catalogService.lakehouseConfig =
