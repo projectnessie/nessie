@@ -23,7 +23,6 @@ import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.MET
 import static org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.ONE_MB;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
-import com.google.common.base.Strings;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -56,6 +55,7 @@ public class TestCacheOvershoot {
     testCacheOvershoot(t -> delayedExecutor(2, TimeUnit.MILLISECONDS).execute(t));
   }
 
+  @SuppressWarnings("ThreadPriorityCheck")
   private void testCacheOvershoot(Executor evictionExecutor) throws Exception {
     var meterRegistry = new SimpleMeterRegistry();
 
@@ -81,7 +81,7 @@ public class TestCacheOvershoot {
     var maxWeight = config.capacityMb() * 1024L * 1024L;
     var admitWeight = cache.admitWeight();
 
-    var str = Strings.repeat("a", 4096);
+    var str = "a".repeat(4096);
 
     var numThreads = 8;
 
