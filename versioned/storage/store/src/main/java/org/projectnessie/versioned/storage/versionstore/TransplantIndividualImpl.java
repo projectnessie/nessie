@@ -96,6 +96,7 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
     CommitLogic commitLogic = commitLogic(persist);
     ObjId newHead = headId();
     boolean empty = true;
+    @SuppressWarnings("NonCanonicalType")
     Map<ContentKey, MergeResult.KeyDetails> keyDetailsMap = new HashMap<>();
     for (CommitObj sourceCommit : mergeTransplantContext.sourceCommits()) {
       CreateCommit createCommit =
