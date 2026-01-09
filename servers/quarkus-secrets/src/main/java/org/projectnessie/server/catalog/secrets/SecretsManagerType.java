@@ -42,6 +42,7 @@ public @interface SecretsManagerType {
   @SuppressWarnings("ClassExplicitlyAnnotation")
   final class Literal extends AnnotationLiteral<SecretsManagerType> implements SecretsManagerType {
 
+    @SuppressWarnings("ImmutableAnnotationChecker")
     private final ExternalSecretsManagerType value;
 
     public Literal(String value) {
