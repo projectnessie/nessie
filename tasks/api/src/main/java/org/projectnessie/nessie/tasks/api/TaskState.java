@@ -87,6 +87,7 @@ public interface TaskState {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   String errorCode();
 
+  @SuppressWarnings("ClassInitializationDeadlock")
   TaskState SUCCESS = ImmutableTaskState.of(TaskStatus.SUCCESS, null, null, null, null);
 
   static TaskState successState() {
