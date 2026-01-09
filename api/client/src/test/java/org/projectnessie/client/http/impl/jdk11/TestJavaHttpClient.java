@@ -32,6 +32,7 @@ import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 public class TestJavaHttpClient extends BaseTestHttpClient {
 
   @BeforeAll
+  @SuppressWarnings("EnumOrdinal")
   public static void checkJava11() {
     assumeThat(JRE.currentJre()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
   }

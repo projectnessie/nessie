@@ -232,6 +232,7 @@ public abstract class MockManifestFile implements IndexedRecord {
   }
 
   @Override
+  @SuppressWarnings("EnumOrdinal")
   public Object get(int i) {
     String field = AVRO_SCHEMA.getFields().get(i).name();
     switch (field) {

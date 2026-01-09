@@ -64,6 +64,7 @@ public class TestHttpClients {
         .hasMessage("No HTTP client factory for name 'blahblah' found");
   }
 
+  @SuppressWarnings("EnumOrdinal")
   static Stream<Arguments> clientByName() {
 
     if (JRE.currentJre().ordinal() < JRE.JAVA_11.ordinal()) {

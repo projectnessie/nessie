@@ -410,6 +410,7 @@ public final class AvroField {
     encoder.writeInt((Integer) value);
   }
 
+  @SuppressWarnings("EnumOrdinal")
   static void writeIntEnum(Encoder encoder, Object value) throws IOException {
     Enum<?> enumValue = (Enum<?>) value;
     encoder.writeInt(enumValue.ordinal());
