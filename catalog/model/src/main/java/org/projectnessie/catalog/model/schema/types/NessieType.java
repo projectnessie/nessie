@@ -209,11 +209,13 @@ public enum NessieType {
     return INTERVAL_TYPE;
   }
 
+  @SuppressWarnings("UnnecessaryBoxedVariable")
   public static NessieListTypeSpec listType(
       NessieTypeSpec elementType, Integer icebergElementFieldId, Boolean elementsNullable) {
     return ImmutableNessieListTypeSpec.of(elementType, icebergElementFieldId, elementsNullable);
   }
 
+  @SuppressWarnings("UnnecessaryBoxedVariable")
   public static NessieMapTypeSpec mapType(
       NessieTypeSpec keyType,
       Integer icebergKeyFieldId,
