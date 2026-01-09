@@ -411,6 +411,7 @@ public class S3Resource {
 
   private InputStream chunkedInput(String contentEncoding, InputStream input) {
     if (contentEncoding != null) {
+      @SuppressWarnings("StringSplitter")
       String[] encodings = contentEncoding.split(",");
       boolean identity = false;
       boolean chunked = false;

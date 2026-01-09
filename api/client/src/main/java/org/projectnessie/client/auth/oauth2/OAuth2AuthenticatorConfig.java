@@ -156,6 +156,7 @@ public interface OAuth2AuthenticatorConfig {
     return builder.build();
   }
 
+  @SuppressWarnings("StringSplitter")
   static Map<String, String> parseExtraParams(String text) {
     if (text == null || text.isBlank()) {
       return Map.of();

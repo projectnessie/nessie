@@ -89,6 +89,7 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
 
     for (Map.Entry<String, Schema> override : overrides.entrySet()) {
       String property = override.getKey();
+      @SuppressWarnings("StringSplitter")
       String[] propertyElements = property.split("[.]");
 
       Schema current = schema;

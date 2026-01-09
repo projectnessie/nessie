@@ -54,6 +54,7 @@ final class AwsChunkedInputStream extends InputStream {
             state = AwsChunkedState.EOF;
             break;
           }
+          @SuppressWarnings("StringSplitter")
           String[] parts = header.split(";");
           chunkLen = Integer.parseInt(parts[0], 16);
           if (chunkLen == 0) {

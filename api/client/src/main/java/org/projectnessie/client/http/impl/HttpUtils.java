@@ -85,6 +85,7 @@ public final class HttpUtils {
       throw new IllegalArgumentException("Missing query string");
     }
     Map<String, String> params = new HashMap<>();
+    @SuppressWarnings("StringSplitter")
     String[] pairs = query.split("&");
     for (String pair : pairs) {
       int idx = pair.indexOf("=");
