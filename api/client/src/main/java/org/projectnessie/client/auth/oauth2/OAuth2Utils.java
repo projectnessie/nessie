@@ -57,7 +57,7 @@ class OAuth2Utils {
     for (String path : WELL_KNOWN_PATHS) {
       try {
         HttpResponse response = httpClient.newRequest(issuerUrl).path(path).get();
-        if (response.getStatus() != Status.OK) {
+        if (response.getStatus().getCode() != Status.OK.getCode()) {
           throw new HttpClientException(
               "Failed to fetch OpenID provider metadata: OpenID provider replied with "
                   + response.getStatus());
