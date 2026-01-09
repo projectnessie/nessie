@@ -128,7 +128,7 @@ class DeviceCodeFlow extends AbstractFlow {
   private void checkPollInterval(Integer serverPollInterval) {
     if (!config.ignoreDeviceCodeFlowServerPollInterval()
         && serverPollInterval != null
-        && serverPollInterval > pollInterval.getSeconds()) {
+        && serverPollInterval > pollInterval.toSeconds()) {
       LOGGER.debug(
           "Device Code Flow: server requested minimum poll interval of {} seconds",
           serverPollInterval);
