@@ -81,6 +81,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     this(username, password, null);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public InteractiveResourceOwnerEmulator(String username, String password, SSLContext sslContext)
       throws IOException {
     this.username = username;
@@ -121,6 +122,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     this.completionListener = listener;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void readConsole() {
     try {
       String line;

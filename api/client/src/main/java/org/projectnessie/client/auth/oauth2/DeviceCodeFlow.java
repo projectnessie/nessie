@@ -60,6 +60,7 @@ class DeviceCodeFlow extends AbstractFlow {
   private volatile Duration pollInterval;
   private volatile Future<?> pollFuture;
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   DeviceCodeFlow(OAuth2ClientConfig config) {
     super(config);
     this.console = config.getConsole();

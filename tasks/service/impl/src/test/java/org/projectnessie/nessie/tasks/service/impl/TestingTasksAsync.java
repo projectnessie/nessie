@@ -78,6 +78,7 @@ public class TestingTasksAsync implements TasksAsync {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     ScheduledTask task =
         new ScheduledTask(

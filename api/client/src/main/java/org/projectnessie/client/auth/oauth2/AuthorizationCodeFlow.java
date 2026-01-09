@@ -95,6 +95,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
    */
   private final Phaser inflightRequestsPhaser = new Phaser(1);
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   AuthorizationCodeFlow(OAuth2ClientConfig config) {
     super(config);
     this.console = config.getConsole();
@@ -178,6 +179,7 @@ class AuthorizationCodeFlow extends AbstractFlow {
    * Subsequent requests will be processed immediately. The response to the request will be delayed
    * until the tokens are received.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void doRequest(HttpExchange exchange) {
     LOGGER.debug("Authorization Code Flow: received request");
     inflightRequestsPhaser.register();
