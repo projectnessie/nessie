@@ -65,7 +65,10 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
   @Inject RequestSigner signer;
   @Inject IcebergErrorMapper errorMapper;
   @Inject SignerKeysService signerKeysService;
-  @Inject UriInfo uriInfo;
+
+  @SuppressWarnings("HidingField")
+  @Inject
+  UriInfo uriInfo;
 
   Clock clock = Clock.systemUTC();
 
