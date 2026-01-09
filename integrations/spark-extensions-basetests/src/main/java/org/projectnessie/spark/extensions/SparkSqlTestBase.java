@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -224,7 +225,7 @@ public abstract class SparkSqlTestBase {
   }
 
   @FormatMethod
-  protected static List<Object[]> sql(String query, Object... args) {
+  protected static List<Object[]> sql(@FormatString String query, Object... args) {
     List<Row> rows = spark.sql(format(query, args)).collectAsList();
     if (rows.isEmpty()) {
       return ImmutableList.of();
@@ -234,7 +235,7 @@ public abstract class SparkSqlTestBase {
   }
 
   @FormatMethod
-  protected static List<Object[]> sqlWithEmptyCache(String query, Object... args) {
+  protected static List<Object[]> sqlWithEmptyCache(@FormatString String query, Object... args) {
     try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
       List<Row> rows = sparkWithEmptyCache.sql(format(query, args)).collectAsList();
       return rows.stream().map(SparkSqlTestBase::toJava).collect(Collectors.toList());

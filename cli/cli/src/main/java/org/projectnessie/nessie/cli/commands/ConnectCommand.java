@@ -340,7 +340,7 @@ public class ConnectCommand extends NessieCommand<ConnectCommandSpec> {
       }
     } catch (Exception e) {
       PrintWriter writer = cli.writer();
-      writer.printf("Failed to cleaned up " + S3V4RestSignerClient.class.getName());
+      writer.printf("Failed to cleaned up %s", S3V4RestSignerClient.class.getName());
       e.printStackTrace(writer);
     }
   }

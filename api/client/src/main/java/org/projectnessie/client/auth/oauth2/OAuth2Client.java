@@ -311,6 +311,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
         minRefreshDelay);
   }
 
+  @SuppressWarnings({"FutureReturnValueIgnored", "Slf4jSignOnlyFormat"})
   private void maybeWarn(String message, Throwable error) {
     Instant now = config.getClock().get();
     boolean shouldWarn =
@@ -321,11 +322,11 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       if (error instanceof HttpClientException) {
         used.thenRun(() -> LOGGER.warn("{}: {}", message, error.toString()));
       } else {
-        used.thenRun(() -> LOGGER.warn(message, error));
+        used.thenRun(() -> LOGGER.warn("{}", message, error));
       }
       lastWarn = now;
     } else {
-      LOGGER.debug(message, error);
+      LOGGER.debug("{}", message, error);
     }
   }
 }

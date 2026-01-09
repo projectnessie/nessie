@@ -64,7 +64,7 @@ public interface ParsedHash {
       return Optional.empty();
     }
     Matcher matcher = HASH_OR_RELATIVE_COMMIT_SPEC_PATTERN.matcher(hashOrRelativeSpec);
-    checkArgument(matcher.matches(), HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE, hashOrRelativeSpec);
+    checkArgument(matcher.matches(), HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE);
     Optional<Hash> absolutePart =
         Optional.ofNullable(matcher.group(1))
             .map(Hash::of)

@@ -725,7 +725,7 @@ final class CommitLogicImpl implements CommitLogic {
     // Collect the removed keys - both for "pure" deletes, renames and re-adds.
     for (Remove remove : createCommit.removes()) {
       StoreKey key = remove.key();
-      checkArgument(keys.add(key), "Duplicate key: " + key);
+      checkArgument(keys.add(key), "Duplicate key: %s", key);
       removedKeys.add(key);
     }
 
@@ -742,20 +742,19 @@ final class CommitLogicImpl implements CommitLogic {
       if (!unseenKey && removedKeys.remove(key)) {
         reAddedKeys.add(key);
       } else {
-        checkArgument(unseenKey, "Duplicate key: " + key);
+        checkArgument(unseenKey, "Duplicate key: %s", key);
       }
       UUID contentId = add.contentId();
       if (contentId != null) {
         checkArgument(
-            seenContentIds.add(contentId),
-            "Duplicate content ID: " + contentId + " for key: " + key);
+            seenContentIds.add(contentId), "Duplicate content ID: %s for key: %s", contentId, key);
       }
     }
 
     // Collect keys from "unchanged" actions.
     for (Unchanged unchanged : createCommit.unchanged()) {
       StoreKey key = unchanged.key();
-      checkArgument(keys.add(key), "Duplicate key: " + key);
+      checkArgument(keys.add(key), "Duplicate key: %s", key);
     }
   }
 

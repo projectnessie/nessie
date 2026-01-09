@@ -134,7 +134,7 @@ final class ReferencedObjectsResolverImpl implements ReferencedObjectsResolver {
             e);
       } else {
         LOGGER.warn(
-            "Error while identifying referenced objects after {} in repository '{}'",
+            "Error while identifying referenced in repository '{}'",
             persist.config().repositoryId(),
             e);
       }

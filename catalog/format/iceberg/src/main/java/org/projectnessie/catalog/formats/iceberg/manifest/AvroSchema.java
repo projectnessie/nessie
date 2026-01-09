@@ -160,7 +160,7 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
       byte header1 = dataInput.readByte();
       checkState(
           header0 == Avro.MAGIC_BYTES[0] && header1 == Avro.MAGIC_BYTES[1],
-          "Unrecognized header bytes: 0x%02X 0x%02X",
+          "Unrecognized header bytes: %s %s",
           header0,
           header1);
 

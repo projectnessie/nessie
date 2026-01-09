@@ -212,7 +212,7 @@ public final class Avro {
         Class<? extends B> builderType,
         Supplier<? extends B> builderCreator) {
       for (AvroTyped<?> avroSchema : knownSchema) {
-        checkState(!avroSchema.handles(entityType), "More than one schema handles " + entityType);
+        checkState(!avroSchema.handles(entityType), "More than one schema handles %s", entityType);
       }
 
       Schema schema = loadSchema(name);

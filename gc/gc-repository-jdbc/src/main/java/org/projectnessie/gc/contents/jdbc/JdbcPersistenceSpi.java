@@ -197,7 +197,9 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
       LiveContentSet current = currentLiveSet(conn, liveSetId);
       Preconditions.checkState(
           current.status() == expectedStatus,
-          "Expected current status of " + expectedStatus + ", but is " + current.status());
+          "Expected current status of %s, but is %s",
+          expectedStatus,
+          current.status());
     }
   }
 
