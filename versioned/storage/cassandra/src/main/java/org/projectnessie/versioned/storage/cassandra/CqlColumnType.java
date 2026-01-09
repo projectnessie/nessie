@@ -36,6 +36,7 @@ public enum CqlColumnType {
   // 7
   INT(DataTypes.INT);
 
+  @SuppressWarnings("ImmutableEnumChecker")
   private final DataType dataType;
 
   CqlColumnType(DataType dataType) {
