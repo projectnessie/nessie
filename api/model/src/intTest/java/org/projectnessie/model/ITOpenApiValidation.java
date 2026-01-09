@@ -67,6 +67,7 @@ public class ITOpenApiValidation {
     DockerClient dockerClient = DockerClientFactory.instance().client();
 
     // Intentionally a StringBuffer, because it's synchronized
+    @SuppressWarnings("JdkObsolete")
     StringBuffer buffer = new StringBuffer();
 
     // Pulls the image, if necessary.
