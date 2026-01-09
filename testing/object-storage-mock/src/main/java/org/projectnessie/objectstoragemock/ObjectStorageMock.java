@@ -205,6 +205,7 @@ public abstract class ObjectStorageMock {
     }
   }
 
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   public MockServer start() {
     ResourceConfig config = new ResourceConfig();
     config.register(

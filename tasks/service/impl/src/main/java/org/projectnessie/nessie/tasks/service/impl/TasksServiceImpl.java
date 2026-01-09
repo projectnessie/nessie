@@ -331,6 +331,7 @@ public class TasksServiceImpl implements TasksService {
             (resultBuilder, failure) -> localTaskFinished(params, resultBuilder, failure));
   }
 
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   private void localTaskFinished(
       ExecParams params, TaskObj.Builder resultBuilder, Throwable failure) {
     // Called from a thread pool, need to lock.
@@ -422,6 +423,7 @@ public class TasksServiceImpl implements TasksService {
     }
   }
 
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   private void unexpectedNullExpectedState(
       ExecParams params, TaskObj.Builder resultBuilder, Throwable failure) {
     // Oops ... no clue how that might have happened, but handle it just in case.

@@ -121,6 +121,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return extractFilesRelativize(allFiles, baseUri);
   }
 
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   private Stream<FileReference> extractTableFiles(ContentReference contentReference) {
     FileIO io = io();
 
@@ -199,6 +200,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
   }
 
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   private static Stream<FileReference> handleNotFound(
       ContentReference contentReference, Exception notFoundCandidate, String kind) {
     boolean notFound = false;
