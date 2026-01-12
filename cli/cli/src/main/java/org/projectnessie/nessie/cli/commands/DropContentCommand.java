@@ -98,6 +98,7 @@ public class DropContentCommand extends NessieCommittingCommand<DropContentComma
     return committed;
   }
 
+  @Override
   public String name() {
     return Token.TokenType.DROP
         + " "
@@ -108,6 +109,7 @@ public class DropContentCommand extends NessieCommittingCommand<DropContentComma
         + Token.TokenType.NAMESPACE;
   }
 
+  @Override
   public String description() {
     return "Drops a table or view.";
   }

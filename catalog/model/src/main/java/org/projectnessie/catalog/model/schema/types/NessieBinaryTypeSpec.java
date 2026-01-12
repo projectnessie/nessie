@@ -35,6 +35,7 @@ public interface NessieBinaryTypeSpec extends NessieTypeSpec {
     idHasher.hash(type().lowerCaseName());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     return targetBuffer.append("binary");
   }

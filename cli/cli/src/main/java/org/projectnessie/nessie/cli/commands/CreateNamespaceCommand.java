@@ -62,10 +62,12 @@ public class CreateNamespaceCommand extends NessieCommittingCommand<CreateNamesp
     return committed;
   }
 
+  @Override
   public String name() {
     return Token.TokenType.CREATE + " " + Token.TokenType.NAMESPACE;
   }
 
+  @Override
   public String description() {
     return "Create a new namespace.";
   }

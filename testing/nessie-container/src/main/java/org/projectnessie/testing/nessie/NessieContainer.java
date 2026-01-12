@@ -263,10 +263,12 @@ public class NessieContainer extends GenericContainer<NessieContainer> {
       this.networkId = networkId;
     }
 
+    @Override
     public String getId() {
       return networkId;
     }
 
+    @Override
     public void close() {
       // don't close the external network
     }

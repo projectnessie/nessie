@@ -34,6 +34,7 @@ public abstract class NessieCommittingCommand<SPEC extends CommandSpec>
     extends NessieCommand<SPEC> {
   protected NessieCommittingCommand() {}
 
+  @Override
   public final void execute(@Nonnull BaseNessieCli cli, SPEC spec) throws Exception {
     @SuppressWarnings("resource")
     NessieApiV2 api = cli.mandatoryNessieApi();

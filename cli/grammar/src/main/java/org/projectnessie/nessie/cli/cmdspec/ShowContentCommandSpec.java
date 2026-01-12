@@ -21,6 +21,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface ShowContentCommandSpec extends RefWithHashCommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.SHOW_CONTENT;
   }

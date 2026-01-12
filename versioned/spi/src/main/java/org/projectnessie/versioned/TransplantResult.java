@@ -30,6 +30,7 @@ public interface TransplantResult extends MergeTransplantResultBase {
   }
 
   interface Builder extends MergeTransplantResultBase.Builder<TransplantResult, Builder> {
+    @Override
     TransplantResult build();
   }
 }

@@ -94,10 +94,12 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
     instanceId = "test-instance";
   }
 
+  @Override
   public String getEmulatorHost() {
     return emulatorHost;
   }
 
+  @Override
   public int getEmulatorPort() {
     return emulatorPort;
   }

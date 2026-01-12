@@ -28,6 +28,7 @@ public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions, PerBu
 
   @Value.NonAttribute
   @JsonIgnore
+  @Override
   default AdlsNamedFileSystemOptions deepClone() {
     return ImmutableAdlsNamedFileSystemOptions.builder()
         .from(AdlsFileSystemOptions.super.deepClone())

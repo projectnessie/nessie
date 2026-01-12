@@ -21,6 +21,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface DropReferenceCommandSpec extends RefWithTypeCommandSpec, CatalogAware {
+  @Override
   default CommandType commandType() {
     return CommandType.DROP_REFERENCE;
   }

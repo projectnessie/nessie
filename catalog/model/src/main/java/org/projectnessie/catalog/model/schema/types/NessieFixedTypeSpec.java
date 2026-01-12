@@ -40,6 +40,7 @@ public interface NessieFixedTypeSpec extends NessieTypeSpec {
     idHasher.hash(type().lowerCaseName()).hash(length());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     return targetBuffer.append("binary(").append(length()).append(")");
   }

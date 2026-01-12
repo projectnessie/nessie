@@ -41,6 +41,7 @@ public interface NessieDecimalTypeSpec extends NessieTypeSpec {
     idHasher.hash(type().lowerCaseName()).hash(scale()).hash(precision());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     return targetBuffer
         .append("decimal(")

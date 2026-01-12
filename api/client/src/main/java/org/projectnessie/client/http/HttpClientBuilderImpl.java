@@ -99,6 +99,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
   }
 
   @CanIgnoreReturnValue
+  @Override
   public HttpClient.Builder setClientSpec(int clientSpec) {
     this.clientSpec = clientSpec;
     return this;
@@ -224,6 +225,7 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
    * remove tracing once it is added.
    */
   @CanIgnoreReturnValue
+  @Override
   public HttpClient.Builder addTracing() {
     try {
       OpentelemetryTracing.addTracing(this);

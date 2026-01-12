@@ -33,6 +33,7 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
 
   private static final Catalogs CATALOGS = new Catalogs();
 
+  @Override
   protected RESTCatalog catalog() {
     return CATALOGS.getCatalog(catalogOptions());
   }

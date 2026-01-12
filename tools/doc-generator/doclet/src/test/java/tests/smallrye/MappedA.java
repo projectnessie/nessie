@@ -42,6 +42,7 @@ import java.util.List;
 public interface MappedA extends IntOne {
   @WithName("some-weird-name")
   @WithDefault("some-default")
+  @Override
   String configOptionFoo();
 
   @Override

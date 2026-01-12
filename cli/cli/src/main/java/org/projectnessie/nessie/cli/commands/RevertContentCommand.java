@@ -180,10 +180,12 @@ public class RevertContentCommand extends NessieCommittingCommand<RevertContentC
     return committed;
   }
 
+  @Override
   public String name() {
     return Token.TokenType.REVERT + " " + Token.TokenType.CONTENT;
   }
 
+  @Override
   public String description() {
     return "Create a new namespace.";
   }

@@ -187,10 +187,12 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
     }
   }
 
+  @Override
   public String name() {
     return Token.TokenType.MERGE + " " + Token.TokenType.BRANCH;
   }
 
+  @Override
   public String description() {
     return "Merge a reference into a branch.";
   }

@@ -35,6 +35,7 @@ public interface NessieStructTypeSpec extends NessieTypeSpec {
     return NessieType.STRUCT;
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     targetBuffer.append("struct<");
     List<NessieField> fields = struct().fields();

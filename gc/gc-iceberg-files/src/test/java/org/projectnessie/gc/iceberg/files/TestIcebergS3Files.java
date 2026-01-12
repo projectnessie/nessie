@@ -42,6 +42,7 @@ public class TestIcebergS3Files extends AbstractFiles {
     return props;
   }
 
+  @Override
   protected Configuration hadoopConfiguration(MockServer server) {
     Configuration conf = new Configuration();
 

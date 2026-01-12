@@ -53,6 +53,7 @@ public interface NessieMapTypeSpec extends NessieTypeSpec {
         .hash(valuesNullable());
   }
 
+  @Override
   default StringBuilder asString(StringBuilder targetBuffer) {
     targetBuffer.append("map<");
     keyType().asString(targetBuffer);

@@ -71,6 +71,7 @@ final class JavaResponseContext implements ResponseContext {
     return response.uri();
   }
 
+  @Override
   public void close(Exception error) {
     if (error != null) {
       try {

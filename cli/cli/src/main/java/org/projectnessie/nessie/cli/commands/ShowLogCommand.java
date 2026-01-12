@@ -104,10 +104,12 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
         });
   }
 
+  @Override
   public String name() {
     return Token.TokenType.SHOW + " " + Token.TokenType.LOG;
   }
 
+  @Override
   public String description() {
     return "List commits.";
   }

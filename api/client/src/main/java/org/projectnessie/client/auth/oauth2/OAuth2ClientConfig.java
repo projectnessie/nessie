@@ -445,6 +445,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   interface Builder extends OAuth2AuthenticatorConfig.Builder {
 
     @CanIgnoreReturnValue
+    @Override
     Builder from(OAuth2AuthenticatorConfig config);
 
     @Override
@@ -466,28 +467,34 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     Builder clientId(String clientId);
 
     @CanIgnoreReturnValue
+    @Override
     Builder clientSecret(Secret clientSecret);
 
     @CanIgnoreReturnValue
+    @Override
     default Builder clientSecret(String clientSecret) {
       return clientSecretSupplier(() -> clientSecret);
     }
 
     @CanIgnoreReturnValue
+    @Override
     Builder clientSecretSupplier(Supplier<String> clientSecret);
 
     @Override
     Builder username(String username);
 
     @CanIgnoreReturnValue
+    @Override
     Builder password(Secret password);
 
     @CanIgnoreReturnValue
+    @Override
     default Builder password(String password) {
       return passwordSupplier(() -> password);
     }
 
     @CanIgnoreReturnValue
+    @Override
     Builder passwordSupplier(Supplier<String> password);
 
     @Override
@@ -500,6 +507,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     Builder scopes(Iterable<String> scopes);
 
     @CanIgnoreReturnValue
+    @Override
     Builder extraRequestParameters(Map<String, ? extends String> extraRequestParameters);
 
     @Override
@@ -571,6 +579,7 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
     @CanIgnoreReturnValue
     Builder clock(Supplier<Instant> clock);
 
+    @Override
     OAuth2ClientConfig build();
   }
 }

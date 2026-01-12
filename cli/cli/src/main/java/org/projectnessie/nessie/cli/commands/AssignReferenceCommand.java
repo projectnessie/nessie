@@ -81,10 +81,12 @@ public class AssignReferenceCommand extends NessieCommand<AssignReferenceCommand
             .append(assigned.getHash(), STYLE_FAINT));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.ASSIGN + " " + Token.TokenType.BRANCH + "/" + Token.TokenType.TAG;
   }
 
+  @Override
   public String description() {
     return "Assign the tip of a branch or tag to a commit ID.";
   }

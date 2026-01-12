@@ -407,10 +407,12 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
       this.networkId = networkId;
     }
 
+    @Override
     public String getId() {
       return networkId;
     }
 
+    @Override
     public void close() {
       // don't close the external network
     }

@@ -107,6 +107,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     System.setOut(consoleOut);
   }
 
+  @Override
   public void setErrorListener(Consumer<Throwable> callback) {
     this.errorListener = callback;
   }
@@ -115,6 +116,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     this.authUrlListener = callback;
   }
 
+  @Override
   public void setCompletionListener(Runnable listener) {
     this.completionListener = listener;
   }

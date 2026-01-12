@@ -43,6 +43,7 @@ public abstract class BaseCommand implements Callable<Integer> {
   public static final Integer EXIT_CODE_REPO_DOES_NOT_EXIST = 4;
   public static final Integer EXIT_CODE_REPO_ALREADY_EXISTS = 100;
 
+  @Override
   public abstract Integer call() throws Exception;
 
   protected void warnOnInMemory() {

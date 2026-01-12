@@ -65,6 +65,7 @@ public interface BasicTaskObj extends TaskObj {
     @CanIgnoreReturnValue
     Builder taskState(TaskState taskState);
 
+    @Override
     BasicTaskObj build();
   }
 

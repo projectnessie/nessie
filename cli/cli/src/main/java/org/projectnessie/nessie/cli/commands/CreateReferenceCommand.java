@@ -93,10 +93,12 @@ public class CreateReferenceCommand extends NessieCommand<CreateReferenceCommand
             .append(created.getHash(), STYLE_FAINT));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.CREATE + " " + Token.TokenType.BRANCH + "/" + Token.TokenType.TAG;
   }
 
+  @Override
   public String description() {
     return "Create a branch or tag.";
   }

@@ -70,10 +70,12 @@ public class UseReferenceCommand extends NessieCommand<UseReferenceCommandSpec> 
             .append(ref.getHash(), STYLE_FAINT));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.USE + " " + Token.TokenType.REFERENCE;
   }
 
+  @Override
   public String description() {
     return "Make the given reference the current reference.";
   }

@@ -22,6 +22,7 @@ import org.projectnessie.nessie.cli.grammar.Node;
 
 @Value.Immutable
 public interface HelpCommandSpec extends CommandSpec {
+  @Override
   default CommandType commandType() {
     return CommandType.HELP;
   }

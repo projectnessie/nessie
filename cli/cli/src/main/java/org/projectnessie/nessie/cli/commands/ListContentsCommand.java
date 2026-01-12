@@ -63,10 +63,12 @@ public class ListContentsCommand extends NessieListingCommand<ListContentsComman
                     .toAnsi(cli.terminal()));
   }
 
+  @Override
   public String name() {
     return Token.TokenType.LIST + " " + Token.TokenType.CONTENTS;
   }
 
+  @Override
   public String description() {
     return "List contents.";
   }

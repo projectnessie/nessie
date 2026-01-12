@@ -28,6 +28,7 @@ public interface S3NamedBucketOptions extends S3BucketOptions, PerBucket {
 
   @Value.NonAttribute
   @JsonIgnore
+  @Override
   default S3NamedBucketOptions deepClone() {
     return ImmutableS3NamedBucketOptions.builder()
         .from(S3BucketOptions.super.deepClone())
