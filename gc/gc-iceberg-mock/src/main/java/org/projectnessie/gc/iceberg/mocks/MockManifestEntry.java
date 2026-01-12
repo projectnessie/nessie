@@ -74,6 +74,7 @@ public abstract class MockManifestEntry implements IndexedRecord {
   }
 
   @Override
+  @SuppressWarnings("EnumOrdinal")
   public Object get(int i) {
     String field = getSchema().getFields().get(i).name();
     switch (field) {

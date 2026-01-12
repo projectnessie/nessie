@@ -394,6 +394,7 @@ public class VersionStoreImpl implements VersionStore {
    * requested. This function returns a result that represents the consistency of the commit log
    * including <em>direct</em> secondary parent commits, the consistency of the "worst" commit.
    */
+  @SuppressWarnings("EnumOrdinal")
   private CommitConsistency checkCommitLog(
       ConsistencyLogic consistencyLogic,
       CommitObj headCommit,

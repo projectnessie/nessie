@@ -64,6 +64,7 @@ final class IdHasherImpl implements NessieIdHasher {
   }
 
   @Override
+  @SuppressWarnings("EnumOrdinal")
   public NessieIdHasher hash(Enum<?> value) {
     if (value != null) {
       hashing.putInt(value.ordinal());
