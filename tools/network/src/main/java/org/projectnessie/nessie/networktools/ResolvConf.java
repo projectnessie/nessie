@@ -56,7 +56,7 @@ public final class ResolvConf {
    * syntax of the {@code /etc/resolv.conf} file, see {@code man resolv.conf}.
    */
   public static ResolvConf fromFile(String file) throws IOException {
-    try (FileReader fileReader = new FileReader(file, StandardCharsets.US_ASCII);
+    try (FileReader fileReader = new FileReader(file, StandardCharsets.UTF_8);
         BufferedReader reader = new BufferedReader(fileReader)) {
       return fromReader(reader);
     }
