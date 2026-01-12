@@ -19,6 +19,7 @@ import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_YELLOW;
 
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -67,8 +68,8 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
         e -> {
           CommitMeta meta = e.getCommitMeta();
 
-          ZonedDateTime authorTimestamp = meta.getAuthorTime().atZone(ZoneId.of("Z"));
-          ZonedDateTime commitTimestamp = meta.getCommitTime().atZone(ZoneId.of("Z"));
+          ZonedDateTime authorTimestamp = meta.getAuthorTime().atZone(ZoneOffset.UTC);
+          ZonedDateTime commitTimestamp = meta.getCommitTime().atZone(ZoneOffset.UTC);
 
           Stream<String> header =
               Stream.of(

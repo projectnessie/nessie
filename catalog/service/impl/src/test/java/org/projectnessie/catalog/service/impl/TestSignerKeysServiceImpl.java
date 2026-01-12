@@ -31,7 +31,7 @@ import static org.projectnessie.catalog.service.objtypes.SignerKeysObj.OBJ_TYPE;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -70,9 +70,10 @@ public class TestSignerKeysServiceImpl {
   protected BiFunction<SignerKeysObj, SignerKeysObj, Boolean> updateKeysTweak;
 
   @BeforeEach
+  @SuppressWarnings("UnnecessaryAssignment")
   protected void setup() {
     initialInstant = Instant.now();
-    clock = MutableClock.of(initialInstant, ZoneId.of("Z"));
+    clock = MutableClock.of(initialInstant, ZoneOffset.UTC);
 
     storeInitialTweak = o -> null;
     updateKeysTweak = (c, u) -> null;
