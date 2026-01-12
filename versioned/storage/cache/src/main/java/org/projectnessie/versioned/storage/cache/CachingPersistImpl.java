@@ -427,7 +427,6 @@ class CachingPersistImpl implements Persist {
       throws RefNotFoundException, RefConditionFailedException {
     Reference r = null;
     try {
-      return r = persist.updateReferencePointer(reference, newPointer);
       r = persist.updateReferencePointer(reference, newPointer);
       return r;
     } finally {
