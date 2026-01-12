@@ -889,10 +889,6 @@ public class NessieModelIceberg {
     return baseLocation + "_" + randomUUID();
   }
 
-  private static String concatLocation(String location, String key) {
-    return location.endsWith("/") ? location + key : location + "/" + key;
-  }
-
   /** Returns the table or view metadata JSON location. */
   public static String icebergMetadataJsonLocation(String baseLocation) {
     return String.format("%s/metadata/00000-%s.metadata.json", baseLocation, randomUUID());

@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -44,7 +43,6 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
   private final byte[] prefix;
   private final Class<? extends E> entityType;
   private final Supplier<? extends B> builderCreator;
-  private final Consumer<? extends B> builderClear;
   private final Function<B, E> builderBuild;
 
   // TODO Optimizations:
@@ -57,7 +55,6 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
       byte[] prefix,
       Class<? extends E> entityType,
       Supplier<? extends B> builderCreator,
-      Consumer<? extends B> builderClear,
       Function<B, E> builderBuild) {
     this.schema = schema;
     this.fields = fields;
@@ -66,7 +63,6 @@ final class AvroSchema<E, B> implements AvroTyped<E> {
     this.prefix = prefix;
     this.entityType = entityType;
     this.builderCreator = builderCreator;
-    this.builderClear = builderClear;
     this.builderBuild = builderBuild;
   }
 

@@ -209,7 +209,6 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
             .create();
     assertThat(catalog.tableExists(ident)).as("Table should exist").isTrue();
     assertThat(table.specs()).hasSize(1);
-    int initialSpecId = table.spec().specId();
 
     table.updateSpec().addField("data").commit();
 

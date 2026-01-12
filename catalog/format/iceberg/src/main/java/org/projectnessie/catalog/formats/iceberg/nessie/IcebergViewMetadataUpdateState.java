@@ -18,12 +18,10 @@ package org.projectnessie.catalog.formats.iceberg.nessie;
 import static java.time.Instant.now;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
@@ -48,7 +46,6 @@ public class IcebergViewMetadataUpdateState {
   private NessieViewSnapshot snapshot;
   private int lastAddedSchemaId = -1;
   private long lastAddedVersionId = -1;
-  private final List<IcebergSnapshot> addedSnapshots = new ArrayList<>();
   private final Set<Integer> addedSchemaIds = new HashSet<>();
   private final Set<Long> addedVersionIds = new HashSet<>();
   private final Set<CatalogOps> catalogOps = EnumSet.noneOf(CatalogOps.class);

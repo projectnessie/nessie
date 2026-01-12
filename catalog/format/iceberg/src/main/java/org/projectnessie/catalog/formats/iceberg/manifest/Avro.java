@@ -329,8 +329,6 @@ public final class Avro {
 
         MethodHandle builderBuild =
             lookup.findVirtual(builderType, "build", MethodType.methodType(entityType));
-        MethodHandle builderClear =
-            lookup.findVirtual(builderType, "clear", MethodType.methodType(builderType));
 
         return new AvroSchema<>(
             schema,
@@ -338,13 +336,6 @@ public final class Avro {
             prefix,
             entityType,
             builderCreator,
-            builder -> {
-              try {
-                builderClear.bindTo(builder).invoke();
-              } catch (Throwable e) {
-                throw new RuntimeException(e);
-              }
-            },
             builder -> {
               try {
                 @SuppressWarnings("unchecked")
@@ -357,34 +348,6 @@ public final class Avro {
       } catch (Exception e) {
         throw new RuntimeException("Failed to setup Avro schema mapping for " + name, e);
       }
-    }
-
-    private static Class<?> asPrimitiveType(Class<?> elementType) {
-      if (elementType == Boolean.class) {
-        return boolean.class;
-      }
-      if (elementType == Character.class) {
-        return char.class;
-      }
-      if (elementType == Byte.class) {
-        return byte.class;
-      }
-      if (elementType == Short.class) {
-        return short.class;
-      }
-      if (elementType == Integer.class) {
-        return int.class;
-      }
-      if (elementType == Long.class) {
-        return long.class;
-      }
-      if (elementType == Float.class) {
-        return float.class;
-      }
-      if (elementType == Double.class) {
-        return double.class;
-      }
-      return elementType;
     }
 
     private static Schema loadSchema(String name) {
