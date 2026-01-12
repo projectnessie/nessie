@@ -128,7 +128,7 @@ public class HeapStorageBucket {
     private final String key;
     private final ImmutableMockObject.Builder object;
 
-    public HeapObjectUpdater(MockObject expected, String key) {
+    HeapObjectUpdater(MockObject expected, String key) {
       this.expected = expected;
       this.key = key;
       this.object = ImmutableMockObject.builder();

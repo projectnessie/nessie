@@ -74,7 +74,7 @@ public final class RestV1Client extends NessieApiClient {
 
     private final Object delegate;
 
-    public ExceptionRewriter(Object delegate) {
+    ExceptionRewriter(Object delegate) {
       this.delegate = delegate;
     }
 

@@ -795,7 +795,7 @@ abstract class AbstractJdbcPersist implements Persist {
       }
     }
 
-    protected abstract R mapToObj(ResultSet rs) throws SQLException;
+    abstract R mapToObj(ResultSet rs) throws SQLException;
   }
 
   protected RuntimeException unhandledSQLException(SQLException e) {

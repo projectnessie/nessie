@@ -153,7 +153,7 @@ public class ImportRepository extends BaseCommand {
     private long timeOffset;
     private long timeLast;
 
-    public ImportProgressListener(PrintWriter out) {
+    ImportProgressListener(PrintWriter out) {
       this.out = out;
     }
 

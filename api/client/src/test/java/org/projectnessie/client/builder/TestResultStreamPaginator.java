@@ -162,7 +162,7 @@ class TestResultStreamPaginator {
     private final String token;
     private final List<String> elements;
 
-    public MockPaginatedResponse(boolean more, String token, List<String> elements) {
+    MockPaginatedResponse(boolean more, String token, List<String> elements) {
       this.more = more;
       this.token = token;
       this.elements = elements;

@@ -805,7 +805,7 @@ public class MongoDBPersist implements Persist {
 
     private final MongoCursor<Document> result;
 
-    public ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
+    ScanAllObjectsIterator(Set<ObjType> returnedObjTypes) {
       Bson condition = eq(ID_REPO_PATH, config.repositoryId());
       if (!returnedObjTypes.isEmpty()) {
         List<String> objTypeShortNames =
