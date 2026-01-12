@@ -33,6 +33,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
@@ -90,7 +91,9 @@ public class ITOpenApiValidation {
             new ResultCallback.Adapter<>() {
               @Override
               public void onNext(Frame frame) {
-                buffer.append(new String(frame.getPayload()).trim()).append('\n');
+                buffer
+                    .append(new String(frame.getPayload(), StandardCharsets.UTF_8).trim())
+                    .append('\n');
               }
             });
 

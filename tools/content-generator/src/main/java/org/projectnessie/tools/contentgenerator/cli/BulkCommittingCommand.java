@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -252,7 +253,10 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
     var parser = keySelector.fileKeySelector.keyParser();
     var batches =
         Iterators.partition(
-            new BufferedReader(new InputStreamReader(input)).lines().map(parser).iterator(),
+            new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))
+                .lines()
+                .map(parser)
+                .iterator(),
             batchSize);
     batches.forEachRemaining(keys -> processBatch(api, ref, keys));
   }

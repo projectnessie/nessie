@@ -39,7 +39,7 @@ public class ITSparkIcebergNessieAzureMock extends AbstractITSparkIcebergNessieO
   private static final String ACCOUNT_FQ = ACCOUNT + ".dfs.core.windows.net";
   private static final String SECRET = "s3cr3t";
   private static final String SECRET_BASE_64 =
-      new String(Base64.getEncoder().encode(SECRET.getBytes(UTF_8)));
+      new String(Base64.getEncoder().encode(SECRET.getBytes(UTF_8)), UTF_8);
   private static final String ADLS_WAREHOUSE_LOCATION =
       "abfs://" + FILESYSTEM + "@" + ACCOUNT_FQ + "/warehouse";
 

@@ -75,8 +75,8 @@ public class GcsContainer extends GenericContainer<GcsContainer>
             .dockerImageName(image));
 
     ThreadLocalRandom rand = ThreadLocalRandom.current();
-    boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
-    boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+    boolean isMac = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+    boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows");
     localAddress =
         isMac || isWindows
             ? "127.0.0.1"

@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jline.terminal.impl.DumbTerminal;
 import org.projectnessie.client.api.NessieApi;
@@ -40,7 +41,7 @@ public class NessieCliTester extends BaseNessieCli implements AutoCloseable {
     @SuppressWarnings("resource")
     PrintWriter w = writer();
     w.flush();
-    return asList(out.toString().split("\n"));
+    return asList(out.toString(StandardCharsets.UTF_8).split("\n"));
   }
 
   @Override

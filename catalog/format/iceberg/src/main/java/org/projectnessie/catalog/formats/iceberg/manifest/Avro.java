@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.apache.avro.LogicalType;
@@ -443,7 +444,7 @@ public final class Avro {
     if (Character.isDigit(character)) {
       return "_" + character;
     }
-    return "_x" + Integer.toHexString(character).toUpperCase();
+    return "_x" + Integer.toHexString(character).toUpperCase(Locale.ROOT);
   }
 
   public static int decimalRequiredBytes(int precision) {

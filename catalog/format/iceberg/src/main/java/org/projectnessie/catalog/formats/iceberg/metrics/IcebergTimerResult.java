@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
@@ -57,14 +58,14 @@ public interface IcebergTimerResult {
     @Override
     public void serialize(TimeUnit value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
-      gen.writeString(value.name().toLowerCase());
+      gen.writeString(value.name().toLowerCase(Locale.ROOT));
     }
   }
 
   final class TimeUnitDeserializer extends JsonDeserializer<TimeUnit> {
     @Override
     public TimeUnit deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      return TimeUnit.valueOf(p.getText().toUpperCase());
+      return TimeUnit.valueOf(p.getText().toUpperCase(Locale.ROOT));
     }
   }
 }

@@ -66,7 +66,7 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
     this.account = account;
     this.accountFq = account + ".dfs.core.windows.net";
     this.secret = secret;
-    this.secretBase64 = new String(Base64.getEncoder().encode(secret.getBytes(UTF_8)));
+    this.secretBase64 = new String(Base64.getEncoder().encode(secret.getBytes(UTF_8)), UTF_8);
 
     this.addExposedPort(DEFAULT_PORT);
     this.setWaitStrategy(new LogMessageWaitStrategy().withRegEx(LOG_WAIT_REGEX));

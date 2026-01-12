@@ -21,6 +21,7 @@ import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGe
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,7 +144,7 @@ class ITDeleteContent extends AbstractContentGeneratorTest {
   }
 
   private void writeInputFile(File file, String separator, ContentKey... keys) throws IOException {
-    try (PrintWriter w = new PrintWriter(file)) {
+    try (PrintWriter w = new PrintWriter(file, StandardCharsets.UTF_8)) {
       for (ContentKey key : keys) {
         if (separator == null || separator.isEmpty()) {
           w.println(key.toPathString());

@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -117,7 +118,8 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
         watch.start();
 
         List<String> lines = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        try (BufferedReader br =
+            new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
           while (true) {
             String line = br.readLine();
             if (line == null) {
