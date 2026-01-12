@@ -31,6 +31,7 @@ public interface CutoffPolicy {
 
   Instant NO_TIMESTAMP = Instant.MAX;
 
+  @SuppressWarnings("ClassInitializationDeadlock")
   CutoffPolicy NONE = new NoneCutoffPolicy();
 
   /**

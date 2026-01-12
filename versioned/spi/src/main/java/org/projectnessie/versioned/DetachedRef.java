@@ -24,6 +24,7 @@ public interface DetachedRef extends NamedRef {
 
   String REF_NAME = "DETACHED";
 
+  @SuppressWarnings("ClassInitializationDeadlock")
   DetachedRef INSTANCE = ImmutableDetachedRef.builder().build();
 
   @Nonnull
