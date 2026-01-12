@@ -913,6 +913,7 @@ class TestOAuth2Client {
     soft.assertThat(lastResponse.getExtraParameters()).containsExactly(entry("foo", "bar"));
   }
 
+  @SuppressWarnings("CanonicalDuration")
   private void checkTokenExchangeResponse(Tokens tokens) {
     assertThat(tokens.getAccessToken()).isNotNull();
     soft.assertThat(tokens.getAccessToken().getPayload()).isEqualTo("access-exchanged");
