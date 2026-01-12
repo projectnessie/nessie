@@ -96,12 +96,9 @@ public class TestRestTypes {
 
   static Stream<Arguments> stringDeser() throws Exception {
     URL dataUrl = TestRestTypes.class.getResource("rest-objects.txt");
-    Stream<String> input = Files.lines(Paths.get(dataUrl.toURI()));
     List<String> lines;
-    try {
+    try (Stream<String> input = Files.lines(Paths.get(dataUrl.toURI()))) {
       lines = input.collect(Collectors.toList());
-    } finally {
-      input.close();
     }
     return lines.stream()
         .map(
