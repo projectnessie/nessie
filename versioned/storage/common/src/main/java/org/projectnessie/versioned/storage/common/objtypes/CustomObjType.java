@@ -101,6 +101,7 @@ public abstract class CustomObjType<T extends Obj> implements ObjType {
   }
 
   @Override
+  @SuppressWarnings("EqualsGetClass")
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

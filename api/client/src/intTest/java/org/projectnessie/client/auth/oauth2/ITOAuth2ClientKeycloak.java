@@ -630,6 +630,7 @@ public class ITOAuth2ClientKeycloak {
     assertThat(response.getStatus()).isEqualTo(201);
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private static HttpClient.Builder validatingHttpClient(String clientId) {
     HttpAuthentication authentication = BasicAuthenticationProvider.create(clientId, "s3cr3t");
     return HttpClient.builder()

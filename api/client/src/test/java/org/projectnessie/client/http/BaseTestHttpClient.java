@@ -493,6 +493,7 @@ public abstract class BaseTestHttpClient {
 
   @ParameterizedTest
   @MethodSource("httpResponses")
+  @SuppressWarnings("ReferenceEquality")
   void testHttpResponses(Status status) {
     ExampleBean expected = new ExampleBean("x", 1, NOW);
     handler.set(
@@ -519,6 +520,7 @@ public abstract class BaseTestHttpClient {
 
   @ParameterizedTest
   @MethodSource("httpResponses")
+  @SuppressWarnings("ReferenceEquality")
   void testHttpResponsesNoJsonEntity(Status status) {
     handler.set(
         (req, resp) -> {
