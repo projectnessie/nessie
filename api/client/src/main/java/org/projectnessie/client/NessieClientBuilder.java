@@ -308,8 +308,10 @@ public interface NessieClientBuilder {
       // META-INF/services/org.projectnessie.client.NessieClientBuilder, tested via the
       // compatibility tests, so it's possible that old code still uses that mechanism.
       try {
-        return (NessieClientBuilder)
-            Class.forName(clientBuilderImpl).getDeclaredConstructor().newInstance();
+        return Class.forName(clientBuilderImpl)
+            .asSubclass(NessieClientBuilder.class)
+            .getDeclaredConstructor()
+            .newInstance();
       } catch (Exception e) {
         throw new RuntimeException("Cannot load Nessie client builder implementation class", e);
       }
