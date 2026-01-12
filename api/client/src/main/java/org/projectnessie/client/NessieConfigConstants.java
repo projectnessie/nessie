@@ -273,6 +273,7 @@ public final class NessieConfigConstants {
    * @hidden
    */
   @Deprecated
+  @SuppressWarnings("InvalidBlockTag")
   @ConfigItem(section = "OAuth2 Authentication")
   public static final String CONF_NESSIE_OAUTH2_TOKEN_EXCHANGE_ENABLED_OLD =
       "nessie.authentication.oauth2.token-exchange-enabled";
