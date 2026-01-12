@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.utils.IoUtils;
 
 @ExtendWith(SoftAssertionsExtension.class)
+@SuppressWarnings("InlineMeInliner")
 public class TestAwsChunkedInputStream {
   @InjectSoftAssertions protected SoftAssertions soft;
 

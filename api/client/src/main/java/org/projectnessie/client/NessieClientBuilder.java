@@ -339,6 +339,7 @@ public interface NessieClientBuilder {
   abstract class AbstractNessieClientBuilder implements NessieClientBuilder {
     @Override
     @Deprecated
+    @SuppressWarnings({"InlineMeSuggester"})
     public NessieClientBuilder fromSystemProperties() {
       return fromConfig(systemPropertiesConfigSource().asFunction());
     }
