@@ -160,13 +160,12 @@ public class ImportRepository extends BaseCommand {
     @Override
     public void progress(@Nonnull ProgressEvent progress, ExportMeta meta) {
       switch (progress) {
-        case START_PREPARE:
+        case START_PREPARE -> {
           out.printf("Preparing repository...%n");
           dot = false;
-          break;
-        case END_PREPARE:
-          break;
-        case END_META:
+        }
+        case END_PREPARE -> {}
+        case END_META -> {
           this.exportMeta = meta;
           String nessieVersion = meta.getNessieVersion();
           if (nessieVersion.isEmpty()) {
@@ -184,32 +183,29 @@ public class ImportRepository extends BaseCommand {
               meta.getCommitsFilesCount(),
               meta.getGenericObjCount(),
               meta.getGenericObjFilesCount());
-          break;
-        case START_COMMITS:
+        }
+        case START_COMMITS -> {
           out.printf("Importing %d commits...%n", exportMeta.getCommitCount());
           startPhase();
-          break;
-        case END_COMMITS:
+        }
+        case END_COMMITS -> {
           endPhase();
           out.printf("%d commits imported, total duration: %s.%n%n", count, totalDuration());
-          break;
-        case START_GENERIC:
+        }
+        case START_GENERIC -> {
           out.printf("Importing %d generic objects...%n", exportMeta.getGenericObjCount());
           startPhase();
-          break;
-        case END_GENERIC:
+        }
+        case END_GENERIC -> {
           endPhase();
           out.printf(
               "%d generic objects imported, total duration: %s.%n%n", count, totalDuration());
-          break;
-        case START_NAMED_REFERENCES:
+        }
+        case START_NAMED_REFERENCES -> {
           out.printf("Importing %d named references...%n", exportMeta.getNamedReferencesCount());
           startPhase();
-          break;
-        case COMMIT_WRITTEN:
-        case GENERIC_WRITTEN:
-        case NAMED_REFERENCE_WRITTEN:
-        case FINALIZE_PROGRESS:
+        }
+        case COMMIT_WRITTEN, GENERIC_WRITTEN, NAMED_REFERENCE_WRITTEN, FINALIZE_PROGRESS -> {
           count++;
           if ((count % 10) == 0) {
             out.print('.');
@@ -223,22 +219,21 @@ public class ImportRepository extends BaseCommand {
             out.printf(" %d - duration: %s%n", count, Duration.ofNanos(now - last));
             dot = false;
           }
-          break;
-        case END_NAMED_REFERENCES:
+        }
+        case END_NAMED_REFERENCES -> {
           endPhase();
           out.printf(
               "%d named references imported, total duration: %s.%n%n", count, totalDuration());
-          break;
-        case START_FINALIZE:
+        }
+        case START_FINALIZE -> {
           out.printf("Finalizing import...%n");
           startPhase();
-          break;
-        case END_FINALIZE:
+        }
+        case END_FINALIZE -> {
           endPhase();
           out.printf("Import finalization finished, total duration: %s.%n%n", totalDuration());
-          break;
-        default:
-          break;
+        }
+        default -> {}
       }
     }
 

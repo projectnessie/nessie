@@ -259,50 +259,45 @@ public class ExportRepository extends BaseCommand {
     @Override
     public void progress(@Nonnull ProgressEvent progress, ExportMeta meta) {
       switch (progress) {
-        case FINISHED:
-          out.printf(
-              "Exported Nessie repository, %d commits into %d files, %d named references into %d files, %d generic objects into %d files.%n",
-              exportMeta.getCommitCount(),
-              exportMeta.getCommitsFilesCount(),
-              exportMeta.getNamedReferencesCount(),
-              exportMeta.getNamedReferencesFilesCount(),
-              exportMeta.getGenericObjCount(),
-              exportMeta.getGenericObjFilesCount());
-          break;
-        case END_META:
-          this.exportMeta = meta;
-          break;
-        case START_COMMITS:
+        case FINISHED ->
+            out.printf(
+                "Exported Nessie repository, %d commits into %d files, %d named references into %d files, %d generic objects into %d files.%n",
+                exportMeta.getCommitCount(),
+                exportMeta.getCommitsFilesCount(),
+                exportMeta.getNamedReferencesCount(),
+                exportMeta.getNamedReferencesFilesCount(),
+                exportMeta.getGenericObjCount(),
+                exportMeta.getGenericObjFilesCount());
+        case END_META -> this.exportMeta = meta;
+        case START_COMMITS -> {
           out.println("Exporting commits...");
           count = 0;
           dot = false;
-          break;
-        case END_COMMITS:
+        }
+        case END_COMMITS -> {
           if (dot) {
             out.println();
           }
           out.printf("%d commits exported.%n%n", count);
-          break;
-        case START_GENERIC:
+        }
+        case START_GENERIC -> {
           out.println("Exporting generic objects...");
           count = 0;
           dot = false;
-          break;
-        case END_GENERIC:
+        }
+        case END_GENERIC -> {
           if (dot) {
             out.println();
           }
           out.printf("%d generic objects exported.%n%n", count);
-          break;
-        case START_NAMED_REFERENCES:
+        }
+        case START_NAMED_REFERENCES -> {
           out.println("Exporting named references...");
           count = 0;
           dot = false;
-          break;
-        case COMMIT_WRITTEN:
+        }
         // GENERIC_WRITTEN isn't actually "produced", but adding the value here for posterity.
-        case GENERIC_WRITTEN:
-        case NAMED_REFERENCE_WRITTEN:
+        case COMMIT_WRITTEN, GENERIC_WRITTEN, NAMED_REFERENCE_WRITTEN -> {
           count++;
           if ((count % 10) == 0) {
             out.print('.');
@@ -312,25 +307,24 @@ public class ExportRepository extends BaseCommand {
             out.printf(" %d%n", count);
             dot = false;
           }
-          break;
-        case END_NAMED_REFERENCES:
+        }
+        case END_NAMED_REFERENCES -> {
           if (dot) {
             out.println();
           }
           out.printf("%d named references exported.%n%n", count);
-          break;
-        case START_FINALIZE:
+        }
+        case START_FINALIZE -> {
           out.printf("Finalizing export...%n");
           dot = false;
-          break;
-        case END_FINALIZE:
+        }
+        case END_FINALIZE -> {
           if (dot) {
             out.println();
           }
           out.printf("Export finalization finished.%n%n");
-          break;
-        default:
-          break;
+        }
+        default -> {}
       }
     }
   }
