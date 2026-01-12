@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-  id("nessie-conventions-java11")
+  id("nessie-conventions-java17")
   id("nessie-shadow-jar")
   id("nessie-license-report")
 }

@@ -92,7 +92,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 === "Standalone Jar"
 
-    Requires Java 11, Java 21 recommended.
+    Requires Java 17, Java 21 recommended.
 
     ```bash
     curl -L -o nessie-cli-{{ versions.nessie }}.jar \
@@ -125,7 +125,7 @@ The main Nessie server serves the Nessie repository using the Iceberg REST API a
 
 === "Standalone Jar"
 
-    Requires Java 11, Java 21 recommended.
+    Requires Java 17, Java 21 recommended.
 
     ```bash
     curl -L -o nessie-gc-{{ versions.nessie }}.jar \

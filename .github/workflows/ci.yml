@@ -875,8 +875,8 @@ jobs:
     if: github.event_name == 'pull_request' && needs.determine-jobs.outputs.nesqueit == 'true'
     env:
       NESSIE_DIR: included-builds/nessie
-      NESSIE_PATCH_REPOSITORY: ''
-      NESSIE_PATCH_BRANCH: ''
+      NESSIE_PATCH_REPOSITORY: 'snazy/nessie'
+      NESSIE_PATCH_BRANCH: 'integ-bump/iceberg'
       NESQUEIT_REPOSITORY: projectnessie/query-engine-integration-tests
       NESQUEIT_BRANCH: main
       ICEBERG_DIR: included-builds/iceberg

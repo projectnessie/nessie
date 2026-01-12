@@ -22,11 +22,11 @@ plugins {
   id("nessie-scala")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.release = 11 }
+tasks.withType<JavaCompile>().configureEach { options.release = 17 }
 
 tasks.withType<ScalaCompile>().configureEach {
-  options.release = 11
-  scalaCompileOptions.additionalParameters.add("-release:11")
-  sourceCompatibility = "11"
-  targetCompatibility = "11"
+  options.release = 17
+  scalaCompileOptions.additionalParameters.add("-release:17")
+  sourceCompatibility = "17"
+  targetCompatibility = "17"
 }

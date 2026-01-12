@@ -15,7 +15,7 @@
  */
 
 plugins {
-  id("nessie-conventions-java11")
+  id("nessie-conventions-java17")
   alias(libs.plugins.jmh)
 }
 
