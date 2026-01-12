@@ -86,10 +86,10 @@ public abstract class AbstractQuarkusSmoke {
           .forEach(
               ref -> {
                 try {
-                  if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                    api().deleteBranch().branch((Branch) ref).delete();
-                  } else if (ref instanceof Tag) {
-                    api().deleteTag().tag((Tag) ref).delete();
+                  if (ref instanceof Branch b && !ref.getName().equals(defaultBranch.getName())) {
+                    api().deleteBranch().branch(b).delete();
+                  } else if (ref instanceof Tag t) {
+                    api().deleteTag().tag(t).delete();
                   }
                 } catch (NessieConflictException | NessieNotFoundException e) {
                   throw new RuntimeException(e);
