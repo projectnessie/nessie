@@ -151,6 +151,7 @@ public final class AvroField {
     return decoder.readBytes(null);
   }
 
+  @SuppressWarnings("ByteBufferBackingArray")
   static Object readByteArray(Decoder decoder, @SuppressWarnings("unused") Schema schema)
       throws IOException {
     ByteBuffer byteBuffer = decoder.readBytes(null);
