@@ -62,7 +62,7 @@ public class NessieApiCompatibilityFilter implements RequestFilter {
     JsonNode config;
     try {
       HttpResponse response = httpClient.newRequest().bypassFilters().path("config").get();
-      if (response.getStatus() != Status.OK) {
+      if (response.getStatus().getCode() != Status.OK.getCode()) {
         LOGGER.warn(
             "API compatibility check: config endpoint replied with status {}, proceeding without check",
             response.getStatus());
