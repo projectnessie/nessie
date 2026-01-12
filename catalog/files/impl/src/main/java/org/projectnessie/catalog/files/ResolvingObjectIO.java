@@ -77,7 +77,7 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
   @Override
   public void deleteObjects(List<StorageUri> uris) throws IOException {
     IOException ex = null;
-    Map<ObjectIO, List<StorageUri>> perObjectIO = new IdentityHashMap<>();
+    IdentityHashMap<ObjectIO, List<StorageUri>> perObjectIO = new IdentityHashMap<>();
     uris.forEach(uri -> perObjectIO.computeIfAbsent(resolve(uri), x -> new ArrayList<>()).add(uri));
     for (Map.Entry<ObjectIO, List<StorageUri>> perObjIO : perObjectIO.entrySet()) {
       try {
