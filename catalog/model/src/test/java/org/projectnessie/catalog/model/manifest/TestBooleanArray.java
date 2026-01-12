@@ -57,6 +57,7 @@ public class TestBooleanArray {
     soft.assertThat(BooleanArray.decodedForIndex(index, encoded)).isEqualTo(v);
   }
 
+  @SuppressWarnings("BooleanLiteral")
   static Stream<Arguments> encodeDecodeForIndex() {
     return Stream.of(
         arguments(null, 0, (byte) 0),
