@@ -56,6 +56,7 @@ public abstract class NessieCommand<SPEC extends CommandSpec> {
     return onReferenceBuilder.refName(refName).hashOnRef(hash);
   }
 
+  @SuppressWarnings("JavaInstantGetSecondsGetNano")
   protected String hashOrTimestamp(RefWithHashCommandSpec commandSpec) {
     String hash = commandSpec.getRefTimestampOrHash();
     if (hash == null) {

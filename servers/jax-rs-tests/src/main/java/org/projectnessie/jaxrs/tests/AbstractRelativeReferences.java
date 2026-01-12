@@ -119,6 +119,7 @@ public abstract class AbstractRelativeReferences {
 
     assertThat(metaForCommit("etl2*" + c5plus1)).isEqualTo(c5commit);
 
+    @SuppressWarnings("JavaInstantGetSecondsGetNano")
     var c5rounded = c5plus1.minusNanos(c5plus1.getNano());
 
     assertThat(metaForCommit("etl2*" + c5rounded.plus(1, ChronoUnit.MILLIS))).isEqualTo(c5commit);
