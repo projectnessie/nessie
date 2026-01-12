@@ -109,7 +109,7 @@ public class Syntax {
     abstract int length();
   }
 
-  class Newline extends Obj {
+  static class Newline extends Obj {
     final Coll coll;
     final String indent;
 
