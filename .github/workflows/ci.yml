@@ -935,7 +935,7 @@ jobs:
         with:
           distribution: 'temurin'
           # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto
-          java-version: | 
+          java-version: |
             11
             17
             21
