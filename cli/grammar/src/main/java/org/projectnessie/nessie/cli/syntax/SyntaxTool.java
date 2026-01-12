@@ -253,8 +253,6 @@ public class SyntaxTool {
           public void space() {}
 
           @Override
-          public void write(Type type, String str) {
-            if (type == Type.NON_TERMINAL) {
           public void write(SyntaxPrinter.Type type, String str) {
             if (type == SyntaxPrinter.Type.NON_TERMINAL) {
               if (seen.add(str)) {
