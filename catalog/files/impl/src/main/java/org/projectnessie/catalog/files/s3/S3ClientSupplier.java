@@ -33,19 +33,20 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkField;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.profiles.ProfileFile;
-import software.amazon.awssdk.profiles.ProfileFile.Type;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.DelegatingS3Client;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.S3Request;
-import software.amazon.awssdk.services.s3.model.S3Request.Builder;
 
 public class S3ClientSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(S3ClientSupplier.class);
   private static final ProfileFile EMPTY_PROFILE_FILE =
-      ProfileFile.builder().content(InputStream.nullInputStream()).type(Type.CONFIGURATION).build();
+      ProfileFile.builder()
+          .content(InputStream.nullInputStream())
+          .type(ProfileFile.Type.CONFIGURATION)
+          .build();
 
   private final SdkHttpClient sdkClient;
   private final S3Options s3options;
@@ -149,7 +150,7 @@ public class S3ClientSupplier {
               .filter(f -> f.memberName().equalsIgnoreCase("Bucket"))
               .findFirst();
       if (bucket.isPresent()) {
-        Builder builder = request.toBuilder();
+        S3Request.Builder builder = request.toBuilder();
         bucket.get().set(builder, accessPoint);
         @SuppressWarnings("unchecked")
         T modified = (T) builder.build();

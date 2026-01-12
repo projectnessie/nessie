@@ -23,7 +23,7 @@ import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;
-import org.projectnessie.versioned.storage.dynamodb.ImmutableDynamoDBBackendConfig.Builder;
+import org.projectnessie.versioned.storage.dynamodb.ImmutableDynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
     return new DynamoDBBackend(dynamoDBBackendConfig, closeClient);
   }
 
-  public Builder dynamoDBConfigBuilder() {
+  public ImmutableDynamoDBBackendConfig.Builder dynamoDBConfigBuilder() {
     return DynamoDBBackendConfig.builder().client(buildNewClient());
   }
 

@@ -515,7 +515,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
     Set<Check> checks = newHashSetWithExpectedSize(operations.size());
     for (Operation op : operations) {
-      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
+      if (!(op instanceof Put) && !(op instanceof Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
       }
       IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
@@ -537,7 +537,7 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
     Map<Check, String> failures = anyCheck ? accessCheck.check() : emptyMap();
 
     for (Operation op : operations) {
-      if (!(op instanceof Operation.Put) && !(op instanceof Operation.Delete)) {
+      if (!(op instanceof Put) && !(op instanceof Delete)) {
         throw new IllegalStateException("Unknown operation " + op);
       }
       IdentifiedContentKey identifiedKey = identifiedKeys.get(op.getKey());
@@ -574,10 +574,10 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
                   ContentKey key = op.getKey();
                   if (op instanceof Put) {
                     Content content = ((Put) op).getContent();
-                    logEntry.addOperations(Operation.Put.of(key, content));
+                    logEntry.addOperations(Put.of(key, content));
                   }
                   if (op instanceof Delete) {
-                    logEntry.addOperations(Operation.Delete.of(key));
+                    logEntry.addOperations(Delete.of(key));
                   }
                 });
       }

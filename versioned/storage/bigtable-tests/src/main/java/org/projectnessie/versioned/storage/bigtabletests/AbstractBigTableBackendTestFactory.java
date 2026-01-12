@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackend;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendConfig;
-import org.projectnessie.versioned.storage.bigtable.ImmutableBigTableBackendConfig.Builder;
+import org.projectnessie.versioned.storage.bigtable.ImmutableBigTableBackendConfig;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 
@@ -43,7 +43,7 @@ public abstract class AbstractBigTableBackendTestFactory implements BackendTestF
     return new BigTableBackend(bigtableConfig);
   }
 
-  public Builder bigtableConfigBuilder() {
+  public ImmutableBigTableBackendConfig.Builder bigtableConfigBuilder() {
     return BigTableBackendConfig.builder()
         .dataClient(buildNewDataClient())
         .tableAdminClient(buildNewTableAdminClient());

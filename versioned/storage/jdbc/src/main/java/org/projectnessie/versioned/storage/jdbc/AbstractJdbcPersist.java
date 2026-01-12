@@ -52,7 +52,6 @@ import static org.projectnessie.versioned.storage.serialize.ProtoSerialization.s
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.lang.reflect.Array;
@@ -104,7 +103,7 @@ abstract class AbstractJdbcPersist implements Persist {
   }
 
   private Map<String, Integer> buildStoreObjSqlParams() {
-    Builder<String, Integer> params = ImmutableMap.builder();
+    ImmutableMap.Builder<String, Integer> params = ImmutableMap.builder();
     int i = 1;
     params.put(COL_REPO_ID, i++);
     for (String col : COLS_OBJS_ALL.keySet()) {

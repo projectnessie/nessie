@@ -134,9 +134,9 @@ public class TestCacheInvalidation {
           .first()
           .extracting(CacheInvalidationEvictReference.class::cast)
           .extracting(
-              CacheInvalidations.CacheInvalidationEvictReference::refName,
-              CacheInvalidations.CacheInvalidationEvictReference::repoId,
-              CacheInvalidations.CacheInvalidationEvictReference::type)
+              CacheInvalidationEvictReference::refName,
+              CacheInvalidationEvictReference::repoId,
+              CacheInvalidationEvictReference::type)
           .containsExactly("foo/bar/baz", "", "ref");
     }
   }
