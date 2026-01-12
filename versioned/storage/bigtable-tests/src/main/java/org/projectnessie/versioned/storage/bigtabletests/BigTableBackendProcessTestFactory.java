@@ -92,6 +92,7 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
               .start();
       System.out.println("Cloud Bigtable emulator started with PID " + process.pid());
       if (emulatorPort == 0) {
+        @SuppressWarnings("ConstantPatternCompile")
         Pattern hostPortPattern =
             Pattern.compile(".*Cloud Bigtable emulator running on ([0-9:.]+):([0-9]+)");
 
