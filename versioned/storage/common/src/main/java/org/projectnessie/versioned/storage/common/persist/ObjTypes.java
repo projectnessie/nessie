@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.storage.common.persist;
 
+import com.google.errorprone.annotations.InlineMe;
 import jakarta.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,12 +44,19 @@ public final class ObjTypes {
 
   @Nonnull
   @Deprecated(forRemoval = true)
+  @SuppressWarnings("InlineMeSuggester")
+  @InlineMe(
+      replacement = "ObjTypes.objTypeByName(name)",
+      imports = "org.projectnessie.versioned.storage.common.persist.ObjTypes")
   public static ObjType forName(@Nonnull String name) {
     return objTypeByName(name);
   }
 
   @Nonnull
   @Deprecated(forRemoval = true)
+  @InlineMe(
+      replacement = "ObjTypes.objTypeByName(shortName)",
+      imports = "org.projectnessie.versioned.storage.common.persist.ObjTypes")
   public static ObjType forShortName(@Nonnull String shortName) {
     return objTypeByName(shortName);
   }
