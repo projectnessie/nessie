@@ -335,6 +335,7 @@ final class TransformParser {
     }
   }
 
+  @SuppressWarnings("JavaLangClash")
   static final class Void implements NessieFieldTransform {
     @Override
     public String toString() {
