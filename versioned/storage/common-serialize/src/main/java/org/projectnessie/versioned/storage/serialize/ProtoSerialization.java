@@ -148,6 +148,7 @@ public final class ProtoSerialization {
     }
   }
 
+  @SuppressWarnings("MixedMutabilityReturnType")
   public static List<Reference.PreviousPointer> deserializePreviousPointers(
       byte[] previousPointers) {
     if (previousPointers == null || previousPointers.length == 0) {
