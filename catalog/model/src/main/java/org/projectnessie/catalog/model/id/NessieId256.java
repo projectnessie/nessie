@@ -169,12 +169,10 @@ final class NessieId256 implements NessieId {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof NessieId256) {
-      NessieId256 other = (NessieId256) obj;
+    if (obj instanceof NessieId256 other) {
       return other.l0 == l0 && other.l1 == l1 && other.l2 == l2 && other.l3 == l3;
     }
-    if (obj instanceof NessieId) {
-      NessieId other = (NessieId) obj;
+    if (obj instanceof NessieId other) {
       int size = size();
       if (other.size() != size) {
         return false;

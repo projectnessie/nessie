@@ -159,10 +159,9 @@ public final class RepositoryConfigTypes {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof RepositoryConfigTypeImpl)) {
+      if (!(o instanceof RepositoryConfigTypeImpl that)) {
         return false;
       }
-      RepositoryConfigTypeImpl that = (RepositoryConfigTypeImpl) o;
       return name.equals(that.name);
     }
 

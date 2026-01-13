@@ -52,12 +52,10 @@ public class AlterNamespaceCommand extends NessieCommittingCommand<AlterNamespac
         applyReference(cli, spec, cli.mandatoryNessieApi().getContent())
             .getSingle(contentKey)
             .getContent();
-    if (!(content instanceof Namespace)) {
+    if (!(content instanceof Namespace namespace)) {
       throw new IllegalArgumentException(
           "Key " + contentKey + " is not a namespace, but a " + content.getType());
     }
-
-    Namespace namespace = (Namespace) content;
 
     HashMap<String, String> props = new HashMap<>(namespace.getProperties());
     spec.removeProperties().forEach(props::remove);

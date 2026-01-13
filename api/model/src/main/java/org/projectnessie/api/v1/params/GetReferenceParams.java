@@ -89,10 +89,9 @@ public class GetReferenceParams {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof GetReferenceParams)) {
+    if (!(o instanceof GetReferenceParams that)) {
       return false;
     }
-    GetReferenceParams that = (GetReferenceParams) o;
     return fetchOption == that.fetchOption && Objects.equals(refName, that.refName);
   }
 

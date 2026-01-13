@@ -49,8 +49,8 @@ public final class ContentTypeIdResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
-    if (value instanceof Content) {
-      return ((Content) value).getType().name();
+    if (value instanceof Content content) {
+      return content.getType().name();
     }
 
     return null;

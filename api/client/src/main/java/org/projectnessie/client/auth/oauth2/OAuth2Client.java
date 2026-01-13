@@ -105,10 +105,10 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
       Throwable cause = e.getCause();
-      if (cause instanceof Error) {
-        throw (Error) cause;
-      } else if (cause instanceof HttpClientException) {
-        throw (HttpClientException) cause;
+      if (cause instanceof Error error) {
+        throw error;
+      } else if (cause instanceof HttpClientException httpClientException) {
+        throw httpClientException;
       } else {
         throw new RuntimeException("Cannot acquire a valid OAuth2 access token", cause);
       }
@@ -141,8 +141,8 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
           tokenRefreshFuture.cancel(true);
         }
         // Only close the executor if it's the default one (not shared).
-        if (executor instanceof OAuth2TokenRefreshExecutor) {
-          ((OAuth2TokenRefreshExecutor) executor).close();
+        if (executor instanceof OAuth2TokenRefreshExecutor oAuth2TokenRefreshExecutor) {
+          oAuth2TokenRefreshExecutor.close();
         }
         // Always close the HTTP client (can't be shared).
         httpClient.close();

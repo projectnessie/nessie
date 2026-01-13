@@ -148,8 +148,8 @@ final class S3IamPolicies {
         ObjectNode node = null;
         if (values.hasNext()) {
           Object value = values.nextValue();
-          if (value instanceof ObjectNode) {
-            node = (ObjectNode) value;
+          if (value instanceof ObjectNode objectNode) {
+            node = objectNode;
           } else {
             throw new IOException("Invalid statement");
           }

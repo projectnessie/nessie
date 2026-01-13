@@ -94,10 +94,9 @@ public class NamespaceParams {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof NamespaceParams)) {
+    if (!(o instanceof NamespaceParams that)) {
       return false;
     }
-    NamespaceParams that = (NamespaceParams) o;
     return Objects.equals(refName, that.refName)
         && Objects.equals(namespace, that.namespace)
         && Objects.equals(hashOnRef, that.hashOnRef);

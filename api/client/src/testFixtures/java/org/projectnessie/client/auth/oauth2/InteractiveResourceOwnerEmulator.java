@@ -220,8 +220,8 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
       conn = (HttpURLConnection) transformed.toURL().openConnection();
     }
     conn.addRequestProperty("Accept", accept);
-    if (sslContext != null && conn instanceof HttpsURLConnection) {
-      ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext.getSocketFactory());
+    if (sslContext != null && conn instanceof HttpsURLConnection httpsURLConnection) {
+      httpsURLConnection.setSSLSocketFactory(sslContext.getSocketFactory());
     }
     return conn;
   }
@@ -242,10 +242,10 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
     MoreExecutors.shutdownAndAwaitTermination(executor, 5, TimeUnit.SECONDS);
     Throwable t = error;
     if (t != null) {
-      if (t instanceof Exception) {
-        throw (Exception) t;
-      } else if (t instanceof Error) {
-        throw (Error) t;
+      if (t instanceof Exception e) {
+        throw e;
+      } else if (t instanceof Error e) {
+        throw e;
       } else {
         throw new RuntimeException(t);
       }

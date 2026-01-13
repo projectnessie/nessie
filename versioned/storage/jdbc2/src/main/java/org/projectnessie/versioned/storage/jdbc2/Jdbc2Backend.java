@@ -173,8 +173,8 @@ public final class Jdbc2Backend implements Backend {
   public void close() {
     if (closeDataSource) {
       try {
-        if (dataSource instanceof AutoCloseable) {
-          ((AutoCloseable) dataSource).close();
+        if (dataSource instanceof AutoCloseable autoCloseable) {
+          autoCloseable.close();
         }
       } catch (Exception e) {
         throw new RuntimeException(e);

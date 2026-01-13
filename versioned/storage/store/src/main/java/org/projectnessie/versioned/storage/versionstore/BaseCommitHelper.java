@@ -229,14 +229,14 @@ class BaseCommitHelper {
       throw referenceConflictException(e);
     } catch (CommitWrappedException e) {
       Throwable c = e.getCause();
-      if (c instanceof ReferenceNotFoundException) {
-        throw (ReferenceNotFoundException) c;
+      if (c instanceof ReferenceNotFoundException referenceNotFoundException) {
+        throw referenceNotFoundException;
       }
-      if (c instanceof ReferenceConflictException) {
-        throw (ReferenceConflictException) c;
+      if (c instanceof ReferenceConflictException referenceConflictException) {
+        throw referenceConflictException;
       }
-      if (c instanceof RuntimeException) {
-        throw (RuntimeException) c;
+      if (c instanceof RuntimeException runtimeException) {
+        throw runtimeException;
       }
       throw new RuntimeException(c);
     } catch (RetryTimeoutException e) {

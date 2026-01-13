@@ -630,8 +630,8 @@ public class VersionStoreImpl implements VersionStore {
   }
 
   static <R> R emptyOrNotFound(Ref ref, R namedRefResult) throws ReferenceNotFoundException {
-    if (ref instanceof Hash && !NO_ANCESTOR.equals(ref)) {
-      throw RefMapping.hashNotFound((Hash) ref);
+    if (ref instanceof Hash hash && !NO_ANCESTOR.equals(ref)) {
+      throw RefMapping.hashNotFound(hash);
     }
     return namedRefResult;
   }

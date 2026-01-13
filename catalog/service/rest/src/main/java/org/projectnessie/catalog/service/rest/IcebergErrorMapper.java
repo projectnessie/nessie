@@ -102,8 +102,7 @@ public class IcebergErrorMapper {
 
     switch (status.statusCode()) {
       case NESSIE_ERROR:
-        if (status.cause() instanceof BaseNessieClientServerException) {
-          BaseNessieClientServerException e = (BaseNessieClientServerException) status.cause();
+        if (status.cause() instanceof BaseNessieClientServerException e) {
           return mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
         }
         return null;
@@ -169,9 +168,7 @@ public class IcebergErrorMapper {
             "Namespace does not exist: " + keyMessage(ex, errorDetails),
             ex);
       case REFERENCE_CONFLICT:
-        if (ex instanceof NessieReferenceConflictException) {
-          NessieReferenceConflictException referenceConflictException =
-              (NessieReferenceConflictException) ex;
+        if (ex instanceof NessieReferenceConflictException referenceConflictException) {
           ReferenceConflicts referenceConflicts = referenceConflictException.getErrorDetails();
           if (referenceConflicts != null) {
             List<Conflict> conflicts = referenceConflicts.conflicts();
@@ -211,8 +208,8 @@ public class IcebergErrorMapper {
   }
 
   private static String keyMessage(Exception ex, NessieErrorDetails errorDetails) {
-    if (errorDetails instanceof ContentKeyErrorDetails) {
-      ContentKey key = ((ContentKeyErrorDetails) errorDetails).contentKey();
+    if (errorDetails instanceof ContentKeyErrorDetails contentKeyErrorDetails) {
+      ContentKey key = contentKeyErrorDetails.contentKey();
       if (key != null) {
         return key.toString();
       }
@@ -228,8 +225,7 @@ public class IcebergErrorMapper {
             404, "NoSuchNamespaceException", "Namespace does not exist: " + conflict.key(), ex);
 
       case KEY_EXISTS:
-        if (ex instanceof CatalogEntityAlreadyExistsException) {
-          CatalogEntityAlreadyExistsException e = (CatalogEntityAlreadyExistsException) ex;
+        if (ex instanceof CatalogEntityAlreadyExistsException e) {
           // Produces different messages depending on the target type - just to get the tests
           // passing :facepalm:
           String type = typeToEntityName(e.getExistingType());

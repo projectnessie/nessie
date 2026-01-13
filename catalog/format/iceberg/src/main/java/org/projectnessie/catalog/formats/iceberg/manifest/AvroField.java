@@ -353,8 +353,7 @@ public final class AvroField {
         return AvroField::readMap;
       case ARRAY:
         Schema elementType = schema.getElementType();
-        if (type instanceof ParameterizedType) {
-          ParameterizedType parameterizedType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType parameterizedType) {
           Type rawType = parameterizedType.getRawType();
           Type[] args = parameterizedType.getActualTypeArguments();
           if (Map.class.isAssignableFrom((Class<?>) rawType)) {
@@ -584,8 +583,7 @@ public final class AvroField {
         return AvroField::writeMap;
       case ARRAY:
         Schema elementType = schema.getElementType();
-        if (type instanceof ParameterizedType) {
-          ParameterizedType parameterizedType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType parameterizedType) {
           Type rawType = parameterizedType.getRawType();
           Type[] args = parameterizedType.getActualTypeArguments();
           if (Map.class.isAssignableFrom((Class<?>) rawType)) {

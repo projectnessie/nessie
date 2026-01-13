@@ -101,10 +101,9 @@ public class MultipleNamespacesParams {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof MultipleNamespacesParams)) {
+    if (!(o instanceof MultipleNamespacesParams that)) {
       return false;
     }
-    MultipleNamespacesParams that = (MultipleNamespacesParams) o;
     return Objects.equals(refName, that.refName)
         && Objects.equals(namespace, that.namespace)
         && Objects.equals(hashOnRef, that.hashOnRef);

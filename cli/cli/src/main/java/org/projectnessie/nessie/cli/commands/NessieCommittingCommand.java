@@ -41,19 +41,18 @@ public abstract class NessieCommittingCommand<SPEC extends CommandSpec>
 
     String refName = null;
     Reference ref;
-    if (spec instanceof RefCommandSpec) {
-      refName = ((RefCommandSpec) spec).getRef();
+    if (spec instanceof RefCommandSpec refCommandSpec) {
+      refName = refCommandSpec.getRef();
     }
     if (refName == null) {
       ref = cli.getCurrentReference();
     } else {
       ref = api.getReference().refName(refName).get();
     }
-    if (!(ref instanceof Branch)) {
+    if (!(ref instanceof Branch branch)) {
       throw new IllegalStateException("Cannot commit to non-branch reference " + ref.getName());
     }
 
-    Branch branch = (Branch) ref;
     CommitMultipleOperationsBuilder commit = api.commitMultipleOperations();
     commit.branch((Branch) ref);
 

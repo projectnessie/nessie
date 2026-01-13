@@ -261,8 +261,8 @@ public final class CassandraBackend implements Backend {
           // If a failure happened, there's not much that can be done, just re-throw
           Throwable f = failure;
           if (f != null) {
-            if (f instanceof RuntimeException) {
-              throw (RuntimeException) f;
+            if (f instanceof RuntimeException re) {
+              throw re;
             }
             throw new RuntimeException(f);
           } else if (queriesCompleted == queryCount) {
@@ -344,8 +344,7 @@ public final class CassandraBackend implements Backend {
   static RuntimeException unhandledException(DriverException e) {
     if (isUnknownOperationResult(e)) {
       return new UnknownOperationResultException(e);
-    } else if (e instanceof AllNodesFailedException) {
-      AllNodesFailedException all = (AllNodesFailedException) e;
+    } else if (e instanceof AllNodesFailedException all) {
       if (all.getAllErrors().values().stream()
           .flatMap(List::stream)
           .filter(DriverException.class::isInstance)

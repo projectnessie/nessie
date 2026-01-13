@@ -159,14 +159,14 @@ public final class CELUtil {
    * @return object suitable for CEL expressions
    */
   public static Object forCel(Object model) {
-    if (model instanceof Content) {
-      return new ContentEntity((Content) model);
+    if (model instanceof Content content) {
+      return new ContentEntity(content);
     }
-    if (model instanceof Operation) {
-      return new OperationForCelImpl((Operation) model);
+    if (model instanceof Operation operation) {
+      return new OperationForCelImpl(operation);
     }
-    if (model instanceof ContentKey) {
-      return new KeyForCelImpl((ContentKey) model);
+    if (model instanceof ContentKey contentKey) {
+      return new KeyForCelImpl(contentKey);
     }
     return model;
   }
@@ -266,8 +266,8 @@ public final class CELUtil {
 
     @Override
     public ContentForCel getContent() {
-      if (op instanceof Put) {
-        return (ContentForCel) forCel(((Put) op).getContent());
+      if (op instanceof Put put) {
+        return (ContentForCel) forCel(put.getContent());
       }
       return null;
     }

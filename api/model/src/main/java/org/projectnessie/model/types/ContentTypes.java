@@ -157,10 +157,9 @@ public final class ContentTypes {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof ContentTypeImpl)) {
+      if (!(o instanceof ContentTypeImpl that)) {
         return false;
       }
-      ContentTypeImpl that = (ContentTypeImpl) o;
       return name.equals(that.name);
     }
 

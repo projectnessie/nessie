@@ -840,16 +840,16 @@ public class DynamoDB2Persist implements Persist {
   }
 
   static RuntimeException unhandledException(RuntimeException e) {
-    if (e instanceof SdkException) {
-      if (((SdkException) e).retryable()
+    if (e instanceof SdkException sdkException) {
+      if (sdkException.retryable()
           || e instanceof ApiCallTimeoutException
           || e instanceof ApiCallAttemptTimeoutException
           || e instanceof AbortedException) {
         return new UnknownOperationResultException(e);
       }
     }
-    if (e instanceof AwsServiceException) {
-      if (((AwsServiceException) e).isThrottlingException()) {
+    if (e instanceof AwsServiceException awsServiceException) {
+      if (awsServiceException.isThrottlingException()) {
         return new UnknownOperationResultException(e);
       }
     }

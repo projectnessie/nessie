@@ -27,10 +27,9 @@ public interface UpdateableObj extends Obj {
 
   static Optional<String> extractVersionToken(Obj obj) {
     String versionToken = null;
-    if (obj instanceof UpdateableObj) {
-      versionToken = ((UpdateableObj) obj).versionToken();
-    } else if (obj instanceof GenericObj) {
-      GenericObj genericObj = (GenericObj) obj;
+    if (obj instanceof UpdateableObj updateableObj) {
+      versionToken = updateableObj.versionToken();
+    } else if (obj instanceof GenericObj genericObj) {
       versionToken = (String) genericObj.attributes().get(VERSION_TOKEN_ATTRIBUTE);
     }
     return Optional.ofNullable(versionToken);

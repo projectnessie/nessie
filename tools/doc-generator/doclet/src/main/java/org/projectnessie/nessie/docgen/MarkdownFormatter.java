@@ -465,12 +465,11 @@ public abstract class MarkdownFormatter {
                 stack.addLast(new UnorderedListTarget(target.indent));
                 break;
               case "li":
-                while (!(target instanceof ListTarget)) {
+                while (!(target instanceof ListTarget listTarget)) {
                   Target last = stack.removeLast();
                   target = stack.peekLast();
                   target.text.append(last.text);
                 }
-                ListTarget listTarget = (ListTarget) target;
                 target.text.append(listTarget.itemPrefix);
                 stack.addLast(listTarget.newItem());
                 break;
@@ -575,8 +574,7 @@ public abstract class MarkdownFormatter {
                 .findFirst();
         if (referenced.isPresent()) {
           Element ref = referenced.get();
-          if (ref instanceof VariableElement) {
-            VariableElement variableElement = (VariableElement) ref;
+          if (ref instanceof VariableElement variableElement) {
             Object value = variableElement.getConstantValue();
             if (value instanceof String) {
               target.text.append('"').append(value).append('"');
@@ -614,8 +612,7 @@ public abstract class MarkdownFormatter {
                 .findFirst();
         if (referenced.isPresent()) {
           Element ref = referenced.get();
-          if (ref instanceof VariableElement) {
-            VariableElement variableElement = (VariableElement) ref;
+          if (ref instanceof VariableElement variableElement) {
             Object value = variableElement.getConstantValue();
             target.text.append(value);
           }

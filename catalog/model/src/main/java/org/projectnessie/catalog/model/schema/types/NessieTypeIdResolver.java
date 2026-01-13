@@ -48,8 +48,8 @@ public class NessieTypeIdResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
-    if (value instanceof NessieTypeSpec) {
-      return ((NessieTypeSpec) value).type().lowerCaseName();
+    if (value instanceof NessieTypeSpec nessieTypeSpec) {
+      return nessieTypeSpec.type().lowerCaseName();
     }
     return null;
   }

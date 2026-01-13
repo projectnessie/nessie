@@ -67,13 +67,12 @@ public final class IcebergTimestampType extends IcebergPrimitiveType {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof IcebergTimestampType)) {
+    if (!(obj instanceof IcebergTimestampType o)) {
       return false;
     }
     if (obj == this) {
       return true;
     }
-    IcebergTimestampType o = (IcebergTimestampType) obj;
     return o.adjustToUTC == adjustToUTC;
   }
 }

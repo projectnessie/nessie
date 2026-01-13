@@ -278,11 +278,11 @@ class CommitImpl extends BaseCommitHelper {
       Operation operation = operations.get(i);
       StoreKey storeKey = storeKeys.get(i);
 
-      if (operation instanceof Delete) {
+      if (operation instanceof Delete delete) {
         commitAddDelete(
             expectedIndex(),
             commit,
-            (Delete) operation,
+            delete,
             storeKey,
             deleted,
             deletedKeysAndPayload::put,
@@ -293,11 +293,11 @@ class CommitImpl extends BaseCommitHelper {
       Operation operation = operations.get(i);
       StoreKey storeKey = storeKeys.get(i);
 
-      if (operation instanceof Put) {
+      if (operation instanceof Put put) {
         commitAddPut(
             expectedIndex(),
             commit,
-            (Put) operation,
+            put,
             storeKey,
             contentToStore,
             commitRetryState,
@@ -321,8 +321,8 @@ class CommitImpl extends BaseCommitHelper {
     if (previous != null) {
       boolean reAdd =
           previous instanceof Delete
-              && current instanceof Put
-              && ((Put) current).getContent().getId() == null;
+              && current instanceof Put put
+              && put.getContent().getId() == null;
       if (!reAdd) {
         throw new IllegalArgumentException(
             "Duplicate key in commit operations: " + current.getKey());

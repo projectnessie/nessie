@@ -57,8 +57,8 @@ public abstract class AbstractNestedVersionStore {
   }
 
   protected StorageAssertions storageCheckpoint() {
-    if (store instanceof ValidatingVersionStore) {
-      return ((ValidatingVersionStore) store).storageCheckpoint();
+    if (store instanceof ValidatingVersionStore validatingVersionStore) {
+      return validatingVersionStore.storageCheckpoint();
     }
     return new StorageAssertions(); // non-validating
   }
@@ -185,8 +185,7 @@ public abstract class AbstractNestedVersionStore {
     return operations.stream()
         .map(
             op -> {
-              if (op instanceof Put) {
-                Put put = (Put) op;
+              if (op instanceof Put put) {
                 Content content = put.getContent();
                 return Put.of(put.getKey(), contentWithoutId(content));
               }

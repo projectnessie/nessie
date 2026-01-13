@@ -182,10 +182,11 @@ public abstract class BaseTestNessieApi {
           .forEach(
               ref -> {
                 try {
-                  if (ref instanceof Branch && !ref.getName().equals(defaultBranch.getName())) {
-                    api.deleteBranch().branch((Branch) ref).delete();
-                  } else if (ref instanceof Tag) {
-                    api.deleteTag().tag((Tag) ref).delete();
+                  if (ref instanceof Branch branch
+                      && !ref.getName().equals(defaultBranch.getName())) {
+                    api.deleteBranch().branch(branch).delete();
+                  } else if (ref instanceof Tag tag) {
+                    api.deleteTag().tag(tag).delete();
                   }
                 } catch (NessieConflictException | NessieNotFoundException e) {
                   throw new RuntimeException(e);

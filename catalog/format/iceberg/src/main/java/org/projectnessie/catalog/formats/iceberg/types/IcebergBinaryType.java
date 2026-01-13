@@ -57,11 +57,11 @@ public final class IcebergBinaryType extends IcebergPrimitiveType {
   }
 
   static byte[] serializeBinary(Object value) {
-    if (value instanceof ByteBuffer) {
-      return toByteArray((ByteBuffer) value);
+    if (value instanceof ByteBuffer byteBuffer) {
+      return toByteArray(byteBuffer);
     }
-    if (value instanceof byte[]) {
-      return (byte[]) value;
+    if (value instanceof byte[] bytes) {
+      return bytes;
     }
     throw new IllegalArgumentException(value.getClass().toString());
   }

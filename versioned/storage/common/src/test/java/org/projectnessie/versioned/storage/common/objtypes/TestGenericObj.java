@@ -48,7 +48,7 @@ public class TestGenericObj {
 
     ObjType genericType = newGenericObjType("genericType_" + UUID.randomUUID());
     String versionToken =
-        (realObj instanceof UpdateableObj) ? ((UpdateableObj) realObj).versionToken() : null;
+        (realObj instanceof UpdateableObj updateableObj) ? updateableObj.versionToken() : null;
 
     String json = mapper.writeValueAsString(realObj);
 

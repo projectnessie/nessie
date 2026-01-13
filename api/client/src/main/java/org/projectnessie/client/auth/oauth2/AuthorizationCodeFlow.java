@@ -170,8 +170,8 @@ class AuthorizationCodeFlow extends AbstractFlow {
       abort();
       Throwable cause = e.getCause();
       LOGGER.error("Authentication failed: {}", cause.toString());
-      if (cause instanceof HttpClientException) {
-        throw (HttpClientException) cause;
+      if (cause instanceof HttpClientException httpClientException) {
+        throw httpClientException;
       }
       throw new RuntimeException(cause);
     }

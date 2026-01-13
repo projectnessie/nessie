@@ -238,8 +238,7 @@ abstract class ExportCommon {
           .setTypeName(objType.shortName())
           .setEncoding(TransferTypes.Encoding.Smile)
           .setData(UnsafeByteOperations.unsafeWrap(serialized));
-      if (obj instanceof UpdateableObj) {
-        UpdateableObj updateableObj = (UpdateableObj) obj;
+      if (obj instanceof UpdateableObj updateableObj) {
         String versionToken = updateableObj.versionToken();
         if (versionToken != null) {
           genericObj.setVersionToken(versionToken);

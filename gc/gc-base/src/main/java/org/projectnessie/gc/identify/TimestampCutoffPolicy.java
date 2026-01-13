@@ -42,10 +42,9 @@ final class TimestampCutoffPolicy implements CutoffPolicy {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof TimestampCutoffPolicy)) {
+    if (!(o instanceof TimestampCutoffPolicy that)) {
       return false;
     }
-    TimestampCutoffPolicy that = (TimestampCutoffPolicy) o;
     return cutoffTimestamp.equals(that.cutoffTimestamp);
   }
 

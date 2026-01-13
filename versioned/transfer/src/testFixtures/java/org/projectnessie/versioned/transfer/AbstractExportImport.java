@@ -429,8 +429,7 @@ public abstract class AbstractExportImport {
             boolean[] r = new boolean[objs.length];
             for (int i = 0; i < objs.length; i++) {
               Obj obj = objs[i];
-              if (obj instanceof CommitObj) {
-                CommitObj c = (CommitObj) obj;
+              if (obj instanceof CommitObj c) {
                 if (c.message().startsWith("commit # ")) {
                   int commit = parseInt(c.message().substring("commit # ".length()));
                   assertThat(c)

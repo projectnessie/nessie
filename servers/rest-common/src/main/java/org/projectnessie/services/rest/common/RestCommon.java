@@ -58,7 +58,7 @@ public final class RestCommon {
         e);
 
     NessieErrorDetails errorDetails =
-        (e instanceof ErrorCodeAware) ? ((ErrorCodeAware) e).getErrorDetails() : null;
+        (e instanceof ErrorCodeAware errorCodeAware) ? errorCodeAware.getErrorDetails() : null;
     if (errorDetails != null && !isNessieClientSpec2(requestHeader)) {
       errorDetails = null;
     }

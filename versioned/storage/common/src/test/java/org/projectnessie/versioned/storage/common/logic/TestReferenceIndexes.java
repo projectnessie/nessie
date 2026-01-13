@@ -488,8 +488,7 @@ public class TestReferenceIndexes {
       ObjId referenceIndexId = commit.referenceIndex();
       if (referenceIndexId != null) {
         Obj full = persist.fetchObj(referenceIndexId);
-        if (full instanceof IndexSegmentsObj) {
-          IndexSegmentsObj referenceIndexObj = (IndexSegmentsObj) full;
+        if (full instanceof IndexSegmentsObj referenceIndexObj) {
           if (!hadFull) {
             soft.assertThat(referenceIndexObj)
                 .describedAs("num keys: %d", numKeys)

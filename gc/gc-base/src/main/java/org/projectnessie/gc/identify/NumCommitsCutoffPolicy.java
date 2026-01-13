@@ -42,10 +42,9 @@ final class NumCommitsCutoffPolicy implements CutoffPolicy {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof NumCommitsCutoffPolicy)) {
+    if (!(o instanceof NumCommitsCutoffPolicy that)) {
       return false;
     }
-    NumCommitsCutoffPolicy that = (NumCommitsCutoffPolicy) o;
     return commits == that.commits;
   }
 

@@ -41,8 +41,8 @@ final class UrlConnectionRequest extends BaseHttpRequest {
     HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
     con.setReadTimeout(config.getReadTimeoutMillis());
     con.setConnectTimeout(config.getConnectionTimeoutMillis());
-    if (con instanceof HttpsURLConnection) {
-      ((HttpsURLConnection) con).setSSLSocketFactory(config.getSslContext().getSocketFactory());
+    if (con instanceof HttpsURLConnection httpsURLConnection) {
+      httpsURLConnection.setSSLSocketFactory(config.getSslContext().getSocketFactory());
     }
 
     applyHeaders(headers, con);

@@ -55,12 +55,12 @@ public final class ClientSideGetNamespace extends BaseGetNamespaceBuilder {
       ContentResponse contentResponse =
           api.getContent().refName(refName).hashOnRef(hashOnRef).getSingle(key);
       Content c = contentResponse.getContent();
-      if (!(c instanceof Namespace)) {
+      if (!(c instanceof Namespace namespace)) {
         throw new NessieNamespaceNotFoundException(
             contentKeyErrorDetails(key),
             String.format("Namespace '%s' does not exist", key.toCanonicalString()));
       }
-      return GetNamespaceResult.of((Namespace) c, contentResponse.getEffectiveReference());
+      return GetNamespaceResult.of(namespace, contentResponse.getEffectiveReference());
     } catch (NessieContentNotFoundException e) {
       throw new NessieNamespaceNotFoundException(
           contentKeyErrorDetails(key),

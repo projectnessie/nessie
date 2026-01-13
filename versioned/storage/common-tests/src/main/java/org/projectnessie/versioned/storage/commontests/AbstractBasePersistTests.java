@@ -196,7 +196,7 @@ public class AbstractBasePersistTests {
 
     ObjType genericType = newGenericObjType("genericType_" + UUID.randomUUID());
     String versionToken =
-        (realObj instanceof UpdateableObj) ? ((UpdateableObj) realObj).versionToken() : null;
+        (realObj instanceof UpdateableObj updateableObj) ? updateableObj.versionToken() : null;
     String json = mapper.writeValueAsString(realObj);
     long referenced = 42L;
 
@@ -740,8 +740,8 @@ public class AbstractBasePersistTests {
   }
 
   static StandardObjType typeDifferentThan(ObjType type) {
-    if (type instanceof StandardObjType) {
-      switch (((StandardObjType) type)) {
+    if (type instanceof StandardObjType standardObjType) {
+      switch (standardObjType) {
         case COMMIT:
           return VALUE;
         case VALUE:
@@ -1312,8 +1312,8 @@ public class AbstractBasePersistTests {
   @SuppressWarnings("EnumOrdinal")
   public static Obj updateObjChange(Obj obj) {
     ObjType type = obj.type();
-    if (type instanceof StandardObjType) {
-      switch (((StandardObjType) type)) {
+    if (type instanceof StandardObjType standardObjType) {
+      switch (standardObjType) {
         case COMMIT:
           StoreIndex<CommitOp> index = newStoreIndex(COMMIT_OP_SERIALIZER);
           index.add(

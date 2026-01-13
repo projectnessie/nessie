@@ -102,10 +102,9 @@ final class CommitHeadersImpl implements CommitHeaders {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof CommitHeadersImpl)) {
+    if (!(obj instanceof CommitHeadersImpl o)) {
       return false;
     }
-    CommitHeadersImpl o = (CommitHeadersImpl) obj;
     return map.equals(o.map);
   }
 

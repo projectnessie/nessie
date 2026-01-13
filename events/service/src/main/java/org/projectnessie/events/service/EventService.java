@@ -215,8 +215,8 @@ public class EventService implements AutoCloseable {
       Instant commitTime = Objects.requireNonNull(commit.getCommitMeta().getCommitTime());
       for (Operation operation : operations) {
         ContentKey contentKey = operation.getKey();
-        if (operation instanceof Put) {
-          Content content = ((Put) operation).getContent();
+        if (operation instanceof Put put) {
+          Content content = put.getContent();
           fireEvent(
               factory.newContentStoredEvent(
                   targetBranch, hash, commitTime, contentKey, content, repositoryId, user));

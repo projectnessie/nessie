@@ -463,11 +463,11 @@ public class CassandraPersist implements Persist {
                   .handle(
                       (resultSet, e) -> {
                         if (e != null) {
-                          if (e instanceof DriverException) {
-                            throw unhandledException((DriverException) e);
+                          if (e instanceof DriverException driverException) {
+                            throw unhandledException(driverException);
                           }
-                          if (e instanceof RuntimeException) {
-                            throw (RuntimeException) e;
+                          if (e instanceof RuntimeException re) {
+                            throw re;
                           }
                           throw new RuntimeException(e);
                         }
@@ -495,11 +495,11 @@ public class CassandraPersist implements Persist {
                 .handle(
                     (resultSet, e) -> {
                       if (e != null) {
-                        if (e instanceof DriverException) {
-                          throw unhandledException((DriverException) e);
+                        if (e instanceof DriverException driverException) {
+                          throw unhandledException(driverException);
                         }
-                        if (e instanceof RuntimeException) {
-                          throw (RuntimeException) e;
+                        if (e instanceof RuntimeException re) {
+                          throw re;
                         }
                         throw new RuntimeException(e);
                       }

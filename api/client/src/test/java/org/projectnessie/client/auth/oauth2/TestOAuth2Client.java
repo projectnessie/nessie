@@ -1028,8 +1028,8 @@ class TestOAuth2Client {
       doAnswer(
               invocation -> {
                 Object value = invocation.callRealMethod();
-                if (value instanceof TokenResponseBase) {
-                  lastResponse = (TokenResponseBase) value;
+                if (value instanceof TokenResponseBase tokenResponseBase) {
+                  lastResponse = tokenResponseBase;
                 }
                 return value;
               })

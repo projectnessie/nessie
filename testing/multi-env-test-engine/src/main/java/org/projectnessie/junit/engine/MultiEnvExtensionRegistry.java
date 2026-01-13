@@ -66,8 +66,7 @@ public class MultiEnvExtensionRegistry {
 
   private static Stream<Class<? extends Extension>> findMultiEnvExtensions(
       TestDescriptor descriptor) {
-    if (descriptor instanceof ClassBasedTestDescriptor) {
-      var classBased = (ClassBasedTestDescriptor) descriptor;
+    if (descriptor instanceof ClassBasedTestDescriptor classBased) {
       var testClass = classBased.getTestClass();
       return AnnotationUtils.findRepeatableAnnotations(testClass, ExtendWith.class).stream()
           .flatMap(e -> Arrays.stream(e.value()))

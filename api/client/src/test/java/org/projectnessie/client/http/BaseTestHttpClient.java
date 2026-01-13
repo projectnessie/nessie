@@ -752,10 +752,9 @@ public abstract class BaseTestHttpClient {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof ExampleBean)) {
+      if (!(o instanceof ExampleBean that)) {
         return false;
       }
-      ExampleBean that = (ExampleBean) o;
       return field2 == that.field2
           && Objects.equals(field1, that.field1)
           && Objects.equals(field3, that.field3);
@@ -805,10 +804,9 @@ public abstract class BaseTestHttpClient {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof ArrayBean)) {
+      if (!(o instanceof ArrayBean arrayBean)) {
         return false;
       }
-      ArrayBean arrayBean = (ArrayBean) o;
       return data.equals(arrayBean.data);
     }
 

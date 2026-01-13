@@ -62,11 +62,10 @@ public final class StoreKey implements Comparable<StoreKey> {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof StoreKey)) {
+    if (!(obj instanceof StoreKey that)) {
       return false;
     }
 
-    StoreKey that = (StoreKey) obj;
     return this.key.equals(that.key);
   }
 

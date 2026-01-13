@@ -23,15 +23,13 @@ import org.projectnessie.versioned.storage.common.objtypes.IndexObj;
 public interface ValidatingPersist extends Persist {
 
   default void verifySoftRestrictions(Obj obj) throws ObjTooLargeException {
-    if (obj instanceof CommitObj) {
-      CommitObj c = (CommitObj) obj;
+    if (obj instanceof CommitObj c) {
       ByteString serializedIndex = c.incrementalIndex();
       if (serializedIndex.size() > effectiveIncrementalIndexSizeLimit()) {
         throw new ObjTooLargeException(
             serializedIndex.size(), effectiveIncrementalIndexSizeLimit());
       }
-    } else if (obj instanceof IndexObj) {
-      IndexObj s = (IndexObj) obj;
+    } else if (obj instanceof IndexObj s) {
       ByteString index = s.index();
       if (index.size() > effectiveIndexSegmentSizeLimit()) {
         throw new ObjTooLargeException(index.size(), effectiveIndexSegmentSizeLimit());

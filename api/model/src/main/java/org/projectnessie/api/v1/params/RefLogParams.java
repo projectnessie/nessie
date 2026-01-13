@@ -142,10 +142,9 @@ public class RefLogParams extends AbstractParams<RefLogParams> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof RefLogParams)) {
+    if (!(o instanceof RefLogParams that)) {
       return false;
     }
-    RefLogParams that = (RefLogParams) o;
     return Objects.equals(startHash, that.startHash)
         && Objects.equals(endHash, that.endHash)
         && Objects.equals(filter, that.filter)

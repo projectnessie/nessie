@@ -49,8 +49,8 @@ public final class ContentMetadataVariantResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
-    if (value instanceof ContentMetadata) {
-      return ((ContentMetadata) value).getVariant();
+    if (value instanceof ContentMetadata contentMetadata) {
+      return contentMetadata.getVariant();
     }
 
     return null;
