@@ -46,6 +46,7 @@ public class JavaPoolTasksAsync implements TasksAsync {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public CompletionStage<Void> schedule(Runnable runnable, Instant scheduleNotBefore) {
     long realDelay = calculateDelay(clock, minimumDelayMillis, scheduleNotBefore);
 

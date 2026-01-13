@@ -197,6 +197,7 @@ public final class BigTableBackend implements Backend {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void eraseRepositoriesTable(TableId tableId, List<ByteString> prefixes) {
 
     Query query =

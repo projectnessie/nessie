@@ -491,6 +491,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void deleteObjs(@Nonnull ObjId[] ids) {
     if (ids.length == 0) {
       return;
@@ -535,6 +536,7 @@ public class BigTablePersist implements Persist {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void upsertObjs(@Nonnull Obj[] objs) throws ObjTooLargeException {
     if (objs.length == 0) {
       return;
