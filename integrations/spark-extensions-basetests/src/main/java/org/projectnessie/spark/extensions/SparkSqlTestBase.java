@@ -251,8 +251,8 @@ public abstract class SparkSqlTestBase {
               }
 
               Object value = row.get(pos);
-              if (value instanceof Row) {
-                return toJava((Row) value);
+              if (value instanceof Row r) {
+                return toJava(r);
               } else if (value instanceof scala.collection.Seq) {
                 return row.getList(pos);
               } else if (value instanceof scala.collection.Map) {

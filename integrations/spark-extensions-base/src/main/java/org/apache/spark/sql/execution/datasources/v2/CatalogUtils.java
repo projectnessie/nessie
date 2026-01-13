@@ -59,21 +59,20 @@ public final class CatalogUtils {
     Catalog icebergCatalog = ((HasIcebergCatalog) currentCatalog).icebergCatalog();
     icebergCatalog = unwrapCachingCatalog(icebergCatalog);
 
-    switch (icebergCatalog.getClass().getSimpleName()) {
-      case "NessieCatalog":
-        return new NessieCatalogBridge(sparkContext, currentCatalog, catalog);
-      case "RESTCatalog":
-        return new RestCatalogBridge(sparkContext, currentCatalog, catalog, icebergCatalog);
-      default:
-        throw new IllegalArgumentException(
-            "The command works only when the catalog is a NessieCatalog or a RESTCatalog using the Nessie Catalog Server, "
-                + "but "
-                + catalog
-                + " is a "
-                + icebergCatalog.getClass().getName()
-                + ". "
-                + "Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
-    }
+    return switch (icebergCatalog.getClass().getSimpleName()) {
+      case "NessieCatalog" -> new NessieCatalogBridge(sparkContext, currentCatalog, catalog);
+      case "RESTCatalog" ->
+          new RestCatalogBridge(sparkContext, currentCatalog, catalog, icebergCatalog);
+      default ->
+          throw new IllegalArgumentException(
+              "The command works only when the catalog is a NessieCatalog or a RESTCatalog using the Nessie Catalog Server, "
+                  + "but "
+                  + catalog
+                  + " is a "
+                  + icebergCatalog.getClass().getName()
+                  + ". "
+                  + "Either set the catalog via USE <catalog_name> or provide the catalog during execution: <command> IN <catalog_name>.");
+    };
   }
 
   static NessieApiV1 buildApi(NessieClientConfigSource nessieClientConfigMapper) {
@@ -83,16 +82,14 @@ public final class CatalogUtils {
     if (clientApiVer == null) {
       clientApiVer = "1";
     }
-    switch (clientApiVer) {
-      case "1":
-        return nessieClientBuilder.build(NessieApiV1.class);
-      case "2":
-        return nessieClientBuilder.build(NessieApiV2.class);
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                "Unsupported client-api-version value: %s. Can only be 1 or 2", clientApiVer));
-    }
+    return switch (clientApiVer) {
+      case "1" -> nessieClientBuilder.build(NessieApiV1.class);
+      case "2" -> nessieClientBuilder.build(NessieApiV2.class);
+      default ->
+          throw new IllegalArgumentException(
+              String.format(
+                  "Unsupported client-api-version value: %s. Can only be 1 or 2", clientApiVer));
+    };
   }
 
   static String refFromRestPrefix(String prefix) {
@@ -221,9 +218,9 @@ public final class CatalogUtils {
   }
 
   static void reinitializeCatalog(Catalog catalog, Map<String, String> properties) {
-    if (catalog instanceof AutoCloseable) {
+    if (catalog instanceof AutoCloseable autoCloseable) {
       try {
-        ((AutoCloseable) catalog).close();
+        autoCloseable.close();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
