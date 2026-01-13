@@ -120,12 +120,10 @@ public final class NessieIdGeneric implements NessieId {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof NessieIdGeneric) {
-      NessieIdGeneric other = (NessieIdGeneric) obj;
+    if (obj instanceof NessieIdGeneric other) {
       return Arrays.equals(id, other.id);
     }
-    if (obj instanceof NessieId) {
-      NessieId other = (NessieId) obj;
+    if (obj instanceof NessieId other) {
       int size = size();
       if (other.size() != size) {
         return false;

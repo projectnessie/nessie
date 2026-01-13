@@ -40,10 +40,9 @@ public class VaultSecretsManager extends AbstractMapBasedSecretsManager {
         .readSecret(path(name))
         .onFailure(
             e -> {
-              if (!(e instanceof VaultClientException)) {
+              if (!(e instanceof VaultClientException ex)) {
                 return false;
               }
-              VaultClientException ex = (VaultClientException) e;
               return 404 == ex.getStatus();
             })
         .recoverWithNull()

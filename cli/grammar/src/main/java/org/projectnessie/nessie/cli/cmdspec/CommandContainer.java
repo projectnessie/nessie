@@ -31,9 +31,9 @@ public interface CommandContainer extends Node {
     List<CommandSpec> commandSpecs = new ArrayList<>();
     for (Node child : children()) {
 
-      if (child instanceof CommandSpec) {
+      if (child instanceof CommandSpec commandSpec) {
         // Have a "proper" CommandSpec instance, use it.
-        commandSpecs.add((CommandSpec) child);
+        commandSpecs.add(commandSpec);
         continue;
       }
 
@@ -144,8 +144,7 @@ public interface CommandContainer extends Node {
       }
 
       // Leaves us with the "simple no arg" commands HELP and EXIT
-      if (child instanceof Token) {
-        Token t = (Token) child;
+      if (child instanceof Token t) {
         CommandSpec spec;
         switch (t.getType()) {
           case EXIT:

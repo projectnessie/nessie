@@ -203,8 +203,8 @@ abstract class IcebergS3SignParams {
       Content content = snapshotResponse.content();
       // TODO disallow all table and view metadata objects, not only the metadata json location
       String metadataLocation = null;
-      if (content instanceof IcebergContent) {
-        metadataLocation = ((IcebergContent) content).getMetadataLocation();
+      if (content instanceof IcebergContent icebergContent) {
+        metadataLocation = icebergContent.getMetadataLocation();
       }
       if (metadataLocation != null
           && requestedS3Uri().equals(normalizeS3Scheme(metadataLocation))) {

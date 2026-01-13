@@ -154,11 +154,11 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       return api.getDefaultBranch();
     } else {
       Reference reference = api.getReference().refName(branchSelector.ref).get();
-      if (!(reference instanceof Branch)) {
+      if (!(reference instanceof Branch branch)) {
         throw new IllegalArgumentException(
             "Content can only be committed to branches: " + branchSelector.ref);
       }
-      return (Branch) reference;
+      return branch;
     }
   }
 
@@ -304,10 +304,10 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
 
     for (Map.Entry<String, List<ContentKey>> entry : perRef.entrySet()) {
       Reference reference = api.getReference().refName(entry.getKey()).get();
-      if (!(reference instanceof Branch)) {
+      if (!(reference instanceof Branch branch)) {
         continue; // automatically skip tags when processing JSON input
       }
-      processBatch(api, (Branch) reference, entry.getValue());
+      processBatch(api, branch, entry.getValue());
     }
   }
 

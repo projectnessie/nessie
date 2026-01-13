@@ -100,8 +100,8 @@ public class ThreadPerTestClassExecutionExecutorService implements HierarchicalT
         threadPerClass.interrupt();
       }
       Exception ex = failure.get();
-      if (ex instanceof RuntimeException) {
-        throw (RuntimeException) ex;
+      if (ex instanceof RuntimeException re) {
+        throw re;
       } else if (ex != null) {
         throw new RuntimeException(ex);
       }

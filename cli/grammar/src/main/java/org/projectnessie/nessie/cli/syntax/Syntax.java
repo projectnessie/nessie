@@ -56,8 +56,7 @@ public class Syntax {
     LexerData lexerData = grammar.getLexerData();
     stringLiterals = new HashMap<>();
     for (RegularExpression orderedNamedToken : lexerData.getOrderedNamedTokens()) {
-      if (orderedNamedToken instanceof RegexpStringLiteral) {
-        RegexpStringLiteral regexpStringLiteral = (RegexpStringLiteral) orderedNamedToken;
+      if (orderedNamedToken instanceof RegexpStringLiteral regexpStringLiteral) {
         String literalString = regexpStringLiteral.getLiteralString();
         if (literalString != null) {
           stringLiterals.put(
@@ -137,7 +136,7 @@ public class Syntax {
 
       boolean didNewline = false;
       for (Obj obj : coll.children) {
-        if (obj instanceof Element && ((Element) obj).type == SyntaxPrinter.Type.SEP) {
+        if (obj instanceof Element element && element.type == SyntaxPrinter.Type.SEP) {
           didNewline = true;
           syntaxPrinter.newline(indent);
           needSpace = false;
@@ -243,12 +242,12 @@ public class Syntax {
       boolean hadNewline = false;
       Coll line = null;
       for (Obj obj : prev) {
-        if (obj instanceof Coll) {
+        if (obj instanceof Coll coll) {
           if (line != null) {
             children.add(new Newline(line, level));
             line = null;
           }
-          children.add(new Newline((Coll) obj, level));
+          children.add(new Newline(coll, level));
           hadNewline = true;
         } else {
           if (hadNewline) {
@@ -268,26 +267,21 @@ public class Syntax {
 
     void collectFrom(Node prod) {
       for (Node node : prod.children()) {
-        if (node instanceof Terminal) {
-          Terminal terminal = (Terminal) node;
+        if (node instanceof Terminal terminal) {
           String label = terminal.getLabel();
           maybeAdd(SyntaxPrinter.Type.TERMINAL, stringLiterals.get(label));
-        } else if (node instanceof NonTerminal) {
-          NonTerminal nonTerminal = (NonTerminal) node;
+        } else if (node instanceof NonTerminal nonTerminal) {
           maybeAdd(SyntaxPrinter.Type.NON_TERMINAL, nonTerminal.getName());
-        } else if (node instanceof Identifier) {
-          Identifier identifier = (Identifier) node;
+        } else if (node instanceof Identifier identifier) {
           maybeAdd(SyntaxPrinter.Type.IDENTIFIER, identifier.toString());
-        } else if (node instanceof Operator) {
-          Operator operator = (Operator) node;
+        } else if (node instanceof Operator operator) {
           String source = operator.getSource();
           if ("|".equals(source)) {
             children.add(new Element(SyntaxPrinter.Type.SEP, source));
           }
         } else if (node instanceof Delimiter) {
           // ignore
-        } else if (node instanceof Expansion) {
-          Expansion expansion = (Expansion) node;
+        } else if (node instanceof Expansion expansion) {
           Coll coll = null;
           switch (expansion.getSimpleName()) {
             case "ZeroOrOne":
@@ -317,8 +311,7 @@ public class Syntax {
       List<Obj> prev = new ArrayList<>(children);
       children.clear();
       for (Obj ch : prev) {
-        if (ch instanceof Coll) {
-          Coll coll = (Coll) ch;
+        if (ch instanceof Coll coll) {
           if (coll.noPrePost()) {
             children.addAll(coll.children);
           } else {
@@ -332,8 +325,7 @@ public class Syntax {
       // inline all directly nested `Coll` elements with 'size == 1' and combine 'pre' + 'post'
       while (children.size() == 1) {
         Obj ch = children.get(0);
-        if (ch instanceof Coll) {
-          Coll coll = (Coll) ch;
+        if (ch instanceof Coll coll) {
           if (coll.children.size() == 1) {
             this.pre.addAll(coll.pre);
             this.post.addAll(coll.post);

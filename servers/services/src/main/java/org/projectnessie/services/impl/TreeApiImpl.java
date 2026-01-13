@@ -572,8 +572,8 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
             .forEach(
                 op -> {
                   ContentKey key = op.getKey();
-                  if (op instanceof Put) {
-                    Content content = ((Put) op).getContent();
+                  if (op instanceof Put put) {
+                    Content content = put.getContent();
                     logEntry.addOperations(Put.of(key, content));
                   }
                   if (op instanceof Delete) {

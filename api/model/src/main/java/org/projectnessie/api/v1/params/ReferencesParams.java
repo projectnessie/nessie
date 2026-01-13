@@ -123,10 +123,9 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ReferencesParams)) {
+    if (!(o instanceof ReferencesParams that)) {
       return false;
     }
-    ReferencesParams that = (ReferencesParams) o;
     return Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())
         && fetchOption == that.fetchOption

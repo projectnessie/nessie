@@ -185,12 +185,8 @@ public class StorageUri implements Comparable<StorageUri> {
       return true;
     }
 
-    if (!(other instanceof StorageUri)) {
-      return false;
-    }
-
-    StorageUri o = (StorageUri) other;
-    return Objects.equals(this.scheme, o.scheme)
+    return other instanceof StorageUri o
+        && Objects.equals(this.scheme, o.scheme)
         && Objects.equals(this.authority, o.authority)
         && Objects.equals(this.path, o.path);
   }

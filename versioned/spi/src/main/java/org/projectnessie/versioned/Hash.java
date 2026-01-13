@@ -248,10 +248,9 @@ public abstract class Hash implements Ref {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof Hash256)) {
+      if (!(o instanceof Hash256 hash256)) {
         return false;
       }
-      Hash256 hash256 = (Hash256) o;
       return l0 == hash256.l0 && l1 == hash256.l1 && l2 == hash256.l2 && l3 == hash256.l3;
     }
 
@@ -327,10 +326,9 @@ public abstract class Hash implements Ref {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof GenericHash)) {
+      if (!(obj instanceof GenericHash that)) {
         return false;
       }
-      GenericHash that = (GenericHash) obj;
       return Arrays.equals(this.bytes, that.bytes);
     }
   }

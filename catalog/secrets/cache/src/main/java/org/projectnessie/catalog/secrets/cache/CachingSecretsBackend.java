@@ -121,10 +121,9 @@ public class CachingSecretsBackend {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof CacheKeyValue)) {
+      if (!(o instanceof CacheKeyValue cacheKey)) {
         return false;
       }
-      CacheKeyValue cacheKey = (CacheKeyValue) o;
       return repositoryId.equals(cacheKey.repositoryId) && name.equals(cacheKey.name);
     }
 

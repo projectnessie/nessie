@@ -229,12 +229,10 @@ public class RefMapping {
   }
 
   CommitObj resolveRefHead(@Nonnull Ref ref) throws ReferenceNotFoundException {
-    if (ref instanceof NamedRef) {
-      NamedRef namedRef = (NamedRef) ref;
+    if (ref instanceof NamedRef namedRef) {
       return resolveNamedRefHead(namedRef);
     }
-    if (ref instanceof Hash) {
-      Hash hash = (Hash) ref;
+    if (ref instanceof Hash hash) {
       CommitLogic commitLogic = commitLogic(persist);
       try {
         return commitLogic.fetchCommit(hashToObjId(hash));

@@ -51,8 +51,8 @@ public final class ObjSerializers {
   @Nonnull
   public static ObjSerializer<Obj> forType(@Nonnull ObjType type) {
     ObjSerializer<?> serializer = CustomObjSerializer.INSTANCE;
-    if (type instanceof StandardObjType) {
-      switch ((StandardObjType) type) {
+    if (type instanceof StandardObjType standardObjType) {
+      switch (standardObjType) {
         case COMMIT:
           serializer = CommitObjSerializer.INSTANCE;
           break;

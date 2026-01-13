@@ -47,8 +47,8 @@ public class NessieErrorDetailsTypeIdResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
-    if (value instanceof NessieErrorDetails) {
-      return ((NessieErrorDetails) value).getType();
+    if (value instanceof NessieErrorDetails details) {
+      return details.getType();
     }
 
     return null;

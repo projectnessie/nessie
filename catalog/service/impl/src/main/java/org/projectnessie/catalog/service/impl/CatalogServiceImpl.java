@@ -336,13 +336,12 @@ public class CatalogServiceImpl implements CatalogService {
       SnapshotReqParams reqParams,
       NessieEntitySnapshot<?> snapshot,
       Reference effectiveReference) {
-    if (snapshot instanceof NessieTableSnapshot) {
+    if (snapshot instanceof NessieTableSnapshot nessieTableSnapshot) {
       return snapshotTableResponse(
-          key, content, reqParams, (NessieTableSnapshot) snapshot, effectiveReference);
+          key, content, reqParams, nessieTableSnapshot, effectiveReference);
     }
-    if (snapshot instanceof NessieViewSnapshot) {
-      return snapshotViewResponse(
-          key, content, reqParams, (NessieViewSnapshot) snapshot, effectiveReference);
+    if (snapshot instanceof NessieViewSnapshot nessieViewSnapshot) {
+      return snapshotViewResponse(key, content, reqParams, nessieViewSnapshot, effectiveReference);
     }
     throw new IllegalArgumentException(
         "Unsupported snapshot type " + snapshot.getClass().getSimpleName());
@@ -831,8 +830,8 @@ public class CatalogServiceImpl implements CatalogService {
     return updates.stream()
         .map(
             up -> {
-              if (up instanceof SetProperties) {
-                var properties = ((SetProperties) up).updates();
+              if (up instanceof SetProperties setProperties) {
+                var properties = setProperties.updates();
                 if (properties.containsKey(STAGED_PROPERTY)) {
                   properties = new HashMap<>(properties);
                   properties.remove(STAGED_PROPERTY);

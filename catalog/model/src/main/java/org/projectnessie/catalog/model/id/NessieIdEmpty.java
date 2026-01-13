@@ -54,10 +54,10 @@ final class NessieIdEmpty implements NessieId {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof NessieId)) {
+    if (!(obj instanceof NessieId nessieId)) {
       return false;
     }
-    return ((NessieId) obj).size() == 0;
+    return nessieId.size() == 0;
   }
 
   @Override

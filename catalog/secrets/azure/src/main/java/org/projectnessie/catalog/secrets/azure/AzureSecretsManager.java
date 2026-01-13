@@ -51,8 +51,8 @@ public class AzureSecretsManager extends AbstractStringBasedSecretsManager {
                   if (t instanceof ResourceNotFoundException) {
                     return null;
                   }
-                  if (t instanceof RuntimeException) {
-                    throw (RuntimeException) t;
+                  if (t instanceof RuntimeException re) {
+                    throw re;
                   }
                   throw new RuntimeException(t);
                 });

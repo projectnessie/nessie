@@ -102,13 +102,11 @@ public final class GcsStorageSupplier {
 
     Credentials bucketCredentials =
         buildCredentials(gcsBucketOptions, httpTransportFactory, secretsProvider);
-    if (bucketCredentials instanceof GoogleCredentials) {
-      GoogleCredentials sourceCredentials = (GoogleCredentials) bucketCredentials;
+    if (bucketCredentials instanceof GoogleCredentials sourceCredentials) {
       downscopedCredentialsBuilder.setSourceCredential(sourceCredentials);
-    } else if (bucketCredentials instanceof OAuth2Credentials) {
+    } else if (bucketCredentials instanceof OAuth2Credentials oAuth2Credentials) {
       // OAuth2Credentials does not extend GoogleCredentials
-      downscopedCredentialsBuilder.setAccessToken(
-          ((OAuth2Credentials) bucketCredentials).getAccessToken());
+      downscopedCredentialsBuilder.setAccessToken(oAuth2Credentials.getAccessToken());
     } else {
       LOGGER.warn(
           "No suitable credentials to generate a downscoped token to access warehouse {}",

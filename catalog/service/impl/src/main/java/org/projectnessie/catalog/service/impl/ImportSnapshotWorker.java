@@ -64,12 +64,11 @@ final class ImportSnapshotWorker {
 
   EntitySnapshotObj.Builder importSnapshot() {
     Content content = taskRequest.content();
-    if (content instanceof IcebergTable) {
-      return importIcebergTable(
-          (IcebergTable) content, (NessieTableSnapshot) taskRequest.snapshot());
+    if (content instanceof IcebergTable icebergTable) {
+      return importIcebergTable(icebergTable, (NessieTableSnapshot) taskRequest.snapshot());
     }
-    if (content instanceof IcebergView) {
-      return importIcebergView((IcebergView) content, (NessieViewSnapshot) taskRequest.snapshot());
+    if (content instanceof IcebergView icebergView) {
+      return importIcebergView(icebergView, (NessieViewSnapshot) taskRequest.snapshot());
     }
 
     throw new UnsupportedOperationException("Unsupported Nessie content type " + content.getType());

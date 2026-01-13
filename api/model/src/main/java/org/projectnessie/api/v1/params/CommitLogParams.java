@@ -165,10 +165,9 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof CommitLogParams)) {
+    if (!(o instanceof CommitLogParams that)) {
       return false;
     }
-    CommitLogParams that = (CommitLogParams) o;
     return Objects.equals(startHash, that.startHash)
         && Objects.equals(endHash, that.endHash)
         && Objects.equals(maxRecords(), that.maxRecords())

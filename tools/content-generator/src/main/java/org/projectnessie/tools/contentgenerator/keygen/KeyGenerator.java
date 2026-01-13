@@ -76,10 +76,9 @@ public class KeyGenerator {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof KeyGenerator)) {
+    if (!(o instanceof KeyGenerator that)) {
       return false;
     }
-    KeyGenerator that = (KeyGenerator) o;
     return params.equals(that.params);
   }
 

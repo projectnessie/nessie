@@ -23,11 +23,11 @@ final class Helper {
   @SuppressWarnings("deprecation")
   static final NamespacedHierarchicalStore.CloseAction<Namespace> CLOSE_RESOURCES =
       (namespace, key, value) -> {
-        if (value instanceof ExtensionContext.Store.CloseableResource) {
-          ((ExtensionContext.Store.CloseableResource) value).close();
+        if (value instanceof ExtensionContext.Store.CloseableResource closeableResource) {
+          closeableResource.close();
         }
-        if (value instanceof AutoCloseable) {
-          ((AutoCloseable) value).close();
+        if (value instanceof AutoCloseable autoCloseable) {
+          autoCloseable.close();
         }
       };
 }

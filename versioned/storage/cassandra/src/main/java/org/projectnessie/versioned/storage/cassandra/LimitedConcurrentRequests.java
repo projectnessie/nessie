@@ -116,8 +116,8 @@ final class LimitedConcurrentRequests implements AutoCloseable {
     synchronized (failureHolder) {
       Throwable f = failureHolder[0];
       if (f != null) {
-        if (f instanceof RuntimeException) {
-          throw (RuntimeException) f;
+        if (f instanceof RuntimeException re) {
+          throw re;
         }
         throw new RuntimeException(f);
       }

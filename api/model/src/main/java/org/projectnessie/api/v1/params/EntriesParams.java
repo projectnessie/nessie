@@ -135,10 +135,9 @@ public class EntriesParams extends AbstractParams<EntriesParams> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof EntriesParams)) {
+    if (!(o instanceof EntriesParams that)) {
       return false;
     }
-    EntriesParams that = (EntriesParams) o;
     return Objects.equals(hashOnRef, that.hashOnRef)
         && Objects.equals(maxRecords(), that.maxRecords())
         && Objects.equals(pageToken(), that.pageToken())

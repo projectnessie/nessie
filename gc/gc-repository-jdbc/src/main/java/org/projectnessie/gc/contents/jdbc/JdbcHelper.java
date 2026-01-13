@@ -162,8 +162,7 @@ public final class JdbcHelper {
    * integrity-constraint-violation.
    */
   static boolean isIntegrityConstraintViolation(Throwable e) {
-    if (e instanceof SQLException) {
-      SQLException sqlException = (SQLException) e;
+    if (e instanceof SQLException sqlException) {
       return sqlException instanceof SQLIntegrityConstraintViolationException
           // e.g. H2
           || CONSTRAINT_VIOLATION_SQL_CODE == sqlException.getErrorCode()

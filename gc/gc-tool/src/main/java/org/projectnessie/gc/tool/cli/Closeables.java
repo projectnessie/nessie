@@ -50,8 +50,8 @@ public final class Closeables implements AutoCloseable {
   }
 
   public <T> T maybeAdd(T maybeAutoCloseable) {
-    if (maybeAutoCloseable instanceof AutoCloseable) {
-      autoCloseables.add((AutoCloseable) maybeAutoCloseable);
+    if (maybeAutoCloseable instanceof AutoCloseable autoCloseable) {
+      autoCloseables.add(autoCloseable);
     }
     return maybeAutoCloseable;
   }

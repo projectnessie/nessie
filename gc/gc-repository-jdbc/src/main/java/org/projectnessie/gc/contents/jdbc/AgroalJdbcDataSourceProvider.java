@@ -138,9 +138,8 @@ public abstract class AgroalJdbcDataSourceProvider implements JdbcDataSourceProv
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Connecting to JDBC URL {}", jdbcUrl());
       for (Object credential : credentials()) {
-        if (credential instanceof NamePrincipal) {
-          LOGGER.debug(
-              "Connecting using name principal {}", ((NamePrincipal) credential).getName());
+        if (credential instanceof NamePrincipal namePrincipal) {
+          LOGGER.debug("Connecting using name principal {}", namePrincipal.getName());
         } else if (credential instanceof SimplePassword) {
           LOGGER.debug("Connecting using given password (not logged)");
         }

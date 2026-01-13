@@ -49,8 +49,8 @@ public final class RepositoryConfigTypeIdResolver extends TypeIdResolverBase {
   }
 
   private String getId(Object value) {
-    if (value instanceof RepositoryConfig) {
-      return ((RepositoryConfig) value).getType().name();
+    if (value instanceof RepositoryConfig repositoryConfig) {
+      return repositoryConfig.getType().name();
     }
 
     return null;

@@ -127,9 +127,8 @@ public class TestNessieRepositoryConnector {
             ops.stream()
                 .map(
                     op -> {
-                      if (op instanceof Operation.Put) {
-                        return Operation.Put.of(
-                            op.getKey(), ((Operation.Put) op).getContent().withId(null));
+                      if (op instanceof Operation.Put put) {
+                        return Operation.Put.of(op.getKey(), put.getContent().withId(null));
                       }
                       return op;
                     })

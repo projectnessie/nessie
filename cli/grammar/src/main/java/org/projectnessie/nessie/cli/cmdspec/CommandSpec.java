@@ -25,8 +25,8 @@ public interface CommandSpec {
 
   @Nullable
   default Node sourceNode() {
-    if (this instanceof Node) {
-      return (Node) this;
+    if (this instanceof Node node) {
+      return node;
     }
     return null;
   }

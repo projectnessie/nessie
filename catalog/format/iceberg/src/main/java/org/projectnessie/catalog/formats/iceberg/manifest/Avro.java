@@ -269,8 +269,7 @@ public final class Avro {
           }
 
           Class<?> rawFieldType;
-          if (fieldType instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) fieldType;
+          if (fieldType instanceof ParameterizedType parameterizedType) {
             rawFieldType = (Class<?>) parameterizedType.getRawType();
           } else {
             rawFieldType = (Class<?>) fieldType;

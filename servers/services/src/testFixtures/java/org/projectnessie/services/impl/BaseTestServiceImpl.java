@@ -570,8 +570,7 @@ public abstract class BaseTestServiceImpl {
   }
 
   protected static Operation operationWithoutContentId(Operation op) {
-    if (op instanceof Put) {
-      Put put = (Put) op;
+    if (op instanceof Put put) {
       return Put.of(put.getKey(), contentWithoutId(put.getContent()));
     }
     return op;

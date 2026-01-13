@@ -48,12 +48,10 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
     ErrorCode errorCode;
     String message;
 
-    if (exception instanceof BaseNessieClientServerException) {
-      BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
+    if (exception instanceof BaseNessieClientServerException e) {
       errorCode = e.getErrorCode();
       message = exception.getMessage();
-    } else if (exception.getCause() instanceof BaseNessieClientServerException) {
-      BaseNessieClientServerException e = (BaseNessieClientServerException) exception.getCause();
+    } else if (exception.getCause() instanceof BaseNessieClientServerException e) {
       errorCode = e.getErrorCode();
       message = exception.getCause().getMessage();
     } else if (exception instanceof JsonParseException
@@ -61,13 +59,13 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
         || exception instanceof IllegalArgumentException) {
       errorCode = ErrorCode.BAD_REQUEST;
       message = exception.getMessage();
-    } else if (exception instanceof WebApplicationException) {
+    } else if (exception instanceof WebApplicationException webApplicationException) {
       if (exception.getCause() instanceof IllegalArgumentException
-          && ((WebApplicationException) exception).getResponse().getStatus() == 404) {
+          && webApplicationException.getResponse().getStatus() == 404) {
         errorCode = ErrorCode.BAD_REQUEST;
         message = exception.getCause().getMessage();
       } else {
-        return ((WebApplicationException) exception).getResponse();
+        return webApplicationException.getResponse();
       }
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);

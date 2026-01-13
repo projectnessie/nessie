@@ -84,7 +84,9 @@ public class AbstractBackendRepositoryTests {
       soft.assertThat(scan)
           .toIterable()
           .filteredOn(
-              o -> o instanceof StringObj && ((StringObj) o).contentType().equals("content-type"))
+              o ->
+                  o instanceof StringObj stringObj
+                      && stringObj.contentType().equals("content-type"))
           .hasSize(objs);
     }
 
@@ -166,7 +168,9 @@ public class AbstractBackendRepositoryTests {
         soft.assertThat(scan)
             .toIterable()
             .filteredOn(
-                o -> o instanceof StringObj && ((StringObj) o).contentType().equals("content-type"))
+                o ->
+                    o instanceof StringObj stringObj
+                        && stringObj.contentType().equals("content-type"))
             .hasSize(objs);
       }
     }

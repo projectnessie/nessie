@@ -52,8 +52,7 @@ public class GcsSecretsManager extends AbstractStringBasedSecretsManager {
       return response.hasPayload() ? secret(response) : null;
     } catch (ExecutionException e) {
       Throwable c = e.getCause();
-      if (c instanceof ApiException) {
-        ApiException apiException = (ApiException) c;
+      if (c instanceof ApiException apiException) {
         StatusCode status = apiException.getStatusCode();
         if (status.getCode() == NOT_FOUND) {
           return null;

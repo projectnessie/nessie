@@ -425,21 +425,17 @@ public class NessieModelIceberg {
         break;
     }
 
-    if (type instanceof IcebergDecimalType) {
-      IcebergDecimalType f = (IcebergDecimalType) type;
+    if (type instanceof IcebergDecimalType f) {
       return NessieType.decimalType(f.scale(), f.precision());
     }
-    if (type instanceof IcebergFixedType) {
-      IcebergFixedType f = (IcebergFixedType) type;
+    if (type instanceof IcebergFixedType f) {
       return NessieType.fixedType(f.length());
     }
-    if (type instanceof IcebergStructType) {
-      IcebergStructType s = (IcebergStructType) type;
+    if (type instanceof IcebergStructType s) {
       return NessieType.structType(
           icebergStructFieldsToNessie(s.fields(), s.avroRecordName(), icebergFields));
     }
-    if (type instanceof IcebergMapType) {
-      IcebergMapType m = (IcebergMapType) type;
+    if (type instanceof IcebergMapType m) {
       return NessieType.mapType(
           icebergTypeToNessieType(m.key(), icebergFields),
           m.keyId(),
@@ -447,8 +443,7 @@ public class NessieModelIceberg {
           m.valueId(),
           !m.valueRequired());
     }
-    if (type instanceof IcebergListType) {
-      IcebergListType l = (IcebergListType) type;
+    if (type instanceof IcebergListType l) {
       return NessieType.listType(
           icebergTypeToNessieType(l.element(), icebergFields), l.elementId(), !l.elementRequired());
     }
@@ -954,8 +949,7 @@ public class NessieModelIceberg {
 
   public static IcebergViewRepresentation nessieViewRepresentationToIceberg(
       NessieViewRepresentation viewRepresentation) {
-    if (viewRepresentation instanceof NessieViewSQLRepresentation) {
-      NessieViewSQLRepresentation sql = (NessieViewSQLRepresentation) viewRepresentation;
+    if (viewRepresentation instanceof NessieViewSQLRepresentation sql) {
       return IcebergSQLViewRepresentation.icebergSqlViewRepresentation(sql.sql(), sql.dialect());
     }
     throw new IllegalArgumentException("Unsupported view representation: " + viewRepresentation);
@@ -963,8 +957,7 @@ public class NessieModelIceberg {
 
   public static NessieViewRepresentation icebergViewRepresentationToNessie(
       IcebergViewRepresentation viewRepresentation) {
-    if (viewRepresentation instanceof IcebergSQLViewRepresentation) {
-      IcebergSQLViewRepresentation sql = (IcebergSQLViewRepresentation) viewRepresentation;
+    if (viewRepresentation instanceof IcebergSQLViewRepresentation sql) {
       return nessieViewSQLRepresentation(sql.sql(), sql.dialect());
     }
     throw new IllegalArgumentException("Unsupported view representation: " + viewRepresentation);

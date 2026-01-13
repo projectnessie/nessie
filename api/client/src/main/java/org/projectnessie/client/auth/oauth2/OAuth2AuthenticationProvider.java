@@ -53,8 +53,8 @@ public class OAuth2AuthenticationProvider implements NessieAuthenticationProvide
    */
   public static OAuth2Authenticator newAuthenticator(OAuth2AuthenticatorConfig config) {
     OAuth2ClientConfig clientConfig =
-        config instanceof OAuth2ClientConfig
-            ? (OAuth2ClientConfig) config
+        config instanceof OAuth2ClientConfig oAuth2ClientConfig
+            ? oAuth2ClientConfig
             : OAuth2ClientConfig.builder().from(config).build();
     return new OAuth2Client(clientConfig);
   }

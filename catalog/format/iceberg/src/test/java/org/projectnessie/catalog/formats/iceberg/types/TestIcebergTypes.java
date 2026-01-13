@@ -103,8 +103,8 @@ public class TestIcebergTypes {
   @MethodSource
   public void icebergTypes(Type type, IcebergType icebergType) {
     org.apache.avro.Schema avroSchema;
-    if (type instanceof Types.StructType) {
-      avroSchema = AvroSchemaUtil.convert((Types.StructType) type, "r1");
+    if (type instanceof Types.StructType structType) {
+      avroSchema = AvroSchemaUtil.convert(structType, "r1");
     } else {
       avroSchema = AvroSchemaUtil.convert(type);
     }

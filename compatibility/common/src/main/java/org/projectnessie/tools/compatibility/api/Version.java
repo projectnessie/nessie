@@ -130,10 +130,9 @@ public class Version implements Comparable<Version> {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof Version)) {
+    if (!(o instanceof Version version)) {
       return false;
     }
-    Version version = (Version) o;
     return Arrays.equals(tuple, version.tuple);
   }
 

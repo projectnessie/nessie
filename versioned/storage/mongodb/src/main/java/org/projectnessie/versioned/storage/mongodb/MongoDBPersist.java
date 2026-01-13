@@ -847,11 +847,10 @@ public class MongoDBPersist implements Persist {
         || e instanceof MongoExecutionTimeoutException) {
       return new UnknownOperationResultException(e);
     }
-    if (e instanceof MongoWriteException) {
-      return handleMongoWriteException((MongoWriteException) e);
+    if (e instanceof MongoWriteException mongoWriteException) {
+      return handleMongoWriteException(mongoWriteException);
     }
-    if (e instanceof MongoBulkWriteException) {
-      MongoBulkWriteException specific = (MongoBulkWriteException) e;
+    if (e instanceof MongoBulkWriteException specific) {
       for (BulkWriteError error : specific.getWriteErrors()) {
         switch (error.getCategory()) {
           case EXECUTION_TIMEOUT:

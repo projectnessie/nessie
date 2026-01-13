@@ -154,8 +154,7 @@ public abstract class ObjectStorageMock {
 
     private static URI baseUri(Server server, URI initUri) {
       for (Connector connector : server.getConnectors()) {
-        if (connector instanceof ServerConnector) {
-          ServerConnector sc = (ServerConnector) connector;
+        if (connector instanceof ServerConnector sc) {
           int localPort = sc.getLocalPort();
           try {
             return new URI(

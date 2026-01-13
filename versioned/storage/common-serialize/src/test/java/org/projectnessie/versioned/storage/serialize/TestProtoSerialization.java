@@ -119,7 +119,7 @@ public class TestProtoSerialization {
     soft.assertThat(deserialized2).isEqualTo(obj);
     soft.assertThat(serialized).isEqualTo(reserialized);
 
-    if (obj instanceof UpdateableObj) {
+    if (obj instanceof UpdateableObj updateableObj) {
       soft.assertThat(StorageTypes.ObjProto.parseFrom(serialized).getCustom().getVersionToken())
           .isNotNull();
 
@@ -137,7 +137,7 @@ public class TestProtoSerialization {
               deserializeObj(obj.id(), 420L, serializedWithoutVersionToken, "my-foo-bar-baz");
       soft.assertThat(deserializedWithoutVersionToken.versionToken())
           .isEqualTo("my-foo-bar-baz")
-          .isNotEqualTo(((UpdateableObj) obj).versionToken());
+          .isNotEqualTo(updateableObj.versionToken());
     }
 
     if (obj instanceof IndexObj || obj instanceof CommitObj) {

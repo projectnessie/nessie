@@ -425,10 +425,9 @@ class CaffeineCacheBackend implements CacheBackend {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof CacheKeyValue)) {
+      if (!(o instanceof CacheKeyValue cacheKey)) {
         return false;
       }
-      CacheKeyValue cacheKey = (CacheKeyValue) o;
       return repositoryId.equals(cacheKey.repositoryId) && id.equals(cacheKey.id);
     }
 

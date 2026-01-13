@@ -492,8 +492,8 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
         .onClose(
             () -> {
               Exception ex = JdbcHelper.forClose(closeables);
-              if (ex instanceof RuntimeException) {
-                throw (RuntimeException) ex;
+              if (ex instanceof RuntimeException runtimeException) {
+                throw runtimeException;
               }
               if (ex != null) {
                 throw new RuntimeException(ex);

@@ -22,13 +22,12 @@ abstract class AbstractStoreIndexElement<V> implements StoreIndexElement<V> {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof StoreIndexElement)) {
+    if (!(o instanceof StoreIndexElement<?> other)) {
       return false;
     }
     if (o == this) {
       return true;
     }
-    StoreIndexElement<?> other = (StoreIndexElement<?>) o;
     return key().equals(other.key()) && content().equals(other.content());
   }
 

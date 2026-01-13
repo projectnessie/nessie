@@ -200,11 +200,11 @@ public class TestResponseFilter {
       ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error));
     } catch (Exception e) {
       soft.assertThat(e).isInstanceOf(clazz);
-      if (e instanceof NessieServiceException) {
-        soft.assertThat(((NessieServiceException) e).getError()).isEqualTo(error);
+      if (e instanceof NessieServiceException nessieServiceException) {
+        soft.assertThat(nessieServiceException.getError()).isEqualTo(error);
       }
-      if (e instanceof BaseNessieClientServerException) {
-        soft.assertThat((BaseNessieClientServerException) e)
+      if (e instanceof BaseNessieClientServerException baseNessieClientServerException) {
+        soft.assertThat(baseNessieClientServerException)
             .extracting(
                 BaseNessieClientServerException::getStatus,
                 BaseNessieClientServerException::getServerStackTrace)

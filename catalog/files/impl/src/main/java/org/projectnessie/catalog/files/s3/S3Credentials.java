@@ -36,8 +36,8 @@ public class S3Credentials {
   }
 
   public Optional<String> sessionToken() {
-    if (credentials instanceof AwsSessionCredentials) {
-      return Optional.of(((AwsSessionCredentials) credentials).sessionToken());
+    if (credentials instanceof AwsSessionCredentials awsSessionCredentials) {
+      return Optional.of(awsSessionCredentials.sessionToken());
     }
     return Optional.empty();
   }

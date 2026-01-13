@@ -41,8 +41,8 @@ public class CatalogOperationTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public String idFromValue(Object value) {
-    if (value instanceof CatalogOperation) {
-      return ((CatalogOperation) value).getType().name();
+    if (value instanceof CatalogOperation catalogOperation) {
+      return catalogOperation.getType().name();
     }
 
     return null;

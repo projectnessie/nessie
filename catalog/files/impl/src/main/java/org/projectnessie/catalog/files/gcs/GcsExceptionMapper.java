@@ -28,8 +28,8 @@ public final class GcsExceptionMapper implements BackendExceptionMapper.Analyzer
 
   @Override
   public BackendErrorStatus analyze(Throwable th) {
-    if (th instanceof BaseServiceException) {
-      return BackendErrorStatus.fromHttpStatusCode(((BaseServiceException) th).getCode(), th);
+    if (th instanceof BaseServiceException baseServiceException) {
+      return BackendErrorStatus.fromHttpStatusCode(baseServiceException.getCode(), th);
     }
     return null;
   }

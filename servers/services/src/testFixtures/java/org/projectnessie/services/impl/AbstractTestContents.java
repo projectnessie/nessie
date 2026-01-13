@@ -74,8 +74,8 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
     }
 
     private static String opString(Operation operation) {
-      if (operation instanceof Put) {
-        return "Put_" + ((Put) operation).getContent().getClass().getSimpleName();
+      if (operation instanceof Put put) {
+        return "Put_" + put.getContent().getClass().getSimpleName();
       } else {
         return operation.getClass().getSimpleName();
       }
@@ -216,9 +216,8 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
         contentAndOps.stream()
             .map(
                 c -> {
-                  if (c.operation instanceof Put) {
-                    return Maps.immutableEntry(
-                        c.operation.getKey(), ((Put) c.operation).getContent());
+                  if (c.operation instanceof Put put) {
+                    return Maps.immutableEntry(c.operation.getKey(), put.getContent());
                   }
                   if (c.operation instanceof Unchanged) {
                     return Maps.immutableEntry(c.operation.getKey(), c.prepare.getContent());
@@ -275,8 +274,7 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
     ContentKey fixedContentKey =
         ContentKey.of(contentAndOperationType.operation.getKey().getElements());
 
-    if (contentAndOperationType.operation instanceof Put) {
-      Put put = (Put) contentAndOperationType.operation;
+    if (contentAndOperationType.operation instanceof Put put) {
 
       List<EntriesResponse.Entry> entries = withoutNamespaces(entries(branch.getName(), null));
       soft.assertThat(entries)
@@ -365,10 +363,9 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
 
   private Operation clearIdOnOperation(Operation o) {
     try {
-      if (!(o instanceof Put)) {
+      if (!(o instanceof Put put)) {
         return o;
       }
-      Put put = (Put) o;
       Content contentWithoutId = clearIdOnContent(put.getContent());
       return ImmutablePut.builder().from(put).content(contentWithoutId).build();
     } catch (Exception e) {

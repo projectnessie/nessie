@@ -25,8 +25,8 @@ public class PreviousTaskExceptionMapper implements BackendExceptionMapper.Analy
 
   @Override
   public BackendErrorStatus analyze(Throwable th) {
-    if (th instanceof PreviousTaskException) {
-      return BackendErrorStatus.of(((PreviousTaskException) th).getErrorCode(), th);
+    if (th instanceof PreviousTaskException previousTaskException) {
+      return BackendErrorStatus.of(previousTaskException.getErrorCode(), th);
     }
     return null;
   }

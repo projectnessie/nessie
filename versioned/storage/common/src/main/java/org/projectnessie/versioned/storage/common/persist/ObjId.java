@@ -484,10 +484,9 @@ public abstract class ObjId {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof ObjId256)) {
+      if (!(o instanceof ObjId256 objectId256)) {
         return false;
       }
-      ObjId256 objectId256 = (ObjId256) o;
       return l0 == objectId256.l0
           && l1 == objectId256.l1
           && l2 == objectId256.l2
@@ -635,10 +634,9 @@ public abstract class ObjId {
 
     @Override
     public boolean equals(Object obj) {
-      if (!(obj instanceof ObjIdGeneric)) {
+      if (!(obj instanceof ObjIdGeneric that)) {
         return false;
       }
-      ObjIdGeneric that = (ObjIdGeneric) obj;
       return Arrays.equals(this.bytes, that.bytes);
     }
   }

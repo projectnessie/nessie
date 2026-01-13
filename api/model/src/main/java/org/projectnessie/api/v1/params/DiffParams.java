@@ -164,10 +164,9 @@ public class DiffParams {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof DiffParams)) {
+    if (!(o instanceof DiffParams that)) {
       return false;
     }
-    DiffParams that = (DiffParams) o;
     return Objects.equals(fromRef, that.fromRef)
         && Objects.equals(fromHashOnRef, that.fromHashOnRef)
         && Objects.equals(toRef, that.toRef)

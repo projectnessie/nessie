@@ -43,11 +43,11 @@ public abstract class NessieCommand<SPEC extends CommandSpec> {
       BaseNessieCli nessieCli, SPEC commandSpec, B onReferenceBuilder) {
     String refName = null;
     String hash = null;
-    if (commandSpec instanceof RefCommandSpec) {
-      refName = ((RefCommandSpec) commandSpec).getRef();
+    if (commandSpec instanceof RefCommandSpec refCommandSpec) {
+      refName = refCommandSpec.getRef();
     }
-    if (commandSpec instanceof RefWithHashCommandSpec) {
-      hash = hashOrTimestamp((RefWithHashCommandSpec) commandSpec);
+    if (commandSpec instanceof RefWithHashCommandSpec refWithHashCommandSpec) {
+      hash = hashOrTimestamp(refWithHashCommandSpec);
     }
     if (refName == null) {
       refName = nessieCli.getCurrentReference().getName();

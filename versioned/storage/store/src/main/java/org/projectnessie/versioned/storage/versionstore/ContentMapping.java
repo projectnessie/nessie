@@ -96,8 +96,7 @@ public final class ContentMapping {
     Map<ContentKey, Content> r = newHashMapWithExpectedSize(ids.length);
     for (int i = 0; i < ids.length; i++) {
       Obj obj = objs[i];
-      if (obj instanceof ContentValueObj) {
-        ContentValueObj contentValue = (ContentValueObj) obj;
+      if (obj instanceof ContentValueObj contentValue) {
         ContentKey contentKey = idsToKeys.get(obj.id());
         Content content = valueToContent(contentValue);
         r.put(contentKey, content);
@@ -121,8 +120,7 @@ public final class ContentMapping {
     Map<ContentKey, Content> r = newHashMapWithExpectedSize(ids.length);
     for (int i = 0; i < ids.length; i++) {
       Obj obj = objs[i];
-      if (obj instanceof ContentValueObj) {
-        ContentValueObj contentValue = (ContentValueObj) obj;
+      if (obj instanceof ContentValueObj contentValue) {
         Content content = valueToContent(contentValue);
         for (ContentKey key : idsToKeys.get(obj.id())) {
           r.put(key, content);
