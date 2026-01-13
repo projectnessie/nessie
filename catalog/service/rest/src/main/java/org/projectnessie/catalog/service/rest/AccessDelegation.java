@@ -46,6 +46,7 @@ public enum AccessDelegation {
    *     headerValue} is {@code null}, which means we don't know what the client accepts.
    */
   @Nonnull
+  @SuppressWarnings("StringSplitter")
   public static Predicate<AccessDelegation> accessDelegationPredicate(
       @Nullable String headerValue) {
     if (headerValue == null) {
