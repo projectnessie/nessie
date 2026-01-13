@@ -194,7 +194,7 @@ public class AvroSerializeBench {
         }
 
         icebergDataFiles.add(
-            (IcebergDataFile.builder()
+            IcebergDataFile.builder()
                 .filePath(
                     prefixed("s3:///", pathPrefixLength).append(AVRO.fileExtension()).toString())
                 .fileSizeInBytes(random.nextLong(10000, 10 * 1024 * 1024 * 1024L))
@@ -227,7 +227,7 @@ public class AvroSerializeBench {
                     IntStream.rangeClosed(1, schemaFields)
                         .boxed()
                         .collect(Collectors.toMap(f -> f, f -> random.nextLong(10_000))))
-                .build()));
+                .build());
       }
 
       icebergManifestFiles = new ArrayList<>(entriesCount);
