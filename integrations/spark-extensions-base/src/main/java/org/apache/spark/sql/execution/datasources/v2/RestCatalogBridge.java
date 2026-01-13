@@ -17,8 +17,8 @@ package org.apache.spark.sql.execution.datasources.v2;
 
 import static java.lang.Boolean.parseBoolean;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
@@ -77,40 +77,36 @@ final class RestCatalogBridge implements CatalogBridge {
                 : catalogProperties.get(x.replace("nessie.", ""));
 
     NessieClientConfigSource configSource =
-        x -> {
-          switch (x) {
-            case NessieConfigConstants.CONF_NESSIE_URI:
-              // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie
-              // Catalog
-              // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely
-              // assume
-              // that `nessie.core-base-uri` contains a `/` terminated URI.
-              return catalogProperties.get("nessie.core-base-uri") + "v2";
-            case "nessie.client-api-version":
-              return "2";
-            case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID:
-              return credential.clientId;
-            case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET:
-              // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
-              return credential.secret;
-            case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES:
-              // Same default scope as the Iceberg REST Client uses in
-              // o.a.i.rest.RESTSessionCatalog.initialize
-              // See o.a.i.rest.auth.OAuth2Util.SCOPE
-              return CatalogUtils.resolveOAuthScope(catalogProperties);
-            case NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
-              return catalogProperties.get("oauth2-server-uri");
-            case NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN:
-              return catalogProperties.get("token");
-            case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE:
-              if (catalogProperties.containsKey("token")) {
-                return "BEARER";
+        x ->
+            switch (x) {
+              case NessieConfigConstants.CONF_NESSIE_URI ->
+                  // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie
+                  // Catalog
+                  // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely
+                  // assume
+                  // that `nessie.core-base-uri` contains a `/` terminated URI.
+                  catalogProperties.get("nessie.core-base-uri") + "v2";
+              case "nessie.client-api-version" -> "2";
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_ID -> credential.clientId;
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SECRET ->
+                  // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+                  credential.secret;
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_CLIENT_SCOPES ->
+                  // Same default scope as the Iceberg REST Client uses in
+                  // o.a.i.rest.RESTSessionCatalog.initialize
+                  // See o.a.i.rest.auth.OAuth2Util.SCOPE
+                  CatalogUtils.resolveOAuthScope(catalogProperties);
+              case NessieConfigConstants.CONF_NESSIE_OAUTH2_AUTH_ENDPOINT ->
+                  catalogProperties.get("oauth2-server-uri");
+              case NessieConfigConstants.CONF_NESSIE_AUTH_TOKEN -> catalogProperties.get("token");
+              case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE -> {
+                if (catalogProperties.containsKey("token")) {
+                  yield "BEARER";
+                }
+                yield defaultConfigValue.apply(x);
               }
-              return defaultConfigValue.apply(x);
-            default:
-              return defaultConfigValue.apply(x);
-          }
-        };
+              default -> defaultConfigValue.apply(x);
+            };
 
     this.api = CatalogUtils.buildApi(configSource);
   }
@@ -168,9 +164,9 @@ final class RestCatalogBridge implements CatalogBridge {
         Arrays.stream(sparkConf.getAllWithPrefix(confPrefix))
             .collect(Collectors.toMap(Tuple2::_1, Tuple2::_2));
 
-    if (icebergCatalog instanceof AutoCloseable) {
+    if (icebergCatalog instanceof AutoCloseable autoCloseable) {
       try {
-        ((AutoCloseable) icebergCatalog).close();
+        autoCloseable.close();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -180,11 +176,7 @@ final class RestCatalogBridge implements CatalogBridge {
   }
 
   private static String encode(String s) {
-    try {
-      return URLEncoder.encode(s, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    return URLEncoder.encode(s, StandardCharsets.UTF_8);
   }
 
   @Override
