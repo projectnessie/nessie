@@ -37,6 +37,7 @@ class TestRetriableAccessChecker {
   private final List<Check> checked = new ArrayList<>();
   private final Map<Check, String> result = new HashMap<>();
 
+  @SuppressWarnings("UnnecessaryLambda")
   private final Supplier<BatchAccessChecker> validator =
       () ->
           new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
