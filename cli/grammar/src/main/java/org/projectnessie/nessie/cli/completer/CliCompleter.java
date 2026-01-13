@@ -68,15 +68,12 @@ public abstract class CliCompleter {
       if (parser.getToken(0).getType().isEOF()) {
         Token prev = parser.getToken(-1);
         switch (prev.getType()) {
-          case IDENTIFIER:
-          case STRING_LITERAL:
-          case URI:
-            completeWithIdentifier(
-                source.substring(0, prev.getEndOffset()), source.substring(prev.getBeginOffset()));
-            break;
-          default:
+          case IDENTIFIER, STRING_LITERAL, URI ->
+              completeWithIdentifier(
+                  source.substring(0, prev.getEndOffset()),
+                  source.substring(prev.getBeginOffset()));
+          default -> {}
             // cannot have "unfinished" keywords for a successfully parsed statement
-            break;
         }
       }
 
@@ -152,30 +149,25 @@ public abstract class CliCompleter {
       List<TokenType> expectedTokenTypes = new ArrayList<>(parser.optionalNextTokenTypes());
       for (TokenType expected : e.getExpectedTokenTypes()) {
         switch (expected) {
-          case EOF:
-          case DUMMY:
-          case WHITESPACE:
-            break;
-          default:
+          case EOF, DUMMY, WHITESPACE -> {}
+          default -> {
             if (parser.isTokenActive(expected)) {
               expectedTokenTypes.add(expected);
             }
+          }
         }
       }
 
       for (TokenType expected : expectedTokenTypes) {
         switch (expected) {
-          case IDENTIFIER:
-          case STRING_LITERAL:
-          case URI:
+          case IDENTIFIER, STRING_LITERAL, URI -> {
             // Don't call 'completeWithIdentifier()' twice for the same input.
             if (!handledIdentifier) {
               completeWithIdentifier(trimmed, currentSource);
               handledIdentifier = true;
             }
-            break;
-
-          default:
+          }
+          default -> {
             // Replace the underscore with a space for "multi-word" tokens.
             String tokenString = parser.tokenToLiteral(expected);
             String tokenUpper = tokenString.toUpperCase(ROOT);
@@ -189,7 +181,7 @@ public abstract class CliCompleter {
             } else {
               tokenCandidateOther(trimmed, expected);
             }
-            break;
+          }
         }
       }
       return true;

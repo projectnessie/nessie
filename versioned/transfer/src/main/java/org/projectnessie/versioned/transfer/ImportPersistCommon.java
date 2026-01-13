@@ -158,12 +158,11 @@ abstract class ImportPersistCommon extends ImportCommon {
   void processCommitOp(StoreIndex<CommitOp> index, Operation op, StoreKey storeKey) {
     byte payload = (byte) op.getPayload();
     switch (op.getOperationType()) {
-      case Delete:
-        index.add(
-            indexElement(
-                storeKey, commitOp(REMOVE, payload, null, contentIdMaybe(op.getContentId()))));
-        break;
-      case Put:
+      case Delete ->
+          index.add(
+              indexElement(
+                  storeKey, commitOp(REMOVE, payload, null, contentIdMaybe(op.getContentId()))));
+      case Put -> {
         try (InputStream inValue = op.getValue().newInput()) {
           Content content = importer.objectMapper().readValue(inValue, Content.class);
           ByteString onRef = importer.storeWorker().toStoreOnReferenceState(content);
@@ -176,9 +175,8 @@ abstract class ImportPersistCommon extends ImportCommon {
         } catch (ObjTooLargeException | IOException e) {
           throw new RuntimeException(e);
         }
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown operation type " + op);
+      }
+      default -> throw new IllegalArgumentException("Unknown operation type " + op);
     }
   }
 }

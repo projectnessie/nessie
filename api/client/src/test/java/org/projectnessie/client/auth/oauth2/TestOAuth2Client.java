@@ -604,26 +604,13 @@ class TestOAuth2Client {
     public void handle(HttpServletRequest req, HttpServletResponse resp) throws IOException {
       String requestUri = req.getRequestURI();
       switch (requestUri) {
-        case "/token":
-          handleTokenEndpoint(req, resp);
-          break;
-        case "/impersonation":
-          handleImpersonationEndpoint(req, resp);
-          break;
-        case "/auth":
-          handleAuthorizationEndpoint(req, resp);
-          break;
-        case "/device-auth":
-          handleDeviceAuthEndpoint(req, resp);
-          break;
-        case "/device":
-          handleDeviceEndpoint(req, resp);
-          break;
-        case "/.well-known/openid-configuration":
-          handleOpenIdProviderMetadataEndpoint(req, resp);
-          break;
-        default:
-          throw new AssertionError("Unexpected request URI: " + requestUri);
+        case "/token" -> handleTokenEndpoint(req, resp);
+        case "/impersonation" -> handleImpersonationEndpoint(req, resp);
+        case "/auth" -> handleAuthorizationEndpoint(req, resp);
+        case "/device-auth" -> handleDeviceAuthEndpoint(req, resp);
+        case "/device" -> handleDeviceEndpoint(req, resp);
+        case "/.well-known/openid-configuration" -> handleOpenIdProviderMetadataEndpoint(req, resp);
+        default -> throw new AssertionError("Unexpected request URI: " + requestUri);
       }
     }
 

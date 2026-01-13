@@ -68,22 +68,17 @@ final class Util {
     for (int i = 0; i < l; i++) {
       char c = encoded.charAt(i);
       switch (c) {
-        case DOT:
-          if (e.length() == 0) {
+        case DOT -> {
+          if (e.isEmpty()) {
             // Got a '.' at the beginning of an element. Escaped syntax.
             return fromPathStringEscaped(elements, encoded);
           } else {
             elements.add(e.toString());
             e.setLength(0);
           }
-          break;
-        case GROUP_SEPARATOR:
-        case ZERO_BYTE:
-          e.append(DOT);
-          break;
-        default:
-          e.append(c);
-          break;
+        }
+        case GROUP_SEPARATOR, ZERO_BYTE -> e.append(DOT);
+        default -> e.append(c);
       }
     }
     if (e.length() > 0) {
@@ -98,11 +93,11 @@ final class Util {
     for (int i = 1; i < l; i++) {
       char c = encoded.charAt(i);
       switch (c) {
-        case DOT:
+        case DOT -> {
           elements.add(e.toString());
           e.setLength(0);
-          break;
-        case STAR:
+        }
+        case STAR -> {
           i++;
           if (i == l) {
             throw new IllegalArgumentException(
@@ -129,13 +124,11 @@ final class Util {
               throw new IllegalArgumentException(
                   "Illegal escaping sequence *" + c + " in encoded path: " + encoded);
           }
-          break;
-        default:
-          e.append(c);
-          break;
+        }
+        default -> e.append(c);
       }
     }
-    if (e.length() > 0) {
+    if (!e.isEmpty()) {
       elements.add(e.toString());
     }
     return elements;
@@ -169,15 +162,11 @@ final class Util {
       for (int i = 0; i < l; i++) {
         char c = element.charAt(i);
         switch (c) {
-          case DOT:
-          case SLASH:
-          case BACKSLASH:
-          case PERCENT:
+          case DOT, SLASH, BACKSLASH, PERCENT -> {
             sb.setLength(0);
             return toPathStringEscaped(elements, sb);
-          default:
-            sb.append(c);
-            break;
+          }
+          default -> sb.append(c);
         }
       }
     }
@@ -213,24 +202,12 @@ final class Util {
       for (int i = 0; i < l; i++) {
         char c = element.charAt(i);
         switch (c) {
-          case DOT:
-            sb.append(ESCAPE_STRING_FOR_DOT);
-            break;
-          case SLASH:
-            sb.append(ESCAPE_STRING_FOR_SLASH);
-            break;
-          case BACKSLASH:
-            sb.append(ESCAPE_STRING_FOR_BACKSLASH);
-            break;
-          case PERCENT:
-            sb.append(ESCAPE_STRING_FOR_PERCENT);
-            break;
-          case STAR:
-            sb.append(ESCAPE_STRING_FOR_STAR);
-            break;
-          default:
-            sb.append(c);
-            break;
+          case DOT -> sb.append(ESCAPE_STRING_FOR_DOT);
+          case SLASH -> sb.append(ESCAPE_STRING_FOR_SLASH);
+          case BACKSLASH -> sb.append(ESCAPE_STRING_FOR_BACKSLASH);
+          case PERCENT -> sb.append(ESCAPE_STRING_FOR_PERCENT);
+          case STAR -> sb.append(ESCAPE_STRING_FOR_STAR);
+          default -> sb.append(c);
         }
       }
     }
@@ -245,15 +222,9 @@ final class Util {
       for (int i = 0; i < l; i++) {
         char c = element.charAt(i);
         switch (c) {
-          case DOT:
-            sb.append(ESCAPE_STRING_FOR_DOT);
-            break;
-          case STAR:
-            sb.append(ESCAPE_STRING_FOR_STAR);
-            break;
-          default:
-            sb.append(c);
-            break;
+          case DOT -> sb.append(ESCAPE_STRING_FOR_DOT);
+          case STAR -> sb.append(ESCAPE_STRING_FOR_STAR);
+          default -> sb.append(c);
         }
       }
     }

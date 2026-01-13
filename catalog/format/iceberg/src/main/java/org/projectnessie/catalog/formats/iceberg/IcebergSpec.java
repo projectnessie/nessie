@@ -67,14 +67,11 @@ public enum IcebergSpec {
   }
 
   public static IcebergSpec forVersion(int version) {
-    switch (version) {
-      case 1:
-        return V1;
-      case 2:
-        return V2;
-      default:
-        throw new IllegalArgumentException("Unkown Iceberg spec version " + version);
-    }
+    return switch (version) {
+      case 1 -> V1;
+      case 2 -> V2;
+      default -> throw new IllegalArgumentException("Unkown Iceberg spec version " + version);
+    };
   }
 
   public static final class IcebergSpecV1 {

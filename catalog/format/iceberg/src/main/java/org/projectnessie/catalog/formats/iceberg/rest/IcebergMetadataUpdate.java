@@ -542,20 +542,11 @@ public interface IcebergMetadataUpdate {
       v = summary.get("operation");
       if (v != null) {
         switch (v.toLowerCase(Locale.ROOT)) {
-          case "append":
-            state.addCatalogOp(CatalogOps.SNAP_OP_APPEND);
-            break;
-          case "replace":
-            state.addCatalogOp(CatalogOps.SNAP_OP_REPLACE);
-            break;
-          case "overwrite":
-            state.addCatalogOp(CatalogOps.SNAP_OP_OVERWRITE);
-            break;
-          case "delete":
-            state.addCatalogOp(CatalogOps.SNAP_OP_DELETE);
-            break;
-          default:
-            break;
+          case "append" -> state.addCatalogOp(CatalogOps.SNAP_OP_APPEND);
+          case "replace" -> state.addCatalogOp(CatalogOps.SNAP_OP_REPLACE);
+          case "overwrite" -> state.addCatalogOp(CatalogOps.SNAP_OP_OVERWRITE);
+          case "delete" -> state.addCatalogOp(CatalogOps.SNAP_OP_DELETE);
+          default -> {}
         }
       }
 

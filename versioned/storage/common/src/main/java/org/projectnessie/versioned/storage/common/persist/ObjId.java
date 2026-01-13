@@ -50,18 +50,17 @@ public abstract class ObjId {
   }
 
   public static ObjId objIdFromByteAccessor(int size, ByteAccessor byteAt) {
-    switch (size) {
-      case 32:
-        return ObjId256.fromByteAccessor(byteAt);
-      case 0:
-        return zeroLengthObjId();
-      default:
+    return switch (size) {
+      case 32 -> ObjId256.fromByteAccessor(byteAt);
+      case 0 -> zeroLengthObjId();
+      default -> {
         byte[] bytes = new byte[size];
         for (int i = 0; i < size; i++) {
           bytes[i] = byteAt.get(i);
         }
-        return ObjIdGeneric.objIdFromByteArray(bytes);
-    }
+        yield ObjIdGeneric.objIdFromByteArray(bytes);
+      }
+    };
   }
 
   /**
@@ -112,14 +111,11 @@ public abstract class ObjId {
     int len = hash.length();
     checkArgument(len % 2 == 0, "hash length needs to be a multiple of two, was %s", len);
 
-    switch (len >> 1) {
-      case 0:
-        return ObjIdEmpty.INSTANCE;
-      case 32:
-        return new ObjId256(hash);
-      default:
-        return new ObjIdGeneric(hash);
-    }
+    return switch (len >> 1) {
+      case 0 -> ObjIdEmpty.INSTANCE;
+      case 32 -> new ObjId256(hash);
+      default -> new ObjIdGeneric(hash);
+    };
   }
 
   /**
@@ -132,14 +128,11 @@ public abstract class ObjId {
    */
   public static ObjId objIdFromBytes(ByteString bytes) {
     int len = bytes.size();
-    switch (len) {
-      case 0:
-        return ObjIdEmpty.INSTANCE;
-      case 32:
-        return new ObjId256(bytes);
-      default:
-        return new ObjIdGeneric(bytes);
-    }
+    return switch (len) {
+      case 0 -> ObjIdEmpty.INSTANCE;
+      case 32 -> new ObjId256(bytes);
+      default -> new ObjIdGeneric(bytes);
+    };
   }
 
   /**
@@ -191,18 +184,17 @@ public abstract class ObjId {
   }
 
   private static ObjId fromBytes(int len, ByteBuffer bytes) {
-    switch (len) {
-      case 0:
-        return ObjIdEmpty.INSTANCE;
-      case 32:
-        return new ObjId256(bytes);
-      default:
+    return switch (len) {
+      case 0 -> ObjIdEmpty.INSTANCE;
+      case 32 -> new ObjId256(bytes);
+      default -> {
         ByteBuffer gen = bytes.duplicate();
         int lim = gen.position() + len;
         gen.limit(lim);
         bytes.position(lim);
-        return new ObjIdGeneric(gen);
-    }
+        yield new ObjIdGeneric(gen);
+      }
+    };
   }
 
   /**
@@ -387,18 +379,13 @@ public abstract class ObjId {
 
     @Override
     public long longAt(int index) {
-      switch (index) {
-        case 0:
-          return l0;
-        case 1:
-          return l1;
-        case 2:
-          return l2;
-        case 3:
-          return l3;
-        default:
-          throw new IllegalArgumentException("Invalid long index " + index);
-      }
+      return switch (index) {
+        case 0 -> l0;
+        case 1 -> l1;
+        case 2 -> l2;
+        case 3 -> l3;
+        default -> throw new IllegalArgumentException("Invalid long index " + index);
+      };
     }
 
     @Override

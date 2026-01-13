@@ -97,16 +97,12 @@ public final class BooleanArray {
   }
 
   static Boolean decodeBoolean(byte b) {
-    switch (b) {
-      case 0:
-        return null;
-      case 1:
-        return Boolean.FALSE;
-      case 2:
-        return Boolean.TRUE;
-      default:
-        throw new IllegalArgumentException("" + b);
-    }
+    return switch (b) {
+      case 0 -> null;
+      case 1 -> Boolean.FALSE;
+      case 2 -> Boolean.TRUE;
+      default -> throw new IllegalArgumentException("" + b);
+    };
   }
 
   static int shiftForIndex(int index) {

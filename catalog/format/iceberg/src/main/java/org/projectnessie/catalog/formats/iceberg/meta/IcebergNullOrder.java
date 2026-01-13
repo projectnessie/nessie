@@ -52,14 +52,11 @@ public interface IcebergNullOrder {
     public IcebergNullOrder deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
-      switch (text) {
-        case NULLS_FIRST_VALUE:
-          return NULLS_FIRST;
-        case NULLS_LAST_VALUE:
-          return NULLS_LAST;
-        default:
-          return ImmutableIcebergNullOrder.of(text, text);
-      }
+      return switch (text) {
+        case NULLS_FIRST_VALUE -> NULLS_FIRST;
+        case NULLS_LAST_VALUE -> NULLS_LAST;
+        default -> ImmutableIcebergNullOrder.of(text, text);
+      };
     }
   }
 }

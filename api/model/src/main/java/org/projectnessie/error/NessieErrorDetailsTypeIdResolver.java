@@ -56,18 +56,12 @@ public class NessieErrorDetailsTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) {
-    Class<? extends NessieErrorDetails> asType;
-    switch (id) {
-      case ReferenceConflicts.TYPE:
-        asType = ReferenceConflicts.class;
-        break;
-      case ContentKeyErrorDetails.TYPE:
-        asType = ContentKeyErrorDetails.class;
-        break;
-      default:
-        asType = GenericErrorDetails.class;
-        break;
-    }
+    Class<? extends NessieErrorDetails> asType =
+        switch (id) {
+          case ReferenceConflicts.TYPE -> ReferenceConflicts.class;
+          case ContentKeyErrorDetails.TYPE -> ContentKeyErrorDetails.class;
+          default -> GenericErrorDetails.class;
+        };
     if (baseType.getRawClass().isAssignableFrom(asType)) {
       return context.constructSpecializedType(baseType, asType);
     }

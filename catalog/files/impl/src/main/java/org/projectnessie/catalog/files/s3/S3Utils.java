@@ -50,31 +50,21 @@ public final class S3Utils {
 
   public static Optional<String> extractBucketName(URI uri) {
     String scheme = requireNonNull(uri, "URI argument missing").getScheme();
-    switch (scheme) {
-      case "s3":
-      case "s3a":
-      case "s3n":
-        return extractBucketFromS3Uri(uri);
-      case "http":
-      case "https":
-        return extractBucketFromHttpUri(uri);
-      default:
-        throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
-    }
+    return switch (scheme) {
+      case "s3", "s3a", "s3n" -> extractBucketFromS3Uri(uri);
+      case "http", "https" -> extractBucketFromHttpUri(uri);
+      default -> throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
+    };
   }
 
   public static boolean isS3scheme(String scheme) {
     if (scheme == null) {
       return false;
     }
-    switch (scheme) {
-      case "s3":
-      case "s3a":
-      case "s3n":
-        return true;
-      default:
-        return false;
-    }
+    return switch (scheme) {
+      case "s3", "s3a", "s3n" -> true;
+      default -> false;
+    };
   }
 
   public static String normalizeS3Scheme(String uri) {
@@ -143,14 +133,8 @@ public final class S3Utils {
     for (int i = 0; i < s.length(); i++) {
       char c = s.charAt(i);
       switch (c) {
-        case '*':
-        case '?':
-        case '$':
-          sb.append("${").append(c).append('}');
-          break;
-        default:
-          sb.append(c);
-          break;
+        case '*', '?', '$' -> sb.append("${").append(c).append('}');
+        default -> sb.append(c);
       }
     }
     return sb.toString();
@@ -158,10 +142,9 @@ public final class S3Utils {
 
   public static AwsCredentialsProvider newCredentialsProvider(
       S3AuthType authType, S3BucketOptions bucketOptions, SecretsProvider secretsProvider) {
-    switch (authType) {
-      case APPLICATION_GLOBAL:
-        return DEFAULT_CREDENTIALS_PROVIDER;
-      case STATIC:
+    return switch (authType) {
+      case APPLICATION_GLOBAL -> DEFAULT_CREDENTIALS_PROVIDER;
+      case STATIC -> {
         URI secretName =
             bucketOptions
                 .accessKey()
@@ -170,7 +153,7 @@ public final class S3Utils {
                         new IllegalArgumentException(
                             "Missing access key and secret for STATIC authentication mode"));
 
-        return secretsProvider
+        yield secretsProvider
             .getSecret(secretName, SecretType.BASIC, BasicCredentials.class)
             .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
             .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
@@ -178,8 +161,8 @@ public final class S3Utils {
                 () ->
                     new IllegalArgumentException(
                         "Missing access key and secret for STATIC authentication mode"));
-      default:
-        throw new IllegalArgumentException("Unsupported S3 auth type: " + authType);
-    }
+      }
+      default -> throw new IllegalArgumentException("Unsupported S3 auth type: " + authType);
+    };
   }
 }

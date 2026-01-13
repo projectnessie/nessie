@@ -98,28 +98,25 @@ public final class RestCommon {
               if (!v.isEmpty()) {
                 String lower = k.toLowerCase(Locale.ROOT);
                 switch (lower) {
-                  case "nessie-commit-message":
-                    v.stream()
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .findFirst()
-                        .ifPresent(commitMeta::message);
-                    break;
-                  case "nessie-commit-authors":
-                    v.stream()
-                        .flatMap(s -> Arrays.stream(s.split(",")))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .forEach(commitMeta::addAllAuthors);
-                    break;
-                  case "nessie-commit-signedoffby":
-                    v.stream()
-                        .flatMap(s -> Arrays.stream(s.split(",")))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .forEach(commitMeta::addAllSignedOffBy);
-                    break;
-                  default:
+                  case "nessie-commit-message" ->
+                      v.stream()
+                          .map(String::trim)
+                          .filter(s -> !s.isEmpty())
+                          .findFirst()
+                          .ifPresent(commitMeta::message);
+                  case "nessie-commit-authors" ->
+                      v.stream()
+                          .flatMap(s -> Arrays.stream(s.split(",")))
+                          .map(String::trim)
+                          .filter(s -> !s.isEmpty())
+                          .forEach(commitMeta::addAllAuthors);
+                  case "nessie-commit-signedoffby" ->
+                      v.stream()
+                          .flatMap(s -> Arrays.stream(s.split(",")))
+                          .map(String::trim)
+                          .filter(s -> !s.isEmpty())
+                          .forEach(commitMeta::addAllSignedOffBy);
+                  default -> {
                     if (lower.startsWith("nessie-commit-property-")) {
                       String prop = lower.substring("nessie-commit-property-".length()).trim();
                       commitMeta.putAllProperties(
@@ -129,7 +126,7 @@ public final class RestCommon {
                               .filter(s -> !s.isEmpty())
                               .collect(Collectors.toList()));
                     }
-                    break;
+                  }
                 }
               }
             });

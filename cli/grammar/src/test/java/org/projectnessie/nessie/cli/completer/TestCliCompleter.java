@@ -1535,56 +1535,60 @@ public class TestCliCompleter {
   @SuppressWarnings("unchecked")
   static <T extends CommandSpec> T asImmutable(T parsedSpec) {
 
-    switch (parsedSpec.commandType()) {
-      case HELP:
-        return (T) ImmutableHelpCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case EXIT:
-        return (T) ImmutableExitCommandSpec.builder().build();
-      case CONNECT:
-        return (T) ImmutableConnectCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case ASSIGN_REFERENCE:
-        return (T)
-            ImmutableAssignReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case USE_REFERENCE:
-        return (T)
-            ImmutableUseReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case LIST_CONTENTS:
-        return (T)
-            ImmutableListContentsCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case LIST_REFERENCES:
-        return (T)
-            ImmutableListReferencesCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case SHOW_REFERENCE:
-        return (T)
-            ImmutableShowReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case SHOW_CONTENT:
-        return (T)
-            ImmutableShowContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case SHOW_LOG:
-        return (T) ImmutableShowLogCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case REVERT_CONTENT:
-        return (T)
-            ImmutableRevertContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case DROP_REFERENCE:
-        return (T)
-            ImmutableDropReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case CREATE_REFERENCE:
-        return (T)
-            ImmutableCreateReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case CREATE_NAMESPACE:
-        return (T)
-            ImmutableCreateNamespaceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case ALTER_NAMESPACE:
-        return (T)
-            ImmutableAlterNamespaceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case DROP_CONTENT:
-        return (T)
-            ImmutableDropContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      case MERGE_BRANCH:
-        return (T)
-            ImmutableMergeBranchCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
-      default:
-        throw new IllegalArgumentException("Unknown type " + parsedSpec.commandType());
-    }
+    return switch (parsedSpec.commandType()) {
+      case HELP -> (T) ImmutableHelpCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case EXIT -> (T) ImmutableExitCommandSpec.builder().build();
+      case CONNECT ->
+          (T) ImmutableConnectCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case ASSIGN_REFERENCE ->
+          (T)
+              ImmutableAssignReferenceCommandSpec.builder()
+                  .from(parsedSpec)
+                  .sourceNode(null)
+                  .build();
+      case USE_REFERENCE ->
+          (T) ImmutableUseReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case LIST_CONTENTS ->
+          (T) ImmutableListContentsCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case LIST_REFERENCES ->
+          (T)
+              ImmutableListReferencesCommandSpec.builder()
+                  .from(parsedSpec)
+                  .sourceNode(null)
+                  .build();
+      case SHOW_REFERENCE ->
+          (T) ImmutableShowReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case SHOW_CONTENT ->
+          (T) ImmutableShowContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case SHOW_LOG ->
+          (T) ImmutableShowLogCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case REVERT_CONTENT ->
+          (T) ImmutableRevertContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case DROP_REFERENCE ->
+          (T) ImmutableDropReferenceCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case CREATE_REFERENCE ->
+          (T)
+              ImmutableCreateReferenceCommandSpec.builder()
+                  .from(parsedSpec)
+                  .sourceNode(null)
+                  .build();
+      case CREATE_NAMESPACE ->
+          (T)
+              ImmutableCreateNamespaceCommandSpec.builder()
+                  .from(parsedSpec)
+                  .sourceNode(null)
+                  .build();
+      case ALTER_NAMESPACE ->
+          (T)
+              ImmutableAlterNamespaceCommandSpec.builder()
+                  .from(parsedSpec)
+                  .sourceNode(null)
+                  .build();
+      case DROP_CONTENT ->
+          (T) ImmutableDropContentCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      case MERGE_BRANCH ->
+          (T) ImmutableMergeBranchCommandSpec.builder().from(parsedSpec).sourceNode(null).build();
+      default -> throw new IllegalArgumentException("Unknown type " + parsedSpec.commandType());
+    };
   }
 }

@@ -206,24 +206,20 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     boolean notFound = false;
     for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
       switch (c.getClass().getName()) {
-        case ICEBERG_NOT_FOUND_EXCEPTION:
-        case S3_KEY_NOT_FOUND_EXCEPTION:
-          notFound = true;
-          break;
-        case GCS_STORAGE_EXCEPTION:
+        case ICEBERG_NOT_FOUND_EXCEPTION, S3_KEY_NOT_FOUND_EXCEPTION -> notFound = true;
+        case GCS_STORAGE_EXCEPTION -> {
           if (c.getMessage().startsWith(GCS_NOT_FOUND_START)) {
             notFound = true;
           }
-          break;
-        case ADLS_BLOB_STORAGE_EXCEPTION:
+        }
+        case ADLS_BLOB_STORAGE_EXCEPTION -> {
           String message = c.getMessage();
           if (message.contains(ADLS_PATH_NOT_FOUND_CODE)
               || message.contains(ADLS_BLOB_NOT_FOUND_CODE)) {
             notFound = true;
           }
-          break;
-        default:
-          break;
+        }
+        default -> {}
       }
 
       if (notFound || c == c.getCause()) {

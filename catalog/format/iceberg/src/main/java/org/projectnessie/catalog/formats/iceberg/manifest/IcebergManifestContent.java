@@ -29,14 +29,13 @@ public enum IcebergManifestContent {
   }
 
   public static IcebergManifestContent fromStringValue(String content) {
-    switch (content) {
-      case "data":
-        return DATA;
-      case "deletes":
-        return DELETES;
-      default:
-        throw new IllegalStateException("Illegal value for 'content', must be 'data' or 'deletes'");
-    }
+    return switch (content) {
+      case "data" -> DATA;
+      case "deletes" -> DELETES;
+      default ->
+          throw new IllegalStateException(
+              "Illegal value for 'content', must be 'data' or 'deletes'");
+    };
   }
 
   public String stringValue() {

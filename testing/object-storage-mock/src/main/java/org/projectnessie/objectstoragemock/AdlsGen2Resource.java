@@ -160,16 +160,11 @@ public class AdlsGen2Resource {
             return keyNotFound();
           }
 
-          String contentType;
-          switch (obj.contentType()) {
-            case "text/plain":
-            case "application/json":
-              contentType = obj.contentType();
-              break;
-            default:
-              contentType = "application/octet-stream";
-              break;
-          }
+          String contentType =
+              switch (obj.contentType()) {
+                case "text/plain", "application/json" -> obj.contentType();
+                default -> "application/octet-stream";
+              };
 
           StreamingOutput stream = output -> obj.writer().write(range, output);
 

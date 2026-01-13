@@ -44,20 +44,13 @@ public interface CommandContainer extends Node {
         if (spec == null) {
           Keyword kw = child.firstChildOfType(Keyword.class);
           switch (kw.getType()) {
-            case LOG:
-              spec = ImmutableShowLogCommandSpec.builder().sourceNode(child).build();
-              break;
-            case TABLE:
-            case VIEW:
-            case NAMESPACE:
-              spec = ImmutableShowContentCommandSpec.builder().sourceNode(child).build();
-              break;
-            case REFERENCE:
-              spec = ImmutableShowReferenceCommandSpec.builder().sourceNode(child).build();
-              break;
-            default:
+            case LOG -> spec = ImmutableShowLogCommandSpec.builder().sourceNode(child).build();
+            case TABLE, VIEW, NAMESPACE ->
+                spec = ImmutableShowContentCommandSpec.builder().sourceNode(child).build();
+            case REFERENCE ->
+                spec = ImmutableShowReferenceCommandSpec.builder().sourceNode(child).build();
+            default -> {}
               // spec = null;
-              break;
           }
         }
         if (spec != null) {
@@ -69,15 +62,12 @@ public interface CommandContainer extends Node {
         if (spec == null) {
           Keyword kw = child.firstChildOfType(Keyword.class);
           switch (kw.getType()) {
-            case CONTENTS:
-              spec = ImmutableListContentsCommandSpec.builder().sourceNode(child).build();
-              break;
-            case REFERENCES:
-              spec = ImmutableListReferencesCommandSpec.builder().sourceNode(child).build();
-              break;
-            default:
+            case CONTENTS ->
+                spec = ImmutableListContentsCommandSpec.builder().sourceNode(child).build();
+            case REFERENCES ->
+                spec = ImmutableListReferencesCommandSpec.builder().sourceNode(child).build();
+            default -> {}
               // spec = null;
-              break;
           }
         }
         if (spec != null) {
@@ -89,16 +79,12 @@ public interface CommandContainer extends Node {
         if (spec == null) {
           Keyword kw = child.firstChildOfType(Keyword.class);
           switch (kw.getType()) {
-            case BRANCH:
-            case TAG:
-              spec = ImmutableCreateReferenceCommandSpec.builder().sourceNode(child).build();
-              break;
-            case NAMESPACE:
-              spec = ImmutableCreateNamespaceCommandSpec.builder().sourceNode(child).build();
-              break;
-            default:
+            case BRANCH, TAG ->
+                spec = ImmutableCreateReferenceCommandSpec.builder().sourceNode(child).build();
+            case NAMESPACE ->
+                spec = ImmutableCreateNamespaceCommandSpec.builder().sourceNode(child).build();
+            default -> {}
               // spec = null;
-              break;
           }
         }
         if (spec != null) {
@@ -110,12 +96,10 @@ public interface CommandContainer extends Node {
         if (spec == null) {
           Keyword kw = child.firstChildOfType(Keyword.class);
           switch (kw.getType()) {
-            case ALTER:
-              spec = ImmutableAlterNamespaceCommandSpec.builder().sourceNode(child).build();
-              break;
-            default:
+            case ALTER ->
+                spec = ImmutableAlterNamespaceCommandSpec.builder().sourceNode(child).build();
+            default -> {}
               // spec = null;
-              break;
           }
         }
         if (spec != null) {
@@ -127,14 +111,10 @@ public interface CommandContainer extends Node {
         if (spec == null) {
           Keyword kw = child.firstChildOfType(Keyword.class);
           switch (kw.getType()) {
-            case BRANCH:
-            case TAG:
-            case NAMESPACE:
-              spec = ImmutableDropReferenceCommandSpec.builder().sourceNode(child).build();
-              break;
-            default:
+            case BRANCH, TAG, NAMESPACE ->
+                spec = ImmutableDropReferenceCommandSpec.builder().sourceNode(child).build();
+            default -> {}
               // spec = null;
-              break;
           }
         }
         if (spec != null) {
@@ -145,21 +125,13 @@ public interface CommandContainer extends Node {
 
       // Leaves us with the "simple no arg" commands HELP and EXIT
       if (child instanceof Token t) {
-        CommandSpec spec;
-        switch (t.getType()) {
-          case EXIT:
-            spec = ImmutableExitCommandSpec.builder().sourceNode(child).build();
-            break;
-          case HELP:
-            spec = ImmutableHelpCommandSpec.builder().sourceNode(child).build();
-            break;
-          case LIST:
-            spec = ImmutableListReferencesCommandSpec.builder().sourceNode(child).build();
-            break;
-          default:
-            spec = null;
-            break;
-        }
+        CommandSpec spec =
+            switch (t.getType()) {
+              case EXIT -> ImmutableExitCommandSpec.builder().sourceNode(child).build();
+              case HELP -> ImmutableHelpCommandSpec.builder().sourceNode(child).build();
+              case LIST -> ImmutableListReferencesCommandSpec.builder().sourceNode(child).build();
+              default -> null;
+            };
         if (spec != null) {
           commandSpecs.add(spec);
         }

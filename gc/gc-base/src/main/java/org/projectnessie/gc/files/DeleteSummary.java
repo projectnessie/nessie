@@ -29,14 +29,11 @@ public interface DeleteSummary {
 
   @CanIgnoreReturnValue
   default DeleteSummary add(DeleteResult deleteResult) {
-    switch (deleteResult) {
-      case SUCCESS:
-        return of(deleted() + 1L, failures());
-      case FAILURE:
-        return of(deleted(), failures() + 1L);
-      default:
-        throw new IllegalArgumentException("" + deleteResult);
-    }
+    return switch (deleteResult) {
+      case SUCCESS -> of(deleted() + 1L, failures());
+      case FAILURE -> of(deleted(), failures() + 1L);
+      default -> throw new IllegalArgumentException("" + deleteResult);
+    };
   }
 
   @CanIgnoreReturnValue

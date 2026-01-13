@@ -112,51 +112,49 @@ public interface NessieTypeSpecSerialized {
     ImmutableNessieTypeSpecSerialized.Builder b =
         ImmutableNessieTypeSpecSerialized.builder().type(nessieType.lowerCaseName());
     switch (nessieType) {
-      case BOOLEAN:
-      case TINYINT:
-      case SMALLINT:
-      case INT:
-      case BIGINT:
-      case FLOAT:
-      case DOUBLE:
-      case STRING:
-      case BINARY:
-      case DATE:
-      case UUID:
-      case INTERVAL:
-        break;
-      case TIME:
+      case BOOLEAN,
+          TINYINT,
+          SMALLINT,
+          INT,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          STRING,
+          BINARY,
+          DATE,
+          UUID,
+          INTERVAL -> {}
+      case TIME -> {
         NessieTimeTypeSpec time = (NessieTimeTypeSpec) value;
         b.precision(time.precision()).withTimeZone(time.withTimeZone());
-        break;
-      case TIMESTAMP:
+      }
+      case TIMESTAMP -> {
         NessieTimestampTypeSpec timestamp = (NessieTimestampTypeSpec) value;
         b.precision(timestamp.precision()).withTimeZone(timestamp.withTimeZone());
-        break;
-      case DECIMAL:
+      }
+      case DECIMAL -> {
         NessieDecimalTypeSpec decimal = (NessieDecimalTypeSpec) value;
         b.length(decimal.scale()).precision(decimal.precision());
-        break;
-      case FIXED:
+      }
+      case FIXED -> {
         NessieFixedTypeSpec fixed = (NessieFixedTypeSpec) value;
         b.length(fixed.length());
-        break;
-      case LIST:
+      }
+      case LIST -> {
         NessieListTypeSpec list = (NessieListTypeSpec) value;
         b.elementType(wrap(list.elementType()))
             .icebergElementFieldId(list.icebergElementFieldId())
             .elementsNullable(list.elementsNullable());
-        break;
-      case MAP:
+      }
+      case MAP -> {
         NessieMapTypeSpec map = (NessieMapTypeSpec) value;
         b.keyType(wrap(map.keyType())).elementType(wrap(map.valueType()));
-        break;
-      case STRUCT:
+      }
+      case STRUCT -> {
         NessieStructTypeSpec struct = (NessieStructTypeSpec) value;
         b.fields(struct.struct().fields()).icebergRecordName(struct.struct().icebergRecordName());
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown type " + nessieType);
+      }
+      default -> throw new IllegalArgumentException("Unknown type " + nessieType);
     }
     return b.build();
   }
@@ -164,53 +162,36 @@ public interface NessieTypeSpecSerialized {
   @Value.NonAttribute
   default NessieTypeSpec unwrap() {
     NessieType nessieType = NessieType.valueOf(type().toUpperCase(Locale.ROOT));
-    switch (nessieType) {
-      case BOOLEAN:
-        return NessieType.booleanType();
-      case TINYINT:
-        return NessieType.tinyintType();
-      case SMALLINT:
-        return NessieType.smallintType();
-      case INT:
-        return NessieType.intType();
-      case BIGINT:
-        return NessieType.bigintType();
-      case FLOAT:
-        return NessieType.floatType();
-      case DOUBLE:
-        return NessieType.doubleType();
-      case STRING:
-        return NessieType.stringType();
-      case BINARY:
-        return NessieType.binaryType();
-      case DATE:
-        return NessieType.dateType();
-      case UUID:
-        return NessieType.uuidType();
-      case INTERVAL:
-        return NessieType.intervalType();
-      case TIME:
-        return NessieType.timeType(Boolean.TRUE.equals(withTimeZone()));
-      case TIMESTAMP:
-        return NessieType.timestampType(Boolean.TRUE.equals(withTimeZone()));
-      case DECIMAL:
-        return NessieType.decimalType(requireNonNull(length()), requireNonNull(precision()));
-      case FIXED:
-        return NessieType.fixedType(requireNonNull(length()));
-      case LIST:
-        return NessieType.listType(
-            requireNonNull(elementType()).unwrap(), icebergElementFieldId(), elementsNullable());
-      case MAP:
-        return NessieType.mapType(
-            requireNonNull(keyType()).unwrap(),
-            icebergKeyFieldId(),
-            requireNonNull(elementType()).unwrap(),
-            icebergElementFieldId(),
-            elementsNullable());
-      case STRUCT:
-        return NessieType.structType(NessieStruct.nessieStruct(fields(), icebergRecordName()));
-      default:
-        throw new IllegalArgumentException("Unknown type " + nessieType);
-    }
+    return switch (nessieType) {
+      case BOOLEAN -> NessieType.booleanType();
+      case TINYINT -> NessieType.tinyintType();
+      case SMALLINT -> NessieType.smallintType();
+      case INT -> NessieType.intType();
+      case BIGINT -> NessieType.bigintType();
+      case FLOAT -> NessieType.floatType();
+      case DOUBLE -> NessieType.doubleType();
+      case STRING -> NessieType.stringType();
+      case BINARY -> NessieType.binaryType();
+      case DATE -> NessieType.dateType();
+      case UUID -> NessieType.uuidType();
+      case INTERVAL -> NessieType.intervalType();
+      case TIME -> NessieType.timeType(Boolean.TRUE.equals(withTimeZone()));
+      case TIMESTAMP -> NessieType.timestampType(Boolean.TRUE.equals(withTimeZone()));
+      case DECIMAL -> NessieType.decimalType(requireNonNull(length()), requireNonNull(precision()));
+      case FIXED -> NessieType.fixedType(requireNonNull(length()));
+      case LIST ->
+          NessieType.listType(
+              requireNonNull(elementType()).unwrap(), icebergElementFieldId(), elementsNullable());
+      case MAP ->
+          NessieType.mapType(
+              requireNonNull(keyType()).unwrap(),
+              icebergKeyFieldId(),
+              requireNonNull(elementType()).unwrap(),
+              icebergElementFieldId(),
+              elementsNullable());
+      case STRUCT ->
+          NessieType.structType(NessieStruct.nessieStruct(fields(), icebergRecordName()));
+      default -> throw new IllegalArgumentException("Unknown type " + nessieType);
+    };
   }
 }

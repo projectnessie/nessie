@@ -386,18 +386,12 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
                         Set<String> actions =
                             requestMeta.keyActions(op.identifiedKey().contentKey());
                         switch (op.operationType()) {
-                          case CREATE:
-                            check.canCreateEntity(branch, op.identifiedKey(), actions);
-                            break;
-                          case UPDATE:
-                            check.canUpdateEntity(branch, op.identifiedKey(), actions);
-                            break;
-                          case DELETE:
-                            check.canDeleteEntity(branch, op.identifiedKey(), actions);
-                            break;
-                          default:
-                            throw new UnsupportedOperationException(
-                                "Unknown operation type " + op.operationType());
+                          case CREATE -> check.canCreateEntity(branch, op.identifiedKey(), actions);
+                          case UPDATE -> check.canUpdateEntity(branch, op.identifiedKey(), actions);
+                          case DELETE -> check.canDeleteEntity(branch, op.identifiedKey(), actions);
+                          default ->
+                              throw new UnsupportedOperationException(
+                                  "Unknown operation type " + op.operationType());
                         }
                       });
               check.checkAndThrow();

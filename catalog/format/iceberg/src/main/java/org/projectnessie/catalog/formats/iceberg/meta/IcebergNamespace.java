@@ -92,13 +92,11 @@ public interface IcebergNamespace {
       Builder b = builder();
       while (true) {
         switch (p.nextToken()) {
-          case VALUE_STRING:
-            b.addLevel(p.getText());
-            break;
-          case END_ARRAY:
+          case VALUE_STRING -> b.addLevel(p.getText());
+          case END_ARRAY -> {
             return b.build();
-          default:
-            throw new IllegalArgumentException("Unexpected token " + p.currentToken());
+          }
+          default -> throw new IllegalArgumentException("Unexpected token " + p.currentToken());
         }
       }
     }

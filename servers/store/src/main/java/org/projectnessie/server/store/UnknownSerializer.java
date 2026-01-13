@@ -41,25 +41,13 @@ public final class UnknownSerializer extends BaseSerializer<Content> {
 
   @Override
   protected Content valueFromStore(ObjectTypes.Content content) {
-    switch (content.getObjectTypeCase()) {
-      case DELTA_LAKE_TABLE:
-        return valueFromStoreDeltaLakeTable(content);
-
-      case ICEBERG_REF_STATE:
-        return valueFromStoreIcebergTable(content);
-
-      case ICEBERG_VIEW_STATE:
-        return valueFromStoreIcebergView(content);
-
-      case NAMESPACE:
-        return valueFromStoreNamespace(content);
-
-      case UDF:
-        return valueFromStoreUDF(content);
-
-      case OBJECTTYPE_NOT_SET:
-      default:
-        throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
-    }
+    return switch (content.getObjectTypeCase()) {
+      case DELTA_LAKE_TABLE -> valueFromStoreDeltaLakeTable(content);
+      case ICEBERG_REF_STATE -> valueFromStoreIcebergTable(content);
+      case ICEBERG_VIEW_STATE -> valueFromStoreIcebergView(content);
+      case NAMESPACE -> valueFromStoreNamespace(content);
+      case UDF -> valueFromStoreUDF(content);
+      default -> throw new IllegalArgumentException("Unknown type " + content.getObjectTypeCase());
+    };
   }
 }

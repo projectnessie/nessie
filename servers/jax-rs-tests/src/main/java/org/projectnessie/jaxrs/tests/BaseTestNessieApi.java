@@ -460,16 +460,15 @@ public abstract class BaseTestNessieApi {
     Reference ref0;
     ReferenceType anotherType;
     switch (referenceType) {
-      case TAG:
+      case TAG -> {
         ref0 = Tag.of("tag1", main.getHash());
         anotherType = ReferenceType.BRANCH;
-        break;
-      case BRANCH:
+      }
+      case BRANCH -> {
         ref0 = Branch.of("branch1", main.getHash());
         anotherType = ReferenceType.TAG;
-        break;
-      default:
-        throw new IllegalStateException("Unsupported ref type: " + referenceType);
+      }
+      default -> throw new IllegalStateException("Unsupported ref type: " + referenceType);
     }
 
     Reference ref = createReference(ref0, main.getName());

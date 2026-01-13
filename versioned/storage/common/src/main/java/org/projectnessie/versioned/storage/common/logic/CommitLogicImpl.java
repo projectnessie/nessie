@@ -802,20 +802,21 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull List<CommitConflict> conflicts,
       @Nonnull CommitConflict conflict) {
     ConflictResolution resolution = conflictHandler.onConflict(conflict);
-    switch (resolution) {
-      case CONFLICT:
+    return switch (resolution) {
+      case CONFLICT -> {
         conflicts.add(conflict);
         // Do not the conflicting action to the commit, report the conflict
-        return true;
-      case ADD:
-        // Add the conflicting action to the resulting commit, not reporting as a conflict
-        return false;
-      case DROP:
-        // Do not add the conflicting action to the resulting commit, not reporting as a conflict
-        return true;
-      default:
-        throw new IllegalStateException("Unknown resolution " + resolution);
-    }
+        yield true;
+        // Do not the conflicting action to the commit, report the conflict
+      }
+      case ADD ->
+          // Add the conflicting action to the resulting commit, not reporting as a conflict
+          false;
+      case DROP ->
+          // Do not add the conflicting action to the resulting commit, not reporting as a conflict
+          true;
+      default -> throw new IllegalStateException("Unknown resolution " + resolution);
+    };
   }
 
   private static StoreIndexElement<CommitOp> existingFromIndex(

@@ -91,83 +91,74 @@ public class IcebergErrorMapper {
       BackendErrorStatus status, Throwable ex, IcebergEntityKind kind) {
     // Log full stack trace on the server side for troubleshooting
     switch (status.statusCode()) {
-      case NESSIE_ERROR:
-      case ICEBERG_ERROR:
-        LOGGER.debug("Propagating storage failure to client: {}", status, ex);
-        break;
-      default:
-        LOGGER.info("Propagating storage failure to client: {}", status, ex);
-        break;
+      case NESSIE_ERROR, ICEBERG_ERROR ->
+          LOGGER.debug("Propagating storage failure to client: {}", status, ex);
+      default -> LOGGER.info("Propagating storage failure to client: {}", status, ex);
     }
 
-    switch (status.statusCode()) {
-      case NESSIE_ERROR:
+    return switch (status.statusCode()) {
+      case NESSIE_ERROR -> {
         if (status.cause() instanceof BaseNessieClientServerException e) {
-          return mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
+          yield mapNessieError(e, e.getErrorCode(), e.getErrorDetails(), kind);
         }
-        return null;
-      case ICEBERG_ERROR:
+        yield null;
+      }
+      case ICEBERG_ERROR -> {
         if (status.cause() instanceof IcebergException) {
-          return ((IcebergException) status.cause()).toErrorResponse();
+          yield ((IcebergException) status.cause()).toErrorResponse();
         }
-        return null;
-      case BAD_REQUEST:
-        return errorResponse(400, "IllegalArgumentException", status.cause().getMessage(), ex);
-      case THROTTLED:
-        return errorResponse(429, "TooManyRequestsException", message(status, ex), ex);
-      case UNAUTHORIZED:
-        return errorResponse(401, "NotAuthorizedException", message(status, ex), ex);
-      case FORBIDDEN:
-        return errorResponse(403, "ForbiddenException", message(status, ex), ex);
-      case NOT_FOUND:
-        // Convert storage-side "not found" into `IllegalArgumentException`.
-        // In most cases this results from bad locations in Iceberg metadata.
-        return errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
-      case UNKNOWN:
-        return null; // generic HTTP/500 error
-      default:
-        return errorResponse(
-            500,
-            "IllegalStateException",
-            message(
-                status,
-                new IllegalStateException(
-                    String.format(
-                        "Unhandled backend error status: %s: %s", status.statusCode(), ex))),
-            ex);
-    }
+        yield null;
+      }
+      case BAD_REQUEST ->
+          errorResponse(400, "IllegalArgumentException", status.cause().getMessage(), ex);
+      case THROTTLED -> errorResponse(429, "TooManyRequestsException", message(status, ex), ex);
+      case UNAUTHORIZED -> errorResponse(401, "NotAuthorizedException", message(status, ex), ex);
+      case FORBIDDEN -> errorResponse(403, "ForbiddenException", message(status, ex), ex);
+      case NOT_FOUND ->
+          // Convert storage-side "not found" into `IllegalArgumentException`.
+          // In most cases this results from bad locations in Iceberg metadata.
+          errorResponse(400, "IllegalArgumentException", message(status, ex), ex);
+      case UNKNOWN -> null; // generic HTTP/500 error
+      default ->
+          errorResponse(
+              500,
+              "IllegalStateException",
+              message(
+                  status,
+                  new IllegalStateException(
+                      String.format(
+                          "Unhandled backend error status: %s: %s", status.statusCode(), ex))),
+              ex);
+    };
   }
 
   private IcebergErrorResponse mapNessieError(
       Exception ex, ErrorCode err, NessieErrorDetails errorDetails, IcebergEntityKind kind) {
-    switch (err) {
-      case UNSUPPORTED_MEDIA_TYPE:
-      case BAD_REQUEST:
-        return errorResponse(400, "BadRequestException", ex.getMessage(), ex);
-      case FORBIDDEN:
-        return errorResponse(403, "NotAuthorizedException", ex.getMessage(), ex);
-      case CONTENT_NOT_FOUND:
-        return errorResponse(
-            404,
-            kind.notFoundExceptionName(),
-            kind.entityName() + " does not exist: " + keyMessage(ex, errorDetails),
-            ex);
-      case NAMESPACE_ALREADY_EXISTS:
-        return errorResponse(
-            409,
-            "AlreadyExistsException",
-            "Namespace already exists: " + keyMessage(ex, errorDetails),
-            ex);
-      case NAMESPACE_NOT_EMPTY:
-      case REFERENCE_ALREADY_EXISTS:
-        return errorResponse(409, "", ex.getMessage(), ex);
-      case NAMESPACE_NOT_FOUND:
-        return errorResponse(
-            404,
-            "NoSuchNamespaceException",
-            "Namespace does not exist: " + keyMessage(ex, errorDetails),
-            ex);
-      case REFERENCE_CONFLICT:
+    return switch (err) {
+      case UNSUPPORTED_MEDIA_TYPE, BAD_REQUEST ->
+          errorResponse(400, "BadRequestException", ex.getMessage(), ex);
+      case FORBIDDEN -> errorResponse(403, "NotAuthorizedException", ex.getMessage(), ex);
+      case CONTENT_NOT_FOUND ->
+          errorResponse(
+              404,
+              kind.notFoundExceptionName(),
+              kind.entityName() + " does not exist: " + keyMessage(ex, errorDetails),
+              ex);
+      case NAMESPACE_ALREADY_EXISTS ->
+          errorResponse(
+              409,
+              "AlreadyExistsException",
+              "Namespace already exists: " + keyMessage(ex, errorDetails),
+              ex);
+      case NAMESPACE_NOT_EMPTY, REFERENCE_ALREADY_EXISTS ->
+          errorResponse(409, "", ex.getMessage(), ex);
+      case NAMESPACE_NOT_FOUND ->
+          errorResponse(
+              404,
+              "NoSuchNamespaceException",
+              "Namespace does not exist: " + keyMessage(ex, errorDetails),
+              ex);
+      case REFERENCE_CONFLICT -> {
         if (ex instanceof NessieReferenceConflictException referenceConflictException) {
           ReferenceConflicts referenceConflicts = referenceConflictException.getErrorDetails();
           if (referenceConflicts != null) {
@@ -176,21 +167,17 @@ public class IcebergErrorMapper {
               Conflict conflict = conflicts.get(0);
               IcebergErrorResponse mapped = mapConflict(conflict, referenceConflictException);
               if (mapped != null) {
-                return mapped;
+                yield mapped;
               }
             }
           }
         }
-        return errorResponse(409, "", ex.getMessage(), ex);
-      case REFERENCE_NOT_FOUND:
-        return errorResponse(400, "NoSuchReferenceException", ex.getMessage(), ex);
-      case UNKNOWN:
-      case TOO_MANY_REQUESTS:
-      default:
-        break;
-    }
-
-    return null;
+        yield errorResponse(409, "", ex.getMessage(), ex);
+      }
+      case REFERENCE_NOT_FOUND ->
+          errorResponse(400, "NoSuchReferenceException", ex.getMessage(), ex);
+      default -> null;
+    };
   }
 
   private IcebergErrorResponse errorResponse(int code, String type, String message, Throwable ex) {
@@ -219,12 +206,11 @@ public class IcebergErrorMapper {
 
   private IcebergErrorResponse mapConflict(Conflict conflict, NessieReferenceConflictException ex) {
     Conflict.ConflictType conflictType = conflict.conflictType();
-    switch (conflictType) {
-      case NAMESPACE_ABSENT:
-        return errorResponse(
-            404, "NoSuchNamespaceException", "Namespace does not exist: " + conflict.key(), ex);
-
-      case KEY_EXISTS:
+    return switch (conflictType) {
+      case NAMESPACE_ABSENT ->
+          errorResponse(
+              404, "NoSuchNamespaceException", "Namespace does not exist: " + conflict.key(), ex);
+      case KEY_EXISTS -> {
         if (ex instanceof CatalogEntityAlreadyExistsException e) {
           // Produces different messages depending on the target type - just to get the tests
           // passing :facepalm:
@@ -251,13 +237,12 @@ public class IcebergErrorMapper {
                     e.getExistingKey());
           }
 
-          return errorResponse(409, "AlreadyExistsException", msg, ex);
+          yield errorResponse(409, "AlreadyExistsException", msg, ex);
         }
-        return null;
-
-      default:
-        return null;
-    }
+        yield null;
+      }
+      default -> null;
+    };
   }
 
   public enum IcebergEntityKind {

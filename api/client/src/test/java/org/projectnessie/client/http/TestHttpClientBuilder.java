@@ -93,18 +93,13 @@ public class TestHttpClientBuilder {
                 BasicAuthenticationProvider.create("my_username", "very_secret")),
         cfg ->
             cfg.withAuthenticationFromConfig(
-                prop -> {
-                  switch (prop) {
-                    case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE:
-                      return "BASIC";
-                    case NessieConfigConstants.CONF_NESSIE_USERNAME:
-                      return "my_username";
-                    case NessieConfigConstants.CONF_NESSIE_PASSWORD:
-                      return "very_secret";
-                    default:
-                      return null;
-                  }
-                }));
+                prop ->
+                    switch (prop) {
+                      case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE -> "BASIC";
+                      case NessieConfigConstants.CONF_NESSIE_USERNAME -> "my_username";
+                      case NessieConfigConstants.CONF_NESSIE_PASSWORD -> "very_secret";
+                      default -> null;
+                    }));
   }
 
   @ParameterizedTest

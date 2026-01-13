@@ -33,22 +33,16 @@ public enum Compression {
   }
 
   public static Compression fromValue(char value) {
-    switch (value) {
-      case 'N':
-        return NONE;
-      case 'G':
-        return GZIP;
-      case 'D':
-        return DEFLATE;
-      case 'Z':
-        return ZSTD;
-      case 'L':
-        return LZ4;
-      case 'S':
-        return SNAPPY;
-      default:
-        throw new IllegalArgumentException("Illegal value '" + value + "' for Compression");
-    }
+    return switch (value) {
+      case 'N' -> NONE;
+      case 'G' -> GZIP;
+      case 'D' -> DEFLATE;
+      case 'Z' -> ZSTD;
+      case 'L' -> LZ4;
+      case 'S' -> SNAPPY;
+      default ->
+          throw new IllegalArgumentException("Illegal value '" + value + "' for Compression");
+    };
   }
 
   private final char value;

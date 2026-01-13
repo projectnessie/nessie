@@ -29,24 +29,18 @@ final class Util {
   private Util() {}
 
   static ObjId nessieIdToObjId(NessieId id) {
-    switch (id.size()) {
-      case 32:
-        return objIdFromLongs(id.longAt(0), id.longAt(1), id.longAt(2), id.longAt(3));
-      case 0:
-        return zeroLengthObjId();
-      default:
-        return objIdFromByteAccessor(id.size(), id::byteAt);
-    }
+    return switch (id.size()) {
+      case 32 -> objIdFromLongs(id.longAt(0), id.longAt(1), id.longAt(2), id.longAt(3));
+      case 0 -> zeroLengthObjId();
+      default -> objIdFromByteAccessor(id.size(), id::byteAt);
+    };
   }
 
   static NessieId objIdToNessieId(ObjId id) {
-    switch (id.size()) {
-      case 32:
-        return nessieIdFromLongs(id.longAt(0), id.longAt(1), id.longAt(2), id.longAt(3));
-      case 0:
-        return emptyNessieId();
-      default:
-        return nessieIdFromByteAccessor(id.size(), id::byteAt);
-    }
+    return switch (id.size()) {
+      case 32 -> nessieIdFromLongs(id.longAt(0), id.longAt(1), id.longAt(2), id.longAt(3));
+      case 0 -> emptyNessieId();
+      default -> nessieIdFromByteAccessor(id.size(), id::byteAt);
+    };
   }
 }

@@ -49,17 +49,13 @@ public class CreateReferenceCommand extends NessieCommand<CreateReferenceCommand
     }
 
     Reference.ReferenceType referenceType = Reference.ReferenceType.valueOf(spec.getRefType());
-    Reference reference;
-    switch (referenceType) {
-      case BRANCH:
-        reference = Branch.of(spec.getRef(), hash);
-        break;
-      case TAG:
-        reference = Tag.of(spec.getRef(), hash);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown reference type: " + spec.getRefType());
-    }
+    Reference reference =
+        switch (referenceType) {
+          case BRANCH -> Branch.of(spec.getRef(), hash);
+          case TAG -> Tag.of(spec.getRef(), hash);
+          default ->
+              throw new IllegalArgumentException("Unknown reference type: " + spec.getRefType());
+        };
 
     Reference created;
     try {

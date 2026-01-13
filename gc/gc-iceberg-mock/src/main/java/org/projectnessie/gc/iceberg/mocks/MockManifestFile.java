@@ -235,39 +235,23 @@ public abstract class MockManifestFile implements IndexedRecord {
   @SuppressWarnings("EnumOrdinal")
   public Object get(int i) {
     String field = AVRO_SCHEMA.getFields().get(i).name();
-    switch (field) {
-      case "manifest_path":
-        return path();
-      case "manifest_length":
-        return length();
-      case "partition_spec_id":
-        return partitionSpecId();
-      case "content":
-        return content().ordinal();
-      case "sequence_number":
-        return sequenceNumber();
-      case "min_sequence_number":
-        return minSequenceNumber();
-      case "added_snapshot_id":
-        return snapshotId();
-      case "added_files_count":
-        return addedFilesCount();
-      case "existing_files_count":
-        return existingFilesCount();
-      case "deleted_files_count":
-        return deletedFilesCount();
-      case "added_rows_count":
-        return addedRowsCount();
-      case "existing_rows_count":
-        return existingRowsCount();
-      case "deleted_rows_count":
-        return deletedRowsCount();
-      case "partitions":
-        return null; // TODO ?
-      case "key_metadata":
-        return null; // TODO ?
-      default:
-        throw new IllegalArgumentException("Unknown field '" + field + "'");
-    }
+    return switch (field) {
+      case "manifest_path" -> path();
+      case "manifest_length" -> length();
+      case "partition_spec_id" -> partitionSpecId();
+      case "content" -> content().ordinal();
+      case "sequence_number" -> sequenceNumber();
+      case "min_sequence_number" -> minSequenceNumber();
+      case "added_snapshot_id" -> snapshotId();
+      case "added_files_count" -> addedFilesCount();
+      case "existing_files_count" -> existingFilesCount();
+      case "deleted_files_count" -> deletedFilesCount();
+      case "added_rows_count" -> addedRowsCount();
+      case "existing_rows_count" -> existingRowsCount();
+      case "deleted_rows_count" -> deletedRowsCount();
+      case "partitions" -> null; // TODO ?
+      case "key_metadata" -> null; // TODO ?
+      default -> throw new IllegalArgumentException("Unknown field '" + field + "'");
+    };
   }
 }

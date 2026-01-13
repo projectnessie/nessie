@@ -357,15 +357,15 @@ public class CatalogServiceImpl implements CatalogService {
     String fileName;
 
     switch (reqParams.snapshotFormat()) {
-      case NESSIE_SNAPSHOT:
+      case NESSIE_SNAPSHOT -> {
         fileName =
             String.join("/", key.getElements())
                 + '_'
                 + snapshot.id().idAsString()
                 + ".nessie-metadata.json";
         result = nessieSnapshotResponse(effectiveReference, snapshot);
-        break;
-      case ICEBERG_TABLE_METADATA:
+      }
+      case ICEBERG_TABLE_METADATA -> {
         // Return the snapshot as an Iceberg table-metadata using either the spec-version
         // given in
         // the request or the one used when the table-metadata was written.
@@ -379,9 +379,8 @@ public class CatalogServiceImpl implements CatalogService {
                 metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown format " + reqParams.snapshotFormat());
+      }
+      default -> throw new IllegalArgumentException("Unknown format " + reqParams.snapshotFormat());
     }
 
     return SnapshotResponse.forEntity(
@@ -407,15 +406,15 @@ public class CatalogServiceImpl implements CatalogService {
     String fileName;
 
     switch (reqParams.snapshotFormat()) {
-      case NESSIE_SNAPSHOT:
+      case NESSIE_SNAPSHOT -> {
         fileName =
             String.join("/", key.getElements())
                 + '_'
                 + snapshot.id().idAsString()
                 + ".nessie-metadata.json";
         result = nessieSnapshotResponse(effectiveReference, snapshot);
-        break;
-      case ICEBERG_TABLE_METADATA:
+      }
+      case ICEBERG_TABLE_METADATA -> {
         // Return the snapshot as an Iceberg table-metadata using either the spec-version
         // given in
         // the request or the one used when the table-metadata was written.
@@ -429,9 +428,8 @@ public class CatalogServiceImpl implements CatalogService {
                 metadataPropertiesTweak(snapshot, effectiveReference));
 
         fileName = "00000-" + snapshot.id().idAsString() + ".metadata.json";
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown format " + reqParams.snapshotFormat());
+      }
+      default -> throw new IllegalArgumentException("Unknown format " + reqParams.snapshotFormat());
     }
 
     return SnapshotResponse.forEntity(

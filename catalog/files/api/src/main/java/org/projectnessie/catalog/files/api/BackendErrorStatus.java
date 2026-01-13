@@ -35,19 +35,13 @@ public interface BackendErrorStatus {
   }
 
   static BackendErrorStatus fromHttpStatusCode(int httpStatusCode, Throwable cause) {
-    switch (httpStatusCode) {
-      case 400:
-        return BackendErrorStatus.of(BAD_REQUEST, cause);
-      case 401:
-        return BackendErrorStatus.of(UNAUTHORIZED, cause);
-      case 403:
-        return BackendErrorStatus.of(FORBIDDEN, cause);
-      case 404:
-        return BackendErrorStatus.of(NOT_FOUND, cause);
-      case 429:
-        return BackendErrorStatus.of(THROTTLED, cause);
-      default:
-        return BackendErrorStatus.of(UNKNOWN, cause);
-    }
+    return switch (httpStatusCode) {
+      case 400 -> BackendErrorStatus.of(BAD_REQUEST, cause);
+      case 401 -> BackendErrorStatus.of(UNAUTHORIZED, cause);
+      case 403 -> BackendErrorStatus.of(FORBIDDEN, cause);
+      case 404 -> BackendErrorStatus.of(NOT_FOUND, cause);
+      case 429 -> BackendErrorStatus.of(THROTTLED, cause);
+      default -> BackendErrorStatus.of(UNKNOWN, cause);
+    };
   }
 }

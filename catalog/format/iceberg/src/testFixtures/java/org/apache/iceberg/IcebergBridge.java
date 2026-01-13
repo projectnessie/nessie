@@ -29,14 +29,11 @@ public final class IcebergBridge {
 
   public static org.apache.iceberg.Schema manifestEntrySchema(
       int version, Types.StructType partitionType) {
-    switch (version) {
-      case 1:
-        return manifestEntrySchemaV1(partitionType);
-      case 2:
-        return manifestEntrySchemaV2(partitionType);
-      default:
-        throw new IllegalArgumentException("version " + version);
-    }
+    return switch (version) {
+      case 1 -> manifestEntrySchemaV1(partitionType);
+      case 2 -> manifestEntrySchemaV2(partitionType);
+      default -> throw new IllegalArgumentException("version " + version);
+    };
   }
 
   public static org.apache.iceberg.Schema manifestEntrySchemaV1(Types.StructType partitionType) {

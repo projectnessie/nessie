@@ -54,14 +54,11 @@ public final class Avro {
   private Avro() {}
 
   public static AvroBundle bundleFor(int specVersion) {
-    switch (specVersion) {
-      case 1:
-        return AvroLazyInit.FORMAT_V1;
-      case 2:
-        return AvroLazyInit.FORMAT_V2;
-      default:
-        throw new IllegalArgumentException("Unknown Iceberg spec version: " + specVersion);
-    }
+    return switch (specVersion) {
+      case 1 -> AvroLazyInit.FORMAT_V1;
+      case 2 -> AvroLazyInit.FORMAT_V2;
+      default -> throw new IllegalArgumentException("Unknown Iceberg spec version: " + specVersion);
+    };
   }
 
   static final byte[] MAGIC_BYTES = new byte[] {(byte) 0xC2, (byte) 0x01};

@@ -220,24 +220,12 @@ public final class TypeMapping {
       @Nonnull CommitHeaders headers, @Nonnull ImmutableCommitMeta.Builder commitMeta) {
     for (String header : headers.keySet()) {
       switch (header) {
-        case AUTHOR:
-          commitMeta.addAllAllAuthors(headers.getAll(header));
-          break;
-        case COMMITTER:
-          commitMeta.committer(headers.getFirst(header));
-          break;
-        case SIGNED_OFF_BY:
-          commitMeta.addAllAllSignedOffBy(headers.getAll(header));
-          break;
-        case COMMIT_TIME:
-          applyInstant(headers.getFirst(header), commitMeta::commitTime);
-          break;
-        case AUTHOR_TIME:
-          applyInstant(headers.getFirst(header), commitMeta::authorTime);
-          break;
-        default:
-          commitMeta.putAllProperties(header, headers.getAll(header));
-          break;
+        case AUTHOR -> commitMeta.addAllAllAuthors(headers.getAll(header));
+        case COMMITTER -> commitMeta.committer(headers.getFirst(header));
+        case SIGNED_OFF_BY -> commitMeta.addAllAllSignedOffBy(headers.getAll(header));
+        case COMMIT_TIME -> applyInstant(headers.getFirst(header), commitMeta::commitTime);
+        case AUTHOR_TIME -> applyInstant(headers.getFirst(header), commitMeta::authorTime);
+        default -> commitMeta.putAllProperties(header, headers.getAll(header));
       }
     }
     return commitMeta;

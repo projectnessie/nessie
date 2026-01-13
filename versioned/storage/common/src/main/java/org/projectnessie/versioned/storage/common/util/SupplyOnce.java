@@ -41,16 +41,12 @@ public final class SupplyOnce {
     @Override
     @SuppressWarnings("unchecked")
     public T get() {
-      switch (loaded) {
-        case 1:
-          return (T) result;
-        case 2:
-          throw (RuntimeException) result;
-        case 0:
-          return load();
-        default:
-          throw new IllegalStateException();
-      }
+      return switch (loaded) {
+        case 1 -> (T) result;
+        case 2 -> throw (RuntimeException) result;
+        case 0 -> load();
+        default -> throw new IllegalStateException();
+      };
     }
 
     private T load() {

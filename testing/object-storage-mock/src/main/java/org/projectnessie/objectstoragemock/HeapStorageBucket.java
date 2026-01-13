@@ -98,20 +98,18 @@ public class HeapStorageBucket {
     synchronized (objects) {
       expected = objects.get(key);
       switch (mode) {
-        case CREATE_NEW:
+        case CREATE_NEW -> {
           if (expected != null) {
             throw new IllegalStateException("Object '" + key + "' already exists");
           }
-          break;
-        case UPDATE:
+        }
+        case UPDATE -> {
           if (expected == null) {
             throw new IllegalStateException("Object '" + key + "' does not exist");
           }
-          break;
-        case UPSERT:
-          break;
-        default:
-          throw new IllegalArgumentException(mode.name());
+        }
+        case UPSERT -> {}
+        default -> throw new IllegalArgumentException(mode.name());
       }
     }
     return new HeapObjectUpdater(expected, key);

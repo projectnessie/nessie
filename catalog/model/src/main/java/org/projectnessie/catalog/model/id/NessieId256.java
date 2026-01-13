@@ -87,18 +87,13 @@ final class NessieId256 implements NessieId {
 
   @Override
   public long longAt(int index) {
-    switch (index) {
-      case 0:
-        return l0;
-      case 1:
-        return l1;
-      case 2:
-        return l2;
-      case 3:
-        return l3;
-      default:
-        throw new IllegalArgumentException("Invalid long index " + index);
-    }
+    return switch (index) {
+      case 0 -> l0;
+      case 1 -> l1;
+      case 2 -> l2;
+      case 3 -> l3;
+      default -> throw new IllegalArgumentException("Invalid long index " + index);
+    };
   }
 
   @Override

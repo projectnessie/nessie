@@ -95,8 +95,7 @@ public class SmallRyeConfigs {
       @Override
       public Void visitType(TypeElement e, Void ignore) {
         switch (e.getKind()) {
-          case CLASS:
-          case INTERFACE:
+          case CLASS, INTERFACE -> {
             ConfigMapping configMapping = e.getAnnotation(ConfigMapping.class);
             SmallRyeConfigMappingInfo mappingInfo;
             ConfigMappingInterface configMappingInterface;
@@ -172,9 +171,8 @@ public class SmallRyeConfigs {
               }
               remainingClasses.addAll(asList(c.getInterfaces()));
             }
-            break;
-          default:
-            break;
+          }
+          default -> {}
         }
 
         return null;

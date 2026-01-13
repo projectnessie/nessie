@@ -742,24 +742,33 @@ public class AbstractBasePersistTests {
   static StandardObjType typeDifferentThan(ObjType type) {
     if (type instanceof StandardObjType standardObjType) {
       switch (standardObjType) {
-        case COMMIT:
+        case COMMIT -> {
           return VALUE;
-        case VALUE:
+        }
+        case VALUE -> {
           return COMMIT;
-        case INDEX_SEGMENTS:
+        }
+        case INDEX_SEGMENTS -> {
           return TAG;
-        case INDEX:
+        }
+        case INDEX -> {
           return REF;
-        case REF:
+        }
+        case REF -> {
           return INDEX;
-        case TAG:
+        }
+        case TAG -> {
           return STRING;
-        case STRING:
+        }
+        case STRING -> {
           return INDEX_SEGMENTS;
-        case UNIQUE:
+        }
+        case UNIQUE -> {
           return REF;
-        default:
+        }
+        default -> {
           // fall through
+        }
       }
     }
     if (type.equals(SimpleTestObj.TYPE)) {
@@ -1309,7 +1318,7 @@ public class AbstractBasePersistTests {
         .containsExactly(newObjs);
   }
 
-  @SuppressWarnings("EnumOrdinal")
+  @SuppressWarnings({"EnumOrdinal", "StatementSwitchToExpressionSwitch"})
   public static Obj updateObjChange(Obj obj) {
     ObjType type = obj.type();
     if (type instanceof StandardObjType standardObjType) {

@@ -77,17 +77,12 @@ public abstract class MockManifestEntry implements IndexedRecord {
   @SuppressWarnings("EnumOrdinal")
   public Object get(int i) {
     String field = getSchema().getFields().get(i).name();
-    switch (field) {
-      case "status":
-        return status().ordinal();
-      case "snapshot_id":
-        return snapshotId();
-      case "sequence_number":
-        return sequenceNumber();
-      case "data_file":
-        return BridgeToIceberg.dummyIndexedDataFile(filePath(), partitionType());
-      default:
-        throw new IllegalArgumentException("Unknown field '" + field + "'");
-    }
+    return switch (field) {
+      case "status" -> status().ordinal();
+      case "snapshot_id" -> snapshotId();
+      case "sequence_number" -> sequenceNumber();
+      case "data_file" -> BridgeToIceberg.dummyIndexedDataFile(filePath(), partitionType());
+      default -> throw new IllegalArgumentException("Unknown field '" + field + "'");
+    };
   }
 }

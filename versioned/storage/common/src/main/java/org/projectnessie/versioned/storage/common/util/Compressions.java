@@ -46,33 +46,25 @@ public final class Compressions {
   }
 
   public static byte[] compress(Compression compression, byte[] uncompressed) {
-    switch (compression) {
-      case NONE:
-        return uncompressed;
-      case GZIP:
-        return gzip(uncompressed);
-      case DEFLATE:
-        return deflate(uncompressed);
-      case SNAPPY:
-        return snappyCompress(uncompressed);
-      default:
-        throw new IllegalArgumentException("Compression " + compression + " not implemented");
-    }
+    return switch (compression) {
+      case NONE -> uncompressed;
+      case GZIP -> gzip(uncompressed);
+      case DEFLATE -> deflate(uncompressed);
+      case SNAPPY -> snappyCompress(uncompressed);
+      default ->
+          throw new IllegalArgumentException("Compression " + compression + " not implemented");
+    };
   }
 
   public static byte[] uncompress(Compression compression, byte[] compressed) {
-    switch (compression) {
-      case NONE:
-        return compressed;
-      case GZIP:
-        return gunzip(compressed);
-      case DEFLATE:
-        return inflate(compressed);
-      case SNAPPY:
-        return snappyUncompress(compressed);
-      default:
-        throw new IllegalArgumentException("Compression " + compression + " not implemented");
-    }
+    return switch (compression) {
+      case NONE -> compressed;
+      case GZIP -> gunzip(compressed);
+      case DEFLATE -> inflate(compressed);
+      case SNAPPY -> snappyUncompress(compressed);
+      default ->
+          throw new IllegalArgumentException("Compression " + compression + " not implemented");
+    };
   }
 
   private static byte[] gzip(byte[] uncompressed) {

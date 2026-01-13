@@ -53,34 +53,18 @@ public final class ObjSerializers {
   public static ObjSerializer<Obj> forType(@Nonnull ObjType type) {
     ObjSerializer<?> serializer = CustomObjSerializer.INSTANCE;
     if (type instanceof StandardObjType standardObjType) {
-      switch (standardObjType) {
-        case COMMIT:
-          serializer = CommitObjSerializer.INSTANCE;
-          break;
-        case INDEX_SEGMENTS:
-          serializer = IndexSegmentsObjSerializer.INSTANCE;
-          break;
-        case INDEX:
-          serializer = IndexObjSerializer.INSTANCE;
-          break;
-        case REF:
-          serializer = RefObjSerializer.INSTANCE;
-          break;
-        case STRING:
-          serializer = StringObjSerializer.INSTANCE;
-          break;
-        case TAG:
-          serializer = TagObjSerializer.INSTANCE;
-          break;
-        case VALUE:
-          serializer = ContentValueObjSerializer.INSTANCE;
-          break;
-        case UNIQUE:
-          serializer = UniqueIdObjSerializer.INSTANCE;
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown standard object type: " + type);
-      }
+      serializer =
+          switch (standardObjType) {
+            case COMMIT -> CommitObjSerializer.INSTANCE;
+            case INDEX_SEGMENTS -> IndexSegmentsObjSerializer.INSTANCE;
+            case INDEX -> IndexObjSerializer.INSTANCE;
+            case REF -> RefObjSerializer.INSTANCE;
+            case STRING -> StringObjSerializer.INSTANCE;
+            case TAG -> TagObjSerializer.INSTANCE;
+            case VALUE -> ContentValueObjSerializer.INSTANCE;
+            case UNIQUE -> UniqueIdObjSerializer.INSTANCE;
+            default -> throw new IllegalArgumentException("Unknown standard object type: " + type);
+          };
     }
     @SuppressWarnings("unchecked")
     ObjSerializer<Obj> cast = (ObjSerializer<Obj>) serializer;

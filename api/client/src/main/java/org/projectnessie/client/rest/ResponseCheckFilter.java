@@ -68,25 +68,20 @@ public class ResponseCheckFilter {
     // If the error could not be identified as a Nessie-controlled error, throw a client-side
     // exception with some level of break-down by sub-class to allow for intelligent exception
     // handling on the caller side.
-    Exception exception;
-    switch (status.getCode()) {
-      case INTERNAL_SERVER_ERROR_CODE:
-        exception = new NessieInternalServerException(error);
-        break;
-      case SERVICE_UNAVAILABLE_CODE:
-        exception = new NessieUnavailableException(error);
-        break;
-      case UNAUTHORIZED_CODE:
-        // Note: UNAUTHORIZED at this point cannot be a Nessie-controlled error.
-        // It must be an error reported at a higher level HTTP service in front of the Nessie
-        // Server.
-        exception = new NessieNotAuthorizedException(error);
-        break;
-      default:
-        // Note: Non-Nessie 404 (Not Found) errors (e.g. mistakes in Nessie URIs) will also go
-        // through this code and will be reported as generic NessieServiceException.
-        exception = new NessieServiceException(error);
-    }
+    Exception exception =
+        switch (status.getCode()) {
+          case INTERNAL_SERVER_ERROR_CODE -> new NessieInternalServerException(error);
+          case SERVICE_UNAVAILABLE_CODE -> new NessieUnavailableException(error);
+          case UNAUTHORIZED_CODE ->
+              // Note: UNAUTHORIZED at this point cannot be a Nessie-controlled error.
+              // It must be an error reported at a higher level HTTP service in front of the Nessie
+              // Server.
+              new NessieNotAuthorizedException(error);
+          default ->
+              // Note: Non-Nessie 404 (Not Found) errors (e.g. mistakes in Nessie URIs) will also go
+              // through this code and will be reported as generic NessieServiceException.
+              new NessieServiceException(error);
+        };
 
     throw exception;
   }

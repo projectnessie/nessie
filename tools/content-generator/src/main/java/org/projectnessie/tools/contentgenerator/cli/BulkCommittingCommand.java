@@ -201,14 +201,9 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
     var selector = keySelector.fileKeySelector;
     try (FileInputStream inputStream = new FileInputStream(selector.input)) {
       switch (selector.format) {
-        case CSV_KEYS:
-          processLines(api, branchFromOptions(api), inputStream);
-          break;
-        case CONTENT_INFO_JSON:
-          processJson(api, inputStream);
-          break;
-        default:
-          throw new IllegalArgumentException("Unsupported format: " + selector.format);
+        case CSV_KEYS -> processLines(api, branchFromOptions(api), inputStream);
+        case CONTENT_INFO_JSON -> processJson(api, inputStream);
+        default -> throw new IllegalArgumentException("Unsupported format: " + selector.format);
       }
     } catch (IOException e) {
       throw new IllegalStateException(e);

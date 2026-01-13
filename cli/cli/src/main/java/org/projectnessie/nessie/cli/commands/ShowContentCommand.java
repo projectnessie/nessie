@@ -111,23 +111,23 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
               iceberg -> {
                 Object metadata;
                 switch (spec.getContentKind()) {
-                  case "TABLE":
-                    metadata =
-                        ((BaseTable) iceberg.loadTable(TableIdentifier.of(key.getElementsArray())))
-                            .operations()
-                            .current();
-                    break;
-                  case "VIEW":
-                    metadata =
-                        ((BaseView) iceberg.loadView(TableIdentifier.of(key.getElementsArray())))
-                            .operations()
-                            .current();
-                    break;
-                  case "NAMESPACE":
-                    metadata = iceberg.loadNamespaceMetadata(Namespace.of(key.getElementsArray()));
-                    break;
-                  default:
+                  case "TABLE" ->
+                      metadata =
+                          ((BaseTable)
+                                  iceberg.loadTable(TableIdentifier.of(key.getElementsArray())))
+                              .operations()
+                              .current();
+                  case "VIEW" ->
+                      metadata =
+                          ((BaseView) iceberg.loadView(TableIdentifier.of(key.getElementsArray())))
+                              .operations()
+                              .current();
+                  case "NAMESPACE" ->
+                      metadata =
+                          iceberg.loadNamespaceMetadata(Namespace.of(key.getElementsArray()));
+                  default -> {
                     return;
+                  }
                 }
 
                 writer.println();
