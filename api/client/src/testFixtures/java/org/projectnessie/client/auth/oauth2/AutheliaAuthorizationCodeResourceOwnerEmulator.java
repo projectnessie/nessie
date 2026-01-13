@@ -91,12 +91,9 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
                 + "\"targetURL\":\"%s\","
                 + "\"keepMeLoggedIn\":false,"
                 + "\"workflow\":\"openid_connect\","
-                + "\"workflowID\":\""
-                + workflowId
+                + "\"workflowID\":\"%s"
                 + "\"}",
-            username,
-            password,
-            authUrl.toString());
+            username, password, authUrl.toString(), workflowId);
     postJson(loginActionConn, data, cookies);
     int responseCode = loginActionConn.getResponseCode();
     assertThat(responseCode).isEqualTo(HTTP_OK);

@@ -96,7 +96,8 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
                         .status(Status.IDENTIFY_IN_PROGRESS)
                         .build()))
             == null,
-        "Duplicate liveSetId " + liveSetId);
+        "Duplicate liveSetId %s",
+        liveSetId);
   }
 
   @Override
@@ -256,7 +257,9 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   private static LiveContentSet assertStatus(LiveContentSet current, Status valid) {
     Preconditions.checkState(
         current.status() == valid,
-        "Expected current status of " + valid + ", but is " + current.status());
+        "Expected current status of %s, but is %s",
+        valid,
+        current.status());
     return current;
   }
 }

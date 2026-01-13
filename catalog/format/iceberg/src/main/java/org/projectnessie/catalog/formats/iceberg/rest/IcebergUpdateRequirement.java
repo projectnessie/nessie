@@ -26,6 +26,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import jakarta.annotation.Nullable;
 import java.util.Objects;
 import org.projectnessie.catalog.model.schema.NessiePartitionDefinition;
@@ -85,7 +87,9 @@ public interface IcebergUpdateRequirement {
             + " not supported for views");
   }
 
-  static void checkState(boolean condition, ContentKey key, String pattern, Object... args) {
+  @FormatMethod
+  static void checkState(
+      boolean condition, ContentKey key, @FormatString String pattern, Object... args) {
     if (!condition) {
       throw new RuntimeException(new UpdateRequirementFailedException(key, format(pattern, args)));
     }

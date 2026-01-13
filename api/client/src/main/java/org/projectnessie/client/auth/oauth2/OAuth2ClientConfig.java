@@ -43,6 +43,8 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_OAUTH2_
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.io.PrintStream;
 import java.net.URI;
 import java.time.Clock;
@@ -258,8 +260,13 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
         .build();
   }
 
+  @FormatMethod
   private static void check(
-      List<String> violations, String paramKey, boolean cond, String msg, Object... args) {
+      List<String> violations,
+      String paramKey,
+      boolean cond,
+      @FormatString String msg,
+      Object... args) {
     if (!cond) {
       if (args.length == 0) {
         violations.add(msg + " (" + paramKey + ")");

@@ -16,6 +16,7 @@
 package org.projectnessie.client.http.impl;
 
 import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLConnection;
@@ -49,7 +50,7 @@ public final class HttpUtils {
    * @param vars string format args
    */
   @FormatMethod
-  public static void checkArgument(boolean expression, String msg, Object... vars) {
+  public static void checkArgument(boolean expression, @FormatString String msg, Object... vars) {
     if (!expression) {
       throw new IllegalArgumentException(String.format(msg, vars));
     }

@@ -1278,7 +1278,7 @@ public class NessieModelIceberg {
   }
 
   public static int icebergSchemaMaxFieldId(IcebergNestedField field, Set<Integer> fieldIds) {
-    checkArgument(fieldIds.add(field.id()), "Duplicate field ID %d", field.id());
+    checkArgument(fieldIds.add(field.id()), "Duplicate field ID %s", field.id());
     return Math.max(field.id(), icebergTypeMaxFieldId(field.type(), fieldIds));
   }
 
@@ -1298,8 +1298,8 @@ public class NessieModelIceberg {
         break;
       case TYPE_MAP:
         IcebergMapType srcMap = (IcebergMapType) type;
-        checkArgument(fieldIds.add(srcMap.keyId()), "Duplicate field ID %d", srcMap.keyId());
-        checkArgument(fieldIds.add(srcMap.valueId()), "Duplicate field ID %d", srcMap.valueId());
+        checkArgument(fieldIds.add(srcMap.keyId()), "Duplicate field ID %s", srcMap.keyId());
+        checkArgument(fieldIds.add(srcMap.valueId()), "Duplicate field ID %s", srcMap.valueId());
         max = Math.max(max, srcMap.keyId());
         max = Math.max(max, srcMap.valueId());
         max = Math.max(max, icebergTypeMaxFieldId(srcMap.key(), fieldIds));

@@ -219,7 +219,9 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
     String entityType = typeToEntityName(expectedContentType).toLowerCase(Locale.ROOT);
     checkArgument(
         effectiveRef instanceof Branch,
-        format("Must only rename a %s on a branch, but target is %s", entityType, effectiveRef));
+        "Must only rename a %s on a branch, but target is %s",
+        entityType,
+        effectiveRef);
 
     Operations ops =
         ImmutableOperations.builder()
@@ -327,7 +329,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
 
   static Branch checkBranch(Reference reference) {
     checkArgument(
-        reference instanceof Branch, "Can only commit against a branch, but got " + reference);
+        reference instanceof Branch, "Can only commit against a branch, but got %s", reference);
     return (Branch) reference;
   }
 

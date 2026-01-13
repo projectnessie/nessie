@@ -110,12 +110,13 @@ public interface S3Iam {
         .ifPresent(
             duration -> {
               checkArgument(
-                  !duration.isNegative(), "Requested session duration is negative: " + duration);
+                  !duration.isNegative(), "Requested session duration is negative: %s", duration);
               long seconds = duration.toSeconds();
-              checkArgument(seconds > 0, "Requested session duration is too short: " + duration);
+              checkArgument(seconds > 0, "Requested session duration is too short: %s", duration);
               checkArgument(
                   seconds < Integer.MAX_VALUE,
-                  "Requested session duration is too long: " + duration);
+                  "Requested session duration is too long: %s",
+                  duration);
             });
   }
 }

@@ -91,6 +91,6 @@ public final class RefUtil {
     if (namedRef instanceof TagName) {
       return ReferenceType.TAG;
     }
-    throw new IllegalArgumentException(String.format("Not a branch or tag: " + namedRef));
+    throw new IllegalArgumentException(String.format("Not a branch or tag: %s", namedRef));
   }
 }

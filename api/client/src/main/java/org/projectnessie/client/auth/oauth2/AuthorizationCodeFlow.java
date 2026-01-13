@@ -18,6 +18,8 @@ package org.projectnessie.client.auth.oauth2;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -53,8 +55,11 @@ class AuthorizationCodeFlow extends AbstractFlow {
   private static final org.slf4j.Logger LOGGER =
       org.slf4j.LoggerFactory.getLogger(AuthorizationCodeFlow.class);
 
+  @SuppressWarnings("InlineFormatString")
   private static final String HTML_TEMPLATE_OK =
       "<html><body><h1>Authentication successful</h1><p>You can close this page now.</p></body></html>";
+
+  @SuppressWarnings("InlineFormatString")
   private static final String HTML_TEMPLATE_FAILED =
       "<html><body><h1>Authentication failed</h1><p>Could not obtain access token: %s</p></body></html>";
 
@@ -259,8 +264,10 @@ class AuthorizationCodeFlow extends AbstractFlow {
     return server;
   }
 
+  @FormatMethod
   private static void writeResponse(
-      HttpExchange exchange, int status, String htmlTemplate, Object... args) throws IOException {
+      HttpExchange exchange, int status, @FormatString String htmlTemplate, Object... args)
+      throws IOException {
     String html = String.format(htmlTemplate, args);
     exchange.getResponseHeaders().add("Content-Type", "text/html");
     exchange.sendResponseHeaders(status, html.length());
