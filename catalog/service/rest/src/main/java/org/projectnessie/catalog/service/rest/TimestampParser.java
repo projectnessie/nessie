@@ -137,6 +137,7 @@ public final class TimestampParser {
    * Returns a "relative commit spec" according to {@code
    * org.projectnessie.versioned.RelativeCommitSpec.Type}.
    */
+  @SuppressWarnings("EmptyCatch")
   public static String timestampToNessie(String timestamp) {
     try {
       Long.parseLong(timestamp);
