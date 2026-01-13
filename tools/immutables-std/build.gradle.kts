@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-plugins { id("nessie-conventions-java11") }
+plugins { id("nessie-conventions-java17") }
 
 publishingHelper { mavenName = "Nessie - Build tool - Immutables without javax annotations" }
 

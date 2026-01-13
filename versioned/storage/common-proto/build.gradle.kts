@@ -19,7 +19,7 @@ import com.google.protobuf.gradle.ProtobufExtension
 import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
-  id("nessie-conventions-java11")
+  id("nessie-conventions-java17")
   alias(libs.plugins.protobuf)
 }
 

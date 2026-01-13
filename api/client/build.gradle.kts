@@ -16,7 +16,7 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-plugins { id("nessie-conventions-java11") }
+plugins { id("nessie-conventions-java17") }
 
 publishingHelper { mavenName = "Nessie - Client" }
 
@@ -102,7 +102,6 @@ tasks.named("jandex") { enabled = false }
 
 val jacksonTestVersions =
   setOf(
-    "2.13.4", // Spark 3.3
     "2.14.2", // Spark 3.4
     "2.15.2", // Spark 3.5
     // there's been some change from 2.18.2->.3, see #10489 &

@@ -358,19 +358,14 @@ fun Project.useSparkScalaVersionsForProject(
  * Get the newest Java LTS version that is lower than or equal to the currently running Java
  * version.
  *
- * For Spark 3.2, this is always Java 11. For Spark 3.3 and 3.4, this is Java 17 when running the
- * build on Java 17 or newer, otherwise Java 11.
+ * Always yields Java 17.
  */
 fun javaVersionForSpark(sparkMajorVersion: String): Int {
   val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
   return when (sparkMajorVersion) {
     "3.3",
     "3.4",
-    "3.5" ->
-      when {
-        currentJavaVersion >= 17 -> 17
-        else -> 11
-      }
+    "3.5" -> 17
     else ->
       throw IllegalArgumentException(
         "Do not know which Java version Spark $sparkMajorVersion supports"

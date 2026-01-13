@@ -9,7 +9,7 @@ periodically to keep the repository clean and to avoid unnecessary storage costs
 
 ## Requirements
 
-The Nessie GC tool is distributed as an uber-jar and requires Java 11 or later to be available on
+The Nessie GC tool is distributed as an uber-jar and requires Java 17 or later to be available on
 the host where it is running.
 
 It is also available as a Docker image, see below for more information.

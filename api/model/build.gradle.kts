@@ -20,7 +20,7 @@ import io.smallrye.openapi.gradleplugin.SmallryeOpenApiTask
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-  id("nessie-conventions-java11")
+  id("nessie-conventions-java17")
   alias(libs.plugins.smallrye.openapi)
 }
 
