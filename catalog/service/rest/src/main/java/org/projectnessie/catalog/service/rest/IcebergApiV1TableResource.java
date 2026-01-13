@@ -213,6 +213,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     writeAccessValidated));
   }
 
+  @SuppressWarnings("EmptyCatch")
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap,

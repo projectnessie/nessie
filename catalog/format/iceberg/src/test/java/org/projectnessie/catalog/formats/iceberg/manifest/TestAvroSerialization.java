@@ -17,7 +17,6 @@ package org.projectnessie.catalog.formats.iceberg.manifest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -478,8 +477,6 @@ public class TestAvroSerialization {
     }
 
     // Read reference manifest file using ManifestReader
-    List<ManifestFile.PartitionFieldSummary> partitions = emptyList();
-    ManifestFile manifestFileX = toGenericManifestFile(realFile, icebergManifestFile, partitions);
     try (ManifestReader<DataFile> reader = ManifestFiles.read(manifestFile, io)) {
       Schema readerSchema =
           AvroSchemaUtil.convert(

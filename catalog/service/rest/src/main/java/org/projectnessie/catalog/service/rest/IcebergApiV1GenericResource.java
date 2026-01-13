@@ -234,6 +234,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   @POST
   @Path("/v1/{prefix}/transactions/commit")
   @Blocking
+  @SuppressWarnings("VoidUsed")
   public Uni<Void> commitTransaction(
       @PathParam("prefix") String prefix,
       @Valid IcebergCommitTransactionRequest commitTransactionRequest)

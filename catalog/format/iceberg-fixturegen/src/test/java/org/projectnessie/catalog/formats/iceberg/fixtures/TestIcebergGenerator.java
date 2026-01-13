@@ -282,7 +282,5 @@ public class TestIcebergGenerator {
             .build();
 
     manifestListGenerator.generate(manifestFileGenerator.createSupplier(UUID.randomUUID()));
-
-    System.err.println(generator);
   }
 }

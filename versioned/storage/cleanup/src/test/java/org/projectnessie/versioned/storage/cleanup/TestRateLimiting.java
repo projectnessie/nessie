@@ -179,7 +179,8 @@ public class TestRateLimiting {
                 .purgeDeleteObjRatePerSecond(4)
                 .rateLimitFactory(
                     i -> {
-                      var a = acquires[i - 1] = new AtomicLong();
+                      var a = new AtomicLong();
+                      acquires[i - 1] = a;
                       return a::incrementAndGet;
                     })
                 .build());

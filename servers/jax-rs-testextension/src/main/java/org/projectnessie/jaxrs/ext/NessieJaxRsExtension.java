@@ -203,7 +203,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
     }
 
     @SuppressWarnings("resource")
-    public EnvHolder(Extension versionStoreExtension) throws Exception {
+    EnvHolder(Extension versionStoreExtension) throws Exception {
       weld = new Weld();
       // Let Weld scan all the resources to discover injection points and dependencies
       weld.addPackages(true, RestConfigResource.class);

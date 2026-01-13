@@ -16,7 +16,6 @@
 package org.projectnessie.nessie.combined;
 
 import static org.projectnessie.nessie.combined.EmptyHttpHeaders.emptyHttpHeaders;
-import static org.projectnessie.services.authz.ApiContext.apiContext;
 
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApi;
@@ -40,7 +39,6 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
   private Persist persist;
   private RestV2ConfigResource configResource;
   private RestV2TreeResource treeResource;
-  private ApiContext apiContext = apiContext("Nessie", 2);
 
   public CombinedClientBuilder() {}
 
@@ -69,8 +67,8 @@ public class CombinedClientBuilder extends NessieClientBuilder.AbstractNessieCli
     return this;
   }
 
+  @SuppressWarnings("unused")
   public CombinedClientBuilder withApiContext(ApiContext apiContext) {
-    this.apiContext = apiContext;
     return this;
   }
 

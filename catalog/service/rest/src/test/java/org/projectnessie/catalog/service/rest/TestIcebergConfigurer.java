@@ -62,6 +62,7 @@ public class TestIcebergConfigurer {
   protected SignerKey signerKey;
 
   @BeforeEach
+  @SuppressWarnings("UnnecessaryAssignment")
   protected void setupIcebergConfigurer() {
     SecretsProvider secretsProvider =
         ResolvingSecretsProvider.builder()

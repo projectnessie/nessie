@@ -1309,6 +1309,7 @@ public class AbstractBasePersistTests {
         .containsExactly(newObjs);
   }
 
+  @SuppressWarnings("EnumOrdinal")
   public static Obj updateObjChange(Obj obj) {
     ObjType type = obj.type();
     if (type instanceof StandardObjType) {
