@@ -236,8 +236,8 @@ final class IndexesLogicImpl implements IndexesLogic {
           format("Commit %s references a reference index, which does not exist", indexId));
     }
     ObjType indexType = keyIndex.type();
-    if (indexType instanceof StandardObjType) {
-      switch ((StandardObjType) indexType) {
+    if (indexType instanceof StandardObjType standardObjType) {
+      switch (standardObjType) {
         case INDEX_SEGMENTS:
           IndexSegmentsObj split = (IndexSegmentsObj) keyIndex;
           List<IndexStripe> indexStripes = split.stripes();
