@@ -46,12 +46,10 @@ import org.openjdk.jmh.infra.Blackhole;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
-import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.ImmutableS3ServerIam;
 import org.projectnessie.catalog.files.config.ImmutableS3StsCache;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3Config;
-import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
@@ -96,16 +94,6 @@ public class S3SessionCacheResourceBench {
 
       S3Config s3config = S3Config.builder().build();
       httpClient = S3Clients.apacheHttpClient(s3config, secretsProvider);
-
-      S3Options s3options =
-          ImmutableS3Options.builder()
-              .defaultOptions(
-                  ImmutableS3NamedBucketOptions.builder()
-                      .accessKey(URI.create("the-access-key"))
-                      .region("eu-central-1")
-                      .pathStyleAccess(true)
-                      .build())
-              .build();
 
       S3StsCache sts = ImmutableS3StsCache.builder().build();
       StsClientsPool stsClientsPool = new StsClientsPool(sts, httpClient, null);
