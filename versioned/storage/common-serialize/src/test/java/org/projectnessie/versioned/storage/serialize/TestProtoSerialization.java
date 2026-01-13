@@ -51,6 +51,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -210,7 +211,11 @@ public class TestProtoSerialization {
             .message("with headers and more")
             // Note: can only use one header name here, because commit-headers rely on HashMap,
             // which has a non-deterministic iteration order.
-            .headers(newCommitHeaders().add("foo", "bar").add("foo", OffsetDateTime.now()).build())
+            .headers(
+                newCommitHeaders()
+                    .add("foo", "bar")
+                    .add("foo", OffsetDateTime.now(ZoneOffset.UTC))
+                    .build())
             .addTail(randomObjId())
             .addTail(randomObjId())
             .addSecondaryParents(randomObjId())
