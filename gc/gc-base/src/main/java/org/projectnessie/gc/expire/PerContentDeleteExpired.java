@@ -52,7 +52,7 @@ public abstract class PerContentDeleteExpired {
   }
 
   /** Returns a stream of files that can be expired. */
-  @SuppressWarnings("UnstableApiUsage")
+  @SuppressWarnings({"UnstableApiUsage", "Slf4jSignOnlyFormat"})
   public DeleteSummary expire() {
     BloomFilter<StorageUri> filter = createBloomFilter();
 

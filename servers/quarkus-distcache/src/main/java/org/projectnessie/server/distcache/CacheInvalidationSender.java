@@ -233,6 +233,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   @VisibleForTesting
+  @SuppressWarnings("Slf4jDoNotLogMessageOfExceptionExplicitly")
   List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
       List<CacheInvalidation> batch, List<String> resolvedAddresses) {
     LOGGER.trace("Submitting {} invalidations", batch.size());

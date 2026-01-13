@@ -92,6 +92,7 @@ class DeviceCodeFlow extends AbstractFlow {
   }
 
   @Override
+  @SuppressWarnings("Slf4jDoNotLogMessageOfExceptionExplicitly")
   public Tokens fetchNewTokens(@Nullable Tokens currentTokens) {
     DeviceCodeResponse response = invokeDeviceAuthEndpoint();
     checkPollInterval(response.getIntervalSeconds());

@@ -44,6 +44,7 @@ public class IndexObjSerializer extends ObjSerializer<IndexObj> {
   }
 
   @Override
+  @SuppressWarnings({"ResultOfMethodCallIgnored", "CheckReturnValue"})
   public void serialize(
       IndexObj obj,
       BoundStatementBuilder stmt,

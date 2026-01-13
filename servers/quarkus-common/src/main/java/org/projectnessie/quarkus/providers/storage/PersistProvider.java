@@ -129,6 +129,7 @@ public class PersistProvider {
 
   @Produces
   @Singleton
+  @SuppressWarnings("Slf4jSignOnlyFormat")
   public CacheBackend produceCacheBackend(
       @Any Instance<MeterRegistry> meterRegistry,
       @Any Instance<DistributedCacheInvalidation> invalidationSender,
