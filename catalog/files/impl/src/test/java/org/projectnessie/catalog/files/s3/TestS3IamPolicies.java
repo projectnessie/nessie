@@ -70,58 +70,59 @@ class TestS3IamPolicies {
 
     soft.assertThat(pretty)
         .isEqualTo(
-            "{\n"
-                + "  \"Version\" : \"2012-10-17\",\n"
-                + "  \"Statement\" : [ {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : \"s3:ListBucket\",\n"
-                + "    \"Resource\" : \"arn:aws:s3:::bucket1\",\n"
-                + "    \"Condition\" : {\n"
-                + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"my/path/bar\", \"my/path/bar/*\", \"*/my/path/bar\", \"*/my/path/bar/*\", \"*/*/*/*/my/path/bar\", \"*/*/*/*/my/path/bar/*\" ]\n"
-                + "      }\n"
-                + "    }\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : \"s3:ListBucket\",\n"
-                + "    \"Resource\" : \"arn:aws:s3:::bucket2\",\n"
-                + "    \"Condition\" : {\n"
-                + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"my/other/bar\", \"my/other/bar/*\", \"*/my/other/bar\", \"*/my/other/bar/*\", \"*/*/*/*/my/other/bar\", \"*/*/*/*/my/other/bar/*\" ]\n"
-                + "      }\n"
-                + "    }\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : \"s3:ListBucket\",\n"
-                + "    \"Resource\" : \"arn:aws:s3:::bucket3\",\n"
-                + "    \"Condition\" : {\n"
-                + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"read/path/bar\", \"read/path/bar/*\", \"*/read/path/bar\", \"*/read/path/bar/*\", \"*/*/*/*/read/path/bar\", \"*/*/*/*/read/path/bar/*\" ]\n"
-                + "      }\n"
-                + "    }\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : \"s3:ListBucket\",\n"
-                + "    \"Resource\" : \"arn:aws:s3:::bucket4\",\n"
-                + "    \"Condition\" : {\n"
-                + "      \"StringLike\" : {\n"
-                + "        \"s3:prefix\" : [ \"read/other/bar\", \"read/other/bar/*\", \"*/read/other/bar\", \"*/read/other/bar/*\", \"*/*/*/*/read/other/bar\", \"*/*/*/*/read/other/bar/*\" ]\n"
-                + "      }\n"
-                + "    }\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : [ \"s3:GetObject\", \"s3:GetObjectVersion\", \"s3:PutObject\", \"s3:DeleteObject\" ],\n"
-                + "    \"Resource\" : [ \"arn:aws:s3:::bucket1/my/path/bar/*\", \"arn:aws:s3:::bucket1/*/my/path/bar/*\", \"arn:aws:s3:::bucket1/*/*/*/*/my/path/bar/*\", \"arn:aws:s3:::bucket2/my/other/bar/*\", \"arn:aws:s3:::bucket2/*/my/other/bar/*\", \"arn:aws:s3:::bucket2/*/*/*/*/my/other/bar/*\" ]\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Allow\",\n"
-                + "    \"Action\" : [ \"s3:GetObject\", \"s3:GetObjectVersion\" ],\n"
-                + "    \"Resource\" : [ \"arn:aws:s3:::bucket3read/path/bar/*\", \"arn:aws:s3:::bucket3/*/read/path/bar/*\", \"arn:aws:s3:::bucket3/*/*/*/*/read/path/bar/*\", \"arn:aws:s3:::bucket4read/other/bar/*\", \"arn:aws:s3:::bucket4/*/read/other/bar/*\", \"arn:aws:s3:::bucket4/*/*/*/*/read/other/bar/*\" ]\n"
-                + "  }, {\n"
-                + "    \"Effect\" : \"Deny\",\n"
-                + "    \"Action\" : \"s3:*\",\n"
-                + "    \"Resource\" : \"arn:aws:s3:::*/blocked\\\"Namespace/*\"\n"
-                + "  } ]\n"
-                + "}");
+            """
+            {
+              "Version" : "2012-10-17",
+              "Statement" : [ {
+                "Effect" : "Allow",
+                "Action" : "s3:ListBucket",
+                "Resource" : "arn:aws:s3:::bucket1",
+                "Condition" : {
+                  "StringLike" : {
+                    "s3:prefix" : [ "my/path/bar", "my/path/bar/*", "*/my/path/bar", "*/my/path/bar/*", "*/*/*/*/my/path/bar", "*/*/*/*/my/path/bar/*" ]
+                  }
+                }
+              }, {
+                "Effect" : "Allow",
+                "Action" : "s3:ListBucket",
+                "Resource" : "arn:aws:s3:::bucket2",
+                "Condition" : {
+                  "StringLike" : {
+                    "s3:prefix" : [ "my/other/bar", "my/other/bar/*", "*/my/other/bar", "*/my/other/bar/*", "*/*/*/*/my/other/bar", "*/*/*/*/my/other/bar/*" ]
+                  }
+                }
+              }, {
+                "Effect" : "Allow",
+                "Action" : "s3:ListBucket",
+                "Resource" : "arn:aws:s3:::bucket3",
+                "Condition" : {
+                  "StringLike" : {
+                    "s3:prefix" : [ "read/path/bar", "read/path/bar/*", "*/read/path/bar", "*/read/path/bar/*", "*/*/*/*/read/path/bar", "*/*/*/*/read/path/bar/*" ]
+                  }
+                }
+              }, {
+                "Effect" : "Allow",
+                "Action" : "s3:ListBucket",
+                "Resource" : "arn:aws:s3:::bucket4",
+                "Condition" : {
+                  "StringLike" : {
+                    "s3:prefix" : [ "read/other/bar", "read/other/bar/*", "*/read/other/bar", "*/read/other/bar/*", "*/*/*/*/read/other/bar", "*/*/*/*/read/other/bar/*" ]
+                  }
+                }
+              }, {
+                "Effect" : "Allow",
+                "Action" : [ "s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject" ],
+                "Resource" : [ "arn:aws:s3:::bucket1/my/path/bar/*", "arn:aws:s3:::bucket1/*/my/path/bar/*", "arn:aws:s3:::bucket1/*/*/*/*/my/path/bar/*", "arn:aws:s3:::bucket2/my/other/bar/*", "arn:aws:s3:::bucket2/*/my/other/bar/*", "arn:aws:s3:::bucket2/*/*/*/*/my/other/bar/*" ]
+              }, {
+                "Effect" : "Allow",
+                "Action" : [ "s3:GetObject", "s3:GetObjectVersion" ],
+                "Resource" : [ "arn:aws:s3:::bucket3read/path/bar/*", "arn:aws:s3:::bucket3/*/read/path/bar/*", "arn:aws:s3:::bucket3/*/*/*/*/read/path/bar/*", "arn:aws:s3:::bucket4read/other/bar/*", "arn:aws:s3:::bucket4/*/read/other/bar/*", "arn:aws:s3:::bucket4/*/*/*/*/read/other/bar/*" ]
+              }, {
+                "Effect" : "Deny",
+                "Action" : "s3:*",
+                "Resource" : "arn:aws:s3:::*/blocked\\"Namespace/*"
+              } ]
+            }""");
   }
 
   @ParameterizedTest

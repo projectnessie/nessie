@@ -21,19 +21,21 @@ import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 public interface ApiDoc {
 
   String PAGING_INFO =
-      "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
-          + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
-          + "\n"
-          + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
-          + "treat is as an opaque value.\n"
-          + "\n"
-          + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
-          + "will return all available data in one page.\n"
-          + "\n"
-          + "Different pages may have different numbers of log records in them even if they come from another "
-          + "call to this method with the same parameters. Also, pages are not guaranteed to be filled to "
-          + "contain exactly 'maxRecords' even if the total amount of available data allows that. Pages may "
-          + "contain more of less entries at server's discretion.\n";
+      """
+      To implement paging, check 'hasMore' in the response and, if 'true', pass the value \
+      returned as 'token' in the next invocation as the 'pageToken' parameter.
+
+      The content and meaning of the returned 'token' is "private" to the implementation,\
+      treat is as an opaque value.
+
+      It is wrong to assume that invoking this method with a very high 'maxRecords' value \
+      will return all available data in one page.
+
+      Different pages may have different numbers of log records in them even if they come from another \
+      call to this method with the same parameters. Also, pages are not guaranteed to be filled to \
+      contain exactly 'maxRecords' even if the total amount of available data allows that. Pages may \
+      contain more of less entries at server's discretion.
+      """;
 
   String FULL_REF_INFO =
       "The 'name@hash' form always refers to the exact commit on a specific named reference. This is the most complete "
@@ -43,32 +45,38 @@ public interface ApiDoc {
           + "to avoid ambiguity.\n";
 
   String COMMIT_BRANCH_DESCRIPTION =
-      "A reference to a particular version of the contents tree (a point in history) on a branch.\n"
-          + "This reference is specified in this form:\n"
-          + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
-          + "\n"
-          + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
-          + "In this case 'hash' indicates the state of contents that should be used for validating incoming changes.\n";
+      """
+      A reference to a particular version of the contents tree (a point in history) on a branch.
+      This reference is specified in this form:
+      - name@hash - Identifies the 'hash' commit on the named branch.
+
+      The 'hash' commit must be reachable from the current HEAD of the branch.
+      In this case 'hash' indicates the state of contents that should be used for validating incoming changes.
+      """;
 
   String MERGE_TRANSPLANT_BRANCH_DESCRIPTION =
-      "A reference to a specific version of the contents tree (a point in history) on a branch.\n"
-          + "This reference is specified in this form:\n"
-          + "- name@hash - Identifies the 'hash' commit on the named branch.\n"
-          + "\n"
-          + "The 'hash' commit must be reachable from the current HEAD of the branch.\n"
-          + "In this case 'hash' indicates the state of contents known to the client and serves to ensure that the "
-          + "operation is performed on the contents that the client expects.\n"
-          + "This hash can point to a commit in the middle of the change history, but it should be as recent as "
-          + "possible.\n";
+      """
+      A reference to a specific version of the contents tree (a point in history) on a branch.
+      This reference is specified in this form:
+      - name@hash - Identifies the 'hash' commit on the named branch.
+
+      The 'hash' commit must be reachable from the current HEAD of the branch.
+      In this case 'hash' indicates the state of contents known to the client and serves to ensure that the \
+      operation is performed on the contents that the client expects.
+      This hash can point to a commit in the middle of the change history, but it should be as recent as \
+      possible.
+      """;
 
   String REF_NAME_DESCRIPTION = "A reference name.\n\n" + REF_NAME_MESSAGE + "\n";
 
   String REF_GET_PARAMETER_DESCRIPTION =
-      "Specifies a reference to a particular commit history branch or tag.\n"
-          + "\n"
-          + "This reference can be specification in these forms:\n"
-          + "- \\- (literal minus character) - identifies the default branch.\n"
-          + "- name - Identifies the named branch or tag.\n";
+      """
+      Specifies a reference to a particular commit history branch or tag.
+
+      This reference can be specification in these forms:
+      - \\- (literal minus character) - identifies the default branch.
+      - name - Identifies the named branch or tag.
+      """;
 
   String REF_PARAMETER_DESCRIPTION =
       "A reference to a particular version of the contents tree (a point in history).\n"
@@ -117,14 +125,16 @@ public interface ApiDoc {
       "If set to 'true', access control checks will check for write/create privilege in addition to read privileges.";
 
   String CHECKED_REF_DESCRIPTION =
-      "Specifies a named branch or tag reference with its expected HEAD 'hash' value.\n"
-          + "\n"
-          + "For example:\n"
-          + "- name@hash - Identifies the 'hash' commit on a branch or tag.\n"
-          + "\n"
-          + "The specified 'hash' must be the value of the current HEAD of the branch or tag known by the client. It will be used to validate that "
-          + "at execution time the reference points to the same hash that the caller expected "
-          + "when the operation arguments were constructed.\n";
+      """
+      Specifies a named branch or tag reference with its expected HEAD 'hash' value.
+
+      For example:
+      - name@hash - Identifies the 'hash' commit on a branch or tag.
+
+      The specified 'hash' must be the value of the current HEAD of the branch or tag known by the client. It will be used to validate that \
+      at execution time the reference points to the same hash that the caller expected \
+      when the operation arguments were constructed.
+      """;
 
   String CHECKED_REF_INFO =
       "The 'ref' parameter may contain a hash qualifier. That hash as well as the optional "
@@ -164,15 +174,19 @@ public interface ApiDoc {
           + KEY_ELEMENTS_DESCRIPTION;
 
   String DEFAULT_KEY_MERGE_MODE_DESCRIPTION =
-      "The default merge mode. If not set, `NORMAL` is assumed.\n"
-          + "\n"
-          + "This settings applies to key thaWhen set to 'true' instructs the server to validate the request\n"
-          + "        but to avoid committing any changes.t are not explicitly mentioned in the `keyMergeModes` property.\n";
+      """
+      The default merge mode. If not set, `NORMAL` is assumed.
+
+      This settings applies to key thaWhen set to 'true' instructs the server to validate the request
+              but to avoid committing any changes.t are not explicitly mentioned in the `keyMergeModes` property.
+      """;
 
   String KEY_MERGE_MODES_DESCRIPTION =
-      "Specific merge behaviour requests by content key.\n"
-          + "\n"
-          + "The default is set by the `defaultKeyMergeMode` parameter.\n";
+      """
+      Specific merge behaviour requests by content key.
+
+      The default is set by the `defaultKeyMergeMode` parameter.
+      """;
 
   String FROM_REF_NAME_DESCRIPTION =
       "The name of the reference that contains the 'source' commits for the requested merge or transplant operation.\n";

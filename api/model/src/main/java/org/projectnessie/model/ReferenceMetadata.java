@@ -27,12 +27,20 @@ import org.immutables.value.Value;
     type = SchemaType.OBJECT,
     title = "ReferenceMetadata",
     description =
-        "Only returned by the server when explicitly requested by the client and contains the following information:\n\n"
-            + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
-            + "- numCommitsBehind (number of commits behind the default branch)\n\n"
-            + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
-            + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
-            + "- numTotalCommits (the total number of commits in this reference).\n\n")
+        """
+        Only returned by the server when explicitly requested by the client and contains the following information:
+
+        - numCommitsAhead (number of commits ahead of the default branch)
+
+        - numCommitsBehind (number of commits behind the default branch)
+
+        - commitMetaOfHEAD (the commit metadata of the HEAD commit)
+
+        - commonAncestorHash (the hash of the common ancestor in relation to the default branch).
+
+        - numTotalCommits (the total number of commits in this reference).
+
+        """)
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceMetadata.class)
 @JsonDeserialize(as = ImmutableReferenceMetadata.class)

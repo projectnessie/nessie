@@ -47,12 +47,14 @@ public class TestS3NamedBucketOptions {
                     ImmutableS3ClientIam.builder()
                         .enabled(true)
                         .policy(
-                            "{ \"Version\":\"2012-10-17\",\n"
-                                + "  \"Statement\": [\n"
-                                + "    {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*\"},\n"
-                                + "    {\"Effect\":\"Deny\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*/blockedNamespace/*\"}\n"
-                                + "   ]\n"
-                                + "}\n")
+                            """
+                            { "Version":"2012-10-17",
+                              "Statement": [
+                                {"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*"},
+                                {"Effect":"Deny", "Action":"s3:*", "Resource":"arn:aws:s3:::*/blockedNamespace/*"}
+                               ]
+                            }
+                            """)
                         .build())
                 .build(),
             List.of("arn:aws:s3:::*", "arn:aws:s3:::*/blockedNamespace/*")),
@@ -90,9 +92,11 @@ public class TestS3NamedBucketOptions {
                     ImmutableS3ClientIam.builder()
                         .enabled(true)
                         .policy(
-                            "{ \"Version\":\"2012-10-17\",\n"
-                                + "  \"Statement\": [\n"
-                                + "    {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*},\n")
+                            """
+                            { "Version":"2012-10-17",
+                              "Statement": [
+                                {"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*},
+                            """)
                         .build())
                 .build(),
             "The client-iam.policy option for the bucketName bucket contains an invalid policy"),
@@ -103,9 +107,11 @@ public class TestS3NamedBucketOptions {
                     ImmutableS3ServerIam.builder()
                         .enabled(true)
                         .policy(
-                            "{ \"Version\":\"2012-10-17\",\n"
-                                + "  \"Statement\": [\n"
-                                + "    {\"Effect\":\"Allow\", \"Action\":\"s3:*\", \"Resource\":\"arn:aws:s3:::*},\n")
+                            """
+                            { "Version":"2012-10-17",
+                              "Statement": [
+                                {"Effect":"Allow", "Action":"s3:*", "Resource":"arn:aws:s3:::*},
+                            """)
                         .build())
                 .build(),
             "The server-iam.policy option for the bucketName bucket contains an invalid policy"),

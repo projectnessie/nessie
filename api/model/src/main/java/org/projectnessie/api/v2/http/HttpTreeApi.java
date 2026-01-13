@@ -118,14 +118,15 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Create a new branch or tag",
       description =
-          "The name and type query parameters define the kind of reference to be created. "
-              + "The payload object defines the new reference's origin in the commit history. "
-              + "\n"
-              + "Only branches and tags can be created by this method, but the payload object may be any"
-              + " valid reference, including a detached commit."
-              + "\n"
-              + "If the payload reference object does not define a commit hash, the HEAD of that reference "
-              + "will be used.",
+          """
+          The name and type query parameters define the kind of reference to be created. \
+          The payload object defines the new reference's origin in the commit history. \
+
+          Only branches and tags can be created by this method, but the payload object may be any\
+           valid reference, including a detached commit.\
+
+          If the payload reference object does not define a commit hash, the HEAD of that reference \
+          will be used.""",
       operationId = "createReferenceV2")
   @APIResponses({
     @APIResponse(
@@ -207,17 +208,18 @@ public interface HttpTreeApi extends TreeApi {
       summary = "Fetch recent pointer changes of a reference",
       operationId = "getReferenceHistory",
       description =
-          "Retrieve the recorded recent history of a reference.\n"
-              + "\n"
-              + "A reference's history is a size and time limited record of changes of the reference's "
-              + "current pointer, aka HEAD. The size and time limits are configured in the Nessie server "
-              + "configuration.\n"
-              + "\n"
-              + "This function is only useful for deployments using replicating multi-zone/region database "
-              + "setups. If the \"primary write target\" fails and cannot be recovered, replicas might not "
-              + "have all written records (data loss scenario). This function helps identifying whether "
-              + "the commits of a reference that were written within the configured \"replication lag\" are "
-              + "present and consistent. A reference might then be deleted or re-assigned to a consistent commit.")
+          """
+          Retrieve the recorded recent history of a reference.
+
+          A reference's history is a size and time limited record of changes of the reference's \
+          current pointer, aka HEAD. The size and time limits are configured in the Nessie server \
+          configuration.
+
+          This function is only useful for deployments using replicating multi-zone/region database \
+          setups. If the "primary write target" fails and cannot be recovered, replicas might not \
+          have all written records (data loss scenario). This function helps identifying whether \
+          the commits of a reference that were written within the configured "replication lag" are \
+          present and consistent. A reference might then be deleted or re-assigned to a consistent commit.""")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -405,16 +407,18 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Get contents that differ in the trees specified by the two given references",
       description =
-          "The URL pattern is basically 'from' and 'to' reference specs separated by '/diff/'\n"
-              + "\n"
-              + "Examples: \n"
-              + "- main/diff/myBranch\n"
-              + "- main@1234567890123456/diff/myBranch\n"
-              + "- main@1234567890123456/diff/myBranch@23445678\n"
-              + "- main/diff/myBranch@23445678\n"
-              + "- main/diff/myBranch@23445678\n"
-              + "- my/branch@/diff/main\n"
-              + "- myBranch/diff/-\n",
+          """
+          The URL pattern is basically 'from' and 'to' reference specs separated by '/diff/'
+
+          Examples:\s
+          - main/diff/myBranch
+          - main@1234567890123456/diff/myBranch
+          - main@1234567890123456/diff/myBranch@23445678
+          - main/diff/myBranch@23445678
+          - main/diff/myBranch@23445678
+          - my/branch@/diff/main
+          - myBranch/diff/-
+          """,
       operationId = "getDiffV2")
   @APIResponses({
     @APIResponse(
@@ -629,12 +633,13 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Get multiple content objects.",
       description =
-          "Similar to 'GET /trees/{ref}/content/{key}', but takes multiple 'key' query parameters and returns zero "
-              + "or more content values in the same JSON structure as the 'POST /trees/{ref}/content' endpoint.\n"
-              + "\n"
-              + "This is a convenience method for fetching a small number of content objects. It is mostly intended "
-              + "for human use. For automated use cases or when the number of keys is large the "
-              + "'POST /trees/{ref}/content' method is preferred.")
+          """
+          Similar to 'GET /trees/{ref}/content/{key}', but takes multiple 'key' query parameters and returns zero \
+          or more content values in the same JSON structure as the 'POST /trees/{ref}/content' endpoint.
+
+          This is a convenience method for fetching a small number of content objects. It is mostly intended \
+          for human use. For automated use cases or when the number of keys is large the \
+          'POST /trees/{ref}/content' method is preferred.""")
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -711,12 +716,13 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Get multiple content objects.",
       description =
-          "Similar to 'GET /trees/{ref}/content/{key}', but takes multiple 'ContentKey's (in the JSON payload) and "
-              + "returns zero or more content objects.\n"
-              + "\n"
-              + "Note that if some keys from the request do not have an associated content object at the point in "
-              + "history defined by the 'ref' parameter, the response will be successful, but no data will be "
-              + "returned for the missing keys.",
+          """
+          Similar to 'GET /trees/{ref}/content/{key}', but takes multiple 'ContentKey's (in the JSON payload) and \
+          returns zero or more content objects.
+
+          Note that if some keys from the request do not have an associated content object at the point in \
+          history defined by the 'ref' parameter, the response will be successful, but no data will be \
+          returned for the missing keys.""",
       operationId = "getMultipleContentsV2")
   @APIResponses({
     @APIResponse(
@@ -787,12 +793,13 @@ public interface HttpTreeApi extends TreeApi {
       summary =
           "Transplant commits specified by the 'Transplant' payload object onto the given 'branch'",
       description =
-          "This is done as an atomic operation such that only the last of the sequence is ever "
-              + "visible to concurrent readers/writers. The sequence to transplant must be "
-              + "contiguous and in order.\n"
-              + "\n"
-              + "The state of contents specified by the 'branch' reference will be used for detecting conflicts with "
-              + "the commits being transplanted.",
+          """
+          This is done as an atomic operation such that only the last of the sequence is ever \
+          visible to concurrent readers/writers. The sequence to transplant must be \
+          contiguous and in order.
+
+          The state of contents specified by the 'branch' reference will be used for detecting conflicts with \
+          the commits being transplanted.""",
       operationId = "transplantV2")
   @APIResponses({
     @APIResponse(
@@ -851,16 +858,17 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Merge commits from another reference onto 'branch'.",
       description =
-          "Merge commits referenced by the 'mergeRefName' and 'fromHash' parameters of the payload object into the "
-              + "requested 'branch'.\n"
-              + "\n"
-              + "The state of contents specified by the 'branch' reference will be used for detecting conflicts with "
-              + "the commits being transplanted.\n"
-              + "\n"
-              + "The merge is committed if it is free from conflicts. The set of commits merged into the target branch "
-              + "will be all of those starting at 'fromHash' on 'mergeRefName' until we arrive at the common ancestor. "
-              + "Depending on the underlying implementation, the number of commits allowed as part of this operation "
-              + "may be limited.",
+          """
+          Merge commits referenced by the 'mergeRefName' and 'fromHash' parameters of the payload object into the \
+          requested 'branch'.
+
+          The state of contents specified by the 'branch' reference will be used for detecting conflicts with \
+          the commits being transplanted.
+
+          The merge is committed if it is free from conflicts. The set of commits merged into the target branch \
+          will be all of those starting at 'fromHash' on 'mergeRefName' until we arrive at the common ancestor. \
+          Depending on the underlying implementation, the number of commits allowed as part of this operation \
+          may be limited.""",
       operationId = "mergeV2")
   @APIResponses({
     @APIResponse(
@@ -922,11 +930,12 @@ public interface HttpTreeApi extends TreeApi {
   @Operation(
       summary = "Commit one or more operations against the given 'branch'.",
       description =
-          "The state of contents specified by the 'branch' reference will be used for detecting conflicts with "
-              + "the operation being committed.\n"
-              + "\n"
-              + "The hash in the successful response will be the hash of the commit that contains the requested "
-              + "operations, whose immediate parent commit will be the current HEAD of the specified branch.",
+          """
+          The state of contents specified by the 'branch' reference will be used for detecting conflicts with \
+          the operation being committed.
+
+          The hash in the successful response will be the hash of the commit that contains the requested \
+          operations, whose immediate parent commit will be the current HEAD of the specified branch.""",
       operationId = "commitV2")
   @APIResponses({
     @APIResponse(
