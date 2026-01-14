@@ -45,35 +45,41 @@ final class IcebergTypes {
   static final IcebergBinaryType BINARY = new IcebergBinaryType();
   static final IcebergTimestampType TIMESTAMPTZ = new IcebergTimestampType(true);
   static final IcebergTimestampType TIMESTAMP = new IcebergTimestampType(false);
+  static final IcebergTimestampNanosType TIMESTAMPTZ_NS = new IcebergTimestampNanosType(true);
+  static final IcebergTimestampNanosType TIMESTAMP_NS = new IcebergTimestampNanosType(false);
 
   private IcebergTypes() {}
 
   static IcebergPrimitiveType primitiveFromString(String primitiveType) {
     switch (primitiveType) {
-      case IcebergBooleanType.TYPE_BOOLEAN:
+      case IcebergType.TYPE_BOOLEAN:
         return IcebergType.booleanType();
-      case IcebergUuidType.TYPE_UUID:
+      case IcebergType.TYPE_UUID:
         return IcebergType.uuidType();
-      case IcebergIntegerType.TYPE_INT:
+      case IcebergType.TYPE_INT:
         return IcebergType.integerType();
-      case IcebergLongType.TYPE_LONG:
+      case IcebergType.TYPE_LONG:
         return IcebergType.longType();
-      case IcebergFloatType.TYPE_FLOAT:
+      case IcebergType.TYPE_FLOAT:
         return IcebergType.floatType();
-      case IcebergDoubleType.TYPE_DOUBLE:
+      case IcebergType.TYPE_DOUBLE:
         return IcebergType.doubleType();
-      case IcebergDateType.TYPE_DATE:
+      case IcebergType.TYPE_DATE:
         return IcebergType.dateType();
-      case IcebergTimeType.TYPE_TIME:
+      case IcebergType.TYPE_TIME:
         return IcebergType.timeType();
-      case IcebergStringType.TYPE_STRING:
+      case IcebergType.TYPE_STRING:
         return IcebergType.stringType();
-      case IcebergBinaryType.TYPE_BINARY:
+      case IcebergType.TYPE_BINARY:
         return IcebergType.binaryType();
-      case IcebergTimestampType.TYPE_TIMESTAMP_TZ:
-        return IcebergType.timestamptzType();
-      case IcebergTimestampType.TYPE_TIMESTAMP:
+      case IcebergType.TYPE_TIMESTAMP_TZ:
+        return IcebergType.timestampTzType();
+      case IcebergType.TYPE_TIMESTAMP:
         return IcebergType.timestampType();
+      case IcebergType.TYPE_TIMESTAMP_NS_TZ:
+        return IcebergType.timestampNanosTzType();
+      case IcebergType.TYPE_TIMESTAMP_NS:
+        return IcebergType.timestampNanosType();
       default:
         Matcher m = DECIMAL_PATTERN.matcher(primitiveType);
         if (m.matches()) {

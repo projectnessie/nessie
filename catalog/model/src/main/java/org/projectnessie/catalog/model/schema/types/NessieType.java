@@ -45,7 +45,8 @@ public enum NessieType {
   MAP("map", NessieMapTypeSpec.class),
   STRUCT("struct", NessieStructTypeSpec.class);
 
-  public static final int DEFAULT_TIME_PRECISION = 6;
+  public static final int MICROS_TIME_PRECISION = 6;
+  public static final int NANOS_TIME_PRECISION = 9;
 
   private final String lowerCaseName;
   private final Class<? extends NessieTypeSpec> typeSpec;
@@ -85,22 +86,32 @@ public enum NessieType {
   private static final NessieTimeTypeSpec TIME_TYPE =
       ImmutableNessieTimeTypeSpec.builder()
           .withTimeZone(false)
-          .precision(DEFAULT_TIME_PRECISION)
+          .precision(MICROS_TIME_PRECISION)
           .build();
   private static final NessieTimeTypeSpec TIME_WITH_TZ_TYPE =
       ImmutableNessieTimeTypeSpec.builder()
           .withTimeZone(true)
-          .precision(DEFAULT_TIME_PRECISION)
+          .precision(MICROS_TIME_PRECISION)
           .build();
   private static final NessieTimestampTypeSpec TIMESTAMP_TYPE =
       ImmutableNessieTimestampTypeSpec.builder()
           .withTimeZone(false)
-          .precision(DEFAULT_TIME_PRECISION)
+          .precision(MICROS_TIME_PRECISION)
           .build();
   private static final NessieTimestampTypeSpec TIMESTAMP_WITH_TZ_TYPE =
       ImmutableNessieTimestampTypeSpec.builder()
           .withTimeZone(true)
-          .precision(DEFAULT_TIME_PRECISION)
+          .precision(MICROS_TIME_PRECISION)
+          .build();
+  private static final NessieTimestampTypeSpec TIMESTAMP_NS_TYPE =
+      ImmutableNessieTimestampTypeSpec.builder()
+          .withTimeZone(false)
+          .precision(NANOS_TIME_PRECISION)
+          .build();
+  private static final NessieTimestampTypeSpec TIMESTAMP_NS_WITH_TZ_TYPE =
+      ImmutableNessieTimestampTypeSpec.builder()
+          .withTimeZone(true)
+          .precision(NANOS_TIME_PRECISION)
           .build();
   private static final NessieIntervalTypeSpec INTERVAL_TYPE =
       ImmutableNessieIntervalTypeSpec.builder().build();
@@ -123,6 +134,8 @@ public enum NessieType {
               DATE_TYPE,
               TIMESTAMP_TYPE,
               TIMESTAMP_WITH_TZ_TYPE,
+              TIMESTAMP_NS_TYPE,
+              TIMESTAMP_NS_WITH_TZ_TYPE,
               INTERVAL_TYPE));
 
   public static List<? extends NessieTypeSpec> primitiveTypes() {
@@ -190,7 +203,7 @@ public enum NessieType {
   }
 
   public static NessieTimeTypeSpec timeType(int precision, boolean withTimeZone) {
-    return precision == DEFAULT_TIME_PRECISION
+    return precision == MICROS_TIME_PRECISION
         ? timeType(withTimeZone)
         : ImmutableNessieTimeTypeSpec.of(precision, withTimeZone);
   }
@@ -199,10 +212,19 @@ public enum NessieType {
     return withTimeZone ? TIMESTAMP_WITH_TZ_TYPE : TIMESTAMP_TYPE;
   }
 
+  public static NessieTimestampTypeSpec timestampNanosType(boolean withTimeZone) {
+    return withTimeZone ? TIMESTAMP_NS_WITH_TZ_TYPE : TIMESTAMP_NS_TYPE;
+  }
+
   public static NessieTimestampTypeSpec timestampType(int precision, boolean withTimeZone) {
-    return precision == DEFAULT_TIME_PRECISION
-        ? timestampType(withTimeZone)
-        : ImmutableNessieTimestampTypeSpec.of(precision, withTimeZone);
+    switch (precision) {
+      case MICROS_TIME_PRECISION:
+        return timestampType(withTimeZone);
+      case NANOS_TIME_PRECISION:
+        return timestampNanosType(withTimeZone);
+      default:
+        return ImmutableNessieTimestampTypeSpec.of(precision, withTimeZone);
+    }
   }
 
   public static NessieIntervalTypeSpec intervalType() {

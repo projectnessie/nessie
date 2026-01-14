@@ -53,7 +53,7 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.longTy
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.mapType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.stringType;
 import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.structType;
-import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestamptzType;
+import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timestampTzType;
 import static org.projectnessie.catalog.model.id.NessieIdHasher.nessieIdHasher;
 import static org.projectnessie.catalog.model.schema.NessieNullOrder.NULLS_LAST;
 import static org.projectnessie.catalog.model.schema.NessieSortDirection.ASC;
@@ -501,7 +501,7 @@ public class TestNessieModelIceberg {
                     nestedField(102, "topic", false, stringType(), null),
                     nestedField(103, "partition", false, integerType(), null),
                     nestedField(104, "offset", false, longType(), null),
-                    nestedField(105, "timestamp", false, timestamptzType(), null),
+                    nestedField(105, "timestamp", false, timestampTzType(), null),
                     nestedField(106, "timestampType", false, integerType(), null),
                     nestedField(
                         107,
@@ -567,7 +567,7 @@ public class TestNessieModelIceberg {
                     nestedField(3, "topic", false, stringType(), null),
                     nestedField(4, "partition", false, integerType(), null),
                     nestedField(5, "offset", false, longType(), null),
-                    nestedField(6, "timestamp", false, timestamptzType(), null),
+                    nestedField(6, "timestamp", false, timestampTzType(), null),
                     nestedField(7, "timestampType", false, integerType(), null),
                     nestedField(
                         8,
