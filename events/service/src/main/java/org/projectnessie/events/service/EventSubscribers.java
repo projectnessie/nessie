@@ -157,23 +157,15 @@ public class EventSubscribers implements AutoCloseable {
    * type.
    */
   private static Stream<ResultType> map(EventType resultType) {
-    switch (resultType) {
-      case COMMIT:
-      case CONTENT_STORED:
-      case CONTENT_REMOVED:
-        return Stream.of(ResultType.COMMIT, ResultType.MERGE, ResultType.TRANSPLANT);
-      case MERGE:
-        return Stream.of(ResultType.MERGE);
-      case TRANSPLANT:
-        return Stream.of(ResultType.TRANSPLANT);
-      case REFERENCE_CREATED:
-        return Stream.of(ResultType.REFERENCE_CREATED);
-      case REFERENCE_UPDATED:
-        return Stream.of(ResultType.REFERENCE_ASSIGNED);
-      case REFERENCE_DELETED:
-        return Stream.of(ResultType.REFERENCE_DELETED);
-      default:
-        throw new IllegalArgumentException("Unknown result type: " + resultType);
-    }
+    return switch (resultType) {
+      case COMMIT, CONTENT_STORED, CONTENT_REMOVED ->
+          Stream.of(ResultType.COMMIT, ResultType.MERGE, ResultType.TRANSPLANT);
+      case MERGE -> Stream.of(ResultType.MERGE);
+      case TRANSPLANT -> Stream.of(ResultType.TRANSPLANT);
+      case REFERENCE_CREATED -> Stream.of(ResultType.REFERENCE_CREATED);
+      case REFERENCE_UPDATED -> Stream.of(ResultType.REFERENCE_ASSIGNED);
+      case REFERENCE_DELETED -> Stream.of(ResultType.REFERENCE_DELETED);
+      default -> throw new IllegalArgumentException("Unknown result type: " + resultType);
+    };
   }
 }

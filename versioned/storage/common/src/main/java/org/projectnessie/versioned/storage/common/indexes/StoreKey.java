@@ -260,14 +260,9 @@ public final class StoreKey implements Comparable<StoreKey> {
     for (int i = 0; i < key.length(); i++) {
       char c = key.charAt(i);
       switch (c) {
-        case 0:
-          c = '/';
-          break;
-        case 1:
-          c = '.';
-          break;
-        default:
-          break;
+        case 0 -> c = '/';
+        case 1 -> c = '.';
+        default -> {}
       }
       sb.append(c);
     }

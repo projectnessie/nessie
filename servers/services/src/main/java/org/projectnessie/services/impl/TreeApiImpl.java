@@ -1080,18 +1080,12 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
               op -> {
                 Set<String> keyActions = requestMeta.keyActions(op.identifiedKey().contentKey());
                 switch (op.operationType()) {
-                  case CREATE:
-                    check.canCreateEntity(branchName, op.identifiedKey(), keyActions);
-                    break;
-                  case UPDATE:
-                    check.canUpdateEntity(branchName, op.identifiedKey(), keyActions);
-                    break;
-                  case DELETE:
-                    check.canDeleteEntity(branchName, op.identifiedKey(), keyActions);
-                    break;
-                  default:
-                    throw new UnsupportedOperationException(
-                        "Unknown operation type " + op.operationType());
+                  case CREATE -> check.canCreateEntity(branchName, op.identifiedKey(), keyActions);
+                  case UPDATE -> check.canUpdateEntity(branchName, op.identifiedKey(), keyActions);
+                  case DELETE -> check.canDeleteEntity(branchName, op.identifiedKey(), keyActions);
+                  default ->
+                      throw new UnsupportedOperationException(
+                          "Unknown operation type " + op.operationType());
                 }
               });
       check.checkAndThrow();

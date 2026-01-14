@@ -131,32 +131,15 @@ public interface EventSubscriber extends AutoCloseable {
    */
   default void onEvent(Event event) {
     switch (event.getType()) {
-      case REFERENCE_CREATED:
-        onReferenceCreated((ReferenceCreatedEvent) event);
-        break;
-      case REFERENCE_UPDATED:
-        onReferenceUpdated((ReferenceUpdatedEvent) event);
-        break;
-      case REFERENCE_DELETED:
-        onReferenceDeleted((ReferenceDeletedEvent) event);
-        break;
-      case COMMIT:
-        onCommit((CommitEvent) event);
-        break;
-      case MERGE:
-        onMerge((MergeEvent) event);
-        break;
-      case TRANSPLANT:
-        onTransplant((TransplantEvent) event);
-        break;
-      case CONTENT_STORED:
-        onContentStored((ContentStoredEvent) event);
-        break;
-      case CONTENT_REMOVED:
-        onContentRemoved((ContentRemovedEvent) event);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown event type: " + event.getType());
+      case REFERENCE_CREATED -> onReferenceCreated((ReferenceCreatedEvent) event);
+      case REFERENCE_UPDATED -> onReferenceUpdated((ReferenceUpdatedEvent) event);
+      case REFERENCE_DELETED -> onReferenceDeleted((ReferenceDeletedEvent) event);
+      case COMMIT -> onCommit((CommitEvent) event);
+      case MERGE -> onMerge((MergeEvent) event);
+      case TRANSPLANT -> onTransplant((TransplantEvent) event);
+      case CONTENT_STORED -> onContentStored((ContentStoredEvent) event);
+      case CONTENT_REMOVED -> onContentRemoved((ContentRemovedEvent) event);
+      default -> throw new IllegalArgumentException("Unknown event type: " + event.getType());
     }
   }
 

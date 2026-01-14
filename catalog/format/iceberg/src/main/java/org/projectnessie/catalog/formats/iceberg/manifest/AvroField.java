@@ -297,14 +297,15 @@ public final class AvroField {
 
   static FieldReader fieldReaderFunction(Schema schema, Type type, AvroBundle bundle) {
     switch (schema.getType()) {
-      case NULL:
+      case NULL -> {
         return AvroField::readNull;
-      case BOOLEAN:
+      }
+      case BOOLEAN -> {
         if (type == Boolean.class || type == boolean.class) {
           return AvroField::readBoolean;
         }
-        break;
-      case INT:
+      }
+      case INT -> {
         if (type == Integer.class || type == int.class) {
           return AvroField::readInt;
         }
@@ -313,23 +314,23 @@ public final class AvroField {
           Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) type;
           return readIntEnum(enumType);
         }
-        break;
-      case LONG:
+      }
+      case LONG -> {
         if (type == Long.class || type == long.class) {
           return AvroField::readLong;
         }
-        break;
-      case FLOAT:
+      }
+      case FLOAT -> {
         if (type == Float.class || type == float.class) {
           return AvroField::readFloat;
         }
-        break;
-      case DOUBLE:
+      }
+      case DOUBLE -> {
         if (type == Double.class || type == double.class) {
           return AvroField::readDouble;
         }
-        break;
-      case STRING:
+      }
+      case STRING -> {
         if (type == String.class) {
           return AvroField::readString;
         }
@@ -338,20 +339,22 @@ public final class AvroField {
           Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) type;
           return readStringEnum(enumType);
         }
-        break;
-      case BYTES:
+      }
+      case BYTES -> {
         if (type.equals(byte[].class)) {
           return AvroField::readByteArray;
         }
         if (((Class<?>) type).isAssignableFrom(ByteBuffer.class)) {
           return AvroField::readByteBuffer;
         }
-        break;
-      case FIXED:
+      }
+      case FIXED -> {
         return AvroField::readFixed;
-      case MAP:
+      }
+      case MAP -> {
         return AvroField::readMap;
-      case ARRAY:
+      }
+      case ARRAY -> {
         Schema elementType = schema.getElementType();
         if (type instanceof ParameterizedType parameterizedType) {
           Type rawType = parameterizedType.getRawType();
@@ -365,13 +368,15 @@ public final class AvroField {
             return readList(elementReader, elementType);
           }
         }
-        break;
-      case ENUM:
+      }
+      case ENUM -> {
         return AvroField::readEnum;
-      case RECORD:
+      }
+      case RECORD -> {
         AvroTyped<?> avroSchema = bundle.lookupSchema((Class<?>) type);
         return avroSchema::read;
-      case UNION:
+      }
+      case UNION -> {
         List<Schema> types = schema.getTypes();
         if (types.size() == 2) {
           if (types.get(0).getType() == Schema.Type.NULL) {
@@ -382,8 +387,8 @@ public final class AvroField {
           }
         }
         return AvroField::readUnion;
-      default:
-        throw new IllegalStateException("Unknown Avro field type " + schema.getType());
+      }
+      default -> throw new IllegalStateException("Unknown Avro field type " + schema.getType());
     }
     throw new IllegalStateException(
         "Unknown Java field type " + type + " + Avro field type " + schema.getType());
@@ -531,57 +536,60 @@ public final class AvroField {
 
   static FieldWriter fieldWriterFunction(Schema schema, Type type, AvroBundle bundle) {
     switch (schema.getType()) {
-      case NULL:
+      case NULL -> {
         return AvroField::writeNull;
-      case BOOLEAN:
+      }
+      case BOOLEAN -> {
         if (type == Boolean.class || type == boolean.class) {
           return AvroField::writeBoolean;
         }
-        break;
-      case INT:
+      }
+      case INT -> {
         if (type == Integer.class || type == int.class) {
           return AvroField::writeInt;
         }
         if (Enum.class.isAssignableFrom((Class<?>) type)) {
           return AvroField::writeIntEnum;
         }
-        break;
-      case LONG:
+      }
+      case LONG -> {
         if (type == Long.class || type == long.class) {
           return AvroField::writeLong;
         }
-        break;
-      case FLOAT:
+      }
+      case FLOAT -> {
         if (type == Float.class || type == float.class) {
           return AvroField::writeFloat;
         }
-        break;
-      case DOUBLE:
+      }
+      case DOUBLE -> {
         if (type == Double.class || type == double.class) {
           return AvroField::writeDouble;
         }
-        break;
-      case STRING:
+      }
+      case STRING -> {
         if (type == String.class) {
           return AvroField::writeString;
         }
         if (Enum.class.isAssignableFrom((Class<?>) type)) {
           return AvroField::writeStringEnum;
         }
-        break;
-      case BYTES:
+      }
+      case BYTES -> {
         if (type.equals(byte[].class)) {
           return AvroField::writeByteArray;
         }
         if (((Class<?>) type).isAssignableFrom(ByteBuffer.class)) {
           return AvroField::writeByteBuffer;
         }
-        break;
-      case FIXED:
+      }
+      case FIXED -> {
         return AvroField::writeFixed;
-      case MAP:
+      }
+      case MAP -> {
         return AvroField::writeMap;
-      case ARRAY:
+      }
+      case ARRAY -> {
         Schema elementType = schema.getElementType();
         if (type instanceof ParameterizedType parameterizedType) {
           Type rawType = parameterizedType.getRawType();
@@ -595,14 +603,16 @@ public final class AvroField {
             return writeList(elementWriter);
           }
         }
-        break;
-      case ENUM:
+      }
+      case ENUM -> {
         return AvroField::writeEnum;
-      case RECORD:
+      }
+      case RECORD -> {
         @SuppressWarnings({"unchecked", "rawtypes"})
         AvroTyped<Object> avroSchema = bundle.lookupSchema((Class) type);
         return (encoder, object) -> avroSchema.write(encoder, object, schema);
-      case UNION:
+      }
+      case UNION -> {
         List<Schema> unionTypes = schema.getTypes();
         if (unionTypes.size() == 2) {
           Schema unionAt0 = unionTypes.get(0);
@@ -615,8 +625,8 @@ public final class AvroField {
           }
         }
         return AvroField::writeUnion;
-      default:
-        throw new IllegalStateException("Unknown Avro field type " + schema.getType());
+      }
+      default -> throw new IllegalStateException("Unknown Avro field type " + schema.getType());
     }
     throw new IllegalStateException(
         "Unknown Java field type " + type + " + Avro field type " + schema.getType());

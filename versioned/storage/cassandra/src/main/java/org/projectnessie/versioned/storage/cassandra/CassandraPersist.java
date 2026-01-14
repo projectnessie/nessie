@@ -429,16 +429,10 @@ public class CassandraPersist implements Persist {
     List<ObjId> updateReferenced = new ArrayList<>();
     for (int i = 0; i < l; i++) {
       switch (results.get(i)) {
-        case 0:
-          break;
-        case 1:
-          array[i] = true;
-          break;
-        case 2:
-          updateReferenced.add(objs[i].id());
-          break;
-        default:
-          throw new IllegalStateException();
+        case 0 -> {}
+        case 1 -> array[i] = true;
+        case 2 -> updateReferenced.add(objs[i].id());
+        default -> throw new IllegalStateException();
       }
     }
 

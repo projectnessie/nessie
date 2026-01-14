@@ -265,7 +265,7 @@ public class TestObjIdHasher {
     ObjId generatedId = obj.id();
     ObjId previousCodeId = null;
     switch (type) {
-      case COMMIT:
+      case COMMIT -> {
         CommitObj commitObj = (CommitObj) obj;
 
         CreateCommit.Builder commit =
@@ -339,25 +339,24 @@ public class TestObjIdHasher {
                     (add, key, id) -> null,
                     (add, key, id) -> null)
                 .id();
-
-        break;
-      case REF:
+      }
+      case REF -> {
         RefObj refObj = (RefObj) obj;
         previousCodeId = refHash(refObj.name(), refObj.initialPointer(), refObj.createdAtMicros());
-        break;
-      case INDEX:
+      }
+      case INDEX -> {
         IndexObj indexObj = (IndexObj) obj;
         previousCodeId = indexHash(indexObj.index());
-        break;
-      case INDEX_SEGMENTS:
+      }
+      case INDEX_SEGMENTS -> {
         IndexSegmentsObj indexSegmentsObj = (IndexSegmentsObj) obj;
         previousCodeId = indexSegmentsHash(indexSegmentsObj.stripes());
-        break;
-      case TAG:
+      }
+      case TAG -> {
         TagObj tagObj = (TagObj) obj;
         previousCodeId = tagHash(tagObj.message(), tagObj.headers(), tagObj.signature());
-        break;
-      case STRING:
+      }
+      case STRING -> {
         StringObj stringObj = (StringObj) obj;
         previousCodeId =
             stringDataHash(
@@ -366,20 +365,19 @@ public class TestObjIdHasher {
                 stringObj.filename(),
                 stringObj.predecessors(),
                 stringObj.text());
-        break;
-      case UNIQUE:
+      }
+      case UNIQUE -> {
         UniqueIdObj uniqueIdObj = (UniqueIdObj) obj;
         previousCodeId = uniqueIdHash(uniqueIdObj.space(), uniqueIdObj.value());
-        break;
-      case VALUE:
+      }
+      case VALUE -> {
         ContentValueObj contentValueObj = (ContentValueObj) obj;
         previousCodeId =
             contentValueHash(
                 contentValueObj.contentId(), contentValueObj.payload(), contentValueObj.data());
-        break;
-      default:
+      }
+      default -> {}
         // ignore
-        break;
     }
 
     soft.assertThat(generatedId).isEqualTo(previousCodeId);

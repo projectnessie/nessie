@@ -61,17 +61,14 @@ final class ImportPersistV1 extends ImportPersistCommon {
               break;
             }
 
-            String ref;
-            switch (namedReference.getRefType()) {
-              case Tag:
-                ref = RefMapping.REFS_TAGS + namedReference.getName();
-                break;
-              case Branch:
-                ref = RefMapping.REFS_HEADS + namedReference.getName();
-                break;
-              default:
-                throw new IllegalArgumentException("Unknown reference type " + namedReference);
-            }
+            String ref =
+                switch (namedReference.getRefType()) {
+                  case Tag -> RefMapping.REFS_TAGS + namedReference.getName();
+                  case Branch -> RefMapping.REFS_HEADS + namedReference.getName();
+                  default ->
+                      throw new IllegalArgumentException(
+                          "Unknown reference type " + namedReference);
+                };
 
             try {
               importer

@@ -66,7 +66,7 @@ class NessieCliCompleter extends SystemCompleter {
       protected void completeWithLiteral(
           CompletionType completionType, String preceding, String toComplete, boolean quoted) {
         switch (completionType) {
-          case REFERENCE_NAME:
+          case REFERENCE_NAME -> {
             AtomicInteger counter = new AtomicInteger();
             // TODO providing all (think: too many) reference names can "overwhelm" completion.
             //  JLine then warns with something like 'JLine terminal: do you wish to see all 218
@@ -88,18 +88,17 @@ class NessieCliCompleter extends SystemCompleter {
                         throw new RuntimeException(e);
                       }
                     });
-            break;
-          case CONNECT_OPTIONS:
+          }
+          case CONNECT_OPTIONS -> {
             for (int i = 0; i < NESSIE_CONFIG_KEYS.size(); i++) {
               candidate("\"" + NESSIE_CONFIG_KEYS.get(i) + "\"", i);
             }
-            break;
-          case CONTENT_KEY:
+          }
+          case CONTENT_KEY -> {
             // TODO do something ?
-            break;
-          default:
+          }
+          default -> {}
             // do nothing - don't break anything
-            break;
         }
       }
 

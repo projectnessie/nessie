@@ -78,15 +78,13 @@ abstract class ExportCommon {
       exportVersion = ExportVersion.UNRECOGNIZED;
     }
     switch (exportVersion) {
-      case V1:
-        throw new IllegalArgumentException(
-            "Cannot export using export-version " + exportVersion.getNumber());
-      case V2:
-      case V3:
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unimplemented export-version " + exportVersion.getNumber());
+      case V1 ->
+          throw new IllegalArgumentException(
+              "Cannot export using export-version " + exportVersion.getNumber());
+      case V2, V3 -> {}
+      default ->
+          throw new IllegalArgumentException(
+              "Unimplemented export-version " + exportVersion.getNumber());
     }
 
     return exportVersion;

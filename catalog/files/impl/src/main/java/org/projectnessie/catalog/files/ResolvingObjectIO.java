@@ -59,19 +59,12 @@ public class ResolvingObjectIO extends DelegatingObjectIO {
     if (scheme == null) {
       scheme = "file";
     }
-    switch (scheme) {
-      case "s3":
-      case "s3a":
-      case "s3n":
-        return s3ObjectIO;
-      case "gs":
-        return gcsObjectIO;
-      case "abfs":
-      case "abfss":
-        return adlsObjectIO;
-      default:
-        throw new IllegalArgumentException("Unknown or unsupported scheme: " + scheme);
-    }
+    return switch (scheme) {
+      case "s3", "s3a", "s3n" -> s3ObjectIO;
+      case "gs" -> gcsObjectIO;
+      case "abfs", "abfss" -> adlsObjectIO;
+      default -> throw new IllegalArgumentException("Unknown or unsupported scheme: " + scheme);
+    };
   }
 
   @Override

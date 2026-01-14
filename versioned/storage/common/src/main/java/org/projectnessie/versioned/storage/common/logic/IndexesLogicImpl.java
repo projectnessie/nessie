@@ -114,25 +114,22 @@ final class IndexesLogicImpl implements IndexesLogic {
         el -> {
           CommitOp c = el.content();
           switch (c.action()) {
-            case ADD:
-              c = commitOp(INCREMENTAL_ADD, c.payload(), c.value(), c.contentId());
-              break;
-            case REMOVE:
+            case ADD -> c = commitOp(INCREMENTAL_ADD, c.payload(), c.value(), c.contentId());
+            case REMOVE -> {
               if (hasReferenceIndex) {
                 c = commitOp(INCREMENTAL_REMOVE, c.payload(), c.value(), c.contentId());
               } else {
                 // purge old removes, if there is no reference-index that might contain those
                 c = null;
               }
-              break;
-            case INCREMENTAL_REMOVE:
+            }
+            case INCREMENTAL_REMOVE -> {
               if (!hasReferenceIndex) {
                 // purge old removes, if there is no reference-index that might contain those
                 c = null;
               }
-              break;
-            default:
-              break;
+            }
+            default -> {}
           }
           return c;
         });
@@ -236,16 +233,19 @@ final class IndexesLogicImpl implements IndexesLogic {
           format("Commit %s references a reference index, which does not exist", indexId));
     }
     ObjType indexType = keyIndex.type();
-    if (indexType instanceof StandardObjType) {
-      switch ((StandardObjType) indexType) {
-        case INDEX_SEGMENTS:
+    if (indexType instanceof StandardObjType standardObjType) {
+      switch (standardObjType) {
+        case INDEX_SEGMENTS -> {
           IndexSegmentsObj split = (IndexSegmentsObj) keyIndex;
           List<IndexStripe> indexStripes = split.stripes();
           return referenceIndexFromStripes(indexStripes, commitId);
-        case INDEX:
+        }
+        case INDEX -> {
           return deserializeIndex(((IndexObj) keyIndex).index()).setObjId(keyIndex.id());
-        default:
+        }
+        default -> {
           // fall through
+        }
       }
     }
     throw new IllegalStateException(

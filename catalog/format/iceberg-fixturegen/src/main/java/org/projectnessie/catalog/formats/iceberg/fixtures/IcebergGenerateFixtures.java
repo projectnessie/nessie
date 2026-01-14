@@ -80,15 +80,9 @@ public class IcebergGenerateFixtures {
     }
     String metadataPath = "table-metadata-simple-no-manifest/";
     switch (icebergSpecVersion) {
-      case 1:
-        metadataPath += "table-metadata-simple-compressed-no-manifest.metadata.json.gz";
-        break;
-      case 2:
-        metadataPath += "table-metadata-simple-compressed-no-manifest.gz.metadata.json";
-        break;
-      default:
-        metadataPath += "table-metadata-simple-compressed-no-manifest.json.gz";
-        break;
+      case 1 -> metadataPath += "table-metadata-simple-compressed-no-manifest.metadata.json.gz";
+      case 2 -> metadataPath += "table-metadata-simple-compressed-no-manifest.gz.metadata.json";
+      default -> metadataPath += "table-metadata-simple-compressed-no-manifest.json.gz";
     }
     return writer.write(URI.create(metadataPath), data);
   }
@@ -109,15 +103,9 @@ public class IcebergGenerateFixtures {
     }
     String metadataPath = "view-metadata-simple-no-manifest/";
     switch (icebergSpecVersion) {
-      case 1:
-        metadataPath += "view-metadata-simple-compressed-no-manifest.metadata.json.gz";
-        break;
-      case 2:
-        metadataPath += "view-metadata-simple-compressed-no-manifest.gz.metadata.json";
-        break;
-      default:
-        metadataPath += "view-metadata-simple-compressed-no-manifest.json.gz";
-        break;
+      case 1 -> metadataPath += "view-metadata-simple-compressed-no-manifest.metadata.json.gz";
+      case 2 -> metadataPath += "view-metadata-simple-compressed-no-manifest.gz.metadata.json";
+      default -> metadataPath += "view-metadata-simple-compressed-no-manifest.json.gz";
     }
     return writer.write(URI.create(metadataPath), data);
   }

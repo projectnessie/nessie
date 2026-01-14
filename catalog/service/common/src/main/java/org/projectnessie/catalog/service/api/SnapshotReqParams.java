@@ -44,7 +44,7 @@ public interface SnapshotReqParams {
       format = format.toUpperCase(Locale.ROOT);
       SnapshotResultFormat tableFormat = SnapshotResultFormat.valueOf(format);
       switch (tableFormat) {
-        case ICEBERG:
+        case ICEBERG -> {
           // Return the snapshot as an Iceberg table-metadata using either the spec-version given
           // in the request or the one used when the table-metadata was written.
           // TODO Does requesting a table-metadata using another spec-version make any sense?
@@ -54,12 +54,9 @@ public interface SnapshotReqParams {
           if (specVersion != null) {
             reqVersion = OptionalInt.of(Integer.parseInt(specVersion));
           }
-          break;
-        case NESSIE:
-          snapshotFormat = SnapshotFormat.NESSIE_SNAPSHOT;
-          break;
-        default:
-          throw new UnsupportedOperationException();
+        }
+        case NESSIE -> snapshotFormat = SnapshotFormat.NESSIE_SNAPSHOT;
+        default -> throw new UnsupportedOperationException();
       }
     }
 

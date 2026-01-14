@@ -129,9 +129,10 @@ public final class GcsClients {
       SecretsProvider secretsProvider) {
     GcsAuthType authType = bucketOptions.effectiveAuthType();
     switch (authType) {
-      case NONE:
+      case NONE -> {
         return NoCredentials.getInstance();
-      case USER:
+      }
+      case USER -> {
         try {
           URI secretName =
               bucketOptions
@@ -149,7 +150,8 @@ public final class GcsClients {
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      case SERVICE_ACCOUNT:
+      }
+      case SERVICE_ACCOUNT -> {
         try {
           URI secretName =
               bucketOptions
@@ -167,39 +169,39 @@ public final class GcsClients {
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
-      case ACCESS_TOKEN:
-        {
-          URI secretName =
-              bucketOptions
-                  .oauth2Token()
-                  .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
+      }
+      case ACCESS_TOKEN -> {
+        URI secretName =
+            bucketOptions
+                .oauth2Token()
+                .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
 
-          TokenSecret oauth2token =
-              secretsProvider
-                  .getSecret(secretName, SecretType.EXPIRING_TOKEN, TokenSecret.class)
-                  .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
-          AccessToken accessToken =
-              new AccessToken(
-                  oauth2token.token(),
-                  oauth2token
-                      .expiresAt()
-                      .map(
-                          i -> {
-                            @SuppressWarnings("JavaUtilDate")
-                            Date d = new Date(i.toEpochMilli());
-                            return d;
-                          })
-                      .orElse(null));
-          return OAuth2Credentials.create(accessToken);
-        }
-      case APPLICATION_DEFAULT:
+        TokenSecret oauth2token =
+            secretsProvider
+                .getSecret(secretName, SecretType.EXPIRING_TOKEN, TokenSecret.class)
+                .orElseThrow(() -> new IllegalStateException("oauth2-token missing"));
+        AccessToken accessToken =
+            new AccessToken(
+                oauth2token.token(),
+                oauth2token
+                    .expiresAt()
+                    .map(
+                        i -> {
+                          @SuppressWarnings("JavaUtilDate")
+                          Date d = new Date(i.toEpochMilli());
+                          return d;
+                        })
+                    .orElse(null));
+        return OAuth2Credentials.create(accessToken);
+      }
+      case APPLICATION_DEFAULT -> {
         try {
           return GoogleCredentials.getApplicationDefault();
         } catch (IOException e) {
           throw new IllegalArgumentException("Unable to load default credentials", e);
         }
-      default:
-        throw new IllegalArgumentException("Unsupported auth type " + authType);
+      }
+      default -> throw new IllegalArgumentException("Unsupported auth type " + authType);
     }
   }
 }

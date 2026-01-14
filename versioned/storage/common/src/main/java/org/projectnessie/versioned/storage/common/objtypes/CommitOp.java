@@ -95,20 +95,15 @@ public interface CommitOp {
     INCREMENTAL_REMOVE('r', false, false);
 
     public static Action fromValue(char value) {
-      switch (value) {
-        case 'N':
-          return NONE;
-        case 'A':
-          return ADD;
-        case 'R':
-          return REMOVE;
-        case 'a':
-          return INCREMENTAL_ADD;
-        case 'r':
-          return INCREMENTAL_REMOVE;
-        default:
-          throw new IllegalArgumentException("Illegal value '" + value + "' for Operation");
-      }
+      return switch (value) {
+        case 'N' -> NONE;
+        case 'A' -> ADD;
+        case 'R' -> REMOVE;
+        case 'a' -> INCREMENTAL_ADD;
+        case 'r' -> INCREMENTAL_REMOVE;
+        default ->
+            throw new IllegalArgumentException("Illegal value '" + value + "' for Operation");
+      };
     }
 
     private final char value;

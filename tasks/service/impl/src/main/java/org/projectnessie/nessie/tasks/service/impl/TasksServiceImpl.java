@@ -116,16 +116,17 @@ public class TasksServiceImpl implements TasksService {
       T taskObj = castObj(taskRequest, obj);
       TaskStatus status = taskObj.taskState().status();
       switch (status) {
-        case FAILURE:
+        case FAILURE -> {
           metrics.taskHasFinalFailure();
           return failedStage(taskRequest.behavior().stateAsException(taskObj));
-        case SUCCESS:
+        }
+        case SUCCESS -> {
           metrics.taskHasFinalSuccess();
           return completedStage(taskObj);
-        default:
-          // task object exists but has a non-final state, handle it asynchronously
-          checkState(!status.isFinal(), "Expect non-final task status");
-          break;
+        }
+        default ->
+            // task object exists but has a non-final state, handle it asynchronously
+            checkState(!status.isFinal(), "Expect non-final task status");
       }
     }
 
@@ -191,24 +192,23 @@ public class TasksServiceImpl implements TasksService {
       LOGGER.trace("{}: Evaluating task for {} with state {}", name, params, state);
 
       switch (state.status()) {
-        case SUCCESS:
+        case SUCCESS -> {
           metrics.taskAttemptFinalSuccess();
           finalResult(params, obj);
-          break;
-        case FAILURE:
+        }
+        case FAILURE -> {
           metrics.taskAttemptFinalFailure();
           finalFailure(params, params.taskRequest.behavior().stateAsException(obj));
-          break;
-        case RUNNING:
+        }
+        case RUNNING -> {
           metrics.taskAttemptRunning();
           checkRunningTask(params, state, obj);
-          break;
-        case ERROR_RETRY:
+        }
+        case ERROR_RETRY -> {
           metrics.taskAttemptErrorRetry();
           maybeAttemptErrorRetry(params, state, obj);
-          break;
-        default:
-          throw new IllegalStateException("Unknown task status " + state.status());
+        }
+        default -> throw new IllegalStateException("Unknown task status " + state.status());
       }
 
     } catch (ObjNotFoundException e) {

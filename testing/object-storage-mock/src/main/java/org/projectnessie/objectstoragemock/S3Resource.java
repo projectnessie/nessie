@@ -169,14 +169,11 @@ public class S3Resource {
             ListBucketResultV2.Builder v2 = null;
 
             switch (listType) {
-              case 1:
-                base = v1 = ListBucketResult.builder();
-                break;
-              case 2:
-                base = v2 = ListBucketResultV2.builder();
-                break;
-              default:
+              case 1 -> base = v1 = ListBucketResult.builder();
+              case 2 -> base = v2 = ListBucketResultV2.builder();
+              default -> {
                 return Response.status(Status.BAD_REQUEST).build();
+              }
             }
 
             boolean truncated = false;
@@ -233,22 +230,17 @@ public class S3Resource {
                 .encodingType(encodingType)
                 .maxKeys(maxKeys)
                 .name(bucketName);
-            ListBucketResultBase result;
-            switch (listType) {
-              case 1:
-                result = v1.marker(marker).nextMarker(nextMarker).build();
-                break;
-              case 2:
-                result =
-                    v2.keyCount(keyCount)
-                        .continuationToken(continuationToken)
-                        .nextContinuationToken(nextContinuationToken)
-                        .startAfter(startAfter)
-                        .build();
-                break;
-              default:
-                throw new IllegalArgumentException();
-            }
+            ListBucketResultBase result =
+                switch (listType) {
+                  case 1 -> v1.marker(marker).nextMarker(nextMarker).build();
+                  case 2 ->
+                      v2.keyCount(keyCount)
+                          .continuationToken(continuationToken)
+                          .nextContinuationToken(nextContinuationToken)
+                          .startAfter(startAfter)
+                          .build();
+                  default -> throw new IllegalArgumentException();
+                };
 
             return Response.ok(result).build();
           }
@@ -417,14 +409,9 @@ public class S3Resource {
       boolean chunked = false;
       for (String encoding : encodings) {
         switch (encoding) {
-          case "identity":
-            identity = true;
-            break;
-          case "aws-chunked":
-            chunked = true;
-            break;
-          default:
-            break;
+          case "identity" -> identity = true;
+          case "aws-chunked" -> chunked = true;
+          default -> {}
         }
       }
       if (identity) {

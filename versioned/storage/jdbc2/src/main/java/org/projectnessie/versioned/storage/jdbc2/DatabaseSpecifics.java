@@ -23,6 +23,7 @@ import java.sql.Types;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import javax.sql.DataSource;
 
 public final class DatabaseSpecifics {
@@ -67,9 +68,10 @@ public final class DatabaseSpecifics {
     try {
       String productName = conn.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
       switch (productName) {
-        case "h2":
+        case "h2" -> {
           return H2_DATABASE_SPECIFIC;
-        case "postgresql":
+        }
+        case "postgresql" -> {
           try (ResultSet rs = conn.getMetaData().getSchemas(conn.getCatalog(), "crdb_internal")) {
             if (rs.next()) {
               return COCKROACH_DATABASE_SPECIFIC;
@@ -77,12 +79,13 @@ public final class DatabaseSpecifics {
               return POSTGRESQL_DATABASE_SPECIFIC;
             }
           }
-        case "mysql":
-        case "mariadb":
+        }
+        case "mysql", "mariadb" -> {
           return MARIADB_DATABASE_SPECIFIC;
-        default:
-          throw new IllegalStateException(
-              "Could not select specifics to use for database product '" + productName + "'");
+        }
+        default ->
+            throw new IllegalStateException(
+                "Could not select specifics to use for database product '" + productName + "'");
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -147,13 +150,10 @@ public final class DatabaseSpecifics {
       if (e.getSQLState() == null) {
         return false;
       }
-      switch (e.getSQLState()) {
-        case DEADLOCK_SQL_STATE_POSTGRES:
-        case RETRY_SQL_STATE_COCKROACH:
-          return true;
-        default:
-          return false;
-      }
+      return switch (e.getSQLState()) {
+        case DEADLOCK_SQL_STATE_POSTGRES, RETRY_SQL_STATE_COCKROACH -> true;
+        default -> false;
+      };
     }
 
     @Override
@@ -233,12 +233,10 @@ public final class DatabaseSpecifics {
 
     @Override
     public String primaryKeyCol(String col, Jdbc2ColumnType columnType) {
-      switch (columnType) {
-        case OBJ_ID:
-          return col + "(255)";
-        default:
-          return col;
+      if (Objects.requireNonNull(columnType) == Jdbc2ColumnType.OBJ_ID) {
+        return col + "(255)";
       }
+      return col;
     }
   }
 }

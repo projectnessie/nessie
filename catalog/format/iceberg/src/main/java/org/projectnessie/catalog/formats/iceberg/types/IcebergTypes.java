@@ -50,31 +50,43 @@ final class IcebergTypes {
 
   static IcebergPrimitiveType primitiveFromString(String primitiveType) {
     switch (primitiveType) {
-      case IcebergBooleanType.TYPE_BOOLEAN:
+      case IcebergBooleanType.TYPE_BOOLEAN -> {
         return IcebergType.booleanType();
-      case IcebergUuidType.TYPE_UUID:
+      }
+      case IcebergUuidType.TYPE_UUID -> {
         return IcebergType.uuidType();
-      case IcebergIntegerType.TYPE_INT:
+      }
+      case IcebergIntegerType.TYPE_INT -> {
         return IcebergType.integerType();
-      case IcebergLongType.TYPE_LONG:
+      }
+      case IcebergLongType.TYPE_LONG -> {
         return IcebergType.longType();
-      case IcebergFloatType.TYPE_FLOAT:
+      }
+      case IcebergFloatType.TYPE_FLOAT -> {
         return IcebergType.floatType();
-      case IcebergDoubleType.TYPE_DOUBLE:
+      }
+      case IcebergDoubleType.TYPE_DOUBLE -> {
         return IcebergType.doubleType();
-      case IcebergDateType.TYPE_DATE:
+      }
+      case IcebergDateType.TYPE_DATE -> {
         return IcebergType.dateType();
-      case IcebergTimeType.TYPE_TIME:
+      }
+      case IcebergTimeType.TYPE_TIME -> {
         return IcebergType.timeType();
-      case IcebergStringType.TYPE_STRING:
+      }
+      case IcebergStringType.TYPE_STRING -> {
         return IcebergType.stringType();
-      case IcebergBinaryType.TYPE_BINARY:
+      }
+      case IcebergBinaryType.TYPE_BINARY -> {
         return IcebergType.binaryType();
-      case IcebergTimestampType.TYPE_TIMESTAMP_TZ:
+      }
+      case IcebergTimestampType.TYPE_TIMESTAMP_TZ -> {
         return IcebergType.timestamptzType();
-      case IcebergTimestampType.TYPE_TIMESTAMP:
+      }
+      case IcebergTimestampType.TYPE_TIMESTAMP -> {
         return IcebergType.timestampType();
-      default:
+      }
+      default -> {
         Matcher m = DECIMAL_PATTERN.matcher(primitiveType);
         if (m.matches()) {
           return IcebergType.decimalType(parseInt(m.group(1)), parseInt(m.group(2)));
@@ -83,7 +95,7 @@ final class IcebergTypes {
         if (m.matches()) {
           return IcebergType.fixedType(parseInt(m.group(1)));
         }
-        break;
+      }
     }
     throw new IllegalArgumentException("Unknown Iceberg primitive type '" + primitiveType + "'");
   }
@@ -108,14 +120,11 @@ final class IcebergTypes {
   static final class IcebergTypeDeserializer extends JsonDeserializer<IcebergType> {
     @Override
     public IcebergType deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      switch (p.currentToken()) {
-        case VALUE_STRING:
-          return primitiveFromString(p.getValueAsString());
-        case START_OBJECT:
-          return p.readValueAs(IcebergComplexType.class);
-        default:
-          throw new IllegalArgumentException("unexpected token " + p.currentToken());
-      }
+      return switch (p.currentToken()) {
+        case VALUE_STRING -> primitiveFromString(p.getValueAsString());
+        case START_OBJECT -> p.readValueAs(IcebergComplexType.class);
+        default -> throw new IllegalArgumentException("unexpected token " + p.currentToken());
+      };
     }
   }
 

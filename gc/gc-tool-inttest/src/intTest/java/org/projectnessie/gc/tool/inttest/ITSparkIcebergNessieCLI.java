@@ -133,24 +133,19 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
     URI nessieUriV2 = new URI(nessieApiUri()).resolve("v2");
 
     switch (command) {
-      case "identify":
-      case "mark-live":
+      case "identify", "mark-live" -> {
         args.add("--uri");
         args.add(nessieUriV2.toASCIIString());
-        break;
-      case "sweep":
-      case "expire":
-      case "deferred-deletes":
-        minio
-            .icebergProperties()
-            .forEach(
-                (k, v) -> {
-                  args.add("--iceberg");
-                  args.add(k + "=" + v);
-                });
-        break;
-      default:
-        break;
+      }
+      case "sweep", "expire", "deferred-deletes" ->
+          minio
+              .icebergProperties()
+              .forEach(
+                  (k, v) -> {
+                    args.add("--iceberg");
+                    args.add(k + "=" + v);
+                  });
+      default -> {}
     }
 
     args.add("--jdbc-url");

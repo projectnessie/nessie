@@ -49,15 +49,13 @@ public final class RefUtil {
   public static NamedRef toNamedRef(
       @Nonnull ReferenceType referenceType, @Nonnull String referenceName) {
     Objects.requireNonNull(referenceType, "referenceType must not be null");
-    switch (referenceType) {
-      case BRANCH:
-        return BranchName.of(referenceName);
-      case TAG:
-        return TagName.of(referenceName);
-      default:
-        throw new IllegalArgumentException(
-            String.format("Invalid reference type '%s'", referenceType));
-    }
+    return switch (referenceType) {
+      case BRANCH -> BranchName.of(referenceName);
+      case TAG -> TagName.of(referenceName);
+      default ->
+          throw new IllegalArgumentException(
+              String.format("Invalid reference type '%s'", referenceType));
+    };
   }
 
   public static Reference toReference(@Nonnull NamedRef namedRef, Hash hash) {

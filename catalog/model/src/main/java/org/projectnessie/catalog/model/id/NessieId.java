@@ -59,14 +59,11 @@ public interface NessieId extends Hashable {
   }
 
   static NessieId nessieIdFromByteAccessor(int size, ByteAccessor byteAt) {
-    switch (size) {
-      case 0:
-        return emptyNessieId();
-      case 32:
-        return NessieId256.nessieIdFromByteAccessor(byteAt);
-      default:
-        return NessieIdGeneric.nessieIdFromByteAccessor(size, byteAt);
-    }
+    return switch (size) {
+      case 0 -> emptyNessieId();
+      case 32 -> NessieId256.nessieIdFromByteAccessor(byteAt);
+      default -> NessieIdGeneric.nessieIdFromByteAccessor(size, byteAt);
+    };
   }
 
   static NessieId nessieIdFromLongs(long l0, long l1, long l2, long l3) {

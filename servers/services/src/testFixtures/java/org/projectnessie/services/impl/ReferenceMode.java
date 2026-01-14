@@ -29,14 +29,11 @@ public enum ReferenceMode {
   NAME_ONLY {
     @Override
     Reference transform(Reference ref) {
-      switch (ref.getType()) {
-        case TAG:
-          return Tag.of(ref.getName(), null);
-        case BRANCH:
-          return Branch.of(ref.getName(), null);
-        default:
-          throw new IllegalArgumentException(ref.toString());
-      }
+      return switch (ref.getType()) {
+        case TAG -> Tag.of(ref.getName(), null);
+        case BRANCH -> Branch.of(ref.getName(), null);
+        default -> throw new IllegalArgumentException(ref.toString());
+      };
     }
   },
   /** Keep the reference unchanged. */

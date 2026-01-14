@@ -234,13 +234,13 @@ public class GcsResource {
                 return notModified(obj.etag());
               }
 
-              switch (alt) {
-                case json:
-                  return Response.ok(
-                          storageObject(bucketName, objectName, obj),
-                          MediaType.APPLICATION_JSON_TYPE)
-                      .build();
-                case media:
+              return switch (alt) {
+                case json ->
+                    Response.ok(
+                            storageObject(bucketName, objectName, obj),
+                            MediaType.APPLICATION_JSON_TYPE)
+                        .build();
+                case media -> {
                   StreamingOutput stream = output -> obj.writer().write(range, output);
                   @SuppressWarnings("JavaUtilDate")
                   Response.ResponseBuilder responseBuilder =
@@ -251,10 +251,10 @@ public class GcsResource {
                   if (range == null) {
                     responseBuilder.header(CONTENT_LENGTH, obj.contentLength());
                   }
-                  return responseBuilder.build();
-                default:
-                  throw new IllegalArgumentException("alt = " + alt);
-              }
+                  yield responseBuilder.build();
+                }
+                default -> throw new IllegalArgumentException("alt = " + alt);
+              };
             });
     return r;
   }
@@ -291,8 +291,8 @@ public class GcsResource {
           try {
             Bucket.Updater updater = bucket.updater();
             MockObject obj;
-            switch (uploadType) {
-              case media:
+            return switch (uploadType) {
+              case media -> {
                 // Not tested
                 obj =
                     updater
@@ -300,12 +300,12 @@ public class GcsResource {
                         .append(0L, stream)
                         .setContentType(contentType)
                         .commit();
-                return Response.ok(
+                yield Response.ok(
                         storageObject(bucketName, objectName, obj), MediaType.APPLICATION_JSON_TYPE)
                     .build();
-              case multipart:
-                return notImplemented();
-              case resumable:
+              }
+              case multipart -> notImplemented();
+              case resumable -> {
                 // read metadata as JSON - see
                 // https://cloud.google.com/storage/docs/json_api/v1/objects/insert
                 ObjectNode metadata = OBJECT_MAPPER.readValue(stream, ObjectNode.class);
@@ -320,7 +320,7 @@ public class GcsResource {
                         .setContentType(ct)
                         .commit();
 
-                return Response.ok(
+                yield Response.ok(
                         storageObject(bucketName, objectName, obj), MediaType.APPLICATION_JSON_TYPE)
                     .header(
                         "Location",
@@ -335,19 +335,20 @@ public class GcsResource {
                                     + "&uploadType="
                                     + UploadType.appendStuff.name()))
                     .build();
-              case appendStuff:
+              }
+              case appendStuff -> {
                 obj =
                     updater
                         .update(objectName, Bucket.UpdaterMode.UPDATE)
                         .append(0L, stream)
                         .commit();
 
-                return Response.ok(
+                yield Response.ok(
                         storageObject(bucketName, objectName, obj), MediaType.APPLICATION_JSON_TYPE)
                     .build();
-              default:
-                throw new IllegalArgumentException("Unknown upload type: " + uploadType);
-            }
+              }
+              default -> throw new IllegalArgumentException("Unknown upload type: " + uploadType);
+            };
           } catch (IOException e) {
             throw new RuntimeException(e);
           } catch (UnsupportedOperationException e) {

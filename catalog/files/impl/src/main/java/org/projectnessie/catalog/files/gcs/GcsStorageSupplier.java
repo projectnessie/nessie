@@ -227,18 +227,10 @@ public final class GcsStorageSupplier {
     for (int i = 0; i < l; i++) {
       char c = quoted.charAt(i);
       switch (c) {
-        case '\'':
-          sb.append("\\'");
-          break;
-        case '\"':
-          sb.append("\\\"");
-          break;
-        case '\\':
-          sb.append("\\\\");
-          break;
-        default:
-          sb.append(c);
-          break;
+        case '\'' -> sb.append("\\'");
+        case '\"' -> sb.append("\\\"");
+        case '\\' -> sb.append("\\\\");
+        default -> sb.append(c);
       }
     }
 

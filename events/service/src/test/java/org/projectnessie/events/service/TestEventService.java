@@ -85,39 +85,39 @@ public class TestEventService {
       verify(subscriber1).onSubscribe(any());
       verify(subscriber2).onSubscribe(any());
       switch (result.getResultType()) {
-        case COMMIT:
+        case COMMIT -> {
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        case MERGE:
+        }
+        case MERGE -> {
           verify(subscriber1, timeout(5000)).onMerge(any());
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        case TRANSPLANT:
+        }
+        case TRANSPLANT -> {
           verify(subscriber1, timeout(5000)).onTransplant(any());
           verify(subscriber1, timeout(5000)).onCommit(any());
           verify(subscriber1, timeout(5000)).onContentStored(any());
           verify(subscriber1, timeout(5000)).onContentRemoved(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        case REFERENCE_CREATED:
+        }
+        case REFERENCE_CREATED -> {
           verify(subscriber1, timeout(5000)).onReferenceCreated(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        case REFERENCE_ASSIGNED:
+        }
+        case REFERENCE_ASSIGNED -> {
           verify(subscriber1, timeout(5000)).onReferenceUpdated(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        case REFERENCE_DELETED:
+        }
+        case REFERENCE_DELETED -> {
           verify(subscriber1, timeout(5000)).onReferenceDeleted(any());
           verify(subscriber2, never()).onEvent(any());
-          break;
-        default:
+        }
+        default -> {}
       }
     }
     verify(subscriber1).close();

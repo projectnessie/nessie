@@ -141,57 +141,55 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     Reference created;
     //noinspection SwitchStatementWithTooFewBranches
     switch (createFailure) {
-      case AFTER_COMMIT_CREATED:
+      case AFTER_COMMIT_CREATED -> {
         CommitReferenceResult commitCreate =
             refLogic.commitCreateReference(
                 refName, initialPointer, extendedInfoObj, persist.config().currentTimeMicros());
         soft.assertThat(commitCreate.kind).isSameAs(ADDED_TO_INDEX);
         created = commitCreate.created;
         soft.assertThat(persist.fetchReference(refName)).isNull();
-        break;
-      default:
-        throw new IllegalArgumentException();
+      }
+      default -> throw new IllegalArgumentException();
     }
 
     switch (postCreateAction) {
-      case GET_REFERENCE:
+      case GET_REFERENCE -> {
         soft.assertThat(refLogic.getReferences(singletonList(refName))).containsExactly(created);
         soft.assertThat(persist.fetchReference(refName)).isEqualTo(created);
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-        break;
-      case QUERY_REFERENCES:
+      }
+      case QUERY_REFERENCES -> {
         soft.assertThat(newArrayList(refLogic.queryReferences(referencesQuery(refName))))
             .containsExactly(created);
         soft.assertThat(persist.fetchReference(refName)).isEqualTo(created);
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-        break;
-      case CREATE_REFERENCE_SAME_POINTER:
+      }
+      case CREATE_REFERENCE_SAME_POINTER -> {
         soft.assertThatThrownBy(() -> refLogic.createReference(refName, initialPointer, null))
             .isInstanceOf(RefAlreadyExistsException.class);
         soft.assertThat(persist.fetchReference(refName)).isEqualTo(created);
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-        break;
-      case CREATE_REFERENCE_OTHER_POINTER:
+      }
+      case CREATE_REFERENCE_OTHER_POINTER -> {
         soft.assertThatThrownBy(
                 () -> refLogic.createReference(refName, objIdFromString("0001"), null))
             .isInstanceOf(RefAlreadyExistsException.class);
         soft.assertThat(persist.fetchReference(refName)).isEqualTo(created);
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-        break;
-      case REMOVE_REFERENCE_SAME_POINTER:
+      }
+      case REMOVE_REFERENCE_SAME_POINTER -> {
         soft.assertThatCode(() -> refLogic.deleteReference(refName, initialPointer))
             .doesNotThrowAnyException();
         soft.assertThat(persist.fetchReference(refName)).isNull();
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
-        break;
-      case REMOVE_REFERENCE_OTHER_POINTER:
+      }
+      case REMOVE_REFERENCE_OTHER_POINTER -> {
         soft.assertThatThrownBy(() -> refLogic.deleteReference(refName, objIdFromString("0001")))
             .isInstanceOf(RefConditionFailedException.class);
         soft.assertThat(persist.fetchReference(refName)).isEqualTo(created);
         soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-        break;
-      default:
-        throw new IllegalArgumentException();
+      }
+      default -> throw new IllegalArgumentException();
     }
 
     soft.assertThat(
@@ -231,34 +229,32 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
     soft.assertThat(deleted.deleted()).isTrue();
 
     switch (deleteFailure) {
-      case AFTER_MARK_DELETE:
-        break;
-      case AFTER_COMMIT_DELETED:
+      case AFTER_MARK_DELETE -> {}
+      case AFTER_COMMIT_DELETED -> {
         refLogic.commitDeleteReference(deleted, null);
         reference = reference.withDeleted(true);
-        break;
-      default:
-        throw new IllegalArgumentException();
+      }
+      default -> throw new IllegalArgumentException();
     }
 
     ObjId otherPointer = randomObjId();
     ObjId otherExtendedInfoObj = randomObjId();
     switch (postAction) {
-      case GET_REFERENCE:
+      case GET_REFERENCE -> {
         soft.assertThat(refLogic.getReferences(singletonList(refName)))
             .hasSize(1)
             .containsOnlyNulls();
         soft.assertThat(persist.fetchReference(refName)).isNull();
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
-        break;
-      case QUERY_REFERENCES:
+      }
+      case QUERY_REFERENCES -> {
         soft.assertThat(newArrayList(refLogic.queryReferences(referencesQuery(refName)))).isEmpty();
         soft.assertThat(persist.fetchReference(refName)).isNull();
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
-        break;
-      case CREATE_REFERENCE_SAME_POINTER:
+      }
+      case CREATE_REFERENCE_SAME_POINTER -> {
         switch (deleteFailure) {
-          case AFTER_MARK_DELETE:
+          case AFTER_MARK_DELETE -> {
             soft.assertThatCode(
                     () -> refLogic.createReference(refName, initialPointer, extendedInfoObj))
                 .doesNotThrowAnyException();
@@ -266,8 +262,8 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
                 .extracting(Reference::pointer, Reference::deleted)
                 .containsExactly(initialPointer, false);
             soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-            break;
-          case AFTER_COMMIT_DELETED:
+          }
+          case AFTER_COMMIT_DELETED -> {
             soft.assertThatThrownBy(
                     () -> refLogic.createReference(refName, initialPointer, extendedInfoObj))
                 .isInstanceOf(RefAlreadyExistsException.class)
@@ -276,14 +272,13 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
                 .isEqualTo(reference);
             soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
             soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-            break;
-          default:
-            throw new IllegalArgumentException();
+          }
+          default -> throw new IllegalArgumentException();
         }
-        break;
-      case CREATE_REFERENCE_OTHER_POINTER:
+      }
+      case CREATE_REFERENCE_OTHER_POINTER -> {
         switch (deleteFailure) {
-          case AFTER_MARK_DELETE:
+          case AFTER_MARK_DELETE -> {
             soft.assertThatCode(
                     () -> refLogic.createReference(refName, otherPointer, otherExtendedInfoObj))
                 .doesNotThrowAnyException();
@@ -291,8 +286,8 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
                 .extracting(Reference::pointer, Reference::deleted)
                 .containsExactly(otherPointer, false);
             soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-            break;
-          case AFTER_COMMIT_DELETED:
+          }
+          case AFTER_COMMIT_DELETED -> {
             soft.assertThatThrownBy(
                     () -> refLogic.createReference(refName, otherPointer, otherExtendedInfoObj))
                 .isInstanceOf(RefAlreadyExistsException.class)
@@ -301,25 +296,23 @@ public class TestReferenceLogicImpl extends AbstractReferenceLogicTests {
                 .isEqualTo(reference);
             soft.assertThat(persist.fetchReference(refName)).isEqualTo(reference);
             soft.assertThat(indexActionExists(refLogic, refName)).isTrue();
-            break;
-          default:
-            throw new IllegalArgumentException();
+          }
+          default -> throw new IllegalArgumentException();
         }
-        break;
-      case REMOVE_REFERENCE_SAME_POINTER:
+      }
+      case REMOVE_REFERENCE_SAME_POINTER -> {
         soft.assertThatThrownBy(() -> refLogic.deleteReference(refName, initialPointer))
             .isInstanceOf(RefNotFoundException.class);
         soft.assertThat(persist.fetchReference(refName)).isNull();
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
-        break;
-      case REMOVE_REFERENCE_OTHER_POINTER:
+      }
+      case REMOVE_REFERENCE_OTHER_POINTER -> {
         soft.assertThatThrownBy(() -> refLogic.deleteReference(refName, objIdFromString("0001")))
             .isInstanceOf(RefNotFoundException.class);
         soft.assertThat(persist.fetchReference(refName)).isNull();
         soft.assertThat(indexActionExists(refLogic, refName)).isFalse();
-        break;
-      default:
-        throw new IllegalArgumentException();
+      }
+      default -> throw new IllegalArgumentException();
     }
 
     soft.assertThat(

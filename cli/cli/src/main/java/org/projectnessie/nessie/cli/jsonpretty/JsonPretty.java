@@ -66,58 +66,40 @@ public class JsonPretty {
     for (Token t = null; ; ) {
       t = lexer.getNextToken(t);
       switch (t.getType()) {
-        case EOF:
-          {
-            newLine(indent);
-            return;
-          }
-        case DUMMY:
-        case INVALID:
-          break;
+        case EOF -> {
+          newLine(indent);
+          return;
+        }
+        case DUMMY, INVALID -> {}
         //
-        case OPEN_BRACKET:
-        case OPEN_BRACE:
+        case OPEN_BRACKET, OPEN_BRACE -> {
           print(t, STYLE_BRACKET_BRACE);
           indent++;
           newLine(indent);
-          break;
-        case CLOSE_BRACKET:
-        case CLOSE_BRACE:
+        }
+        case CLOSE_BRACKET, CLOSE_BRACE -> {
           indent--;
           newLine(indent);
           print(t, STYLE_BRACKET_BRACE);
-          break;
-        case COMMA:
+        }
+        case COMMA -> {
           print(t, STYLE_SEPARATOR);
           newLine(indent);
-          break;
-        case COLON:
+        }
+        case COLON -> {
           print(t, STYLE_SEPARATOR);
           printSpace();
-          break;
-        case NULL:
-          print(t, STYLE_NULL);
-          break;
-        case TRUE:
-        case FALSE:
-          print(t, STYLE_BOOL);
-          break;
-        case NUMBER:
-          print(t, STYLE_NUMBER);
-          break;
-        case STRING_LITERAL:
-          print(t, STYLE_STRING);
-          break;
-        //
-        case SINGLE_LINE_COMMENT:
-        case MULTI_LINE_COMMENT:
-        case WHITESPACE:
-          /* ignore */
-          break;
+        }
+        case NULL -> print(t, STYLE_NULL);
+        case TRUE, FALSE -> print(t, STYLE_BOOL);
+        case NUMBER -> print(t, STYLE_NUMBER);
+        case STRING_LITERAL -> print(t, STYLE_STRING);
 
-        default:
-          print(t, AttributedStyle.DEFAULT);
-          break;
+        //
+        case SINGLE_LINE_COMMENT, MULTI_LINE_COMMENT, WHITESPACE -> {
+          /* ignore */
+        }
+        default -> print(t, AttributedStyle.DEFAULT);
       }
     }
   }

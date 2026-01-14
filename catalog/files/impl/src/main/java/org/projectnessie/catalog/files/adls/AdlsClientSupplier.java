@@ -225,10 +225,9 @@ public final class AdlsClientSupplier {
       Consumer<String> sasTokenConsumer,
       Consumer<TokenCredential> tokenCredentialConsumer) {
     AzureAuthType authType = fileSystemOptions.authType().orElse(AzureAuthType.NONE);
-    switch (authType) {
-      case NONE:
-        return false;
-      case STORAGE_SHARED_KEY:
+    return switch (authType) {
+      case NONE -> false;
+      case STORAGE_SHARED_KEY -> {
         BasicCredentials account =
             fileSystemOptions
                 .account()
@@ -242,8 +241,9 @@ public final class AdlsClientSupplier {
 
         sharedKeyCredentialConsumer.accept(
             new StorageSharedKeyCredential(account.name(), account.secret()));
-        return true;
-      case SAS_TOKEN:
+        yield true;
+      }
+      case SAS_TOKEN -> {
         sasTokenConsumer.accept(
             fileSystemOptions
                 .sasToken()
@@ -254,13 +254,14 @@ public final class AdlsClientSupplier {
                 .map(Optional::get)
                 .orElseThrow(() -> new IllegalStateException("SAS token missing"))
                 .key());
-        return true;
-      case APPLICATION_DEFAULT:
+        yield true;
+      }
+      case APPLICATION_DEFAULT -> {
         tokenCredentialConsumer.accept(DefaultAzureCredentialsLazy.DEFAULT_AZURE_CREDENTIAL);
-        return true;
-      default:
-        throw new IllegalArgumentException("Unsupported auth type " + authType);
-    }
+        yield true;
+      }
+      default -> throw new IllegalArgumentException("Unsupported auth type " + authType);
+    };
   }
 
   private static final class DefaultAzureCredentialsLazy {
@@ -273,31 +274,29 @@ public final class AdlsClientSupplier {
     return fileSystemOptions
         .retryPolicy()
         .flatMap(
-            strategy -> {
-              switch (strategy) {
-                case NONE:
-                  return Optional.empty();
-                case EXPONENTIAL_BACKOFF:
-                  return Optional.of(
-                      new RequestRetryOptions(
-                          RetryPolicyType.EXPONENTIAL,
-                          fileSystemOptions.maxRetries().orElse(null),
-                          fileSystemOptions.tryTimeout().orElse(null),
-                          fileSystemOptions.retryDelay().orElse(null),
-                          fileSystemOptions.maxRetryDelay().orElse(null),
-                          null));
-                case FIXED_DELAY:
-                  return Optional.of(
-                      new RequestRetryOptions(
-                          RetryPolicyType.FIXED,
-                          fileSystemOptions.maxRetries().orElse(null),
-                          fileSystemOptions.tryTimeout().orElse(null),
-                          fileSystemOptions.retryDelay().orElse(null),
-                          fileSystemOptions.maxRetryDelay().orElse(null),
-                          null));
-                default:
-                  throw new IllegalArgumentException("Invalid retry strategy: " + strategy);
-              }
-            });
+            strategy ->
+                switch (strategy) {
+                  case NONE -> Optional.empty();
+                  case EXPONENTIAL_BACKOFF ->
+                      Optional.of(
+                          new RequestRetryOptions(
+                              RetryPolicyType.EXPONENTIAL,
+                              fileSystemOptions.maxRetries().orElse(null),
+                              fileSystemOptions.tryTimeout().orElse(null),
+                              fileSystemOptions.retryDelay().orElse(null),
+                              fileSystemOptions.maxRetryDelay().orElse(null),
+                              null));
+                  case FIXED_DELAY ->
+                      Optional.of(
+                          new RequestRetryOptions(
+                              RetryPolicyType.FIXED,
+                              fileSystemOptions.maxRetries().orElse(null),
+                              fileSystemOptions.tryTimeout().orElse(null),
+                              fileSystemOptions.retryDelay().orElse(null),
+                              fileSystemOptions.maxRetryDelay().orElse(null),
+                              null));
+                  default ->
+                      throw new IllegalArgumentException("Invalid retry strategy: " + strategy);
+                });
   }
 }

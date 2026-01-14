@@ -131,24 +131,15 @@ public class SyntaxTool {
             String pre = "";
             String post = "";
             switch (type) {
-              case PRE:
-              case POST:
-              case SEP:
-                break;
-              case IDENTIFIER:
+              case PRE, POST, SEP -> {}
+              case IDENTIFIER -> {
                 pre = "**`";
                 post = "`**";
-                break;
-              case TERMINAL:
-                pre = post = "`";
-                break;
-              case NON_TERMINAL:
-                pre = post = "**";
-                break;
-              case UNKNOWN:
-                break;
-              default:
-                break;
+              }
+              case TERMINAL -> pre = post = "`";
+              case NON_TERMINAL -> pre = post = "**";
+              case UNKNOWN -> {}
+              default -> {}
             }
             sb.append(pre);
             for (int i = 0; i < str.length(); i++) {

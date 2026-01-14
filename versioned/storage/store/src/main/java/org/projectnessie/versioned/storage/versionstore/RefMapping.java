@@ -144,31 +144,33 @@ public class RefMapping {
     String k = key != null ? "key '" + key + "'" : "store-key '" + conflict.key() + "'";
     String msg;
     ConflictType conflictType;
-    switch (conflict.conflictType()) {
-      case KEY_DOES_NOT_EXIST:
-        conflictType = ConflictType.KEY_DOES_NOT_EXIST;
-        msg = k + " does not exist";
-        break;
-      case KEY_EXISTS:
-        conflictType = ConflictType.KEY_EXISTS;
-        msg = k + " already exists";
-        break;
-      case PAYLOAD_DIFFERS:
-        conflictType = ConflictType.PAYLOAD_DIFFERS;
-        msg = "payload of existing and expected content for " + k + " are different";
-        break;
-      case CONTENT_ID_DIFFERS:
-        conflictType = ConflictType.CONTENT_ID_DIFFERS;
-        msg = "content IDs of existing and expected content for " + k + " are different";
-        break;
-      case VALUE_DIFFERS:
-        conflictType = ConflictType.VALUE_DIFFERS;
-        msg = "values of existing and expected content for " + k + " are different";
-        break;
-      default:
-        conflictType = ConflictType.UNKNOWN;
-        msg = conflict.toString();
-    }
+    msg =
+        switch (conflict.conflictType()) {
+          case KEY_DOES_NOT_EXIST -> {
+            conflictType = ConflictType.KEY_DOES_NOT_EXIST;
+            yield k + " does not exist";
+          }
+          case KEY_EXISTS -> {
+            conflictType = ConflictType.KEY_EXISTS;
+            yield k + " already exists";
+          }
+          case PAYLOAD_DIFFERS -> {
+            conflictType = ConflictType.PAYLOAD_DIFFERS;
+            yield "payload of existing and expected content for " + k + " are different";
+          }
+          case CONTENT_ID_DIFFERS -> {
+            conflictType = ConflictType.CONTENT_ID_DIFFERS;
+            yield "content IDs of existing and expected content for " + k + " are different";
+          }
+          case VALUE_DIFFERS -> {
+            conflictType = ConflictType.VALUE_DIFFERS;
+            yield "values of existing and expected content for " + k + " are different";
+          }
+          default -> {
+            conflictType = ConflictType.UNKNOWN;
+            yield conflict.toString();
+          }
+        };
     return conflict(conflictType, key, msg);
   }
 
@@ -337,17 +339,13 @@ public class RefMapping {
       }
 
       switch (spec.type()) {
-        case TIMESTAMP_MILLIS_EPOCH:
-          startCommit = findWithSmallerTimestamp(startCommit, commitLogic, spec.instantValue());
-          break;
-        case N_TH_PREDECESSOR:
-          startCommit = findNthPredecessor(startCommit, commitLogic, (int) spec.longValue());
-          break;
-        case N_TH_PARENT:
-          startCommit = findNthParent(startCommit, commitLogic, (int) spec.longValue());
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown lookup type " + spec.type());
+        case TIMESTAMP_MILLIS_EPOCH ->
+            startCommit = findWithSmallerTimestamp(startCommit, commitLogic, spec.instantValue());
+        case N_TH_PREDECESSOR ->
+            startCommit = findNthPredecessor(startCommit, commitLogic, (int) spec.longValue());
+        case N_TH_PARENT ->
+            startCommit = findNthParent(startCommit, commitLogic, (int) spec.longValue());
+        default -> throw new IllegalArgumentException("Unknown lookup type " + spec.type());
       }
     }
     return startCommit;

@@ -269,39 +269,36 @@ public final class NessieClientConfigSources {
     // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
     Credential credential = resolveCredential(catalogProperties);
 
-    return x -> {
-      switch (x) {
-        case CONF_NESSIE_URI:
-          // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie
-          // Catalog
-          // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely
-          // assume
-          // that `nessie.core-base-uri` contains a `/` terminated URI.
-          return catalogProperties.get("nessie.core-base-uri") + "v2";
-        case CONF_NESSIE_CLIENT_API_VERSION:
-          return "2";
-        case CONF_NESSIE_OAUTH2_AUTH_ENDPOINT:
-          return catalogProperties.get("oauth2-server-uri");
-        case CONF_NESSIE_OAUTH2_CLIENT_ID:
-          return credential.clientId;
-        case CONF_NESSIE_OAUTH2_CLIENT_SECRET:
-          // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
-          return credential.secret;
-        case CONF_NESSIE_OAUTH2_CLIENT_SCOPES:
-          // Same default scope as the Iceberg REST Client uses in
-          // o.a.i.rest.RESTSessionCatalog.initialize
-          // See o.a.i.rest.auth.OAuth2Util.SCOPE
-          return resolveOAuthScope(catalogProperties);
-        case CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN:
-          return resolveTokenLifespan(catalogProperties);
-        default:
-          // TODO need the "token" (initial bearer token for OAuth2 as in
-          //  o.a.i.rest.RESTSessionCatalog.initialize?
-          // TODO Nessie has way more OAuth configurations than Iceberg. What shall we do there?
-          String v = catalogProperties.get(x);
-          return v != null ? v : catalogProperties.get(x.replace("nessie.", ""));
-      }
-    };
+    return x ->
+        switch (x) {
+          case CONF_NESSIE_URI ->
+              // Use the Nessie Core REST API URL provided by Nessie Catalog Server. The Nessie
+              // Catalog
+              // Server provides a _base_ URI without the `v1` or `v2` suffixes. We can safely
+              // assume
+              // that `nessie.core-base-uri` contains a `/` terminated URI.
+              catalogProperties.get("nessie.core-base-uri") + "v2";
+          case CONF_NESSIE_CLIENT_API_VERSION -> "2";
+          case CONF_NESSIE_OAUTH2_AUTH_ENDPOINT -> catalogProperties.get("oauth2-server-uri");
+          case CONF_NESSIE_OAUTH2_CLIENT_ID -> credential.clientId;
+          case CONF_NESSIE_OAUTH2_CLIENT_SECRET ->
+              // See o.a.i.rest.auth.OAuth2Properties.CREDENTIAL
+              credential.secret;
+          case CONF_NESSIE_OAUTH2_CLIENT_SCOPES ->
+              // Same default scope as the Iceberg REST Client uses in
+              // o.a.i.rest.RESTSessionCatalog.initialize
+              // See o.a.i.rest.auth.OAuth2Util.SCOPE
+              resolveOAuthScope(catalogProperties);
+          case CONF_NESSIE_OAUTH2_DEFAULT_ACCESS_TOKEN_LIFESPAN ->
+              resolveTokenLifespan(catalogProperties);
+          default -> {
+            // TODO need the "token" (initial bearer token for OAuth2 as in
+            //  o.a.i.rest.RESTSessionCatalog.initialize?
+            // TODO Nessie has way more OAuth configurations than Iceberg. What shall we do there?
+            String v = catalogProperties.get(x);
+            yield v != null ? v : catalogProperties.get(x.replace("nessie.", ""));
+          }
+        };
   }
 
   static String resolveTokenLifespan(Map<String, String> catalogProperties) {

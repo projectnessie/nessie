@@ -647,26 +647,22 @@ public class ITOAuth2ClientKeycloak {
   }
 
   private ResourceOwnerEmulator newResourceOwner(GrantType initialGrantType) throws IOException {
-    switch (initialGrantType) {
-      case CLIENT_CREDENTIALS:
-      case PASSWORD:
-        return ResourceOwnerEmulator.INACTIVE;
-      case AUTHORIZATION_CODE:
-        {
-          KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
-              new KeycloakAuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
-          resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
-          return resourceOwner;
-        }
-      case DEVICE_CODE:
-        {
-          KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
-              new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t");
-          resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
-          return resourceOwner;
-        }
-      default:
-        throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
-    }
+    return switch (initialGrantType) {
+      case CLIENT_CREDENTIALS, PASSWORD -> ResourceOwnerEmulator.INACTIVE;
+      case AUTHORIZATION_CODE -> {
+        KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
+            new KeycloakAuthorizationCodeResourceOwnerEmulator("Alice", "s3cr3t");
+        resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
+        yield resourceOwner;
+      }
+      case DEVICE_CODE -> {
+        KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
+            new KeycloakDeviceCodeResourceOwnerEmulator("Alice", "s3cr3t");
+        resourceOwner.setAuthServerBaseUri(URI.create(KEYCLOAK.getAuthServerUrl()));
+        yield resourceOwner;
+      }
+      default ->
+          throw new IllegalArgumentException("Unexpected initial grant type: " + initialGrantType);
+    };
   }
 }

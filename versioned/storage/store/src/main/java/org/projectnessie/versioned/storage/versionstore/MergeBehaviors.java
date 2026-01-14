@@ -81,25 +81,23 @@ final class MergeBehaviors {
         .forEach(
             (key, mergeKeyBehavior) -> {
               switch (mergeKeyBehavior.getMergeBehavior()) {
-                case NORMAL:
+                case NORMAL -> {
                   if (mergeKeyBehavior.getResolvedContent() != null) {
                     checkArgument(
                         mergeKeyBehavior.getExpectedTargetContent() != null,
                         "MergeKeyBehavior.resolvedContent requires setting MergeKeyBehavior.expectedTarget as well for key %s",
                         key);
                   }
-                  break;
-                case DROP:
-                case FORCE:
-                  checkArgument(
-                      mergeKeyBehavior.getResolvedContent() == null,
-                      "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
-                      mergeKeyBehavior.getMergeBehavior(),
-                      key);
-                  break;
-                default:
-                  throw new IllegalArgumentException(
-                      "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
+                }
+                case DROP, FORCE ->
+                    checkArgument(
+                        mergeKeyBehavior.getResolvedContent() == null,
+                        "MergeKeyBehavior.resolvedContent must be null for MergeBehavior.%s for %s",
+                        mergeKeyBehavior.getMergeBehavior(),
+                        key);
+                default ->
+                    throw new IllegalArgumentException(
+                        "Unknown MergeBehavior " + mergeKeyBehavior.getMergeBehavior());
               }
             });
   }

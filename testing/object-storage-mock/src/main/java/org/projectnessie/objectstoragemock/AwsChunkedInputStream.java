@@ -46,9 +46,10 @@ final class AwsChunkedInputStream extends InputStream {
   public int read(byte[] b, int off, int len) throws IOException {
     while (true) {
       switch (state) {
-        case EOF:
+        case EOF -> {
           return -1;
-        case EXPECT_METADATA:
+        }
+        case EXPECT_METADATA -> {
           String header = readLine();
           if (header == null) {
             state = AwsChunkedState.EOF;
@@ -63,8 +64,8 @@ final class AwsChunkedInputStream extends InputStream {
           }
           // TODO verify 'chunk-signature'
           state = AwsChunkedState.DATA;
-          break;
-        case DATA:
+        }
+        case DATA -> {
           if (chunkLen == 0) {
             state = AwsChunkedState.EXPECT_SEPARATOR;
             break;
@@ -80,7 +81,8 @@ final class AwsChunkedInputStream extends InputStream {
           }
           chunkLen -= rd;
           return rd;
-        case EXPECT_SEPARATOR:
+        }
+        case EXPECT_SEPARATOR -> {
           String line = readLine();
           if (line == null) {
             state = AwsChunkedState.EOF;
@@ -92,9 +94,8 @@ final class AwsChunkedInputStream extends InputStream {
             // x-amz-trailer-signature
             state = AwsChunkedState.EXPECT_METADATA;
           }
-          break;
-        default:
-          throw new IllegalStateException();
+        }
+        default -> throw new IllegalStateException();
       }
     }
   }

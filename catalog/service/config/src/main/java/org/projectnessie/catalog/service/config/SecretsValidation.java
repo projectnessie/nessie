@@ -139,20 +139,13 @@ public abstract class SecretsValidation {
       return Optional.empty();
     }
 
-    Class<? extends Secret> javaType;
-    switch (secretType) {
-      case BASIC:
-        javaType = BasicCredentials.class;
-        break;
-      case KEY:
-        javaType = KeySecret.class;
-        break;
-      case EXPIRING_TOKEN:
-        javaType = TokenSecret.class;
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid secret type: " + secretType);
-    }
+    Class<? extends Secret> javaType =
+        switch (secretType) {
+          case BASIC -> BasicCredentials.class;
+          case KEY -> KeySecret.class;
+          case EXPIRING_TOKEN -> TokenSecret.class;
+          default -> throw new IllegalArgumentException("Invalid secret type: " + secretType);
+        };
 
     try {
       if (secretsProvider().getSecret(uri.get(), secretType, javaType).isPresent()) {

@@ -127,50 +127,21 @@ public class TestBatchAccessChecker {
 
   private static void performCheck(BatchAccessChecker checker, Check c) {
     switch (c.type()) {
-      case VIEW_REFERENCE:
-        checker.canViewReference(c.ref());
-        break;
-      case CREATE_REFERENCE:
-        checker.canCreateReference(c.ref());
-        break;
-      case DELETE_REFERENCE:
-        checker.canDeleteReference(c.ref());
-        break;
-      case READ_ENTRIES:
-        checker.canReadEntries(c.ref());
-        break;
-      case READ_CONTENT_KEY:
-        checker.canReadContentKey(c.ref(), c.identifiedKey(), c.actions());
-        break;
-      case ASSIGN_REFERENCE_TO_HASH:
-        checker.canAssignRefToHash(c.ref());
-        break;
-      case LIST_COMMIT_LOG:
-        checker.canListCommitLog(c.ref());
-        break;
-      case COMMIT_CHANGE_AGAINST_REFERENCE:
-        checker.canCommitChangeAgainstReference(c.ref());
-        break;
-      case READ_ENTITY_VALUE:
-        checker.canReadEntityValue(c.ref(), c.identifiedKey(), c.actions());
-        break;
-      case CREATE_ENTITY:
-        checker.canCreateEntity(c.ref(), c.identifiedKey(), c.actions());
-        break;
-      case UPDATE_ENTITY:
-        checker.canUpdateEntity(c.ref(), c.identifiedKey(), c.actions());
-        break;
-      case DELETE_ENTITY:
-        checker.canDeleteEntity(c.ref(), c.identifiedKey(), c.actions());
-        break;
-      case READ_REPOSITORY_CONFIG:
-        checker.canReadRepositoryConfig(c.repositoryConfigType());
-        break;
-      case UPDATE_REPOSITORY_CONFIG:
-        checker.canUpdateRepositoryConfig(c.repositoryConfigType());
-        break;
-      default:
-        throw new IllegalArgumentException("Unsupported: " + c);
+      case VIEW_REFERENCE -> checker.canViewReference(c.ref());
+      case CREATE_REFERENCE -> checker.canCreateReference(c.ref());
+      case DELETE_REFERENCE -> checker.canDeleteReference(c.ref());
+      case READ_ENTRIES -> checker.canReadEntries(c.ref());
+      case READ_CONTENT_KEY -> checker.canReadContentKey(c.ref(), c.identifiedKey(), c.actions());
+      case ASSIGN_REFERENCE_TO_HASH -> checker.canAssignRefToHash(c.ref());
+      case LIST_COMMIT_LOG -> checker.canListCommitLog(c.ref());
+      case COMMIT_CHANGE_AGAINST_REFERENCE -> checker.canCommitChangeAgainstReference(c.ref());
+      case READ_ENTITY_VALUE -> checker.canReadEntityValue(c.ref(), c.identifiedKey(), c.actions());
+      case CREATE_ENTITY -> checker.canCreateEntity(c.ref(), c.identifiedKey(), c.actions());
+      case UPDATE_ENTITY -> checker.canUpdateEntity(c.ref(), c.identifiedKey(), c.actions());
+      case DELETE_ENTITY -> checker.canDeleteEntity(c.ref(), c.identifiedKey(), c.actions());
+      case READ_REPOSITORY_CONFIG -> checker.canReadRepositoryConfig(c.repositoryConfigType());
+      case UPDATE_REPOSITORY_CONFIG -> checker.canUpdateRepositoryConfig(c.repositoryConfigType());
+      default -> throw new IllegalArgumentException("Unsupported: " + c);
     }
   }
 

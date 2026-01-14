@@ -90,20 +90,20 @@ public class IcebergColumnStatsCollector {
 
     long recordCount = requireNonNull(entry.dataFile()).recordCount();
     switch (entry.status()) {
-      case ADDED:
+      case ADDED -> {
         addedDataFilesCount++;
         addedRowsCount += recordCount;
-        break;
-      case DELETED:
+      }
+      case DELETED -> {
         deletedDataFilesCount++;
         deletedRowsCount += recordCount;
-        break;
-      case EXISTING:
+      }
+      case EXISTING -> {
         existingDataFilesCount++;
         existingRowsCount += recordCount;
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown manifest-entry status " + entry.status());
+      }
+      default ->
+          throw new IllegalArgumentException("Unknown manifest-entry status " + entry.status());
     }
   }
 

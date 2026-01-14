@@ -123,26 +123,17 @@ public class EventService implements AutoCloseable {
     Principal user = event.getUser().orElse(null);
     String repositoryId = event.getRepositoryId();
     switch (result.getResultType()) {
-      case COMMIT:
-        onCommitResult((CommitResult) result, repositoryId, user);
-        break;
-      case MERGE:
-        onMergeResult((MergeResult) result, repositoryId, user);
-        break;
-      case TRANSPLANT:
-        onTransplantResult((TransplantResult) result, repositoryId, user);
-        break;
-      case REFERENCE_CREATED:
-        onReferenceCreatedResult((ReferenceCreatedResult) result, repositoryId, user);
-        break;
-      case REFERENCE_ASSIGNED:
-        onReferenceAssignedResult((ReferenceAssignedResult) result, repositoryId, user);
-        break;
-      case REFERENCE_DELETED:
-        onReferenceDeletedResult((ReferenceDeletedResult) result, repositoryId, user);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown result type: " + result.getResultType());
+      case COMMIT -> onCommitResult((CommitResult) result, repositoryId, user);
+      case MERGE -> onMergeResult((MergeResult) result, repositoryId, user);
+      case TRANSPLANT -> onTransplantResult((TransplantResult) result, repositoryId, user);
+      case REFERENCE_CREATED ->
+          onReferenceCreatedResult((ReferenceCreatedResult) result, repositoryId, user);
+      case REFERENCE_ASSIGNED ->
+          onReferenceAssignedResult((ReferenceAssignedResult) result, repositoryId, user);
+      case REFERENCE_DELETED ->
+          onReferenceDeletedResult((ReferenceDeletedResult) result, repositoryId, user);
+      default ->
+          throw new IllegalArgumentException("Unknown result type: " + result.getResultType());
     }
   }
 

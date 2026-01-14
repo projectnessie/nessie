@@ -105,25 +105,23 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
     String exceptionClassName = e.getClass().getName();
     if (!exceptionClassName.startsWith("org.projectnessie.error.")) {
       switch (exceptionClassName) {
-        case "org.projectnessie.client.rest.NessieBadRequestException":
+        case "org.projectnessie.client.rest.NessieBadRequestException" -> {
           status = 400;
           exceptionClassName = "org.projectnessie.error.NessieBadRequestException";
-          break;
-        case "org.projectnessie.client.rest.NessieBackendThrottledException":
+        }
+        case "org.projectnessie.client.rest.NessieBackendThrottledException" -> {
           status = 400;
           exceptionClassName = "org.projectnessie.error.NessieBackendThrottledException";
-          break;
-        case "org.projectnessie.client.rest.NessieForbiddenException":
+        }
+        case "org.projectnessie.client.rest.NessieForbiddenException" -> {
           status = 401;
           exceptionClassName = "org.projectnessie.error.NessieForbiddenException";
-          break;
-        case "org.projectnessie.client.rest.NessieInternalServerException":
-          status = 500;
-          break;
-        case "org.projectnessie.client.rest.NessieNotAuthorizedException":
-          break;
-        default:
+        }
+        case "org.projectnessie.client.rest.NessieInternalServerException" -> status = 500;
+        case "org.projectnessie.client.rest.NessieNotAuthorizedException" -> {}
+        default -> {
           return e;
+        }
       }
     }
 

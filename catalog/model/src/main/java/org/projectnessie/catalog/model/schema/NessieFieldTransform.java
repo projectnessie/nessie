@@ -43,30 +43,35 @@ public interface NessieFieldTransform extends Hashable {
     }
 
     switch (name.toLowerCase(Locale.ROOT)) {
-      case "truncate":
+      case "truncate" -> {
         if (hasWidth) {
           return truncate(parsedWidth);
         }
-        break;
-      case "bucket":
+      }
+      case "bucket" -> {
         if (hasWidth) {
           return bucket(parsedWidth);
         }
-        break;
-      case "identity":
+      }
+      case "identity" -> {
         return identity();
-      case "year":
+      }
+      case "year" -> {
         return year();
-      case "month":
+      }
+      case "month" -> {
         return month();
-      case "day":
+      }
+      case "day" -> {
         return day();
-      case "hour":
+      }
+      case "hour" -> {
         return hour();
-      case "void":
+      }
+      case "void" -> {
         return voidTransform();
-      default:
-        break;
+      }
+      default -> {}
     }
 
     return unknownTransform(transform);

@@ -66,40 +66,31 @@ public abstract class MarkdownFormatter {
       // @see, @deprecated, etc
       for (DocTree doc : commentTree.getBlockTags()) {
         switch (doc.getKind()) {
-          case SEE:
-            {
-              // @see
-              SeeTree seeTree = (SeeTree) doc;
-              List<? extends DocTree> reference = seeTree.getReference();
-              this.javadocSee = format(reference);
-            }
-            break;
-          case DEPRECATED:
-            {
-              // @deprecated
-              DeprecatedTree deprecatedTree = (DeprecatedTree) doc;
-              List<? extends DocTree> body = deprecatedTree.getBody();
-              this.javadocDeprecated = format(body);
-            }
-            break;
-          case HIDDEN:
-            {
-              // @hidden
-              HiddenTree hiddenTree = (HiddenTree) doc;
-              List<? extends DocTree> body = hiddenTree.getBody();
-              this.javadocHidden = format(body);
-            }
-            break;
-          case SINCE:
-            {
-              // @since
-              SinceTree sinceTree = (SinceTree) doc;
-              List<? extends DocTree> body = sinceTree.getBody();
-              this.javadocSince = format(body);
-            }
-            break;
-          default:
-            break;
+          case SEE -> {
+            // @see
+            SeeTree seeTree = (SeeTree) doc;
+            List<? extends DocTree> reference = seeTree.getReference();
+            this.javadocSee = format(reference);
+          }
+          case DEPRECATED -> {
+            // @deprecated
+            DeprecatedTree deprecatedTree = (DeprecatedTree) doc;
+            List<? extends DocTree> body = deprecatedTree.getBody();
+            this.javadocDeprecated = format(body);
+          }
+          case HIDDEN -> {
+            // @hidden
+            HiddenTree hiddenTree = (HiddenTree) doc;
+            List<? extends DocTree> body = hiddenTree.getBody();
+            this.javadocHidden = format(body);
+          }
+          case SINCE -> {
+            // @since
+            SinceTree sinceTree = (SinceTree) doc;
+            List<? extends DocTree> body = sinceTree.getBody();
+            this.javadocSince = format(body);
+          }
+          default -> {}
         }
       }
 

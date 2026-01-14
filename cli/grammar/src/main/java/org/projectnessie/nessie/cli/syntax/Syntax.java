@@ -284,21 +284,11 @@ public class Syntax {
         } else if (node instanceof Expansion expansion) {
           Coll coll = null;
           switch (expansion.getSimpleName()) {
-            case "ZeroOrOne":
-              coll = new Coll("[", "]");
-              break;
-            case "ZeroOrMore":
-              coll = new Coll("{", "}");
-              break;
-            case "ExpansionWithParentheses":
-              coll = new Coll("(", ")");
-              break;
-            case "ExpansionSequence":
-            case "ExpansionChoice":
-              coll = new Coll("", "");
-              break;
-            default:
-              break;
+            case "ZeroOrOne" -> coll = new Coll("[", "]");
+            case "ZeroOrMore" -> coll = new Coll("{", "}");
+            case "ExpansionWithParentheses" -> coll = new Coll("(", ")");
+            case "ExpansionSequence", "ExpansionChoice" -> coll = new Coll("", "");
+            default -> {}
           }
           if (coll != null) {
             coll.collectFrom(node);

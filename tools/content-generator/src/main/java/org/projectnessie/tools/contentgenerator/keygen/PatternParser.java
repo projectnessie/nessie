@@ -59,15 +59,15 @@ class PatternParser {
       char c = p.charAt(i);
 
       switch (state) {
-        case CONST:
+        case CONST -> {
           if (c == '$') {
             maybeAddConstant(currentConstant);
             state = State.DOLLAR;
           } else {
             currentConstant.append(c);
           }
-          break;
-        case DOLLAR:
+        }
+        case DOLLAR -> {
           if (c == '{') {
             state = State.FUNC;
           } else if (c == '$') {
@@ -76,8 +76,8 @@ class PatternParser {
           } else {
             throw parseError(i, "illegal function declaration");
           }
-          break;
-        case FUNC:
+        }
+        case FUNC -> {
           if (c == '}') {
             try {
               parseFuncPattern(currentFunc);
@@ -88,18 +88,15 @@ class PatternParser {
           } else {
             currentFunc.append(c);
           }
-          break;
-        default:
-          break;
+        }
+        default -> {}
       }
     }
 
     switch (state) {
-      case DOLLAR:
-      case FUNC:
-        throw parseError(l, "unclosed function pattern at the end of the pattern");
-      default:
-        break;
+      case DOLLAR, FUNC ->
+          throw parseError(l, "unclosed function pattern at the end of the pattern");
+      default -> {}
     }
 
     maybeAddConstant(currentConstant);

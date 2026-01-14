@@ -148,18 +148,15 @@ public abstract class NessieImporter {
     ExportMeta exportMeta = loadExportMeta();
     progressListener().progress(ProgressEvent.END_META, exportMeta);
 
-    switch (exportMeta.getVersion()) {
-      case V1:
-        return new ImportPersistV1(exportMeta, this).importRepo();
-      case V2:
-      case V3:
-        return new ImportPersistV23(exportMeta, this).importRepo();
-      default:
-        throw new IllegalStateException(
-            String.format(
-                "This Nessie version does not support importing a %s (%d) export",
-                exportMeta.getVersion().name(), exportMeta.getVersionValue()));
-    }
+    return switch (exportMeta.getVersion()) {
+      case V1 -> new ImportPersistV1(exportMeta, this).importRepo();
+      case V2, V3 -> new ImportPersistV23(exportMeta, this).importRepo();
+      default ->
+          throw new IllegalStateException(
+              String.format(
+                  "This Nessie version does not support importing a %s (%d) export",
+                  exportMeta.getVersion().name(), exportMeta.getVersionValue()));
+    };
   }
 
   @SuppressWarnings("resource")

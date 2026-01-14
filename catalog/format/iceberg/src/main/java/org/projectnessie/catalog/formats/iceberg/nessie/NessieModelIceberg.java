@@ -317,72 +317,66 @@ public class NessieModelIceberg {
   }
 
   public static IcebergType nessieTypeToIcebergType(NessieTypeSpec type) {
-    switch (type.type()) {
-      case BOOLEAN:
-        return IcebergType.booleanType();
-      case INT:
-        return IcebergType.integerType();
-      case BIGINT:
-        return IcebergType.longType();
-      case FLOAT:
-        return IcebergType.floatType();
-      case DOUBLE:
-        return IcebergType.doubleType();
-      case UUID:
-        return IcebergType.uuidType();
-      case STRING:
-        return IcebergType.stringType();
-      case DATE:
-        return IcebergType.dateType();
-      case TIME:
+    return switch (type.type()) {
+      case BOOLEAN -> IcebergType.booleanType();
+      case INT -> IcebergType.integerType();
+      case BIGINT -> IcebergType.longType();
+      case FLOAT -> IcebergType.floatType();
+      case DOUBLE -> IcebergType.doubleType();
+      case UUID -> IcebergType.uuidType();
+      case STRING -> IcebergType.stringType();
+      case DATE -> IcebergType.dateType();
+      case TIME -> {
         NessieTimeTypeSpec time = (NessieTimeTypeSpec) type;
         if (time.precision() != DEFAULT_TIME_PRECISION || time.withTimeZone()) {
           throw new IllegalArgumentException("Data type not supported in Iceberg: " + type);
         }
-        return IcebergType.timeType();
-      case TIMESTAMP:
+        yield IcebergType.timeType();
+      }
+      case TIMESTAMP -> {
         NessieTimestampTypeSpec timestamp = (NessieTimestampTypeSpec) type;
         if (timestamp.precision() != DEFAULT_TIME_PRECISION) {
           throw new IllegalArgumentException("Data type not supported in Iceberg: " + type);
         }
-        return timestamp.withTimeZone()
+        yield timestamp.withTimeZone()
             ? IcebergType.timestamptzType()
             : IcebergType.timestampType();
-      case BINARY:
-        return IcebergType.binaryType();
-      case DECIMAL:
+      }
+      case BINARY -> IcebergType.binaryType();
+      case DECIMAL -> {
         NessieDecimalTypeSpec decimal = (NessieDecimalTypeSpec) type;
-        return IcebergType.decimalType(decimal.precision(), decimal.scale());
-      case FIXED:
+        yield IcebergType.decimalType(decimal.precision(), decimal.scale());
+      }
+      case FIXED -> {
         NessieFixedTypeSpec fixed = (NessieFixedTypeSpec) type;
-        return IcebergType.fixedType(fixed.length());
-      case LIST:
+        yield IcebergType.fixedType(fixed.length());
+      }
+      case LIST -> {
         NessieListTypeSpec list = (NessieListTypeSpec) type;
-        return IcebergType.listType(
+        yield IcebergType.listType(
             list.icebergElementFieldId(),
             nessieTypeToIcebergType(list.elementType()),
             !list.elementsNullable());
-      case MAP:
+      }
+      case MAP -> {
         NessieMapTypeSpec map = (NessieMapTypeSpec) type;
-        return IcebergType.mapType(
+        yield IcebergType.mapType(
             map.icebergKeyFieldId(),
             nessieTypeToIcebergType(map.keyType()),
             map.icebergValueFieldId(),
             nessieTypeToIcebergType(map.valueType()),
             !map.valuesNullable());
-      case STRUCT:
+      }
+      case STRUCT -> {
         NessieStructTypeSpec struct = (NessieStructTypeSpec) type;
-        return IcebergType.structType(
+        yield IcebergType.structType(
             struct.struct().fields().stream()
                 .map(NessieModelIceberg::nessieFieldToIceberg)
                 .collect(Collectors.toList()),
             struct.struct().icebergRecordName());
-      case INTERVAL:
-      case TINYINT:
-      case SMALLINT:
-      default:
-        throw new IllegalArgumentException("Type unsupported in Iceberg: " + type);
-    }
+      }
+      default -> throw new IllegalArgumentException("Type unsupported in Iceberg: " + type);
+    };
   }
 
   private static IcebergNestedField nessieFieldToIceberg(NessieField nessieField) {
@@ -397,32 +391,43 @@ public class NessieModelIceberg {
   static NessieTypeSpec icebergTypeToNessieType(
       IcebergType type, Map<Integer, NessieField> icebergFields) {
     switch (type.type()) {
-      case IcebergType.TYPE_TIMESTAMP_TZ:
+      case IcebergType.TYPE_TIMESTAMP_TZ -> {
         return NessieType.timestampType(true);
-      case IcebergType.TYPE_TIMESTAMP:
+      }
+      case IcebergType.TYPE_TIMESTAMP -> {
         return NessieType.timestampType(false);
-      case IcebergType.TYPE_BOOLEAN:
+      }
+      case IcebergType.TYPE_BOOLEAN -> {
         return NessieType.booleanType();
-      case IcebergType.TYPE_UUID:
+      }
+      case IcebergType.TYPE_UUID -> {
         return NessieType.uuidType();
-      case IcebergType.TYPE_INT:
+      }
+      case IcebergType.TYPE_INT -> {
         return NessieType.intType();
-      case IcebergType.TYPE_LONG:
+      }
+      case IcebergType.TYPE_LONG -> {
         return NessieType.bigintType();
-      case IcebergType.TYPE_FLOAT:
+      }
+      case IcebergType.TYPE_FLOAT -> {
         return NessieType.floatType();
-      case IcebergType.TYPE_DOUBLE:
+      }
+      case IcebergType.TYPE_DOUBLE -> {
         return NessieType.doubleType();
-      case IcebergType.TYPE_DATE:
+      }
+      case IcebergType.TYPE_DATE -> {
         return NessieType.dateType();
-      case IcebergType.TYPE_TIME:
+      }
+      case IcebergType.TYPE_TIME -> {
         return NessieType.timeType();
-      case IcebergType.TYPE_STRING:
+      }
+      case IcebergType.TYPE_STRING -> {
         return NessieType.stringType();
-      case IcebergType.TYPE_BINARY:
+      }
+      case IcebergType.TYPE_BINARY -> {
         return NessieType.binaryType();
-      default:
-        break;
+      }
+      default -> {}
     }
 
     if (type instanceof IcebergDecimalType f) {
@@ -1050,14 +1055,9 @@ public class NessieModelIceberg {
             .lastUpdatedMs(nessie.lastUpdatedTimestamp().toEpochMilli());
 
     switch (spec) {
-      case V1:
-        metadata.lastSequenceNumber(0L);
-        break;
-      case V2:
-        metadata.lastSequenceNumber(nessie.icebergLastSequenceNumber());
-        break;
-      default:
-        throw new IllegalArgumentException(spec.toString());
+      case V1 -> metadata.lastSequenceNumber(0L);
+      case V2 -> metadata.lastSequenceNumber(nessie.icebergLastSequenceNumber());
+      default -> throw new IllegalArgumentException(spec.toString());
     }
 
     int currentSchemaId = INITIAL_SCHEMA_ID;
@@ -1278,18 +1278,18 @@ public class NessieModelIceberg {
   public static int icebergTypeMaxFieldId(IcebergType type, Set<Integer> fieldIds) {
     int max = 0;
     switch (type.type()) {
-      case TYPE_STRUCT:
+      case TYPE_STRUCT -> {
         IcebergStructType srcStruct = (IcebergStructType) type;
         for (IcebergNestedField f : srcStruct.fields()) {
           max = Math.max(max, icebergSchemaMaxFieldId(f, fieldIds));
         }
-        break;
-      case TYPE_LIST:
+      }
+      case TYPE_LIST -> {
         IcebergListType srcList = (IcebergListType) type;
         max = Math.max(max, srcList.elementId());
         max = Math.max(max, icebergTypeMaxFieldId(srcList.element(), fieldIds));
-        break;
-      case TYPE_MAP:
+      }
+      case TYPE_MAP -> {
         IcebergMapType srcMap = (IcebergMapType) type;
         checkArgument(fieldIds.add(srcMap.keyId()), "Duplicate field ID %s", srcMap.keyId());
         checkArgument(fieldIds.add(srcMap.valueId()), "Duplicate field ID %s", srcMap.valueId());
@@ -1297,9 +1297,8 @@ public class NessieModelIceberg {
         max = Math.max(max, srcMap.valueId());
         max = Math.max(max, icebergTypeMaxFieldId(srcMap.key(), fieldIds));
         max = Math.max(max, icebergTypeMaxFieldId(srcMap.value(), fieldIds));
-        break;
-      default:
-        break;
+      }
+      default -> {}
     }
     return max;
   }
@@ -1328,7 +1327,7 @@ public class NessieModelIceberg {
   private static IcebergType maybeRemapNested(
       IcebergType type, AtomicInteger nextId, Map<Integer, Integer> remappedFieldIds) {
     switch (type.type()) {
-      case TYPE_STRUCT:
+      case TYPE_STRUCT -> {
         IcebergStructType srcStruct = (IcebergStructType) type;
         IcebergStructType.Builder struct =
             IcebergStructType.builder().from(srcStruct).fields(emptyList());
@@ -1336,8 +1335,8 @@ public class NessieModelIceberg {
           struct.addField(icebergInitialSchemaField(f, nextId, remappedFieldIds));
         }
         type = struct.build();
-        break;
-      case TYPE_LIST:
+      }
+      case TYPE_LIST -> {
         IcebergListType srcList = (IcebergListType) type;
         IcebergListType.Builder list =
             IcebergListType.builder()
@@ -1345,8 +1344,8 @@ public class NessieModelIceberg {
                 .elementId(nextId.incrementAndGet())
                 .element(maybeRemapNested(srcList.element(), nextId, remappedFieldIds));
         type = list.build();
-        break;
-      case TYPE_MAP:
+      }
+      case TYPE_MAP -> {
         IcebergMapType srcMap = (IcebergMapType) type;
 
         IcebergMapType.Builder map =
@@ -1357,9 +1356,8 @@ public class NessieModelIceberg {
                 .valueId(nextId.incrementAndGet())
                 .value(maybeRemapNested(srcMap.value(), nextId, remappedFieldIds));
         type = map.build();
-        break;
-      default:
-        break;
+      }
+      default -> {}
     }
     return type;
   }

@@ -56,27 +56,27 @@ public class DropContentCommand extends NessieCommittingCommand<DropContentComma
             .getContent();
 
     switch (spec.getContentKind()) {
-      case "TABLE":
+      case "TABLE" -> {
         if (!(content instanceof IcebergTable) && !(content instanceof DeltaLakeTable)) {
           throw new IllegalArgumentException(
               "Key " + contentKey + " is not a table, but a " + content.getType());
         }
-        break;
-      case "VIEW":
+      }
+      case "VIEW" -> {
         if (!(content instanceof IcebergView)) {
           throw new IllegalArgumentException(
               "Key " + contentKey + " is not a view, but a " + content.getType());
         }
-        break;
-      case "NAMESPACE":
+      }
+      case "NAMESPACE" -> {
         if (!(content instanceof Namespace)) {
           throw new IllegalArgumentException(
               "Key " + contentKey + " is not a namespace, but a " + content.getType());
         }
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Content kind not supported: " + spec.getContentKind());
+      }
+      default ->
+          throw new UnsupportedOperationException(
+              "Content kind not supported: " + spec.getContentKind());
     }
 
     String kind = spec.getContentKind().toLowerCase(Locale.ROOT);

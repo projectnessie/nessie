@@ -50,16 +50,13 @@ public class AssignReferenceCommand extends NessieCommand<AssignReferenceCommand
 
     Reference.ReferenceType referenceType = Reference.ReferenceType.valueOf(spec.getRefType());
 
-    switch (referenceType) {
-      case BRANCH:
-        toRef = Branch.of(toRef.getName(), hash);
-        break;
-      case TAG:
-        toRef = Tag.of(toRef.getName(), hash);
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown reference type: " + spec.getRefType());
-    }
+    toRef =
+        switch (referenceType) {
+          case BRANCH -> Branch.of(toRef.getName(), hash);
+          case TAG -> Tag.of(toRef.getName(), hash);
+          default ->
+              throw new IllegalArgumentException("Unknown reference type: " + spec.getRefType());
+        };
 
     Reference assigned = api.assignReference().reference(ref).assignTo(toRef).assignAndGet();
 

@@ -107,13 +107,10 @@ public class TestRestTypes {
               String clazzSimpleName = ln.substring(0, i);
               String json = ln.substring(i + 2);
               String nessieSimpleName;
-              switch (clazzSimpleName) {
-                case "ReportMetricsRequest":
-                  nessieSimpleName = "MetricsReport";
-                  break;
-                default:
-                  nessieSimpleName = clazzSimpleName;
-                  break;
+              if (clazzSimpleName.equals("ReportMetricsRequest")) {
+                nessieSimpleName = "MetricsReport";
+              } else {
+                nessieSimpleName = clazzSimpleName;
               }
               Class<?> nessieType =
                   findClass(

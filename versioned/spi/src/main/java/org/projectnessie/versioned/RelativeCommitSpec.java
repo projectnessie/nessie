@@ -74,7 +74,7 @@ public abstract class RelativeCommitSpec {
     Instant instant = Instant.EPOCH;
 
     switch (type) {
-      case TIMESTAMP_MILLIS_EPOCH:
+      case TIMESTAMP_MILLIS_EPOCH -> {
         try {
           long v = Long.parseLong(value);
           instant = Instant.ofEpochMilli(v);
@@ -88,9 +88,8 @@ public abstract class RelativeCommitSpec {
                     + "' must be represent an ISO-8601 timestamp ('Z' only) or a numeric value representing the milliseconds since epoch");
           }
         }
-        break;
-      case N_TH_PARENT:
-      case N_TH_PREDECESSOR:
+      }
+      case N_TH_PARENT, N_TH_PREDECESSOR -> {
         try {
           num = Long.parseLong(value);
         } catch (NumberFormatException e) {
@@ -102,9 +101,8 @@ public abstract class RelativeCommitSpec {
             value,
             type.name(),
             type.mnemonic());
-        break;
-      default:
-        throw new UnsupportedOperationException();
+      }
+      default -> throw new UnsupportedOperationException();
     }
 
     return relativeCommitSpec(type, num, instant);
@@ -120,16 +118,12 @@ public abstract class RelativeCommitSpec {
     N_TH_PARENT('^');
 
     static Type typeForMnemonic(char mnemonic) {
-      switch (mnemonic) {
-        case '*':
-          return TIMESTAMP_MILLIS_EPOCH;
-        case '~':
-          return N_TH_PREDECESSOR;
-        case '^':
-          return N_TH_PARENT;
-        default:
-          throw new IllegalArgumentException("Illegal mnemonic '" + mnemonic + '\'');
-      }
+      return switch (mnemonic) {
+        case '*' -> TIMESTAMP_MILLIS_EPOCH;
+        case '~' -> N_TH_PREDECESSOR;
+        case '^' -> N_TH_PARENT;
+        default -> throw new IllegalArgumentException("Illegal mnemonic '" + mnemonic + '\'');
+      };
     }
 
     private final char mnemonic;

@@ -119,26 +119,25 @@ public interface TaskState {
   @Value.Check
   default void check() {
     switch (status()) {
-      case SUCCESS:
+      case SUCCESS -> {
         checkState(retryNotBefore() == null, "retryNotBefore must be null for SUCCESS");
         checkState(lostNotBefore() == null, "retryNotBefore must be null for SUCCESS");
-        break;
-      case FAILURE:
+      }
+      case FAILURE -> {
         checkState(retryNotBefore() == null, "retryNotBefore must be null for FAILURE");
         checkState(lostNotBefore() == null, "lostNotBefore must be null for FAILURE");
         checkState(message() != null, "message must not be null for FAILURE");
-        break;
-      case RUNNING:
+      }
+      case RUNNING -> {
         checkState(retryNotBefore() != null, "retryNotBefore must not be null for RUNNING");
         checkState(lostNotBefore() != null, "lostNotBefore must not be null for RUNNING");
-        break;
-      case ERROR_RETRY:
+      }
+      case ERROR_RETRY -> {
         checkState(retryNotBefore() != null, "retryNotBefore must not be null for ERROR_RETRY");
         checkState(lostNotBefore() == null, "lostNotBefore must be null for ERROR_RETRY");
         checkState(message() != null, "message must not be null for ERROR_RETRY");
-        break;
-      default:
-        throw new IllegalStateException("Unknown task status " + status());
+      }
+      default -> throw new IllegalStateException("Unknown task status " + status());
     }
   }
 }

@@ -217,32 +217,26 @@ public final class ProtoSerialization {
     }
     ObjProto.Builder b = ObjProto.newBuilder().setReferenced(obj.referenced());
     if (obj.type() instanceof StandardObjType) {
-      switch (((StandardObjType) obj.type())) {
-        case COMMIT:
-          return b.setCommit(serializeCommit((CommitObj) obj, incrementalIndexSizeLimit))
-              .build()
-              .toByteArray();
-        case VALUE:
-          return b.setContentValue(serializeContentValue((ContentValueObj) obj))
-              .build()
-              .toByteArray();
-        case REF:
-          return b.setRef(serializeRef((RefObj) obj)).build().toByteArray();
-        case INDEX_SEGMENTS:
-          return b.setIndexSegments(serializeIndexSegments((IndexSegmentsObj) obj))
-              .build()
-              .toByteArray();
-        case INDEX:
-          return b.setIndex(serializeIndex((IndexObj) obj, indexSizeLimit)).build().toByteArray();
-        case STRING:
-          return b.setStringData(serializeStringData((StringObj) obj)).build().toByteArray();
-        case TAG:
-          return b.setTag(serializeTag((TagObj) obj)).build().toByteArray();
-        case UNIQUE:
-          return b.setUniqueId(serializeUniqueId((UniqueIdObj) obj)).build().toByteArray();
-        default:
-          throw new UnsupportedOperationException("Unknown standard object type " + obj.type());
-      }
+      return switch (((StandardObjType) obj.type())) {
+        case COMMIT ->
+            b.setCommit(serializeCommit((CommitObj) obj, incrementalIndexSizeLimit))
+                .build()
+                .toByteArray();
+        case VALUE ->
+            b.setContentValue(serializeContentValue((ContentValueObj) obj)).build().toByteArray();
+        case REF -> b.setRef(serializeRef((RefObj) obj)).build().toByteArray();
+        case INDEX_SEGMENTS ->
+            b.setIndexSegments(serializeIndexSegments((IndexSegmentsObj) obj))
+                .build()
+                .toByteArray();
+        case INDEX ->
+            b.setIndex(serializeIndex((IndexObj) obj, indexSizeLimit)).build().toByteArray();
+        case STRING -> b.setStringData(serializeStringData((StringObj) obj)).build().toByteArray();
+        case TAG -> b.setTag(serializeTag((TagObj) obj)).build().toByteArray();
+        case UNIQUE -> b.setUniqueId(serializeUniqueId((UniqueIdObj) obj)).build().toByteArray();
+        default ->
+            throw new UnsupportedOperationException("Unknown standard object type " + obj.type());
+      };
     } else {
       return b.setCustom(serializeCustom(obj, includeVersionToken)).build().toByteArray();
     }

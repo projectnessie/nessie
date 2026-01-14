@@ -363,7 +363,7 @@ final class ReferenceLogicImpl implements ReferenceLogic {
           commitToIndex.existing);
 
       switch (commitToIndex.kind) {
-        case ADDED_TO_INDEX:
+        case ADDED_TO_INDEX -> {
           checkState(!created.deleted(), "internal error");
           try {
             return persist.addReference(created);
@@ -377,13 +377,15 @@ final class ReferenceLogicImpl implements ReferenceLogic {
             // Might happen in a rare race
             throw e;
           }
-        case REF_ROW_MISSING:
+        }
+        case REF_ROW_MISSING -> {
           existing = commitToIndex.existing;
           checkState(!existing.deleted(), "internal error");
           // Note: addReference() may or may not throw a ReferenceAlreadyExistsException
           existing = persist.addReference(existing);
           throw new RefAlreadyExistsException(existing);
-        case REF_ROW_EXISTS:
+        }
+        case REF_ROW_EXISTS -> {
           // Reference recovery logic might have kicked in and added the reference. It that's the
           // case, just return it.
           existing = commitToIndex.existing;
@@ -395,9 +397,8 @@ final class ReferenceLogicImpl implements ReferenceLogic {
           }
           maybeRecover(name, existing, createRefsIndexSupplier());
           // try again
-          break;
-        default:
-          throw new IllegalStateException();
+        }
+        default -> throw new IllegalStateException();
       }
     }
   }

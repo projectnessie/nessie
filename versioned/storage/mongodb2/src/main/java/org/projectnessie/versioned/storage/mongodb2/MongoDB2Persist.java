@@ -855,11 +855,10 @@ public class MongoDB2Persist implements Persist {
     if (e instanceof MongoBulkWriteException specific) {
       for (BulkWriteError error : specific.getWriteErrors()) {
         switch (error.getCategory()) {
-          case EXECUTION_TIMEOUT:
-          case UNCATEGORIZED:
+          case EXECUTION_TIMEOUT, UNCATEGORIZED -> {
             return new UnknownOperationResultException(e);
-          default:
-            break;
+          }
+          default -> {}
         }
       }
     }
@@ -871,12 +870,9 @@ public class MongoDB2Persist implements Persist {
   }
 
   static RuntimeException handleMongoWriteError(MongoException e, WriteError error) {
-    switch (error.getCategory()) {
-      case EXECUTION_TIMEOUT:
-      case UNCATEGORIZED:
-        return new UnknownOperationResultException(e);
-      default:
-        return e;
-    }
+    return switch (error.getCategory()) {
+      case EXECUTION_TIMEOUT, UNCATEGORIZED -> new UnknownOperationResultException(e);
+      default -> e;
+    };
   }
 }

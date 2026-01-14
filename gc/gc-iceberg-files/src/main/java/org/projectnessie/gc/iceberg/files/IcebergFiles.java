@@ -111,17 +111,10 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
   }
 
   private boolean supportsBulkAndPrefixOperations(StorageUri uri) {
-    switch (uri.scheme()) {
-      case "s3":
-      case "s3a":
-      case "s3n":
-      case "gs":
-      case "abfs":
-      case "abfss":
-        return true;
-      default:
-        return false;
-    }
+    return switch (uri.scheme()) {
+      case "s3", "s3a", "s3n", "gs", "abfs", "abfss" -> true;
+      default -> false;
+    };
   }
 
   @Override

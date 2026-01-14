@@ -53,17 +53,13 @@ public abstract class IcebergManifestFileWriter implements AutoCloseable {
       entryWriter.setMeta("content", writerSpec.content().stringValue());
     }
 
-    AvroSerializationContext serializationContext;
-    switch (writerSpec.content()) {
-      case DATA:
-        serializationContext = dataSerializationContext(writerSpec.tableProperties());
-        break;
-      case DELETES:
-        serializationContext = deleteSerializationContext(writerSpec.tableProperties());
-        break;
-      default:
-        throw new IllegalStateException("Unknown manifest content " + writerSpec.content());
-    }
+    AvroSerializationContext serializationContext =
+        switch (writerSpec.content()) {
+          case DATA -> dataSerializationContext(writerSpec.tableProperties());
+          case DELETES -> deleteSerializationContext(writerSpec.tableProperties());
+          default ->
+              throw new IllegalStateException("Unknown manifest content " + writerSpec.content());
+        };
     serializationContext.applyToDataFileWriter(entryWriter);
 
     Schema entryWriteSchema = writerSpec.writerSchema();

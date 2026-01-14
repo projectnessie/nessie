@@ -53,14 +53,11 @@ public interface NessieSortDirection {
     public NessieSortDirection deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
-      switch (text) {
-        case ASC_VALUE:
-          return ASC;
-        case DESC_VALUE:
-          return DESC;
-        default:
-          return ImmutableNessieSortDirection.of(text, text);
-      }
+      return switch (text) {
+        case ASC_VALUE -> ASC;
+        case DESC_VALUE -> DESC;
+        default -> ImmutableNessieSortDirection.of(text, text);
+      };
     }
   }
 }

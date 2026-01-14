@@ -185,16 +185,10 @@ public abstract class BaseTestHttpClient {
             server.getUri(),
             b -> {
               switch (ssl) {
-                case NONE:
-                  break;
-                case SSL_VERIFIED:
-                  b.setSslContext(server.getSslContext());
-                  break;
-                case SSL_UNVERIFIED:
-                  b.setSslNoCertificateVerification(true);
-                  break;
-                default:
-                  throw new UnsupportedOperationException();
+                case NONE -> {}
+                case SSL_VERIFIED -> b.setSslContext(server.getSslContext());
+                case SSL_UNVERIFIED -> b.setSslNoCertificateVerification(true);
+                default -> throw new UnsupportedOperationException();
               }
               b.setHttp2Upgrade(http2);
             })) {
@@ -234,22 +228,20 @@ public abstract class BaseTestHttpClient {
         (req, resp) -> {
           ArrayBean input;
           switch (req.getMethod()) {
-            case "PUT":
-            case "POST":
+            case "PUT", "POST" -> {
               try (InputStream in = req.getInputStream()) {
                 input = MAPPER.readValue(in, ArrayBean.class);
               }
-              break;
-            case "GET":
-            case "DELETE":
-              input =
-                  ArrayBean.construct(
-                      Integer.parseInt(req.getParameter("len")),
-                      Integer.parseInt(req.getParameter("num")));
-              break;
-            default:
+            }
+            case "GET", "DELETE" ->
+                input =
+                    ArrayBean.construct(
+                        Integer.parseInt(req.getParameter("len")),
+                        Integer.parseInt(req.getParameter("num")));
+            default -> {
               resp.sendError(500);
               return;
+            }
           }
 
           resp.addHeader("Content-Type", "application/json");

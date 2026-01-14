@@ -48,16 +48,12 @@ class TestNessieApiCompatibilityFilter {
     MISMATCH;
 
     public String expectedErrorMessage() {
-      switch (this) {
-        case TOO_OLD:
-          return "too old";
-        case TOO_NEW:
-          return "too new";
-        case MISMATCH:
-          return "mismatch";
-        default:
-          return null;
-      }
+      return switch (this) {
+        case TOO_OLD -> "too old";
+        case TOO_NEW -> "too new";
+        case MISMATCH -> "mismatch";
+        default -> null;
+      };
     }
   }
 
