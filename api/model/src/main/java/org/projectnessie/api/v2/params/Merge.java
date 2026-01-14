@@ -42,18 +42,20 @@ import org.projectnessie.model.Validation;
       @SchemaProperty(
           name = "message",
           description =
-              "Optional commit message for this merge request\n"
-                  + "\n"
-                  + "If not set, the server will generate a commit message automatically using metadata from the \n"
-                  + "merged commits."),
+              """
+              Optional commit message for this merge request
+
+              If not set, the server will generate a commit message automatically using metadata from the\s
+              merged commits."""),
       @SchemaProperty(
           name = "fromHash",
           pattern = Validation.HASH_REGEX,
           description =
-              "The hash of the last commit to merge.\n"
-                  + "\n"
-                  + "This commit must be present in the history on 'fromRefName' before the first common parent with respect "
-                  + "to the target branch."),
+              """
+              The hash of the last commit to merge.
+
+              This commit must be present in the history on 'fromRefName' before the first common parent with respect \
+              to the target branch."""),
       @SchemaProperty(name = "fromRefName", description = FROM_REF_NAME_DESCRIPTION),
       @SchemaProperty(name = "keyMergeModes", description = KEY_MERGE_MODES_DESCRIPTION),
       @SchemaProperty(

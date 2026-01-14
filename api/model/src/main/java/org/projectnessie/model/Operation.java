@@ -36,9 +36,10 @@ import org.projectnessie.model.ser.Views;
     type = SchemaType.OBJECT,
     title = "Operation",
     description =
-        "Describes an operation to be performed against one content object.\n"
-            + "\n"
-            + "The Nessie backend will validate the correctness of the operations.",
+        """
+        Describes an operation to be performed against one content object.
+
+        The Nessie backend will validate the correctness of the operations.""",
     oneOf = {Operation.Put.class, Operation.Unchanged.class, Operation.Delete.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "PUT", schema = Operation.Put.class),

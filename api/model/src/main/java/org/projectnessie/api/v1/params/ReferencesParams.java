@@ -35,15 +35,24 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
 
   @Parameter(
       description =
-          "Specify how much information to be returned. Will fetch additional metadata for references if set to 'ALL'.\n\n"
-              + "A returned Branch instance will have the following information:\n\n"
-              + "- numCommitsAhead (number of commits ahead of the default branch)\n\n"
-              + "- numCommitsBehind (number of commits behind the default branch)\n\n"
-              + "- commitMetaOfHEAD (the commit metadata of the HEAD commit)\n\n"
-              + "- commonAncestorHash (the hash of the common ancestor in relation to the default branch).\n\n"
-              + "- numTotalCommits (the total number of commits in this reference).\n\n"
-              + "A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.\n\n"
-              + "Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.")
+          """
+          Specify how much information to be returned. Will fetch additional metadata for references if set to 'ALL'.
+
+          A returned Branch instance will have the following information:
+
+          - numCommitsAhead (number of commits ahead of the default branch)
+
+          - numCommitsBehind (number of commits behind the default branch)
+
+          - commitMetaOfHEAD (the commit metadata of the HEAD commit)
+
+          - commonAncestorHash (the hash of the common ancestor in relation to the default branch).
+
+          - numTotalCommits (the total number of commits in this reference).
+
+          A returned Tag instance will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.
+
+          Note that computing & fetching additional metadata might be computationally expensive on the server-side, so this flag should be used with care.""")
   @QueryParam("fetch")
   @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
@@ -52,13 +61,19 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
 
   @Parameter(
       description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n"
-              + "Usable variables within the expression are:\n\n"
-              + "- ref (Reference) describes the reference, with fields name (String), hash (String), metadata (ReferenceMetadata)\n\n"
-              + "- metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty\n\n"
-              + "- commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty\n\n"
-              + "- refType (String) - the reference type, either BRANCH or TAG\n\n"
-              + "Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.",
+          """
+          A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.
+          Usable variables within the expression are:
+
+          - ref (Reference) describes the reference, with fields name (String), hash (String), metadata (ReferenceMetadata)
+
+          - metadata (ReferenceMetadata) shortcut to ref.metadata, never null, but possibly empty
+
+          - commit (CommitMeta) - shortcut to ref.metadata.commitMetaOfHEAD, never null, but possibly empty
+
+          - refType (String) - the reference type, either BRANCH or TAG
+
+          Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.""",
       examples = {
         @ExampleObject(ref = "expr_by_refType"),
         @ExampleObject(ref = "expr_by_ref_name"),

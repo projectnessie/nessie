@@ -116,15 +116,16 @@ public class TestNessieSchema {
 
     return Stream.of(
         arguments(
-            "{\n"
-                + "  \"sourceFieldId\" : \"8c4f7079-5905-4604-9333-e928d21613df\",\n"
-                + "  \"type\" : {\n"
-                + "    \"type\" : \"int\"\n"
-                + "  },\n"
-                + "  \"transformSpec\" : \"bucket[42]\",\n"
-                + "  \"nullOrder\" : \"nulls-first\",\n"
-                + "  \"direction\" : \"asc\"\n"
-                + "}",
+            """
+            {
+              "sourceFieldId" : "8c4f7079-5905-4604-9333-e928d21613df",
+              "type" : {
+                "type" : "int"
+              },
+              "transformSpec" : "bucket[42]",
+              "nullOrder" : "nulls-first",
+              "direction" : "asc"
+            }""",
             NessieSortField.builder()
                 .direction(NessieSortDirection.ASC)
                 .nullOrder(NessieNullOrder.NULLS_FIRST)
@@ -135,15 +136,16 @@ public class TestNessieSchema {
             NessieSortField.class),
         //
         arguments(
-            "{\n"
-                + "  \"sourceFieldId\" : \"8c4f7079-5905-4604-9333-e928d21613df\",\n"
-                + "  \"type\" : {\n"
-                + "    \"type\" : \"int\"\n"
-                + "  },\n"
-                + "  \"transformSpec\" : \"bucket[42]\",\n"
-                + "  \"nullOrder\" : \"nulls-last\",\n"
-                + "  \"direction\" : \"desc\"\n"
-                + "}",
+            """
+            {
+              "sourceFieldId" : "8c4f7079-5905-4604-9333-e928d21613df",
+              "type" : {
+                "type" : "int"
+              },
+              "transformSpec" : "bucket[42]",
+              "nullOrder" : "nulls-last",
+              "direction" : "desc"
+            }""",
             NessieSortField.builder()
                 .direction(NessieSortDirection.DESC)
                 .nullOrder(NessieNullOrder.NULLS_LAST)
@@ -154,15 +156,16 @@ public class TestNessieSchema {
             NessieSortField.class),
         //
         arguments(
-            "{\n"
-                + "  \"sourceFieldId\" : \"8c4f7079-5905-4604-9333-e928d21613df\",\n"
-                + "  \"type\" : {\n"
-                + "    \"type\" : \"int\"\n"
-                + "  },\n"
-                + "  \"transformSpec\" : \"bucket[42]\",\n"
-                + "  \"nullOrder\" : \"nulls-random\",\n"
-                + "  \"direction\" : \"mixed\"\n"
-                + "}",
+            """
+            {
+              "sourceFieldId" : "8c4f7079-5905-4604-9333-e928d21613df",
+              "type" : {
+                "type" : "int"
+              },
+              "transformSpec" : "bucket[42]",
+              "nullOrder" : "nulls-random",
+              "direction" : "mixed"
+            }""",
             NessieSortField.builder()
                 // unknown sort-direction + null-order
                 .direction(ImmutableNessieSortDirection.of("mixed", "mixed"))

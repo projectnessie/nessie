@@ -75,34 +75,38 @@ public class TestSyntax {
     return Stream.of(
         arguments(
             "RevertContentStatement",
-            "{TERMINAL:REVERT} {TERMINAL:CONTENT} \n"
-                + "    {PRE:[} {TERMINAL:DRY} {POST:]} \n"
-                + "    {TERMINAL:OF} {NON_TERMINAL:ContentKey} \n"
-                + "    {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {POST:}} \n"
-                + "    {PRE:[} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {POST:]} \n"
-                + "    {TERMINAL:TO} {TERMINAL:STATE} \n"
-                + "    {PRE:(} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit}\n"
-                + "    {POST:)} \n"
-                + "    {PRE:[} {TERMINAL:ALLOW} {TERMINAL:DELETES} {POST:]}",
-            "REVERT CONTENT \n"
-                + "    [ DRY ] \n"
-                + "    OF ContentKey \n"
-                + "    { AND ContentKey } \n"
-                + "    [ ON [ ReferenceType ] ExistingReference ] \n"
-                + "    TO STATE \n"
-                + "    ( ON [ ReferenceType ] ExistingReference [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]\n"
-                + "    | AT [ TIMESTAMP | COMMIT ] TimestampOrCommit\n"
-                + "    ) \n"
-                + "    [ ALLOW DELETES ]"),
+            """
+            {TERMINAL:REVERT} {TERMINAL:CONTENT}\s
+                {PRE:[} {TERMINAL:DRY} {POST:]}\s
+                {TERMINAL:OF} {NON_TERMINAL:ContentKey}\s
+                {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {POST:}}\s
+                {PRE:[} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {POST:]}\s
+                {TERMINAL:TO} {TERMINAL:STATE}\s
+                {PRE:(} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}
+                {SEP:|} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit}
+                {POST:)}\s
+                {PRE:[} {TERMINAL:ALLOW} {TERMINAL:DELETES} {POST:]}""",
+            """
+            REVERT CONTENT\s
+                [ DRY ]\s
+                OF ContentKey\s
+                { AND ContentKey }\s
+                [ ON [ ReferenceType ] ExistingReference ]\s
+                TO STATE\s
+                ( ON [ ReferenceType ] ExistingReference [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]
+                | AT [ TIMESTAMP | COMMIT ] TimestampOrCommit
+                )\s
+                [ ALLOW DELETES ]"""),
         arguments(
             "ShowReferenceStatement",
-            "{TERMINAL:REFERENCE} \n"
-                + "    {PRE:[} {NON_TERMINAL:ExistingReference} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}",
-            "SHOW REFERENCE \n"
-                + "    [ ExistingReference ] \n"
-                + "    [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"),
+            """
+            {TERMINAL:REFERENCE}\s
+                {PRE:[} {NON_TERMINAL:ExistingReference} {POST:]}\s
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}""",
+            """
+            SHOW REFERENCE\s
+                [ ExistingReference ]\s
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
         arguments(
             "MergeBehaviorKind",
             "{TERMINAL:NORMAL} {SEP:|} {TERMINAL:FORCE} {SEP:|} {TERMINAL:DROP}",
@@ -110,73 +114,81 @@ public class TestSyntax {
         arguments("ReferenceType", "{TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG}", "BRANCH | TAG"),
         arguments(
             "HelpStatement",
-            "{TERMINAL:HELP} \n"
-                + "    {PRE:[} {TERMINAL:USE}\n"
-                + "    {SEP:|} {TERMINAL:CONNECT}\n"
-                + "    {SEP:|} {TERMINAL:CREATE} {PRE:[} {PRE:(} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {SEP:|} {TERMINAL:NAMESPACE} {POST:)} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:ALTER} {PRE:[} {TERMINAL:NAMESPACE} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:DROP} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:LIST} {PRE:[} {TERMINAL:CONTENTS} {SEP:|} {TERMINAL:REFERENCES} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:SHOW} {PRE:[} {TERMINAL:LOG} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:REFERENCE} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:ASSIGN} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {POST:]}\n"
-                + "    {SEP:|} {TERMINAL:MERGE}\n"
-                + "    {SEP:|} {TERMINAL:REVERT}\n"
-                + "    {SEP:|} {TERMINAL:HELP}\n"
-                + "    {SEP:|} {TERMINAL:EXIT}\n"
-                + "    {SEP:|} {TERMINAL:LICENSE}\n"
-                + "    {POST:]}",
-            "HELP \n"
-                + "    [ USE\n"
-                + "    | CONNECT\n"
-                + "    | CREATE [ ( BRANCH | TAG | NAMESPACE ) ]\n"
-                + "    | ALTER [ NAMESPACE ]\n"
-                + "    | DROP [ BRANCH | TAG | NAMESPACE | TABLE | VIEW ]\n"
-                + "    | LIST [ CONTENTS | REFERENCES ]\n"
-                + "    | SHOW [ LOG | TABLE | VIEW | NAMESPACE | REFERENCE ]\n"
-                + "    | ASSIGN [ BRANCH | TAG ]\n"
-                + "    | MERGE\n"
-                + "    | REVERT\n"
-                + "    | HELP\n"
-                + "    | EXIT\n"
-                + "    | LICENSE\n"
-                + "    ]"),
+            """
+            {TERMINAL:HELP}\s
+                {PRE:[} {TERMINAL:USE}
+                {SEP:|} {TERMINAL:CONNECT}
+                {SEP:|} {TERMINAL:CREATE} {PRE:[} {PRE:(} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {SEP:|} {TERMINAL:NAMESPACE} {POST:)} {POST:]}
+                {SEP:|} {TERMINAL:ALTER} {PRE:[} {TERMINAL:NAMESPACE} {POST:]}
+                {SEP:|} {TERMINAL:DROP} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {POST:]}
+                {SEP:|} {TERMINAL:LIST} {PRE:[} {TERMINAL:CONTENTS} {SEP:|} {TERMINAL:REFERENCES} {POST:]}
+                {SEP:|} {TERMINAL:SHOW} {PRE:[} {TERMINAL:LOG} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:REFERENCE} {POST:]}
+                {SEP:|} {TERMINAL:ASSIGN} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {POST:]}
+                {SEP:|} {TERMINAL:MERGE}
+                {SEP:|} {TERMINAL:REVERT}
+                {SEP:|} {TERMINAL:HELP}
+                {SEP:|} {TERMINAL:EXIT}
+                {SEP:|} {TERMINAL:LICENSE}
+                {POST:]}""",
+            """
+            HELP\s
+                [ USE
+                | CONNECT
+                | CREATE [ ( BRANCH | TAG | NAMESPACE ) ]
+                | ALTER [ NAMESPACE ]
+                | DROP [ BRANCH | TAG | NAMESPACE | TABLE | VIEW ]
+                | LIST [ CONTENTS | REFERENCES ]
+                | SHOW [ LOG | TABLE | VIEW | NAMESPACE | REFERENCE ]
+                | ASSIGN [ BRANCH | TAG ]
+                | MERGE
+                | REVERT
+                | HELP
+                | EXIT
+                | LICENSE
+                ]"""),
         arguments(
             "CreateNamespaceStatement",
-            "{TERMINAL:NAMESPACE} {NON_TERMINAL:ContentKey} \n"
-                + "    {PRE:[} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:SET} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {POST:}} {POST:]}",
-            "CREATE NAMESPACE ContentKey \n"
-                + "    [ ON [ ReferenceType ] ExistingReference ] \n"
-                + "    [ SET ParamKey = Value { AND ParamKey = Value } ]"),
+            """
+            {TERMINAL:NAMESPACE} {NON_TERMINAL:ContentKey}\s
+                {PRE:[} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {POST:]}\s
+                {PRE:[} {TERMINAL:SET} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {POST:}} {POST:]}""",
+            """
+            CREATE NAMESPACE ContentKey\s
+                [ ON [ ReferenceType ] ExistingReference ]\s
+                [ SET ParamKey = Value { AND ParamKey = Value } ]"""),
         arguments(
             "CreateReferenceStatement",
-            "{NON_TERMINAL:ReferenceType} \n"
-                + "    {PRE:[} {TERMINAL:IF} {TERMINAL:NOT} {TERMINAL:EXISTS} {POST:]} \n"
-                + "    {NON_TERMINAL:ReferenceName} \n"
-                + "    {PRE:[} {TERMINAL:FROM} {NON_TERMINAL:ExistingReference} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}",
-            "CREATE ReferenceType \n"
-                + "    [ IF NOT EXISTS ] \n"
-                + "    ReferenceName \n"
-                + "    [ FROM ExistingReference ] \n"
-                + "    [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"),
+            """
+            {NON_TERMINAL:ReferenceType}\s
+                {PRE:[} {TERMINAL:IF} {TERMINAL:NOT} {TERMINAL:EXISTS} {POST:]}\s
+                {NON_TERMINAL:ReferenceName}\s
+                {PRE:[} {TERMINAL:FROM} {NON_TERMINAL:ExistingReference} {POST:]}\s
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}""",
+            """
+            CREATE ReferenceType\s
+                [ IF NOT EXISTS ]\s
+                ReferenceName\s
+                [ FROM ExistingReference ]\s
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
         arguments(
             "MergeBranchStatement",
-            "{TERMINAL:MERGE} \n"
-                + "    {PRE:[} {TERMINAL:DRY} {POST:]} \n"
-                + "    {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} \n"
-                + "    {NON_TERMINAL:ExistingReference} \n"
-                + "    {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:INTO} {NON_TERMINAL:ExistingReference} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:BEHAVIOR} {NON_TERMINAL:MergeBehaviorKind} {POST:]} \n"
-                + "    {PRE:[} {TERMINAL:BEHAVIORS} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {POST:}} {POST:]}",
-            "MERGE \n"
-                + "    [ DRY ] \n"
-                + "    [ ReferenceType ] \n"
-                + "    ExistingReference \n"
-                + "    [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ] \n"
-                + "    [ INTO ExistingReference ] \n"
-                + "    [ BEHAVIOR MergeBehaviorKind ] \n"
-                + "    [ BEHAVIORS ContentKey = MergeBehaviorKind { AND ContentKey = MergeBehaviorKind } ]"));
+            """
+            {TERMINAL:MERGE}\s
+                {PRE:[} {TERMINAL:DRY} {POST:]}\s
+                {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]}\s
+                {NON_TERMINAL:ExistingReference}\s
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}\s
+                {PRE:[} {TERMINAL:INTO} {NON_TERMINAL:ExistingReference} {POST:]}\s
+                {PRE:[} {TERMINAL:BEHAVIOR} {NON_TERMINAL:MergeBehaviorKind} {POST:]}\s
+                {PRE:[} {TERMINAL:BEHAVIORS} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {POST:}} {POST:]}""",
+            """
+            MERGE\s
+                [ DRY ]\s
+                [ ReferenceType ]\s
+                ExistingReference\s
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]\s
+                [ INTO ExistingReference ]\s
+                [ BEHAVIOR MergeBehaviorKind ]\s
+                [ BEHAVIORS ContentKey = MergeBehaviorKind { AND ContentKey = MergeBehaviorKind } ]"""));
   }
 }

@@ -105,10 +105,12 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   @ArgGroup(
       exclusive = false,
       heading =
-          "\n"
-              + "Statements to execute before or without running the REPL\n"
-              + "========================================================\n"
-              + "\n")
+          """
+
+          Statements to execute before or without running the REPL
+          ========================================================
+
+          """)
   private CommandsToRun commandsToRun;
 
   @Option(
@@ -150,7 +152,15 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
   private Path historyFile = Paths.get(HISTORY_FILE_DEFAULT);
 
-  @ArgGroup(exclusive = false, heading = "\n" + "Connect options\n" + "===============\n" + "\n")
+  @ArgGroup(
+      exclusive = false,
+      heading =
+          """
+
+    Connect options
+    ===============
+
+    """)
   private ConnectOptions connectOptions;
 
   public NessieCliImpl() {
@@ -197,8 +207,11 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
         if (history) {
           writer.println(
               String.format(
-                  "History file in %s will record all statements.\n"
-                      + "Tip: lines that start with a space (' ') are not recorded in the history.\n\n",
+                  """
+                  History file in %s will record all statements.
+                  Tip: lines that start with a space (' ') are not recorded in the history.
+
+                  """,
                   historyFile));
         }
 

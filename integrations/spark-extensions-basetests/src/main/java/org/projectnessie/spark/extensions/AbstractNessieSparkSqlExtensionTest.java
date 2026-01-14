@@ -807,13 +807,14 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
       sql("USE REFERENCE %s IN nessie", branchName);
     }
     sql(
-        "CREATE TABLE nessie.db.tbl (id int, val int) "
-            + "USING iceberg \n"
-            + "TBLPROPERTIES (\n"
-            + " 'write.delete.mode'='merge-on-read',\n"
-            + " 'write.update.mode'='merge-on-read',\n"
-            + " 'write.merge.mode'='merge-on-read'\n"
-            + ") PARTITIONED BY (id)");
+        """
+        CREATE TABLE nessie.db.tbl (id int, val int) \
+        USING iceberg\s
+        TBLPROPERTIES (
+         'write.delete.mode'='merge-on-read',
+         'write.update.mode'='merge-on-read',
+         'write.merge.mode'='merge-on-read'
+        ) PARTITIONED BY (id)""");
     sql(
         "INSERT INTO nessie.db.tbl (id, val) VALUES (23, 2301), (23, 2302), (23, 2303), (24, 2401), (24, 2402), (24, 2403)");
     sql("UPDATE nessie.db.tbl SET val = 2311 WHERE id = 23 AND val = 2301");

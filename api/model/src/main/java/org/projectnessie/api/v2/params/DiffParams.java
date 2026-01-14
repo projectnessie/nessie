@@ -91,9 +91,12 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
 
   @Parameter(
       description =
-          "A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.\n\n"
-              + "Usable variables within the expression are:\n\n"
-              + "- 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the \"simple\" table name)")
+          """
+          A Common Expression Language (CEL) expression. An intro to CEL can be found at https://github.com/google/cel-spec/blob/master/doc/intro.md.
+
+          Usable variables within the expression are:
+
+          - 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the "simple" table name)""")
   @QueryParam("filter")
   @jakarta.ws.rs.QueryParam("filter")
   private String filter;
