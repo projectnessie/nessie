@@ -18,10 +18,8 @@ package org.projectnessie.quarkus.providers.storage;
 import static org.projectnessie.quarkus.config.VersionStoreConfig.VersionStoreType.MONGODB;
 
 import com.mongodb.client.MongoClient;
-import io.quarkus.arc.Arc;
-import io.quarkus.mongodb.runtime.MongoClientBeanUtil;
-import io.quarkus.mongodb.runtime.MongoClients;
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.quarkus.providers.versionstore.StoreType;
@@ -38,11 +36,11 @@ public class MongoDBBackendBuilder implements BackendBuilder {
   @ConfigProperty(name = "quarkus.mongodb.database")
   String databaseName;
 
+  @Inject Instance<MongoClient> mongoClientInstance;
+
   @Override
   public Backend buildBackend() {
-    MongoClients mongoClients = Arc.container().instance(MongoClients.class).get();
-    MongoClient client =
-        mongoClients.createMongoClient(MongoClientBeanUtil.DEFAULT_MONGOCLIENT_NAME);
+    MongoClient client = mongoClientInstance.get();
 
     MongoDBBackendFactory factory = new MongoDBBackendFactory();
     MongoDBBackendConfig c =
