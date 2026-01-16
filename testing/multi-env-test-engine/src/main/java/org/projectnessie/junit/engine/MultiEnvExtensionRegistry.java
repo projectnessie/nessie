@@ -30,6 +30,7 @@ import org.junit.jupiter.engine.extension.MutableExtensionRegistry;
 import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.TestDescriptor;
+import org.junit.platform.engine.UniqueId;
 
 /**
  * A helper class for collecting instances of {@link MultiEnvTestExtension}.
@@ -42,10 +43,11 @@ public class MultiEnvExtensionRegistry {
 
   private final Set<TestDescriptor> probablyNotMultiEnv = new LinkedHashSet<>();
 
-  public MultiEnvExtensionRegistry(EngineDiscoveryRequest discoveryRequest) {
+  public MultiEnvExtensionRegistry(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     this.registry =
         MutableExtensionRegistry.createRegistryWithDefaultExtensions(
-            newDefaultJupiterConfiguration(new EmptyConfigurationParameters(), discoveryRequest));
+            newDefaultJupiterConfiguration(
+                new EmptyConfigurationParameters(), discoveryRequest, uniqueId));
   }
 
   public void registerExtensions(TestDescriptor descriptor) {

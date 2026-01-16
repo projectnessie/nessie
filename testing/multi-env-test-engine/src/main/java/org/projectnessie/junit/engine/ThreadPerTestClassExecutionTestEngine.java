@@ -21,7 +21,6 @@ import java.util.Optional;
 import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
-import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext;
 import org.junit.jupiter.engine.execution.LauncherStoreFacade;
 import org.junit.jupiter.engine.support.JupiterThrowableCollectorFactory;
@@ -58,9 +57,9 @@ public class ThreadPerTestClassExecutionTestEngine
   @Override
   public TestDescriptor discover(EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     JupiterConfiguration configuration =
-        new CachingJupiterConfiguration(newDefaultJupiterConfiguration(discoveryRequest));
+        new CachingJupiterConfiguration(newDefaultJupiterConfiguration(discoveryRequest, uniqueId));
     JupiterEngineDescriptor engineDescriptor = new JupiterEngineDescriptor(uniqueId, configuration);
-    new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, engineDescriptor);
+    JUnitCompat.resolveSelectors(discoveryRequest, engineDescriptor, uniqueId);
     return engineDescriptor;
   }
 

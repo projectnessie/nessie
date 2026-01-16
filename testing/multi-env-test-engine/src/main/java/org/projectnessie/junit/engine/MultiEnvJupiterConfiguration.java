@@ -17,13 +17,15 @@ package org.projectnessie.junit.engine;
 
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.platform.engine.EngineDiscoveryRequest;
+import org.junit.platform.engine.UniqueId;
 
 public class MultiEnvJupiterConfiguration extends MultiEnvDelegatingJupiterConfiguration {
 
   private final String environment;
 
-  public MultiEnvJupiterConfiguration(EngineDiscoveryRequest discoveryRequest, String environment) {
-    super(discoveryRequest);
+  public MultiEnvJupiterConfiguration(
+      EngineDiscoveryRequest discoveryRequest, String environment, UniqueId uniqueId) {
+    super(discoveryRequest, uniqueId);
     this.environment = environment;
   }
 
