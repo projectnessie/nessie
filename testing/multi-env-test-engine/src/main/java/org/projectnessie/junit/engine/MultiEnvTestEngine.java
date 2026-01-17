@@ -27,7 +27,6 @@ import org.junit.jupiter.engine.config.CachingJupiterConfiguration;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor;
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor;
-import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver;
 import org.junit.platform.engine.ConfigurationParameters;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.ExecutionRequest;
@@ -76,7 +75,7 @@ public class MultiEnvTestEngine implements TestEngine {
     try {
 
       if (registry == null) {
-        registry = new MultiEnvExtensionRegistry(discoveryRequest);
+        registry = new MultiEnvExtensionRegistry(discoveryRequest, uniqueId);
       }
 
       // Scan for multi-env test extensions
@@ -89,7 +88,8 @@ public class MultiEnvTestEngine implements TestEngine {
       // JupiterEngineDescriptor must be the root, that's what the JUnit Jupiter engine
       // implementation expects.
       JupiterEngineDescriptor multiEnvRootDescriptor =
-          new JupiterEngineDescriptor(uniqueId, newDefaultJupiterConfiguration(discoveryRequest));
+          new JupiterEngineDescriptor(
+              uniqueId, newDefaultJupiterConfiguration(discoveryRequest, uniqueId));
 
       // Handle the "multi-env" tests.
       List<String> extensions = new ArrayList<>();
@@ -107,11 +107,10 @@ public class MultiEnvTestEngine implements TestEngine {
 
                   JupiterConfiguration envRootConfiguration =
                       new CachingJupiterConfiguration(
-                          new MultiEnvJupiterConfiguration(discoveryRequest, envId));
+                          new MultiEnvJupiterConfiguration(discoveryRequest, envId, uniqueId));
                   JupiterEngineDescriptor discoverResult =
                       new JupiterEngineDescriptor(segment, envRootConfiguration);
-                  new DiscoverySelectorResolver()
-                      .resolveSelectors(discoveryRequest, discoverResult);
+                  JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
 
                   List<? extends TestDescriptor> children =
                       new ArrayList<>(discoverResult.getChildren());
@@ -138,11 +137,11 @@ public class MultiEnvTestEngine implements TestEngine {
               td -> {
                 JupiterConfiguration jupiterConfiguration =
                     new CachingJupiterConfiguration(
-                        newDefaultJupiterConfiguration(discoveryRequest));
+                        newDefaultJupiterConfiguration(discoveryRequest, uniqueId));
 
                 JupiterEngineDescriptor discoverResult =
                     new JupiterEngineDescriptor(uniqueId, jupiterConfiguration);
-                new DiscoverySelectorResolver().resolveSelectors(discoveryRequest, discoverResult);
+                JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
 
                 List<? extends TestDescriptor> children =
                     new ArrayList<>(discoverResult.getChildren());

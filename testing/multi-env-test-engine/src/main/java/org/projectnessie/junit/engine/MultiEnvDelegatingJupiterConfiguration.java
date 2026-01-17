@@ -34,13 +34,15 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
 import org.junit.platform.engine.EngineDiscoveryRequest;
 import org.junit.platform.engine.OutputDirectoryCreator;
+import org.junit.platform.engine.UniqueId;
 
 public class MultiEnvDelegatingJupiterConfiguration implements JupiterConfiguration {
 
   final JupiterConfiguration delegate;
 
-  public MultiEnvDelegatingJupiterConfiguration(EngineDiscoveryRequest discoveryRequest) {
-    this.delegate = newDefaultJupiterConfiguration(discoveryRequest);
+  public MultiEnvDelegatingJupiterConfiguration(
+      EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
+    this.delegate = newDefaultJupiterConfiguration(discoveryRequest, uniqueId);
   }
 
   @Override
