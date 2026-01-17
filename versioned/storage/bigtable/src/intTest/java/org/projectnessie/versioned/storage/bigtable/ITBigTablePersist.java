@@ -83,8 +83,12 @@ public class ITBigTablePersist extends AbstractPersistTests {
         BigtableTableAdminClient adminClientB = requireNonNull(backendB.adminClient());
 
         List<String> expectedTables = List.of();
-        soft.assertThat(adminClientA.listTables()).containsAll(expectedTables);
-        soft.assertThat(adminClientB.listTables()).containsAll(expectedTables);
+        soft.assertThat(adminClientA.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         // Setup "A"
 
@@ -95,8 +99,12 @@ public class ITBigTablePersist extends AbstractPersistTests {
 
         expectedTables = List.of("instanceA_refs", "instanceA_objs");
 
-        soft.assertThat(adminClientA.listTables()).containsAll(expectedTables);
-        soft.assertThat(adminClientB.listTables()).containsAll(expectedTables);
+        soft.assertThat(adminClientA.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoA.repositoryExists()).isFalse();
         repoA.initialize("main");
@@ -112,8 +120,12 @@ public class ITBigTablePersist extends AbstractPersistTests {
         expectedTables =
             List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
 
-        soft.assertThat(adminClientA.listTables()).containsAll(expectedTables);
-        soft.assertThat(adminClientB.listTables()).containsAll(expectedTables);
+        soft.assertThat(adminClientA.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
+        soft.assertThat(adminClientB.listTables())
+            .filteredOn(t -> t.startsWith("instance"))
+            .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoB.repositoryExists()).isFalse();
         repoB.initialize("main");
