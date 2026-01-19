@@ -49,7 +49,7 @@ tests:
     asserts:
       - matchRegex:
           path: data["application.properties"]
-          pattern: quarkus\.log\.console\.json=true\n
+          pattern: quarkus\.log\.console\.json\.enabled=true\n
   - it: should set console log format
     set:
       log.console.format: "(%t) %s%e%n"
