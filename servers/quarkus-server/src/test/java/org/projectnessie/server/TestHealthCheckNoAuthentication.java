@@ -20,8 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
+import jakarta.inject.Inject;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,8 +33,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 @TestProfile(value = TestBasicAuthentication.Profile.class)
 public class TestHealthCheckNoAuthentication {
 
-  private static RequestSpecification request() {
-    RestAssured.port = Integer.getInteger("quarkus.management.port");
+  @Inject HttpServer httpServer;
+
+  private RequestSpecification request() {
+    RestAssured.port = httpServer.getManagementPort();
     return given().when().baseUri(RestAssured.baseURI);
   }
 

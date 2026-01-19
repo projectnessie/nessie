@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
@@ -43,12 +44,10 @@ public abstract class AbstractTrino {
 
   // Need the S3 endpoint here, which is not accessible via '@BeforeAll'
   @BeforeEach
-  void maybeStartTrino() throws Exception {
+  void maybeStartTrino(HttpServer httpServer) throws Exception {
     if (trinoContainer != null) {
       return;
     }
-
-    int quarkusPort = Integer.getInteger("quarkus.http.port", 19120);
 
     // Use Nessie's convenience 'trino-config' endpoint that provides a _starter_ catalog
     // configuration for Trino.
@@ -58,7 +57,7 @@ public abstract class AbstractTrino {
                 URI.create(
                         format(
                             "http://localhost:%d/iceberg-ext/v1/client-template/trino",
-                            quarkusPort))
+                            httpServer.getPort()))
                     .toURL()
                     .openConnection())
             .getInputStream()) {

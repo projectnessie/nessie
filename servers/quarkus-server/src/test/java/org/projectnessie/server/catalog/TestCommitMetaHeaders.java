@@ -21,6 +21,8 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUS
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
@@ -62,6 +64,8 @@ public class TestCommitMetaHeaders {
   // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
   protected final SoftAssertions soft = new SoftAssertions();
 
+  @Inject HttpServer httpServer;
+
   @AfterEach
   void cleanup() throws Exception {
     try {
@@ -84,9 +88,8 @@ public class TestCommitMetaHeaders {
   }
 
   protected NessieClientBuilder nessieClientBuilder() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
     return NessieClientBuilder.createClientBuilderFromSystemSettings()
-        .withUri(String.format("http://127.0.0.1:%d/api/v2/", catalogServerPort));
+        .withUri(httpServer.getLocalBaseUri().resolve("/api/v2/"));
   }
 
   @Test
