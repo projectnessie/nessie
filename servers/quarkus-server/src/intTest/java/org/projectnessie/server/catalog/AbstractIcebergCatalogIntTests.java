@@ -23,6 +23,7 @@ import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 @WithTestResource(IcebergResourceLifecycleManager.ForIntegrationTests.class)
@@ -30,7 +31,9 @@ public abstract class AbstractIcebergCatalogIntTests extends AbstractIcebergCata
 
   @Test
   public void objectStoreReadiness() throws Exception {
-    int managementPort = Integer.getInteger("quarkus.management.port", 9000);
+    var quarkusManagementPort =
+        ConfigProvider.getConfig().getConfigValue("quarkus.management.port");
+    var managementPort = Integer.parseInt(quarkusManagementPort.getValue());
     URL health = URI.create(String.format("http://127.0.0.1:%d/q/health", managementPort)).toURL();
     URLConnection conn = health.openConnection();
     try (var input = conn.getInputStream()) {

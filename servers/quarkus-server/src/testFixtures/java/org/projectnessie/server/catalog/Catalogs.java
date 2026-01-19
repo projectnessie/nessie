@@ -15,6 +15,9 @@
  */
 package org.projectnessie.server.catalog;
 
+import static java.lang.String.format;
+
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -22,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.HTTPClient;
 import org.apache.iceberg.rest.RESTCatalog;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 public class Catalogs implements AutoCloseable {
   private final Map<Map<String, String>, RESTCatalog> catalogs = new HashMap<>();
@@ -30,10 +34,13 @@ public class Catalogs implements AutoCloseable {
     // normalize
     options = new TreeMap<>(options);
 
+    var quarkusHttpPort = ConfigProvider.getConfig().getConfigValue("quarkus.http.port");
+    var httpPort = Integer.parseInt(quarkusHttpPort.getValue());
+    var serverBaseUri = URI.create(format("http://localhost:%d/", httpPort));
+
     return catalogs.computeIfAbsent(
         options,
         opts -> {
-          int catalogServerPort = Integer.getInteger("quarkus.http.port");
           RESTCatalog c =
               new RESTCatalog(
                   config -> {
@@ -48,9 +55,7 @@ public class Catalogs implements AutoCloseable {
                   });
           c.setConf(new Configuration());
           Map<String, String> catalogOptions = new HashMap<>();
-          catalogOptions.put(
-              CatalogProperties.URI,
-              String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort));
+          catalogOptions.put(CatalogProperties.URI, serverBaseUri.resolve("/iceberg/").toString());
           catalogOptions.putAll(opts);
           c.initialize(getClass().getSimpleName(), catalogOptions);
           return c;

@@ -16,23 +16,25 @@
 package org.projectnessie.server;
 
 import static io.restassured.RestAssured.given;
-import static java.lang.String.format;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemory;
 
 @QuarkusTest
 @TestProfile(QuarkusTestProfilePersistInmemory.class)
 public class TestSinglePageApplicationRouting {
+  @Inject HttpServer httpServer;
 
   @Test
   public void makeSureNonHomePathServesHtml() {
     given()
         .when()
-        .baseUri(format("http://localhost:%d/", Integer.getInteger("quarkus.http.port")))
+        .baseUri(httpServer.getLocalBaseUri().toString())
         .get("/tree/123")
         .then()
         .contentType(ContentType.HTML)
