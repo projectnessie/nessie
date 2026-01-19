@@ -32,7 +32,10 @@ public abstract class AbstractBearerAuthentication extends BaseClientAuthTest {
     return Jwt.preferredUserName("expired")
         .issuer("https://server.example.com")
         .expiresAt(0)
-        .sign();
+        // Need to pass the JWT signing key, as present in the quarkus-test-oidc-server artifact for
+        // the integration test variant, because the configured Quarkus configuration is _not_
+        // available to integration test clients.
+        .sign("privateKey.jwk");
   }
 
   @Test
