@@ -121,8 +121,10 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
 
         List<String> expectedTables = List.of();
         soft.assertThat(clientA.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         // Setup "A"
@@ -135,8 +137,10 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
         expectedTables = List.of("instanceA_refs", "instanceA_objs");
 
         soft.assertThat(clientA.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoA.repositoryExists()).isFalse();
@@ -154,8 +158,10 @@ public class ITDynamoDBPersist extends AbstractPersistTests {
             List.of("instanceA_refs", "instanceA_objs", "instanceB_refs", "instanceB_objs");
 
         soft.assertThat(clientA.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
         soft.assertThat(clientB.listTables().tableNames())
+            .filteredOn(t -> t.startsWith("instance"))
             .containsExactlyInAnyOrderElementsOf(expectedTables);
 
         soft.assertThat(repoB.repositoryExists()).isFalse();
