@@ -93,7 +93,7 @@ public interface ContentService {
               regexp = HASH_OR_RELATIVE_COMMIT_SPEC_REGEX,
               message = HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE)
           String hashOnRef,
-      @Valid @Size @Size(min = 1) List<ContentKey> keys,
+      @Size @Size(min = 1) List<@Valid ContentKey> keys,
       boolean withDocumentation,
       RequestMeta requestMeta)
       throws NessieNotFoundException;
