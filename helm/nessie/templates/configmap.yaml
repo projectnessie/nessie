@@ -48,7 +48,7 @@ data:
     {{- $_ = set $map "quarkus.log.console.enable" "true" -}}
     {{- $_ = set $map "quarkus.log.console.level" .Values.log.console.threshold -}}
     {{- if .Values.log.console.json -}}
-    {{- $_ = set $map "quarkus.log.console.json" "true" -}}
+    {{- $_ = set $map "quarkus.log.console.json.enabled" "true" -}}
     {{- else -}}
     {{- $_ = set $map "quarkus.log.console.format" .Values.log.console.format -}}
     {{- end -}}
