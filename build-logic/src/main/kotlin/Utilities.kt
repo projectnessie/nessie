@@ -133,13 +133,17 @@ fun ModuleDependency.withSparkExcludes(): ModuleDependency {
 }
 
 fun DependencyHandlerScope.forScala(scalaVersion: String) {
+  forScala(scalaVersion, "implementation")
+}
+
+fun DependencyHandlerScope.forScala(scalaVersion: String, configName: String) {
   // Note: Quarkus contains Scala dependencies since 2.9.0
-  add("implementation", "org.scala-lang:scala-library:$scalaVersion!!")
-  add("implementation", "org.scala-lang:scala-reflect:$scalaVersion!!")
+  add(configName, "org.scala-lang:scala-library:$scalaVersion!!")
+  add(configName, "org.scala-lang:scala-reflect:$scalaVersion!!")
   if (scalaVersion.startsWith("2.12")) {
     // We only need this dependency for Scala 2.12, which does not have
     // scala.jdk.CollectionConverters, but the deprecated JavaConverters.
-    add("implementation", "org.scala-lang.modules:scala-collection-compat_2.12:2.12.0")
+    add(configName, "org.scala-lang.modules:scala-collection-compat_2.12:2.12.0")
   }
 }
 

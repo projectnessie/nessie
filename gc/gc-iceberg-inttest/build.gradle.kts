@@ -57,6 +57,10 @@ dependencies {
 
   implementation(libs.agrona)
 
+  // This is required to resolve varying Scala minor version mismatches,
+  // for example via Spark and its transitive dependencies.
+  forScala(sparkScala.scalaVersion, "intTestImplementation")
+
   intTestImplementation(
     nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
   )
