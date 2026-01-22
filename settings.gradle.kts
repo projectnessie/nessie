@@ -42,6 +42,10 @@ dependencyResolutionManagement {
       mavenLocal()
     }
     mavenCentral()
+    maven {
+      url = uri("https://jitpack.io")
+      content { includeModule("com.github.RoaringBitmap.RoaringBitmap", "roaringbitmap") }
+    }
     gradlePluginPortal()
     if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
       maven {
