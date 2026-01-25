@@ -10,7 +10,7 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-* Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
+- Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
   versions. This follows Iceberg's recent change to drop support for Java 11.
 
 ### Breaking changes
@@ -22,6 +22,8 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+
+- Fixes an issue when Nessie was running behind a reverse proxy which existed in Nessie versions 0.105.5 up to 0.106.0.
 
 ### Commits
 
