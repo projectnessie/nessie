@@ -163,5 +163,5 @@ nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.4" }
 protobuf = { id = "com.google.protobuf", version = "0.9.6" }
 quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
-smallrye-openapi = { id = "io.smallrye.openapi", version = "4.1.1" }
+smallrye-openapi = { id = "io.smallrye.openapi", version = "4.2.4" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.5.0"}
