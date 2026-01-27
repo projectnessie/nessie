@@ -156,7 +156,7 @@ wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.13.2" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-6" }
 
 [plugins]
-gatling = { id = "io.gatling.gradle", version = "3.14.9.5" }
+gatling = { id = "io.gatling.gradle", version = "3.14.9.6" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
 nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.4" }
