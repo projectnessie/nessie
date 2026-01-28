@@ -10,9 +10,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-- Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
-  versions. This follows Iceberg's recent change to drop support for Java 11.
-
 ### Breaking changes
 
 ### New Features
@@ -23,9 +20,18 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
-- Fixes an issue when Nessie was running behind a reverse proxy which existed in Nessie versions 0.105.5 up to 0.106.0.
-
 ### Commits
+
+## [0.107.0] Release (2026-01-28)
+
+### Upgrade notes
+
+- Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
+  versions. This follows Iceberg's recent change to drop support for Java 11.
+
+### Fixes
+
+- Fixes an issue when Nessie was running behind a reverse proxy which existed in Nessie versions 0.105.5 up to 0.106.0.
 
 ## [0.106.0] Release (2025-12-05)
 
@@ -1182,7 +1188,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.107.0...HEAD
+[0.107.0]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...nessie-0.107.0
 [0.106.0]: https://github.com/projectnessie/nessie/compare/nessie-0.105.7...nessie-0.106.0
 [0.105.7]: https://github.com/projectnessie/nessie/compare/nessie-0.105.6...nessie-0.105.7
 [0.105.6]: https://github.com/projectnessie/nessie/compare/nessie-0.105.3...nessie-0.105.6

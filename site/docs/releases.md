@@ -2,6 +2,97 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.0 Release (January 28, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.0).
+
+### Upgrade notes
+
+- Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
+  versions. This follows Iceberg's recent change to drop support for Java 11.
+
+### Fixes
+
+- Fixes an issue when Nessie was running behind a reverse proxy which existed in Nessie versions 0.105.5 up to 0.106.0.
+
+### Commits
+* Allow field ID 0 in Iceberg schemas for Paimon compatibility (#11973)
+* Ninja: changelog
+* Add jitpack.io repository also for NesQuEIT (#11958)
+* Fix ExternalBaseUriImpl behavior with X-Forwarded-Prefix header (#11960)
+* Add jitpack.io repository (#11951)
+* Another attempt, follow-up of #11939 (#11950)
+* Update Scala versions (#11949)
+* Enforce scala-lang version (#11939)
+* Let quarkus-build index com.azure:azure-json (#11931)
+* Fix Iceberg-realm.json so example docker containers can work (#11937)
+* Apply changes from #11768 to quarkus-cr workflow (#11935)
+* Tackle quarkus.log.console.json deprecation (#11934)
+* Tackle quarkus.smallrye-health.context-propagation deprecation (#11933)
+* Tackle `@Valid` on collection element type warning (#11932)
+* Fix all ListPrefixes test classes (#11926)
+* Adopt for Junit 6 (#11921)
+* Fix ITBigTablePersis.TablePrefixes execution order issue (#11924)
+* Errorprone: text block (#11905)
+* ErrorProne: switch (#11904)
+* Errorprone: pattern (#11903)
+* Errorprone: fix execution (#11829)
+* Errorprone: fix some Java 17 warnings (#11901)
+* Require Java 17 as the minimum Java version for clients (#11885)
+* Address couple more errorprone warnings (#11900)
+* Errorprone: format string (#11873)
+* Errorprone: Slf4j* (#11895)
+* Errorprone: FutureReturnValueIgnored (#11894)
+* Errorprone: StringSplitter (#11893)
+* Errorprone: EmptyCatch (#11889)
+* Errorprone: AssignmentExpression (#11880)
+* Errorprone: UnnecessaryLambda (#11896)
+* Errorprone: charset + locale (#11886)
+* Errorprone: JdkObsolete (#11890)
+* Errorprone: Duration nanos/seconds (#11892)
+* Errorprone: ConstantPatternCompile (#11891)
+* Errorprone: AddressSelection (#11875)
+* Errorprone: switch pattern (#11887)
+* Errorprone: unused stuff (#11888)
+* Errorprone: InlineMe (#11884)
+* Errorprone: ReferenceEquality (#11883)
+* Errorprone: InvalidBlockTag + AlmostJavadoc (#11882)
+* Errorprone: TypeParameterUnusedInFormals (#11881)
+* Errorprone: JavaUtilDate (#11879)
+* Errorprone: EnumOrdinal (#11877)
+* Errorprone: ReferenceEquality + Class equality (#11876)
+* Errorprone: ByteBufferBackingArray (#11871)
+* Errorprone: unnecessary paranthesis (#11872)
+* Errorprone: IdentityHashMap (#11868)
+* Errorprone: asSubclass() instead of cast (#11869)
+* Errorprone: Collection->List (equals not implemented warning) (#11867)
+* Errorprone: static class (#11866)
+* Errorprone: pattern matching (#11865)
+* Errorprone: resource leak (#11864)
+* Errorprone: ZoneOffset (#11863)
+* Errorprone: BooleanLiteral (#11862)
+* Errorprone: JavaLangClash (#11861)
+* Errorprone: UnnecessaryAssignment (#11860)
+* Errorprone: MixedMutabilityReturnType (#11858)
+* Errorprone: NonCanonicalType (#11857)
+* Errorprone: visibility modifiers (#11854)
+* Errorprone: CanonicalDuration (#11856)
+* Errorprone: VoidUsed (#11859)
+* Errorprone: ImmutableAnnotationChecker (#11855)
+* Errorprone: ClassInitializationDeadlock (#11843)
+* Errorprone: inlineme replacements (#11847)
+* Errorprone: fix use of assertj .as() (#11846)
+* Errorprone: HidingField (#11845)
+* Errorprone: UnnecessaryBoxedVariable (#11844)
+* Errorprone: ImmutableEnumChecker (#11842)
+* Errorprone: ThreadPriorityCheck (#11841)
+* Errorprone: String/repeat (#11840)
+* Errorprone: confusing/inconsistent type names (#11839)
+* Errorprone: missing `@Override` (#11838)
+* Errorprone: disable DoNotCall + DoNotCallSuggester (#11837)
+* Prepare for new errorprone version 2.46.0 (#11825)
+* Helm: Add chart test configuration (#11777)
+
 ## 0.106.1 Release (January 05, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.106.1).
