@@ -1235,4 +1235,50 @@ public class TestNessieModelIceberg {
     soft.assertThat(icebergSchema.schemaId()).isEqualTo(0);
     soft.assertThat(icebergSchema.fields()).hasSize(2); // id and person
   }
+
+  /**
+   * Verifies that schemas with field IDs starting from 0 are accepted.
+   *
+   * <p>This is important for compatibility with Apache Paimon, which assigns field IDs starting
+   * from 0 (hardcoded behavior that cannot be changed). The Iceberg specification does not prohibit
+   * field ID 0, and Iceberg's core library accepts such schemas.
+   */
+  @Test
+  public void schemaWithFieldIdZeroShouldBeValid() {
+    // Schema with field IDs starting from 0 (as produced by Apache Paimon)
+    IcebergSchema schemaWithZeroFieldId =
+        IcebergSchema.builder()
+            .schemaId(0)
+            .addFields(
+                nestedField(0, "id", false, integerType(), null),
+                nestedField(1, "name", false, stringType(), null),
+                nestedField(2, "amount", false, longType(), null))
+            .build();
+
+    // This should NOT throw "Duplicate field ID 0" - field ID 0 is valid per Iceberg spec
+    int maxFieldId = NessieModelIceberg.icebergSchemaMaxFieldId(schemaWithZeroFieldId);
+
+    soft.assertThat(maxFieldId).isEqualTo(2);
+  }
+
+  /**
+   * Verifies that actual duplicate field IDs are still detected and rejected.
+   *
+   * <p>Allowing field ID 0 should not weaken the duplicate detection for truly duplicate IDs.
+   */
+  @Test
+  public void schemaWithActualDuplicateFieldIdsShouldBeRejected() {
+    // Schema with actually duplicate field IDs (both fields have ID 1)
+    IcebergSchema schemaWithDuplicates =
+        IcebergSchema.builder()
+            .schemaId(0)
+            .addFields(
+                nestedField(1, "id", false, integerType(), null),
+                nestedField(1, "name", false, stringType(), null)) // Duplicate ID 1
+            .build();
+
+    soft.assertThatIllegalArgumentException()
+        .isThrownBy(() -> NessieModelIceberg.icebergSchemaMaxFieldId(schemaWithDuplicates))
+        .withMessageContaining("Duplicate field ID");
+  }
 }

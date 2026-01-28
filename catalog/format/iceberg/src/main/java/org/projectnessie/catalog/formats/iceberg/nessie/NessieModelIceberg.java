@@ -1262,7 +1262,6 @@ public class NessieModelIceberg {
 
   public static int icebergSchemaMaxFieldId(IcebergSchema schema) {
     Set<Integer> fieldIds = new HashSet<>();
-    fieldIds.add(INITIAL_COLUMN_ID);
     int max = 0;
     for (IcebergNestedField field : schema.fields()) {
       max = Math.max(max, icebergSchemaMaxFieldId(field, fieldIds));
