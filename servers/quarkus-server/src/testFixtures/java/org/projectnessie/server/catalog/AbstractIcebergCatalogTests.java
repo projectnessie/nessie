@@ -26,6 +26,7 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUS
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
+import io.quarkus.vertx.http.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,6 +81,7 @@ import org.apache.iceberg.view.View;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
@@ -101,6 +103,13 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
   // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
   protected final SoftAssertions soft = new SoftAssertions();
+
+  protected static HttpServer httpServer;
+
+  @BeforeAll
+  public static void beforeAll(HttpServer httpServer) {
+    AbstractIcebergCatalogTests.httpServer = httpServer;
+  }
 
   @Override
   protected RESTCatalog catalog() {
@@ -142,9 +151,8 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   }
 
   protected NessieClientBuilder nessieClientBuilder() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
     return NessieClientBuilder.createClientBuilderFromSystemSettings()
-        .withUri(format("http://127.0.0.1:%d/api/v2/", catalogServerPort));
+        .withUri(format("http://127.0.0.1:%d/api/v2/", httpServer.getPort()));
   }
 
   @Override

@@ -365,7 +365,7 @@ jobs:
 
       - name: Gradle / intTest Quarkus Server
         run:
-          ./gradlew :nessie-quarkus:intTest --scan
+          ./gradlew :nessie-quarkus:intTest --scan --info
 
       - name: Dump quarkus.log
         if: ${{ failure() }}

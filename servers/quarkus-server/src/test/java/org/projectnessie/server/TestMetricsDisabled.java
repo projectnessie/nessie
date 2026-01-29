@@ -17,7 +17,9 @@ package org.projectnessie.server;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.RestAssured;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -29,9 +31,11 @@ import org.projectnessie.quarkus.tests.profiles.QuarkusTestProfilePersistInmemor
 @TestProfile(TestMetricsDisabled.Profile.class)
 public class TestMetricsDisabled extends AbstractQuarkusRest {
 
+  @Inject HttpServer httpServer;
+
   @Test
   void smokeTestMetricsDisabled() {
-    int managementPort = Integer.getInteger("quarkus.management.port");
+    int managementPort = httpServer.getManagementPort();
     URI managementBaseUri;
     try {
       managementBaseUri =

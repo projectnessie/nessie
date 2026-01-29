@@ -251,6 +251,7 @@ com.google.api.grpc:proto-google-cloud-bigtable-admin-v2
 com.google.api.grpc:proto-google-cloud-bigtable-v2
 com.google.api.grpc:proto-google-cloud-monitoring-v3
 com.google.api.grpc:proto-google-cloud-secretmanager-v1
+com.google.api.grpc:proto-google-cloud-secretmanager-v1beta1
 com.google.api.grpc:proto-google-cloud-secretmanager-v1beta2
 com.google.api.grpc:proto-google-cloud-storage-control-v2
 com.google.api.grpc:proto-google-cloud-storage-v2
@@ -461,7 +462,9 @@ io.quarkus:quarkus-oidc
 io.quarkus:quarkus-oidc-common
 io.quarkus:quarkus-opentelemetry
 io.quarkus:quarkus-picocli
+io.quarkus:quarkus-proxy-registry
 io.quarkus:quarkus-reactive-routes
+io.quarkus:quarkus-registry
 io.quarkus:quarkus-rest
 io.quarkus:quarkus-rest-common
 io.quarkus:quarkus-rest-jackson

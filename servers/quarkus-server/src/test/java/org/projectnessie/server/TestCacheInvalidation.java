@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import jakarta.inject.Inject;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -69,6 +70,7 @@ public class TestCacheInvalidation {
   @Inject QuarkusStoreConfig storeConfig;
   @Inject @ServerInstanceId String serverInstanceId;
   @Inject Persist persist;
+  @Inject HttpServer httpServer;
 
   // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
   // of Quarkus class loading issues. See https://github.com/quarkusio/quarkus/issues/19814
@@ -80,7 +82,7 @@ public class TestCacheInvalidation {
   }
 
   URI invalidationUri(String serverInstanceId) throws Exception {
-    int managementPort = Integer.getInteger("quarkus.management.port");
+    int managementPort = httpServer.getManagementPort();
     return new URI(
         "http",
         null,

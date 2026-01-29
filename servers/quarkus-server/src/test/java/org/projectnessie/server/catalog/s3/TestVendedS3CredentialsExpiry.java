@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -56,6 +58,8 @@ public class TestVendedS3CredentialsExpiry {
 
   @SuppressWarnings("unused") // Injected by ObjectStorageMockTestResourceLifecycleManager
   private AssumeRoleHandlerHolder assumeRoleHandler;
+
+  @Inject HttpServer httpServer;
 
   @AfterEach
   void assertAll() {
@@ -92,8 +96,6 @@ public class TestVendedS3CredentialsExpiry {
               .build();
         });
 
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-
     try (RESTCatalog catalog = new RESTCatalog()) {
       catalog.setConf(new Configuration());
       soft.assertThatCode(
@@ -102,7 +104,7 @@ public class TestVendedS3CredentialsExpiry {
                       "nessie-s3-iceberg-api",
                       Map.of(
                           CatalogProperties.URI,
-                          String.format("http://127.0.0.1:%d/iceberg/", catalogServerPort))))
+                          httpServer.getLocalBaseUri().resolve("/iceberg/").toString())))
           .doesNotThrowAnyException();
       soft.assertThatCode(() -> catalog.createNamespace(Namespace.of("foo")))
           .doesNotThrowAnyException();
