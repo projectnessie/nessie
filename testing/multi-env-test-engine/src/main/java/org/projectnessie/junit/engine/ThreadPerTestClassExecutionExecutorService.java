@@ -79,7 +79,7 @@ public class ThreadPerTestClassExecutionExecutorService implements HierarchicalT
     TestDescriptor testDescriptor = getTestDescriptor(testTask);
     UniqueId.Segment lastSegment = testDescriptor.getUniqueId().getLastSegment();
     String type = lastSegment.getType();
-    if ("class".equals(type)) {
+    if ("class-NOP_NOP".equals(type)) {
       AtomicReference<Exception> failure = new AtomicReference<>();
       Thread threadPerClass =
           new Thread(
