@@ -23,7 +23,9 @@ import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import java.util.Map;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -54,6 +56,8 @@ public class TestForwardedPrefix {
 
   private static final String REGEX = "http://localhost:\\d+/nessie-proxy/nessie-root/(\\w+/)+";
 
+  @Inject HttpServer httpServer;
+
   @ParameterizedTest
   @ValueSource(strings = {"nessie-proxy", "/nessie-proxy", "nessie-proxy/", "/nessie-proxy/"})
   public void icebergConfigWithXForwardedPrefix(String forwardedPrefix) {
@@ -62,7 +66,7 @@ public class TestForwardedPrefix {
     Map<String, Object> response =
         given()
             .when()
-            .baseUri(String.format("http://localhost:%d/", Integer.getInteger("quarkus.http.port")))
+            .baseUri(String.format("http://localhost:%d/", httpServer.getPort()))
             .header("X-Forwarded-Prefix", forwardedPrefix)
             .get("/iceberg/v1/config")
             .then()
