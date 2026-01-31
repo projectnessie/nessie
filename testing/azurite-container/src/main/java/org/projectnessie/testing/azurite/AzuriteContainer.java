@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
+import com.azure.storage.file.datalake.DataLakeServiceVersion;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
@@ -95,6 +96,7 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
     return new DataLakeServiceClientBuilder()
         .endpoint(endpoint())
         .credential(credential())
+        .serviceVersion(DataLakeServiceVersion.V2025_07_05)
         .buildClient();
   }
 
