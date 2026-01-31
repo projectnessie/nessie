@@ -1,0 +1,28 @@
+name: Devcontainer Build Test
+
+on:
+  pull_request:
+    # we could be more aggressive with this check, but I also don't want to double dip tests and the rest of CI
+    paths:
+      - '.devcontainer/**'
+
+jobs:
+  build-devcontainer:
+    name: Build and Test Devcontainer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build devcontainer image
+        run: |
+          docker build -t nessie-devcontainer -f .devcontainer/Dockerfile .
+
+      - name: Run gradle build in devcontainer
+        run: |
+          docker run --rm \
+            -v "$(pwd)":/workspace \
+            -w /workspace \
+            -u nessie \
+            nessie-devcontainer \
+            ./gradlew jar testClasses
