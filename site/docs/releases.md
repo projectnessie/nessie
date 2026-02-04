@@ -2,6 +2,23 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.1 Release (February 04, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.1).
+
+### Upgrade notes
+
+- Java minimum version requirement is now Java 17 for all Nessie modules that required Java 11 in earlier Nessie
+  versions. This follows Iceberg's recent change to drop support for Java 11.
+
+### Fixes
+
+- Fixes an issue when Nessie was running behind a reverse proxy which existed in Nessie versions 0.105.5 up to 0.106.0.
+
+### Commits
+* Automatically adjust gradlew during Gradle Wrapper updates (#11999)
+* Azurite: use old service version in tests (#12008)
+
 ## 0.107.0 Release (January 28, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.0).
