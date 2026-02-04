@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.azure.storage.file.datalake.DataLakeServiceClient;
 import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
-import com.azure.storage.file.datalake.DataLakeServiceVersion;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
@@ -72,6 +71,18 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
     this.addExposedPort(DEFAULT_PORT);
     this.setWaitStrategy(new LogMessageWaitStrategy().withRegEx(LOG_WAIT_REGEX));
     this.addEnv("AZURITE_ACCOUNTS", account + ":" + this.secretBase64);
+    // --skipApiVersionCheck is necessary until Azurite supports the latest API version used by
+    // Azure SDK 1.3.4.
+    // See https://github.com/Azure/Azurite/issues/2623
+    this.setCommand(
+        "azurite",
+        "--blobHost",
+        "0.0.0.0",
+        "--tableHost",
+        "0.0.0.0",
+        "--queueHost",
+        "0.0.0.0",
+        "--skipApiVersionCheck");
   }
 
   @Override
@@ -96,7 +107,6 @@ public class AzuriteContainer extends GenericContainer<AzuriteContainer>
     return new DataLakeServiceClientBuilder()
         .endpoint(endpoint())
         .credential(credential())
-        .serviceVersion(DataLakeServiceVersion.V2025_07_05)
         .buildClient();
   }
 
