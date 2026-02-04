@@ -54,8 +54,8 @@ dependencies {
   testImplementation("io.quarkus:quarkus-opentelemetry")
   testImplementation("io.quarkus:quarkus-micrometer")
   testImplementation("io.quarkus:quarkus-micrometer-registry-prometheus")
-  testImplementation("io.quarkus:quarkus-junit5")
-  testImplementation("io.quarkus:quarkus-junit5-mockito")
+  testImplementation("io.quarkus:quarkus-junit")
+  testImplementation("io.quarkus:quarkus-junit-mockito")
 
   testImplementation("io.opentelemetry:opentelemetry-sdk-trace")
 

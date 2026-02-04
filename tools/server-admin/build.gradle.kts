@@ -106,7 +106,7 @@ dependencies {
   intTestImplementation(project(":nessie-multi-env-test-engine"))
   testFixturesApi(project(":nessie-versioned-storage-testextension"))
   testFixturesApi(quarkusPlatform(project))
-  testFixturesApi("io.quarkus:quarkus-junit5")
+  testFixturesApi("io.quarkus:quarkus-junit")
   testFixturesApi(libs.microprofile.openapi)
 
   testFixturesApi(platform(libs.junit.bom))
