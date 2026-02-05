@@ -76,7 +76,7 @@ public class AzuriteExtension
       AzuriteAccess container =
           context
               .getStore(NAMESPACE)
-              .getOrComputeIfAbsent(
+              .computeIfAbsent(
                   field.toString(), x -> createContainer(azurite), AzuriteAccess.class);
 
       makeAccessible(field).set(context.getTestInstance().orElse(null), container);
@@ -101,7 +101,7 @@ public class AzuriteExtension
       throws ParameterResolutionException {
     return extensionContext
         .getStore(NAMESPACE)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             AzuriteExtension.class.getName() + '#' + parameterContext.getParameter().getName(),
             k -> {
               Azurite azurite = parameterContext.findAnnotation(Azurite.class).get();

@@ -120,7 +120,7 @@ public class CombinedNessieClientFactory
   private Persist persist(ExtensionContext extensionContext) {
     return extensionContext
         .getStore(NAMESPACE)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             "persistSupplier",
             x -> {
               PersistFactory persistFactory = backend(extensionContext).createFactory();
@@ -132,7 +132,7 @@ public class CombinedNessieClientFactory
   private Backend backend(ExtensionContext extensionContext) {
     return extensionContext
         .getStore(NAMESPACE)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             "backendSupplier",
             x -> {
               BackendFactory<InmemoryBackendConfig> backendFactory = new InmemoryBackendFactory();
