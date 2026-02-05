@@ -10,6 +10,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
+
 ### Breaking changes
 
 ### New Features
