@@ -65,7 +65,7 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
 
   private final PipedOutputStream pipeOut = new PipedOutputStream();
   private final PipedInputStream pipeIn = new PipedInputStream(pipeOut);
-  private final PrintStream consoleOut = new PrintStream(pipeOut, true, "UTF-8");
+  private final PrintStream consoleOut = new PrintStream(pipeOut, true, UTF_8);
   private final BufferedReader consoleIn = new BufferedReader(new InputStreamReader(pipeIn, UTF_8));
   private final PrintStream standardOut;
 
@@ -262,9 +262,9 @@ abstract class InteractiveResourceOwnerEmulator implements ResourceOwnerEmulator
       for (Iterator<String> iterator = data.keySet().iterator(); iterator.hasNext(); ) {
         String name = iterator.next();
         String value = data.get(name);
-        out.write(URLEncoder.encode(name, "UTF-8").getBytes(UTF_8));
+        out.write(URLEncoder.encode(name, UTF_8).getBytes(UTF_8));
         out.write('=');
-        out.write(URLEncoder.encode(value, "UTF-8").getBytes(UTF_8));
+        out.write(URLEncoder.encode(value, UTF_8).getBytes(UTF_8));
         if (iterator.hasNext()) {
           out.write('&');
         }

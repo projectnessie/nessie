@@ -16,12 +16,14 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -110,7 +112,7 @@ public class KeycloakAuthorizationCodeResourceOwnerEmulator
               callbackUrl.getHost(),
               callbackUrl.getPort(),
               callbackUrl.getPath(),
-              "code=" + URLEncoder.encode(code, "UTF-8") + "&state=" + params.get("state"),
+              "code=" + URLEncoder.encode(code, UTF_8) + "&state=" + params.get("state"),
               null);
     }
     HttpURLConnection conn = (HttpURLConnection) callbackUrl.toURL().openConnection();

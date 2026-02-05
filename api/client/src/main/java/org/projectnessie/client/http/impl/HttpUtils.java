@@ -15,9 +15,10 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -92,13 +93,8 @@ public final class HttpUtils {
       int idx = pair.indexOf("=");
       String name;
       String value;
-      try {
-        name = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-        value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        // cannot happen with UTF-8
-        throw new IllegalStateException(e);
-      }
+      name = URLDecoder.decode(pair.substring(0, idx), UTF_8);
+      value = URLDecoder.decode(pair.substring(idx + 1), UTF_8);
       params.put(name, value);
     }
     return params;

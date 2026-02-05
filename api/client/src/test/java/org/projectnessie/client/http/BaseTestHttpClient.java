@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
@@ -40,7 +41,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -810,10 +810,9 @@ public abstract class BaseTestHttpClient {
 
   public static Map<String, String> decodeFormData(InputStream in) throws IOException {
     Map<String, String> decodedValues;
-    try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8))) {
       String data = reader.readLine();
-      String decodedData = URLDecoder.decode(data, StandardCharsets.UTF_8.name());
+      String decodedData = URLDecoder.decode(data, UTF_8);
       decodedValues = new HashMap<>();
       Iterable<String> keyValues = Splitter.on('&').split(decodedData);
       for (String keyValue : keyValues) {

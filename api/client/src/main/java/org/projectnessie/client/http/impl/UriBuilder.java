@@ -15,9 +15,9 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -45,7 +45,7 @@ public class UriBuilder {
     String trimmedPath = HttpUtils.checkNonNullTrim(path);
     HttpUtils.checkArgument(
         !trimmedPath.isEmpty(), "Path %s must be of length greater than 0", trimmedPath);
-    if (uri.length() > 0 && !trimmedPath.startsWith("/")) {
+    if (!uri.isEmpty() && !trimmedPath.startsWith("/")) {
       uri.append('/');
     }
     uri.append(trimmedPath);
@@ -57,7 +57,7 @@ public class UriBuilder {
       return this;
     }
 
-    if (query.length() > 0) {
+    if (!query.isEmpty()) {
       query.append('&');
     }
 
@@ -87,7 +87,7 @@ public class UriBuilder {
     StringBuilder uriBuilder = new StringBuilder();
     uriBuilder.append(baseUri);
 
-    if (uri.length() > 0) {
+    if (!uri.isEmpty()) {
 
       if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
         uriBuilder.append('/');
@@ -101,7 +101,7 @@ public class UriBuilder {
       for (int i = 0; i < l; i++) {
         char c = uri.charAt(i);
         if (c == '/') {
-          if (pathElement.length() > 0) {
+          if (!pathElement.isEmpty()) {
             uriBuilder.append(encode(pathElement.toString()));
             pathElement.setLength(0);
             uriBuilder.append('/');
@@ -139,7 +139,7 @@ public class UriBuilder {
       checkEmpty(templateValues, uri);
     }
 
-    if (query.length() > 0) {
+    if (!query.isEmpty()) {
       uriBuilder.append("?");
       uriBuilder.append(query);
     }
@@ -148,12 +148,8 @@ public class UriBuilder {
   }
 
   private static String encode(String s) throws HttpClientException {
-    try {
-      // URLEncoder encodes space ' ' to + according to how encoding forms should work. When
-      // encoding URLs %20 should be used instead.
-      return BACKSLASH_PATTERN.matcher(URLEncoder.encode(s, "UTF-8")).replaceAll("%20");
-    } catch (UnsupportedEncodingException e) {
-      throw new HttpClientException(String.format("Cannot url encode %s", s), e);
-    }
+    // URLEncoder encodes space ' ' to + according to how encoding forms should work. When
+    // encoding URLs %20 should be used instead.
+    return BACKSLASH_PATTERN.matcher(URLEncoder.encode(s, UTF_8)).replaceAll("%20");
   }
 }

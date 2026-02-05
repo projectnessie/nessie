@@ -15,7 +15,8 @@
  */
 package org.apache.spark.sql.execution.datasources.v2;
 
-import java.io.UnsupportedEncodingException;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
@@ -114,11 +115,7 @@ public final class CatalogUtils {
   }
 
   private static String decodePrefix(String prefix) {
-    try {
-      prefix = URLDecoder.decode(prefix, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    prefix = URLDecoder.decode(prefix, UTF_8);
     return prefix;
   }
 
