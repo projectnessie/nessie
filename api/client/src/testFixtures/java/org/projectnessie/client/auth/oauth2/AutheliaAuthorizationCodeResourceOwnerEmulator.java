@@ -16,6 +16,7 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -103,7 +104,7 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
     assertThat(response).contains("\"status\":\"OK\"");
     Matcher matcher = REDIRECT_PATTERN.matcher(response);
     assertThat(matcher.find()).isTrue();
-    String redirectUri = URLDecoder.decode(matcher.group(1), "UTF-8").replace("\\u0026", "&");
+    String redirectUri = URLDecoder.decode(matcher.group(1), UTF_8).replace("\\u0026", "&");
     HttpURLConnection redirectConn = openConnection(URI.create(redirectUri));
     writeCookies(redirectConn, cookies);
     return readRedirectUrl(redirectConn, cookies);

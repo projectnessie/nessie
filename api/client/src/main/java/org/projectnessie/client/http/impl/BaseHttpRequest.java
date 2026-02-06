@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.client.http.impl.HttpUtils.GZIP;
 import static org.projectnessie.client.http.impl.HttpUtils.GZIP_DEFLATE;
 import static org.projectnessie.client.http.impl.HttpUtils.HEADER_ACCEPT;
@@ -35,7 +36,6 @@ import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -51,8 +51,7 @@ import org.projectnessie.client.http.ResponseContext;
 
 public abstract class BaseHttpRequest extends HttpRequest {
 
-  private static final TypeReference<Map<String, Object>> MAP_TYPE =
-      new TypeReference<Map<String, Object>>() {};
+  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
   protected BaseHttpRequest(HttpRuntimeConfig config, URI baseUri) {
     super(config, baseUri);
@@ -212,7 +211,7 @@ public abstract class BaseHttpRequest extends HttpRequest {
       writer.forType(bodyType).writeValue(out, body);
     } else {
       // This is mostly used for testing bad/broken JSON
-      out.write(((String) body).getBytes(StandardCharsets.UTF_8));
+      out.write(((String) body).getBytes(UTF_8));
     }
   }
 
@@ -229,13 +228,11 @@ public abstract class BaseHttpRequest extends HttpRequest {
       } else {
         first = false;
       }
-      String key = URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name());
-      String value =
-          URLEncoder.encode(
-              mapper.convertValue(entry.getValue(), String.class), StandardCharsets.UTF_8.name());
-      out.write(key.getBytes(StandardCharsets.UTF_8));
+      String key = URLEncoder.encode(entry.getKey(), UTF_8);
+      String value = URLEncoder.encode(mapper.convertValue(entry.getValue(), String.class), UTF_8);
+      out.write(key.getBytes(UTF_8));
       out.write('=');
-      out.write(value.getBytes(StandardCharsets.UTF_8));
+      out.write(value.getBytes(UTF_8));
     }
   }
 }
