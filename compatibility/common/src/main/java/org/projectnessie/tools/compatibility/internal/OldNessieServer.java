@@ -60,7 +60,7 @@ final class OldNessieServer implements NessieServer {
     OldServerConnectionProvider connectionProvider =
         oldConnectionProvider(store, classLoader, serverKey, backendConfigConsumer);
 
-    return store.getOrComputeIfAbsent(
+    return store.computeIfAbsent(
         serverKey,
         v -> new OldNessieServer(serverKey, connectionProvider, classLoader, initializeRepository),
         OldNessieServer.class);
@@ -71,7 +71,7 @@ final class OldNessieServer implements NessieServer {
       ClassLoader classLoader,
       ServerKey serverKey,
       Consumer<Object> backendConfigConsumer) {
-    return store.getOrComputeIfAbsent(
+    return store.computeIfAbsent(
         connectionProviderKey(serverKey),
         v -> new OldServerConnectionProvider(serverKey, classLoader, backendConfigConsumer),
         OldServerConnectionProvider.class);
@@ -86,7 +86,7 @@ final class OldNessieServer implements NessieServer {
   }
 
   private static ClassLoader classLoader(Store store, Version version) {
-    return store.getOrComputeIfAbsent(
+    return store.computeIfAbsent(
         classLoaderKey(version),
         x -> {
           ClassLoader appClassLoader = Thread.currentThread().getContextClassLoader();

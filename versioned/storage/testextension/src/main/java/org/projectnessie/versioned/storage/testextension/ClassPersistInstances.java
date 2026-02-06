@@ -46,7 +46,7 @@ final class ClassPersistInstances {
   ClassPersistInstances(ExtensionContext context) {
     Store rootStore = context.getRoot().getStore(NAMESPACE);
     ReusableTestBackend reusableTestBackend =
-        rootStore.getOrComputeIfAbsent(
+        rootStore.computeIfAbsent(
             KEY_REUSABLE_BACKEND, k -> new ReusableTestBackend(), ReusableTestBackend.class);
 
     backendSupplier = () -> reusableTestBackend.backend(context);

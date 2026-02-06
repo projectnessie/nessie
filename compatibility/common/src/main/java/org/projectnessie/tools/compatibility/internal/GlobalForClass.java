@@ -42,7 +42,7 @@ final class GlobalForClass {
     String key = String.format("%s <-- %s", forClass, GlobalForClass.class.getName());
 
     return extensionStore(root)
-        .getOrComputeIfAbsent(key, x -> new GlobalForClass(), GlobalForClass.class);
+        .computeIfAbsent(key, x -> new GlobalForClass(), GlobalForClass.class);
   }
 
   @SuppressWarnings({"unchecked", "unused"})

@@ -59,7 +59,7 @@ final class OldNessieApiHolder extends AbstractNessieApiHolder {
 
   private ClassLoader nessieVersionClassLoader(ExtensionContext context) {
     return extensionStore(context.getRoot())
-        .getOrComputeIfAbsent(classloaderKey(), k -> createClassLoader(), ClassLoader.class);
+        .computeIfAbsent(classloaderKey(), k -> createClassLoader(), ClassLoader.class);
   }
 
   private String classloaderKey() {

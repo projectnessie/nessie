@@ -75,7 +75,7 @@ public class GcsExtension
       GcsAccess container =
           context
               .getStore(NAMESPACE)
-              .getOrComputeIfAbsent(field.toString(), x -> createContainer(gcs), GcsAccess.class);
+              .computeIfAbsent(field.toString(), x -> createContainer(gcs), GcsAccess.class);
 
       makeAccessible(field).set(context.getTestInstance().orElse(null), container);
     } catch (Throwable t) {
@@ -99,7 +99,7 @@ public class GcsExtension
       throws ParameterResolutionException {
     return extensionContext
         .getStore(NAMESPACE)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             GcsExtension.class.getName() + '#' + parameterContext.getParameter().getName(),
             k -> {
               Gcs gcs = parameterContext.findAnnotation(Gcs.class).get();

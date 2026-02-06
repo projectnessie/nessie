@@ -90,7 +90,7 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
     ClassPersistInstances classPersistInstances =
         context
             .getStore(NAMESPACE)
-            .getOrComputeIfAbsent(
+            .computeIfAbsent(
                 KEY_STATICS, k -> new ClassPersistInstances(context), ClassPersistInstances.class);
 
     findAnnotatedFields(testClass, NessiePersist.class, ReflectionUtils::isStatic)

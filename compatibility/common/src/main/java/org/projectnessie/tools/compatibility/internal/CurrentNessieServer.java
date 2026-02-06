@@ -53,7 +53,7 @@ final class CurrentNessieServer implements NessieServer {
       BooleanSupplier initializeRepository,
       Consumer<Object> backendConfigConsumer) {
     return extensionStore(extensionContext)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             serverKey,
             k -> new CurrentNessieServer(serverKey, initializeRepository, backendConfigConsumer),
             CurrentNessieServer.class);

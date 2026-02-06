@@ -50,13 +50,12 @@ abstract class AbstractNessieApiHolder implements AutoCloseable {
 
     if (version.equals(Version.CURRENT)) {
       return extensionStore(context)
-          .getOrComputeIfAbsent(
-              clientKey, CurrentNessieApiHolder::new, CurrentNessieApiHolder.class)
+          .computeIfAbsent(clientKey, CurrentNessieApiHolder::new, CurrentNessieApiHolder.class)
           .getApiInstance();
     } else {
       return context
           .getStore(Util.EXTENSION_CONTEXT_NAMESPACE)
-          .getOrComputeIfAbsent(
+          .computeIfAbsent(
               clientKey, k -> new OldNessieApiHolder(context, k), OldNessieApiHolder.class)
           .getApiInstance();
     }
