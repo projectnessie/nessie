@@ -5,8 +5,6 @@ search:
 <!--start-->
 
 ```
-2025-12-05 15:26:49,600 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
-2025-12-05 15:26:50,045 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
 Usage: nessie-server-admin-tool-runner.jar import [-ehV]
        [--commit-batch-size=<commitBatchSize>]
        [--input-buffer-size=<inputBufferSize>] -p=<import-from>

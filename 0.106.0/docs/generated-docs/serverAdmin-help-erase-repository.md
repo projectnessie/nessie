@@ -5,8 +5,6 @@ search:
 <!--start-->
 
 ```
-2025-12-05 15:26:44,239 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
-2025-12-05 15:26:44,677 WARN  [org.hibernate.validator.internal.metadata.aggregated.CascadingMetaDataBuilder] (main) HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: ContentService#getMultipleContents(String, String, List, boolean, RequestMeta)
 Usage: nessie-server-admin-tool-runner.jar erase-repository [-hV]
        [--confirmation-code=<confirmationCode>] [-r=<newDefaultBranch>]
 Erase current Nessie repository (all data will be lost) and optionally
