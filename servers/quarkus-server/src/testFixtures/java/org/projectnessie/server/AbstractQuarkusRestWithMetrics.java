@@ -15,7 +15,9 @@
  */
 package org.projectnessie.server;
 
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.RestAssured;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
@@ -28,8 +30,10 @@ public abstract class AbstractQuarkusRestWithMetrics extends AbstractQuarkusRest
 
   // this test is executed after all tests from the base class
 
+  @Inject HttpServer httpServer;
+
   protected String getMetrics() {
-    int managementPort = Integer.getInteger("quarkus.management.port");
+    int managementPort = httpServer.getManagementPort();
     URI managementBaseUri;
     try {
       managementBaseUri =

@@ -36,7 +36,7 @@ dependencies {
   implementation(project(":nessie-container-spec-helper"))
 
   implementation(quarkusPlatform(project))
-  implementation("io.quarkus:quarkus-junit5")
+  implementation("io.quarkus:quarkus-junit")
 
   implementation(platform(libs.testcontainers.bom))
   implementation("org.testcontainers:testcontainers")

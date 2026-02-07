@@ -18,6 +18,7 @@ package org.projectnessie.server.catalog;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
+import io.quarkus.vertx.http.HttpServer;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
@@ -59,12 +60,10 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
   }
 
   @AfterEach
-  void cleanup() throws Exception {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
-
+  void cleanup(HttpServer httpServer) throws Exception {
     try (NessieApiV2 api =
         NessieClientBuilder.createClientBuilderFromSystemSettings()
-            .withUri(String.format("http://127.0.0.1:%d/api/v2/", catalogServerPort))
+            .withUri(String.format("http://127.0.0.1:%d/api/v2/", httpServer.getPort()))
             .build(NessieApiV2.class)) {
       Reference main = null;
       for (Reference reference : api.getAllReferences().stream().toList()) {

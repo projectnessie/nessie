@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import jakarta.inject.Inject;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -33,9 +34,11 @@ public class TestBasicOperations extends AbstractTestBasicOperations {
 
   @Inject QuarkusStoreConfig storeConfig;
 
+  @Inject HttpServer httpServer;
+
   @Test
   public void receiveCacheInvalidationSmoke() throws Exception {
-    int managementPort = Integer.getInteger("quarkus.management.port");
+    int managementPort = httpServer.getManagementPort();
     URI uri =
         new URI(
             "http",

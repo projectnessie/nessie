@@ -66,7 +66,7 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.awaitility)
   testImplementation(quarkusPlatform(project))
-  testImplementation("io.quarkus:quarkus-junit5")
+  testImplementation("io.quarkus:quarkus-junit")
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.immutables.value.annotations)

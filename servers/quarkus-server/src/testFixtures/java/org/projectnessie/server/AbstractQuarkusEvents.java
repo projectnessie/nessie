@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.quarkus.tests.profiles.BaseConfigProfile.TEST_REPO_ID;
 
 import com.google.common.collect.ImmutableMap;
+import io.quarkus.vertx.http.HttpServer;
 import io.restassured.RestAssured;
 import jakarta.inject.Inject;
 import java.net.URI;
@@ -73,6 +74,8 @@ public abstract class AbstractQuarkusEvents {
   @SuppressWarnings("CdiInjectionPointsInspection")
   @Inject
   public MockEventSubscriber subscriber;
+
+  @Inject HttpServer httpServer;
 
   @BeforeAll
   void startRecording() {
@@ -512,7 +515,7 @@ public abstract class AbstractQuarkusEvents {
   }
 
   private String getMetrics() {
-    int managementPort = Integer.getInteger("quarkus.management.port");
+    int managementPort = httpServer.getManagementPort();
     URI managementBaseUri;
     try {
       managementBaseUri =

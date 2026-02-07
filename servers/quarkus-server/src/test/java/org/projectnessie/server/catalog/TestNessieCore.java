@@ -29,6 +29,7 @@ import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLife
 import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -76,6 +77,8 @@ public class TestNessieCore {
 
   @Inject ObjectIO objectIO;
 
+  @Inject HttpServer httpServer;
+
   String currentBase;
 
   HeapStorageBucket heapStorageBucket;
@@ -95,10 +98,9 @@ public class TestNessieCore {
 
   @BeforeEach
   void createNessieClient() {
-    int catalogServerPort = Integer.getInteger("quarkus.http.port");
     api =
         createClientBuilderFromSystemSettings()
-            .withUri(format("http://127.0.0.1:%d/api/v2", catalogServerPort))
+            .withUri(httpServer.getLocalBaseUri().resolve("/api/v2/"))
             .build(NessieApiV2.class);
 
     @SuppressWarnings("resource")

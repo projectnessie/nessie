@@ -16,13 +16,14 @@
 package org.projectnessie.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.projectnessie.server.QuarkusNessieClientResolver.getQuarkusBaseTestUri;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.Map;
@@ -32,6 +33,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 @QuarkusTest
 @TestProfile(value = TestAnonPathsWithAuthDisabled.Profile.class)
 public class TestAnonPathsWithAuthDisabled {
+  @Inject HttpServer httpServer;
+
   @ParameterizedTest
   @CsvSource(
       value = {
@@ -64,7 +67,7 @@ public class TestAnonPathsWithAuthDisabled {
       })
   public void httpStatusForPath(String method, String path, int expectedStatus) throws Exception {
     var urlConnection =
-        (HttpURLConnection) getQuarkusBaseTestUri().resolve(path).toURL().openConnection();
+        (HttpURLConnection) httpServer.getLocalBaseUri().resolve(path).toURL().openConnection();
     urlConnection.setRequestMethod(method);
     try (var in = urlConnection.getInputStream()) {
       if ("HEAD".equals(method)) {
