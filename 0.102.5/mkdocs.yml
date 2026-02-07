@@ -2,7 +2,7 @@
 # and navigation for each release.
 
 # The site_name is replaced later during a release
-site_name: "Nessie 0.102.5"
+site_name: "Nessie 0.102.5, 0.103.0, 0.103.1"
 repo_url: https://github.com/projectnessie/nessie
 
 plugins:
