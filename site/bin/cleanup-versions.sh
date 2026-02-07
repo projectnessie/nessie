@@ -100,7 +100,7 @@ for i in $(seq 1 "$((num_versions - 2))"); do
       sed -E "s/    - Nessie (${collapse_first}.*): '!include build\/versions\/${collapse_first}\/mkdocs.yml'/    - Nessie \1, ${append_to_site_name}: '!include build\/versions\/${collapse_first}\/mkdocs.yml'/" \
         "${base_dir}/nav.yml" > "${temp_diff_dir}/new-nav.yml"
       mv "${temp_diff_dir}/new-nav.yml" "${base_dir}/nav.yml"
-      for removal in "${removals[@]}"; do
+      for removal in "${collapse_more[@]}"; do
         echo "  Removing ${removal} from nav.yml"
         grep -v "    - Nessie ${removal}" < "${base_dir}/nav.yml" > "${temp_diff_dir}/new-nav.yml"
         mv "${temp_diff_dir}/new-nav.yml" "${base_dir}/nav.yml"
