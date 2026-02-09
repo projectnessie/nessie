@@ -10,9 +10,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-- When using the Google Cloud Secret Manager, you have to explicitly configure
-  `quarkus.google.cloud.secret-manager-enabled=true`.
-
 ### Breaking changes
 
 ### New Features
@@ -24,6 +21,13 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.107.2] Release (2026-02-09)
+
+### Upgrade notes
+
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
 
 ## [0.107.0] Release (2026-01-28)
 
@@ -1191,7 +1195,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.107.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.107.2...HEAD
+[0.107.2]: https://github.com/projectnessie/nessie/compare/nessie-0.107.0...nessie-0.107.2
 [0.107.0]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...nessie-0.107.0
 [0.106.0]: https://github.com/projectnessie/nessie/compare/nessie-0.105.7...nessie-0.106.0
 [0.105.7]: https://github.com/projectnessie/nessie/compare/nessie-0.105.6...nessie-0.105.7

@@ -2,6 +2,22 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.2 Release (February 09, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.2).
+
+### Upgrade notes
+
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
+
+### Commits
+* Update to Quarkus 3.31 (#11995)
+* Fix a few errors for errorprone 2.47.0 (#12038)
+* Tackle a JUnit deprecation (#12037)
+* Quarkus 3.31/Google Secrets Manager: disable by default (#12029)
+* Azurite testcontainer: use `--skipApiVersionCheck` (#12021)
+
 ## 0.107.1 Release (February 04, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.1).
