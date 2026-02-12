@@ -38,14 +38,6 @@ readarray -t versions < <(find . -mindepth 1 -maxdepth 1 -type d -name "[01]*" -
 num_versions=${#versions[@]}
 echo "Found ${num_versions} versions"
 
-#find . -name "*.md" | while read -r file ; do
-#  if grep -qw HV000271 "$file"; then
-#    echo $file
-#  fi
-#done
-#exit 0
-
-
 collapse_first=""
 declare -a collapse_more
 
