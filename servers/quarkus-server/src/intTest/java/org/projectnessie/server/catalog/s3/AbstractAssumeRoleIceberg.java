@@ -190,7 +190,8 @@ public abstract class AbstractAssumeRoleIceberg {
     // Attempts to create files blocked by the server side IAM policy, breaks the createTable() call
     assertThatThrownBy(() -> catalog.createTable(TableIdentifier.of(ns, "table1"), schema))
         .isInstanceOf(ForbiddenException.class)
-        .hasMessageContaining("S3Exception: Access Denied")
+        // Exception depends on the AWSSDK version
+        .hasMessageMatching(".*(S3Exception|AccessDeniedException): Access Denied.*")
         // make sure the error comes from the Catalog Server
         .hasStackTraceContaining("org.apache.iceberg.rest.HTTPClient");
   }
