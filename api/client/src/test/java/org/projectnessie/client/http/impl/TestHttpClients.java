@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -66,31 +65,6 @@ public class TestHttpClients {
 
   @SuppressWarnings("EnumOrdinal")
   static Stream<Arguments> clientByName() {
-
-    if (JRE.currentJre().ordinal() < JRE.JAVA_11.ordinal()) {
-      return Stream.of(
-          arguments(
-              "apachehttp", "org.projectnessie.client.http.impl.apache.ApacheHttpClient", false),
-          arguments(
-              "ApacheHttp", "org.projectnessie.client.http.impl.apache.ApacheHttpClient", false),
-          arguments("http", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", false),
-          arguments("HTTP", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", false),
-          arguments(null, "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", false),
-          arguments(
-              "UrlConnection",
-              "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient",
-              false),
-          arguments(
-              "urlconnection",
-              "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient",
-              false),
-          arguments(
-              "urlconnection", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true),
-          arguments(null, "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true),
-          arguments(
-              "apachehttp", "org.projectnessie.client.http.impl.jdk8.UrlConnectionClient", true));
-    }
-
     return Stream.of(
         arguments(
             "apachehttp", "org.projectnessie.client.http.impl.apache.ApacheHttpClient", false),

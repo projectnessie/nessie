@@ -15,28 +15,18 @@
  */
 package org.projectnessie.client.http.impl.jdk11;
 
-import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.JRE;
 import org.projectnessie.client.http.BaseTestHttpClient;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.impl.HttpRuntimeConfig;
 
 public class TestJavaHttpClient extends BaseTestHttpClient {
-
-  @BeforeAll
-  @SuppressWarnings("EnumOrdinal")
-  public static void checkJava11() {
-    assumeThat(JRE.currentJre()).matches(jre -> jre.ordinal() >= JRE.JAVA_11.ordinal());
-  }
-
   @Override
   protected HttpClient createClient(URI baseUri, Consumer<HttpClient.Builder> customizer) {
     HttpClient.Builder b =
