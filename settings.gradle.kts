@@ -48,10 +48,16 @@ dependencyResolutionManagement {
     }
     gradlePluginPortal()
     if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
+      // This is a hack to let Renovate _not_ query the Apache snapshot repository for all
+      // dependencies.
+      // See https://github.com/renovatebot/renovate/discussions/41291
+      fun configureIndirectForRenovate(asfSnap: MavenArtifactRepository) {
+        asfSnap.url = uri("https://repository.apache.org/content/repositories/snapshots/")
+        asfSnap.mavenContent { snapshotsOnly() }
+      }
       maven {
         name = "Apache Snapshots"
-        url = URI("https://repository.apache.org/content/repositories/snapshots/")
-        mavenContent { snapshotsOnly() }
+        configureIndirectForRenovate(this)
         metadataSources {
           // Workaround for
           // https://youtrack.jetbrains.com/issue/IDEA-327421/IJ-fails-to-import-Gradle-project-with-dependency-with-classifier
