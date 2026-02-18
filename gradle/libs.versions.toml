@@ -25,8 +25,7 @@ opentelemetry = "1.59.0"
 opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.33.5"
-quarkusPlatform = "3.31.3"
-quarkusPlugin = "3.31.3"
+quarkus = "3.31.3"
 quarkusVault = "4.5.0"
 slf4j = "2.0.17"
 undertow = "2.3.23.Final"
@@ -125,7 +124,7 @@ picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "pico
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 quarkus-azure-services-bom = { module = "io.quarkiverse.azureservices:quarkus-azure-services-bom", version = "1.2.2" }
-quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkusPlatform" }
+quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }
 quarkus-logging-sentry = { module = "io.quarkiverse.loggingsentry:quarkus-logging-sentry", version = "2.3.0" }
 quarkus-vault = { module = "io.quarkiverse.vault:quarkus-vault", version.ref = "quarkusVault" }
 quarkus-vault-deployment = { module = "io.quarkiverse.vault:quarkus-vault-deployment", version.ref = "quarkusVault" }
@@ -161,7 +160,7 @@ jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
 nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.4" }
 protobuf = { id = "com.google.protobuf", version = "0.9.6" }
-quarkus = { id = "io.quarkus", version.ref = "quarkusPlugin" }
-quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkusPlugin" }
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkus" }
 smallrye-openapi = { id = "io.smallrye.openapi", version = "4.2.4" }
 jetbrains-changelog = { id = "org.jetbrains.changelog",  version = "2.5.0"}

@@ -214,20 +214,30 @@
     },
 
     {
-      groupName: 'Quarkus Platform and Group',
+      groupName: 'Quarkus Platform + Plugin',
       matchManagers: [
         'gradle',
       ],
       matchPackageNames: [
         'io.quarkus.platform:quarkus-bom',
-        'io.quarkus.platform:quarkus-amazon-services-bom',
-        'io.quarkus.platform:quarkus-cassandra-bom',
-        'io.quarkus.platform:quarkus-google-cloud-services-bom',
-        'io.quarkus:io.quarkus.gradle.plugin',
       ],
       labels: [
         'pr-docker',
       ],
+    },
+    {
+      // skip all non-Platform BOM Quarkus dependencies
+      groupName: 'Quarkus, non Platform',
+      matchManagers: [
+        'gradle'
+      ],
+      matchPackageNames: [
+        'io.quarkus.platform:quarkus-amazon-services-bom',
+        'io.quarkus.platform:quarkus-cassandra-bom',
+        'io.quarkus.platform:quarkus-google-cloud-services-bom',
+        'io.quarkus:io.quarkus.gradle.plugin'
+      ],
+      enabled: true
     },
   ],
 

@@ -71,7 +71,7 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
     )
 
   val quarkusVersion =
-    quarkusCustomVersion ?: project.libs().findVersion("quarkusPlatform").get().requiredVersion
+    quarkusCustomVersion ?: project.libs().findVersion("quarkus").get().requiredVersion
 
   val group =
     if (noQuarkusEnforcedPlatform && extension == "quarkus-bom") "io.quarkus"
