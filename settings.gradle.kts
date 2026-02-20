@@ -42,10 +42,6 @@ dependencyResolutionManagement {
       mavenLocal()
     }
     mavenCentral()
-    maven {
-      url = uri("https://jitpack.io")
-      content { includeModule("com.github.RoaringBitmap.RoaringBitmap", "roaringbitmap") }
-    }
     gradlePluginPortal()
     if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
       // This is a hack to let Renovate _not_ query the Apache snapshot repository for all
