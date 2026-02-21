@@ -237,7 +237,7 @@
         'io.quarkus.platform:quarkus-google-cloud-services-bom',
         'io.quarkus:io.quarkus.gradle.plugin'
       ],
-      enabled: true
+      enabled: false
     },
   ],
 
