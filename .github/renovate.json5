@@ -235,6 +235,7 @@
         'io.quarkus.platform:quarkus-amazon-services-bom',
         'io.quarkus.platform:quarkus-cassandra-bom',
         'io.quarkus.platform:quarkus-google-cloud-services-bom',
+	'io.quarkus.extension',
         'io.quarkus:io.quarkus.gradle.plugin'
       ],
       enabled: false
