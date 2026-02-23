@@ -236,7 +236,14 @@ public abstract class SparkSqlTestBase {
 
   @FormatMethod
   protected static List<Object[]> sqlWithEmptyCache(@FormatString String query, Object... args) {
-    try (SparkSession sparkWithEmptyCache = spark.cloneSession()) {
+    try {
+      Method cloneSessionMethod = SparkSession.class.getMethod("cloneSession");
+      try (SparkSession sparkWithEmptyCache = (SparkSession) cloneSessionMethod.invoke(spark)) {
+        List<Row> rows = sparkWithEmptyCache.sql(format(query, args)).collectAsList();
+        return rows.stream().map(SparkSqlTestBase::toJava).collect(Collectors.toList());
+      }
+    } catch (ReflectiveOperationException e) {
+      SparkSession sparkWithEmptyCache = spark.newSession();
       List<Row> rows = sparkWithEmptyCache.sql(format(query, args)).collectAsList();
       return rows.stream().map(SparkSqlTestBase::toJava).collect(Collectors.toList());
     }
