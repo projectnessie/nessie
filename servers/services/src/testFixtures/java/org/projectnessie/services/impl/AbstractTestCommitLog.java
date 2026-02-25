@@ -16,6 +16,7 @@
 package org.projectnessie.services.impl;
 
 import static com.google.common.collect.Lists.reverse;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -223,7 +224,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commitLog(
             branch.getName(),
             null,
-            String.format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime));
+            format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime));
     soft.assertThat(log)
         .hasSize(expectedTotalSize - 1)
         .allSatisfy(
@@ -234,7 +235,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commitLog(
             branch.getName(),
             null,
-            String.format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater));
+            format("timestamp(commit.commitTime) < timestamp('%s')", fiveMinLater));
     soft.assertThat(log)
         .hasSize(expectedTotalSize)
         .allSatisfy(
@@ -244,7 +245,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commitLog(
             branch.getName(),
             null,
-            String.format(
+            format(
                 "timestamp(commit.commitTime) > timestamp('%s') && timestamp(commit.commitTime) < timestamp('%s')",
                 initialCommitTime, lastCommitTime));
     soft.assertThat(log)
@@ -259,7 +260,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commitLog(
             branch.getName(),
             null,
-            String.format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater));
+            format("timestamp(commit.commitTime) > timestamp('%s')", fiveMinLater));
     soft.assertThat(log).isEmpty();
   }
 
@@ -332,6 +333,60 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
   }
 
   @Test
+  public void filterCommitLogStopOnNonMatch() throws BaseNessieClientServerException {
+    var branch = createBranch("filterCommitLogStopOnNonMatch");
+
+    var numCommitsPerAuthor = 1;
+    var numAuthors = 3;
+    var numCommits = numCommitsPerAuthor * numAuthors;
+
+    var currentHash = branch.getHash();
+
+    // This creates three commits with varying values for the 'author'.
+    // All filtered results must only yield one commit, the most recent one,
+    // because "stop-at-hash" is the hash of the second commit, which does _not_ match the filter.
+    createCommits(branch, 3, numCommitsPerAuthor, currentHash);
+
+    var entireLog = commitLog(branch.getName());
+    soft.assertThat(entireLog).hasSize(numCommits);
+
+    var firstCommitHash = entireLog.get(0).getCommitMeta().getHash();
+    var skippedCommit = entireLog.get(1).getCommitMeta();
+    var secondCommitHash = skippedCommit.getHash();
+    var filterExcluding2ndCommit = format("commit.author != '%s'", skippedCommit.getAuthor());
+
+    var filteredFullLog =
+        treeApi()
+            .getCommitLog(
+                branch.getName(),
+                MINIMAL,
+                secondCommitHash,
+                null,
+                filterExcluding2ndCommit,
+                null,
+                new UnlimitedListResponseHandler<>());
+    soft.assertThat(filteredFullLog)
+        .hasSize(1)
+        .extracting(LogEntry::getCommitMeta)
+        .extracting(CommitMeta::getHash)
+        .containsExactly(firstCommitHash);
+
+    for (var pageSize : List.of(1, 2, 3)) {
+      soft.assertThat(
+              pagedCommitLog(
+                  branch.getName(),
+                  MINIMAL,
+                  filterExcluding2ndCommit,
+                  pageSize,
+                  1,
+                  secondCommitHash))
+          .extracting(LogEntry::getCommitMeta)
+          .extracting(CommitMeta::getHash)
+          .containsExactly(firstCommitHash);
+    }
+  }
+
+  @Test
   public void commitLogPagingAndFilteringByAuthor() throws BaseNessieClientServerException {
     Branch branch = createBranch("commitLogPagingAndFiltering");
 
@@ -355,7 +410,7 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
             pagedCommitLog(
                     branch.getName(),
                     MINIMAL,
-                    String.format("commit.author=='%s'", author),
+                    format("commit.author=='%s'", author),
                     pageSizeHint,
                     commits)
                 .stream()

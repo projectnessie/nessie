@@ -274,6 +274,17 @@ public abstract class BaseTestServiceImpl {
   protected List<LogEntry> pagedCommitLog(
       String refName, FetchOption fetchOption, String filter, int pageSize, int totalCommits)
       throws NessieNotFoundException {
+    return pagedCommitLog(refName, fetchOption, filter, pageSize, totalCommits, null);
+  }
+
+  protected List<LogEntry> pagedCommitLog(
+      String refName,
+      FetchOption fetchOption,
+      String filter,
+      int pageSize,
+      int totalCommits,
+      String stopAtHash)
+      throws NessieNotFoundException {
 
     List<LogEntry> completeLog = new ArrayList<>();
     String token = null;
@@ -284,7 +295,7 @@ public abstract class BaseTestServiceImpl {
               .getCommitLog(
                   refName,
                   fetchOption,
-                  null,
+                  stopAtHash,
                   null,
                   filter,
                   token,
