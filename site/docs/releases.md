@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.3 Release (February 25, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.3).
+
+### Upgrade notes
+
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
+
+### Commits
+* Commit-log should stop at "latest-hash" (#12135)
+* Ninja/Renovate: also ignore `io.quarkus.extension` to prefer the Quarkus Platform BOM
+* Fix typo from #12105
+* Remove jitpack.io repo (#12117)
+* Remove superfluous JRE11 check and assumption (#12106)
+* Renovate: Bump only Quarkus platform BOM (#12105)
+* Do not let Renovate query `repository.a.o/.../snapshots` (#12099)
+* Site: add a script to remove versioned-docs with identical content (#12046)
+* Fixes S3Exception/AccessDeniedExcepiton assertion (#12073)
+* Remove Minio handling from Renovate config (#12059)
+
 ## 0.107.2 Release (February 09, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.2).
