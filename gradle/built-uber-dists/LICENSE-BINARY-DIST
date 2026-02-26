@@ -436,6 +436,7 @@ io.quarkus:quarkus-core
 io.quarkus:quarkus-credentials
 io.quarkus:quarkus-datasource
 io.quarkus:quarkus-datasource-common
+io.quarkus:quarkus-devservices
 io.quarkus:quarkus-development-mode-spi
 io.quarkus:quarkus-elytron-security
 io.quarkus:quarkus-elytron-security-common
@@ -479,6 +480,7 @@ io.quarkus:quarkus-swagger-ui
 io.quarkus:quarkus-tls-registry
 io.quarkus:quarkus-tls-registry-spi
 io.quarkus:quarkus-transaction-annotations
+io.quarkus:quarkus-value-registry
 io.quarkus:quarkus-vertx
 io.quarkus:quarkus-vertx-http
 io.quarkus:quarkus-vertx-latebound-mdc-provider
