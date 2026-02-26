@@ -141,7 +141,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-test-reports
@@ -192,7 +192,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
@@ -249,7 +249,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-reports
@@ -291,7 +291,7 @@ jobs:
           ./gradlew $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-stores-reports
@@ -334,7 +334,7 @@ jobs:
           ./gradlew $(cat ../spark-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-integrations-reports
@@ -377,7 +377,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-server-reports
@@ -421,7 +421,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-tool-reports
@@ -465,7 +465,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-events-reports
