@@ -68,6 +68,8 @@ google-cloud-libraries-bom = { module = "com.google.cloud:libraries-bom", versio
 google-java-format = { module = "com.google.googlejavaformat:google-java-format", version.ref = "googleJavaFormat" }
 guava = { module = "com.google.guava:guava", version = "33.5.0-jre" }
 h2 = { module = "com.h2database:h2", version = "2.4.240" }
+hadoop-hdfs = { module = "org.apache.hadoop:hadoop-hdfs", version.ref = "hadoop" }
+hadoop-hdfs-client = { module = "org.apache.hadoop:hadoop-hdfs-client", version.ref = "hadoop" }
 hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
 hadoop-azure = { module = "org.apache.hadoop:hadoop-azure", version.ref = "hadoop" }
 hadoop-client = { module = "org.apache.hadoop:hadoop-client", version.ref = "hadoop" }

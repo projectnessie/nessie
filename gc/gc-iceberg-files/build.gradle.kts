@@ -38,6 +38,8 @@ dependencies {
     exclude("org.eclipse.jetty")
     exclude("org.apache.zookeeper")
   }
+  implementation(libs.hadoop.hdfs)
+  implementation(libs.hadoop.hdfs.client)
   // Bump the jabx-impl version 2.2.3-1 via hadoop-common to make it work with Java 17+
   implementation(libs.jaxb.impl)
 
