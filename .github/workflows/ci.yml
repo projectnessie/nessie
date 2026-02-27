@@ -619,7 +619,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
         with:
           # https://helm.sh/docs/topics/version_skew/
-          version: 'v3.11.3'
+          version: 'v4.1.1'
 
       - name: Setup chart-testing
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
@@ -836,8 +836,7 @@ jobs:
 
       - name: Run Helm unit tests
         run: |
-          # Pin version to 1.0.2 due to https://github.com/helm-unittest/helm-unittest/issues/790
-          helm plugin install https://github.com/helm-unittest/helm-unittest.git --version 1.0.2 || true
+          helm plugin install --verify=false https://github.com/helm-unittest/helm-unittest.git || true
           helm unittest helm/nessie
 
       - name: Run chart-testing (lint)
@@ -848,11 +847,15 @@ jobs:
 
       - name: Install fixtures
         run: |
-          kubectl create namespace nessie-ns
           # Install Gateway API CRDs
-          kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml
-          helm install envoy-gateway oci://docker.io/envoyproxy/gateway-helm -n gateway --create-namespace
+          helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
+            --version v1.7.0 \
+            --set crds.gatewayAPI.enabled=true \
+            --set crds.gatewayAPI.channel=standard \
+            --set crds.envoyGateway.enabled=false \
+            | kubectl apply --server-side -f -
           # Install other fixtures
+          kubectl create namespace nessie-ns
           kubectl apply --namespace nessie-ns $(find helm/nessie/ci/fixtures -name "*.yaml" -exec echo -n "-f {} " \;)
 
       - name: Run chart-testing (install)
