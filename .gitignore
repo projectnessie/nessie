@@ -75,3 +75,6 @@ __pycache__/
 
 # Spark / Hive
 metastore_db/
+
+# Claude AI assistant files
+CLAUDE.md

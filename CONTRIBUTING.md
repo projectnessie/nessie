@@ -150,6 +150,19 @@ non-obvious platform differences.
 
 TL;DR It is fine to build code on macOS and Windows, but the reference platform is Linux.
 
+#### Development Container
+
+If you prefer not to develop on the metal, Nessie provides a VSCode `devcontainers` development container
+configuration that creates an isolated Linux environment with all required tools pre-installed.
+
+**Quick Start:**
+(Assumes you are using [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) )
+1. Open the project in VS Code
+2. When prompted, click "Reopen in Container" or use `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
+3. Wait for the container to build and start developing!
+
+For detailed instructions and manual Docker usage, see [`.devcontainer/README.md`](.devcontainer/README.md).
+
 #### Running tests on macOS
 
 In our CI we use Podman for macOS, initialized using the following sequence of commands,
