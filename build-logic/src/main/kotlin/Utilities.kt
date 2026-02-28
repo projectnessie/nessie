@@ -371,7 +371,8 @@ fun javaVersionForSpark(sparkMajorVersion: String): Int {
   return when (sparkMajorVersion) {
     "3.3",
     "3.4",
-    "3.5" -> 17
+    "3.5",
+    "4.0" -> 17
     else ->
       throw IllegalArgumentException(
         "Do not know which Java version Spark $sparkMajorVersion supports"
