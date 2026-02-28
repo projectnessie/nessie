@@ -68,4 +68,24 @@ public class TestJdbcHelper extends AbstractJdbcHelper {
         .as("dropping tables again should not throw")
         .doesNotThrowAnyException();
   }
+
+  @Test
+  @Order(2)
+  void truncateTables() {
+    assertThatCode(
+            () -> {
+              try (Connection conn = dataSource.getConnection()) {
+                JdbcHelper.truncateTable(conn);
+              }
+            })
+        .doesNotThrowAnyException();
+    assertThatCode(
+            () -> {
+              try (Connection conn = dataSource.getConnection()) {
+                JdbcHelper.truncateTable(conn);
+              }
+            })
+        .as("truncating tables again should not throw")
+        .doesNotThrowAnyException();
+  }
 }
