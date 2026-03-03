@@ -19,8 +19,8 @@ To access Nessie on Iceberg from a spark cluster make sure the `spark.jars` spar
   ('3.3', '2.12'),
   ('3.3', '2.13'),
 ] %}
-{%- set runtime = iceberg_spark_runtime(sparkver, scalaver) %}
-{%- set extensions = nessie_spark_extensions(sparkver, scalaver) %}
+{%- set runtime = iceberg_spark_runtime(spark=sparkver, scala=scalaver) %}
+{%- set extensions = nessie_spark_extensions(spark=sparkver, scala=scalaver) %}
 | Spark **{{sparkver}}**, Scala **{{scalaver}}**: | `{{runtime.spark_jar_package}}`<br />*([All]({{runtime.all_versions_url}}), [Latest]({{runtime.jar_url}}))* | `{{extensions.spark_jar_package}}`<br />*([All]({{extensions.all_versions_url}}), [Latest]({{extensions.jar_url}}))* |
 {%- endfor %}
 
