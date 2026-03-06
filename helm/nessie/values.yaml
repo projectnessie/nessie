@@ -1098,6 +1098,13 @@ extraInitContainers: []
     #   imagePullPolicy: Always
     #   command: ['sh', '-c', 'echo "hello world"']
 
+# -- Add additional sidecar containers to the nessie pod(s). See https://kubernetes.io/docs/concepts/workloads/pods/.
+extraContainers: []
+    # - name: your-image-name
+    #   image: your-image
+    #   imagePullPolicy: Always
+    #   command: ['sh', '-c', 'echo "hello world"']
+
 # -- Add a PodDisruptionBudget. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/.
 podDisruptionBudget:
   enabled: false
