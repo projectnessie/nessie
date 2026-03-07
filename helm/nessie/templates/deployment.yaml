@@ -155,6 +155,9 @@ spec:
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           resources:
             {{- tpl (toYaml .Values.resources) . | nindent 12 }}
+        {{- if .Values.extraContainers }}
+        {{- tpl (toYaml .Values.extraContainers) . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: nessie-config
           configMap:
