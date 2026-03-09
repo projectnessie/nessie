@@ -460,20 +460,18 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
           String hash = logEntry.getCommitMeta().getHash();
 
-          if (!predicate.test(logEntry)) {
-            continue;
-          }
-
           boolean stop = Objects.equals(hash, stopHash);
 
-          logEntry =
-              logEntryOperationsAccessCheck(successfulChecks, failedChecks, endRef, logEntry);
+          if (predicate.test(logEntry)) {
+            logEntry =
+                logEntryOperationsAccessCheck(successfulChecks, failedChecks, endRef, logEntry);
 
-          if (!pagedResponseHandler.addEntry(logEntry)) {
-            if (!stop) {
-              pagedResponseHandler.hasMore(commits.tokenForCurrent());
+            if (!pagedResponseHandler.addEntry(logEntry)) {
+              if (!stop) {
+                pagedResponseHandler.hasMore(commits.tokenForCurrent());
+              }
+              break;
             }
-            break;
           }
 
           if (stop) {

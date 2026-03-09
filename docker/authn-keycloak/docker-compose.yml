@@ -24,7 +24,7 @@ version: '3'
 services:
 
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.107.2
+    image: ghcr.io/projectnessie/nessie:0.107.3
     ports:
       # API port
       - "19120:19120"
@@ -47,7 +47,7 @@ services:
       retries: 15
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5.4
+    image: quay.io/keycloak/keycloak:26.5.5
     ports:
       - "8080:8080"
       - "9001:9000"

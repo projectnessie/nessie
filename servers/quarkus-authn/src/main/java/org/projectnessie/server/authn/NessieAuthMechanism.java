@@ -16,14 +16,10 @@
 package org.projectnessie.server.authn;
 
 import io.quarkus.security.AuthenticationFailedException;
-import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
-import io.quarkus.security.identity.request.AnonymousAuthenticationRequest;
 import io.quarkus.security.identity.request.AuthenticationRequest;
-import io.quarkus.security.runtime.AnonymousIdentityProvider;
-import io.quarkus.security.spi.runtime.BlockingSecurityExecutor;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
@@ -33,9 +29,12 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.projectnessie.quarkus.config.QuarkusNessieAuthenticationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * HTTP authentication mechanism implementation to disallow all unauthorized accesses, except for
@@ -43,6 +42,8 @@ import org.projectnessie.quarkus.config.QuarkusNessieAuthenticationConfig;
  */
 @ApplicationScoped
 public class NessieAuthMechanism implements HttpAuthenticationMechanism {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieAuthMechanism.class);
 
   /**
    * {@code HttpAuthenticationMechanism}s with a higher priority are "asked" first, let
@@ -55,18 +56,8 @@ public class NessieAuthMechanism implements HttpAuthenticationMechanism {
   private final Set<String> anonymousPaths;
   private final Set<String> anonymousPathPrefixes;
 
-  /** Provides the anonymous {@link SecurityIdentity}. */
-  private final AnonymousIdentityProvider anonymousIdentityProvider;
-
-  /**
-   * The blocking authentication request context, which is technically not needed by the
-   * implementation of {@link AnonymousIdentityProvider}, but we provide it to be on the safe side.
-   */
-  private final AuthenticationRequestContext blockingRequestContext;
-
   @Inject
-  public NessieAuthMechanism(
-      QuarkusNessieAuthenticationConfig config, BlockingSecurityExecutor blockingExecutor) {
+  public NessieAuthMechanism(QuarkusNessieAuthenticationConfig config) {
     this.enabled = config.enabled();
     this.unauthorized = new AuthenticationFailedException("Missing or unrecognized credentials");
     Set<String> paths = new HashSet<>();
@@ -78,8 +69,6 @@ public class NessieAuthMechanism implements HttpAuthenticationMechanism {
             .anonymousPathPrefixes()
             .map(prefixes -> prefixes.stream().map(p -> p + '/').collect(Collectors.toSet()))
             .orElse(Set.of());
-    this.anonymousIdentityProvider = new AnonymousIdentityProvider();
-    this.blockingRequestContext = blockingExecutor::executeBlocking;
   }
 
   boolean checkPath(String path) {
@@ -118,6 +107,7 @@ public class NessieAuthMechanism implements HttpAuthenticationMechanism {
   public Uni<SecurityIdentity> authenticate(
       RoutingContext context, IdentityProviderManager identityProviderManager) {
     if (enabled) {
+      LOGGER.info("Authenticating request for path: {}", context.request().path());
       // Some (REST) resources shall be publicly accessible. In hindsight, this should have been
       // configured using corresponding annotations on the endpoint and/or Quarkus path-based
       // auth-mechanism configuration (see
@@ -134,16 +124,17 @@ public class NessieAuthMechanism implements HttpAuthenticationMechanism {
       return Uni.createFrom().failure(unauthorized);
     }
 
+    LOGGER.info("No authentication for path: {}", context.request().path());
     return anonymous();
   }
 
   /**
-   * Effectively return the {@linkplain AnonymousIdentityProvider anonymous SecurityIdentity}
-   * directly, which is, as of Quarkus 3.16, a constant value.
+   * See Quarkus implementation of {@code
+   * io.quarkus.vertx.http.runtime.security.HttpAuthenticator.NoAuthenticationMechanism.authenticate(RoutingContext,
+   * IdentityProviderManager)}.
    */
   private Uni<SecurityIdentity> anonymous() {
-    return anonymousIdentityProvider.authenticate(
-        AnonymousAuthenticationRequest.INSTANCE, blockingRequestContext);
+    return Uni.createFrom().optional(Optional.empty());
   }
 
   @Override
