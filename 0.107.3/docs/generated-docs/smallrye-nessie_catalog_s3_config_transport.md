@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Default Value | Type | Description |
 |----------|---------------|------|-------------|
 | `nessie.catalog.service.s3.http.max-http-connections` |  | `int` | Override the default maximum number of pooled connections.  |
