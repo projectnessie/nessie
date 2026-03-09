@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.107.3](https://img.shields.io/badge/Version-0.107.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.107.4](https://img.shields.io/badge/Version-0.107.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -291,6 +291,7 @@ are unavailable.
 | dynamodb.secret.awsAccessKeyId | string | `"aws_access_key_id"` | The secret key storing the AWS secret key id. |
 | dynamodb.secret.awsSecretAccessKey | string | `"aws_secret_access_key"` | The secret key storing the AWS secret access key. |
 | dynamodb.secret.name | string | `"awscreds"` | The secret name to pull AWS credentials from. Optional; if not present, the default AWS credentials provider chain is used. |
+| extraContainers | list | `[]` | Add additional sidecar containers to the nessie pod(s). See https://kubernetes.io/docs/concepts/workloads/pods/. |
 | extraEnv | list | `[]` | Advanced configuration via Environment Variables. Extra environment variables to add to the Nessie server container. You can pass here any valid EnvVar object: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core This can be useful to get configuration values from Kubernetes secrets or config maps. |
 | extraInitContainers | list | `[]` | Add additional init containers to the nessie pod(s) See https://kubernetes.io/docs/concepts/workloads/pods/init-containers/. |
 | extraServices | list | `[]` | Additional service definitions. All service definitions always select all Nessie pods. Use this if you need to expose specific ports with different configurations. |

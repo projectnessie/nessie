@@ -2,6 +2,23 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.4 Release (March 09, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.4).
+
+### Upgrade notes
+
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
+
+### Commits
+* add spark sql 4.0 extension (#12126)
+* [Site Doc] fix iceberg version in spark-scala jar link (#12169)
+* Add support for extraContainers in helm chart (#12178)
+* Update Helm CI job (#12152)
+* Quarkus: adapt `anonymous()` "auth" to recent Quarkus changes (#12144)
+* Ninja/Renovate: fix Quarkus extension plugin exclusion
+
 ## 0.107.3 Release (February 25, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.3).
