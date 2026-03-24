@@ -78,7 +78,7 @@ jobs:
         git config --global user.name "Nessie Release Workflow [bot]"
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@0f4528296b4bc09e8ae0fc7be30185a4ab435545 # v6
+      uses: gradle/actions/setup-gradle@39e147cb9de83bb9910b8ef8bd7fff0ee20fcd6f # v6
       with:
         cache-disabled: true
         validate-wrappers: false
