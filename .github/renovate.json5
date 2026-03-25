@@ -101,6 +101,18 @@
     // Specific rules
     //
 
+    // Gradle action - manual merge until https://blog.gradle.org/github-actions-for-gradle-v6 has been checked
+    {
+      matchManagers: [
+        'github-actions',
+      ],
+      automerge: false,
+      platformAutomerge: false,
+      matchPackageNames: [
+        'gradle/actions',
+      ],
+    },
+
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
       matchManagers: [
