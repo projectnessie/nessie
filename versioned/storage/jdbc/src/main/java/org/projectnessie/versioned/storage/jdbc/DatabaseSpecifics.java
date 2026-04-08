@@ -54,6 +54,8 @@ public final class DatabaseSpecifics {
 
   public static final DatabaseSpecific MARIADB_DATABASE_SPECIFIC = new MariaDBDatabaseSpecific();
 
+  public static final DatabaseSpecific SQL_SERVER_DATABASE_SPECIFIC = new SqlServerDatabaseSpecific();
+
   public static DatabaseSpecific detect(DataSource dataSource) {
     try (Connection conn = dataSource.getConnection()) {
       return detect(conn);
@@ -81,6 +83,9 @@ public final class DatabaseSpecifics {
         }
         case "mysql", "mariadb" -> {
           return MARIADB_DATABASE_SPECIFIC;
+        }
+        case "microsoft sql server" -> {
+          return SQL_SERVER_DATABASE_SPECIFIC;
         }
         default ->
             throw new IllegalStateException(

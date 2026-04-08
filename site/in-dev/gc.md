@@ -19,7 +19,7 @@ must be reachable from the host where the GC tool is running. The JDBC-compliant
 be reachable from the host where the GC tool is running. The database is used to store the live
 content sets and the deferred deletes.
 
-Nessie GC has built-in support for PostgreSQL, MariaDB, MySQL (using the MariaDB driver), and H2 
+Nessie GC has built-in support for PostgreSQL, MariaDB, MySQL (using the MariaDB driver), Microsoft SQL Server, and H2
 databases.
 
 !!! note

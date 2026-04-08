@@ -81,6 +81,10 @@ public class JdbcBackendBuilder implements BackendBuilder {
     return dataSourceName;
   }
 
+  private static boolean isMssql(String databaseKind) {
+    return "mssql".equals(databaseKind);
+  }
+
   private void checkDatabaseKind(String dataSourceName, DataSourceBuildTimeConfig config) {
     if (config.dbKind().isEmpty()) {
       throw new IllegalArgumentException(
@@ -89,14 +93,15 @@ public class JdbcBackendBuilder implements BackendBuilder {
     String databaseKind = config.dbKind().get();
     if (!DatabaseKind.isPostgreSQL(databaseKind)
         && !DatabaseKind.isH2(databaseKind)
-        && !DatabaseKind.isMariaDB(databaseKind)) {
+        && !DatabaseKind.isMariaDB(databaseKind)
+        && !isMssql(databaseKind)) {
       throw new IllegalArgumentException(
           "Database kind for datasource "
               + dataSourceName
               + " is configured to '"
               + databaseKind
               + "', which Nessie does not support yet; "
-              + "currently PostgreSQL, H2, MariaDB (and MySQL via MariaDB driver) are supported. "
+              + "currently PostgreSQL, H2, MariaDB (and MySQL via MariaDB driver), and Microsoft SQL Server are supported. "
               + "Feel free to raise a pull request to support your database of choice.");
     }
   }
