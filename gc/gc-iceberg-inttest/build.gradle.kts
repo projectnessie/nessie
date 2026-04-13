@@ -23,7 +23,7 @@ tasks.withType<JavaCompile>().configureEach { options.release = 17 }
 
 publishingHelper { mavenName = "Nessie - GC - Integration tests" }
 
-val sparkScala = useSparkScalaVersionsForProject("3.5", "2.12")
+val sparkScala = useSparkScalaVersionsForProject("3.5", "2.13")
 
 dependencies {
   implementation(libs.hadoop.client)
