@@ -55,15 +55,16 @@ final class TrinoResultsImpl extends AbstractIterator<List<Object>> implements T
       QueryError error;
       while (client.isRunning()) {
         results = client.currentStatusInfo();
+        var data = new ArrayList<List<Object>>();
+        client.currentRows().forEach(data::add);
         error = results.getError();
         if (error != null) {
           throw error.getFailureInfo().toException();
         }
-        Iterable<List<Object>> data = client.currentRows();
 
         client.advance();
 
-        if (data != null) {
+        if (!data.isEmpty()) {
           currentPage = data.iterator();
           break;
         } else {
