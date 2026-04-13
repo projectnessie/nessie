@@ -319,7 +319,13 @@ public class ITOAuth2ClientKeycloak {
       soft.assertThatThrownBy(client::authenticate)
           .asInstanceOf(type(OAuth2Exception.class))
           .extracting(OAuth2Exception::getStatus)
-          .isEqualTo(Status.UNAUTHORIZED);
+          .isIn(
+              // HTTP/401 was returned by Keycloak before v26.6.0 (see below)
+              Status.UNAUTHORIZED,
+              // HTTP/400 is returned by Keycloak since v26.6.0 (see
+              // https://github.com/keycloak/keycloak/issues/45812 and
+              // https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+              Status.BAD_REQUEST);
     }
   }
 

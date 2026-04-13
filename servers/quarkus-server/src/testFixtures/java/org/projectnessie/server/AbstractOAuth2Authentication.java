@@ -67,9 +67,9 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
   protected abstract ResourceOwnerEmulator newResourceOwner(GrantType grantType) throws IOException;
 
   /**
-   * This test expects the OAuthClient to fail with a 401 UNAUTHORIZED, not Nessie. It is too
-   * difficult to configure Keycloak to return a 401 UNAUTHORIZED for a token that was successfully
-   * obtained with the OAuthClient.
+   * This test expects the OAuthClient to fail with a 400 BAD_REQUEST (or 401 UNAUTHORIZED), not
+   * Nessie. It is too challenging to configure Keycloak to return a 401 UNAUTHORIZED for a token
+   * that was successfully obtained with the OAuthClient.
    */
   @Test
   void testUnauthorized() {
@@ -78,7 +78,13 @@ public abstract class AbstractOAuth2Authentication extends BaseClientAuthTest {
     assertThatThrownBy(() -> api().getAllReferences().stream())
         .asInstanceOf(type(OAuth2Exception.class))
         .extracting(OAuth2Exception::getStatus)
-        .isEqualTo(Status.UNAUTHORIZED);
+        .isIn(
+            // HTTP/401 was returned by Keycloak before v26.6.0 (see below)
+            Status.UNAUTHORIZED,
+            // HTTP/400 is returned by Keycloak since v26.6.0 (see
+            // https://github.com/keycloak/keycloak/issues/45812 and
+            // https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+            Status.BAD_REQUEST);
   }
 
   protected Properties clientCredentialsConfig() {
