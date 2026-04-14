@@ -38,56 +38,61 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.testcontainers.containers.BindMode;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @ExtendWith(SoftAssertionsExtension.class)
+@SuppressWarnings({"resource", "deprecation"})
 public class ITOAuth2ClientAuthelia {
 
   private static final int NESSIE_CALLBACK_PORT;
+  private static final int DOCKER_HOST_AUTHELIA_PORT;
+
+  @Container static final FixedHostPortGenericContainer<?> AUTHELIA;
 
   static {
-    try (ServerSocket socket = new ServerSocket(0)) {
-      NESSIE_CALLBACK_PORT = socket.getLocalPort();
+    try (ServerSocket s1 = new ServerSocket(0);
+        ServerSocket s2 = new ServerSocket(0)) {
+      NESSIE_CALLBACK_PORT = s1.getLocalPort();
+      DOCKER_HOST_AUTHELIA_PORT = s2.getLocalPort();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
 
-  @SuppressWarnings("resource")
-  @Container
-  static final GenericContainer<?> AUTHELIA =
-      new GenericContainer<>(
-              ContainerSpecHelper.builder()
-                  .name("authelia")
-                  .containerClass(ITOAuth2ClientAuthelia.class)
-                  .build()
-                  .dockerImageName(null)
-                  .asCompatibleSubstituteFor("authelia/authelia")
-                  .toString())
-          .withExposedPorts(9091)
-          .withEnv("X_AUTHELIA_CONFIG_FILTERS", "template")
-          .withEnv("NESSIE_CALLBACK_PORT", NESSIE_CALLBACK_PORT + "")
-          .withClasspathResourceMapping(
-              "org/projectnessie/client/auth/oauth2/authelia-config.yaml",
-              "/config/configuration.yml",
-              BindMode.READ_ONLY)
-          .withClasspathResourceMapping(
-              "org/projectnessie/client/auth/oauth2/authelia-users.yaml",
-              "/config/users.yml",
-              BindMode.READ_ONLY)
-          .withClasspathResourceMapping(
-              "org/projectnessie/client/auth/oauth2/authelia-key.pem",
-              "/config/key.pem",
-              BindMode.READ_ONLY)
-          .withClasspathResourceMapping(
-              "org/projectnessie/client/auth/oauth2/authelia-cert.pem",
-              "/config/cert.pem",
-              BindMode.READ_ONLY)
-          .waitingFor(Wait.forListeningPort());
+    AUTHELIA =
+        new FixedHostPortGenericContainer<>(
+                ContainerSpecHelper.builder()
+                    .name("authelia")
+                    .containerClass(ITOAuth2ClientAuthelia.class)
+                    .build()
+                    .dockerImageName(null)
+                    .asCompatibleSubstituteFor("authelia/authelia")
+                    .toString())
+            .withFixedExposedPort(DOCKER_HOST_AUTHELIA_PORT, 9091)
+            .withEnv("X_AUTHELIA_CONFIG_FILTERS", "template")
+            .withEnv("NESSIE_CALLBACK_PORT", NESSIE_CALLBACK_PORT + "")
+            .withEnv("DOCKER_HOST_AUTHELIA_PORT", DOCKER_HOST_AUTHELIA_PORT + "")
+            .withClasspathResourceMapping(
+                "org/projectnessie/client/auth/oauth2/authelia-config.yaml",
+                "/config/configuration.yml",
+                BindMode.READ_ONLY)
+            .withClasspathResourceMapping(
+                "org/projectnessie/client/auth/oauth2/authelia-users.yaml",
+                "/config/users.yml",
+                BindMode.READ_ONLY)
+            .withClasspathResourceMapping(
+                "org/projectnessie/client/auth/oauth2/authelia-key.pem",
+                "/config/key.pem",
+                BindMode.READ_ONLY)
+            .withClasspathResourceMapping(
+                "org/projectnessie/client/auth/oauth2/authelia-cert.pem",
+                "/config/cert.pem",
+                BindMode.READ_ONLY)
+            .waitingFor(Wait.forListeningPort());
+  }
 
   private static URI issuerUrl;
 
@@ -95,7 +100,7 @@ public class ITOAuth2ClientAuthelia {
 
   @BeforeAll
   static void beforeAll() {
-    issuerUrl = URI.create("https://127.0.0.1:" + AUTHELIA.getMappedPort(9091));
+    issuerUrl = URI.create("https://127.0.0.1:" + DOCKER_HOST_AUTHELIA_PORT);
   }
 
   @Test
