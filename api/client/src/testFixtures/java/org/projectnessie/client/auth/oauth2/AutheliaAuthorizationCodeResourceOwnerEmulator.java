@@ -16,13 +16,11 @@
 package org.projectnessie.client.auth.oauth2;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +37,8 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
   private static final Logger LOGGER =
       LoggerFactory.getLogger(AutheliaAuthorizationCodeResourceOwnerEmulator.class);
 
-  private static final Pattern REDIRECT_PATTERN = Pattern.compile("\"redirect\":\"([^\"]+)\"");
+  private static final Pattern REDIRECT_PATTERN =
+      Pattern.compile("\"redirect(?:_uri)?\":\"([^\"]+)\"");
 
   private URI authUrl;
 
@@ -79,7 +78,7 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
     LOGGER.info("Performing login...");
     loginPageUrl = readRedirectUrl(openConnection(loginPageUrl), cookies);
     String loginHtml = getHtmlPage(loginPageUrl, cookies);
-    assertThat(loginHtml).contains("Login - Authelia");
+    assertThat(loginHtml).contains("data-basepath");
     Map<String, String> params = HttpUtils.parseQueryString(loginPageUrl.getRawQuery());
     String workflowId = params.get("workflow_id");
     URI loginActionUrl = loginPageUrl.resolve("/api/firstfactor");
@@ -104,10 +103,48 @@ public class AutheliaAuthorizationCodeResourceOwnerEmulator
     assertThat(response).contains("\"status\":\"OK\"");
     Matcher matcher = REDIRECT_PATTERN.matcher(response);
     assertThat(matcher.find()).isTrue();
-    String redirectUri = URLDecoder.decode(matcher.group(1), UTF_8).replace("\\u0026", "&");
+    String redirectUri = matcher.group(1).replace("\\u0026", "&");
     HttpURLConnection redirectConn = openConnection(URI.create(redirectUri));
     writeCookies(redirectConn, cookies);
-    return readRedirectUrl(redirectConn, cookies);
+    URI nextUri = readRedirectUrl(redirectConn, cookies);
+    if (nextUri.getPath().startsWith("/consent/")) {
+      nextUri = acceptConsent(nextUri, cookies);
+    }
+    return nextUri;
+  }
+
+  /**
+   * Authelia adds a consent decision step even with consent_mode: 'implicit'. The React SPA would
+   * auto-submit consent via JavaScript in this case; we call the API directly instead.
+   */
+  private URI acceptConsent(URI consentPageUri, Set<String> cookies) throws Exception {
+    LOGGER.info("Accepting consent at {}...", consentPageUri);
+    Map<String, String> params = HttpUtils.parseQueryString(consentPageUri.getRawQuery());
+    String flowId = params.get("flow_id");
+    assertThat(flowId).as("flow_id must be present in consent URL").isNotNull();
+    // POST consent acceptance to the Authelia consent API.
+    // See ConsentPostRequestBody in authelia/internal/oidc/types.go.
+    URI consentApiUrl = consentPageUri.resolve("/api/oidc/consent");
+    HttpURLConnection consentConn =
+        openConnection(consentApiUrl, "application/json, text/plain, */*");
+    String data =
+        String.format(
+            "{\"flow_id\":\"%s\",\"client_id\":\"nessie-private-ac\",\"consent\":true,\"pre_configure\":false}",
+            flowId);
+    postJson(consentConn, data, cookies);
+    int responseCode = consentConn.getResponseCode();
+    assertThat(responseCode).isEqualTo(HTTP_OK);
+    readCookies(consentConn, cookies);
+    String consentResponse = readBody(consentConn);
+    consentConn.disconnect();
+    Matcher redirectMatcher = REDIRECT_PATTERN.matcher(consentResponse);
+    assertThat(redirectMatcher.find())
+        .as("Expected redirect in consent response: %s", consentResponse)
+        .isTrue();
+    String authzUri = redirectMatcher.group(1).replace("\\u0026", "&");
+    HttpURLConnection authzConn = openConnection(URI.create(authzUri));
+    writeCookies(authzConn, cookies);
+    return readRedirectUrl(authzConn, cookies);
   }
 
   /** Emulate browser being redirected to callback URL. */
