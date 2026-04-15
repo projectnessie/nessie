@@ -92,6 +92,7 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
                     .dockerImageName(null)
                     .asCompatibleSubstituteFor("vault"))
             .withLogConsumer(c -> LOGGER.info("[VAULT] {}", c.getUtf8StringWithoutLineEnding()))
+            .withEnv("SKIP_SETCAP", "true")
             .withVaultToken(VAULT_ROOT_TOKEN)
             .withInitCommand("auth enable userpass");
 
