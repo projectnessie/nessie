@@ -68,6 +68,7 @@ public class ITVaultSecretsProvider {
                   .build()
                   .dockerImageName(null)
                   .asCompatibleSubstituteFor("vault"))
+          .withEnv("SKIP_SETCAP", "true")
           .withLogConsumer(c -> LOGGER.info("[VAULT] {}", c.getUtf8StringWithoutLineEnding()))
           .withVaultToken(VAULT_ROOT_TOKEN);
 
