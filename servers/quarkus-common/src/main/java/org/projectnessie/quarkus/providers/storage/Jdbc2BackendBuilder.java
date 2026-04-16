@@ -75,10 +75,6 @@ public class Jdbc2BackendBuilder implements BackendBuilder {
     return dataSourceName;
   }
 
-  private static boolean isMssql(String databaseKind) {
-    return "mssql".equals(databaseKind);
-  }
-
   private void checkDatabaseKind(String dataSourceName, DataSourceBuildTimeConfig config) {
     if (config.dbKind().isEmpty()) {
       throw new IllegalArgumentException(
@@ -88,7 +84,7 @@ public class Jdbc2BackendBuilder implements BackendBuilder {
     if (!DatabaseKind.isPostgreSQL(databaseKind)
         && !DatabaseKind.isH2(databaseKind)
         && !DatabaseKind.isMariaDB(databaseKind)
-        && !isMssql(databaseKind)) {
+        && !DatabaseKind.isMsSQL(databaseKind)) {
       throw new IllegalArgumentException(
           "Database kind for datasource "
               + dataSourceName

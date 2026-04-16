@@ -48,6 +48,7 @@ dependencies {
   testRuntimeOnly(libs.h2)
   intTestRuntimeOnly(libs.postgresql)
   intTestRuntimeOnly(libs.mariadb.java.client)
+  intTestRuntimeOnly(libs.mssql.jdbc)
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly(libs.docker.java.api)
   testFixturesImplementation(platform(libs.junit.bom))
