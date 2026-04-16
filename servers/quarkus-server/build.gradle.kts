@@ -209,6 +209,8 @@ dependencies {
   intTestCompileOnly(project(":nessie-immutables"))
   intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
 
+  testImplementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
+
   intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
