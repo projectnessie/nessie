@@ -88,7 +88,6 @@ dependencies {
   implementation("io.quarkus:quarkus-logging-json")
   implementation(libs.quarkus.logging.sentry)
   implementation("io.smallrye:smallrye-open-api-jaxrs")
-  implementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
 
   implementation(platform(libs.cel.bom))
   implementation("org.projectnessie.cel:cel-standalone")
@@ -209,6 +208,8 @@ dependencies {
   testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
   intTestCompileOnly(project(":nessie-immutables"))
   intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
+
+  testImplementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
 
   intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
