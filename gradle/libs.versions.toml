@@ -160,7 +160,7 @@ gatling = { id = "io.gatling.gradle", version = "3.15.0.1" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
 nmcp = { id = "com.gradleup.nmcp.aggregation", version = "1.4.4" }
-protobuf = { id = "com.google.protobuf", version = "0.9.6" }
+protobuf = { id = "com.google.protobuf", version = "0.10.0" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 quarkus-extension = { id = "io.quarkus.extension", version.ref = "quarkus" }
 smallrye-openapi = { id = "io.smallrye.openapi", version = "4.3.0" }
