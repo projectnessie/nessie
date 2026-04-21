@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Map of warehouse names to warehouse configurations.
 
 | Property | Default Value | Type | Description |

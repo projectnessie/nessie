@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `REVERT` `CONTENT` <br>
       \[ `DRY` \] <br>
       `OF` **ContentKey** <br>
