@@ -2,6 +2,27 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.5 Release (April 21, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.5).
+
+### Upgrade notes
+
+- When using the Google Cloud Secret Manager, you have to explicitly configure
+  `quarkus.google.cloud.secret-manager-enabled=true`.
+
+### Commits
+* Remove micrometer simpleclient (#12336)
+* Testing/Vault: set `SKIP_SETCAP=true` (#12331)
+* Re-enable Authelia Authorization Code test (#12326)
+* Adapt Authelia integration tests to 4.39.19 (#12322)
+* Adapt tests to Keycloak v26.6.0 (#12312)
+* Trino-testing-container: defensive result rows copy (#12313)
+* Client-integration-tests: use fully qualified Authelia version (#12311)
+* Update dependency io.quarkus.platform:quarkus-bom to v3.33.1 (#12309)
+* Fix IntelliJ import (#12308)
+* Renovate: do not auto-merge Gradle action + revert to v5 (#12251)
+
 ## 0.107.4 Release (March 09, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.4).
