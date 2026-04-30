@@ -45,6 +45,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.SoftAssertions;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -100,11 +101,8 @@ public class TestCacheInvalidation {
     AtomicReference<String> body = new AtomicReference<>();
     AtomicReference<URI> reqUri = new AtomicReference<>();
 
-    // Although the "real" management server binds to the expected random port, as exposed via the
-    // 'quarkus.management.port' system property, the configuration value that is passed to
-    // CacheInvalidationSender's c'tor is 9000. Since we expect that all instances listen to the
-    // same port, we have to bind our "test server" below to port 9000.
-    int managementPort = 9000; // Integer.getInteger("quarkus.management.port");
+    int managementPort =
+        ConfigProvider.getConfig().getValue("quarkus.management.port", Integer.class);
 
     Semaphore sem = new Semaphore(0);
     try (HttpTestServer ignored =
