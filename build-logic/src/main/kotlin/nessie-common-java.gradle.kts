@@ -95,7 +95,7 @@ if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
   }
 }
 
-configurations.all {
+val bannedDependencies = lazy {
   rootProject
     .file("gradle/banned-dependencies.txt")
     .readText(Charsets.UTF_8)
@@ -103,7 +103,11 @@ configurations.all {
     .lines()
     .map { it.trim() }
     .filterNot { it.isBlank() || it.startsWith("#") }
-    .forEach { line ->
+}
+
+configurations.all {
+  if (state == Configuration.State.UNRESOLVED) {
+    bannedDependencies.value.forEach { line ->
       val idx = line.indexOf(':')
       if (idx == -1) {
         exclude(group = line)
@@ -113,4 +117,5 @@ configurations.all {
         exclude(group = group, module = module)
       }
     }
+  }
 }
