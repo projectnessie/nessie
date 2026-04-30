@@ -344,6 +344,24 @@ HTTP_ACCESS_LOG_LEVEL=ERROR java -Xms2g -Xmx2G \
   -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar
 ```
 
+### Microsoft SQL Server
+
+```bash
+docker run -ti --rm -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD='Your_password123' -p 1433:1433 \
+  mcr.microsoft.com/mssql/server:2022-latest
+
+HTTP_ACCESS_LOG_LEVEL=ERROR java -Xms2g -Xmx2G \
+  -Dquarkus.http.port=19121 \
+  -Dnessie.server.send-stacktrace-to-client=true \
+  -Dnessie.version.store.type=JDBC2 \
+  -Dnessie.version.store.persist.cache-capacity-mb=1024 \
+  -Dnessie.version.store.persist.commit-timeout-millis=10000 \
+  -Dquarkus.datasource.username=sa \
+  -Dquarkus.datasource.password=Your_password123 \
+  -Dquarkus.datasource.jdbc.url='jdbc:sqlserver://localhost:1433;encrypt=false;databaseName=nessie' \
+  -jar servers/quarkus-server/build/quarkus-app/quarkus-run.jar
+```
+
 ### Mongo
 
 ```bash

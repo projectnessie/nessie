@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- JDBC version store: experimental support for **Microsoft SQL Server** (`jdbc:sqlserver://` URLs) for both the deprecated `JDBC` and the preferred `JDBC2` version store types. The Nessie server, Server Admin tool, and GC tool ship the Microsoft JDBC driver; automated integration tests against SQL Server are not included yet.
+
 ### Changes
 
 ### Deprecations

@@ -40,4 +40,5 @@ dependencies {
   implementation("org.testcontainers:testcontainers-cockroachdb")
   implementation("org.testcontainers:testcontainers-mariadb")
   implementation("org.testcontainers:testcontainers-mysql")
+  implementation("org.testcontainers:testcontainers-mssqlserver")
 }

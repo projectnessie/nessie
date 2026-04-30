@@ -351,7 +351,7 @@ are unavailable.
 | ingress.hosts[0].service.portName | string | `"nessie-http"` | The port name to route traffic to. Must match one of the ports in service.ports or in extraServices.ports. Optional; if not provided, the first port in service.ports will be used. |
 | ingress.pathType | string | `"ImplementationSpecific"` | Specifies the path type of host paths. Valid values are: "Prefix", "Exact" or "ImplementationSpecific". |
 | ingress.tls | list | `[]` | A list of TLS certificates; each entry has a list of hosts in the certificate, along with the secret name used to terminate TLS traffic on port 443. |
-| jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie"` | The JDBC connection string. If you are using Nessie OSS images, then only PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation for the correct URL format. |
+| jdbc.jdbcUrl | string | `"jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie"` | The JDBC connection string. If you are using Nessie OSS images, then PostgreSQL, MariaDB, MySQL, and Microsoft SQL Server URLs are supported. Check your JDBC driver documentation for the correct URL format. |
 | jdbc.secret.name | string | `"datasource-creds"` | The secret name to pull datasource credentials from. |
 | jdbc.secret.password | string | `"password"` | The secret key storing the datasource password. |
 | jdbc.secret.username | string | `"username"` | The secret key storing the datasource username. |
