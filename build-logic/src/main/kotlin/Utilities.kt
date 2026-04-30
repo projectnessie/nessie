@@ -23,6 +23,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.UnknownProjectException
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
@@ -83,11 +84,13 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
 
 fun Project.cassandraDriverTweak() {
   configurations.all {
-    resolutionStrategy {
-      eachDependency {
-        if (requested.module.toString() == "com.datastax.oss:java-driver-core") {
-          val cstarVersion = libs().findLibrary("cassandra-driver-bom").get().get().version
-          useTarget("org.apache.cassandra:java-driver-core:$cstarVersion")
+    if (state == Configuration.State.UNRESOLVED) {
+      resolutionStrategy {
+        eachDependency {
+          if (requested.module.toString() == "com.datastax.oss:java-driver-core") {
+            val cstarVersion = libs().findLibrary("cassandra-driver-bom").get().get().version
+            useTarget("org.apache.cassandra:java-driver-core:$cstarVersion")
+          }
         }
       }
     }
@@ -100,10 +103,12 @@ fun Project.cassandraDriverTweak() {
  */
 fun Project.dnsjavaDowngrade() {
   configurations.all {
-    resolutionStrategy {
-      eachDependency {
-        when (requested.module.toString()) {
-          "dnsjava:dnsjava" -> useVersion("3.5.3")
+    if (state == Configuration.State.UNRESOLVED) {
+      resolutionStrategy {
+        eachDependency {
+          when (requested.module.toString()) {
+            "dnsjava:dnsjava" -> useVersion("3.5.3")
+          }
         }
       }
     }
