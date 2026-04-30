@@ -102,7 +102,7 @@ public class TestCacheInvalidationSender {
 
     soft.assertThatThrownBy(
             () ->
-                new CacheInvalidationSender(vertx, config, 80, senderId) {
+                new CacheInvalidationSender(vertx, config, senderId) {
                   @Override
                   Future<List<String>> resolveServiceNames(List<String> serviceNames) {
                     return failedFuture(new RuntimeException("foo"));
@@ -110,7 +110,7 @@ public class TestCacheInvalidationSender {
 
                   @Override
                   List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-                      List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+                      List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
                     soft.fail("Not expected");
                     return null;
                   }
@@ -145,7 +145,7 @@ public class TestCacheInvalidationSender {
 
     try {
       CacheInvalidationSender sender =
-          new CacheInvalidationSender(vertx, config, 80, senderId) {
+          new CacheInvalidationSender(vertx, config, senderId) {
             @Override
             Future<List<String>> resolveServiceNames(List<String> serviceNames) {
               try {
@@ -171,10 +171,15 @@ public class TestCacheInvalidationSender {
 
             @Override
             List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-                List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+                List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
               submitResolvedAddresses.set(resolvedAddresses);
               submittedSemaphore.release();
               return null;
+            }
+
+            @Override
+            int quarkusManagementPort() {
+              return 42;
             }
           };
 
@@ -244,7 +249,7 @@ public class TestCacheInvalidationSender {
         buildConfig(tokens, Optional.empty(), Duration.ofSeconds(10), Duration.ofSeconds(10));
 
     CacheInvalidationSender sender =
-        new CacheInvalidationSender(vertx, config, 80, senderId) {
+        new CacheInvalidationSender(vertx, config, senderId) {
           @Override
           Future<List<String>> resolveServiceNames(List<String> serviceNames) {
             return succeededFuture(List.of());
@@ -252,7 +257,7 @@ public class TestCacheInvalidationSender {
 
           @Override
           List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-              List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+              List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
             soft.fail("Not expected");
             return null;
           }
@@ -290,7 +295,7 @@ public class TestCacheInvalidationSender {
 
     Semaphore sem = new Semaphore(0);
     CacheInvalidationSender sender =
-        new CacheInvalidationSender(vertx, config, 80, senderId) {
+        new CacheInvalidationSender(vertx, config, senderId) {
           @Override
           Future<List<String>> resolveServiceNames(List<String> serviceNames) {
             return succeededFuture(resolvedServiceNames);
@@ -298,9 +303,14 @@ public class TestCacheInvalidationSender {
 
           @Override
           List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-              List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+              List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
             sem.release(1);
             return null;
+          }
+
+          @Override
+          int quarkusManagementPort() {
+            return 42;
           }
         };
 
@@ -309,7 +319,7 @@ public class TestCacheInvalidationSender {
     invalidation.accept(senderSpy);
     assertThat(sem.tryAcquire(30, TimeUnit.SECONDS)).isTrue();
 
-    verify(senderSpy).submit(singletonList(expected), resolvedServiceNames);
+    verify(senderSpy).submit(singletonList(expected), resolvedServiceNames, 42);
   }
 
   @Test
@@ -329,7 +339,7 @@ public class TestCacheInvalidationSender {
     Semaphore sem = new Semaphore(0);
     Queue<CacheInvalidation> received = new ConcurrentLinkedQueue<>();
     CacheInvalidationSender sender =
-        new CacheInvalidationSender(vertx, config, 80, senderId) {
+        new CacheInvalidationSender(vertx, config, senderId) {
           @Override
           Future<List<String>> resolveServiceNames(List<String> serviceNames) {
             return succeededFuture(resolvedServiceNames);
@@ -337,12 +347,17 @@ public class TestCacheInvalidationSender {
 
           @Override
           List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-              List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+              List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
             received.addAll(batch);
             soft.assertThat(resolvedAddresses)
                 .containsExactlyInAnyOrderElementsOf(resolvedServiceNames);
             sem.release(batch.size());
             return null;
+          }
+
+          @Override
+          int quarkusManagementPort() {
+            return 42;
           }
         };
 
@@ -402,7 +417,7 @@ public class TestCacheInvalidationSender {
       URI uri = receiver.getUri();
 
       CacheInvalidationSender sender =
-          new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
+          new CacheInvalidationSender(vertx, config, senderId) {
             @Override
             Future<List<String>> resolveServiceNames(List<String> serviceNames) {
               return succeededFuture(List.of(uri.getHost()));
@@ -411,7 +426,9 @@ public class TestCacheInvalidationSender {
 
       CompletableFuture<Void> future =
           CompletableFuture.allOf(
-              sender.submit(singletonList(expected), singletonList(uri.getHost())).stream()
+              sender
+                  .submit(singletonList(expected), singletonList(uri.getHost()), uri.getPort())
+                  .stream()
                   .map(Future::toCompletionStage)
                   .map(CompletionStage::toCompletableFuture)
                   .toArray(CompletableFuture[]::new));
@@ -460,7 +477,7 @@ public class TestCacheInvalidationSender {
       URI uri = receiver.getUri();
 
       CacheInvalidationSender sender =
-          new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
+          new CacheInvalidationSender(vertx, config, senderId) {
             @Override
             Future<List<String>> resolveServiceNames(List<String> serviceNames) {
               return succeededFuture(List.of(uri.getHost()));
@@ -468,7 +485,7 @@ public class TestCacheInvalidationSender {
           };
 
       CompletableFuture<?> future =
-          Future.all(sender.submit(expected, singletonList(uri.getHost())))
+          Future.all(sender.submit(expected, singletonList(uri.getHost()), uri.getPort()))
               .toCompletionStage()
               .toCompletableFuture();
 
@@ -511,7 +528,7 @@ public class TestCacheInvalidationSender {
       URI uri = receiver.getUri();
 
       CacheInvalidationSender sender =
-          new CacheInvalidationSender(vertx, config, uri.getPort(), senderId) {
+          new CacheInvalidationSender(vertx, config, senderId) {
             @Override
             Future<List<String>> resolveServiceNames(List<String> serviceNames) {
               return succeededFuture(List.of(uri.getHost()));
@@ -520,7 +537,7 @@ public class TestCacheInvalidationSender {
 
       CompletableFuture<Void> future =
           CompletableFuture.allOf(
-              sender.submit(expected, singletonList(uri.getHost())).stream()
+              sender.submit(expected, singletonList(uri.getHost()), uri.getPort()).stream()
                   .map(Future::toCompletionStage)
                   .map(CompletionStage::toCompletableFuture)
                   .toArray(CompletableFuture[]::new));

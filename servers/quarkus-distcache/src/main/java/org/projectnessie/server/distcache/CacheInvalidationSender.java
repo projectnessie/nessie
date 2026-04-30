@@ -52,7 +52,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.projectnessie.nessie.networktools.AddressResolver;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.quarkus.providers.ServerInstanceId;
@@ -74,7 +74,6 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private final AddressResolver addressResolver;
 
   private final List<String> serviceNames;
-  private final int httpPort;
   private final String invalidationUri;
   private final long requestTimeout;
 
@@ -85,15 +84,14 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private boolean triggered;
   private final String token;
 
+  private int quarkusManagementPort;
+
   /** Contains the IPv4/6 addresses resolved from {@link #serviceNames}. */
   private volatile List<String> resolvedAddresses = emptyList();
 
   @Inject
   public CacheInvalidationSender(
-      Vertx vertx,
-      QuarkusStoreConfig config,
-      @ConfigProperty(name = "quarkus.management.port") int httpPort,
-      @ServerInstanceId String serverInstanceId) {
+      Vertx vertx, QuarkusStoreConfig config, @ServerInstanceId String serverInstanceId) {
     this.vertx = vertx;
 
     this.addressResolver = new AddressResolver(vertx);
@@ -104,7 +102,6 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
             .toMillis();
     this.httpClient = vertx.createHttpClient();
     this.serviceNames = config.cacheInvalidationServiceNames().orElse(emptyList());
-    this.httpPort = httpPort;
     this.invalidationUri = config.cacheInvalidationUri() + "?sender=" + serverInstanceId;
     this.serviceNameLookupIntervalMillis =
         config.cacheInvalidationServiceNameLookupInterval().toMillis();
@@ -188,7 +185,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
     try {
       invalidations.add(invalidation);
 
-      if (!triggered) {
+      if (!triggered && quarkusManagementPort() != 0) {
         LOGGER.trace("Triggered invalidation submission");
         vertx.executeBlocking(this::sendInvalidations);
         triggered = true;
@@ -200,6 +197,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
 
   private Void sendInvalidations() {
     List<CacheInvalidation> batch = new ArrayList<>(batchSize);
+    var httpPort = quarkusManagementPort();
     try {
       while (true) {
         lock.lock();
@@ -213,7 +211,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
         } finally {
           lock.unlock();
         }
-        submit(batch, resolvedAddresses);
+        submit(batch, resolvedAddresses, httpPort);
         batch = new ArrayList<>(batchSize);
       }
     } finally {
@@ -233,9 +231,18 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   }
 
   @VisibleForTesting
+  int quarkusManagementPort() {
+    if (quarkusManagementPort == 0) {
+      quarkusManagementPort =
+          ConfigProvider.getConfig().getValue("quarkus.management.port", Integer.class);
+    }
+    return quarkusManagementPort;
+  }
+
+  @VisibleForTesting
   @SuppressWarnings("Slf4jDoNotLogMessageOfExceptionExplicitly")
   List<Future<Map.Entry<HttpClientResponse, Buffer>>> submit(
-      List<CacheInvalidation> batch, List<String> resolvedAddresses) {
+      List<CacheInvalidation> batch, List<String> resolvedAddresses, int httpPort) {
     LOGGER.trace("Submitting {} invalidations", batch.size());
 
     String json;
