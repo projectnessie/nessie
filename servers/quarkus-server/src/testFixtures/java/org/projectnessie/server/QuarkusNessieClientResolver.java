@@ -17,8 +17,9 @@ package org.projectnessie.server;
 
 import static java.lang.String.format;
 
+import io.quarkus.test.common.ListeningAddress;
+import io.quarkus.test.config.ValueRegistryInjector;
 import java.net.URI;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.projectnessie.client.ext.NessieClientResolver;
 
@@ -33,9 +34,9 @@ public class QuarkusNessieClientResolver extends NessieClientResolver {
     // The tricky issue here is that QuarkusNessieClientResolver is used as a JUnit extension and
     // there is no guaranteed order of extension-initialization.
     // We also cannot `@Inject` something into an extension, so we have to rely on the "legacy way"
-    // to get the port..
-    var quarkusHttpPort = ConfigProvider.getConfig().getConfigValue("quarkus.http.port");
-    var httpPort = Integer.parseInt(quarkusHttpPort.getValue());
+    // to get the port.
+    var registry = ValueRegistryInjector.get(extensionContext);
+    var httpPort = registry.get(ListeningAddress.HTTP_PORT);
     return URI.create(format("http://localhost:%d/", httpPort));
   }
 }
