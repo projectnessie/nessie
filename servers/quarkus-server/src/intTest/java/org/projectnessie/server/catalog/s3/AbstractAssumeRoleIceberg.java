@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,6 +40,7 @@ import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.types.Types;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.Catalogs;
@@ -90,13 +92,21 @@ public abstract class AbstractAssumeRoleIceberg {
 
   private static final Catalogs CATALOGS = new Catalogs();
 
+  static HttpServer httpServer;
+
+  @BeforeAll
+  static void beforeAll(HttpServer httpServer) {
+    AbstractAssumeRoleIceberg.httpServer = httpServer;
+  }
+
   RESTCatalog catalog() {
     return CATALOGS.getCatalog(
         Map.of(
             AwsClientProperties.CLIENT_REGION,
             MinioTestResourceLifecycleManager.TEST_REGION,
             CatalogProperties.WAREHOUSE_LOCATION,
-            minio.s3BucketUri(scheme(), "").toString()));
+            minio.s3BucketUri(scheme(), "").toString()),
+        httpServer);
   }
 
   protected abstract String scheme();

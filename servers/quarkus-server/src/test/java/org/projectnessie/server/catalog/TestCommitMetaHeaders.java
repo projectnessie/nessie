@@ -112,7 +112,8 @@ public class TestCommitMetaHeaders {
                 "header.Nessie-Commit-Property-foo",
                 "bar",
                 "header.Nessie-Commit-Property-dog",
-                "Elani"));
+                "Elani"),
+            httpServer);
 
     try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
       catalog.createNamespace(NS);
