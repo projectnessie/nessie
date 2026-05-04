@@ -141,6 +141,8 @@ dependencies {
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
+  testFixturesImplementation("io.quarkus:quarkus-junit-config")
+  testFixturesImplementation("io.quarkus:quarkus-test-common")
   testFixturesImplementation(libs.guava)
   testFixturesImplementation(libs.microprofile.openapi)
   testFixturesImplementation(libs.awaitility)

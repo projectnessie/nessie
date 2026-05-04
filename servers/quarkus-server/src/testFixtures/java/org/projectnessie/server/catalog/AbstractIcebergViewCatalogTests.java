@@ -25,6 +25,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.Branch;
@@ -34,9 +35,16 @@ public abstract class AbstractIcebergViewCatalogTests extends ViewCatalogTests<R
 
   private static final Catalogs CATALOGS = new Catalogs();
 
+  protected static HttpServer httpServer;
+
+  @BeforeAll
+  public static void beforeAll(HttpServer httpServer) {
+    AbstractIcebergViewCatalogTests.httpServer = httpServer;
+  }
+
   @Override
   protected RESTCatalog catalog() {
-    return CATALOGS.getCatalog(catalogOptions());
+    return CATALOGS.getCatalog(catalogOptions(), httpServer);
   }
 
   protected Map<String, String> catalogOptions() {

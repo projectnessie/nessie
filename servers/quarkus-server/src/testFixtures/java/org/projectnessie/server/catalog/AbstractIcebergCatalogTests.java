@@ -113,7 +113,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   @Override
   protected RESTCatalog catalog() {
-    return CATALOGS.getCatalog(catalogOptions());
+    return CATALOGS.getCatalog(catalogOptions(), AbstractIcebergCatalogTests.httpServer);
   }
 
   protected Map<String, String> catalogOptions() {

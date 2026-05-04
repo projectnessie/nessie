@@ -17,6 +17,7 @@ package org.projectnessie.server.catalog;
 
 import static java.lang.String.format;
 
+import io.quarkus.vertx.http.HttpServer;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,18 +26,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.HTTPClient;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 public class Catalogs implements AutoCloseable {
   private final Map<Map<String, String>, RESTCatalog> catalogs = new HashMap<>();
 
-  public RESTCatalog getCatalog(Map<String, String> options) {
+  public RESTCatalog getCatalog(Map<String, String> options, HttpServer httpServer) {
     // normalize
     options = new TreeMap<>(options);
 
-    var quarkusHttpPort = ConfigProvider.getConfig().getConfigValue("quarkus.http.port");
-    var httpPort = Integer.parseInt(quarkusHttpPort.getValue());
-    var serverBaseUri = URI.create(format("http://localhost:%d/", httpPort));
+    var serverBaseUri = URI.create(format("http://localhost:%d/", httpServer.getPort()));
 
     return catalogs.computeIfAbsent(
         options,

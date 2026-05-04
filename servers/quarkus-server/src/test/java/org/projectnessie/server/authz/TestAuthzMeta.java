@@ -34,6 +34,7 @@ import static org.projectnessie.services.authz.Check.check;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.vertx.http.HttpServer;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -85,6 +86,8 @@ public class TestAuthzMeta extends BaseClientAuthTest {
 
   HeapStorageBucket heapStorageBucket;
 
+  @Inject HttpServer httpServer;
+
   private static final Catalogs CATALOGS = new Catalogs();
 
   // Cannot use @ExtendWith(SoftAssertionsExtension.class) + @InjectSoftAssertions here, because
@@ -92,7 +95,7 @@ public class TestAuthzMeta extends BaseClientAuthTest {
   protected final SoftAssertions soft = new SoftAssertions();
 
   protected RESTCatalog catalog(Map<String, String> catalogOptions) {
-    return CATALOGS.getCatalog(catalogOptions);
+    return CATALOGS.getCatalog(catalogOptions, httpServer);
   }
 
   @AfterAll
