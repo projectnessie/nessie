@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Dremio
+ * Copyright (C) 2026 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,40 +17,25 @@ package org.projectnessie.events.ri.messaging.nats.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkiverse.reactive.messaging.nats.jetstream.mapper.DefaultPayloadMapper;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.mapper.Serializer;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import jakarta.enterprise.inject.Alternative;
 import java.io.IOException;
-import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.model.ser.Views;
 
+// This type does effectively the same thing as the old ViewAwareJsonPayloadMapper.
 @ApplicationScoped
-public class ViewAwareJsonPayloadMapper extends DefaultPayloadMapper {
-
-  static {
-    int apiVersion = NessieConfiguration.getBuiltInConfig().getMaxSupportedApiVersion();
-    if (apiVersion != 2) {
-      throw new IllegalStateException(
-          "Unexpected API version, this class might be outdated: " + apiVersion);
-    }
-  }
-
+@Alternative // Want to replace
+// io.quarkiverse.reactive.messaging.nats.jetstream.client.mapper.SerializerImpl
+public class ViewAwareSerializer implements Serializer {
   private final ObjectMapper objectMapper;
 
-  @SuppressWarnings("unused")
-  public ViewAwareJsonPayloadMapper() {
-    super(null);
-    this.objectMapper = null;
-  }
-
-  @Inject
-  public ViewAwareJsonPayloadMapper(ObjectMapper objectMapper) {
-    super(objectMapper);
+  public ViewAwareSerializer(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
 
   @Override
-  public byte[] of(Object payload) {
+  public <T> byte[] toBytes(T payload) {
     try {
       if (payload == null) {
         return new byte[0];
@@ -66,7 +51,7 @@ public class ViewAwareJsonPayloadMapper extends DefaultPayloadMapper {
   }
 
   @Override
-  public <T> T of(byte[] data, Class<T> type) {
+  public <T> T readValue(byte[] data, Class<T> type) {
     try {
       assert objectMapper != null;
       return objectMapper.readerWithView(Views.V2.class).readValue(data, type);
