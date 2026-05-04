@@ -378,8 +378,8 @@ io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations
 io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations-support
 io.opentelemetry.instrumentation:opentelemetry-instrumentation-api
 io.opentelemetry.instrumentation:opentelemetry-instrumentation-api-incubator
+io.opentelemetry.instrumentation:opentelemetry-runtime-telemetry
 io.opentelemetry.instrumentation:opentelemetry-runtime-telemetry-java17
-io.opentelemetry.instrumentation:opentelemetry-runtime-telemetry-java8
 io.opentelemetry:opentelemetry-api
 io.opentelemetry:opentelemetry-api-incubator
 io.opentelemetry:opentelemetry-common
