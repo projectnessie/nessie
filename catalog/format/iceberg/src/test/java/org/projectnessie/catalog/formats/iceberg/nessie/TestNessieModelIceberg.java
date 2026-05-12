@@ -1281,4 +1281,74 @@ public class TestNessieModelIceberg {
         .isThrownBy(() -> NessieModelIceberg.icebergSchemaMaxFieldId(schemaWithDuplicates))
         .withMessageContaining("Duplicate field ID");
   }
+
+  @Test
+  public void importPrunesUnreferencedSchemas() {
+    String uuid = UUID.randomUUID().toString();
+    String location = "s3://mybucket/tables/my/table";
+
+    IcebergSchema schema1 =
+        IcebergSchema.builder()
+            .schemaId(0)
+            .addFields(nestedField(1, "id", false, integerType(), null))
+            .build();
+    IcebergSchema schema2 =
+        IcebergSchema.builder()
+            .schemaId(1)
+            .addFields(
+                nestedField(1, "id", false, integerType(), null),
+                nestedField(2, "name", false, stringType(), null))
+            .build();
+    IcebergSchema schema3 =
+        IcebergSchema.builder()
+            .schemaId(2)
+            .addFields(
+                nestedField(1, "id", false, integerType(), null),
+                nestedField(2, "name", false, stringType(), null),
+                nestedField(3, "value", false, longType(), null))
+            .build();
+
+    IcebergTableMetadata metadata =
+        IcebergTableMetadata.builder()
+            .location(location)
+            .tableUuid(uuid)
+            .formatVersion(2)
+            .lastUpdatedMs(1L)
+            .lastColumnId(3)
+            .currentSchemaId(2)
+            .addSchemas(schema1, schema2, schema3)
+            .currentSnapshotId(-1L)
+            .build();
+
+    NessieId snapshotId = NessieId.randomNessieId();
+    NessieTable table =
+        NessieTable.builder()
+            .tableFormat(TableFormat.ICEBERG)
+            .nessieContentId(uuid)
+            .icebergUuid(uuid)
+            .createdTimestamp(Instant.EPOCH)
+            .build();
+
+    NessieTableSnapshot nessieSnapshot =
+        NessieModelIceberg.icebergTableSnapshotToNessie(
+            snapshotId, null, table, metadata, IcebergSnapshot::manifestList);
+
+    soft.assertThat(nessieSnapshot.schemas())
+        .as("import should only store the current schema")
+        .hasSize(1);
+
+    IcebergTableMetadata roundTripped =
+        NessieModelIceberg.nessieTableSnapshotToIceberg(
+            nessieSnapshot, Optional.empty(), properties -> {});
+
+    soft.assertThat(roundTripped.schemas())
+        .as("output metadata should only contain the current schema")
+        .hasSize(1);
+    soft.assertThat(roundTripped.currentSchemaId())
+        .as("the current schema ID should match the output schema")
+        .isEqualTo(roundTripped.schemas().get(0).schemaId());
+    soft.assertThat(roundTripped.schemas().get(0).fields())
+        .as("the current schema should have all 3 fields")
+        .hasSize(3);
+  }
 }
