@@ -100,11 +100,11 @@ final class DependencyResolver {
     RepositorySystem repositorySystem = new RepositorySystemSupplier().get();
     RepositorySystemSession repositorySystemSession = newSession(repositorySystem);
 
+    String mavenCentralUrl =
+        System.getProperty("mavenCentralUrl", "https://repo1.maven.org/maven2/");
     List<RemoteRepository> repositories =
         Collections.singletonList(
-            new RemoteRepository.Builder(
-                    "maven-central", "default", "https://repo1.maven.org/maven2/")
-                .build());
+            new RemoteRepository.Builder("maven-central", "default", mavenCentralUrl).build());
 
     // Note: 'collectDependencies' takes a couple 100ms :(
     CollectRequest collectRequest = new CollectRequest().setRepositories(repositories);
