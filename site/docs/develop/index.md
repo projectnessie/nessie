@@ -1,7 +1,7 @@
 # Architecture
 
 Nessie builds on the recent ecosystem developments around table formats. The rise of
-very large metadata and eventually consistent cloud data lakes (S3 specifically) drove
+very large metadata and cloud data lakes (S3 specifically) drove
 the need for an updated model around metadata management. Where consistent directory
 listings in HDFS used to be sufficient, there were many features lacking. This includes
 snapshotting, consistency and fast planning. Apache Iceberg was created to help alleviate
@@ -21,8 +21,10 @@ require a pointer to the active metadata set to function. This pointer allows th
 current schema, files and partitions in the dataset. Iceberg currently relies on the Hive metastore or hdfs to perform
 this role. The requirements for this root pointer store is it must hold (at least) information about the location of the
 current up-to-date metadata file, and it must be able to update this location atomically. In Hive this is accomplished by
-locks and in hdfs by using atomic file swap operations. These operations don’t exist in eventually consistent cloud
-object stores, necessitating a Hive metastore for cloud data lakes. The Nessie system is designed to store the
+locks and in hdfs by using atomic file swap operations. While modern cloud object stores
+(S3 since December 2020, GCS and Azure Blob since launch) provide strong read-after-write
+consistency, they still lack atomic multi-object swap operations, necessitating a Hive
+metastore for cloud data lakes. The Nessie system is designed to store the
 root metadata pointer and perform atomic updates to this pointer, obviating the need for a Hive metastore. Removing the
 need for a Hive metastore simplifies deployment and broadens the reach of tools that can work with Iceberg tables.
 
