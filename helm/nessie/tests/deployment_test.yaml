@@ -88,3 +88,134 @@ tests:
             name: sidecar-two
             image: nginx
         template: deployment.yaml
+  - it: should render startupProbe with defaults
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /q/health/started
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+            timeoutSeconds: 10
+        template: deployment.yaml
+  - it: should apply startupProbe overrides
+    set:
+      startupProbe:
+        initialDelaySeconds: 7
+        periodSeconds: 15
+        successThreshold: 2
+        failureThreshold: 20
+        timeoutSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /q/health/started
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 7
+            periodSeconds: 15
+            successThreshold: 2
+            failureThreshold: 20
+            timeoutSeconds: 5
+        template: deployment.yaml
+  - it: should render livenessProbe with defaults
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /q/health/live
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 10
+            terminationGracePeriodSeconds: 30
+        template: deployment.yaml
+  - it: should apply livenessProbe overrides
+    set:
+      livenessProbe:
+        initialDelaySeconds: 12
+        periodSeconds: 20
+        successThreshold: 1
+        failureThreshold: 6
+        timeoutSeconds: 4
+        terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /q/health/live
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 12
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 6
+            timeoutSeconds: 4
+            terminationGracePeriodSeconds: 60
+        template: deployment.yaml
+  - it: should render readinessProbe with defaults
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /q/health/ready
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 10
+        template: deployment.yaml
+  - it: should apply readinessProbe overrides
+    set:
+      readinessProbe:
+        initialDelaySeconds: 8
+        periodSeconds: 15
+        successThreshold: 1
+        failureThreshold: 5
+        timeoutSeconds: 3
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /q/health/ready
+              port: nessie-mgmt
+              scheme: HTTP
+            initialDelaySeconds: 8
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 5
+            timeoutSeconds: 3
+        template: deployment.yaml
+  - it: should point all probes at the management port
+    set:
+      managementService:
+        portName: custom-mgmt
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: custom-mgmt
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: custom-mgmt
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: custom-mgmt
+        template: deployment.yaml
