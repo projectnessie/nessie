@@ -128,7 +128,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   @Option(
       names = {"-S", OPTION_STDOUT},
       description = {
-        "Use standard System.in/System.out streams for the terminal instead of opening",
+        "Use standard in/out streams for communicating with the operator instead of opening",
         "the controlling PTY. This makes shell redirection (>) and pipes (|) work even",
         "in environments where jline can still detect a TTY (e.g. interactive shells).",
         "Implies " + OPTION_PLAIN + " (no ANSI control sequences are emitted)."
