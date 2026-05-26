@@ -92,6 +92,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   public static final String OPTION_CONTINUE_ON_ERROR = "--continue-on-error";
   public static final String OPTION_NON_ANSI = "--non-ansi";
   public static final String OPTION_PLAIN = "--plain";
+  public static final String OPTION_STDOUT = "--stdout";
 
   public static final String HISTORY_FILE_DEFAULT = "~/.nessie/nessie-cli.history";
   public static final AttributedStyle STYLE_ERROR_HIGHLIGHT = STYLE_ERROR.italic().bold();
@@ -123,6 +124,17 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       },
       defaultValue = "false")
   private boolean dumbTerminal;
+
+  @Option(
+      names = {"-S", OPTION_STDOUT},
+      description = {
+        "Use standard in/out streams for communicating with the operator instead of opening",
+        "the controlling PTY. This makes shell redirection (>) and pipes (|) work even",
+        "in environments where jline can still detect a TTY (e.g. interactive shells).",
+        "Implies " + OPTION_PLAIN + " (no ANSI control sequences are emitted)."
+      },
+      defaultValue = "false")
+  private boolean stdoutTerminal;
 
   @Option(
       names = {"-q", OPTION_QUIET},
@@ -184,12 +196,23 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
 
   @Override
   public Integer call() throws Exception {
-    Terminal terminal =
-        TerminalBuilder.builder()
-            .jansi(!dumbTerminal)
-            .dumb(dumbTerminal)
-            .provider(dumbTerminal ? TerminalBuilder.PROP_PROVIDER_DUMB : null)
-            .build();
+    // --stdout implies --plain (no ANSI control sequences make sense on a redirected stream).
+    boolean plain = dumbTerminal || stdoutTerminal;
+
+    TerminalBuilder builder = TerminalBuilder.builder().jansi(!plain);
+    if (stdoutTerminal) {
+      // Force a stream-backed terminal that honours shell redirection (>) and pipes (|).
+      // Background: jline's default builder opens the controlling PTY (/dev/tty on POSIX) when
+      // a TTY is detected, which bypasses stdout redirection. Pointing system(false).streams(...)
+      // at System.in/System.out produces a Terminal whose I/O follows the redirected streams.
+      // Setting type="dumb" suppresses ANSI control sequences so the file/pipe stays clean;
+      // we deliberately do NOT pass dumb(true) here because that triggers a TTY lookup which
+      // fails with IllegalStateException when stdout is a regular file or pipe.
+      builder.system(false).streams(System.in, System.out).type("dumb");
+    } else {
+      builder.dumb(plain).provider(plain ? TerminalBuilder.PROP_PROVIDER_DUMB : null);
+    }
+    Terminal terminal = builder.build();
 
     setTerminal(terminal);
 
@@ -203,7 +226,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
     PrintWriter writer = writer();
     try {
       if (!quiet) {
-        writer.print(readResource(dumbTerminal ? "banner-plain.txt" : "banner.txt"));
+        writer.print(readResource(plain ? "banner-plain.txt" : "banner.txt"));
         writer.printf("v%s%n%n", NessieVersion.NESSIE_VERSION);
         writer.print(readResource("welcome.txt"));
 
