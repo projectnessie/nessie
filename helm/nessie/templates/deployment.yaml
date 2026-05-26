@@ -132,6 +132,16 @@ spec:
             {{- tpl (toYaml .Values.extraEnv) . | nindent 12 }}
             {{- end }}
           {{- include "nessie.containerPorts" . | trim | nindent 10 }}
+          startupProbe:
+            httpGet:
+              path: /q/health/started
+              port: {{ .Values.managementService.portName }}
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
           livenessProbe:
             httpGet:
               path: /q/health/live

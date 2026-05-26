@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- Helm chart: support for `startupProbe` has been added.
+
 ### Changes
 
 ### Deprecations
