@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Drops a new Nessie branch or tag using the name specified using the `ReferenceName` parameter.
 The reference type is specified using the `ReferenceType` parameter.
 

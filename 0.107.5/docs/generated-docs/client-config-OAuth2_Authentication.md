@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.issuer-url` | OAuth2 issuer URL. <br><br>The root URL of the OpenID Connect identity issuer provider, which will be used for  discovering supported endpoints and their locations. For Keycloak, this is typically the realm  URL: `https://<keycloak-server>/realms/<realm-name>`.   <br><br>Endpoint discovery is performed using the OpenID Connect Discovery metadata published by the  issuer. See [OpenID Connect  Discovery 1.0 ](https://openid.net/specs/openid-connect-discovery-1_0.html) for more information.   <br><br>Either this property or (`nessie.authentication.oauth2.token-endpoint`) must be set.  |
