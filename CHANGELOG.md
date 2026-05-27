@@ -14,8 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- Helm chart: support for `startupProbe` has been added.
-
 ### Changes
 
 ### Deprecations
@@ -23,6 +21,12 @@ as necessary. Empty sections will not end in the release notes.
 ### Fixes
 
 ### Commits
+
+## [0.107.6] Release (2026-05-27)
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
 
 ## [0.107.2] Release (2026-02-09)
 
@@ -1197,7 +1201,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.107.2...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.107.6...HEAD
+[0.107.6]: https://github.com/projectnessie/nessie/compare/nessie-0.107.2...nessie-0.107.6
 [0.107.2]: https://github.com/projectnessie/nessie/compare/nessie-0.107.0...nessie-0.107.2
 [0.107.0]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...nessie-0.107.0
 [0.106.0]: https://github.com/projectnessie/nessie/compare/nessie-0.105.7...nessie-0.106.0

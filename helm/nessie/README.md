@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.107.5](https://img.shields.io/badge/Version-0.107.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.107.6](https://img.shields.io/badge/Version-0.107.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -437,6 +437,12 @@ are unavailable.
 | serviceMonitor.interval | string | `""` | The scrape interval; leave empty to let Prometheus decide. Must be a valid duration, e.g. 1d, 1h30m, 5m, 10s. |
 | serviceMonitor.labels | object | `{}` | Labels for the created ServiceMonitor so that Prometheus operator can properly pick it up. |
 | serviceMonitor.metricRelabelings | list | `[]` | Relabeling rules to apply to metrics. Ref https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config. |
+| startupProbe | object | `{"failureThreshold":5,"initialDelaySeconds":0,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}` | Configures the startup probe for nessie pods. |
+| startupProbe.failureThreshold | int | `5` | Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1. |
+| startupProbe.initialDelaySeconds | int | `0` | Number of seconds after the container has started before startup probes are initiated. Minimum value is 0. |
+| startupProbe.periodSeconds | int | `10` | How often (in seconds) to perform the probe. Minimum value is 1. |
+| startupProbe.successThreshold | int | `1` | Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1. |
+| startupProbe.timeoutSeconds | int | `10` | Number of seconds after which the probe times out. Minimum value is 1. |
 | tolerations | list | `[]` | A list of tolerations to apply to nessie pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | tracing.attributes | object | `{}` | Resource attributes to identify the nessie service among other tracing sources. See https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service. If left empty, traces will be attached to a service named "Nessie"; to change this, provide a service.name attribute here. |
 | tracing.enabled | bool | `false` | Specifies whether tracing for the nessie server should be enabled. |

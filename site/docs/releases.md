@@ -2,6 +2,26 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.6 Release (May 27, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.6).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+* nessie-cli: add --stdout / -S for stream-backed terminal (#10865) (#12431)
+* Add support for `startupProbe` in helm chart (#12427)
+* Revert Gradle action to v5 (#12430)
+* docs: update outdated eventual consistency wording for cloud object stores (#12424)
+* Bump pymdown-extensions from 10.21.2 to 10.21.3 in /site (#12428)
+* Add --plain / -P alias for the --non-ansi CLI option (#12425)
+* Configurable mavenCentralUrl in DependencyResolver (#12423)
+* Quarkus 3.35 upgrade preparation (#12397)
+* Adapt CacheInvalidationSender + test to dynamic Quarkus management port (#12390)
+* Fix banned-dependency handling wrt detached/copied configuations (#12391)
+
 ## 0.107.5 Release (April 21, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.5).
