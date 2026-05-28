@@ -227,13 +227,24 @@ public class IcebergConfigurer {
     Set<StorageUri> readOnly = new HashSet<>();
     Set<StorageUri> maybeWriteable = writeAccessGranted ? writeable : readOnly;
     StorageUri locationUri = StorageUri.of(tableMetadata.location());
-    (tableMetadata.location().startsWith(warehouseLocation) ? maybeWriteable : readOnly)
+    // Normalize the S3 scheme on both sides of the prefix check so that tables written by
+    // HadoopFileIO (metadata.location prefixed with s3a://) are still classified as writeable
+    // against a warehouse registered with the canonical s3:// scheme. Without this, the
+    // resulting writeable[] is empty and the S3 request signer rejects every PUT/DELETE.
+    String normalizedWarehouseForPrefix = normalizeS3Scheme(warehouseLocation);
+    String normalizedTableLocationForPrefix = normalizeS3Scheme(tableMetadata.location());
+    (normalizedTableLocationForPrefix.startsWith(normalizedWarehouseForPrefix)
+            ? maybeWriteable
+            : readOnly)
         .add(locationUri);
 
     if (!icebergWriteObjectStorage(tableConfig, tableMetadata.properties(), warehouseLocation)) {
       String writeLocation = icebergWriteLocation(tableMetadata.properties());
-      if (writeLocation != null && !writeLocation.startsWith(tableMetadata.location())) {
-        (writeLocation.startsWith(warehouseLocation) ? maybeWriteable : readOnly)
+      if (writeLocation != null
+          && !normalizeS3Scheme(writeLocation).startsWith(normalizedTableLocationForPrefix)) {
+        (normalizeS3Scheme(writeLocation).startsWith(normalizedWarehouseForPrefix)
+                ? maybeWriteable
+                : readOnly)
             .add(StorageUri.of(writeLocation));
       }
     }
