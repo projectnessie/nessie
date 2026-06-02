@@ -36,6 +36,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.FilesTable;
 import org.apache.iceberg.HasTableOperations;
@@ -1429,7 +1430,7 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     table.newAppend().appendFile(anotherFile).commit();
     table
         .expireSnapshots()
-        .cleanExpiredFiles(false)
+        .cleanupLevel(ExpireSnapshots.CleanupLevel.ALL)
         .expireOlderThan(table.currentSnapshot().timestampMillis())
         .cleanExpiredMetadata(true)
         .commit();
