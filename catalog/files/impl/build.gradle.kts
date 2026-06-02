@@ -70,6 +70,9 @@ dependencies {
 
   testRuntimeOnly(libs.logback.classic)
 
+  // For AWSSDK 2.46+
+  testRuntimeOnly(libs.slf4j.jcl.over.slf4j)
+
   jmhImplementation(libs.jmh.core)
   jmhImplementation(project(":nessie-object-storage-mock"))
   jmhAnnotationProcessor(libs.jmh.generator.annprocess)
