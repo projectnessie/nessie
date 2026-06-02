@@ -92,7 +92,8 @@ public abstract class BaseNessieCli {
   }
 
   public boolean dumbTerminal() {
-    return terminal.getType().equals("dumb");
+    String type = terminal.getType();
+    return type != null && type.startsWith(Terminal.TYPE_DUMB);
   }
 
   public void setCurrentReference(Reference currentReference) {
