@@ -67,6 +67,7 @@ public class IcebergConfigurer {
 
   static final String ICEBERG_WAREHOUSE_LOCATION = "warehouse";
   static final String ICEBERG_PREFIX = "prefix";
+  static final String ICEBERG_REST_PAGE_SIZE = "rest-page-size";
 
   static final String METRICS_REPORTING_ENABLED = "rest-metrics-reporting-enabled";
 
@@ -187,8 +188,8 @@ public class IcebergConfigurer {
     configDefault.accept(METRICS_REPORTING_ENABLED, "false");
     configDefault.accept(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     uriInfo.icebergConfigDefaults(configDefault);
-    // allow users to override the 'rest-page-size' in the Nessie configuration
-    configDefault.accept("rest-page-size", "200");
+    // Same key as Iceberg's RESTCatalogProperties.PAGE_SIZE.
+    configDefault.accept(ICEBERG_REST_PAGE_SIZE, "200");
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
