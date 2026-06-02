@@ -57,8 +57,10 @@ dependencies {
   implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkiverse.amazonservices:quarkus-amazon-dynamodb")
 
-  implementation(libs.testcontainers.keycloak)
-  implementation(libs.keycloak.admin.client)
+  implementation(libs.testcontainers.keycloak) {
+    exclude(group = "org.keycloak", module = "keycloak-admin-client")
+  }
+  implementation(libs.keycloak.client.common.synced)
 
   compileOnly(project(":nessie-immutables-std"))
 }

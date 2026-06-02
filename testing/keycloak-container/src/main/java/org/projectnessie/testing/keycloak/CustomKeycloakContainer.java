@@ -15,11 +15,23 @@
  */
 package org.projectnessie.testing.keycloak;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dasniko.testcontainers.keycloak.ExtendableKeycloakContainer;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,12 +39,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.token.TokenManager;
-import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -58,6 +64,9 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
 
   private static final int KEYCLOAK_PORT_HTTP = 8080;
   private static final int KEYCLOAK_PORT_HTTPS = 8443;
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   private final KeycloakConfig config;
 
@@ -258,29 +267,24 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
     LOGGER.info("Keycloak started, creating realm {}...", config.realmName());
 
     RealmRepresentation realm = createRealm();
-    Retry.execute(
-        () -> {
-          try (Keycloak adminClient = getKeycloakAdminClient()) {
-            adminClient.realms().create(realm);
-          }
-        },
-        5,
-        1000);
+    retry(() -> createRealm(realm));
 
     LOGGER.info("Finished setting up Keycloak, external realm auth url: {}", getExternalRealmUri());
   }
 
   public String createBearerToken(String realm, String clientId, String clientSecret) {
-    try (Keycloak k =
-        KeycloakBuilder.builder()
-            .serverUrl(getAuthServerUrl())
-            .realm(realm)
-            .clientId(clientId)
-            .clientSecret(clientSecret)
-            .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-            .build()) {
-      TokenManager tm = k.tokenManager();
-      return tm.getAccessTokenString();
+    try {
+      return token(
+          keycloakUri("realms/%s/protocol/openid-connect/token".formatted(realm)),
+          Map.of(
+              "grant_type", "client_credentials",
+              "client_id", clientId,
+              "client_secret", clientSecret));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     }
   }
 
@@ -316,13 +320,136 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
   @Override
   public void stop() {
     try {
-      try (Keycloak adminClient = getKeycloakAdminClient()) {
-        RealmResource realm = adminClient.realm(config.realmName());
-        realm.remove();
-      }
+      deleteRealm();
     } finally {
       super.stop();
     }
+  }
+
+  private void createRealm(RealmRepresentation realm) throws IOException, InterruptedException {
+    HttpRequest request =
+        HttpRequest.newBuilder(keycloakUri("admin/realms"))
+            .header("Authorization", "Bearer " + adminToken())
+            .header("Content-Type", "application/json")
+            .POST(BodyPublishers.ofString(MAPPER.writeValueAsString(realm)))
+            .build();
+
+    HttpResponse<String> response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+    expectStatus(response, 201, 409);
+  }
+
+  private void deleteRealm() {
+    try {
+      HttpRequest request =
+          HttpRequest.newBuilder(keycloakUri("admin/realms/%s".formatted(config.realmName())))
+              .header("Authorization", "Bearer " + adminToken())
+              .DELETE()
+              .build();
+
+      HttpResponse<String> response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+      expectStatus(response, 204, 404);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String adminToken() throws IOException, InterruptedException {
+    return token(
+        keycloakUri("realms/master/protocol/openid-connect/token"),
+        Map.of(
+            "grant_type",
+            "password",
+            "client_id",
+            "admin-cli",
+            "username",
+            getAdminUsername(),
+            "password",
+            getAdminPassword()));
+  }
+
+  private static String token(URI tokenEndpoint, Map<String, String> form)
+      throws IOException, InterruptedException {
+    HttpRequest request =
+        HttpRequest.newBuilder(tokenEndpoint)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(BodyPublishers.ofString(form(form)))
+            .build();
+
+    HttpResponse<String> response = HTTP_CLIENT.send(request, BodyHandlers.ofString());
+    expectStatus(response, 200);
+
+    JsonNode json = MAPPER.readTree(response.body());
+    return json.required("access_token").asText();
+  }
+
+  private URI keycloakUri(String path) {
+    String base = getAuthServerUrl();
+    if (!base.endsWith("/")) {
+      base += "/";
+    }
+    if (path.startsWith("/")) {
+      path = path.substring(1);
+    }
+    return URI.create(base + path);
+  }
+
+  private static String form(Map<String, String> values) {
+    return values.entrySet().stream()
+        .map(e -> encode(e.getKey()) + "=" + encode(e.getValue()))
+        .collect(joining("&"));
+  }
+
+  private static String encode(String value) {
+    return URLEncoder.encode(value, UTF_8);
+  }
+
+  private static void expectStatus(HttpResponse<String> response, int... expected) {
+    for (int status : expected) {
+      if (response.statusCode() == status) {
+        return;
+      }
+    }
+
+    throw new IllegalStateException(
+        "Keycloak request failed with HTTP " + response.statusCode() + ": " + response.body());
+  }
+
+  private static void retry(CheckedRunnable runnable) {
+    RuntimeException failure = null;
+    for (int attempt = 1; attempt <= 5; attempt++) {
+      try {
+        runnable.run();
+        return;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        failure = new UncheckedIOException(e);
+      } catch (RuntimeException e) {
+        failure = e;
+      } catch (Exception e) {
+        failure = new RuntimeException(e);
+      }
+
+      if (attempt < 5) {
+        try {
+          Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
+    throw failure;
+  }
+
+  @FunctionalInterface
+  private interface CheckedRunnable {
+    void run() throws Exception;
   }
 
   /** Returns the (external) root URL for Keycloak (without the context path). */
@@ -399,14 +526,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
         .getIpAddress();
   }
 
-  private static class ExternalNetwork implements Network {
-
-    private final String networkId;
-
-    ExternalNetwork(String networkId) {
-      this.networkId = networkId;
-    }
-
+  private record ExternalNetwork(String networkId) implements Network {
     @Override
     public String getId() {
       return networkId;
