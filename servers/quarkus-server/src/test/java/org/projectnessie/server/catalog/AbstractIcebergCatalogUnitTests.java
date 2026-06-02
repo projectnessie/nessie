@@ -27,8 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -293,13 +291,5 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     assertThatThrownBy(() -> catalog.buildTable(id1, SCHEMA).create())
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("table_access_denied");
-  }
-
-  // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
-  static <T> T readValue(ObjectMapper mapper, URL url, Class<T> clazz) throws Exception {
-    URLConnection conn = url.openConnection();
-    try (var input = conn.getInputStream()) {
-      return mapper.readValue(input, clazz);
-    }
   }
 }
