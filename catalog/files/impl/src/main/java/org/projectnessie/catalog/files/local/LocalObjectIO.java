@@ -90,6 +90,7 @@ public class LocalObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {}
 

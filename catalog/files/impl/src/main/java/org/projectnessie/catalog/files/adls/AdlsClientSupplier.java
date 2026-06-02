@@ -62,6 +62,8 @@ import org.slf4j.LoggerFactory;
 public final class AdlsClientSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdlsClientSupplier.class);
 
+  public record AdlsSasToken(String token, Instant expiresAt) {}
+
   private final HttpClient httpClient;
   private final AdlsConfig adlsConfig;
   private final AdlsOptions adlsOptions;
@@ -102,7 +104,7 @@ public final class AdlsClientSupplier {
     return buildFileSystemClient(uri, fileSystemOptions, clientConfig, endpoint);
   }
 
-  public Optional<String> generateUserDelegationSas(
+  public Optional<AdlsSasToken> generateUserDelegationSas(
       StorageLocations storageLocations, AdlsNamedFileSystemOptions fileSystemOptions) {
     if (!fileSystemOptions.effectiveUserDelegation().enable().orElse(false)) {
       return Optional.empty();
@@ -169,7 +171,7 @@ public final class AdlsClientSupplier {
 
     String sasToken = client.generateUserDelegationSas(sasSignatureValues, userDelegationKey);
 
-    return Optional.of(sasToken);
+    return Optional.of(new AdlsSasToken(sasToken, sasExpiry.toInstant()));
   }
 
   private DataLakeFileSystemClient buildFileSystemClient(

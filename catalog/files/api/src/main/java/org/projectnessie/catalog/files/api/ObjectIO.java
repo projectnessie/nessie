@@ -49,6 +49,7 @@ public interface ObjectIO {
    *
    * @param storageLocations warehouse, readable and writeable locations
    * @param config configuration consumer
+   * @param storageCredential storage credential consumer with prefix and credential config
    * @param enableRequestSigning callback predicate that is called when request signing is possible
    *     for the bucket, must return whether request signing is effective
    * @param canDoCredentialsVending whether to configure credentials vending
@@ -56,6 +57,7 @@ public interface ObjectIO {
   void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending);
 

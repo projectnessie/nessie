@@ -19,6 +19,7 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
@@ -27,19 +28,23 @@ import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.catalog.files.api.ObjectIO;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
@@ -62,7 +67,7 @@ public class TestIcebergConfigurer {
   protected SignerKey signerKey;
 
   @BeforeEach
-  @SuppressWarnings("UnnecessaryAssignment")
+  @SuppressWarnings({"UnnecessaryAssignment", "HttpUrlsUsage"})
   protected void setupIcebergConfigurer() {
     SecretsProvider secretsProvider =
         ResolvingSecretsProvider.builder()
@@ -147,6 +152,58 @@ public class TestIcebergConfigurer {
         );
   }
 
+  @Test
+  @SuppressWarnings("UnnecessaryAssignment")
+  public void icebergConfigPerTableStorageCredentials() {
+    ObjectIO objectIO = mock(ObjectIO.class);
+    doAnswer(
+            invocation -> {
+              BiConsumer<String, String> config = invocation.getArgument(1);
+              BiConsumer<String, Map<String, String>> storageCredential = invocation.getArgument(2);
+              config.accept("legacy-key", "legacy-value");
+              storageCredential.accept(
+                  "s3://bucket/path", new HashMap<>(Map.of("credential-key", "credential-value")));
+              return null;
+            })
+        .when(objectIO)
+        .configureIcebergTable(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyBoolean());
+    icebergConfigurer.objectIO = objectIO;
+
+    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
+    when(tm.location()).thenReturn("s3://bucket/path/table");
+    when(tm.properties()).thenReturn(Map.of());
+
+    NessieTableSnapshot nessieSnapshot =
+        NessieTableSnapshot.builder()
+            .lastUpdatedTimestamp(Instant.now())
+            .id(NessieId.randomNessieId())
+            .entity(
+                NessieTable.builder()
+                    .nessieContentId(UUID.randomUUID().toString())
+                    .createdTimestamp(Instant.now())
+                    .build())
+            .build();
+
+    IcebergTableConfig tableConfig =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, "s3://bucket/", tm, "main", ContentKey.of("table"), null, true);
+
+    soft.assertThat(tableConfig.config()).containsEntry("legacy-key", "legacy-value");
+    soft.assertThat(tableConfig.storageCredentials())
+        .singleElement()
+        .satisfies(
+            credential -> {
+              soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
+              soft.assertThat(credential.config())
+                  .containsEntry("credential-key", "credential-value");
+            });
+  }
+
   /** Verify compatibility with Iceberg < 1.5.0 S3 signer properties. */
   @ParameterizedTest
   @MethodSource
@@ -204,6 +261,7 @@ public class TestIcebergConfigurer {
     }
   }
 
+  @SuppressWarnings("HttpUrlsUsage")
   static Stream<Arguments> icebergConfigPerTable() {
     ContentKey key = ContentKey.of("foo", "bar");
 

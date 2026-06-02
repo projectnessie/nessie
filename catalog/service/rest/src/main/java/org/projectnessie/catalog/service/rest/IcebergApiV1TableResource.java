@@ -185,7 +185,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             loadTableResponse -> {
               var creds = loadTableResponse.storageCredentials();
 
-              return ImmutableIcebergLoadCredentialsResponse.of(creds);
+              return ImmutableIcebergLoadCredentialsResponse.of(creds != null ? creds : List.of());
             });
   }
 
@@ -298,6 +298,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .metadata(resultMetadata)
         .metadataLocation(metadataLocation)
         .putAllConfig(config.config())
+        .addAllStorageCredentials(config.storageCredentials())
         .build();
   }
 

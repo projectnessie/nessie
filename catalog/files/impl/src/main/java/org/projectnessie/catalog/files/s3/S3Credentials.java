@@ -15,6 +15,7 @@
  */
 package org.projectnessie.catalog.files.s3;
 
+import java.time.Instant;
 import java.util.Optional;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
@@ -40,5 +41,9 @@ public class S3Credentials {
       return Optional.of(awsSessionCredentials.sessionToken());
     }
     return Optional.empty();
+  }
+
+  public Optional<Instant> expirationTime() {
+    return credentials.expirationTime();
   }
 }

@@ -52,6 +52,8 @@ import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.api.SignerKeysService;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
@@ -252,10 +254,17 @@ public class IcebergConfigurer {
     Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
 
     Map<String, String> config = new HashMap<>();
+    List<IcebergStorageCredential> storageCredentials = new ArrayList<>();
 
     objectIO.configureIcebergTable(
         locations,
         config::put,
+        (credentialPrefix, credentialConfig) ->
+            storageCredentials.add(
+                ImmutableIcebergStorageCredential.builder()
+                    .prefix(credentialPrefix)
+                    .config(credentialConfig)
+                    .build()),
         signUrlExpiration ->
             configureS3RequestSigningForTable(
                 signUrlExpiration,
@@ -266,7 +275,7 @@ public class IcebergConfigurer {
                 config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
-    return tableConfig.config(config).build();
+    return tableConfig.config(config).storageCredentials(storageCredentials).build();
   }
 
   /**

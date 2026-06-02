@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +46,7 @@ import org.projectnessie.storage.uri.StorageUri;
 
 public class AdlsObjectIO implements ObjectIO {
   static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
+  static final String ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX = "adls.sas-token-expires-at-ms.";
   static final String ADLS_CONNECTION_STRING_PREFIX = "adls.connection-string.";
   static final String ADLS_READ_BLOCK_SIZE_BYTES = "adls.read.block-size-bytes";
   static final String ADLS_WRITE_BLOCK_SIZE_BYTES = "adls.write.block-size-bytes";
@@ -133,6 +136,7 @@ public class AdlsObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
@@ -145,7 +149,11 @@ public class AdlsObjectIO implements ObjectIO {
     }
 
     icebergConfigDefaults(config);
-    icebergConfigOverrides(storageLocations, config);
+    Map<String, String> credentialConfig = icebergConfigOverrides(storageLocations, config);
+    if (!credentialConfig.isEmpty()) {
+      credentialPrefixes(storageLocations)
+          .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
+    }
   }
 
   @Override
@@ -162,8 +170,9 @@ public class AdlsObjectIO implements ObjectIO {
     }
   }
 
-  void icebergConfigOverrides(
+  Map<String, String> icebergConfigOverrides(
       StorageLocations storageLocations, BiConsumer<String, String> config) {
+    Map<String, String> credentialConfig = new HashMap<>();
     List<AdlsLocation> allLocations =
         Stream.concat(
                 storageLocations.writeableLocations().stream(),
@@ -208,6 +217,7 @@ public class AdlsObjectIO implements ObjectIO {
 
     AdlsOptions adlsOptions = clientSupplier.adlsOptions();
     AdlsNamedFileSystemOptions fileSystemOptions = adlsOptions.resolveOptionsForUri(loc);
+    Optional<String> endpoint = fileSystemOptions.endpoint();
     fileSystemOptions
         .endpoint()
         .ifPresent(
@@ -227,12 +237,57 @@ public class AdlsObjectIO implements ObjectIO {
         .generateUserDelegationSas(storageLocations, fileSystemOptions)
         .ifPresent(
             sasToken -> {
-              config.accept(ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken);
+              putConfigAndCredential(
+                  ADLS_SAS_TOKEN_PREFIX + storageAccount,
+                  sasToken.token(),
+                  config,
+                  credentialConfig);
+              putConfigAndCredential(
+                  ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + storageAccount,
+                  Long.toString(sasToken.expiresAt().toEpochMilli()),
+                  config,
+                  credentialConfig);
+              endpoint.ifPresent(
+                  e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));
               storageAccountShort.ifPresent(
-                  account -> config.accept(ADLS_SAS_TOKEN_PREFIX + account, sasToken));
+                  account -> {
+                    putConfigAndCredential(
+                        ADLS_SAS_TOKEN_PREFIX + account,
+                        sasToken.token(),
+                        config,
+                        credentialConfig);
+                    putConfigAndCredential(
+                        ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + account,
+                        Long.toString(sasToken.expiresAt().toEpochMilli()),
+                        config,
+                        credentialConfig);
+                    endpoint.ifPresent(
+                        e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + account, e));
+                  });
             });
 
     fileSystemOptions.tableConfigOverrides().forEach(config);
+    return credentialConfig;
+  }
+
+  private static void putConfigAndCredential(
+      String key,
+      String value,
+      BiConsumer<String, String> config,
+      Map<String, String> credentialConfig) {
+    config.accept(key, value);
+    credentialConfig.put(key, value);
+  }
+
+  private static Set<String> credentialPrefixes(StorageLocations storageLocations) {
+    return Stream.concat(
+            Stream.of(storageLocations.warehouseLocation()),
+            Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream()))
+        .filter(uri -> AdlsLocation.isAdlsScheme(uri.scheme()))
+        .map(StorageUri::toString)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   void icebergConfigDefaults(BiConsumer<String, String> config) {
