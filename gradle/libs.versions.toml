@@ -27,7 +27,7 @@ picocli = "4.7.6"
 protobuf = "4.34.1"
 quarkus = "3.35.2"
 quarkusVault = "4.7.0"
-slf4j = "2.0.17"
+slf4j = "2.0.18"
 undertow = "2.3.24.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
