@@ -28,7 +28,6 @@ protobuf = "4.35.0"
 quarkus = "3.36.0"
 quarkusVault = "4.7.0"
 slf4j = "2.0.18"
-undertow = "2.3.24.Final"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
 logback_compat = "1.3.14" # For Java 8
@@ -149,8 +148,8 @@ testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "4.2.1" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.9.0" }
 trino-client = { module = "io.trino:trino-client", version = "480" }
-undertow-core = { module = "io.undertow:undertow-core", version.ref = "undertow" }
-undertow-servlet = { module = "io.undertow:undertow-servlet", version.ref = "undertow" }
+undertow-core = { module = "io.undertow:undertow-core", version = "2.3.24.Final" }
+undertow-servlet = { module = "io.undertow:undertow-servlet", version = "2.3.24.Final" }
 vertx-core = { module = "io.vertx:vertx-core", version = "5.1.1" }
 wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.13.2" }
 zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-9" }
