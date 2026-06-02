@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.TestInstantiationAwareExtension;
 import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDirDeletionStrategy;
 import org.junit.jupiter.api.io.TempDirFactory;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.engine.config.JupiterConfiguration;
@@ -43,6 +44,11 @@ public class MultiEnvDelegatingJupiterConfiguration implements JupiterConfigurat
   public MultiEnvDelegatingJupiterConfiguration(
       EngineDiscoveryRequest discoveryRequest, UniqueId uniqueId) {
     this.delegate = newDefaultJupiterConfiguration(discoveryRequest, uniqueId);
+  }
+
+  @Override
+  public Supplier<TempDirDeletionStrategy> getDefaultTempDirDeletionStrategySupplier() {
+    return delegate.getDefaultTempDirDeletionStrategySupplier();
   }
 
   @Override
