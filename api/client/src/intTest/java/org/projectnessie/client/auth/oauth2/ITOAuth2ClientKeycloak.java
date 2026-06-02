@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -61,6 +62,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
@@ -125,6 +127,10 @@ public class ITOAuth2ClientKeycloak {
       createClient("Public2", false, true);
       // Create a client that will act as a resource server attempting to validate access tokens
       createClient("ResourceServer", true, false);
+      addIntrospectionAudiences("Private1");
+      addIntrospectionAudiences("Private2");
+      addIntrospectionAudiences("Public1");
+      addIntrospectionAudiences("Public2");
       // Create a user that will be used to obtain access tokens via password grant
       createUser();
     }
@@ -614,6 +620,26 @@ public class ITOAuth2ClientKeycloak {
       client.setAuthorizationSettings(settings);
     }
     Response response = master.clients().create(client);
+    assertThat(response.getStatus()).isEqualTo(201);
+  }
+
+  private static void addIntrospectionAudiences(String clientId) {
+    addAudienceMapper(clientId, "Private1");
+    addAudienceMapper(clientId, "Private2");
+  }
+
+  @SuppressWarnings("resource")
+  private static void addAudienceMapper(String clientId, String audience) {
+    ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+    mapper.setName("audience-" + audience);
+    mapper.setProtocol("openid-connect");
+    mapper.setProtocolMapper("oidc-audience-mapper");
+    Map<String, String> config = new HashMap<>();
+    config.put("included.client.audience", audience);
+    config.put("access.token.claim", "true");
+    config.put("id.token.claim", "false");
+    mapper.setConfig(config);
+    Response response = master.clients().get(clientId).getProtocolMappers().createMapper(mapper);
     assertThat(response.getStatus()).isEqualTo(201);
   }
 
