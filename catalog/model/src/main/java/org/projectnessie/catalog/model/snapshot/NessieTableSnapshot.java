@@ -129,6 +129,11 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Nullable
   @jakarta.annotation.Nullable
+  Integer icebergSnapshotSchemaId();
+
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Nullable
+  @jakarta.annotation.Nullable
   Integer icebergLastColumnId();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -258,6 +263,9 @@ public interface NessieTableSnapshot extends NessieEntitySnapshot<NessieTable> {
 
     @CanIgnoreReturnValue
     Builder icebergSnapshotSequenceNumber(@Nullable Long icebergSnapshotSequenceNumber);
+
+    @CanIgnoreReturnValue
+    Builder icebergSnapshotSchemaId(@Nullable Integer icebergSnapshotSchemaId);
 
     @CanIgnoreReturnValue
     Builder icebergLastColumnId(@Nullable Integer icebergLastColumnId);

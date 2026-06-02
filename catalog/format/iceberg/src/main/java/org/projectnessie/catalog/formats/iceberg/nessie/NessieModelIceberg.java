@@ -92,6 +92,7 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddS
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AddSortOrder;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.AssignUUID;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveProperties;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.RemoveSchemas;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetCurrentSchema;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetLocation;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate.SetProperties;
@@ -599,16 +600,12 @@ public class NessieModelIceberg {
       icebergFields = new HashMap<>();
     }
 
-    Map<Integer, NessieSchema> icebergSchemaIdToSchema = new HashMap<>();
-
     partsWithV1DefaultPart(iceberg.schemas(), iceberg.schema(), IcebergSchema::schemaId)
         .forEach(
             schema -> {
               boolean isCurrent = schema.schemaId() == currentSchemaId;
 
               NessieSchema nessieSchema = icebergSchemaToNessieSchema(schema, icebergFields);
-
-              icebergSchemaIdToSchema.put(schema.schemaId(), nessieSchema);
 
               snapshot.addSchemas(nessieSchema);
               if (isCurrent) {
@@ -670,12 +667,7 @@ public class NessieModelIceberg {
               // snapshots??
               Integer schemaId = currentSnapshot.schemaId();
               if (schemaId != null) {
-                // TODO this overwrites the "current schema ID" with the schema ID of the current
-                //  snapshot. Is this okay??
-                NessieSchema currentSchema = icebergSchemaIdToSchema.get(schemaId);
-                if (currentSchema != null) {
-                  snapshot.currentSchemaId(currentSchema.id());
-                }
+                snapshot.icebergSnapshotSchemaId(schemaId);
               }
 
               String listLocation = manifestListLocation.apply(currentSnapshot);
@@ -1115,7 +1107,7 @@ public class NessieModelIceberg {
       IcebergSnapshot.Builder snapshot =
           IcebergSnapshot.builder()
               .snapshotId(snapshotId)
-              .schemaId(currentSchemaId) // TODO is this fine?
+              .schemaId(safeUnbox(nessie.icebergSnapshotSchemaId(), currentSchemaId))
               .manifests(manifestsLocations)
               .manifestList(manifestListLocation)
               .summary(nessie.icebergSnapshotSummary())
@@ -1258,6 +1250,22 @@ public class NessieModelIceberg {
     }
 
     state.schemaAdded(schema.schemaId());
+  }
+
+  public static void removeSchemas(
+      RemoveSchemas removeSchemas, IcebergTableMetadataUpdateState state) {
+    NessieTableSnapshot snapshot = state.snapshot();
+
+    var removeIds = new HashSet<>(removeSchemas.schemaIds());
+    var schemas = new ArrayList<NessieSchema>();
+
+    for (NessieSchema schema : snapshot.schemas()) {
+      if (!removeIds.contains(schema.icebergId())) {
+        schemas.add(schema);
+      }
+    }
+
+    state.builder().schemas(schemas);
   }
 
   public static int icebergSchemaMaxFieldId(IcebergSchema schema) {
@@ -1658,17 +1666,13 @@ public class NessieModelIceberg {
 
   public static void addSnapshot(AddSnapshot u, IcebergTableMetadataUpdateState state) {
     IcebergSnapshot icebergSnapshot = u.snapshot();
-    Integer schemaId = icebergSnapshot.schemaId();
     NessieTableSnapshot snapshot = state.snapshot();
-    if (schemaId != null) {
-      Optional<NessieSchema> schema = snapshot.schemaByIcebergId(schemaId);
-      schema.ifPresent(s -> state.builder().currentSchemaId(s.id()));
-    }
 
     state
         .builder()
         .icebergSnapshotId(icebergSnapshot.snapshotId())
         .icebergSnapshotSequenceNumber(icebergSnapshot.sequenceNumber())
+        .icebergSnapshotSchemaId(icebergSnapshot.schemaId())
         .icebergLastSequenceNumber(
             Math.max(
                 safeUnbox(

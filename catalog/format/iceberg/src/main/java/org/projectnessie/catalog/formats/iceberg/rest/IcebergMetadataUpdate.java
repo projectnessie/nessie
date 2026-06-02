@@ -65,6 +65,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
       value = IcebergMetadataUpdate.UpgradeFormatVersion.class,
       name = "upgrade-format-version"),
   @JsonSubTypes.Type(value = IcebergMetadataUpdate.AddSchema.class, name = "add-schema"),
+  @JsonSubTypes.Type(value = IcebergMetadataUpdate.RemoveSchemas.class, name = "remove-schemas"),
   @JsonSubTypes.Type(
       value = IcebergMetadataUpdate.SetCurrentSchema.class,
       name = "set-current-schema"),
@@ -367,6 +368,31 @@ public interface IcebergMetadataUpdate {
 
     static AddSchema addSchema(IcebergSchema schema) {
       return ImmutableAddSchema.of(schema, OptionalInt.empty());
+    }
+  }
+
+  @NessieImmutable
+  @JsonTypeName("remove-schemas")
+  @JsonSerialize(as = ImmutableRemoveSchemas.class)
+  @JsonDeserialize(as = ImmutableRemoveSchemas.class)
+  interface RemoveSchemas extends IcebergMetadataUpdate {
+    Set<Integer> schemaIds();
+
+    @Override
+    default void applyToTable(IcebergTableMetadataUpdateState state) {
+      state.addCatalogOp(CatalogOps.META_REMOVE_SCHEMAS);
+      NessieModelIceberg.removeSchemas(this, state);
+    }
+
+    @Value.Check
+    default void check() {
+      for (Integer schemaId : schemaIds()) {
+        checkState(schemaId != null && schemaId >= 0, "Illegal schema-ID %s", schemaId);
+      }
+    }
+
+    static RemoveSchemas removeSchemas(Set<Integer> schemaIds) {
+      return ImmutableRemoveSchemas.of(schemaIds);
     }
   }
 
