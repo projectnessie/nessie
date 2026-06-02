@@ -148,7 +148,7 @@ testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version
 testcontainers-keycloak = { module = "com.github.dasniko:testcontainers-keycloak", version = "4.2.1" }
 threeten-extra = { module = "org.threeten:threeten-extra", version = "1.9.0" }
 trino-client = { module = "io.trino:trino-client", version = "480" }
-undertow-core = { module = "io.undertow:undertow-core", version = "2.3.24.Final" }
+undertow-core = { module = "io.undertow:undertow-core", version = "2.4.1.Final" }
 undertow-servlet = { module = "io.undertow:undertow-servlet", version = "2.3.24.Final" }
 vertx-core = { module = "io.vertx:vertx-core", version = "5.1.1" }
 wiremock = { module = "org.wiremock:wiremock-standalone", version = "3.13.2" }
