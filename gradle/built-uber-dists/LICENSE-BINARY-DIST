@@ -668,6 +668,7 @@ org.xerial.snappy:snappy-java
 org.yaml:snakeyaml
 software.amazon.awssdk:annotations
 software.amazon.awssdk:apache-client
+software.amazon.awssdk:apache5-client
 software.amazon.awssdk:arns
 software.amazon.awssdk:auth
 software.amazon.awssdk:aws-core

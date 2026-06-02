@@ -75,6 +75,9 @@ dependencies {
   testFixturesApi(libs.threeten.extra)
   testFixturesApi(libs.jakarta.ws.rs.api)
 
+  // For AWSSDK 2.46+
+  testRuntimeOnly(libs.slf4j.jcl.over.slf4j)
+
   testImplementation(testFixtures(project(":nessie-catalog-secrets-api")))
   testImplementation(platform(libs.awssdk.bom))
   testImplementation("software.amazon.awssdk:s3")
