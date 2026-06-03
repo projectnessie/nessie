@@ -15,6 +15,10 @@
  */
 
 import java.time.Duration
+import java.util.zip.ZipFile
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.jetbrains.changelog.date
 import org.jetbrains.gradle.ext.settings
 import org.jetbrains.gradle.ext.taskTriggers
@@ -68,7 +72,117 @@ nmcpAggregation {
     validationTimeout = Duration.ofMinutes(120)
     publicationName = "${project.name}-$version"
   }
-  publishAllProjectsProbablyBreakingProjectIsolation()
+}
+
+allprojects {
+  pluginManager.withPlugin("maven-publish") {
+    fun configureNmcpPublishing() {
+      pluginManager.apply("com.gradleup.nmcp")
+
+      extensions.configure<PublishingExtension> {
+        repositories
+          .withType<MavenArtifactRepository>()
+          .matching { it.name == "nmcp" }
+          .configureEach { url = uri(layout.buildDirectory.dir("nmcp/m2").get().asFile) }
+      }
+      tasks
+        .withType<PublishToMavenRepository>()
+        .matching { it.name.endsWith("ToNmcpRepository") }
+        .configureEach {
+          doFirst { repository.url = uri(layout.buildDirectory.dir("nmcp/m2").get().asFile) }
+        }
+
+      // Do not use NMCP's deprecated publishAllProjectsProbablyBreakingProjectIsolation() helper
+      // here. Wire the producer configuration explicitly, so generated projects such as the Spark
+      // extension variants cannot be lost through implicit variant selection.
+      rootProject.dependencies.add(
+        "nmcpAggregation",
+        rootProject.dependencies.project(mapOf("path" to path, "configuration" to "nmcpProducer")),
+      )
+    }
+
+    if (name.startsWith("nessie-spark-extensions")) {
+      // Spark extension projects set a Scala-specific build directory in their build scripts.
+      // Apply NMCP after that, otherwise the NMCP publish repository points to build/nmcp/m2
+      // while the producer variant points to build/<scala>/nmcp/m2.
+      afterEvaluate { configureNmcpPublishing() }
+    } else {
+      configureNmcpPublishing()
+    }
+  }
+}
+
+val requiredNmcpSparkArtifacts =
+  providers.provider {
+    val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
+    val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
+    val scalaVersions = linkedSetOf<String>()
+    val artifacts = mutableListOf<String>()
+
+    for (sparkVersion in sparkVersions) {
+      sparkScala["sparkVersion-${sparkVersion}-scalaVersions"]
+        .toString()
+        .split(",")
+        .map { it.trim() }
+        .forEach { scalaVersion ->
+          scalaVersions.add(scalaVersion)
+          artifacts.add("nessie-spark-extensions-${sparkVersion}_$scalaVersion")
+        }
+    }
+
+    scalaVersions.forEach { scalaVersion ->
+      artifacts.add("nessie-spark-extensions-base_$scalaVersion")
+    }
+
+    artifacts
+  }
+
+val checkNmcpAggregationSparkArtifacts by
+  tasks.registering {
+    group = "Verification"
+    description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
+
+    val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
+    dependsOn("nmcpZipAggregation")
+    inputs.file(aggregationZip)
+
+    doLast {
+      val version = project.version.toString()
+      val entries =
+        ZipFile(aggregationZip.get().asFile).use { zip ->
+          zip.entries().asSequence().map { it.name }.toSet()
+        }
+
+      val missing =
+        requiredNmcpSparkArtifacts.get().filter { artifactId ->
+          val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
+          fun isMainJar(entry: String): Boolean {
+            val fileName = entry.substringAfterLast("/")
+            val expectedReleaseFileName = "$artifactId-$version.jar"
+            val expectedSnapshotFileName =
+              Regex(
+                Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+                  """\d{8}\.\d{6}-\d+\.jar"""
+              )
+
+            return entry.startsWith(artifactDir) &&
+              (fileName == expectedReleaseFileName ||
+                (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+          }
+
+          entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
+            entries.none(::isMainJar)
+        }
+
+      check(missing.isEmpty()) {
+        "NMCP aggregation zip is missing Spark artifacts for version $version: " +
+          missing.joinToString(", ")
+      }
+    }
+  }
+
+tasks.named("nmcpPublishAggregationToCentralPortal") {
+  dependsOn(checkNmcpAggregationSparkArtifacts)
 }
 
 val buildToolIntegrationGradle by
