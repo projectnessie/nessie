@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.8 Release (June 04, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.8).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+* Fix publication of the Nessie Spark extensions (#12508)
+* Version-catalog: split undertow deps (#12488)
+
 ## 0.107.6 Release (May 27, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.6).
