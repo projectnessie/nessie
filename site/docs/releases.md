@@ -2,6 +2,16 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.107.9 Release (June 04, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.9).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+
 ## 0.107.8 Release (June 04, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.8).
