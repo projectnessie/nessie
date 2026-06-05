@@ -16,6 +16,7 @@
 package org.projectnessie.nessie.cli.cli;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.nessie.cli.commands.CommandsFactory.buildCommandInstance;
@@ -44,6 +45,7 @@ import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Size;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.terminal.impl.DumbTerminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -199,27 +201,27 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
     // --stdout implies --plain (no ANSI control sequences make sense on a redirected stream).
     boolean plain = dumbTerminal || stdoutTerminal;
 
-    TerminalBuilder builder = TerminalBuilder.builder().jansi(!plain);
+    Terminal terminal;
     if (stdoutTerminal) {
       // Force a stream-backed terminal that honours shell redirection (>) and pipes (|).
       // Background: jline's default builder opens the controlling PTY (/dev/tty on POSIX) when
       // a TTY is detected, which bypasses stdout redirection. Pointing system(false).streams(...)
       // at System.in/System.out produces a Terminal whose I/O follows the redirected streams.
-      // Setting type="dumb" suppresses ANSI control sequences so the file/pipe stays clean;
-      // we deliberately do NOT pass dumb(true) here because that triggers a TTY lookup which
-      // fails with IllegalStateException when stdout is a regular file or pipe.
-      builder.system(false).streams(System.in, System.out).type("dumb");
+      // Use an explicit DumbTerminal instead of TerminalBuilder's stream-backed terminal: JLine 4's
+      // builder path can truncate output and mishandle EOF for --run-script -.
+      terminal = new DumbTerminal(System.in, System.out);
     } else {
+      TerminalBuilder builder = TerminalBuilder.builder();
       builder.dumb(plain).provider(plain ? TerminalBuilder.PROP_PROVIDER_DUMB : null);
+      terminal = builder.build();
     }
-    Terminal terminal = builder.build();
 
     setTerminal(terminal);
 
     // hard coded terminal size when redirecting (redirect detection doesn't work properly in jline
     // though :( )
-    if (terminal.getWidth() == 0 || terminal.getHeight() == 0) {
-      terminal.setSize(new Size(120, 40));
+    if (terminal.getColumns() == 0 || terminal.getRows() == 0) {
+      terminal.setSize(Size.of(120, 40));
     }
 
     @SuppressWarnings("resource")
@@ -382,11 +384,15 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
     String scriptSource;
     try {
       if ("-".equals(source.scriptFile)) {
-        StringWriter sw = new StringWriter();
-        @SuppressWarnings("resource")
-        Terminal terminal = terminal();
-        terminal.reader().transferTo(sw);
-        scriptSource = sw.toString();
+        if (stdoutTerminal) {
+          scriptSource = new String(System.in.readAllBytes(), UTF_8);
+        } else {
+          StringWriter sw = new StringWriter();
+          @SuppressWarnings("resource")
+          Terminal terminal = terminal();
+          terminal.reader().transferTo(sw);
+          scriptSource = sw.toString();
+        }
       } else {
         scriptSource = Files.readString(Paths.get(source.scriptFile));
       }
