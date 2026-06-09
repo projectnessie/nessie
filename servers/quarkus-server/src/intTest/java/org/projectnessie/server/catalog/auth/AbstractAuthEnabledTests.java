@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticationProvider;
 import org.projectnessie.client.auth.oauth2.OAuth2AuthenticatorConfig;
@@ -63,6 +64,12 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogInt
                     .clientSecret(clientSecret)
                     .tokenEndpoint(tokenEndpoint)
                     .build()));
+  }
+
+  @Override
+  @Disabled("We'd have to get the actual token to invoke the /credentials endpoint")
+  public void loadCredentialsEndpoint() throws Exception {
+    super.loadCredentialsEndpoint();
   }
 
   public abstract static class Profiles implements QuarkusTestProfile {

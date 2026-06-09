@@ -15,17 +15,19 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadTableResult;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /**
  * Composite result of {@link IcebergConfigurer#icebergConfigPerTable(NessieEntitySnapshot, String,
- * String, Map, String, ContentKey, String, boolean)}.
+ * IcebergTableMetadata, String, ContentKey, String, boolean)}.
  */
 @NessieImmutable
 interface IcebergTableConfig {
@@ -37,4 +39,7 @@ interface IcebergTableConfig {
 
   /** Values for {@link IcebergLoadTableResult#config()}. */
   Map<String, String> config();
+
+  /** Values for {@link IcebergLoadTableResult#storageCredentials()}. */
+  List<IcebergStorageCredential> storageCredentials();
 }

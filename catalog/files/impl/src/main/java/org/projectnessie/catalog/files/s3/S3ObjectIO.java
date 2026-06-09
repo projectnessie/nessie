@@ -23,9 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -50,6 +53,7 @@ public class S3ObjectIO implements ObjectIO {
   static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
   static final String S3_SECRET_ACCESS_KEY = "s3.secret-access-key";
   static final String S3_SESSION_TOKEN = "s3.session-token";
+  static final String S3_SESSION_TOKEN_EXPIRES_AT_MS = "s3.session-token-expires-at-ms";
   static final String S3_ENDPOINT = "s3.endpoint";
   static final String S3_ACCESS_POINTS_PREFIX = "s3.access-points.";
   static final String S3_PATH_STYLE_ACCESS = "s3.path-style-access";
@@ -175,6 +179,7 @@ public class S3ObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
@@ -212,12 +217,37 @@ public class S3ObjectIO implements ObjectIO {
       // TODO: expectedSessionDuration() should probably be declared by the client.
       S3Credentials s3credentials =
           s3CredentialsResolver.resolveSessionCredentials(bucketOptions, storageLocations);
-      config.accept(S3_ACCESS_KEY_ID, s3credentials.accessKeyId());
-      config.accept(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
-      s3credentials.sessionToken().ifPresent(t -> config.accept(S3_SESSION_TOKEN, t));
+
+      Map<String, String> credentialConfig = new HashMap<>();
+      credentialConfig.put(S3_ACCESS_KEY_ID, s3credentials.accessKeyId());
+      credentialConfig.put(S3_SECRET_ACCESS_KEY, s3credentials.secretAccessKey());
+      s3credentials.sessionToken().ifPresent(t -> credentialConfig.put(S3_SESSION_TOKEN, t));
+      s3credentials
+          .expirationTime()
+          .ifPresent(
+              i ->
+                  credentialConfig.put(
+                      S3_SESSION_TOKEN_EXPIRES_AT_MS, Long.toString(i.toEpochMilli())));
+
+      credentialConfig.forEach(config);
+
+      credentialPrefixes(storageLocations)
+          .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
     }
 
     bucketOptions.tableConfigOverrides().forEach(config);
+  }
+
+  private static Set<String> credentialPrefixes(StorageLocations storageLocations) {
+    return Stream.concat(
+            Stream.of(storageLocations.warehouseLocation()),
+            Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream()))
+        .filter(uri -> isS3scheme(uri.scheme()))
+        .map(StorageUri::toString)
+        .map(S3Utils::normalizeS3Scheme)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   @Override
@@ -259,10 +289,10 @@ public class S3ObjectIO implements ObjectIO {
                     S3_ACCESS_POINTS_PREFIX + bucketOptions.authority().orElseThrow(), ap));
     bucketOptions
         .allowCrossRegionAccessPoint()
-        .ifPresent(allow -> config.accept(S3_USE_ARN_REGION_ENABLED, allow ? "true" : "false"));
+        .ifPresent(allow -> config.accept(S3_USE_ARN_REGION_ENABLED, allow.toString()));
     bucketOptions
         .pathStyleAccess()
-        .ifPresent(psa -> config.accept(S3_PATH_STYLE_ACCESS, psa ? "true" : "false"));
+        .ifPresent(psa -> config.accept(S3_PATH_STYLE_ACCESS, psa.toString()));
 
     return bucketOptions;
   }

@@ -24,12 +24,16 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import io.quarkus.vertx.http.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -83,6 +87,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
 import org.projectnessie.client.NessieClientBuilder;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.NessieNotFoundException;
@@ -124,6 +130,35 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
         "token");
   }
 
+  @Test
+  public void loadCredentialsEndpoint() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    var namespace = Namespace.of("credentials_ns");
+    var tableIdentifier = TableIdentifier.of(namespace, "table");
+
+    catalog.createNamespace(namespace);
+    Table table = catalog.buildTable(tableIdentifier, SCHEMA).create();
+
+    Map<String, String> props = catalog.properties();
+    URI baseUri = URI.create(props.get("uri"));
+    String prefix = props.get("prefix");
+    String path =
+        format(
+            "v1/%s/namespaces/%s/tables/%s/credentials", prefix, namespace, tableIdentifier.name());
+    URL credentials = baseUri.resolve(path).toURL();
+
+    IcebergLoadCredentialsResponse response =
+        readValue(IcebergJson.objectMapper(), credentials, IcebergLoadCredentialsResponse.class);
+    verifyLoadCredentialsResponse(table, response);
+  }
+
+  protected void verifyLoadCredentialsResponse(
+      Table table, IcebergLoadCredentialsResponse response) {
+    soft.assertThat(response.storageCredentials()).isNullOrEmpty();
+  }
+
   @AfterAll
   static void closeRestCatalog() throws Exception {
     CATALOGS.close();
@@ -153,6 +188,14 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
   protected NessieClientBuilder nessieClientBuilder() {
     return NessieClientBuilder.createClientBuilderFromSystemSettings()
         .withUri(format("http://127.0.0.1:%d/api/v2/", httpServer.getPort()));
+  }
+
+  // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
+  protected static <T> T readValue(ObjectMapper mapper, URL url, Class<T> clazz) throws Exception {
+    URLConnection conn = url.openConnection();
+    try (var input = conn.getInputStream()) {
+      return mapper.readValue(input, clazz);
+    }
   }
 
   @Override
@@ -513,6 +556,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     }
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void testTableWithObjectStorage() throws Exception {
     @SuppressWarnings("resource")
@@ -586,7 +630,6 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
    */
   @Test
   public void testRegisterTableFromFileSystem() throws Exception {
-    @SuppressWarnings("resource")
     RESTCatalog catalog = catalog();
 
     if (requiresNamespaceCreate()) {

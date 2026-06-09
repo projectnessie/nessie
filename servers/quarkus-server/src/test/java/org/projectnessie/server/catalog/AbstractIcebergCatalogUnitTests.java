@@ -19,6 +19,8 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
+import static org.projectnessie.catalog.formats.iceberg.rest.IcebergEndpoint.icebergEndpoint;
+import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -28,7 +30,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import io.quarkus.test.common.WithTestResource;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,8 @@ import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -98,6 +101,47 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     var spec = PartitionSpec.builderFor(schema).day(sourceName, "daytime_day").build();
 
     soft.assertThatCode(() -> catalog.createTable(table, schema, spec)).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void configEndpointReturnsExpectedEndpoints() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    URL config =
+        URI.create(catalog.properties().get("uri"))
+            .resolve("v1/config?warehouse=" + WAREHOUSE_NAME)
+            .toURL();
+    IcebergConfigResponse response =
+        readValue(IcebergJson.objectMapper(), config, IcebergConfigResponse.class);
+
+    soft.assertThat(response.endpoints())
+        .containsExactly(
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces"),
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}"),
+            icebergEndpoint("HEAD", "/v1/{prefix}/namespaces/{namespace}"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/properties"),
+            icebergEndpoint("DELETE", "/v1/{prefix}/namespaces/{namespace}"),
+            icebergEndpoint("POST", "/v1/{prefix}/transactions/commit"),
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/tables"),
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/tables/{table}"),
+            icebergEndpoint("HEAD", "/v1/{prefix}/namespaces/{namespace}/tables/{table}"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/tables"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/tables/{table}"),
+            icebergEndpoint("DELETE", "/v1/{prefix}/namespaces/{namespace}/tables/{table}"),
+            icebergEndpoint("POST", "/v1/{prefix}/tables/rename"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/register"),
+            icebergEndpoint(
+                "GET", "/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics"),
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/views"),
+            icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/views/{view}"),
+            icebergEndpoint("HEAD", "/v1/{prefix}/namespaces/{namespace}/views/{view}"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/views"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/views/{view}"),
+            icebergEndpoint("DELETE", "/v1/{prefix}/namespaces/{namespace}/views/{view}"),
+            icebergEndpoint("POST", "/v1/{prefix}/views/rename"));
   }
 
   // Paging tests
@@ -293,13 +337,5 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
     assertThatThrownBy(() -> catalog.buildTable(id1, SCHEMA).create())
         .isInstanceOf(ForbiddenException.class)
         .hasMessageContaining("table_access_denied");
-  }
-
-  // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
-  static <T> T readValue(ObjectMapper mapper, URL url, Class<T> clazz) throws Exception {
-    URLConnection conn = url.openConnection();
-    try (var input = conn.getInputStream()) {
-      return mapper.readValue(input, clazz);
-    }
   }
 }

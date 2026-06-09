@@ -52,6 +52,8 @@ import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.api.SignerKeysService;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
@@ -67,6 +69,7 @@ public class IcebergConfigurer {
 
   static final String ICEBERG_WAREHOUSE_LOCATION = "warehouse";
   static final String ICEBERG_PREFIX = "prefix";
+  static final String ICEBERG_REST_PAGE_SIZE = "rest-page-size";
 
   static final String METRICS_REPORTING_ENABLED = "rest-metrics-reporting-enabled";
 
@@ -187,8 +190,8 @@ public class IcebergConfigurer {
     configDefault.accept(METRICS_REPORTING_ENABLED, "false");
     configDefault.accept(ICEBERG_WAREHOUSE_LOCATION, warehouseConfig.location());
     uriInfo.icebergConfigDefaults(configDefault);
-    // allow users to override the 'rest-page-size' in the Nessie configuration
-    configDefault.accept("rest-page-size", "200");
+    // Same key as Iceberg's RESTCatalogProperties.PAGE_SIZE.
+    configDefault.accept(ICEBERG_REST_PAGE_SIZE, "200");
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
@@ -251,10 +254,17 @@ public class IcebergConfigurer {
     Predicate<AccessDelegation> accessDelegationPredicate = accessDelegationPredicate(dataAccess);
 
     Map<String, String> config = new HashMap<>();
+    List<IcebergStorageCredential> storageCredentials = new ArrayList<>();
 
     objectIO.configureIcebergTable(
         locations,
         config::put,
+        (credentialPrefix, credentialConfig) ->
+            storageCredentials.add(
+                ImmutableIcebergStorageCredential.builder()
+                    .prefix(credentialPrefix)
+                    .config(credentialConfig)
+                    .build()),
         signUrlExpiration ->
             configureS3RequestSigningForTable(
                 signUrlExpiration,
@@ -265,7 +275,7 @@ public class IcebergConfigurer {
                 config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
-    return tableConfig.config(config).build();
+    return tableConfig.config(config).storageCredentials(storageCredentials).build();
   }
 
   /**

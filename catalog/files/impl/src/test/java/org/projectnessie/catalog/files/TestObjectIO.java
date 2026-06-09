@@ -15,9 +15,14 @@
  */
 package org.projectnessie.catalog.files;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.files.api.ObjectIO.PYICEBERG_FILE_IO_IMPL;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +46,19 @@ import org.projectnessie.catalog.files.config.ImmutableGcsBucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableGcsConfig;
 import org.projectnessie.catalog.files.config.ImmutableGcsOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3BucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.gcs.GcsObjectIO;
 import org.projectnessie.catalog.files.gcs.GcsStorageSupplier;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
+import org.projectnessie.catalog.files.s3.S3Credentials;
+import org.projectnessie.catalog.files.s3.S3CredentialsResolver;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.storage.uri.StorageUri;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class TestObjectIO {
@@ -61,11 +70,16 @@ class TestObjectIO {
   @InjectSoftAssertions protected SoftAssertions soft;
 
   private static S3ObjectIO s3(BucketOptions options) {
+    return s3(options, null);
+  }
+
+  private static S3ObjectIO s3(BucketOptions options, S3CredentialsResolver credentialsResolver) {
     S3Options s3Options =
         ImmutableS3Options.builder()
             .defaultOptions(ImmutableS3BucketOptions.builder().from(options).build())
             .build();
-    return new S3ObjectIO(new S3ClientSupplier(null, s3Options, null, secretsProvider), null);
+    return new S3ObjectIO(
+        new S3ClientSupplier(null, s3Options, null, secretsProvider), credentialsResolver);
   }
 
   private static GcsObjectIO gcs(BucketOptions options) {
@@ -126,11 +140,64 @@ class TestObjectIO {
         StorageLocations.storageLocations(whUri, List.of(whUri), List.of());
     Map<String, String> config = new HashMap<>();
 
-    objectIO.configureIcebergTable(storageLocations, config::put, x -> false, false);
+    objectIO.configureIcebergTable(storageLocations, config::put, (p, c) -> {}, x -> false, false);
     soft.assertThat(config).containsEntry(propName, expectedValue);
 
     config.clear();
-    objectIO.configureIcebergTable(storageLocations, config::put, x -> true, true);
+    objectIO.configureIcebergTable(storageLocations, config::put, (p, c) -> {}, x -> true, true);
     soft.assertThat(config).containsEntry(propName, expectedValue);
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  void s3VendedCredentials(String warehouseLocation, String tableLocation) {
+    S3CredentialsResolver resolver = mock(S3CredentialsResolver.class);
+    S3Credentials credentials =
+        new S3Credentials(
+            AwsSessionCredentials.builder()
+                .accessKeyId("key")
+                .secretAccessKey("secret")
+                .sessionToken("token")
+                .expirationTime(Instant.ofEpochMilli(12345))
+                .build());
+
+    StorageUri whUri = StorageUri.of(warehouseLocation);
+    StorageUri tableUri = StorageUri.of(tableLocation);
+    StorageLocations storageLocations =
+        StorageLocations.storageLocations(whUri, List.of(tableUri), List.of());
+
+    var bucketOptions =
+        ImmutableS3BucketOptions.builder()
+            .region("us-east-1")
+            .clientIam(ImmutableS3ClientIam.builder().enabled(true).assumeRole("role").build())
+            .build();
+    when(resolver.resolveSessionCredentials(any(), eq(storageLocations))).thenReturn(credentials);
+
+    Map<String, String> config = new HashMap<>();
+    Map<String, Map<String, String>> storageCredentials = new HashMap<>();
+
+    s3(bucketOptions, resolver)
+        .configureIcebergTable(
+            storageLocations, config::put, storageCredentials::put, x -> false, true);
+
+    soft.assertThat(config)
+        .containsEntry("s3.access-key-id", "key")
+        .containsEntry("s3.secret-access-key", "secret")
+        .containsEntry("s3.session-token", "token")
+        .containsEntry("s3.session-token-expires-at-ms", "12345");
+    soft.assertThat(storageCredentials)
+        .containsKeys("s3://bucket/warehouse", "s3://bucket/warehouse/table");
+    soft.assertThat(storageCredentials.values())
+        .allSatisfy(
+            credential ->
+                soft.assertThat(credential)
+                    .containsEntry("s3.access-key-id", "key")
+                    .containsEntry("s3.secret-access-key", "secret")
+                    .containsEntry("s3.session-token", "token")
+                    .containsEntry("s3.session-token-expires-at-ms", "12345"));
+  }
+
+  static Stream<Arguments> s3VendedCredentials() {
+    return Stream.of(Arguments.of("s3a://bucket/warehouse", "s3a://bucket/warehouse/table"));
   }
 }

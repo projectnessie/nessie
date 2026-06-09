@@ -24,9 +24,11 @@ import io.quarkus.test.junit.TestProfile;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.intellij.lang.annotations.Language;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
 import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
@@ -66,6 +68,22 @@ public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests
   @Override
   protected String scheme() {
     return "s3";
+  }
+
+  @Override
+  protected void verifyLoadCredentialsResponse(
+      Table table, IcebergLoadCredentialsResponse response) {
+    soft.assertThat(response.storageCredentials())
+        .anySatisfy(
+            credential -> {
+              soft.assertThat(credential.prefix()).startsWith(table.location());
+              soft.assertThat(credential.config())
+                  .containsKeys(
+                      "s3.access-key-id",
+                      "s3.secret-access-key",
+                      "s3.session-token",
+                      "s3.session-token-expires-at-ms");
+            });
   }
 
   public static class Profile implements QuarkusTestProfile {

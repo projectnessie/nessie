@@ -426,7 +426,8 @@ public class AvroSerializeBench {
         ManifestFiles.read(
             param.manifestFile,
             new LocalFileIO.SingleInputFileIO(
-                new InMemoryInputFile(param.manifestFile.path(), param.serializedManifestFile)))) {
+                new InMemoryInputFile(param.manifestFile.path(), param.serializedManifestFile)),
+            Map.of(param.partitionSpec.specId(), param.partitionSpec))) {
       reader.forEach(blackhole::consume);
     }
   }
@@ -498,7 +499,7 @@ public class AvroSerializeBench {
         .build();
   }
 
-  @SuppressWarnings({"DataFlowIssue", "deprecation"})
+  @SuppressWarnings("DataFlowIssue")
   // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;

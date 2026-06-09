@@ -29,6 +29,8 @@ import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -183,6 +185,7 @@ public class GcsObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     if (Stream.concat(
@@ -201,16 +204,32 @@ public class GcsObjectIO implements ObjectIO {
           .generateDelegationToken(storageLocations, bucketOptions)
           .ifPresent(
               t -> {
-                config.accept(GCS_OAUTH2_TOKEN, t.token());
+                Map<String, String> credentialConfig = new HashMap<>();
+                credentialConfig.put(GCS_OAUTH2_TOKEN, t.token());
                 t.expiresAt()
                     .ifPresent(
                         i ->
-                            config.accept(
+                            credentialConfig.put(
                                 GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
+
+                credentialConfig.forEach(config);
+                credentialPrefixes(storageLocations)
+                    .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
               });
     }
 
     bucketOptions.tableConfigOverrides().forEach(config);
+  }
+
+  private static Set<String> credentialPrefixes(StorageLocations storageLocations) {
+    return Stream.concat(
+            Stream.of(storageLocations.warehouseLocation()),
+            Stream.concat(
+                storageLocations.writeableLocations().stream(),
+                storageLocations.readonlyLocations().stream()))
+        .filter(uri -> GcsLocation.isGcsScheme(uri.scheme()))
+        .map(StorageUri::toString)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   @Override

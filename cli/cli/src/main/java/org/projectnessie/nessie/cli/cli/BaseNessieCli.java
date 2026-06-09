@@ -30,6 +30,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.RESTSessionCatalog;
@@ -110,7 +111,8 @@ public abstract class BaseNessieCli {
 
         Field pathsField = sessionCatalog.getClass().getDeclaredField("paths");
         pathsField.setAccessible(true);
-        ResourcePaths paths = new ResourcePaths(icebergRestPrefix);
+        ResourcePaths paths =
+            ResourcePaths.forCatalogProperties(Map.of("prefix", icebergRestPrefix));
         pathsField.set(sessionCatalog, paths);
 
       } catch (IllegalAccessException | NoSuchFieldException e) {

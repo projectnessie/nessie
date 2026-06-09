@@ -36,6 +36,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.FilesTable;
 import org.apache.iceberg.HasTableOperations;
@@ -44,6 +45,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
@@ -60,10 +62,14 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -82,6 +88,7 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   protected static final Namespace NS = Namespace.of("newdb");
   protected static final TableIdentifier TABLE = TableIdentifier.of(NS, "table");
   protected static final TableIdentifier RENAMED_TABLE = TableIdentifier.of(NS, "table_renamed");
+  protected static final TableIdentifier TBL = TableIdentifier.of("ns", "tbl");
 
   // Schema passed to create tables
   protected static final Schema SCHEMA =
@@ -403,6 +410,67 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   }
 
   @Test
+  public void testDropNonEmptyNamespace() {
+    C catalog = catalog();
+
+    assertThat(catalog.namespaceExists(NS)).as("Namespace should not exist").isFalse();
+
+    catalog.createNamespace(NS);
+    assertThat(catalog.namespaceExists(NS)).as("Namespace should exist").isTrue();
+    catalog.buildTable(TABLE, SCHEMA).create();
+    assertThat(catalog.tableExists(TABLE)).as("Table should exist").isTrue();
+
+    assertThatThrownBy(() -> catalog.dropNamespace(NS))
+        .isInstanceOf(NamespaceNotEmptyException.class)
+        .hasMessageContaining("is not empty");
+
+    catalog.dropTable(TABLE);
+    assertThat(catalog.tableExists(TABLE)).as("Table should not exist").isFalse();
+
+    assertThat(catalog.dropNamespace(NS))
+        .as("Dropping an existing namespace should return true")
+        .isTrue();
+    assertThat(catalog.namespaceExists(NS)).as("Namespace should not exist").isFalse();
+  }
+
+  @Test
+  public void testDropNamespaceWithNestedNamespace() {
+    assumeTrue(
+        supportsNestedNamespaces(), "Only valid when the catalog supports nested namespaces");
+
+    C catalog = catalog();
+
+    Namespace parent = Namespace.of("parent");
+    Namespace nested = Namespace.of("parent", "child");
+
+    assertThat(catalog.namespaceExists(parent)).as("Parent namespace should not exist").isFalse();
+    assertThat(catalog.namespaceExists(nested)).as("Nested namespace should not exist").isFalse();
+
+    catalog.createNamespace(parent);
+    catalog.createNamespace(nested);
+
+    assertThat(catalog.namespaceExists(parent)).as("Parent namespace should exist").isTrue();
+    assertThat(catalog.namespaceExists(nested)).as("Nested namespace should exist").isTrue();
+
+    assertThatThrownBy(() -> catalog.dropNamespace(parent))
+        .isInstanceOf(NamespaceNotEmptyException.class)
+        .hasMessageContaining("is not empty");
+
+    assertThat(catalog.namespaceExists(parent)).as("Parent namespace should still exist").isTrue();
+    assertThat(catalog.namespaceExists(nested)).as("Nested namespace should still exist").isTrue();
+
+    assertThat(catalog.dropNamespace(nested))
+        .as("Dropping an existing nested namespace should return true")
+        .isTrue();
+    assertThat(catalog.namespaceExists(nested)).as("Nested namespace should not exist").isFalse();
+
+    assertThat(catalog.dropNamespace(parent))
+        .as("Dropping an existing namespace should return true")
+        .isTrue();
+    assertThat(catalog.namespaceExists(parent)).as("Parent namespace should not exist").isFalse();
+  }
+
+  @Test
   public void testListNamespaces() {
     C catalog = catalog();
     // the catalog may automatically create a default namespace
@@ -671,6 +739,37 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   }
 
   @Test
+  public void testCreateTableWithDefaultColumnValue() {
+    assumeTrue(supportsSpecV3());
+
+    C catalog = catalog();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(TBL.namespace());
+    }
+
+    assertThat(catalog.tableExists(TBL)).as("Table should not exist").isFalse();
+
+    Schema schemaWithDefault =
+        new Schema(
+            List.of(
+                required("colWithDefault")
+                    .withId(1)
+                    .ofType(Types.IntegerType.get())
+                    .withWriteDefault(Literal.of(10))
+                    .withInitialDefault(Literal.of(12))
+                    .build()));
+
+    catalog
+        .buildTable(TBL, schemaWithDefault)
+        .withLocation(temporaryLocation())
+        .withProperty(TableProperties.FORMAT_VERSION, "3")
+        .create();
+    assertThat(catalog.tableExists(TBL)).as("Table should exist").isTrue();
+    assertThat(schemaWithDefault.asStruct()).isEqualTo(catalog.loadTable(TBL).schema().asStruct());
+  }
+
+  @Test
   public void testLoadTable() {
     C catalog = catalog();
 
@@ -710,6 +809,15 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     assertThat(table.properties().entrySet())
         .as("Table properties should be a superset of the requested properties")
         .containsAll(properties.entrySet());
+  }
+
+  @Test
+  public void testLoadTableWithNonExistingNamespace() {
+    TableIdentifier ident = TableIdentifier.of("non-existing", "tbl");
+    assertThat(catalog().tableExists(ident)).as("Table should not exist").isFalse();
+    assertThatThrownBy(() -> catalog().loadTable(ident))
+        .isInstanceOf(NoSuchTableException.class)
+        .hasMessageStartingWith("Table does not exist: %s", ident);
   }
 
   @Test
@@ -772,6 +880,64 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
 
     catalog.dropTable(RENAMED_TABLE);
     assertEmpty("Should not contain table after drop", catalog, NS);
+  }
+
+  @Test
+  public void dropAfterRenameDoesntCorruptTable() throws IOException {
+    C catalog = catalog();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(TABLE.namespace());
+    }
+
+    PartitionSpec spec = PartitionSpec.unpartitioned();
+
+    Table initialTable = catalog.createTable(TABLE, SCHEMA, spec);
+    String initialFilePath = initialTable.locationProvider().newDataLocation("data-a.parquet");
+    DataFile dataFile =
+        DataFiles.builder(spec)
+            .withPath(initialFilePath)
+            .withFileSizeInBytes(10)
+            .withRecordCount(2)
+            .build();
+    initialTable.io().newOutputFile(initialFilePath).create().close();
+    initialTable.newAppend().appendFile(dataFile).commit();
+
+    catalog.renameTable(TABLE, RENAMED_TABLE);
+
+    Table newTable = catalog.createTable(TABLE, SCHEMA, spec);
+    String newFilePath = newTable.locationProvider().newDataLocation("data-b.parquet");
+    DataFile anotherFile =
+        DataFiles.builder(spec)
+            .withPath(newFilePath)
+            .withFileSizeInBytes(10)
+            .withRecordCount(2)
+            .build();
+    newTable.io().newOutputFile(newFilePath).create().close();
+    newTable.newAppend().appendFile(anotherFile).commit();
+
+    catalog.dropTable(RENAMED_TABLE, true);
+
+    assertThat(catalog.tableExists(RENAMED_TABLE))
+        .as("After PURGE, %s must not exist", RENAMED_TABLE)
+        .isFalse();
+    assertThat(catalog.tableExists(TABLE))
+        .as(
+            "After dropping the renamed table with PURGE, the recreated table with the original name (%s) must exist",
+            TABLE)
+        .isTrue();
+
+    Table table = catalog.loadTable(TABLE);
+    FileIO io = table.io();
+    try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+      tasks.forEach(
+          task -> {
+            InputFile file = io.newInputFile(task.file().location());
+            assertThat(file.exists())
+                .as("Table %s should remain unaffected by dropping %s", TABLE, RENAMED_TABLE)
+                .isTrue();
+          });
+    }
   }
 
   @Test
@@ -1429,7 +1595,7 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     table.newAppend().appendFile(anotherFile).commit();
     table
         .expireSnapshots()
-        .cleanExpiredFiles(false)
+        .cleanupLevel(ExpireSnapshots.CleanupLevel.ALL)
         .expireOlderThan(table.currentSnapshot().timestampMillis())
         .cleanExpiredMetadata(true)
         .commit();
@@ -1438,6 +1604,66 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
       assertThat(loaded.specs().values()).containsExactlyInAnyOrder(spec, current);
     } else {
       assertThat(loaded.specs().values()).containsExactlyInAnyOrder(current);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testRemoveUnusedSchemas(boolean withBranch) {
+    assumeTrue(!withBranch || supportsBranches());
+
+    String branch = "test";
+    C catalog = catalog();
+
+    if (requiresNamespaceCreate()) {
+      catalog.createNamespace(NS);
+    }
+
+    Table table =
+        catalog
+            .buildTable(TABLE, SCHEMA)
+            .withPartitionSpec(SPEC)
+            .withProperty(TableProperties.GC_ENABLED, "true")
+            .create();
+
+    table.newFastAppend().appendFile(FILE_A).commit();
+    Snapshot firstSnapshot = table.currentSnapshot();
+    if (supportsBranches() && withBranch) {
+      table.manageSnapshots().createBranch(branch).commit();
+    }
+
+    table.updateSchema().addColumn("col_to_delete", Types.IntegerType.get()).commit();
+    table.updateSchema().deleteColumn("col_to_delete").commit();
+    table.updateSchema().addColumn("extra_col", Types.StringType.get()).commit();
+
+    assertThat(table.schemas().values()).as("Should have 3 total schemas").hasSize(3);
+
+    table.expireSnapshots().cleanExpiredMetadata(true).commit();
+
+    Table loaded = catalog.loadTable(TABLE);
+    assertThat(loaded.snapshot(firstSnapshot.snapshotId())).isNotNull();
+    assertThat(loaded.schemas().keySet())
+        .containsExactlyInAnyOrder(firstSnapshot.schemaId(), loaded.schema().schemaId());
+
+    table.updateSchema().addColumn("extra_col2", Types.LongType.get()).commit();
+    table.newFastAppend().appendFile(FILE_B).commit();
+
+    table
+        .expireSnapshots()
+        .expireOlderThan(table.currentSnapshot().timestampMillis())
+        .cleanExpiredMetadata(true)
+        .commit();
+
+    loaded = catalog.loadTable(TABLE);
+    if (withBranch) {
+      assertThat(loaded.snapshots())
+          .containsExactlyInAnyOrder(firstSnapshot, loaded.currentSnapshot());
+      assertThat(loaded.schemas().keySet())
+          .containsExactlyInAnyOrder(firstSnapshot.schemaId(), loaded.currentSnapshot().schemaId());
+    } else {
+      assertThat(loaded.snapshot(firstSnapshot.snapshotId())).isNull();
+      assertThat(loaded.schemas().keySet())
+          .containsExactlyInAnyOrder(loaded.currentSnapshot().schemaId());
     }
   }
 

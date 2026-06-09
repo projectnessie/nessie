@@ -63,7 +63,13 @@ public final class IcebergBridge {
       long sequenceNumber) {
     return new ManifestListWriterBridge(
         ManifestLists.write(
-            formatVersion, manifestListFile, snapshotId, parentSnapshotId, sequenceNumber, null));
+            formatVersion,
+            manifestListFile,
+            null,
+            snapshotId,
+            parentSnapshotId,
+            sequenceNumber,
+            null));
   }
 
   public static class ManifestListWriterBridge implements Closeable {

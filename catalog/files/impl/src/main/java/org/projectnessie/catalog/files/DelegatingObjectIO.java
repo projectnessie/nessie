@@ -67,11 +67,16 @@ public abstract class DelegatingObjectIO implements ObjectIO {
   public void configureIcebergTable(
       StorageLocations storageLocations,
       BiConsumer<String, String> config,
+      BiConsumer<String, Map<String, String>> storageCredential,
       Predicate<Duration> enableRequestSigning,
       boolean canDoCredentialsVending) {
     resolve(storageLocations.warehouseLocation())
         .configureIcebergTable(
-            storageLocations, config, enableRequestSigning, canDoCredentialsVending);
+            storageLocations,
+            config,
+            storageCredential,
+            enableRequestSigning,
+            canDoCredentialsVending);
   }
 
   @Override

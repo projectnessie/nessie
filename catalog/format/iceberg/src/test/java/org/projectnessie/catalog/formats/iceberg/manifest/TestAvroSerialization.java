@@ -254,8 +254,7 @@ public class TestAvroSerialization {
         field.containsNaN());
   }
 
-  @SuppressWarnings({"DataFlowIssue", "deprecation"})
-  // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
+  @SuppressWarnings("DataFlowIssue")
   static ManifestFile toManifestFile(IcebergManifestFile file) {
     ToLongFunction<Long> default0L = boxed -> boxed != null ? boxed : 0L;
     return new GenManifestFile(
@@ -477,7 +476,8 @@ public class TestAvroSerialization {
     }
 
     // Read reference manifest file using ManifestReader
-    try (ManifestReader<DataFile> reader = ManifestFiles.read(manifestFile, io)) {
+    Map<Integer, PartitionSpec> specsById = Map.of(partitionSpec.specId(), referencePartitionSpec);
+    try (ManifestReader<DataFile> reader = ManifestFiles.read(manifestFile, io, specsById)) {
       Schema readerSchema =
           AvroSchemaUtil.convert(
               IcebergBridge.manifestEntrySchema(spec.version(), reader.spec().partitionType()),
@@ -639,8 +639,7 @@ public class TestAvroSerialization {
         .build();
   }
 
-  @SuppressWarnings({"DataFlowIssue", "deprecation"})
-  // GenericManifestFile c'tor removed in Iceberg 1.10, tackled then
+  @SuppressWarnings("DataFlowIssue")
   static ManifestFile toGenericManifestFile(
       Path realFile,
       IcebergManifestFile icebergManifestFile,
