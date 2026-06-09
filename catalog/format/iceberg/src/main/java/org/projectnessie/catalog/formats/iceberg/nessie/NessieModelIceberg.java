@@ -601,6 +601,8 @@ public class NessieModelIceberg {
 
     Map<Integer, NessieSchema> icebergSchemaIdToSchema = new HashMap<>();
 
+    // Populate the schema lookup map from all schemas (needed for snapshot schema resolution),
+    // but only store the current schema in the snapshot to prevent unbounded schema accumulation.
     partsWithV1DefaultPart(iceberg.schemas(), iceberg.schema(), IcebergSchema::schemaId)
         .forEach(
             schema -> {
@@ -610,8 +612,8 @@ public class NessieModelIceberg {
 
               icebergSchemaIdToSchema.put(schema.schemaId(), nessieSchema);
 
-              snapshot.addSchemas(nessieSchema);
               if (isCurrent) {
+                snapshot.addSchemas(nessieSchema);
                 snapshot.currentSchemaId(nessieSchema.id());
               }
             });
@@ -669,12 +671,13 @@ public class NessieModelIceberg {
               // Iceberg
               // snapshots??
               Integer schemaId = currentSnapshot.schemaId();
-              if (schemaId != null) {
-                // TODO this overwrites the "current schema ID" with the schema ID of the current
-                //  snapshot. Is this okay??
-                NessieSchema currentSchema = icebergSchemaIdToSchema.get(schemaId);
-                if (currentSchema != null) {
-                  snapshot.currentSchemaId(currentSchema.id());
+              if (schemaId != null && schemaId != currentSchemaId) {
+                // The snapshot references a different schema than the metadata-level current.
+                // Ensure it is included in the stored schemas.
+                NessieSchema snapshotSchema = icebergSchemaIdToSchema.get(schemaId);
+                if (snapshotSchema != null) {
+                  snapshot.addSchemas(snapshotSchema);
+                  snapshot.currentSchemaId(snapshotSchema.id());
                 }
               }
 
@@ -1062,14 +1065,21 @@ public class NessieModelIceberg {
 
     int currentSchemaId = INITIAL_SCHEMA_ID;
     var allSchemasFieldsById = new HashMap<UUID, NessieField>();
+    NessieId currentNessieSchemaId = nessie.currentSchemaId();
     for (NessieSchema schema : nessie.schemas()) {
       collectFieldsByNessieId(schema, allSchemasFieldsById);
-      IcebergSchema iceberg = nessieSchemaToIcebergSchema(schema);
-      metadata.addSchemas(iceberg);
-      if (schema.id().equals(nessie.currentSchemaId())) {
-        currentSchemaId = schema.icebergId();
-        if (spec.version() == 1) {
-          metadata.schema(iceberg);
+      // When a current schema is set, only include it in the output metadata to avoid unbounded
+      // schema accumulation. Historical schemas are unreachable since Nessie maintains only one
+      // snapshot. When no current schema is set, include all schemas for compatibility.
+      boolean include = currentNessieSchemaId == null || schema.id().equals(currentNessieSchemaId);
+      if (include) {
+        IcebergSchema iceberg = nessieSchemaToIcebergSchema(schema);
+        metadata.addSchemas(iceberg);
+        if (schema.id().equals(currentNessieSchemaId)) {
+          currentSchemaId = schema.icebergId();
+          if (spec.version() == 1) {
+            metadata.schema(iceberg);
+          }
         }
       }
     }
