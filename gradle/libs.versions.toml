@@ -26,7 +26,7 @@ opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.35.0"
 quarkus = "3.36.1"
-quarkusVault = "4.7.0"
+quarkusVault = "4.8.0"
 slf4j = "2.0.18"
 
 # Backwards compatibility versions. Not referenced in this file to not let Renovate bump those versions.
