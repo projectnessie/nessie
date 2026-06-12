@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.108.0 Release (June 12, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.0).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+* Bump Iceberg to 1.11 and support `/credentials` endpoint (#12499)
+* Update dependency org.jline:jline to v4 + adopt CLI code (#12501)
+
 ## 0.107.9 Release (June 04, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.107.9).
