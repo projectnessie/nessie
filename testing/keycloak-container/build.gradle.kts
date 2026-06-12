@@ -22,9 +22,9 @@ dependencies {
   implementation(libs.slf4j.api)
   implementation(project(":nessie-container-spec-helper"))
   compileOnly(project(":nessie-immutables-std"))
-  api(libs.keycloak.admin.client)
+  api(libs.keycloak.client.common.synced)
   api(libs.testcontainers.keycloak) {
-    exclude(group = "org.slf4j") // uses SLF4J 2.x, we are not ready yet
+    exclude(group = "org.keycloak", module = "keycloak-admin-client")
   }
 
   compileOnly(libs.jakarta.annotation.api)
