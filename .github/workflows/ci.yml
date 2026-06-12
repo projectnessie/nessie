@@ -933,6 +933,13 @@ jobs:
         # Gradle 9 requires a project's directory to exist, even if it's empty.
         run: mkdir "${{env.ICEBERG_DIR}}/bom"
 
+      # Setup Gradle properties, heap requirements are for the "Integration test w/ Nessie".
+      - name: Setup gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xms2g -Xmx6g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
+          echo "org.gradle.vfs.watch=false" >> ~/.gradle/gradle.properties
+
       - name: Setup JDK
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
