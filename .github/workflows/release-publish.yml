@@ -251,7 +251,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5
         with:
-          version: v4.2.0
+          version: v4.2.1
       ### END runner setup
 
       - name: Package Nessie Helm chart
