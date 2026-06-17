@@ -112,74 +112,72 @@ allprojects {
   }
 }
 
-val requiredNmcpSparkArtifacts =
-  providers.provider {
-    val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
-    val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
-    val scalaVersions = linkedSetOf<String>()
-    val artifacts = mutableListOf<String>()
+val requiredNmcpSparkArtifacts = providers.provider {
+  val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
+  val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
+  val scalaVersions = linkedSetOf<String>()
+  val artifacts = mutableListOf<String>()
 
-    for (sparkVersion in sparkVersions) {
-      sparkScala["sparkVersion-${sparkVersion}-scalaVersions"]
-        .toString()
-        .split(",")
-        .map { it.trim() }
-        .forEach { scalaVersion ->
-          scalaVersions.add(scalaVersion)
-          artifacts.add("nessie-spark-extensions-${sparkVersion}_$scalaVersion")
-        }
-    }
-
-    scalaVersions.forEach { scalaVersion ->
-      artifacts.add("nessie-spark-extensions-base_$scalaVersion")
-    }
-
-    artifacts
-  }
-
-val checkNmcpAggregationSparkArtifacts by
-  tasks.registering {
-    group = "Verification"
-    description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
-
-    val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
-    dependsOn("nmcpZipAggregation")
-    inputs.file(aggregationZip)
-
-    doLast {
-      val version = project.version.toString()
-      val entries =
-        ZipFile(aggregationZip.get().asFile).use { zip ->
-          zip.entries().asSequence().map { it.name }.toSet()
-        }
-
-      val missing =
-        requiredNmcpSparkArtifacts.get().filter { artifactId ->
-          val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
-          fun isMainJar(entry: String): Boolean {
-            val fileName = entry.substringAfterLast("/")
-            val expectedReleaseFileName = "$artifactId-$version.jar"
-            val expectedSnapshotFileName =
-              Regex(
-                Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
-                  """\d{8}\.\d{6}-\d+\.jar"""
-              )
-
-            return entry.startsWith(artifactDir) &&
-              (fileName == expectedReleaseFileName ||
-                (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
-          }
-
-          entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
-            entries.none(::isMainJar)
-        }
-
-      check(missing.isEmpty()) {
-        "NMCP aggregation zip is missing Spark artifacts for version $version: " +
-          missing.joinToString(", ")
+  for (sparkVersion in sparkVersions) {
+    sparkScala["sparkVersion-${sparkVersion}-scalaVersions"]
+      .toString()
+      .split(",")
+      .map { it.trim() }
+      .forEach { scalaVersion ->
+        scalaVersions.add(scalaVersion)
+        artifacts.add("nessie-spark-extensions-${sparkVersion}_$scalaVersion")
       }
+  }
+
+  scalaVersions.forEach { scalaVersion ->
+    artifacts.add("nessie-spark-extensions-base_$scalaVersion")
+  }
+
+  artifacts
+}
+
+val checkNmcpAggregationSparkArtifacts by tasks.registering {
+  group = "Verification"
+  description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
+
+  val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
+  dependsOn("nmcpZipAggregation")
+  inputs.file(aggregationZip)
+
+  doLast {
+    val version = project.version.toString()
+    val entries =
+      ZipFile(aggregationZip.get().asFile).use { zip ->
+        zip.entries().asSequence().map { it.name }.toSet()
+      }
+
+    val missing =
+      requiredNmcpSparkArtifacts.get().filter { artifactId ->
+        val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
+        fun isMainJar(entry: String): Boolean {
+          val fileName = entry.substringAfterLast("/")
+          val expectedReleaseFileName = "$artifactId-$version.jar"
+          val expectedSnapshotFileName =
+            Regex(
+              Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+                """\d{8}\.\d{6}-\d+\.jar"""
+            )
+
+          return entry.startsWith(artifactDir) &&
+            (fileName == expectedReleaseFileName ||
+              (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+        }
+
+        entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
+          entries.none(::isMainJar)
+      }
+
+    check(missing.isEmpty()) {
+      "NMCP aggregation zip is missing Spark artifacts for version $version: " +
+        missing.joinToString(", ")
     }
   }
+}
 
 tasks.named("nmcpPublishAggregationToCentralPortal") {
   dependsOn(checkNmcpAggregationSparkArtifacts)
@@ -205,15 +203,14 @@ val buildToolIntegrationMaven by
     commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
   }
 
-val buildToolsIntegrationTest by
-  tasks.registering {
-    group = "Verification"
-    description =
-      "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
+val buildToolsIntegrationTest by tasks.registering {
+  group = "Verification"
+  description =
+    "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-    dependsOn(buildToolIntegrationGradle)
-    dependsOn(buildToolIntegrationMaven)
-  }
+  dependsOn(buildToolIntegrationGradle)
+  dependsOn(buildToolIntegrationMaven)
+}
 
 val buildToolsIntegrationClean by
   tasks.registering(Delete::class) {

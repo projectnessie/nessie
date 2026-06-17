@@ -37,19 +37,18 @@ val collectLicenseReportJars by
     from(licenseReports)
   }
 
-val aggregateLicenseReports by
-  tasks.registering {
-    val outputDir = project.layout.buildDirectory.dir("licenseReports")
-    outputs.dir(outputDir)
-    dependsOn(collectLicenseReportJars)
-    doLast {
-      delete(outputDir)
-      fileTree(collectLicenseReportJars.get().destinationDir).files.forEach { zip ->
-        val targetDirName = zip.name.replace("-license-report.zip", "")
-        unzipTo(outputDir.get().dir(targetDirName).asFile, zip)
-      }
+val aggregateLicenseReports by tasks.registering {
+  val outputDir = project.layout.buildDirectory.dir("licenseReports")
+  outputs.dir(outputDir)
+  dependsOn(collectLicenseReportJars)
+  doLast {
+    delete(outputDir)
+    fileTree(collectLicenseReportJars.get().destinationDir).files.forEach { zip ->
+      val targetDirName = zip.name.replace("-license-report.zip", "")
+      unzipTo(outputDir.get().dir(targetDirName).asFile, zip)
     }
   }
+}
 
 val aggregatedLicenseReportsZip by
   tasks.registering(Zip::class) {
