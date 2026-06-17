@@ -64,66 +64,62 @@ import org.gradle.work.DisableCachingByDefault
 class CopiedCodeCheckerPlugin
 @Inject
 constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Plugin<Project> {
-  override fun apply(project: Project): Unit =
-    project.run {
-      val extension =
-        extensions.create("copiedCodeChecks", CopiedCodeCheckerExtension::class.java, project)
+  override fun apply(project: Project): Unit = project.run {
+    val extension =
+      extensions.create("copiedCodeChecks", CopiedCodeCheckerExtension::class.java, project)
 
-      if (rootProject == this) {
-        // Apply this plugin to all projects
-        afterEvaluate { subprojects { plugins.apply(CopiedCodeCheckerPlugin::class.java) } }
+    if (rootProject == this) {
+      // Apply this plugin to all projects
+      afterEvaluate { subprojects { plugins.apply(CopiedCodeCheckerPlugin::class.java) } }
 
-        tasks.register(
-          CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME,
-          CheckCopiedCodeMentionsExistTask::class.java,
-        )
-
-        afterEvaluate {
-          tasks.named("codeChecks").configure {
-            dependsOn(CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME)
-          }
-        }
-      } else {
-        extension.excludedContentTypePatterns.convention(
-          provider {
-            rootProject.extensions
-              .getByType(CopiedCodeCheckerExtension::class.java)
-              .excludedContentTypePatterns
-              .get()
-          }
-        )
-        extension.includedContentTypePatterns.convention(
-          provider {
-            rootProject.extensions
-              .getByType(CopiedCodeCheckerExtension::class.java)
-              .includedContentTypePatterns
-              .get()
-          }
-        )
-        extension.includeUnrecognizedContentType.convention(
-          provider {
-            rootProject.extensions
-              .getByType(CopiedCodeCheckerExtension::class.java)
-              .includeUnrecognizedContentType
-              .get()
-          }
-        )
-        extension.licenseFile.convention(
-          provider {
-            rootProject.extensions
-              .getByType(CopiedCodeCheckerExtension::class.java)
-              .licenseFile
-              .get()
-          }
-        )
-      }
-
-      tasks.register(CHECK_FOR_COPIED_CODE_TASK_NAME, CheckForCopiedCodeTask::class.java)
+      tasks.register(
+        CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME,
+        CheckCopiedCodeMentionsExistTask::class.java,
+      )
 
       afterEvaluate {
-        tasks.named("codeChecks").configure { dependsOn(CHECK_FOR_COPIED_CODE_TASK_NAME) }
+        tasks.named("codeChecks").configure {
+          dependsOn(CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME)
+        }
       }
+    } else {
+      extension.excludedContentTypePatterns.convention(
+        provider {
+          rootProject.extensions
+            .getByType(CopiedCodeCheckerExtension::class.java)
+            .excludedContentTypePatterns
+            .get()
+        }
+      )
+      extension.includedContentTypePatterns.convention(
+        provider {
+          rootProject.extensions
+            .getByType(CopiedCodeCheckerExtension::class.java)
+            .includedContentTypePatterns
+            .get()
+        }
+      )
+      extension.includeUnrecognizedContentType.convention(
+        provider {
+          rootProject.extensions
+            .getByType(CopiedCodeCheckerExtension::class.java)
+            .includeUnrecognizedContentType
+            .get()
+        }
+      )
+      extension.licenseFile.convention(
+        provider {
+          rootProject.extensions.getByType(CopiedCodeCheckerExtension::class.java).licenseFile.get()
+        }
+      )
     }
+
+    tasks.register(CHECK_FOR_COPIED_CODE_TASK_NAME, CheckForCopiedCodeTask::class.java)
+
+    afterEvaluate {
+      tasks.named("codeChecks").configure { dependsOn(CHECK_FOR_COPIED_CODE_TASK_NAME) }
+    }
+  }
 
   companion object {
     private const val CHECK_FOR_COPIED_CODE_TASK_NAME = "checkForCopiedCode"
@@ -253,11 +249,13 @@ abstract class CheckForCopiedCodeTask : DefaultTask() {
                   check = false
                 }
               } else {
-                val excluded =
-                  excludedPatterns.any { pattern -> pattern.matcher(fileType).matches() }
+                val excluded = excludedPatterns.any { pattern ->
+                  pattern.matcher(fileType).matches()
+                }
                 if (excluded) {
-                  val included =
-                    includedPatterns.any { pattern -> pattern.matcher(fileType).matches() }
+                  val included = includedPatterns.any { pattern ->
+                    pattern.matcher(fileType).matches()
+                  }
                   if (!included) {
                     logger.info("   ... excluded and not included content type, skipping")
                     check = false
