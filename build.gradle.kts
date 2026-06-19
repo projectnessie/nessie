@@ -36,25 +36,6 @@ publishingHelper { mavenName = "Nessie" }
 
 description = "Transactional Catalog for Data Lakes"
 
-// To fix circular dependencies with NessieClient, certain projects need to use the same Nessie
-// version as Iceberg/Delta has.
-// Allow overriding the Iceberg version used by Nessie and the Nessie version used by integration
-// tests that depend on Iceberg.
-val versionIceberg: String =
-  providers.systemProperty("nessie.versionIceberg").getOrElse(libs.versions.iceberg.get())
-val versionClientNessie: String =
-  providers
-    .systemProperty("nessie.versionClientNessie")
-    .getOrElse(libs.versions.nessieClientVersion.get())
-
-mapOf(
-    "versionClientNessie" to versionClientNessie,
-    "versionIceberg" to versionIceberg,
-    "versionJandex" to libs.versions.jandex.get(),
-  )
-  .plus(loadProperties(file("integrations/spark-scala.properties")))
-  .forEach { (k, v) -> extra[k.toString()] = v }
-
 tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.DistributionType.ALL }
 
 // Pass environment variables:

@@ -148,14 +148,14 @@ dependencies {
           System.getProperty("idea.active").toBoolean() ||
           System.getProperty("eclipse.product") != null ||
           gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
-      val sparkVersions = rootProject.extra["sparkVersions"].toString().split(",").map { it.trim() }
+      val sparkScala = loadProperties(rootProject.file("integrations/spark-scala.properties"))
+      val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
       val allScalaVersions = LinkedHashSet<String>()
       for (sparkVersion in sparkVersions) {
         val scalaVersions =
-          rootProject.extra["sparkVersion-${sparkVersion}-scalaVersions"]
-            .toString()
-            .split(",")
-            .map { it.trim() }
+          sparkScala["sparkVersion-${sparkVersion}-scalaVersions"].toString().split(",").map {
+            it.trim()
+          }
         for (scalaVersion in scalaVersions) {
           allScalaVersions.add(scalaVersion)
           api(project(":nessie-spark-extensions-${sparkVersion}_$scalaVersion"))
