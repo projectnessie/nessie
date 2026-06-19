@@ -41,9 +41,11 @@ description = "Transactional Catalog for Data Lakes"
 // Allow overriding the Iceberg version used by Nessie and the Nessie version used by integration
 // tests that depend on Iceberg.
 val versionIceberg: String =
-  System.getProperty("nessie.versionIceberg", libs.versions.iceberg.get())
+  providers.systemProperty("nessie.versionIceberg").getOrElse(libs.versions.iceberg.get())
 val versionClientNessie: String =
-  System.getProperty("nessie.versionClientNessie", libs.versions.nessieClientVersion.get())
+  providers
+    .systemProperty("nessie.versionClientNessie")
+    .getOrElse(libs.versions.nessieClientVersion.get())
 
 mapOf(
     "versionClientNessie" to versionClientNessie,
@@ -65,9 +67,10 @@ tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.Distribut
 //    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
 nmcpAggregation {
   centralPortal {
-    username.value(provider { System.getenv("ORG_GRADLE_PROJECT_sonatypeUsername") })
-    password.value(provider { System.getenv("ORG_GRADLE_PROJECT_sonatypePassword") })
-    publishingType = if (System.getenv("CI") != null) "AUTOMATIC" else "USER_MANAGED"
+    username.value(providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypeUsername"))
+    password.value(providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypePassword"))
+    publishingType =
+      if (providers.environmentVariable("CI").isPresent) "AUTOMATIC" else "USER_MANAGED"
     publishingTimeout = Duration.ofMinutes(120)
     validationTimeout = Duration.ofMinutes(120)
     publicationName = "${project.name}-$version"
