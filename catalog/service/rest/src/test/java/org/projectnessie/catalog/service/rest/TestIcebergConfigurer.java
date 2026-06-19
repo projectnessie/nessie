@@ -22,6 +22,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
@@ -253,7 +254,10 @@ public class TestIcebergConfigurer {
               p -> p.signerSignature().warehouseLocation(),
               p -> p.signerSignature().identifier())
           .containsExactly(
-              signerKey.name(), List.of(loc), warehouseLocation, key.toPathStringEscaped());
+              signerKey.name(),
+              List.of(normalizeS3Scheme(loc)),
+              warehouseLocation,
+              key.toPathStringEscaped());
       soft.assertThat(signPath).doesNotStartWith("/");
       soft.assertThat(signUri).isNotNull();
     } else {
@@ -266,12 +270,32 @@ public class TestIcebergConfigurer {
     ContentKey key = ContentKey.of("foo", "bar");
 
     String s3 = "s3://bucket/path/1/2/3";
+    String s3a = "s3a://bucket/path/1/2/3";
+    String s3n = "s3n://bucket/path/1/2/3";
     String gcs = "gcs://bucket/path/1/2/3";
     String complexPrefix = "main|s3://blah/meep";
     return Stream.of(
         arguments(
             URI.create("http://foo:12434"),
             s3,
+            "main",
+            key,
+            "http://foo:12434/iceberg/",
+            "v1/main/s3sign/"),
+        // Tables written by HadoopFileIO have metadata.location prefixed with s3a:// while the
+        // warehouse is registered with s3://. The writeable derivation must normalize the scheme
+        // on both sides of the prefix check; otherwise the writeable[] returned to the S3 signer
+        // is empty and every PUT/DELETE is rejected.
+        arguments(
+            URI.create("http://foo:12434"),
+            s3a,
+            "main",
+            key,
+            "http://foo:12434/iceberg/",
+            "v1/main/s3sign/"),
+        arguments(
+            URI.create("http://foo:12434"),
+            s3n,
             "main",
             key,
             "http://foo:12434/iceberg/",
