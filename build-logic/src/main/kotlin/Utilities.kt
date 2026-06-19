@@ -301,7 +301,7 @@ private class NessieProjects {
 }
 
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
-fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar") || isIncludedInNesQuEIT()
+fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar")
 
 fun Project.quarkusPackageType(): String = if (quarkusFatJar()) "uber-jar" else "fast-jar"
 
