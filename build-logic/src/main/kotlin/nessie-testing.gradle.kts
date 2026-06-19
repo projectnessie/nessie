@@ -67,11 +67,11 @@ if (plugins.hasPlugin("io.quarkus")) {
 }
 
 tasks.withType<Test>().configureEach {
-  val testJvmArgs: String? by project
-  val testHeapSize: String? by project
+  val testJvmArgs = providers.gradleProperty("testJvmArgs").orNull
+  val testHeapSize = providers.gradleProperty("testHeapSize").orNull
   jvmArgs("-XX:+HeapDumpOnOutOfMemoryError")
   if (testJvmArgs != null) {
-    jvmArgs((testJvmArgs as String).split(" "))
+    jvmArgs(testJvmArgs.split(" "))
   }
 
   systemProperty("file.encoding", "UTF-8")
@@ -106,11 +106,11 @@ tasks.withType<Test>().configureEach {
       }
     )
 
-    minHeapSize = if (testHeapSize != null) testHeapSize as String else "768m"
-    maxHeapSize = if (testHeapSize != null) testHeapSize as String else "4g"
+    minHeapSize = testHeapSize ?: "768m"
+    maxHeapSize = testHeapSize ?: "4g"
   } else if (testHeapSize != null) {
-    minHeapSize = testHeapSize!!
-    maxHeapSize = testHeapSize!!
+    minHeapSize = testHeapSize
+    maxHeapSize = testHeapSize
   }
 
   filter { isFailOnNoMatchingTests = false }

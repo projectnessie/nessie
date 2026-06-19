@@ -18,9 +18,7 @@ plugins { id("nessie-conventions-java17") }
 
 publishingHelper { mavenName = "Nessie - Build tool - Immutables without javax annotations" }
 
-val processor by configurations.creating
-
-processor.extendsFrom(configurations.api.get())
+val processor = configurations.create("processor") { extendsFrom(configurations.api.get()) }
 
 dependencies {
   api(libs.immutables.builder)

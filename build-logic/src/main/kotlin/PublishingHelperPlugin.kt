@@ -40,7 +40,6 @@ import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.SigningExtension
@@ -208,16 +207,16 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
       suppressedValidationErrors.add("enforced-platform")
     }
 
-    if (project.hasProperty("release")) {
+    if (project.providers.gradleProperty("release").isPresent) {
       plugins.withType<SigningPlugin>().configureEach {
         configure<SigningExtension> {
-          val signingKey: String? by project
-          val signingPassword: String? by project
+          val signingKey = project.providers.gradleProperty("signingKey").orNull
+          val signingPassword = project.providers.gradleProperty("signingPassword").orNull
           useInMemoryPgpKeys(signingKey, signingPassword)
           val publishing = project.extensions.getByType(PublishingExtension::class.java)
           afterEvaluate { sign(publishing.publications.getByName("maven")) }
 
-          if (project.hasProperty("useGpgAgent")) {
+          if (project.providers.gradleProperty("useGpgAgent").isPresent) {
             useGpgCmd()
           }
         }

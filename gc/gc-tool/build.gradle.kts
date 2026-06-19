@@ -123,8 +123,8 @@ tasks.named<Test>("test").configure {
 
 val mainClassName = "org.projectnessie.gc.tool.cli.CLI"
 
-val generateAutoComplete by
-  tasks.registering(JavaExec::class) {
+val generateAutoComplete =
+  tasks.register<JavaExec>("generateAutoComplete") {
     group = "build"
     description = "Generates the bash/zsh autocompletion scripts"
 
@@ -161,8 +161,8 @@ listOf("compileTestJava", "jandex", "jar", "shadowJar").forEach { t ->
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
 
-val copyUberJar by
-  tasks.registering(Copy::class) {
+val copyUberJar =
+  tasks.register<Copy>("copyUberJar") {
     group = "build"
     description = "Copies the uber-jar to build/executable"
     dependsOn(shadowJar)

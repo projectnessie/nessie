@@ -15,6 +15,7 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.ShadowPlugin
+import org.gradle.api.tasks.SourceSetContainer
 import org.kordamp.gradle.plugin.jandex.JandexExtension
 import org.kordamp.gradle.plugin.jandex.JandexPlugin
 import org.kordamp.gradle.plugin.jandex.tasks.JandexTask
@@ -50,7 +51,10 @@ plugins.withType<ShadowPlugin>().configureEach {
 
 //
 
-if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
+if (
+  providers.gradleProperty("release").isPresent ||
+    providers.gradleProperty("jarWithGitInfo").isPresent
+) {
   /**
    * Adds convenient, but not strictly necessary information to each generated "main" jar.
    *
@@ -87,7 +91,7 @@ if (project.hasProperty("release") || project.hasProperty("jarWithGitInfo")) {
 
     tasks.named("processResources") { dependsOn(additionalJarContent) }
 
-    val sourceSets: SourceSetContainer by project
+    val sourceSets = extensions.getByType(SourceSetContainer::class.java)
     sourceSets.named("main") {
       resources.srcDir(additionalJarContent)
       resources.srcDir(generatePomProperties)

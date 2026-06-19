@@ -18,7 +18,7 @@ plugins { id("nessie-conventions-java17") }
 
 publishingHelper { mavenName = "Nessie - Build tool - Immutables" }
 
-val processor by configurations.creating
+val processor = configurations.create("processor")
 
 processor.extendsFrom(configurations.api.get())
 

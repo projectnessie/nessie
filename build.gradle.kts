@@ -139,55 +139,56 @@ val requiredNmcpSparkArtifacts = providers.provider {
   artifacts
 }
 
-val checkNmcpAggregationSparkArtifacts by tasks.registering {
-  group = "Verification"
-  description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
+val checkNmcpAggregationSparkArtifacts =
+  tasks.register("checkNmcpAggregationSparkArtifacts") {
+    group = "Verification"
+    description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
 
-  val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
-  dependsOn("nmcpZipAggregation")
-  inputs.file(aggregationZip)
+    val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
+    dependsOn("nmcpZipAggregation")
+    inputs.file(aggregationZip)
 
-  doLast {
-    val version = project.version.toString()
-    val entries =
-      ZipFile(aggregationZip.get().asFile).use { zip ->
-        zip.entries().asSequence().map { it.name }.toSet()
-      }
-
-    val missing =
-      requiredNmcpSparkArtifacts.get().filter { artifactId ->
-        val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
-        fun isMainJar(entry: String): Boolean {
-          val fileName = entry.substringAfterLast("/")
-          val expectedReleaseFileName = "$artifactId-$version.jar"
-          val expectedSnapshotFileName =
-            Regex(
-              Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
-                """\d{8}\.\d{6}-\d+\.jar"""
-            )
-
-          return entry.startsWith(artifactDir) &&
-            (fileName == expectedReleaseFileName ||
-              (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+    doLast {
+      val version = project.version.toString()
+      val entries =
+        ZipFile(aggregationZip.get().asFile).use { zip ->
+          zip.entries().asSequence().map { it.name }.toSet()
         }
 
-        entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
-          entries.none(::isMainJar)
-      }
+      val missing =
+        requiredNmcpSparkArtifacts.get().filter { artifactId ->
+          val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
+          fun isMainJar(entry: String): Boolean {
+            val fileName = entry.substringAfterLast("/")
+            val expectedReleaseFileName = "$artifactId-$version.jar"
+            val expectedSnapshotFileName =
+              Regex(
+                Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+                  """\d{8}\.\d{6}-\d+\.jar"""
+              )
 
-    check(missing.isEmpty()) {
-      "NMCP aggregation zip is missing Spark artifacts for version $version: " +
-        missing.joinToString(", ")
+            return entry.startsWith(artifactDir) &&
+              (fileName == expectedReleaseFileName ||
+                (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+          }
+
+          entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
+            entries.none(::isMainJar)
+        }
+
+      check(missing.isEmpty()) {
+        "NMCP aggregation zip is missing Spark artifacts for version $version: " +
+          missing.joinToString(", ")
+      }
     }
   }
-}
 
 tasks.named("nmcpPublishAggregationToCentralPortal") {
   dependsOn(checkNmcpAggregationSparkArtifacts)
 }
 
-val buildToolIntegrationGradle by
-  tasks.registering(Exec::class) {
+val buildToolIntegrationGradle =
+  tasks.register<Exec>("buildToolIntegrationGradle") {
     group = "Verification"
     description =
       "Checks whether the bom works fine with Gradle, requires preceding publishToMavenLocal in a separate Gradle invocation"
@@ -196,8 +197,8 @@ val buildToolIntegrationGradle by
     commandLine("${project.projectDir}/gradlew", "-p", workingDir, "test")
   }
 
-val buildToolIntegrationMaven by
-  tasks.registering(Exec::class) {
+val buildToolIntegrationMaven =
+  tasks.register<Exec>("buildToolIntegrationMaven") {
     group = "Verification"
     description =
       "Checks whether the bom works fine with Maven, requires preceding publishToMavenLocal in a separate Gradle invocation"
@@ -206,23 +207,24 @@ val buildToolIntegrationMaven by
     commandLine("./mvnw", "--batch-mode", "clean", "test", "-Dnessie.version=${project.version}")
   }
 
-val buildToolsIntegrationTest by tasks.registering {
-  group = "Verification"
-  description =
-    "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
+val buildToolsIntegrationTest =
+  tasks.register("buildToolsIntegrationTest") {
+    group = "Verification"
+    description =
+      "Checks whether the bom works fine with build tools, requires preceding publishToMavenLocal in a separate Gradle invocation"
 
-  dependsOn(buildToolIntegrationGradle)
-  dependsOn(buildToolIntegrationMaven)
-}
+    dependsOn(buildToolIntegrationGradle)
+    dependsOn(buildToolIntegrationMaven)
+  }
 
-val buildToolsIntegrationClean by
-  tasks.registering(Delete::class) {
+val buildToolsIntegrationClean =
+  tasks.register<Delete>("buildToolsIntegrationClean") {
     delete("build-tools-integration-tests/.gradle")
     delete("build-tools-integration-tests/build")
     delete("build-tools-integration-tests/target")
   }
 
-val clean by tasks.getting(Delete::class) { dependsOn(buildToolsIntegrationClean) }
+val clean = tasks.named<Delete>("clean") { dependsOn(buildToolsIntegrationClean) }
 
 publishingHelper {
   nessieRepoName = "nessie"

@@ -30,13 +30,13 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Quarkus Server" }
 
-val quarkusRunner by configurations.creating {
-  description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
-}
+val quarkusRunner =
+  configurations.create("quarkusRunner") {
+    description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
+  }
 
-val openapiSource by configurations.creating {
-  description = "Used to reference OpenAPI spec files"
-}
+val openapiSource =
+  configurations.create("openapiSource") { description = "Used to reference OpenAPI spec files" }
 
 val versionIceberg = libs.versions.iceberg.get()
 
@@ -225,8 +225,8 @@ dependencies {
   intTestCompileOnly(libs.immutables.value.annotations)
 }
 
-val pullOpenApiSpec by
-  tasks.registering(Sync::class) {
+val pullOpenApiSpec =
+  tasks.register<Sync>("pullOpenApiSpec") {
     inputs.files(openapiSource)
     destinationDir = layout.buildDirectory.dir("resources/openapi").get().asFile
     from(provider { zipTree(openapiSource.singleFile) }) {
