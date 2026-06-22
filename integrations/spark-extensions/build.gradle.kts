@@ -24,7 +24,7 @@ plugins {
 
 val sparkScala = getSparkScalaVersionsForProject()
 
-val nessieQuarkusServer by configurations.creating
+val nessieQuarkusServer = configurations.create("nessieQuarkusServer")
 
 dependencies {
   // picks the right dependencies for scala compilation

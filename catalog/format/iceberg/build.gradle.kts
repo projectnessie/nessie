@@ -22,10 +22,10 @@ val versionIceberg = libs.versions.iceberg.get()
 
 sourceSets.register("avroSchema")
 
-val avroSchemaImplementation by configurations.getting
-val avroSchemaCompileOnly by configurations.getting
-val avroSchemaAnnotationProcessor by configurations.getting
-val avroSchemaRuntimeClasspath by configurations.getting
+val avroSchemaImplementation = configurations.getByName("avroSchemaImplementation")
+val avroSchemaCompileOnly = configurations.getByName("avroSchemaCompileOnly")
+val avroSchemaAnnotationProcessor = configurations.getByName("avroSchemaAnnotationProcessor")
+val avroSchemaRuntimeClasspath = configurations.getByName("avroSchemaRuntimeClasspath")
 
 dependencies {
   compileOnly(project(":nessie-immutables"))
@@ -71,8 +71,8 @@ dependencies {
 val generatedAvroSchemas =
   layout.buildDirectory.asFile.map { it.resolve("generated/avroSchemas") }.get()
 
-val generateAvroSchemas by
-  tasks.registering(JavaExec::class) {
+val generateAvroSchemas =
+  tasks.register<JavaExec>("generateAvroSchemas") {
     dependsOn(tasks.named("avroSchemaClasses"))
 
     classpath(avroSchemaRuntimeClasspath, tasks.named("compileAvroSchemaJava"))

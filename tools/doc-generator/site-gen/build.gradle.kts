@@ -21,13 +21,13 @@ plugins {
   `java-library`
 }
 
-val genProjects by configurations.creating
-val genSources by configurations.creating
-val cliGrammar by configurations.creating
-val doclet by configurations.creating
-val gcRunner by configurations.creating
-val cliRunner by configurations.creating
-val serverAdminRunner by configurations.creating
+val genProjects = configurations.create("genProjects")
+val genSources = configurations.create("genSources")
+val cliGrammar = configurations.create("cliGrammar")
+val doclet = configurations.create("doclet")
+val gcRunner = configurations.create("gcRunner")
+val cliRunner = configurations.create("cliRunner")
+val serverAdminRunner = configurations.create("serverAdminRunner")
 
 val genProjectPaths = listOf(
   ":nessie-model",
@@ -141,7 +141,7 @@ val generatedMarkdownDocs = tasks.register<JavaExec>("generatedMarkdownDocs") {
 
 val cliHelpDir = layout.buildDirectory.dir("cliHelp")
 
-val cliHelp by tasks.registering(JavaExec::class) {
+val cliHelp = tasks.register<JavaExec>("cliHelp") {
   mainClass = "-jar"
 
   inputs.files(cliRunner)
@@ -168,7 +168,7 @@ val cliHelp by tasks.registering(JavaExec::class) {
 
 val gcHelpDir = layout.buildDirectory.dir("gcHelp")
 
-val gcHelp by tasks.registering(Sync::class) {
+val gcHelp = tasks.register<Sync>("gcHelp") {
   into(gcHelpDir)
 }
 
@@ -215,7 +215,7 @@ for (cmdArgs in listOf(
 
 val serverAdminHelpDir = layout.buildDirectory.dir("serverAdminHelp")
 
-val serverAdminHelp by tasks.registering(Sync::class) {
+val serverAdminHelp = tasks.register<Sync>("serverAdminHelp") {
   into(serverAdminHelpDir)
 }
 

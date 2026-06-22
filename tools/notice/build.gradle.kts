@@ -27,8 +27,8 @@ tasks.withType<JavaCompile>().configureEach { options.release = 8 }
 
 val noticeDir = project.layout.buildDirectory.dir("notice")
 
-val includeNoticeLicenseFiles by
-  tasks.registering(Sync::class) {
+val includeNoticeLicenseFiles =
+  tasks.register<Sync>("includeNoticeLicenseFiles") {
     destinationDir = noticeDir.get().asFile
     inputs.files(rootProject.layout.files("NOTICE", "LICENSE", "version.txt"))
     inputs.files(

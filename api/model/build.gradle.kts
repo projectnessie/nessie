@@ -85,11 +85,12 @@ tasks.named<ProcessResources>("processResources").configure {
   filter(ReplaceTokens::class, mapOf("tokens" to mapOf("projectVersion" to project.version)))
 }
 
-val openapiSource by configurations.creating {
-  isCanBeConsumed = true
-  isCanBeResolved = false
-  description = "Source OpenAPI spec files, containing the examples"
-}
+val openapiSource =
+  configurations.create("openapiSource") {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    description = "Source OpenAPI spec files, containing the examples"
+  }
 
 val generateOpenApiSpec = tasks.named<SmallryeOpenApiTask>("generateOpenApiSpec")
 

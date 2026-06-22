@@ -98,8 +98,8 @@ if (Os.isFamily(Os.FAMILY_MAC) && System.getenv("CI") != null) {
   tasks.named<Test>("intTest").configure { this.enabled = false }
 }
 
-val relatedObjectsJar by
-  tasks.registering(Jar::class) {
+val relatedObjectsJar =
+  tasks.register<Jar>("relatedObjectsJar") {
     group = "build"
     archiveBaseName = "related-objects-for-tests"
     from(tasks.named("compileRelatedObjectsJava"), tasks.named("processRelatedObjectsResources"))

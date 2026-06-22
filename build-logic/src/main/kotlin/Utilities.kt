@@ -63,23 +63,27 @@ fun DependencyHandler.quarkusExtension(project: Project, extension: String): Dep
 
 fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependency {
   val noQuarkusEnforcedPlatform =
-    System.getProperty("quarkus.custom.noEnforcedPlatform").toBoolean()
-  val quarkusCustomVersion = System.getProperty("quarkus.custom.version")
+    project.providers.systemProperty("quarkus.custom.noEnforcedPlatform").map(String::toBoolean)
+  val quarkusCustomVersion = project.providers.systemProperty("quarkus.custom.version")
 
-  if (project.hasProperty("release") && (noQuarkusEnforcedPlatform || quarkusCustomVersion != null))
+  if (
+    project.providers.gradleProperty("release").isPresent &&
+      (noQuarkusEnforcedPlatform.getOrElse(false) || quarkusCustomVersion.isPresent)
+  )
     throw GradleException(
       "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed"
     )
 
   val quarkusVersion =
-    quarkusCustomVersion ?: project.libs().findVersion("quarkus").get().requiredVersion
+    quarkusCustomVersion.getOrElse(project.libs().findVersion("quarkus").get().requiredVersion)
 
   val group =
-    if (noQuarkusEnforcedPlatform && extension == "quarkus-bom") "io.quarkus"
+    if (noQuarkusEnforcedPlatform.getOrElse(false) && extension == "quarkus-bom") "io.quarkus"
     else "io.quarkus.platform"
   val notation = "$group:$extension:$quarkusVersion"
 
-  return if (noQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+  return if (noQuarkusEnforcedPlatform.getOrElse(false)) platform(notation)
+  else enforcedPlatform(notation)
 }
 
 fun Project.cassandraDriverTweak() {
@@ -301,7 +305,7 @@ private class NessieProjects {
 }
 
 /** Utility method to check whether a Quarkus build shall produce the uber-jar. */
-fun Project.quarkusFatJar(): Boolean = hasProperty("uber-jar")
+fun Project.quarkusFatJar(): Boolean = providers.gradleProperty("uber-jar").isPresent
 
 fun Project.quarkusPackageType(): String = if (quarkusFatJar()) "uber-jar" else "fast-jar"
 

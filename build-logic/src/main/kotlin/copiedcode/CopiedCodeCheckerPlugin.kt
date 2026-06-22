@@ -31,7 +31,6 @@ import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
-import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.work.DisableCachingByDefault
 
 /**
@@ -179,7 +178,7 @@ abstract class CheckForCopiedCodeTask : DefaultTask() {
       namedDirectorySets.add(Pair("scan directory ${scanDirectory.name}", scanDirectory))
     }
 
-    val sourceSets: SourceSetContainer? by project
+    val sourceSets = project.extensions.findByType(SourceSetContainer::class.java)
     sourceSets?.forEach { sourceSet ->
       namedDirectorySets.add(Pair("source set ${sourceSet.name}", sourceSet.allSource))
     }

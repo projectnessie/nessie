@@ -30,9 +30,10 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Server Admin Tool" }
 
-val quarkusRunner by configurations.creating {
-  description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
-}
+val quarkusRunner =
+  configurations.create("quarkusRunner") {
+    description = "Used to reference the generated runner-jar (either fast-jar or uber-jar)"
+  }
 
 cassandraDriverTweak()
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-val clean by tasks.registering(Delete::class) {
+val clean = tasks.register<Delete>("clean") {
   delete("venv")
   delete(".cache")
   delete("build")
@@ -24,14 +24,14 @@ val clean by tasks.registering(Delete::class) {
 /*
 Not adding `siteServe`, because killing the build (ctrl-C) does not kill the subprocess.
 
-val siteServe by tasks.registering(Exec::class) {
+tasks.register<Exec>("siteServe") {
   group = "Site"
   description = "Serve the Nessie web site locally"
   commandLine("bin/serve.sh")
 }
 */
 
-val siteServe by tasks.registering {
+val siteServe = tasks.register("siteServe") {
   group = "Site"
   description = "Serve the Nessie web site locally"
   doFirst {
@@ -39,7 +39,7 @@ val siteServe by tasks.registering {
   }
 }
 
-val siteBuild by tasks.registering(Exec::class) {
+val siteBuild = tasks.register<Exec>("siteBuild") {
   group = "Site"
   description = "Build the Nessie web site locally"
   commandLine("bin/build.sh")

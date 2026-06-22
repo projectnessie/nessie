@@ -27,7 +27,7 @@ publishingHelper { mavenName = "Nessie - CLI" }
 
 val versionIceberg = libs.versions.iceberg.get()
 
-val nessieQuarkusServer by configurations.creating
+val nessieQuarkusServer = configurations.create("nessieQuarkusServer")
 
 dependencies {
   implementation(project(":nessie-model"))

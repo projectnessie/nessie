@@ -20,7 +20,7 @@ publishingHelper { mavenName = "Nessie - Catalog - Schema Model" }
 
 description = "Nessie Catalog Schema Model classes"
 
-val protobufSchemaGen by configurations.creating
+val protobufSchemaGen = configurations.create("protobufSchemaGen")
 
 protobufSchemaGen.extendsFrom(configurations.runtimeClasspath.get())
 

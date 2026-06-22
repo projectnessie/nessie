@@ -19,8 +19,8 @@ plugins {
   alias(libs.plugins.jmh)
 }
 
-val congocc by configurations.creating
-val syntaxGen by configurations.creating
+val congocc = configurations.create("congocc")
+val syntaxGen = configurations.create("syntaxGen")
 
 configurations.compileOnly { extendsFrom(syntaxGen) }
 
@@ -69,8 +69,8 @@ val genNessieSparkSyntaxDir =
   project.layout.buildDirectory.dir("generated/resources/nessie-spark-syntax")
 val genJsonGrammarDir = project.layout.buildDirectory.dir("generated/sources/congocc/json")
 
-val generateNessieGrammar by
-  tasks.registering(Generate::class) {
+val generateNessieGrammar =
+  tasks.register<Generate>("generateNessieGrammar") {
     sourceDir = projectDir.resolve("src/main/congocc/nessie")
     val sourceFile =
       sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString()
@@ -92,8 +92,8 @@ val generateNessieGrammar by
     )
   }
 
-val generateJsonGrammar by
-  tasks.registering(Generate::class) {
+val generateJsonGrammar =
+  tasks.register<Generate>("generateJsonGrammar") {
     sourceDir = projectDir.resolve("src/main/congocc/json")
     outputDir = genJsonGrammarDir
 
@@ -122,8 +122,8 @@ val generateJsonGrammar by
 val compileJava =
   tasks.named("compileJava") { dependsOn(generateNessieGrammar, generateJsonGrammar) }
 
-val generateNessieCliSyntax by
-  tasks.registering(Generate::class) {
+val generateNessieCliSyntax =
+  tasks.register<Generate>("generateNessieCliSyntax") {
     dependsOn(compileJava)
 
     sourceDir = projectDir.resolve("src/main/congocc/nessie")
@@ -146,8 +146,8 @@ val generateNessieCliSyntax by
     )
   }
 
-val generateNessieSparkSyntax by
-  tasks.registering(Generate::class) {
+val generateNessieSparkSyntax =
+  tasks.register<Generate>("generateNessieSparkSyntax") {
     dependsOn(compileJava)
 
     sourceDir = projectDir.resolve("src/main/congocc/nessie")
