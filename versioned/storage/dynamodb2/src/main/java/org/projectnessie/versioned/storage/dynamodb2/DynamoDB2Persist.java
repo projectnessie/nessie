@@ -87,6 +87,7 @@ import software.amazon.awssdk.core.exception.AbortedException;
 import software.amazon.awssdk.core.exception.ApiCallAttemptTimeoutException;
 import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
@@ -465,6 +466,7 @@ public class DynamoDB2Persist implements Persist {
                             Map.of(
                                 COL_OBJ_REFERENCED,
                                 AttributeValueUpdate.builder()
+                                    .action(AttributeAction.PUT)
                                     .value(fromS(Long.toString(referenced)))
                                     .build())));
         return false;
@@ -613,7 +615,11 @@ public class DynamoDB2Persist implements Persist {
             .collect(
                 Collectors.toMap(
                     Map.Entry::getKey,
-                    e -> AttributeValueUpdate.builder().value(e.getValue()).build()));
+                    e ->
+                        AttributeValueUpdate.builder()
+                            .action(AttributeAction.PUT)
+                            .value(e.getValue())
+                            .build()));
 
     try {
       // Although '.attributeUpdates()' + '.expected()' are deprecated those functionalities do
