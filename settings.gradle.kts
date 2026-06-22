@@ -16,6 +16,8 @@
 
 import java.net.URI
 import java.util.Properties
+import org.gradle.api.configuration.BuildFeatures
+import org.gradle.kotlin.dsl.support.serviceOf
 
 includeBuild("build-logic") { name = "nessie-build-logic" }
 
@@ -23,11 +25,24 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
   throw GradleException("Build requires Java 21")
 }
 
+val isCI = providers.environmentVariable("CI").isPresent
+val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean)
+val ideaActive = providers.systemProperty("idea.active").map(String::toBoolean)
+val eclipseProduct = providers.systemProperty("eclipse.product")
+val configurationCacheRequested =
+  gradle.serviceOf<BuildFeatures>().configurationCache.requested.getOrElse(false)
+
+if (isCI && configurationCacheRequested) {
+  throw GradleException(
+    "Gradle configuration cache must not be enabled in CI because it can persist build configuration state to disk."
+  )
+}
+
 val baseVersion = file("version.txt").readText().trim()
 
 pluginManagement {
   repositories {
-    if (System.getProperty("withMavenLocal").toBoolean()) {
+    if (providers.systemProperty("withMavenLocal").map(String::toBoolean).getOrElse(false)) {
       mavenLocal()
     }
     mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
@@ -38,12 +53,12 @@ pluginManagement {
 dependencyResolutionManagement {
   repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
   repositories {
-    if (System.getProperty("withMavenLocal", "false").toBoolean()) {
+    if (providers.systemProperty("withMavenLocal").map(String::toBoolean).getOrElse(false)) {
       mavenLocal()
     }
     mavenCentral()
     gradlePluginPortal()
-    if (System.getProperty("withApacheSnapshots", "false").toBoolean()) {
+    if (providers.systemProperty("withApacheSnapshots").map(String::toBoolean).getOrElse(false)) {
       // This is a hack to let Renovate _not_ query the Apache snapshot repository for all
       // dependencies.
       // See https://github.com/renovatebot/renovate/discussions/41291
@@ -73,7 +88,10 @@ dependencyResolutionManagement {
 
 plugins {
   id("com.gradle.develocity") version ("4.4.3")
-  if (System.getenv("CI") != null || System.getProperty("allow-java-download").toBoolean()) {
+  if (
+    providers.environmentVariable("CI").isPresent ||
+      providers.systemProperty("allow-java-download").map(String::toBoolean).getOrElse(false)
+  ) {
     // Enable automatic Java toolchain download in CI or when explicitly requested by the user.
     // If in doubt, install the required Java toolchain manually, preferably using a "proper"
     // package manager. The downside of letting Gradle automatically download toolchains is that
@@ -83,7 +101,7 @@ plugins {
 }
 
 develocity {
-  if (System.getenv("CI") != null) {
+  if (isCI) {
     buildScan {
       termsOfUseUrl = "https://gradle.com/terms-of-service"
       termsOfUseAgree = "yes"
@@ -102,15 +120,15 @@ develocity {
           "GITHUB_WORKFLOW",
         )
         .forEach { e ->
-          val v = System.getenv(e)
+          val v = providers.environmentVariable(e).orNull
           if (v != null) {
             value(e, v)
           }
         }
-      val ghUrl = System.getenv("GITHUB_SERVER_URL")
+      val ghUrl = providers.environmentVariable("GITHUB_SERVER_URL").orNull
       if (ghUrl != null) {
-        val ghRepo = System.getenv("GITHUB_REPOSITORY")
-        val ghRunId = System.getenv("GITHUB_RUN_ID")
+        val ghRepo = providers.environmentVariable("GITHUB_REPOSITORY").orNull
+        val ghRunId = providers.environmentVariable("GITHUB_RUN_ID").orNull
         link("Summary", "$ghUrl/$ghRepo/actions/runs/$ghRunId")
         link("PRs", "$ghUrl/$ghRepo/pulls")
       }
@@ -160,9 +178,9 @@ fun loadProjects(file: String, groupId: String) =
 loadProjects("gradle/projects.main.properties", groupIdMain)
 
 val ideSyncActive =
-  System.getProperty("idea.sync.active").toBoolean() ||
-    System.getProperty("idea.active").toBoolean() ||
-    System.getProperty("eclipse.product") != null ||
+  ideaSyncActive.getOrElse(false) ||
+    ideaActive.getOrElse(false) ||
+    eclipseProduct.isPresent ||
     gradle.startParameter.taskNames.any { it.startsWith("eclipse") }
 
 // Needed when loading/syncing the whole integrations-tools-testing project with Nessie as an
