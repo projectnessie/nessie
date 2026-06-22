@@ -75,3 +75,5 @@ __pycache__/
 
 # Spark / Hive
 metastore_db/
+
+/.env
