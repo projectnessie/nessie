@@ -65,4 +65,9 @@ tasks.withType<Test>().configureEach {
     // Exclude test-classes for the tests
     excludeTestsMatching("TestNessieCompatibilityExtensions\$*")
   }
+  // Test discovery behaves differently on Gradle 9.6:
+  // Our multi-env-test-engine gets called for the actually excluded tests above and fails,
+  // because no matching environment is (naturally) configured.
+  // See also `TestNessieCompatibilityExtensions.noVersions()`
+  systemProperty("org.projectnessie.junit.engine.ignore-empty-environments", "true")
 }

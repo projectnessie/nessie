@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -67,6 +68,7 @@ class TestNessieCompatibilityExtensions {
   }
 
   @Test
+  @Disabled("Fails with Gradle 9.6, see project's build.gradle.kts")
   void noVersions() {
     soft.assertThatThrownBy(
             () ->
