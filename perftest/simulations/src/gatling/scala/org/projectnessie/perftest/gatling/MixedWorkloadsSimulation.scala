@@ -49,7 +49,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
   */
 class MixedWorkloadsSimulation extends Simulation {
 
-  private val params: MixedWorkloadsParams =
+  private val simulationParams: MixedWorkloadsParams =
     MixedWorkloadsParams.fromSystemProperties()
   private val branchTables: mutable.Map[(String, Int), Lock] =
     mutable.HashMap[(String, Int), Lock]()
@@ -57,15 +57,15 @@ class MixedWorkloadsSimulation extends Simulation {
   private def prepareScenario(): ScenarioBuilder = {
     scenario("Initialize")
       .exec(session => {
-        for (b <- 0 until params.branches.numBranches) {
-          for (t <- 0 until params.tables.activeTables) {
-            val branch = params.branches.branchOf(b)
+        for (b <- 0 until simulationParams.branches.numBranches) {
+          for (t <- 0 until simulationParams.tables.activeTables) {
+            val branch = simulationParams.branches.branchOf(b)
             branchTables
               .put((branch, t), new ReentrantReadWriteLock().writeLock())
           }
         }
         session
-          .set("namespace", params.tables.namespace)
+          .set("namespace", simulationParams.tables.namespace)
           .set("branchesCreated", 0)
           .set("tablesCreated", 0)
       })
@@ -75,7 +75,7 @@ class MixedWorkloadsSimulation extends Simulation {
       .exec(
         doWhile(
           session =>
-            session("tablesCreated").as[Int] < params.tables.totalTables,
+            session("tablesCreated").as[Int] < simulationParams.tables.totalTables,
           "tableNum"
         ) {
           exec(prepareTables)
@@ -85,7 +85,7 @@ class MixedWorkloadsSimulation extends Simulation {
       .exec(
         doWhile(
           session =>
-            session("branchesCreated").as[Int] < params.branches.numBranches,
+            session("branchesCreated").as[Int] < simulationParams.branches.numBranches,
           "branchNum"
         ) {
           exec(prepareAdditionalReference)
@@ -99,7 +99,7 @@ class MixedWorkloadsSimulation extends Simulation {
       .execute { (client, session) =>
         val tablesCreated: Int =
           session("tablesCreated").asOption[Int].getOrElse(0)
-        val tables: Int = params.tablesPerCommit
+        val tables: Int = simulationParams.tablesPerCommit
         val head = session("branch").as[Branch]
         val batchNum = session("tableNum").as[Int]
 
@@ -114,7 +114,7 @@ class MixedWorkloadsSimulation extends Simulation {
         for (t <- tablesCreated until tablesCreated + tables) {
           commit.operation(
             Operation.Put.of(
-              params.tables.contentKey(t, session),
+              simulationParams.tables.contentKey(t, session),
               IcebergTable.of("meta-0", 1, 2, 3, 4)
             )
           )
@@ -133,7 +133,7 @@ class MixedWorkloadsSimulation extends Simulation {
         // create the branch (errors will be ignored)
         val branch = client
           .createReference()
-          .reference(Branch.of(params.branches.branchOf(0), null))
+          .reference(Branch.of(simulationParams.branches.branchOf(0), null))
           .create()
         System.err.println(s"Created initial $branch")
         session.set("branchesCreated", 1).set("branch", branch)
@@ -152,7 +152,7 @@ class MixedWorkloadsSimulation extends Simulation {
           .sourceRefName(initialBranch.getName)
           .reference(
             Branch.of(
-              params.branches.branchOf(branchesCreated),
+              simulationParams.branches.branchOf(branchesCreated),
               initialBranch.getHash
             )
           )
@@ -165,7 +165,7 @@ class MixedWorkloadsSimulation extends Simulation {
 
   private def writersScenario(): ScenarioBuilder = {
     scenario("writers")
-      .exec(session => session.set("namespace", params.tables.namespace))
+      .exec(session => session.set("namespace", simulationParams.tables.namespace))
       .exec(
         nessie("writers - precheck")
           .execute { (client, session) =>
@@ -177,10 +177,10 @@ class MixedWorkloadsSimulation extends Simulation {
       .exitHereIfFailed
       .exec(
         forever("iteration") {
-          pace(params.writers.rateToDuration())
+          pace(simulationParams.writers.rateToDuration())
             .exitBlockOnFail(
               exec(session =>
-                session.set("branch", params.branches.randomBranch)
+                session.set("branch", simulationParams.branches.randomBranch)
               )
                 .exec(performUpdate("writers"))
             )
@@ -190,15 +190,15 @@ class MixedWorkloadsSimulation extends Simulation {
 
   private def readersScenario(): ScenarioBuilder = {
     val chain = exec(
-      nessie(s"readers - Read ${params.readNumTables} table(s)").execute {
+      nessie(s"readers - Read ${simulationParams.readNumTables} table(s)").execute {
         (client, session) =>
           val tables = mutable.HashSet[ContentKey]()
-          while (tables.size < params.readNumTables) {
-            val tableId: Int = params.tables.randomActiveTable()
-            tables.add(params.tables.contentKey(tableId, session))
+          while (tables.size < simulationParams.readNumTables) {
+            val tableId: Int = simulationParams.tables.randomActiveTable()
+            tables.add(simulationParams.tables.contentKey(tableId, session))
           }
           client.getContent
-            .refName(params.branches.randomBranch)
+            .refName(simulationParams.branches.randomBranch)
             .keys(tables.toSeq.asJava)
             .get()
           session
@@ -206,7 +206,7 @@ class MixedWorkloadsSimulation extends Simulation {
     )
 
     scenario("readers")
-      .exec(session => session.set("namespace", params.tables.namespace))
+      .exec(session => session.set("namespace", simulationParams.tables.namespace))
       .exec(
         nessie("readers - precheck")
           .execute { (client, session) =>
@@ -218,14 +218,14 @@ class MixedWorkloadsSimulation extends Simulation {
       .exitHereIfFailed
       .exec(
         forever("iteration") {
-          pace(params.readers.rateToDuration()).exitBlockOnFail(chain)
+          pace(simulationParams.readers.rateToDuration()).exitBlockOnFail(chain)
         }
       )
   }
 
   private def uiUsersScenario(): ScenarioBuilder = {
     val chain =
-      exec(session => session.set("branch", params.branches.randomBranch))
+      exec(session => session.set("branch", simulationParams.branches.randomBranch))
         .exec(
           nessie("ui-users - Get all entries").execute { (client, session) =>
             val branch: String = session("branch").as[String]
@@ -237,7 +237,7 @@ class MixedWorkloadsSimulation extends Simulation {
         .exec(performUpdate("ui-users"))
 
     scenario("ui-users")
-      .exec(session => session.set("namespace", params.tables.namespace))
+      .exec(session => session.set("namespace", simulationParams.tables.namespace))
       .exec(
         nessie("ui-users - precheck")
           .execute { (client, session) =>
@@ -249,7 +249,7 @@ class MixedWorkloadsSimulation extends Simulation {
       .exitHereIfFailed
       .exec(
         forever("iteration") {
-          pace(params.uiUsers.rateToDuration()).exitBlockOnFail(chain)
+          pace(simulationParams.uiUsers.rateToDuration()).exitBlockOnFail(chain)
         }
       )
   }
@@ -260,18 +260,18 @@ class MixedWorkloadsSimulation extends Simulation {
   ): (ContentKey, Option[Lock]) = {
     var tableLock: Option[Lock] = None
     var tableId: Int = 0
-    if (!params.allowConflicts) {
+    if (!simulationParams.allowConflicts) {
       while (tableLock.isEmpty) {
-        tableId = params.tables.randomActiveTable()
+        tableId = simulationParams.tables.randomActiveTable()
         val lock: Lock = branchTables((branch, tableId))
         if (lock.tryLock()) {
           tableLock = Some(lock)
         }
       }
     } else {
-      tableId = params.tables.randomActiveTable()
+      tableId = simulationParams.tables.randomActiveTable()
     }
-    (params.tables.contentKey(tableId, session), tableLock)
+    (simulationParams.tables.contentKey(tableId, session), tableLock)
   }
 
   private def performUpdate(parent: String): ChainBuilder = {
@@ -343,34 +343,34 @@ class MixedWorkloadsSimulation extends Simulation {
     val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
     System.err.println(
-      s"Setting up ${params.tables}, ${params.branches}"
+      s"Setting up ${simulationParams.tables}, ${simulationParams.branches}"
     )
     val prepare: PopulationBuilder =
       prepareScenario().inject(atOnceUsers(1))
 
     val popBuilders: ListBuffer[PopulationBuilder] = ListBuffer()
-    if (params.writers.users > 0) {
-      System.err.println(s"Simulating writers: ${params.writers}")
+    if (simulationParams.writers.users > 0) {
+      System.err.println(s"Simulating writers: ${simulationParams.writers}")
       popBuilders.addOne(
-        writersScenario().inject(atOnceUsers(params.writers.users))
+        writersScenario().inject(atOnceUsers(simulationParams.writers.users))
       )
     }
-    if (params.readers.users > 0) {
-      System.err.println(s"Simulating readers: ${params.readers}")
+    if (simulationParams.readers.users > 0) {
+      System.err.println(s"Simulating readers: ${simulationParams.readers}")
       popBuilders.addOne(
-        readersScenario().inject(atOnceUsers(params.readers.users))
+        readersScenario().inject(atOnceUsers(simulationParams.readers.users))
       )
     }
-    if (params.uiUsers.users > 0) {
-      System.err.println(s"Simulating ui-users: ${params.uiUsers}")
+    if (simulationParams.uiUsers.users > 0) {
+      System.err.println(s"Simulating ui-users: ${simulationParams.uiUsers}")
       popBuilders.addOne(
-        uiUsersScenario().inject(atOnceUsers(params.uiUsers.users))
+        uiUsersScenario().inject(atOnceUsers(simulationParams.uiUsers.users))
       )
     }
 
-    System.err.println(s"Will run for ${params.duration}")
+    System.err.println(s"Will run for ${simulationParams.duration}")
     setUp(prepare.andThen(popBuilders))
-      .maxDuration(FiniteDuration(params.duration.toNanos, NANOSECONDS))
+      .maxDuration(FiniteDuration(simulationParams.duration.toNanos, NANOSECONDS))
       .protocols(nessieProtocol)
   }
 

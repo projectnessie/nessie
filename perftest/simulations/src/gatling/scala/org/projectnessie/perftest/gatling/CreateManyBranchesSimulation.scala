@@ -28,7 +28,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS}
   */
 class CreateManyBranchesSimulation extends Simulation {
 
-  val params: CreateManyBranchesParams =
+  val simulationParams: CreateManyBranchesParams =
     CreateManyBranchesParams.fromSystemProperties()
 
   /** Get the [[Branch]] object, create the branch in Nessie if needed.
@@ -64,11 +64,11 @@ class CreateManyBranchesSimulation extends Simulation {
         }
     )
 
-    if (params.opRate > 0) {
+    if (simulationParams.opRate > 0) {
       // "pace" the commits, if commit-rate is configured
       val oneHour = FiniteDuration(1, HOURS)
       val nanosPerIteration =
-        oneHour.toNanos / (params.opRate * oneHour.toSeconds)
+        oneHour.toNanos / (simulationParams.opRate * oneHour.toSeconds)
       pace(FiniteDuration(nanosPerIteration.toLong, NANOSECONDS))
         .exitBlockOnFail(chain)
     } else {
@@ -82,7 +82,7 @@ class CreateManyBranchesSimulation extends Simulation {
       .exec(getReference)
 
     // Process configured number of commits
-    scn.repeat(params.numberOfBranches, "branchNum") {
+    scn.repeat(simulationParams.numberOfBranches, "branchNum") {
       createBranch
     }
   }
@@ -93,9 +93,9 @@ class CreateManyBranchesSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
-    System.out.println(params.asPrintableString())
+    System.out.println(simulationParams.asPrintableString())
 
-    val s: SetUp = setUp(buildScenario().inject(atOnceUsers(params.numUsers)))
+    val s: SetUp = setUp(buildScenario().inject(atOnceUsers(simulationParams.numUsers)))
     s.protocols(nessieProtocol)
   }
 
