@@ -9,6 +9,9 @@
     ':semanticPrefixFixDepsChoreOthers',
     ':dependencyDashboard',
   ],
+  // Keep monorepo grouping when there are actually multiple updates,
+  // but allow one-dependency PRs to use version-specific titles.
+  groupSingleUpdates: false,
   pip_requirements: {
     managerFilePatterns: [
       // default: (^|/)([\\w-]*)requirements\\.(txt|pip)$
@@ -174,25 +177,6 @@
       ],
     },
 
-    // Exclude a couple packages that are known to break Nessie and/or downstream users
-    {
-      matchManagers: [
-        'maven',
-        'gradle',
-      ],
-      matchPackageNames: [
-        'jakarta.validation:jakarta.validation-api',
-        'jakarta.enterprise:jakarta.enterprise.cdi-api',
-        'org.glassfish.jersey:jersey-bom',
-      ],
-      matchUpdateTypes: [
-        'minor',
-        'patch',
-        'pin',
-        'digest',
-      ],
-    },
-
     // Run docker CI for some dependencies
     {
       matchManagers: [
@@ -226,6 +210,27 @@
     },
 
     {
+      // skip all non-Platform BOM Quarkus dependencies
+      groupName: 'Quarkus, non Platform',
+      matchManagers: [
+        'gradle',
+      ],
+      matchPackageNames: [
+        // Gradle plugin IDs
+        'io.quarkus',
+        'io.quarkus.extension',
+        // Maven coordinates
+        '/^io\\.quarkus:.+/',
+        'io.quarkus.extension:io.quarkus.extension.gradle.plugin',
+        'io.quarkus.platform:quarkus-amazon-services-bom',
+        'io.quarkus.platform:quarkus-cassandra-bom',
+        'io.quarkus.platform:quarkus-google-cloud-services-bom',
+        // do not dis-allow the platform BOMs
+        '/^io\\.quarkus\\.platform:(?!quarkus-bom$).+/',
+      ],
+      enabled: false,
+    },
+    {
       groupName: 'Quarkus Platform + Plugin',
       matchManagers: [
         'gradle',
@@ -236,21 +241,6 @@
       labels: [
         'pr-docker',
       ],
-    },
-    {
-      // skip all non-Platform BOM Quarkus dependencies
-      groupName: 'Quarkus, non Platform',
-      matchManagers: [
-        'gradle'
-      ],
-      matchPackageNames: [
-        'io.quarkus.platform:quarkus-amazon-services-bom',
-        'io.quarkus.platform:quarkus-cassandra-bom',
-        'io.quarkus.platform:quarkus-google-cloud-services-bom',
-        'io.quarkus.extension:io.quarkus.extension.gradle.plugin',
-        'io.quarkus:io.quarkus.gradle.plugin'
-      ],
-      enabled: false
     },
   ],
 
