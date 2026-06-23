@@ -64,7 +64,15 @@ if (
    */
   plugins.withType(JavaLibraryPlugin::class.java) {
     val generatePomProperties =
-      tasks.register("generatePomProperties", GeneratePomProperties::class.java) {}
+      tasks.register("generatePomProperties", GeneratePomProperties::class.java) {
+        val groupId = project.group.toString()
+        val artifactId = project.name
+        val version = project.version.toString()
+        this.groupId.set(groupId)
+        this.artifactId.set(artifactId)
+        this.version.set(version)
+        pomInputs.set(listOf(groupId, artifactId, version))
+      }
 
     val additionalJarContent =
       tasks.register("additionalJarContent", Sync::class.java) {

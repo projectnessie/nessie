@@ -32,6 +32,7 @@ import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema.INITI
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortField.sortField;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder.INITIAL_SORT_ORDER_ID;
 import static org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata.INITIAL_PARTITION_ID;
+import static org.projectnessie.catalog.formats.iceberg.meta.IcebergViewRepresentation.IcebergSQLViewRepresentation.icebergSqlViewRepresentation;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.collectFieldsByIcebergId;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergPartitionSpecToNessie;
 import static org.projectnessie.catalog.formats.iceberg.nessie.NessieModelIceberg.icebergSchemaToNessieSchema;
@@ -59,6 +60,7 @@ import static org.projectnessie.catalog.formats.iceberg.types.IcebergType.timest
 import static org.projectnessie.catalog.model.id.NessieIdHasher.nessieIdHasher;
 import static org.projectnessie.catalog.model.schema.NessieNullOrder.NULLS_LAST;
 import static org.projectnessie.catalog.model.schema.NessieSortDirection.ASC;
+import static org.projectnessie.catalog.model.snapshot.NessieViewRepresentation.NessieViewSQLRepresentation.nessieViewSQLRepresentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -1280,6 +1282,43 @@ public class TestNessieModelIceberg {
     soft.assertThat(snap4.icebergLocation()).isEqualTo(location3);
     soft.assertThat(snap4.additionalKnownLocations())
         .containsExactlyInAnyOrder(location1, location2);
+  }
+
+  @Test
+  public void icebergViewSnapshotToNessiePreservesRepresentations() {
+    String uuid = UUID.randomUUID().toString();
+    String sql = "SELECT id, name FROM ns.view_source";
+
+    IcebergViewVersion version =
+        IcebergViewVersion.builder()
+            .versionId(1)
+            .timestampMs(1L)
+            .schemaId(1)
+            .defaultNamespace(IcebergNamespace.EMPTY_ICEBERG_NAMESPACE)
+            .addRepresentation(icebergSqlViewRepresentation(sql, "DremioSQL"))
+            .build();
+    IcebergViewMetadata metadata =
+        IcebergViewMetadata.builder()
+            .location("s3://bucket/views/v/metadata/00000.metadata.json")
+            .viewUuid(uuid)
+            .formatVersion(2)
+            .currentVersionId(1)
+            .addVersions(version)
+            .build();
+    NessieView view =
+        NessieView.builder()
+            .tableFormat(TableFormat.ICEBERG)
+            .nessieContentId(uuid)
+            .icebergUuid(uuid)
+            .createdTimestamp(Instant.EPOCH)
+            .build();
+
+    NessieViewSnapshot snapshot =
+        NessieModelIceberg.icebergViewSnapshotToNessie(
+            NessieId.randomNessieId(), null, view, metadata);
+
+    soft.assertThat(snapshot.representations())
+        .containsExactly(nessieViewSQLRepresentation(sql, "DremioSQL"));
   }
 
   @Test

@@ -28,7 +28,18 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponentFactory
-import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.IgnoreEmptyDirectories
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
@@ -71,53 +82,48 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
       // Apply this plugin to all projects
       afterEvaluate { subprojects { plugins.apply(CopiedCodeCheckerPlugin::class.java) } }
 
-      tasks.register(
-        CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME,
-        CheckCopiedCodeMentionsExistTask::class.java,
-      )
+      val checkCopiedCodeMentionsExist =
+        tasks.register(
+          CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME,
+          CheckCopiedCodeMentionsExistTask::class.java,
+        ) {
+          licenseFile.set(extension.licenseFile)
+          rootDirectory.set(rootProject.layout.projectDirectory)
+        }
 
-      afterEvaluate {
-        tasks.named("codeChecks").configure {
-          dependsOn(CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME)
+      tasks.named("codeChecks").configure { dependsOn(checkCopiedCodeMentionsExist) }
+    } else {
+      val rootExtension = rootProject.extensions.getByType(CopiedCodeCheckerExtension::class.java)
+      extension.excludedContentTypePatterns.convention(rootExtension.excludedContentTypePatterns)
+      extension.includedContentTypePatterns.convention(rootExtension.includedContentTypePatterns)
+      extension.includeUnrecognizedContentType.convention(
+        rootExtension.includeUnrecognizedContentType
+      )
+      extension.magicWord.convention(rootExtension.magicWord)
+      extension.licenseFile.convention(rootExtension.licenseFile)
+    }
+
+    val checkForCopiedCode =
+      tasks.register(CHECK_FOR_COPIED_CODE_TASK_NAME, CheckForCopiedCodeTask::class.java) {
+        licenseFile.set(extension.licenseFile)
+        includedContentTypePatterns.set(extension.includedContentTypePatterns)
+        excludedContentTypePatterns.set(extension.excludedContentTypePatterns)
+        includeUnrecognizedContentType.set(extension.includeUnrecognizedContentType)
+        magicWord.set(extension.magicWord)
+        rootDirectory.set(rootProject.layout.projectDirectory)
+        projectDirectory.set(layout.projectDirectory)
+        buildDirectory.set(layout.buildDirectory)
+
+        extension.scanDirectories.configureEach { sourceFiles.from(this) }
+
+        plugins.withId("java") {
+          extensions.findByType(SourceSetContainer::class.java)?.configureEach {
+            sourceFiles.from(allSource)
+          }
         }
       }
-    } else {
-      extension.excludedContentTypePatterns.convention(
-        provider {
-          rootProject.extensions
-            .getByType(CopiedCodeCheckerExtension::class.java)
-            .excludedContentTypePatterns
-            .get()
-        }
-      )
-      extension.includedContentTypePatterns.convention(
-        provider {
-          rootProject.extensions
-            .getByType(CopiedCodeCheckerExtension::class.java)
-            .includedContentTypePatterns
-            .get()
-        }
-      )
-      extension.includeUnrecognizedContentType.convention(
-        provider {
-          rootProject.extensions
-            .getByType(CopiedCodeCheckerExtension::class.java)
-            .includeUnrecognizedContentType
-            .get()
-        }
-      )
-      extension.licenseFile.convention(
-        provider {
-          rootProject.extensions.getByType(CopiedCodeCheckerExtension::class.java).licenseFile.get()
-        }
-      )
-    }
 
-    tasks.register(CHECK_FOR_COPIED_CODE_TASK_NAME, CheckForCopiedCodeTask::class.java)
-
-    afterEvaluate {
-      tasks.named("codeChecks").configure { dependsOn(CHECK_FOR_COPIED_CODE_TASK_NAME) }
-    }
+    tasks.named("codeChecks").configure { dependsOn(checkForCopiedCode) }
   }
 
   companion object {
@@ -128,23 +134,26 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
 @DisableCachingByDefault
 abstract class CheckCopiedCodeMentionsExistTask : DefaultTask() {
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val licenseFile: RegularFileProperty
+
+  @get:Internal abstract val rootDirectory: DirectoryProperty
+
   @TaskAction
   fun checkMentions() {
-    val extension = project.extensions.getByType(CopiedCodeCheckerExtension::class.java)
-
-    val licenseFile = extension.licenseFile.get().asFile
-    val licenseFileRelative = licenseFile.relativeTo(project.rootDir).toString()
+    val rootDirectory = rootDirectory.get().asFile
+    val licenseFile = licenseFile.get().asFile
+    val licenseFileRelative = licenseFile.relativeTo(rootDirectory).toString()
 
     logger.info("Checking whether files mentioned in the {} file exist", licenseFileRelative)
 
     val nonExistingMentions =
-      extension.licenseFile
-        .get()
-        .asFile
+      licenseFile
         .readLines()
         .filter { line -> line.startsWith("* ") && line.length > 2 }
         .map { line -> line.substring(2) }
-        .filter { relFilePath -> !project.rootProject.file(relFilePath).exists() }
+        .filter { relFilePath -> !rootDirectory.resolve(relFilePath).exists() }
         .sorted()
 
     if (nonExistingMentions.isNotEmpty()) {
@@ -170,126 +179,108 @@ abstract class CheckCopiedCodeMentionsExistTask : DefaultTask() {
 
 @DisableCachingByDefault
 abstract class CheckForCopiedCodeTask : DefaultTask() {
-  private fun namedDirectorySets(): List<Pair<String, SourceDirectorySet>> {
-    val namedDirectorySets = mutableListOf<Pair<String, SourceDirectorySet>>()
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val licenseFile: RegularFileProperty
 
-    val extension = project.extensions.getByType(CopiedCodeCheckerExtension::class.java)
-    extension.scanDirectories.forEach { scanDirectory ->
-      namedDirectorySets.add(Pair("scan directory ${scanDirectory.name}", scanDirectory))
-    }
+  @get:Input abstract val includedContentTypePatterns: SetProperty<String>
 
-    val sourceSets = project.extensions.findByType(SourceSetContainer::class.java)
-    sourceSets?.forEach { sourceSet ->
-      namedDirectorySets.add(Pair("source set ${sourceSet.name}", sourceSet.allSource))
-    }
+  @get:Input abstract val excludedContentTypePatterns: SetProperty<String>
 
-    return namedDirectorySets
-  }
+  @get:Input abstract val includeUnrecognizedContentType: Property<Boolean>
+
+  @get:Input abstract val magicWord: Property<String>
+
+  @get:InputFiles
+  @get:IgnoreEmptyDirectories
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val sourceFiles: ConfigurableFileCollection
+
+  @get:Internal abstract val rootDirectory: DirectoryProperty
+
+  @get:Internal abstract val projectDirectory: DirectoryProperty
+
+  @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @TaskAction
   fun checkForCopiedCode() {
-    val extension = project.extensions.getByType(CopiedCodeCheckerExtension::class.java)
-
-    val licenseFile = extension.licenseFile.get().asFile
-    val licenseFileRelative = licenseFile.relativeTo(project.rootDir).toString()
+    val rootDirectory = rootDirectory.get().asFile
+    val projectDirectory = projectDirectory.get().asFile
+    val buildDirectory = buildDirectory.get().asFile
+    val licenseFile = licenseFile.get().asFile
+    val licenseFileRelative = licenseFile.relativeTo(rootDirectory).toString()
 
     logger.info("Running copied code check against root project's {} file", licenseFileRelative)
 
-    val namedDirectorySets = namedDirectorySets()
+    val includedPatterns = includedContentTypePatterns.get().map { Pattern.compile(it) }
+    val excludedPatterns = excludedContentTypePatterns.get().map { Pattern.compile(it) }
+    val includeUnknown = includeUnrecognizedContentType.get()
 
-    val includedPatterns = extension.includedContentTypePatterns.get().map { Pattern.compile(it) }
-    val excludedPatterns = extension.includedContentTypePatterns.get().map { Pattern.compile(it) }
-    val includeUnknown = extension.includeUnrecognizedContentType.get()
-
-    val magicWord = extension.magicWord.get()
+    val magicWord = magicWord.get()
     val magicWordPattern = Pattern.compile(".*\\b${magicWord}\\b.*")
 
     val mentionedFilesInLicense =
-      extension.licenseFile
-        .get()
-        .asFile
+      licenseFile
         .readLines()
         .filter { line -> line.startsWith("* ") && line.length > 2 }
         .map { line -> line.substring(2) }
         .toSet()
 
-    val buildDir = project.layout.buildDirectory.asFile.get()
-
     val unmentionedFiles =
-      namedDirectorySets
-        .flatMap { pair ->
-          val name = pair.first
-          val sourceDirectorySet = pair.second
-
+      sourceFiles.asFileTree
+        .filter { file -> !file.startsWith(buildDirectory) }
+        .map { file ->
+          val projectRelativeFile = file.relativeTo(projectDirectory)
+          val fileType = Files.probeContentType(file.toPath())
           logger.info(
-            "Checking {} for files containing {} not mentioned in {}",
-            name,
-            magicWord,
-            licenseFileRelative,
+            "Checking file '{}' (probed content type: {})",
+            projectRelativeFile,
+            fileType,
           )
 
-          sourceDirectorySet.asFileTree
-            .filter { file -> !file.startsWith(buildDir) }
-            .map { file ->
-              val projectRelativeFile = file.relativeTo(project.projectDir)
-              val fileType = Files.probeContentType(file.toPath())
-              logger.info(
-                "Checking file '{}' (probed content type: {})",
-                projectRelativeFile,
-                fileType,
-              )
+          var r: String? = null
 
-              var r: String? = null
-
-              var check = true
-              if (fileType == null) {
-                if (!includeUnknown) {
-                  logger.info("   ... unknown content type, skipping")
-                  check = false
-                }
-              } else {
-                val excluded = excludedPatterns.any { pattern ->
-                  pattern.matcher(fileType).matches()
-                }
-                if (excluded) {
-                  val included = includedPatterns.any { pattern ->
-                    pattern.matcher(fileType).matches()
-                  }
-                  if (!included) {
-                    logger.info("   ... excluded and not included content type, skipping")
-                    check = false
-                  }
-                }
-              }
-
-              if (check) {
-                if (!file.readLines().any { s -> magicWordPattern.matcher(s).matches() }) {
-                  logger.info(
-                    "   ... no magic word, not expecting an entry in {}",
-                    licenseFileRelative,
-                  )
-                } else {
-                  val relativeFilePath = file.relativeTo(project.rootProject.projectDir).toString()
-                  if (mentionedFilesInLicense.contains(relativeFilePath)) {
-                    logger.info("   ... has magic word & mentioned in {}", licenseFileRelative)
-                  } else {
-                    // error (summary) logged below
-                    logger.info(
-                      "The file '{}' has the {} marker, but is not mentioned in {}",
-                      relativeFilePath,
-                      magicWord,
-                      licenseFileRelative,
-                    )
-                    r = relativeFilePath
-                  }
-                }
-              }
-
-              r
+          var check = true
+          if (fileType == null) {
+            if (!includeUnknown) {
+              logger.info("   ... unknown content type, skipping")
+              check = false
             }
-            .filter { r -> r != null }
-            .map { r -> r!! }
+          } else {
+            val excluded = excludedPatterns.any { pattern -> pattern.matcher(fileType).matches() }
+            if (excluded) {
+              val included = includedPatterns.any { pattern -> pattern.matcher(fileType).matches() }
+              if (!included) {
+                logger.info("   ... excluded and not included content type, skipping")
+                check = false
+              }
+            }
+          }
+
+          if (check) {
+            if (!file.readLines().any { s -> magicWordPattern.matcher(s).matches() }) {
+              logger.info("   ... no magic word, not expecting an entry in {}", licenseFileRelative)
+            } else {
+              val relativeFilePath = file.relativeTo(rootDirectory).toString()
+              if (mentionedFilesInLicense.contains(relativeFilePath)) {
+                logger.info("   ... has magic word & mentioned in {}", licenseFileRelative)
+              } else {
+                // error (summary) logged below
+                logger.info(
+                  "The file '{}' has the {} marker, but is not mentioned in {}",
+                  relativeFilePath,
+                  magicWord,
+                  licenseFileRelative,
+                )
+                r = relativeFilePath
+              }
+            }
+          }
+
+          r
         }
+        .filter { r -> r != null }
+        .map { r -> r!! }
         .sorted()
         .toList()
 

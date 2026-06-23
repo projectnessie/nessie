@@ -112,12 +112,8 @@ dependencies {
   testFixturesApi(project(":nessie-quarkus-authn"))
   testFixturesApi(project(":nessie-quarkus-authz"))
   testFixturesApi(project(":nessie-quarkus-common"))
-  testFixturesApi(project(":nessie-quarkus-tests")) {
-    // Don't use resteasy-classic (and prevent the Quarkus warning)
-    exclude(group = "org.jboss.resteasy")
-  }
-  testFixturesApi(project(":nessie-quarkus-config"))
   testFixturesApi(project(":nessie-quarkus-tests"))
+  testFixturesApi(project(":nessie-quarkus-config"))
   testFixturesApi(project(":nessie-catalog-files-api"))
   testFixturesApi(project(":nessie-catalog-files-impl"))
   testFixturesApi(project(":nessie-catalog-service-common"))
@@ -151,13 +147,9 @@ dependencies {
 
   testFixturesApi(platform(libs.testcontainers.bom))
   testFixturesApi("org.testcontainers:testcontainers")
-  testFixturesApi(project(":nessie-keycloak-testcontainer")) {
-    // Don't use resteasy-classic (and prevent the Quarkus warning)
-    exclude(group = "org.jboss.resteasy")
-  }
+  testFixturesApi(project(":nessie-keycloak-testcontainer"))
   testFixturesApi("org.testcontainers:testcontainers-localstack")
   testFixturesApi("org.testcontainers:testcontainers-vault")
-  testFixturesApi(project(":nessie-keycloak-testcontainer"))
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
   testFixturesApi(project(":nessie-minio-testcontainer"))
