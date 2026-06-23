@@ -49,7 +49,7 @@ class KeyListSpillingSimulation extends Simulation {
 
   /** Configuration specific to this simulation and scenario.
     */
-  private val params: KeyListSpillingParams =
+  private val simulationParams: KeyListSpillingParams =
     KeyListSpillingParams.fromSystemProperties()
 
   /** Session key for the zero-indexed commit number associated with the current
@@ -75,7 +75,7 @@ class KeyListSpillingSimulation extends Simulation {
           val testBranch = session("branch").as[Branch]
           val userId = session.userId
           val putOps: List[Operation] = List
-            .range(0, params.putsPerTestCommit)
+            .range(0, simulationParams.putsPerTestCommit)
             .map(i => {
               val key = ContentKey.of(s"$userId $commitIndex $i" + padding)
               val table = IcebergTable
@@ -109,7 +109,7 @@ class KeyListSpillingSimulation extends Simulation {
     exec(
       nessie("DeleteTestBranchIfExists")
         .execute { (client, session) =>
-          val testBranchName = params.getTestBranchName(session)
+          val testBranchName = simulationParams.getTestBranchName(session)
 
           // Get the test branch (we must know its hash to delete it)
           try {
@@ -140,15 +140,15 @@ class KeyListSpillingSimulation extends Simulation {
         .execute { (client, session) =>
           // Get the base branch
           val parentBranch: Reference = client.getReference
-            .refName(params.getBaseBranchName)
+            .refName(simulationParams.getBaseBranchName)
             .get()
 
           // Create a new test branch from the base branch
           val testBranch = client
             .createReference()
-            .sourceRefName(params.getBaseBranchName)
+            .sourceRefName(simulationParams.getBaseBranchName)
             .reference(
-              Branch.of(params.getTestBranchName(session), parentBranch.getHash)
+              Branch.of(simulationParams.getTestBranchName(session), parentBranch.getHash)
             )
             .create()
             .asInstanceOf[Branch]
@@ -166,7 +166,7 @@ class KeyListSpillingSimulation extends Simulation {
   private def buildScenario(): ScenarioBuilder = {
     scenario("KeyList-Spilling")
       .exec(dropAndCreateTestBranch)
-      .repeat(params.testCommitCount, commitIndexKey) {
+      .repeat(simulationParams.testCommitCount, commitIndexKey) {
         commitToBranch
       }
   }
@@ -177,7 +177,7 @@ class KeyListSpillingSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
-    val branchName = params.getBaseBranchName
+    val branchName = simulationParams.getBaseBranchName
 
     // Drop base branch, if it exists
     try {
@@ -186,7 +186,7 @@ class KeyListSpillingSimulation extends Simulation {
       if (null != ref) {
         nessieProtocol.client
           .deleteReference()
-          .reference(Branch.of(params.getBaseBranchName, ref.getHash))
+          .reference(Branch.of(simulationParams.getBaseBranchName, ref.getHash))
           .delete()
       }
     } catch {
@@ -201,7 +201,7 @@ class KeyListSpillingSimulation extends Simulation {
     // Create base branch
     nessieProtocol.client
       .createReference()
-      .reference(Branch.of(params.getBaseBranchName, null))
+      .reference(Branch.of(simulationParams.getBaseBranchName, null))
       .create()
 
     // Load test fixture into base branch
@@ -215,10 +215,10 @@ class KeyListSpillingSimulation extends Simulation {
     val s: SetUp = setUp(
       buildScenario().inject(
         constantConcurrentUsers(1).during(
-          FiniteDuration(params.targetDurationSeconds, SECONDS)
+          FiniteDuration(simulationParams.targetDurationSeconds, SECONDS)
         )
       )
-    ).maxDuration(FiniteDuration(params.targetDurationSeconds, SECONDS))
+    ).maxDuration(FiniteDuration(simulationParams.targetDurationSeconds, SECONDS))
 
     s.protocols(nessieProtocol)
   }
@@ -233,8 +233,8 @@ class KeyListSpillingSimulation extends Simulation {
     */
   private def loadData(nessieProtocol: NessieProtocol, branch: Branch): Unit = {
 
-    val commitCount = params.baseCommitCount
-    val operationCount = params.putsPerBaseCommit
+    val commitCount = simulationParams.baseCommitCount
+    val operationCount = simulationParams.putsPerBaseCommit
 
     log.info(
       "Loading shared fixture into branch {}: {} commits, each with {} distinctly-keyed put operations",

@@ -29,7 +29,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS, NANOSECONDS, SECONDS}
   */
 class CommitToBranchSimulation extends Simulation {
 
-  val params: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
+  val simulationParams: CommitToBranchParams = CommitToBranchParams.fromSystemProperties()
 
   /** The actual benchmark code to measure Nessie-commit performance in various
     * scenarios.
@@ -43,7 +43,7 @@ class CommitToBranchSimulation extends Simulation {
             // Current Nessie Branch object
             val branch = session("branch").as[Branch]
             // Table used in the Nessie commit
-            val tableName = params.makeTableName(session)
+            val tableName = simulationParams.makeTableName(session)
 
             val key = ContentKey.of("table-" + tableName)
 
@@ -69,7 +69,7 @@ class CommitToBranchSimulation extends Simulation {
             val key = session("key").as[ContentKey]
 
             val expectedTable =
-              if (params.uniqueTables) Option.empty
+              if (simulationParams.uniqueTables) Option.empty
               else session("existingTable").as[Option[IcebergTable]]
 
             val metadataLocation = s"metadata_${userId}_$commitNum"
@@ -98,11 +98,11 @@ class CommitToBranchSimulation extends Simulation {
       )
     }
 
-    if (params.opRate > 0) {
+    if (simulationParams.opRate > 0) {
       // "pace" the commits, if commit-rate is configured
       val oneHour = FiniteDuration(1, HOURS)
       val nanosPerIteration =
-        oneHour.toNanos / (params.opRate * oneHour.toSeconds)
+        oneHour.toNanos / (simulationParams.opRate * oneHour.toSeconds)
       pace(FiniteDuration(nanosPerIteration.toLong, NANOSECONDS))
         .exitBlockOnFail(chain)
     } else {
@@ -116,12 +116,12 @@ class CommitToBranchSimulation extends Simulation {
   private def getReference: ChainBuilder = {
     // If we don't have a reference for the branch yet, then try to create the branch and try to fetch the reference
     exec(
-      nessie(s"Create branch $params.branch")
+      nessie(s"Create branch $simulationParams.branch")
         .execute { (client, session) =>
           // create the branch (errors will be ignored)
           val branch = client
             .createReference()
-            .reference(Branch.of(params.makeBranchName(session), null))
+            .reference(Branch.of(simulationParams.makeBranchName(session), null))
             .create()
             .asInstanceOf[Branch]
           session.set("branch", branch)
@@ -132,11 +132,11 @@ class CommitToBranchSimulation extends Simulation {
         .dontLog()
     ).doIf(session => !session.contains("branch")) {
       exec(
-        nessie(s"Get reference $params.branch")
+        nessie(s"Get reference $simulationParams.branch")
           .execute { (client, session) =>
             // retrieve the Nessie branch reference and store it in the Gatling session object
             val branch = client.getReference
-              .refName(params.makeBranchName(session))
+              .refName(simulationParams.makeBranchName(session))
               .get()
               .asInstanceOf[Branch]
             session.set("branch", branch)
@@ -151,9 +151,9 @@ class CommitToBranchSimulation extends Simulation {
     val scn = scenario("Commit-To-Branch")
       .exec(getReference)
 
-    if (params.numberOfCommits > 0) {
+    if (simulationParams.numberOfCommits > 0) {
       // Process configured number of commits
-      scn.repeat(params.numberOfCommits, "commitNum") {
+      scn.repeat(simulationParams.numberOfCommits, "commitNum") {
         commitToBranch
       }
     } else {
@@ -170,11 +170,11 @@ class CommitToBranchSimulation extends Simulation {
   private def doSetUp(): SetUp = {
     val nessieProtocol: NessieProtocol = nessie().clientFromSystemProperties()
 
-    System.out.println(params.asPrintableString())
+    System.out.println(simulationParams.asPrintableString())
 
-    var s: SetUp = setUp(buildScenario().inject(atOnceUsers(params.numUsers)))
-    if (params.durationSeconds > 0) {
-      s = s.maxDuration(FiniteDuration(params.durationSeconds, SECONDS))
+    var s: SetUp = setUp(buildScenario().inject(atOnceUsers(simulationParams.numUsers)))
+    if (simulationParams.durationSeconds > 0) {
+      s = s.maxDuration(FiniteDuration(simulationParams.durationSeconds, SECONDS))
     }
     s.protocols(nessieProtocol)
   }
