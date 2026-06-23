@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+import java.io.ByteArrayOutputStream
 import java.util.Properties
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
+import org.gradle.process.ExecOperations
 
 plugins {
   eclipse
@@ -37,7 +39,7 @@ if (noCheckstyle) {
 } else {
   checkstyle {
     toolVersion = libsRequiredVersion("checkstyle")
-    config = MemoizedCheckstyleConfig.checkstyleConfig(rootProject)
+    config = rootProject.resources.text.fromFile("codestyle/checkstyle-config.xml")
     isShowViolations = true
     isIgnoreFailures = false
   }
@@ -85,23 +87,6 @@ if (noCheckstyle) {
   }
 }
 
-private class MemoizedCheckstyleConfig {
-  companion object {
-    fun checkstyleConfig(rootProject: Project): TextResource {
-      val e = rootProject.extensions.getByType(ExtraPropertiesExtension::class)
-      if (e.has("nessie-checkstyle-config")) {
-        return e.get("nessie-checkstyle-config") as TextResource
-      }
-      val configResource = rootProject.resources.text.fromFile("codestyle/checkstyle-config.xml")
-      e.set("nessie-checkstyle-config", configResource)
-      return configResource
-    }
-  }
-}
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Errorprone
-
 tasks.withType<JavaCompile>().configureEach {
   options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
   if (project.extra.has("duplicated-project-sources")) {
@@ -115,7 +100,7 @@ tasks.withType<JavaCompile>().configureEach {
     val checksMapProperty =
       objects
         .mapProperty(String::class.java, CheckSeverity::class.java)
-        .convention(provider { MemoizedErrorproneRules.rules(rootProject, errorproneRules) })
+        .convention(provider { errorproneRules(errorproneRules) })
 
     options.errorprone.checks.putAll(checksMapProperty)
     options.errorprone.excludedPaths =
@@ -123,27 +108,16 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
-private class MemoizedErrorproneRules {
-  companion object {
-    fun rules(rootProject: Project, rulesFile: File): Map<String, CheckSeverity> {
-      if (rootProject.extra.has("nessieErrorproneRules")) {
-        @Suppress("UNCHECKED_CAST")
-        return rootProject.extra["nessieErrorproneRules"] as Map<String, CheckSeverity>
-      }
-      val checksMap =
-        rulesFile.reader().use {
-          val rules = Properties()
-          rules.load(it)
-          rules
-            .mapKeys { e -> (e.key as String).trim() }
-            .mapValues { e -> (e.value as String).trim() }
-            .filter { e -> e.key.isNotEmpty() && e.value.isNotEmpty() }
-            .mapValues { e -> CheckSeverity.valueOf(e.value) }
-            .toMap()
-        }
-      rootProject.extra["nessieErrorproneRules"] = checksMap
-      return checksMap
-    }
+private fun errorproneRules(rulesFile: File): Map<String, CheckSeverity> {
+  return rulesFile.reader().use {
+    val rules = Properties()
+    rules.load(it)
+    rules
+      .mapKeys { e -> (e.key as String).trim() }
+      .mapValues { e -> (e.value as String).trim() }
+      .filter { e -> e.key.isNotEmpty() && e.value.isNotEmpty() }
+      .mapValues { e -> CheckSeverity.valueOf(e.value) }
+      .toMap()
   }
 }
 
@@ -171,74 +145,75 @@ if (
   providers.gradleProperty("release").isPresent ||
     providers.gradleProperty("jarWithGitInfo").isPresent
 ) {
+  val generateGitBuildInfo =
+    rootProject.tasks.findByName("generateGitBuildInfo")?.let {
+      rootProject.tasks.named("generateGitBuildInfo", GenerateGitBuildInfo::class.java)
+    }
+      ?: rootProject.tasks.register("generateGitBuildInfo", GenerateGitBuildInfo::class.java) {
+        versionFile.set(rootProject.layout.projectDirectory.file("version.txt"))
+        outputFile.set(
+          rootProject.layout.buildDirectory.file("generated/git-build-info.properties")
+        )
+      }
+
   tasks.withType<Jar>().configureEach {
-    manifest { MemoizedGitInfo.gitInfo(rootProject, attributes) }
-  }
-}
-
-class MemoizedGitInfo {
-  companion object {
-    private fun execProc(rootProject: Project, cmd: String, vararg args: Any): String {
-      var out =
-        rootProject.providers
-          .exec {
-            executable = cmd
-            args(args.toList())
-          }
-          .standardOutput
-          .asText
-          .get()
-      return out.trim()
-    }
-
-    fun gitInfo(rootProject: Project, attribs: Attributes) {
-      val props = gitInfo(rootProject)
-      attribs.putAll(props)
-    }
-
-    fun gitInfo(rootProject: Project): Map<String, String> {
-      if (
-        !rootProject.providers.gradleProperty("release").isPresent &&
-          !rootProject.providers.gradleProperty("jarWithGitInfo").isPresent
-      ) {
-        return emptyMap()
-      }
-
-      return if (rootProject.extra.has("gitReleaseInfo")) {
-        @Suppress("UNCHECKED_CAST")
-        rootProject.extra["gitReleaseInfo"] as Map<String, String>
-      } else {
-        val gitHead = execProc(rootProject, "git", "rev-parse", "HEAD")
-        val gitDescribe = execProc(rootProject, "git", "describe", "--tags")
-        val timestamp = execProc(rootProject, "date", "+%Y-%m-%d-%H:%M:%S%:z")
-        val system = execProc(rootProject, "uname", "-a")
-        val javaVersion = System.getProperty("java.version")
-
-        val info =
-          mapOf(
-            "Nessie-Version" to
-              rootProject.layout.projectDirectory.file("version.txt").asFile.readText().trim(),
-            "Nessie-Build-Git-Head" to gitHead,
-            "Nessie-Build-Git-Describe" to gitDescribe,
-            "Nessie-Build-Timestamp" to timestamp,
-            "Nessie-Build-System" to system,
-            "Nessie-Build-Java-Version" to javaVersion,
-          )
-        rootProject.extra["gitReleaseInfo"] = info
-        return info
-      }
+    val buildInfoFile = generateGitBuildInfo.flatMap { it.outputFile }
+    dependsOn(generateGitBuildInfo)
+    inputs.file(buildInfoFile).withPathSensitivity(PathSensitivity.NONE)
+    doFirst {
+      val buildInfo = Properties()
+      buildInfoFile.get().asFile.reader(Charsets.UTF_8).use { buildInfo.load(it) }
+      manifest.attributes(buildInfo.entries.associate { it.key.toString() to it.value.toString() })
     }
   }
 }
 
-afterEvaluate {
-  tasks.named("codeChecks").configure {
-    dependsOn("spotlessCheck")
-    if (!noCheckstyle) {
-      dependsOn("checkstyle")
-    }
-    if (tasks.names.contains("checkLicense")) {
-      dependsOn("checkLicense")
+@DisableCachingByDefault(
+  because = "Git build information intentionally reflects the current checkout"
+)
+abstract class GenerateGitBuildInfo : DefaultTask() {
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val versionFile: RegularFileProperty
+
+  @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @get:Inject abstract val execOperations: ExecOperations
+
+  @TaskAction
+  fun generate() {
+    val info =
+      mapOf(
+        "Nessie-Version" to versionFile.get().asFile.readText(Charsets.UTF_8).trim(),
+        "Nessie-Build-Git-Head" to execProc("git", "rev-parse", "HEAD"),
+        "Nessie-Build-Git-Describe" to execProc("git", "describe", "--tags"),
+        "Nessie-Build-Timestamp" to execProc("date", "+%Y-%m-%d-%H:%M:%S%:z"),
+        "Nessie-Build-System" to execProc("uname", "-a"),
+        "Nessie-Build-Java-Version" to System.getProperty("java.version"),
+      )
+
+    val output = outputFile.get().asFile
+    output.parentFile.mkdirs()
+    output.writer(Charsets.UTF_8).use { writer ->
+      info.forEach { (key, value) -> writer.appendLine("$key=$value") }
     }
   }
+
+  private fun execProc(cmd: String, vararg args: String): String {
+    val output = ByteArrayOutputStream()
+    execOperations.exec {
+      executable = cmd
+      args(*args)
+      standardOutput = output
+    }
+    return output.toString(Charsets.UTF_8).trim()
+  }
+}
+
+tasks.named("codeChecks").configure {
+  dependsOn("spotlessCheck")
+  if (!noCheckstyle) {
+    dependsOn("checkstyle")
+  }
+  pluginManager.withPlugin("com.github.jk1.dependency-license-report") { dependsOn("checkLicense") }
 }
