@@ -17,7 +17,11 @@
 plugins { id("nessie-common-base") }
 
 val licenseReports =
-  configurations.create("licenseReports") { description = "Used to reference license reports" }
+  configurations.create("licenseReports") {
+    description = "Used to reference license reports"
+    isCanBeConsumed = false
+    isCanBeResolved = true
+  }
 
 dependencies {
   licenseReports(nessieProject("nessie-quarkus", "licenseReports"))
@@ -25,34 +29,30 @@ dependencies {
   licenseReports(nessieProject("nessie-gc-tool", "licenseReports"))
   licenseReports(nessieProject("nessie-content-generator", "licenseReports"))
   licenseReports(nessieProject("nessie-cli", "licenseReports"))
-  rootProject.subprojects
-    .filter { p -> p.name.startsWith("nessie-spark-extensions-3") }
-    .forEach { p -> licenseReports(nessieProject(p.path.substring(1), "licenseReports")) }
+
+  val sparkScala = loadProperties(rootProject.file("integrations/spark-scala.properties"))
+  sparkScala["sparkVersions"]
+    .toString()
+    .split(",")
+    .map { it.trim() }
+    .filter { sparkVersion -> sparkVersion.startsWith("3") }
+    .forEach { sparkVersion ->
+      sparkScala["sparkVersion-${sparkVersion}-scalaVersions"]
+        .toString()
+        .split(",")
+        .map { it.trim() }
+        .forEach { scalaVersion ->
+          licenseReports(
+            nessieProject("nessie-spark-extensions-${sparkVersion}_$scalaVersion", "licenseReports")
+          )
+        }
+    }
 }
 
-val licenseReportJarsDir = layout.buildDirectory.dir("tmp/license-report-jars")
-
-val collectLicenseReportJars =
-  tasks.register<Sync>("collectLicenseReportJars") {
-    into(licenseReportJarsDir)
-    from(licenseReports)
-  }
-
 val aggregateLicenseReports =
-  tasks.register("aggregateLicenseReports") {
-    val outputDir = project.layout.buildDirectory.dir("licenseReports")
-    outputs.dir(outputDir)
-    dependsOn(collectLicenseReportJars)
-    doLast {
-      delete(outputDir)
-      fileTree(licenseReportJarsDir).files.forEach { zip ->
-        val targetDirName = zip.name.replace("-license-report.zip", "")
-        copy {
-          from(zipTree(zip))
-          into(outputDir.map { it.dir(targetDirName) })
-        }
-      }
-    }
+  tasks.register("aggregateLicenseReports", AggregateLicenseReports::class.java) {
+    licenseReportZips.from(licenseReports)
+    outputDir.set(layout.buildDirectory.dir("licenseReports"))
   }
 
 val aggregatedLicenseReportsZip =
@@ -64,3 +64,30 @@ val aggregatedLicenseReportsZip =
     }
     archiveExtension.set("zip")
   }
+
+@DisableCachingByDefault(because = "Aggregating license reports is not worth caching")
+abstract class AggregateLicenseReports
+@Inject
+constructor(
+  private val fileSystemOperations: FileSystemOperations,
+  private val archiveOperations: ArchiveOperations,
+) : DefaultTask() {
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NAME_ONLY)
+  abstract val licenseReportZips: ConfigurableFileCollection
+
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+  @TaskAction
+  fun aggregate() {
+    val outputDir = outputDir.get()
+    fileSystemOperations.delete { delete(outputDir) }
+    licenseReportZips.files.forEach { zip ->
+      val targetDirName = zip.name.replace("-license-report.zip", "")
+      fileSystemOperations.copy {
+        from(archiveOperations.zipTree(zip))
+        into(outputDir.dir(targetDirName))
+      }
+    }
+  }
+}
