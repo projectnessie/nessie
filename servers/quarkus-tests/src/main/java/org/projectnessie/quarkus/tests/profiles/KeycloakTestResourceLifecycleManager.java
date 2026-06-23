@@ -26,7 +26,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -43,8 +42,6 @@ import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
  * <ul>
  *   <li>Use {@link ExtendableKeycloakContainer} from {@code dasniko/testcontainers-keycloak}
  *       instead of {@code GenericContainer};
- *   <li>Use {@link Keycloak} from {@code org.keycloak:keycloak-admin-client} instead of RestAssured
- *       to interact with the Keycloak server;
  *   <li>Token exchange is enabled;
  *   <li>Implements {@link DevServicesContext.ContextAware}};
  *   <li>Container can be configured using Quarkus test resource init args, falling back to system
