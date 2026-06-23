@@ -540,6 +540,10 @@ public class NessieModelIceberg {
         .icebergDefaultCatalog(currentVersion.defaultCatalog())
         .icebergNamespace(currentVersion.defaultNamespace().levels())
         .icebergVersionSummary(currentVersion.summary())
+        .representations(
+            currentVersion.representations().stream()
+                .map(NessieModelIceberg::icebergViewRepresentationToNessie)
+                .collect(Collectors.toList()))
         .snapshotCreatedTimestamp(now())
         .lastUpdatedTimestamp(lastUpdatedTimestamp);
 
