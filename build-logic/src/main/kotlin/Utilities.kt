@@ -48,7 +48,6 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.exclude
-import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.project
 import org.gradle.process.JavaForkOptions
@@ -317,6 +316,17 @@ fun loadProperties(file: File): Properties {
   return props
 }
 
+/**
+ * Loads the Spark/Scala project matrix used by settings and dependency wiring.
+ *
+ * Keep this as a file read instead of root `extra` state so each project can derive its own
+ * configuration without depending on mutable root-project state.
+ */
+fun Project.loadSparkScalaProperties(): Properties =
+  loadProperties(
+    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile
+  )
+
 /** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
@@ -350,7 +360,7 @@ fun Project.sparkDependencyVersion(sparkMajorVersion: String, scalaMajorVersion:
 
 fun Project.useSparkScalaVersionsForProject(sparkMajorVersion: String): SparkScalaVersions {
   val scalaMajorVersion =
-    rootProject.extra["sparkVersion-${sparkMajorVersion}-scalaVersions"]
+    loadSparkScalaProperties()["sparkVersion-${sparkMajorVersion}-scalaVersions"]
       .toString()
       .split(",")
       .map { it.trim() }[0]
