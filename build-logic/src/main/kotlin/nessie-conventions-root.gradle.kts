@@ -18,6 +18,9 @@
 
 import copiedcode.CopiedCodeCheckerPlugin
 import java.util.Properties
+import javax.inject.Inject
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFileProperty
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.copyright
 import org.jetbrains.gradle.ext.delegateActions
@@ -135,42 +138,56 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
 
 eclipse { project { name = ideName } }
 
-tasks.register("listProjectsWithPrefix", ListChildProjectsTask::class)
+tasks.register("listProjectsWithPrefix", ListChildProjectsTask::class).configure {
+  childProjectPaths.set(childProjects.values.map { it.path })
+}
 
 @DisableCachingByDefault(because = "Projects list is not worth caching")
 abstract class ListChildProjectsTask : DefaultTask() {
+  @get:Inject abstract val projectLayout: ProjectLayout
+
+  @get:Input abstract val childProjectPaths: ListProperty<String>
+
   @get:Option(option = "prefix", description = "Project path prefix.")
-  @get:Internal
+  @get:Input
   abstract val prefix: Property<String>
 
   @get:Option(option = "task", description = "Name of the task to print.")
-  @get:Internal
-  abstract val task: Property<String>
+  @get:Input
+  abstract val taskName: Property<String>
 
-  @get:Option(option = "output", description = "Output file name.")
-  @get:Internal
-  abstract val output: Property<String>
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
   @get:Option(option = "exclude", description = "Output file name.")
-  @get:Internal
+  @get:Input
   abstract val exclude: Property<Boolean>
+
+  init {
+    taskName.convention("intTest")
+    exclude.convention(false)
+  }
+
+  @Option(option = "output", description = "Output file name.")
+  fun output(outputFileName: String) {
+    outputFile.set(projectLayout.projectDirectory.file(outputFileName))
+  }
 
   @TaskAction
   fun exec() {
     val prefix = prefix.get()
-    val task = task.convention("intTest").get()
-    val outputFile = output.get()
-    val exclude = if (exclude.convention(false).get()) "-x " else ""
-    project.file(outputFile).writer().use {
+    val task = taskName.get()
+    val exclude = if (exclude.get()) "-x " else ""
+    outputFile.get().asFile.writer().use {
       val writer = it
-      project.childProjects.values
-        .filter { it.path.startsWith(prefix) }
-        .forEach { writer.write("$exclude${it.path}:$task\n") }
+      childProjectPaths
+        .get()
+        .filter { it.startsWith(prefix) }
+        .forEach {
+          writer.write("$exclude$it:$task\n")
+        }
     }
   }
 }
-
-apply<CopiedCodeCheckerPlugin>()
 
 allprojects {
   tasks.register("codeChecks").configure {
@@ -178,3 +195,5 @@ allprojects {
     description = "Runs code style and license checks"
   }
 }
+
+apply<CopiedCodeCheckerPlugin>()
