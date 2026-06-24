@@ -87,16 +87,17 @@ Certain variables are available within the `<rule_expression>` depending on cont
 * **ref** - refers to a string representing a branch/tag name or `DETATCHED` for direct access to a commit id.
 * **path** - refers to the URI path representation (`ContentKey.toPathString()`) of the [content key](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/ContentKey.java) for the object related to the authorization check.
 * **contentType** - refers to a (possibly empty) string representing the name of the object's [`Content.Type`](https://github.com/projectnessie/nessie/blob/main/api/model/src/main/java/org/projectnessie/model/Content.java).
-* **type** - refers to the repository config type to be retrieved or updated.
-* **api** - contains information about the receiving API. This is a composite object with two properties:
-  * **apiName** the name of the API, can be `Nessie` or `Iceberg`
-  * **apiVersion** the version of the API - for `Nessie` it can be 1 or 2, for `Iceberg` currently 1
-* **actions** a list of actions (strings), available for some Iceberg endpoints.
+* **api** and **actions** are available to custom `Authorizer` implementations through Nessie's
+  authorization check metadata, but they are not available in the built-in CEL authorizer.
+* Repository config checks expose the repository config type to custom `Authorizer`
+  implementations, but the `type` variable is not available in the built-in CEL authorizer.
 
 #### Actions
 
-The list of `actions` (strings) is available for some Iceberg endpoints that perform changes against
-an entity (table, view, namespace). The list of actions is empty for the Nessie REST API.
+The list of `actions` (strings) is available to custom `Authorizer` implementations for some
+Iceberg endpoints that perform changes against an entity (table, view, namespace). The list of
+actions is empty for the Nessie REST API. The built-in CEL authorizer cannot use `actions` in CEL
+expressions.
 
 **Catalog operations**
 
@@ -181,7 +182,6 @@ Available variables:
 * `role`
 * `roles`
 * `ref`
-* `api`
 
 #### Checks for Content operations
 
@@ -200,8 +200,6 @@ Available variables:
 * `ref`
 * `path`
 * `contentType`
-* `api`
-* `actions` (for `CREATE_ENTITY`, `UPDATE_ENTITY`, `DELETE_ENTITY` against Iceberg REST)
 
 #### Checks for Repository Config operations
 
@@ -214,8 +212,6 @@ Available variables:
 
 * `role`
 * `roles`
-* `type`
-* `api`
 
 #### Relevant CEL features
 
