@@ -258,6 +258,18 @@ changed using the `--expiry-parallelism` command line option.
 It is highly recommended to use one of the supported databases to persist the live-content-sets.
 Running the different Nessie GC phases separately is only supported with such a database.
 
+Run destructive GC phases with object-store credentials that are limited to the warehouse or
+prefixes that GC is expected to clean up. The _expire_ and _delete_ phases derive table base
+locations from table metadata stored in Nessie, including metadata that may have been committed
+through the native Nessie API. Nessie GC cannot infer an external warehouse boundary for arbitrary
+native API content, so object-store permissions are the primary deletion boundary for those
+deployments.
+
+If less-trusted users can write table metadata into Nessie, use _deferred deletion_ first and review
+the generated deletion list before allowing GC to delete objects. Treat any unexpected bucket,
+filesystem, warehouse, or prefix in the deferred-deletion output as a configuration or metadata
+integrity problem that must be investigated before deletion.
+
 Make yourself familiar with all the commands offered by `nessie-gc.jar` and the available command
 line options. It is safe to run `java -jar nessie-gc.jar mark-live`, because it is non-destructive.
 Use `java -jar nessie-gc.jar show --with-content-references` to inspect the collected live content

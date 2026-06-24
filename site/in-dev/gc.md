@@ -19,6 +19,11 @@ must be reachable from the host where the GC tool is running. The JDBC-compliant
 be reachable from the host where the GC tool is running. The database is used to store the live
 content sets and the deferred deletes.
 
+The GC tool also requires table-format and object-store credentials for destructive cleanup phases.
+Scope those credentials to the warehouse or prefixes that GC is expected to clean up. GC derives
+base locations from table metadata stored in Nessie, including metadata committed through the native
+Nessie API, and cannot infer an external warehouse boundary for arbitrary native API content.
+
 Nessie GC has built-in support for PostgreSQL, MariaDB, MySQL (using the MariaDB driver), and H2 
 databases.
 
