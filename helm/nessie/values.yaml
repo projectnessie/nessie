@@ -818,7 +818,10 @@ service:
 
 # -- Management service settings. These settings are used to configure liveness and readiness probes,
 # and to configure the dedicated headless service that will expose health checks and metrics, e.g.
-# for metrics scraping and service monitoring.
+# for metrics scraping and service monitoring. The chart also derives the distributed cache
+# invalidation token from these settings. This token is deterministic chart configuration, not a
+# high-entropy secret. Keep the management service internal to trusted cluster workloads and use
+# Kubernetes network controls if namespace-local workloads are not equally trusted.
 managementService:
   # -- The name of the management port. Required.
   portName: nessie-mgmt

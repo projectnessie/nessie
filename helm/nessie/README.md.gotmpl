@@ -41,6 +41,18 @@ helm-docs --chart-search-root=helm
 
 Note: don't modify the README.md file directly, please modify `README.md.gotmpl` instead.
 
+## Management service and cache invalidation
+
+The chart exposes a dedicated headless management service for health checks, metrics, and
+cluster-internal distributed cache invalidation between Nessie pods. The cache invalidation token is
+derived deterministically from `managementService` chart values so that pods in the same release
+share the same value.
+
+Treat that token as cluster-internal coordination material, not as a high-entropy secret. Keep the
+management service reachable only by trusted cluster workloads, and use Kubernetes NetworkPolicy or
+equivalent controls if other namespace-local workloads should not be able to reach Nessie's
+management port.
+
 ## Installation
 
 ### From Helm repo

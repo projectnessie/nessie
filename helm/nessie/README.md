@@ -39,6 +39,18 @@ helm-docs --chart-search-root=helm
 
 Note: don't modify the README.md file directly, please modify `README.md.gotmpl` instead.
 
+## Management service and cache invalidation
+
+The chart exposes a dedicated headless management service for health checks, metrics, and
+cluster-internal distributed cache invalidation between Nessie pods. The cache invalidation token is
+derived deterministically from `managementService` chart values so that pods in the same release
+share the same value.
+
+Treat that token as cluster-internal coordination material, not as a high-entropy secret. Keep the
+management service reachable only by trusted cluster workloads, and use Kubernetes NetworkPolicy or
+equivalent controls if other namespace-local workloads should not be able to reach Nessie's
+management port.
+
 ## Installation
 
 ### From Helm repo
@@ -392,7 +404,7 @@ are unavailable.
 | log.sentry.inAppPackages | list | `["org.projectnessie"]` | Package prefixes that belong to your application. |
 | log.sentry.level | string | `"ERROR"` | The log level of the Sentry appender. |
 | log.sentry.release | string | `nil` | The release version to report to Sentry. Optional. |
-| managementService | object | `{"annotations":{},"portName":"nessie-mgmt","portNumber":9000}` | Management service settings. These settings are used to configure liveness and readiness probes, and to configure the dedicated headless service that will expose health checks and metrics, e.g. for metrics scraping and service monitoring. |
+| managementService | object | `{"annotations":{},"portName":"nessie-mgmt","portNumber":9000}` | Management service settings. These settings are used to configure liveness and readiness probes, and to configure the dedicated headless service that will expose health checks and metrics, e.g. for metrics scraping and service monitoring. The chart also derives the distributed cache invalidation token from these settings. This token is deterministic chart configuration, not a high-entropy secret. Keep the management service internal to trusted cluster workloads and use Kubernetes network controls if namespace-local workloads are not equally trusted. |
 | managementService.annotations | object | `{}` | Annotations to add to the service. |
 | managementService.portName | string | `"nessie-mgmt"` | The name of the management port. Required. |
 | managementService.portNumber | int | `9000` | The port the management service listens on. By default, the management interface is exposed on HTTP port 9000. |
