@@ -21,8 +21,8 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.UntrackedTask
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.register
 import org.gradle.work.DisableCachingByDefault
@@ -66,9 +66,9 @@ class ReleaseSupportPlugin : Plugin<Project> {
     }
   }
 
-  @DisableCachingByDefault(because = "Version bumps cannot be cached")
+  @UntrackedTask(because = "Version bumps intentionally mutate the current version file")
   abstract class BumpVersionTask : DefaultTask() {
-    @get:InputFile @get:OutputFile abstract val versionFile: RegularFileProperty
+    @get:Internal abstract val versionFile: RegularFileProperty
 
     @Option(
       option = "bumpToRelease",
