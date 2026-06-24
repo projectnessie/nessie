@@ -38,4 +38,10 @@ public class MeterFilterProvider {
             .map(e -> Tag.of(e.getKey(), e.getValue()))
             .collect(Collectors.toSet()));
   }
+
+  @Produces
+  @Singleton
+  public MeterFilter ignoreServerPortTag() {
+    return MeterFilter.ignoreTags("server.port");
+  }
 }
