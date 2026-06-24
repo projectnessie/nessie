@@ -1,5 +1,10 @@
 # Security Policy
 
+Project Nessie's runtime-server security assumptions and trust boundaries are documented in
+[SECURITY_THREAT_MODEL.md](SECURITY_THREAT_MODEL.md). Use that document to understand the intended
+security contract for authentication, authorization, native Nessie REST APIs, Iceberg REST APIs,
+catalog/object-store access, and deployment assumptions.
+
 ## Supported Versions
 
 Currently supported versions are listed below.
