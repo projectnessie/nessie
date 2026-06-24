@@ -2,6 +2,42 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.108.1 Release (June 24, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.1).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+* Fix release related tasks (#12621)
+* Catalog: fail closed on S3 signing snapshot lookup errors (#12620)
+* Add threat model (#12618)
+* Check diff entry sides independently (#12619)
+* Docs: clarify Helm cache invalidation boundary (#12617)
+* Docs: clarify GC deletion authority (#12616)
+* Docs: clarify CEL authorization variables (#12615)
+* Restore Prometheus metrics endpoint (#12613)
+* Remove root extra Spark metadata (#12598)
+* Prepare for Gradle 9.6 - part 2 (#12600)
+* Remove resteasy-classic from keycloak-testcontainer (#12500)
+* Ninja: fix renovate config
+* Fix Renovate grouping and Quarkus platform BOM handling (#12604)
+* Preserve SQL representations when importing Iceberg views (#12602)
+* Move common source metadata out of configuration (#12597)
+* Avoid subproject scans in license aggregation (#12599)
+* Prepare for Gatling update (#12603)
+* Make build-logic tasks configuration-cache safer (#12594)
+* Prepare for Gradle 9.6 (#12581)
+* Allow setting environment variables for the Gradle invocation (#12583)
+* Add CI configuration-cache guard based on BuildFeatures. (#12582)
+* NesQuEIT: attempt to fix OOMs (#12584)
+* Normalize S3 scheme in IcebergConfigurer writeable derivation (fixes #12426) (#12432)
+* Update Quarkus to 3.36.3 (#12577)
+* Revert "Update gradle/actions action to v6 (#12497 + #12535)"
+* CI: increase heap for NesQuEIT (#12549)
+
 ## 0.108.0 Release (June 12, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.0).
