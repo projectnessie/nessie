@@ -189,8 +189,10 @@ abstract class IcebergS3SignParams {
                   requestMeta.build(),
                   ICEBERG_V1);
       // consider an import failure as a non-existing content:
-      // signing will be authorized for the future location only.
-      return Uni.createFrom().completionStage(stage).onFailure().recoverWithNull();
+      return Uni.createFrom()
+          .completionStage(stage)
+          .onFailure(NessieContentNotFoundException.class)
+          .recoverWithNull();
     } catch (NessieContentNotFoundException ignored) {
       return Uni.createFrom().nullItem();
     } catch (NessieNotFoundException e) {
