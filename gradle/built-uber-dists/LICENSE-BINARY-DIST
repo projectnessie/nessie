@@ -454,6 +454,7 @@ io.quarkus:quarkus-jdbc-postgresql
 io.quarkus:quarkus-jsonp
 io.quarkus:quarkus-logging-json
 io.quarkus:quarkus-micrometer
+io.quarkus:quarkus-micrometer-registry-prometheus
 io.quarkus:quarkus-mongodb-client
 io.quarkus:quarkus-mutiny
 io.quarkus:quarkus-mutiny-reactive-streams-operators
