@@ -19,6 +19,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.ICEBERG_V1;
 import static org.projectnessie.versioned.RequestMeta.apiRead;
@@ -67,6 +68,7 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
 import org.projectnessie.model.Reference.ReferenceType;
+import org.projectnessie.services.authz.AccessCheckException;
 import org.projectnessie.versioned.RequestMeta;
 
 @ExtendWith({MockitoExtension.class, SoftAssertionsExtension.class})
@@ -298,6 +300,19 @@ class TestIcebergS3SignParams {
   }
 
   @Test
+  void verifyAndSignSuccessContentNotFoundAsync() throws Exception {
+    CompletionStage<SnapshotResponse> contentNotFoundStage =
+        CompletableFuture.failedStage(new NessieContentNotFoundException(key, "main"));
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(contentNotFoundStage);
+    when(signer.sign(any())).thenReturn(signingResponse);
+    IcebergS3SignParams icebergSigner = newBuilder().build();
+    Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
+    expectSuccess(response);
+  }
+
+  @Test
   void verifyAndSignFailureReferenceNotFound() throws Exception {
     when(catalogService.retrieveSnapshot(
             any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
@@ -308,16 +323,29 @@ class TestIcebergS3SignParams {
   }
 
   @Test
-  void verifyAndSignSuccessImportFailed() throws Exception {
+  void verifyAndSignFailureSnapshotRetrievalFailed() throws Exception {
     CompletionStage<SnapshotResponse> importFailedStage =
         CompletableFuture.failedStage(new RuntimeException("import failed"));
     when(catalogService.retrieveSnapshot(
             any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
         .thenReturn(importFailedStage);
-    when(signer.sign(any())).thenReturn(signingResponse);
     IcebergS3SignParams icebergSigner = newBuilder().build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
-    expectSuccess(response);
+    expectFailure(response, RuntimeException.class, "import failed");
+    verifyNoInteractions(signer);
+  }
+
+  @Test
+  void verifyAndSignFailureSnapshotRetrievalUnauthorized() throws Exception {
+    CompletionStage<SnapshotResponse> unauthorizedStage =
+        CompletableFuture.failedStage(new AccessCheckException("not allowed"));
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(unauthorizedStage);
+    IcebergS3SignParams icebergSigner = newBuilder().build();
+    Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
+    expectFailure(response, AccessCheckException.class, "not allowed");
+    verifyNoInteractions(signer);
   }
 
   @ParameterizedTest
