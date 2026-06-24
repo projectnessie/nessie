@@ -83,7 +83,7 @@ dependencies {
   implementation("io.quarkus:quarkus-security")
   implementation("io.quarkus:quarkus-elytron-security-properties-file")
   implementation("io.quarkus:quarkus-oidc")
-  implementation("io.quarkus:quarkus-micrometer")
+  implementation("io.quarkus:quarkus-micrometer-registry-prometheus")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
   implementation(libs.quarkus.logging.sentry)
@@ -202,8 +202,6 @@ dependencies {
   testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
   intTestCompileOnly(project(":nessie-immutables"))
   intTestAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
-
-  testImplementation("io.micrometer:micrometer-registry-prometheus-simpleclient")
 
   intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
