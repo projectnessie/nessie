@@ -16,6 +16,9 @@
 
 // Conventions for project being built for/with Quarkus.
 
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+
 plugins { id("nessie-conventions-java21") }
 
 // This can likely be removed with Quarkus 3.26.3 (or newer)
@@ -27,3 +30,22 @@ listOf("compileJava", "javadoc", "sourcesJar").forEach { name ->
 listOf("compileTestJava", "checkstyleTest", "compileTestJava").forEach { name ->
   tasks.named(name).configure { dependsOn(tasks.named("compileQuarkusTestGeneratedSourcesJava")) }
 }
+
+if (quarkusFatJar()) {
+  val quarkusUberJarBuildLimiter =
+    gradle.sharedServices.registerIfAbsent(
+      "quarkusUberJarBuildLimiter",
+      QuarkusUberJarBuildLimiter::class.java,
+    ) {
+      maxParallelUsages = 1
+    }
+
+  tasks.named("quarkusBuild").configure {
+    // Quarkus' uber-jar assembly can temporarily require a large heap while it repackages
+    // dependency jars. Release publishing builds multiple Quarkus applications in one Gradle
+    // invocation, so serialize only the memory-heavy application packaging step.
+    usesService(quarkusUberJarBuildLimiter)
+  }
+}
+
+abstract class QuarkusUberJarBuildLimiter : BuildService<BuildServiceParameters.None>

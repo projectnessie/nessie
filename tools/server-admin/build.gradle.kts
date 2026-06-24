@@ -137,6 +137,9 @@ quarkus {
         .toMap()
     }
   )
+  buildForkOptions {
+    maxHeapSize = "4G"
+  }
 }
 
 val quarkusBuild = tasks.named<QuarkusBuild>("quarkusBuild")

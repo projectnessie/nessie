@@ -65,10 +65,6 @@ jobs:
       - name: Setup Java, Gradle
         uses: ./.github/actions/dev-tool-java
 
-      # Needed for the Quarkus plugin - can likely go away once we use Quarkus 3 or newer
-      - name: Bump Gradle daemon heap
-        run: sed -i 's/-Xms.*/-Xms6G -Xmx6G -XX:MaxMetaspaceSize=1g \\/' gradle.properties
-
       - name: Prepare Gradle build cache
         uses: ./.github/actions/ci-incr-build-cache-prepare
 
