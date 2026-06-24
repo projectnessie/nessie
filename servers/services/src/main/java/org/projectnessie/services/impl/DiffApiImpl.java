@@ -23,7 +23,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -123,22 +122,20 @@ public class DiffApiImpl extends BaseApiImpl implements DiffService {
                       .build())) {
 
         AuthzPaginationIterator<Diff> authz =
-            new AuthzPaginationIterator<Diff>(
+            new AuthzPaginationIterator<>(
                 diffs, super::startAccessCheck, getServerConfig().accessChecksBatchSize()) {
               @Override
               protected Set<Check> checksForEntry(Diff entry) {
                 if (entry.getFromValue().isPresent()) {
-                  if (entry.getToValue().isPresent()
-                      && !Objects.equals(entry.getFromKey(), entry.getToKey())) {
+                  if (entry.getToValue().isPresent()) {
                     return ImmutableSet.of(
                         canReadContentKey(fromNamedRef, entry.getFromKey()),
-                        canReadContentKey(fromNamedRef, entry.getToKey()));
-                  } else {
-                    return singleton(canReadContentKey(fromNamedRef, entry.getFromKey()));
+                        canReadContentKey(toNamedRef, entry.getToKey()));
                   }
-                } else {
-                  return singleton(canReadContentKey(toNamedRef, entry.getToKey()));
+                  return singleton(canReadContentKey(fromNamedRef, entry.getFromKey()));
                 }
+
+                return singleton(canReadContentKey(toNamedRef, entry.getToKey()));
               }
             }.initialCheck(canViewReference(fromNamedRef))
                 .initialCheck(canViewReference(toNamedRef));
