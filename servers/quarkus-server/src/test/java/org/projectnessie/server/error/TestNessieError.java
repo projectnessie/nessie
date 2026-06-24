@@ -136,7 +136,7 @@ class TestNessieError {
     soft.assertThatThrownBy(() -> client.newRequest().path("basicEntity").put("{}"))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith(
-            "Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n");
+            "Bad Request (HTTP/400): basicEntity.entity.value: must not be null");
     soft.assertThatThrownBy(() -> client.newRequest().path("basicEntity").put("{\"value\":null}"))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith(
@@ -154,7 +154,7 @@ class TestNessieError {
             () -> unwrap(() -> client.newRequest().path("basicEntity").put(new OtherEntity("bar"))))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith(
-            "Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n");
+            "Bad Request (HTTP/400): basicEntity.entity.value: must not be null");
   }
 
   @Test
