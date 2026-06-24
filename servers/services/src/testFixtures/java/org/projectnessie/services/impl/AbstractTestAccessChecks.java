@@ -473,6 +473,39 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
   }
 
   @Test
+  public void diffUsesEntryReferencesForContentChecks() throws Exception {
+    ContentKey key = ContentKey.of("diffSideTable");
+
+    Branch left = createBranch("diffSideLeft");
+    IcebergTable leftValue = IcebergTable.of("left-location", 1, 2, 3, 4);
+    CommitResponse leftCommit =
+        commit(left, CommitMeta.fromMessage("left"), Put.of(key, leftValue));
+    left = leftCommit.getTargetBranch();
+    leftValue = (IcebergTable) leftCommit.contentWithAssignedId(key, leftValue);
+
+    Branch right = createBranch("diffSideRight", left);
+    IcebergTable rightValue =
+        IcebergTable.of("right-location", 5, 6, 7, 8).withId(leftValue.getId());
+    right =
+        commit(right, CommitMeta.fromMessage("right"), Put.of(key, rightValue)).getTargetBranch();
+
+    String rightName = right.getName();
+    setBatchAccessChecker(
+        x ->
+            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
+              @Override
+              public Map<Check, String> check() {
+                return getChecks().stream()
+                    .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
+                    .filter(c -> c.ref() != null && rightName.equals(c.ref().getName()))
+                    .collect(Collectors.toMap(Function.identity(), c -> "Not available"));
+              }
+            });
+
+    assertThat(diff(left, right)).isEmpty();
+  }
+
+  @Test
   public void detachedRefAccessChecks() throws Exception {
 
     BatchAccessChecker accessChecker =
