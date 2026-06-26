@@ -40,21 +40,21 @@ public class TestBlockingEventDelivery extends TestStandardEventDelivery {
   @Override
   void testDeliverySuccessNoRetry() {
     setUpVertxExecuteBlocking();
-    super.testDeliverySuccessNoRetry();
+    standardDeliverySuccessNoRetry();
   }
 
   @Test
   @Override
   void testDeliverySuccessWithRetry() {
     setUpVertxExecuteBlocking();
-    super.testDeliverySuccessWithRetry();
+    standardDeliverySuccessWithRetry();
   }
 
   @Test
   @Override
   void testDeliveryFailureWithRetry() {
     setUpVertxExecuteBlocking();
-    super.testDeliveryFailureWithRetry();
+    standardDeliveryFailureWithRetry();
   }
 
   @SuppressWarnings("unchecked")

@@ -110,7 +110,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   void testDeliverySuccessNoRetry() {
     when(processor.isStartRequired()).thenReturn(true);
     when(processor.isEndRequired()).thenReturn(true);
-    super.testDeliverySuccessNoRetry();
+    deliverySuccessNoRetry();
     verify(delegate).deliverySuccessful(1);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));
     verify(processor).onEnd(argThat(deliverySpanMatcherNoRetry));
@@ -124,7 +124,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   void testDeliverySuccessWithRetry() {
     when(processor.isStartRequired()).thenReturn(true);
     when(processor.isEndRequired()).thenReturn(true);
-    super.testDeliverySuccessWithRetry();
+    deliverySuccessWithRetry();
     verify(delegate).deliverySuccessful(3);
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
     verify(processor).onEnd(argThat(deliverySpanMatcherWithRetries));
@@ -142,7 +142,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   void testDeliveryFailureWithRetry() {
     when(processor.isStartRequired()).thenReturn(true);
     when(processor.isEndRequired()).thenReturn(true);
-    super.testDeliveryFailureWithRetry();
+    deliveryFailureWithRetry();
     verify(delegate).deliveryFailed(eq(3), any());
     verify(processor).onStart(any(), argThat(deliverySpanMatcherWithRetries));
     verify(processor).onEnd(argThat(deliverySpanMatcherWithRetries));
@@ -160,7 +160,7 @@ class TestTracingEventDelivery extends TestRetriableEventDelivery<TracingEventDe
   void testDeliveryRejected() {
     when(processor.isStartRequired()).thenReturn(true);
     when(processor.isEndRequired()).thenReturn(true);
-    super.testDeliveryRejected();
+    deliveryRejected();
     verify(delegate).deliveryRejected();
     verify(processor).onStart(any(), argThat(deliverySpanMatcherNoRetry));
     verify(processor).onEnd(argThat(deliverySpanMatcherNoRetry));

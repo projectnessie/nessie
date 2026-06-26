@@ -58,6 +58,10 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   @Test
   void testDeliverySuccessNoRetry() {
+    deliverySuccessNoRetry();
+  }
+
+  void deliverySuccessNoRetry() {
     when(subscriber.accepts(event)).thenReturn(true);
     delivery.start();
     verify(subscriber).onEvent(event);
@@ -65,6 +69,10 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   @Test
   void testDeliverySuccessWithRetry() {
+    deliverySuccessWithRetry();
+  }
+
+  void deliverySuccessWithRetry() {
     when(subscriber.accepts(event)).thenReturn(true);
     setUpVertxTimer();
     AtomicReference<Throwable> errorHolder = mockSubscriberFailures(2);
@@ -78,6 +86,10 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   @Test
   void testDeliveryFailureWithRetry() {
+    deliveryFailureWithRetry();
+  }
+
+  void deliveryFailureWithRetry() {
     when(subscriber.accepts(event)).thenReturn(true);
     setUpVertxTimer();
     AtomicReference<Throwable> errorHolder = mockSubscriberFailures(3);
@@ -93,6 +105,10 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   @Test
   void testDeliveryRejected() {
+    deliveryRejected();
+  }
+
+  void deliveryRejected() {
     when(subscriber.accepts(event)).thenReturn(false);
     delivery.start();
     verify(subscriber, never()).onEvent(event);
