@@ -42,7 +42,7 @@ public abstract class AbstractReferenceNotFound extends AbstractNestedVersionSto
     super(store);
   }
 
-  private static class ReferenceNotFoundFunction {
+  static class ReferenceNotFoundFunction {
 
     final String name;
     String msg;

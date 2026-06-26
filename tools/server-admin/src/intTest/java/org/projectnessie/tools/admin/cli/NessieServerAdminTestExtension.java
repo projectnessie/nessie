@@ -129,8 +129,7 @@ public class NessieServerAdminTestExtension
       store.remove(BACKEND);
       previous.close();
     }
-    // TODO replace once Quarkus 3.31 is in
-    return store.getOrComputeIfAbsent(
+    return store.computeIfAbsent(
         BACKEND, key -> createBackendHolder(environment), BackendHolder.class);
   }
 

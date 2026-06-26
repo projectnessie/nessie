@@ -17,7 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singletonList;
-import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogicImpl.NO_COMMON_ANCESTOR_IN_PARENTS_OF;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.BOTH_COMMITS;
@@ -118,7 +118,7 @@ public abstract class MergeBase {
 
   private List<ShallowCommit> flagReachableCommits(ShallowCommit commitA, ShallowCommit commitB) {
     PriorityQueue<ShallowCommit> queue =
-        new PriorityQueue<>(comparing(ShallowCommit::seq).reversed());
+        new PriorityQueue<>(comparingLong(ShallowCommit::seq).reversed());
     List<ShallowCommit> result = new ArrayList<>();
 
     commitA.setCommitA();
