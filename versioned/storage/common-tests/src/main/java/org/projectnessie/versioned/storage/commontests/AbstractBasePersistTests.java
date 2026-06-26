@@ -1536,7 +1536,7 @@ public class AbstractBasePersistTests {
       soft.assertThat(Lists.newArrayList(scan))
           .containsExactlyInAnyOrderElementsOf(
               stream(customObjs)
-                  .filter(o -> o.type() == SimpleTestObj.TYPE)
+                  .filter(o -> SimpleTestObj.TYPE.equals(o.type()))
                   .collect(Collectors.toList()));
     }
     try (CloseableIterator<Obj> scan = persist.scanAllObjects(Set.of(COMMIT))) {
