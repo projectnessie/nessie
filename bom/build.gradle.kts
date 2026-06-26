@@ -25,7 +25,7 @@ publishingHelper { mavenName = "Nessie - Bill of Materials (BOM)" }
 
 dependencies {
   constraints {
-    api(rootProject)
+    api(project(":"))
     api(project(":nessie-azurite-testcontainer"))
     api(project(":nessie-cli"))
     api(project(":nessie-cli-grammar"))
