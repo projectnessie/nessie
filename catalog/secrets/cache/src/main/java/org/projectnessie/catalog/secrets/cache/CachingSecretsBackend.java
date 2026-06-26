@@ -76,6 +76,7 @@ public class CachingSecretsBackend {
     this.cache = cacheBuilder.build();
   }
 
+  @SuppressWarnings("ReferenceEquality")
   <S extends Secret> Optional<S> resolveSecret(
       String repositoryId,
       SecretsProvider backend,

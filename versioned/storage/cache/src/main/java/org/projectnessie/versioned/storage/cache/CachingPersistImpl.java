@@ -49,6 +49,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
+  @SuppressWarnings("ReferenceEquality")
   public Obj fetchObj(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o != null) {
@@ -68,6 +69,7 @@ class CachingPersistImpl implements Persist {
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public Obj getImmediate(@Nonnull ObjId id) {
     Obj o = cache.get(id);
     if (o == NOT_FOUND_OBJ_SENTINEL) {
@@ -78,6 +80,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
+  @SuppressWarnings("ReferenceEquality")
   public <T extends Obj> T fetchTypedObj(
       @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
     Obj o = cache.get(id);
@@ -104,6 +107,7 @@ class CachingPersistImpl implements Persist {
 
   @Override
   @Nonnull
+  @SuppressWarnings("ReferenceEquality")
   public ObjType fetchObjType(@Nonnull ObjId id) throws ObjNotFoundException {
     Obj o = cache.get(id);
     if (o == NOT_FOUND_OBJ_SENTINEL) {
@@ -179,6 +183,7 @@ class CachingPersistImpl implements Persist {
     return fetchObjsPost(backendIds, backendResult, r, type);
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private <T extends Obj> ObjId[] fetchObjsPre(
       ObjId[] ids, T[] r, ObjType type, @SuppressWarnings("unused") @Nonnull Class<T> typeClass) {
     ObjId[] backendIds = null;
@@ -448,6 +453,7 @@ class CachingPersistImpl implements Persist {
     return fetchReferenceInternal(name, true);
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private Reference fetchReferenceInternal(@Nonnull String name, boolean bypassCache) {
     Reference r = null;
     if (!bypassCache) {
@@ -480,6 +486,7 @@ class CachingPersistImpl implements Persist {
     return fetchReferencesInternal(names, true);
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private Reference[] fetchReferencesInternal(@Nonnull String[] names, boolean bypassCache) {
     Reference[] r = new Reference[names.length];
 
