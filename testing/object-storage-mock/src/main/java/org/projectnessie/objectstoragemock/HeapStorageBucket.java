@@ -147,6 +147,7 @@ public class HeapStorageBucket {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public MockObject commit() {
       synchronized (objects) {
         MockObject curr = objects.get(key);

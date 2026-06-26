@@ -46,6 +46,7 @@ public class ValidationExceptionMapper extends BaseExceptionMapper<ValidationExc
     return sb.toString();
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private void doUnwrapException(StringBuilder sb, Throwable t) {
     if (t == null) {
       return;
