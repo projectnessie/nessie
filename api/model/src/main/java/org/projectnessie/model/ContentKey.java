@@ -101,6 +101,7 @@ public abstract class ContentKey implements Comparable<ContentKey>, Elements {
    * Return the content key, truncated to the given maximum length if the number of elements is
    * greater than {@code targetMaxLength}, otherwise returns this content key.
    */
+  @SuppressWarnings("ReferenceEquality")
   public ContentKey truncateToLength(int targetMaxLength) {
     List<String> elements;
     elements = getElements();

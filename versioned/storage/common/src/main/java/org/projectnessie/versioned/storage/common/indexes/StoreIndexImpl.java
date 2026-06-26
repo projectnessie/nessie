@@ -250,6 +250,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public void updateAll(Function<StoreIndexElement<V>, V> updater) {
     List<StoreIndexElement<V>> e = elements;
     ElementSerializer<V> serializer = this.serializer;
@@ -257,6 +258,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
     for (int i = 0; i < size; i++) {
       StoreIndexElement<V> el = e.get(i);
       V updated = updater.apply(el);
+      // Intentional identity check: avoid invoking potentially expensive value equality here.
       if (updated != el) {
         modified = true;
         int oldSerializedSize = el.contentSerializedSize(serializer);
@@ -452,6 +454,7 @@ final class StoreIndexImpl<V> implements StoreIndex<V> {
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public @Nonnull ByteString serialize() {
     ByteBuffer target;
 
