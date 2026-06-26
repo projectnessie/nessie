@@ -142,7 +142,7 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
       writer.println(detailsHeading);
 
       Comparator<MergeResponse.ContentKeyDetails> conflictsFirstComparator =
-          Comparator.comparing(d -> d.getConflict() != null ? 0 : 1);
+          Comparator.comparingInt(d -> d.getConflict() != null ? 0 : 1);
       Comparator<MergeResponse.ContentKeyDetails> keyComparator =
           Comparator.comparing(MergeResponse.ContentKeyDetails::getKey);
 
