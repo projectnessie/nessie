@@ -757,6 +757,7 @@ import org.projectnessie.nessie.cli.cmdspec.*;
 
 INJECT ParseException :
 {
+  @SuppressWarnings("unchecked")
   public Set<Token.TokenType> getExpectedTokenTypes() {
     // expectedTypes is 'Set<? extends Node.NodeType> expectedTypes', but it's all TokenType, so...
     Set x = expectedTypes;
