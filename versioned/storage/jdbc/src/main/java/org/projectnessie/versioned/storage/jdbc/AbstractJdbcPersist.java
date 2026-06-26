@@ -520,6 +520,7 @@ abstract class AbstractJdbcPersist implements Persist {
     return r;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private void upsertObjsWrite(
       Connection conn,
       Obj[] objs,

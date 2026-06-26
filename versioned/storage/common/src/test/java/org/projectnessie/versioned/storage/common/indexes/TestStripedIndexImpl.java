@@ -57,6 +57,7 @@ public class TestStripedIndexImpl {
   @InjectSoftAssertions SoftAssertions soft;
 
   @Test
+  @SuppressWarnings("ReferenceEquality")
   public void isLoadedReflectedLazy() {
     StoreIndex<CommitOp> reference = KeyIndexTestSet.basicIndexTestSet().keyIndex();
 
@@ -144,6 +145,7 @@ public class TestStripedIndexImpl {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
+  @SuppressWarnings("ReferenceEquality")
   public void isModifiedReflected(boolean lazyStripes) {
     StoreIndex<CommitOp> reference = KeyIndexTestSet.basicIndexTestSet().keyIndex();
 
