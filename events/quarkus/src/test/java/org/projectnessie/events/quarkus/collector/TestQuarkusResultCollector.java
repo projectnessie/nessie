@@ -52,6 +52,10 @@ class TestQuarkusResultCollector {
 
   @Test
   void testAcceptedBySubscribers() {
+    acceptedBySubscribers();
+  }
+
+  void acceptedBySubscribers() {
     when(result.getResultType()).thenReturn(ResultType.COMMIT);
     when(subscriber.accepts(any(EventType.class))).thenReturn(true);
     EventSubscribers subscribers = new EventSubscribers(subscriber);
@@ -69,6 +73,10 @@ class TestQuarkusResultCollector {
 
   @Test
   void testRejectedBySubscribers() {
+    rejectedBySubscribers();
+  }
+
+  void rejectedBySubscribers() {
     when(result.getResultType()).thenReturn(ResultType.COMMIT);
     when(subscriber.accepts(any(EventType.class))).thenReturn(false);
     EventSubscribers subscribers = new EventSubscribers(subscriber);

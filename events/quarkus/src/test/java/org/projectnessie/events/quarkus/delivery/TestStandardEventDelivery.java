@@ -35,28 +35,44 @@ abstract class TestStandardEventDelivery extends TestRetriableEventDelivery<Stan
   @Override
   @Test
   void testDeliverySuccessNoRetry() {
-    super.testDeliverySuccessNoRetry();
+    standardDeliverySuccessNoRetry();
+  }
+
+  void standardDeliverySuccessNoRetry() {
+    deliverySuccessNoRetry();
     verify(delivery).deliverySuccessful(1);
   }
 
   @Override
   @Test
   void testDeliverySuccessWithRetry() {
-    super.testDeliverySuccessWithRetry();
+    standardDeliverySuccessWithRetry();
+  }
+
+  void standardDeliverySuccessWithRetry() {
+    deliverySuccessWithRetry();
     verify(delivery).deliverySuccessful(3);
   }
 
   @Override
   @Test
   void testDeliveryFailureWithRetry() {
-    super.testDeliveryFailureWithRetry();
+    standardDeliveryFailureWithRetry();
+  }
+
+  void standardDeliveryFailureWithRetry() {
+    deliveryFailureWithRetry();
     verify(delivery).deliveryFailed(eq(3), any());
   }
 
   @Override
   @Test
   void testDeliveryRejected() {
-    super.testDeliveryRejected();
+    standardDeliveryRejected();
+  }
+
+  void standardDeliveryRejected() {
+    deliveryRejected();
     verify(delivery).deliveryRejected();
   }
 }

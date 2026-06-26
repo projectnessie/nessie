@@ -61,7 +61,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Override
   @Test
   void testDeliverySuccessNoRetry() {
-    super.testDeliverySuccessNoRetry();
+    deliverySuccessNoRetry();
     verify(delegate).deliverySuccessful(1);
     assertThat(totalTimer(SUCCESSFUL).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(1);
@@ -76,7 +76,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Override
   @Test
   void testDeliverySuccessWithRetry() {
-    super.testDeliverySuccessWithRetry();
+    deliverySuccessWithRetry();
     verify(delegate).deliverySuccessful(3);
     assertThat(totalTimer(SUCCESSFUL).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(1);
@@ -91,7 +91,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Override
   @Test
   void testDeliveryFailureWithRetry() {
-    super.testDeliveryFailureWithRetry();
+    deliveryFailureWithRetry();
     verify(delegate).deliveryFailed(eq(3), any());
     assertThat(totalTimer(FAILED).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(0);
@@ -106,7 +106,7 @@ class TestMetricsEventDelivery extends TestRetriableEventDelivery<MetricsEventDe
   @Override
   @Test
   void testDeliveryRejected() {
-    super.testDeliveryRejected();
+    deliveryRejected();
     verify(delegate).deliveryRejected();
     assertThat(totalTimer(REJECTED).totalTime(TimeUnit.MILLISECONDS)).isEqualTo(10L);
     assertThat(totalTimer(SUCCESSFUL).count()).isEqualTo(0);
