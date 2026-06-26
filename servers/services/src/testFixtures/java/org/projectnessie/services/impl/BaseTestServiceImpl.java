@@ -211,7 +211,7 @@ public abstract class BaseTestServiceImpl {
 
   protected List<Entry> withoutNamespaces(List<Entry> entries) {
     return entries.stream()
-        .filter(e -> e.getType() != Content.Type.NAMESPACE)
+        .filter(e -> !Content.Type.NAMESPACE.equals(e.getType()))
         .collect(Collectors.toList());
   }
 

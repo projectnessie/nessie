@@ -216,7 +216,7 @@ public class CreateMissingNamespaces extends CommittingCommand {
         .flatMap(
             e -> {
               ContentKey key = e.getName();
-              if (e.getType() == NAMESPACE) {
+              if (NAMESPACE.equals(e.getType())) {
                 existing.add(key);
               }
               if (key.getElementCount() == 1) {

@@ -33,7 +33,7 @@ public final class IcebergContentTypeFilter implements ContentTypeFilter {
 
   @Override
   public boolean test(Content.Type type) {
-    return type == ICEBERG_TABLE || type == ICEBERG_VIEW;
+    return ICEBERG_TABLE.equals(type) || ICEBERG_VIEW.equals(type);
   }
 
   @Override

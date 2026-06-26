@@ -472,7 +472,7 @@ class BaseCommitHelper {
                     // drop the conflicting operation on the floor.
                     return ConflictResolution.DROP;
                   }
-                  if (contentTypeForPayload(op.payload()) == NAMESPACE) {
+                  if (NAMESPACE.equals(contentTypeForPayload(op.payload()))) {
                     return ConflictResolution.ADD;
                   }
                 }

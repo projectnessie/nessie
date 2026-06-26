@@ -84,8 +84,8 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
             .stream()
             .filter(
                 e ->
-                    (e.getTo() == null ? e.getFrom() : e.getTo()).getType()
-                        != Content.Type.NAMESPACE)
+                    !Content.Type.NAMESPACE.equals(
+                        (e.getTo() == null ? e.getFrom() : e.getTo()).getType()))
             .map(DiffEntry::getKey)
             .collect(toSet());
 
