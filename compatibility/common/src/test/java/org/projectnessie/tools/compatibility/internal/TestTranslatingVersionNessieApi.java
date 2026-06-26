@@ -96,6 +96,7 @@ class TestTranslatingVersionNessieApi {
 
   @ParameterizedTest
   @MethodSource("translate")
+  @SuppressWarnings("ReferenceEquality")
   void translate(String expectedClassName, Object modelObj) throws Exception {
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 

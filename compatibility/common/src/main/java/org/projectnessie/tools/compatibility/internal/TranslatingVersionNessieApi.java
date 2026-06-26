@@ -251,6 +251,7 @@ final class TranslatingVersionNessieApi implements AutoCloseable {
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ReferenceEquality")
   Object reserialize(Object o) {
     try {
       ClassLoader readClassLoader;
