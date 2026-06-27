@@ -348,6 +348,30 @@ are unavailable.
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.namespace | string | `""` | Optional namespace override for the backend Service. |
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.port | string | `nil` | Optional port override for the backend Service. When empty, the first service port is used. |
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].weight | int | `1` | Optional backend weight. |
+| gc | object | `{"affinity":{},"args":[],"backoffLimit":3,"command":[],"concurrencyPolicy":"Forbid","enabled":false,"env":[],"extraArgs":[],"failedJobsHistoryLimit":1,"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/projectnessie/nessie-gc","tag":""},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"resources":{},"restartPolicy":"Never","schedule":"0 2 * * *","serviceAccountName":"","startingDeadlineSeconds":null,"successfulJobsHistoryLimit":3,"suspend":false,"tolerations":[]}` | Optional Nessie Garbage Collection (GC) CronJob. When enabled, the chart renders a Kubernetes CronJob that runs the Nessie GC tool image on a schedule. The chart only provides the schedulable scaffolding; configure the GC tool's behavior (version store connection, command, options) via `gc.args`, `gc.extraArgs`, and `gc.env`. See https://projectnessie.org/nessie-latest/gc/ for the GC tool documentation. |
+| gc.affinity | object | `{}` | Affinity and anti-affinity for the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity. |
+| gc.args | list | `[]` | Arguments for the GC container, replacing the image's default arguments. Use this to invoke the desired GC subcommand (for example `gc`) together with its options. |
+| gc.backoffLimit | int | `3` | The number of retries before considering the GC job as failed. |
+| gc.command | list | `[]` | The entrypoint command for the GC container. Leave empty to use the image's default entrypoint. |
+| gc.concurrencyPolicy | string | `"Forbid"` | The concurrency policy for the CronJob: Allow, Forbid, or Replace. |
+| gc.enabled | bool | `false` | Whether to enable the Nessie GC CronJob. |
+| gc.env | list | `[]` | Environment variables to set in the GC container. Use this to configure the version store connection and other GC settings. |
+| gc.extraArgs | list | `[]` | Additional arguments appended after `gc.args`. Useful for adding flags without redefining the full argument list. |
+| gc.failedJobsHistoryLimit | int | `1` | The number of failed finished jobs to retain in history. |
+| gc.image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
+| gc.image.repository | string | `"ghcr.io/projectnessie/nessie-gc"` | The GC tool image repository to pull from. |
+| gc.image.tag | string | `""` | Overrides the GC image tag whose default is the chart version. |
+| gc.nodeSelector | object | `{}` | Node labels which must match for the GC pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector. |
+| gc.podAnnotations | object | `{}` | Annotations to add to the GC job pods. |
+| gc.podLabels | object | `{}` | Labels to add to the GC job pods. |
+| gc.resources | object | `{}` | Configures the resource requests and limits for the GC job pods. |
+| gc.restartPolicy | string | `"Never"` | The restart policy for the GC job pods: Never or OnFailure. |
+| gc.schedule | string | `"0 2 * * *"` | The cron schedule for the GC job, in standard cron format. Required when `gc.enabled` is true. |
+| gc.serviceAccountName | string | `""` | The name of an existing service account to use for the GC job pods. Leave empty to use the pod's default service account. |
+| gc.startingDeadlineSeconds | string | `nil` | Optional deadline in seconds for starting the job if it misses its scheduled time. Leave empty for no deadline. |
+| gc.successfulJobsHistoryLimit | int | `3` | The number of successful finished jobs to retain in history. |
+| gc.suspend | bool | `false` | Whether the CronJob is suspended (no new jobs are scheduled while true). |
+| gc.tolerations | list | `[]` | A list of tolerations to apply to the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | image.configDir | string | `"/deployments/config"` | The path to the directory where the application.properties file should be mounted. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |

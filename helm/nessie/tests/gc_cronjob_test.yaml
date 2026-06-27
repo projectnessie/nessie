@@ -1,0 +1,103 @@
+##
+## Copyright (C) 2024 Dremio
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+
+release:
+  name: nessie
+  namespace: nessie-ns
+
+templates:
+  - gc-cronjob.yaml
+
+tests:
+  - it: should not render a CronJob by default (gc disabled)
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should render exactly one CronJob when gc.enabled is true
+    set:
+      gc:
+        enabled: true
+        schedule: "0 3 * * *"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - containsDocument:
+          kind: CronJob
+          apiVersion: batch/v1
+          name: nessie-gc
+          namespace: nessie-ns
+      - equal:
+          path: spec.schedule
+          value: "0 3 * * *"
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: ghcr.io/projectnessie/nessie-gc:0.108.1
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: nessie
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: gc
+  - it: should honor custom image repository and tag
+    set:
+      gc:
+        enabled: true
+        image:
+          repository: example.com/custom-gc
+          tag: "1.2.3"
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: example.com/custom-gc:1.2.3
+  - it: should flow through args, env, resources, concurrencyPolicy and serviceAccountName
+    set:
+      gc:
+        enabled: true
+        concurrencyPolicy: Replace
+        serviceAccountName: nessie-gc-sa
+        args: [ "gc" ]
+        extraArgs: [ "--inmemory" ]
+        env:
+          - name: NESSIE_URI
+            value: http://nessie:19120/api/v2
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Replace
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.serviceAccountName
+          value: nessie-gc-sa
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].args
+          value: [ "gc", "--inmemory" ]
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env[0].name
+          value: NESSIE_URI
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].resources.limits.cpu
+          value: "500m"
+  - it: should fail rendering when gc.enabled is true but schedule is empty
+    set:
+      gc:
+        enabled: true
+        schedule: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: gc.schedule is required when gc.enabled is true

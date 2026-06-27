@@ -1128,3 +1128,61 @@ podDisruptionBudget:
     #  maxUnavailable: 50%
     #  minAvailable: 50%
     #  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Optional Nessie Garbage Collection (GC) CronJob. When enabled, the chart renders a Kubernetes
+# CronJob that runs the Nessie GC tool image on a schedule. The chart only provides the schedulable
+# scaffolding; configure the GC tool's behavior (version store connection, command, options) via
+# `gc.args`, `gc.extraArgs`, and `gc.env`. See https://projectnessie.org/nessie-latest/gc/ for the
+# GC tool documentation.
+gc:
+  # -- Whether to enable the Nessie GC CronJob.
+  enabled: false
+  # -- The cron schedule for the GC job, in standard cron format. Required when `gc.enabled` is true.
+  schedule: "0 2 * * *"
+  image:
+    # -- The GC tool image repository to pull from.
+    repository: ghcr.io/projectnessie/nessie-gc
+    # -- The image pull policy.
+    pullPolicy: IfNotPresent
+    # -- Overrides the GC image tag whose default is the chart version.
+    tag: ""
+  # -- The entrypoint command for the GC container. Leave empty to use the image's default entrypoint.
+  command: []
+  # -- Arguments for the GC container, replacing the image's default arguments. Use this to invoke the
+  # desired GC subcommand (for example `gc`) together with its options.
+  args: []
+  # -- Additional arguments appended after `gc.args`. Useful for adding flags without redefining the
+  # full argument list.
+  extraArgs: []
+  # -- Environment variables to set in the GC container. Use this to configure the version store
+  # connection and other GC settings.
+  env: []
+  # -- Configures the resource requests and limits for the GC job pods.
+  resources: {}
+  # -- The name of an existing service account to use for the GC job pods. Leave empty to use the
+  # pod's default service account.
+  serviceAccountName: ""
+  # -- Annotations to add to the GC job pods.
+  podAnnotations: {}
+  # -- Labels to add to the GC job pods.
+  podLabels: {}
+  # -- Node labels which must match for the GC pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
+  nodeSelector: {}
+  # -- A list of tolerations to apply to the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/.
+  tolerations: []
+  # -- Affinity and anti-affinity for the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity.
+  affinity: {}
+  # -- The concurrency policy for the CronJob: Allow, Forbid, or Replace.
+  concurrencyPolicy: Forbid
+  # -- Whether the CronJob is suspended (no new jobs are scheduled while true).
+  suspend: false
+  # -- Optional deadline in seconds for starting the job if it misses its scheduled time. Leave empty for no deadline.
+  startingDeadlineSeconds: ~
+  # -- The number of successful finished jobs to retain in history.
+  successfulJobsHistoryLimit: 3
+  # -- The number of failed finished jobs to retain in history.
+  failedJobsHistoryLimit: 1
+  # -- The restart policy for the GC job pods: Never or OnFailure.
+  restartPolicy: Never
+  # -- The number of retries before considering the GC job as failed.
+  backoffLimit: 3
