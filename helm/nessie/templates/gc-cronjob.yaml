@@ -47,7 +47,17 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "nessie.selectorLabels" . | nindent 12 }}
+            {{- /*
+              Use a GC-specific app name so these pods do NOT match the Nessie
+              Service selector (nessie.selectorLabels), which would otherwise add
+              the GC pods as Service endpoints even though they don't serve the
+              Nessie API/management ports.
+            */}}
+            helm.sh/chart: {{ include "nessie.chart" . }}
+            app.kubernetes.io/name: {{ include "nessie.name" . }}-gc
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/version: {{ .Chart.Version | quote }}
+            app.kubernetes.io/managed-by: {{ .Release.Service }}
             app.kubernetes.io/component: gc
             {{- with .Values.gc.podLabels }}
             {{- tpl (toYaml .) $ | nindent 12 }}
@@ -65,8 +75,12 @@ spec:
           serviceAccountName: {{ tpl . $ }}
           {{- end }}
           restartPolicy: {{ .Values.gc.restartPolicy }}
+          securityContext:
+            {{- tpl (toYaml .Values.podSecurityContext) . | nindent 12 }}
           containers:
             - name: {{ .Chart.Name }}-gc
+              securityContext:
+                {{- tpl (toYaml .Values.securityContext) . | nindent 16 }}
               image: "{{ tpl .Values.gc.image.repository . }}:{{ tpl .Values.gc.image.tag . | default .Chart.Version }}"
               imagePullPolicy: {{ tpl .Values.gc.image.pullPolicy . }}
               {{- with .Values.gc.command }}

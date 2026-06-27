@@ -51,6 +51,22 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: gc
+      # GC pods must NOT match the Nessie Service selector (name + instance), so
+      # the pod-template name label is GC-specific.
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: nessie-gc
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: gc
+      # GC pods inherit the chart's hardened security contexts so they run in
+      # restricted Pod Security namespaces.
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
   - it: should honor custom image repository and tag
     set:
       gc:
