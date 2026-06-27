@@ -20,10 +20,13 @@
 {{- if not .Values.gc.schedule -}}
 {{- fail "gc.schedule is required when gc.enabled is true" -}}
 {{- end -}}
+{{- if and (not .Values.gc.command) (not .Values.gc.args) (not .Values.gc.extraArgs) -}}
+{{- fail "gc.args (or gc.command/gc.extraArgs) must specify the GC subcommand to run when gc.enabled is true" -}}
+{{- end -}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "nessie.fullname" . }}-gc
+  name: {{ printf "%s-gc" (include "nessie.fullname" .) | trunc 52 | trimSuffix "-" }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nessie.labels" . | nindent 4 }}
@@ -54,7 +57,7 @@ spec:
               Nessie API/management ports.
             */}}
             helm.sh/chart: {{ include "nessie.chart" . }}
-            app.kubernetes.io/name: {{ include "nessie.name" . }}-gc
+            app.kubernetes.io/name: {{ printf "%s-gc" (include "nessie.name" .) | trunc 63 | trimSuffix "-" }}
             app.kubernetes.io/instance: {{ .Release.Name }}
             app.kubernetes.io/version: {{ .Chart.Version | quote }}
             app.kubernetes.io/managed-by: {{ .Release.Service }}

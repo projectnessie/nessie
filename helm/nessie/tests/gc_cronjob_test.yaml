@@ -31,6 +31,7 @@ tests:
       gc:
         enabled: true
         schedule: "0 3 * * *"
+        args: [ "gc" ]
     asserts:
       - hasDocuments:
           count: 1
@@ -42,9 +43,11 @@ tests:
       - equal:
           path: spec.schedule
           value: "0 3 * * *"
-      - equal:
+      # The GC image tag defaults to the chart version, so assert the repository
+      # prefix rather than pinning a specific release number.
+      - matchRegex:
           path: spec.jobTemplate.spec.template.spec.containers[0].image
-          value: ghcr.io/projectnessie/nessie-gc:0.108.1
+          pattern: "^ghcr\\.io/projectnessie/nessie-gc:"
       - equal:
           path: metadata.labels["app.kubernetes.io/name"]
           value: nessie
@@ -71,6 +74,7 @@ tests:
     set:
       gc:
         enabled: true
+        args: [ "gc" ]
         image:
           repository: example.com/custom-gc
           tag: "1.2.3"
@@ -114,6 +118,14 @@ tests:
       gc:
         enabled: true
         schedule: ""
+        args: [ "gc" ]
     asserts:
       - failedTemplate:
           errorMessage: gc.schedule is required when gc.enabled is true
+  - it: should fail rendering when gc.enabled is true but no command or args are provided
+    set:
+      gc:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: gc.args (or gc.command/gc.extraArgs) must specify the GC subcommand to run when gc.enabled is true

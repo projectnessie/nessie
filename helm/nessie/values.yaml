@@ -1149,7 +1149,8 @@ gc:
   # -- The entrypoint command for the GC container. Leave empty to use the image's default entrypoint.
   command: []
   # -- Arguments for the GC container, replacing the image's default arguments. Use this to invoke the
-  # desired GC subcommand (for example `gc`) together with its options.
+  # desired GC subcommand (for example `gc`) together with its options. At least one of `gc.command`,
+  # `gc.args`, or `gc.extraArgs` is required when `gc.enabled` is true.
   args: []
   # -- Additional arguments appended after `gc.args`. Useful for adding flags without redefining the
   # full argument list.
