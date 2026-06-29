@@ -23,11 +23,11 @@ import java.net.URI;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
-import org.projectnessie.server.catalog.GcsEmulatorTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociGcpTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.GcsToken;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
-@WithTestResource(GcsEmulatorTestResourceLifecycleManager.class)
+@WithTestResource(FlociGcpTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 public class ITGcsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 
