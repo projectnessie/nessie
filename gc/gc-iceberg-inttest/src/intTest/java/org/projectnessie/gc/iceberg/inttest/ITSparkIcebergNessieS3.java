@@ -23,23 +23,23 @@ import org.apache.iceberg.CatalogProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
-import org.projectnessie.minio.Minio;
-import org.projectnessie.minio.MinioAccess;
-import org.projectnessie.minio.MinioExtension;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.testing.floci.s3.FlociS3;
+import org.projectnessie.testing.floci.s3.FlociS3Access;
+import org.projectnessie.testing.floci.s3.FlociS3Extension;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
-@ExtendWith(MinioExtension.class)
+@ExtendWith(FlociS3Extension.class)
 public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectStorage {
 
   public static final String S3_BUCKET_URI = "/my/prefix";
   public static final String S3_KEY_PREFIX = S3_BUCKET_URI.substring(1);
 
-  @Minio static MinioAccess minio;
+  @FlociS3 static FlociS3Access flociS3;
 
   @Override
   Storage storage() {
@@ -48,24 +48,24 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
 
   @Override
   protected String warehouseURI() {
-    return minio.s3BucketUri(S3_BUCKET_URI).toString();
+    return flociS3.s3BucketUri(S3_BUCKET_URI).toString();
   }
 
   @Override
   protected Map<String, String> sparkHadoop() {
-    return minio.hadoopConfig();
+    return flociS3.hadoopConfig();
   }
 
   @Override
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
     r.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
-    r.putAll(minio.icebergProperties());
+    r.putAll(flociS3.icebergProperties());
 
     System.setProperty("aws.region", "us-east-1");
-    System.setProperty("aws.s3.endpoint", minio.s3endpoint());
-    System.setProperty("aws.s3.accessKey", minio.accessKey());
-    System.setProperty("aws.s3.secretAccessKey", minio.secretKey());
+    System.setProperty("aws.s3.endpoint", flociS3.s3endpoint());
+    System.setProperty("aws.s3.accessKey", flociS3.accessKey());
+    System.setProperty("aws.s3.secretAccessKey", flociS3.secretKey());
 
     return r;
   }
@@ -73,8 +73,8 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
   @AfterEach
   void purgeS3() {
     ListObjectsV2Request request =
-        ListObjectsV2Request.builder().bucket(minio.bucket()).prefix(S3_KEY_PREFIX).build();
-    minio.s3Client().listObjectsV2Paginator(request).stream()
+        ListObjectsV2Request.builder().bucket(flociS3.bucket()).prefix(S3_KEY_PREFIX).build();
+    flociS3.s3Client().listObjectsV2Paginator(request).stream()
         .map(ListObjectsV2Response::contents)
         .filter(contents -> !contents.isEmpty())
         .map(
@@ -84,11 +84,11 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
                     .collect(Collectors.toList()))
         .forEach(
             keys ->
-                minio
+                flociS3
                     .s3Client()
                     .deleteObjects(
                         DeleteObjectsRequest.builder()
-                            .bucket(minio.bucket())
+                            .bucket(flociS3.bucket())
                             .delete(Delete.builder().objects(keys).build())
                             .build()));
   }
@@ -96,15 +96,15 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
   @Override
   IcebergFiles icebergFiles() {
     Configuration conf = new Configuration();
-    minio.hadoopConfig().forEach(conf::set);
+    flociS3.hadoopConfig().forEach(conf::set);
     return IcebergFiles.builder()
-        .properties(minio.icebergProperties())
+        .properties(flociS3.icebergProperties())
         .hadoopConfiguration(conf)
         .build();
   }
 
   @Override
   protected StorageUri bucketUri() {
-    return StorageUri.of(minio.s3BucketUri(S3_BUCKET_URI));
+    return StorageUri.of(flociS3.s3BucketUri(S3_BUCKET_URI));
   }
 }

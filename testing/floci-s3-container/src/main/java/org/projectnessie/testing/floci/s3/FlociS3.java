@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -24,15 +24,15 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface Minio {
+public @interface FlociS3 {
   /** Optional, use this access key instead of a random one. */
   String accessKey() default DEFAULT;
 
-  /** Optional, use this secert key instead of a random one. */
+  /** Optional, use this secret key instead of a random one. */
   String secretKey() default DEFAULT;
 
   /** Optional, use this bucket instead of a random one. */
   String bucket() default DEFAULT;
 
-  String DEFAULT = "minio_default_value__";
+  String DEFAULT = "floci_s3_default_value__";
 }

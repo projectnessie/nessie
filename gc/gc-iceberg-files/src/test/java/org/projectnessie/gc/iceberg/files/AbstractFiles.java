@@ -93,7 +93,7 @@ public abstract class AbstractFiles {
   /**
    * Creates many files, lists the files, deletes 10% of the created files, lists again.
    *
-   * <p>Minio in the used configuration is not particularly fast - creating 100000 objects with 4
+   * <p>FlociS3 in the used configuration is not particularly fast - creating 100000 objects with 4
    * threads (more crashes w/ timeouts) takes about ~30 minutes (plus ~3 seconds for listing 100000
    * objects, plus ~3 seconds for deleting 10000 objects).
    */

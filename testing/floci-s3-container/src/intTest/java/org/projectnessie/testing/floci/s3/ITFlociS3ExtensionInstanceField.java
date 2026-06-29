@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -25,62 +25,62 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
 
-@ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
+@ExtendWith({FlociS3Extension.class, SoftAssertionsExtension.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class ITMinioExtensionInstanceField {
+public class ITFlociS3ExtensionInstanceField {
   @InjectSoftAssertions private SoftAssertions soft;
 
-  @Minio private MinioAccess minioInstanceField;
+  @FlociS3 private FlociS3Access flociS3InstanceField;
 
-  static MinioAccess memoizedInstanceInstance;
+  static FlociS3Access memoizedInstanceInstance;
 
   @Order(101)
   @Test
   public void fields1() {
-    soft.assertThat(minioInstanceField).isNotNull();
+    soft.assertThat(flociS3InstanceField).isNotNull();
 
-    soft.assertThat(minioInstanceField.bucket()).isNotEmpty();
-    soft.assertThat(minioInstanceField.accessKey()).isNotEmpty();
-    soft.assertThat(minioInstanceField.secretKey()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.bucket()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.accessKey()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.secretKey()).isNotEmpty();
 
-    soft.assertThat(minioInstanceField.s3endpoint()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.s3endpoint()).isNotEmpty();
 
-    soft.assertThat(minioInstanceField.hostPort()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.hostPort()).isNotEmpty();
 
-    memoizedInstanceInstance = minioInstanceField;
+    memoizedInstanceInstance = flociS3InstanceField;
   }
 
   @Order(102)
   @Test
   public void fields2() {
-    soft.assertThat(minioInstanceField).isNotNull();
+    soft.assertThat(flociS3InstanceField).isNotNull();
 
-    soft.assertThat(memoizedInstanceInstance).isNotNull().isNotSameAs(minioInstanceField);
+    soft.assertThat(memoizedInstanceInstance).isNotNull().isNotSameAs(flociS3InstanceField);
     soft.assertThat(((GenericContainer<?>) memoizedInstanceInstance).isRunning()).isFalse();
 
-    soft.assertThat(minioInstanceField.bucket()).isNotEmpty();
-    soft.assertThat(minioInstanceField.accessKey()).isNotEmpty();
-    soft.assertThat(minioInstanceField.secretKey()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.bucket()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.accessKey()).isNotEmpty();
+    soft.assertThat(flociS3InstanceField.secretKey()).isNotEmpty();
 
-    soft.assertThat(minioInstanceField).isNotSameAs(memoizedInstanceInstance);
+    soft.assertThat(flociS3InstanceField).isNotSameAs(memoizedInstanceInstance);
 
-    soft.assertThat(minioInstanceField.bucket())
+    soft.assertThat(flociS3InstanceField.bucket())
         .isNotEmpty()
         .isNotEqualTo(memoizedInstanceInstance.bucket());
 
-    soft.assertThat(minioInstanceField.accessKey())
+    soft.assertThat(flociS3InstanceField.accessKey())
         .isNotEmpty()
         .isNotEqualTo(memoizedInstanceInstance.accessKey());
 
-    soft.assertThat(minioInstanceField.secretKey())
+    soft.assertThat(flociS3InstanceField.secretKey())
         .isNotEmpty()
         .isNotEqualTo(memoizedInstanceInstance.secretKey());
 
-    soft.assertThat(minioInstanceField.s3endpoint())
+    soft.assertThat(flociS3InstanceField.s3endpoint())
         .isNotEmpty()
         .isNotEqualTo(memoizedInstanceInstance.s3endpoint());
 
-    soft.assertThat(minioInstanceField.hostPort())
+    soft.assertThat(flociS3InstanceField.hostPort())
         .isNotEmpty()
         .isNotEqualTo(memoizedInstanceInstance.hostPort());
   }

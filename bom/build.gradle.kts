@@ -51,7 +51,7 @@ dependencies {
     api(project(":nessie-jaxrs-testextension"))
     api(project(":nessie-jaxrs-tests"))
     api(project(":nessie-keycloak-testcontainer"))
-    api(project(":nessie-minio-testcontainer"))
+    api(project(":nessie-floci-s3-testcontainer"))
     api(project(":nessie-nessie-testcontainer"))
     api(project(":nessie-network-tools"))
     api(project(":nessie-object-storage-mock"))

@@ -28,29 +28,29 @@ import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.files.tests.AbstractFiles;
-import org.projectnessie.minio.Minio;
-import org.projectnessie.minio.MinioAccess;
-import org.projectnessie.minio.MinioExtension;
 import org.projectnessie.storage.uri.StorageUri;
+import org.projectnessie.testing.floci.s3.FlociS3;
+import org.projectnessie.testing.floci.s3.FlociS3Access;
+import org.projectnessie.testing.floci.s3.FlociS3Extension;
 import software.amazon.awssdk.core.sync.RequestBody;
 
-@ExtendWith(MinioExtension.class)
+@ExtendWith(FlociS3Extension.class)
 public class ITIcebergS3Files extends AbstractFiles {
 
   public static final String BUCKET_URI_PREFIX = "/path/";
-  private MinioAccess minio;
+  private FlociS3Access flociS3;
   private IcebergFiles s3;
   private StorageUri baseUri;
 
   @BeforeEach
-  void setUp(@Minio MinioAccess minio) {
-    this.minio = minio;
-    this.baseUri = StorageUri.of(minio.s3BucketUri(BUCKET_URI_PREFIX));
+  void setUp(@FlociS3 FlociS3Access flociS3) {
+    this.flociS3 = flociS3;
+    this.baseUri = StorageUri.of(flociS3.s3BucketUri(BUCKET_URI_PREFIX));
     Configuration config = new Configuration();
-    minio.hadoopConfig().forEach(config::set);
+    flociS3.hadoopConfig().forEach(config::set);
     this.s3 =
         IcebergFiles.builder()
-            .properties(minio.icebergProperties())
+            .properties(flociS3.icebergProperties())
             .hadoopConfiguration(config)
             .build();
   }
@@ -81,7 +81,7 @@ public class ITIcebergS3Files extends AbstractFiles {
                   IntStream.range(0, numFiles)
                       .mapToObj(AbstractFiles::dirAndFilename)
                       .parallel()
-                      .peek(p -> minio.s3put(BUCKET_URI_PREFIX + p, RequestBody.empty()))
+                      .peek(p -> flociS3.s3put(BUCKET_URI_PREFIX + p, RequestBody.empty()))
                       .map(p -> baseUri.resolve(p))
                       .map(p -> FileReference.of(baseUri.relativize(p), baseUri, -1L))
                       .collect(Collectors.toList())));
