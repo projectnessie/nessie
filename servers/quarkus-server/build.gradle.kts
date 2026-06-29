@@ -211,7 +211,6 @@ dependencies {
   intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
-  intTestImplementation(libs.lowkey.vault.testcontainers)
 
   intTestImplementation(platform(libs.awssdk.bom))
   intTestImplementation("software.amazon.awssdk:s3")
