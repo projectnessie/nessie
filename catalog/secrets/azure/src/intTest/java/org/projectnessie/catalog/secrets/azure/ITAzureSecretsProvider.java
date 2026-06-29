@@ -20,11 +20,19 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
+import com.azure.core.credential.AccessToken;
+import com.azure.core.http.HttpPipelineCallContext;
+import com.azure.core.http.HttpPipelineNextPolicy;
+import com.azure.core.http.HttpResponse;
+import com.azure.core.http.policy.HttpPipelinePolicy;
 import com.azure.security.keyvault.secrets.SecretAsyncClient;
-import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainer;
-import com.github.nagyesta.lowkeyvault.testcontainers.LowkeyVaultContainerBuilder;
+import com.azure.security.keyvault.secrets.SecretClientBuilder;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -38,33 +46,36 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.core.publisher.Mono;
 
 @Testcontainers
 @ExtendWith(SoftAssertionsExtension.class)
 public class ITAzureSecretsProvider {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITAzureSecretsProvider.class);
+  private static final int FLOCI_AZ_PORT = 4577;
+  private static final String ACCOUNT = "devstoreaccount1";
 
   @InjectSoftAssertions SoftAssertions soft;
 
   @Container
-  static LowkeyVaultContainer lowkeyVault =
-      LowkeyVaultContainerBuilder.lowkeyVault(
+  static GenericContainer<?> flociAz =
+      new GenericContainer<>(
               ContainerSpecHelper.builder()
-                  .name("lowkey-vault")
+                  .name("floci-az")
                   .containerClass(ITAzureSecretsProvider.class)
                   .build()
-                  .dockerImageName(null)
-                  .asCompatibleSubstituteFor("nagyesta/lowkey-vault"))
-          .build()
-          .withLogConsumer(
-              c -> LOGGER.info("[LOWKEY-VAULT] {}", c.getUtf8StringWithoutLineEnding()));
+                  .dockerImageName(null))
+          .withExposedPorts(FLOCI_AZ_PORT)
+          .waitingFor(Wait.forHttp("/_floci/health").forPort(FLOCI_AZ_PORT))
+          .withLogConsumer(c -> LOGGER.info("[FLOCI-AZ] {}", c.getUtf8StringWithoutLineEnding()));
 
   @Test
   public void azureSecrets() {
-    final SecretAsyncClient client =
-        lowkeyVault.getClientFactory().getSecretClientBuilderForDefaultVault().buildAsyncClient();
+    final SecretAsyncClient client = secretClient();
 
     String instantStr = "2024-06-05T20:38:16Z";
     Instant instant = Instant.parse(instantStr);
@@ -108,5 +119,43 @@ public class ITAzureSecretsProvider {
         .isEmpty();
     soft.assertThat(secretsProvider.getSecret("nope", SecretType.BASIC, BasicCredentials.class))
         .isEmpty();
+  }
+
+  private static SecretAsyncClient secretClient() {
+    String vaultUrl =
+        "https://"
+            + flociAz.getHost()
+            + ':'
+            + flociAz.getMappedPort(FLOCI_AZ_PORT)
+            + '/'
+            + ACCOUNT
+            + "-keyvault";
+    return new SecretClientBuilder()
+        .vaultUrl(vaultUrl)
+        .credential(
+            request ->
+                Mono.just(
+                    new AccessToken("fake-token", OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))))
+        .addPolicy(new ForceHttpPolicy())
+        .disableChallengeResourceVerification()
+        .buildAsyncClient();
+  }
+
+  static final class ForceHttpPolicy implements HttpPipelinePolicy {
+    @Override
+    public Mono<HttpResponse> process(
+        HttpPipelineCallContext context, HttpPipelineNextPolicy next) {
+      URL url = context.getHttpRequest().getUrl();
+      if ("https".equals(url.getProtocol())) {
+        try {
+          context
+              .getHttpRequest()
+              .setUrl(new URL("http", url.getHost(), url.getPort(), url.getFile()));
+        } catch (MalformedURLException e) {
+          return Mono.error(e);
+        }
+      }
+      return next.process();
+    }
   }
 }

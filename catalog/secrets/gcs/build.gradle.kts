@@ -37,4 +37,11 @@ dependencies {
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
+
+  intTestCompileOnly(project(":nessie-immutables"))
+  intTestImplementation(platform(libs.testcontainers.bom))
+  intTestImplementation("org.testcontainers:testcontainers")
+  intTestImplementation("org.testcontainers:testcontainers-junit-jupiter")
+  intTestImplementation(project(":nessie-container-spec-helper"))
+  intTestRuntimeOnly(libs.logback.classic)
 }
