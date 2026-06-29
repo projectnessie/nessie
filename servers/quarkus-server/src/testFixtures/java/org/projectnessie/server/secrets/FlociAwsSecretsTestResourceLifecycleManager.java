@@ -17,6 +17,7 @@ package org.projectnessie.server.secrets;
 
 import static java.lang.String.format;
 
+import io.floci.testcontainers.FlociContainer;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager.TestInjector.AnnotatedAndMatchesType;
 import java.lang.annotation.ElementType;
@@ -34,7 +35,6 @@ import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -42,13 +42,14 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.CreateSecretRequest;
 
-public class LocalstackTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
+public class FlociAwsSecretsTestResourceLifecycleManager
+    implements QuarkusTestResourceLifecycleManager {
   private static final Logger LOGGER =
-      LoggerFactory.getLogger(LocalstackTestResourceLifecycleManager.class);
+      LoggerFactory.getLogger(FlociAwsSecretsTestResourceLifecycleManager.class);
 
   public static final String NESSIE_SECRETS_PATH = "nessie.secrets";
 
-  private volatile LocalStackContainer localstack;
+  private volatile FlociContainer floci;
   private volatile SecretsManagerClient secretsManagerClient;
 
   @Target(ElementType.FIELD)
@@ -69,43 +70,40 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
 
   @Override
   public Map<String, String> start() {
-    localstack =
-        new LocalStackContainer(
+    floci =
+        new FlociContainer(
                 ContainerSpecHelper.builder()
-                    .name("localstack")
-                    .containerClass(LocalstackTestResourceLifecycleManager.class)
+                    .name("floci")
+                    .containerClass(FlociAwsSecretsTestResourceLifecycleManager.class)
                     .build()
                     .dockerImageName(null)
-                    .asCompatibleSubstituteFor("localstack/localstack"))
-            .withLogConsumer(
-                c -> LOGGER.info("[LOCALSTACK] {}", c.getUtf8StringWithoutLineEnding()))
-            .withServices("secretsmanager");
+                    .asCompatibleSubstituteFor("floci/floci"))
+            .withLogConsumer(c -> LOGGER.info("[FLOCI] {}", c.getUtf8StringWithoutLineEnding()));
 
-    localstack.start();
+    floci.start();
 
-    URI secretsManagerEndpoint = localstack.getEndpoint();
+    URI secretsManagerEndpoint = URI.create(floci.getEndpoint());
 
     try {
       secretsManagerClient =
           SecretsManagerClient.builder()
               .endpointOverride(secretsManagerEndpoint)
-              .region(Region.of(localstack.getRegion()))
+              .region(Region.of(floci.getRegion()))
               .credentialsProvider(
                   StaticCredentialsProvider.create(
-                      AwsBasicCredentials.create(
-                          localstack.getAccessKey(), localstack.getSecretKey())))
+                      AwsBasicCredentials.create(floci.getAccessKey(), floci.getSecretKey())))
               .build();
 
       return ImmutableMap.<String, String>builder()
           .put("quarkus.secretsmanager.endpoint-override", secretsManagerEndpoint.toString())
-          .put("quarkus.secretsmanager.aws.region", localstack.getRegion())
+          .put("quarkus.secretsmanager.aws.region", floci.getRegion())
           .put("quarkus.secretsmanager.aws.credentials.type", "static")
           .put(
               "quarkus.secretsmanager.aws.credentials.static-provider.access-key-id",
-              localstack.getAccessKey())
+              floci.getAccessKey())
           .put(
               "quarkus.secretsmanager.aws.credentials.static-provider.secret-access-key",
-              localstack.getSecretKey())
+              floci.getSecretKey())
           .put("nessie.secrets.type", ExternalSecretsManagerType.AMAZON)
           .put("nessie.secrets.path", NESSIE_SECRETS_PATH)
           .build();
@@ -129,11 +127,11 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
     } finally {
       secretsManagerClient = null;
 
-      if (localstack != null) {
+      if (floci != null) {
         try {
-          localstack.stop();
+          floci.stop();
         } finally {
-          localstack = null;
+          floci = null;
         }
       }
     }
@@ -169,16 +167,16 @@ public class LocalstackTestResourceLifecycleManager implements QuarkusTestResour
   @Override
   public void inject(TestInjector testInjector) {
     testInjector.injectIntoFields(
-        localstack.getEndpoint(),
+        URI.create(floci.getEndpoint()),
         new AnnotatedAndMatchesType(AwsSecretsManagerEndpoint.class, URI.class));
     testInjector.injectIntoFields(
-        localstack.getRegion(),
+        floci.getRegion(),
         new AnnotatedAndMatchesType(AwsSecretsManagerRegion.class, String.class));
     testInjector.injectIntoFields(
-        localstack.getAccessKey(),
+        floci.getAccessKey(),
         new AnnotatedAndMatchesType(AwsSecretsManagerAccessKey.class, String.class));
     testInjector.injectIntoFields(
-        localstack.getSecretKey(),
+        floci.getSecretKey(),
         new AnnotatedAndMatchesType(AwsSecretsManagerSecretAccessKey.class, String.class));
     testInjector.injectIntoFields(
         (SecretsUpdateHandler) this::updateSecrets,

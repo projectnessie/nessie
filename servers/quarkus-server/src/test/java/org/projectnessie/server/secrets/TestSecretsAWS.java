@@ -24,7 +24,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 @QuarkusTest // because the tests need @Inject'd fields
-@WithTestResource(LocalstackTestResourceLifecycleManager.class)
+@WithTestResource(FlociAwsSecretsTestResourceLifecycleManager.class)
 @DisabledOnOs(OS.MAC) // test doesn't work on MacOS
 public class TestSecretsAWS extends AbstractSecretsSuppliers {
   @Override
