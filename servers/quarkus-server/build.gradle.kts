@@ -146,9 +146,9 @@ dependencies {
   testFixturesApi(testFixtures(project(":nessie-quarkus-common")))
 
   testFixturesApi(platform(libs.testcontainers.bom))
+  testFixturesApi(libs.floci.testcontainers)
   testFixturesApi("org.testcontainers:testcontainers")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
-  testFixturesApi("org.testcontainers:testcontainers-localstack")
   testFixturesApi("org.testcontainers:testcontainers-vault")
   testFixturesApi(project(":nessie-azurite-testcontainer"))
   testFixturesApi(project(":nessie-gcs-testcontainer"))
