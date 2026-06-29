@@ -49,7 +49,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg-mock"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-object-storage-mock"))
-  implementation(nessieProject("nessie-minio-testcontainer"))
+  implementation(nessieProject("nessie-floci-s3-testcontainer"))
 
   implementation(platform(libs.jackson.bom))
 

@@ -19,11 +19,11 @@ import io.quarkus.test.common.ResourceArg;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
 
 @WithTestResource(
     initArgs = {@ResourceArg(name = "scheme", value = "s3n")},
-    value = MinioTestResourceLifecycleManager.class)
+    value = FlociS3TestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3NAssumeRoleIceberg.Profile.class)
 public class ITS3NAssumeRoleIceberg extends AbstractAssumeRoleIceberg {

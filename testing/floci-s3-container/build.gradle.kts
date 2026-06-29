@@ -16,12 +16,13 @@
 
 plugins { id("nessie-conventions-java17") }
 
-publishingHelper { mavenName = "Nessie - Minio testcontainer" }
+publishingHelper { mavenName = "Nessie - FlociS3 testcontainer" }
 
-description = "JUnit extension providing a Minio instance."
+description = "JUnit extension providing a FlociS3 instance."
 
 dependencies {
   implementation(platform(libs.testcontainers.bom))
+  implementation(libs.floci.testcontainers)
   implementation("org.testcontainers:testcontainers")
   implementation(project(":nessie-container-spec-helper"))
   compileOnly(project(":nessie-immutables-std"))

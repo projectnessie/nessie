@@ -19,9 +19,9 @@ import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.projectnessie.server.catalog.AbstractTrino;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
 
-@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(FlociS3TestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITTrinoS3.Profile.class)
 public class ITTrinoS3 extends AbstractTrino {

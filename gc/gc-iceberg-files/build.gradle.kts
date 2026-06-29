@@ -57,7 +57,7 @@ dependencies {
 
   testFixturesApi(nessieProject("nessie-gc-base-tests"))
   testFixturesApi(nessieProject("nessie-object-storage-mock"))
-  testFixturesApi(nessieProject("nessie-minio-testcontainer"))
+  testFixturesApi(nessieProject("nessie-floci-s3-testcontainer"))
 
   testFixturesRuntimeOnly(libs.logback.classic)
 

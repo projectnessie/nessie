@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled;
@@ -36,15 +36,15 @@ import org.junit.platform.commons.util.ExceptionUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 /**
- * JUnit extension that provides a Minio container configured with a single bucket.
+ * JUnit extension that provides a FlociS3 container configured with a single bucket.
  *
- * <p>Provides instances of {@link MinioAccess} via instance or static fields or parameters
- * annotated with {@link Minio}.
+ * <p>Provides instances of {@link FlociS3Access} via instance or static fields or parameters
+ * annotated with {@link FlociS3}.
  */
-public class MinioExtension
+public class FlociS3Extension
     implements BeforeAllCallback, BeforeEachCallback, ParameterResolver, ExecutionCondition {
   private static final ExtensionContext.Namespace NAMESPACE =
-      ExtensionContext.Namespace.create(MinioExtension.class);
+      ExtensionContext.Namespace.create(FlociS3Extension.class);
 
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
@@ -53,7 +53,7 @@ public class MinioExtension
     }
     if (OS.current() == OS.MAC
         && System.getenv("CI_MAC") == null
-        && MinioContainer.canRunOnMacOs()) {
+        && FlociS3Container.canRunOnMacOs()) {
       // Disable tests on GitHub Actions
       return enabled("Running on macOS locally");
     }
@@ -64,7 +64,7 @@ public class MinioExtension
   public void beforeAll(ExtensionContext context) {
     Class<?> testClass = context.getRequiredTestClass();
 
-    findAnnotatedFields(testClass, Minio.class, ReflectionUtils::isStatic)
+    findAnnotatedFields(testClass, FlociS3.class, ReflectionUtils::isStatic)
         .forEach(field -> injectField(context, field));
   }
 
@@ -72,20 +72,21 @@ public class MinioExtension
   public void beforeEach(ExtensionContext context) {
     Class<?> testClass = context.getRequiredTestClass();
 
-    findAnnotatedFields(testClass, Minio.class, ReflectionUtils::isNotStatic)
+    findAnnotatedFields(testClass, FlociS3.class, ReflectionUtils::isNotStatic)
         .forEach(field -> injectField(context, field));
   }
 
   private void injectField(ExtensionContext context, Field field) {
     try {
-      Minio minio =
-          AnnotationUtils.findAnnotation(field, Minio.class)
+      FlociS3 flociS3 =
+          AnnotationUtils.findAnnotation(field, FlociS3.class)
               .orElseThrow(IllegalStateException::new);
 
-      MinioAccess container =
+      FlociS3Access container =
           context
               .getStore(NAMESPACE)
-              .computeIfAbsent(field.toString(), x -> createContainer(minio), MinioAccess.class);
+              .computeIfAbsent(
+                  field.toString(), x -> createContainer(flociS3), FlociS3Access.class);
 
       makeAccessible(field).set(context.getTestInstance().orElse(null), container);
     } catch (Throwable t) {
@@ -97,10 +98,10 @@ public class MinioExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    if (parameterContext.findAnnotation(Minio.class).isEmpty()) {
+    if (parameterContext.findAnnotation(FlociS3.class).isEmpty()) {
       return false;
     }
-    return parameterContext.getParameter().getType().isAssignableFrom(MinioAccess.class);
+    return parameterContext.getParameter().getType().isAssignableFrom(FlociS3Access.class);
   }
 
   @Override
@@ -110,25 +111,25 @@ public class MinioExtension
     return extensionContext
         .getStore(NAMESPACE)
         .computeIfAbsent(
-            MinioExtension.class.getName() + '#' + parameterContext.getParameter().getName(),
+            FlociS3Extension.class.getName() + '#' + parameterContext.getParameter().getName(),
             k -> {
-              Minio minio = parameterContext.findAnnotation(Minio.class).get();
-              return createContainer(minio);
+              FlociS3 flociS3 = parameterContext.findAnnotation(FlociS3.class).get();
+              return createContainer(flociS3);
             },
-            MinioAccess.class);
+            FlociS3Access.class);
   }
 
-  private MinioAccess createContainer(Minio minio) {
-    String accessKey = nonDefault(minio.accessKey());
-    String secretKey = nonDefault(minio.secretKey());
-    String bucket = nonDefault(minio.bucket());
-    MinioContainer container =
-        new MinioContainer(null, accessKey, secretKey, bucket).withStartupAttempts(5);
+  private FlociS3Access createContainer(FlociS3 flociS3) {
+    String accessKey = nonDefault(flociS3.accessKey());
+    String secretKey = nonDefault(flociS3.secretKey());
+    String bucket = nonDefault(flociS3.bucket());
+    FlociS3Container container =
+        new FlociS3Container(null, accessKey, secretKey, bucket).withStartupAttempts(5);
     container.start();
     return container;
   }
 
   private static String nonDefault(String s) {
-    return s.equals(Minio.DEFAULT) ? null : s;
+    return s.equals(FlociS3.DEFAULT) ? null : s;
   }
 }
