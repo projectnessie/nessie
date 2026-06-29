@@ -1,0 +1,176 @@
+/*
+ * Copyright (C) 2022 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.projectnessie.testing.floci.az;
+
+import com.azure.storage.common.StorageSharedKeyCredential;
+import com.azure.storage.file.datalake.DataLakeServiceClient;
+import com.azure.storage.file.datalake.DataLakeServiceClientBuilder;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.Base58;
+
+public class FlociAzContainer extends GenericContainer<FlociAzContainer>
+    implements FlociAzAccess, AutoCloseable {
+
+  private static final int DEFAULT_PORT = 4577;
+  private static final String DEFAULT_ACCOUNT = "devstoreaccount1";
+  private static final String DEFAULT_ACCOUNT_KEY =
+      "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMh0==";
+
+  private final String storageContainer;
+  private final String account;
+  private final String accountFq;
+  private final String secret;
+  private final String secretBase64;
+
+  public FlociAzContainer() {
+    this(null, null);
+  }
+
+  public FlociAzContainer(String image, String storageContainer) {
+    super(
+        ContainerSpecHelper.builder()
+            .name("floci-az")
+            .containerClass(FlociAzContainer.class)
+            .build()
+            .dockerImageName(image));
+    if (storageContainer == null) {
+      storageContainer = randomString("filesystem");
+    }
+    this.storageContainer = storageContainer;
+    this.account = DEFAULT_ACCOUNT;
+    this.accountFq = this.account + ".dfs.core.windows.net";
+    this.secret = DEFAULT_ACCOUNT_KEY;
+    this.secretBase64 = DEFAULT_ACCOUNT_KEY;
+
+    this.addExposedPort(DEFAULT_PORT);
+    this.setWaitStrategy(Wait.forHttp("/_floci/health").forPort(DEFAULT_PORT));
+  }
+
+  @Override
+  public void start() {
+    super.start();
+
+    createStorageContainer();
+  }
+
+  @Override
+  public void createStorageContainer() {
+    serviceClient().createFileSystem(storageContainer);
+  }
+
+  @Override
+  public void deleteStorageContainer() {
+    serviceClient().deleteFileSystem(storageContainer);
+  }
+
+  @Override
+  public DataLakeServiceClient serviceClient() {
+    return new DataLakeServiceClientBuilder()
+        .endpoint(endpoint())
+        .credential(credential())
+        .buildClient();
+  }
+
+  @Override
+  public String storageContainer() {
+    return storageContainer;
+  }
+
+  @Override
+  public String location(String path) {
+    if (path.startsWith("/")) {
+      path = path.substring(1);
+    }
+    return String.format("abfs://%s@%s/%s", storageContainer, accountFq, path);
+  }
+
+  @Override
+  public String endpoint() {
+    return String.format("http://%s/%s", endpointHostPort(), account);
+  }
+
+  @Override
+  public String endpointHostPort() {
+    return String.format("%s:%d", getHost(), getMappedPort(DEFAULT_PORT));
+  }
+
+  @Override
+  public StorageSharedKeyCredential credential() {
+    return new StorageSharedKeyCredential(account, secretBase64);
+  }
+
+  @Override
+  public String account() {
+    return account;
+  }
+
+  @Override
+  public String accountFq() {
+    return accountFq;
+  }
+
+  @Override
+  public String secret() {
+    return secret;
+  }
+
+  @Override
+  public String secretBase64() {
+    return secretBase64;
+  }
+
+  @Override
+  public Map<String, String> icebergProperties() {
+    Map<String, String> r = new HashMap<>();
+    r.put("io-impl", "org.apache.iceberg.azure.adlsv2.ADLSFileIO");
+    r.put("adls.connection-string." + accountFq, endpoint());
+    r.put("adls.auth.shared-key.account.name", account);
+    r.put("adls.auth.shared-key.account.key", secretBase64);
+    return r;
+  }
+
+  @Override
+  public Map<String, String> hadoopConfig() {
+    Map<String, String> r = new HashMap<>();
+
+    r.put("fs.azure.impl", "org.apache.hadoop.fs.azure.AzureNativeFileSystemStore");
+    r.put("fs.AbstractFileSystem.azure.impl", "org.apache.hadoop.fs.azurebfs.Abfs");
+
+    r.put("fs.azure.always.use.https", "false");
+    r.put("fs.azure.abfs.endpoint", endpointHostPort());
+
+    r.put("fs.azure.test.emulator", "true");
+    r.put("fs.azure.storage.emulator.account.name", account);
+    r.put("fs.azure.account.auth.type", "SharedKey");
+    r.put("fs.azure.account.key." + accountFq, secretBase64);
+
+    return r;
+  }
+
+  private static String randomString(String prefix) {
+    return prefix + "-" + Base58.randomString(6).toLowerCase(Locale.ROOT);
+  }
+
+  @Override
+  public void close() {
+    stop();
+  }
+}
