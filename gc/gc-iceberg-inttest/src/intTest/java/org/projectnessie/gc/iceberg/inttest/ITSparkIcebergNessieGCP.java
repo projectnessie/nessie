@@ -21,16 +21,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.storage.uri.StorageUri;
-import org.projectnessie.testing.gcs.Gcs;
-import org.projectnessie.testing.gcs.GcsAccess;
-import org.projectnessie.testing.gcs.GcsExtension;
+import org.projectnessie.testing.floci.gcp.FlociGcp;
+import org.projectnessie.testing.floci.gcp.FlociGcpAccess;
+import org.projectnessie.testing.floci.gcp.FlociGcpExtension;
 
-@ExtendWith(GcsExtension.class)
+@ExtendWith(FlociGcpExtension.class)
 public class ITSparkIcebergNessieGCP extends AbstractITSparkIcebergNessieObjectStorage {
 
   public static final String BUCKET_URI = "/my/prefix";
 
-  private static @Gcs GcsAccess gcsAccess;
+  private static @FlociGcp FlociGcpAccess gcsAccess;
 
   @Override
   Storage storage() {
