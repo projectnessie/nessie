@@ -108,7 +108,7 @@ public class NessieJaxRsExtension extends NessieClientResolver
     // Note: we also use EnvHolder.class as a key to the map of stored values.
     extensionContext
         .getStore(NAMESPACE)
-        .getOrComputeIfAbsent(
+        .computeIfAbsent(
             EnvHolder.class,
             key -> {
               try {
