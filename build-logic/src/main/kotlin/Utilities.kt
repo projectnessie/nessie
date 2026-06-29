@@ -277,7 +277,11 @@ fun DependencyHandlerScope.nessieProject(
     project(":$artifactId", configuration)
   } catch (_: UnknownProjectException) {
     val groupId = NessieProjects.groupIdForArtifact(artifactId)
-    create(groupId, artifactId, configuration = configuration)
+    create("$groupId:$artifactId").also {
+      if (configuration != null) {
+        (it as ModuleDependency).targetConfiguration = configuration
+      }
+    } as ModuleDependency
   }
 }
 

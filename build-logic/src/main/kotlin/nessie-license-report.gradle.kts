@@ -17,6 +17,7 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import com.github.jk1.license.render.InventoryHtmlReportRenderer
 import com.github.jk1.license.render.JsonReportRenderer
+import com.github.jk1.license.render.ReportRenderer
 import com.github.jk1.license.render.XmlReportRenderer
 import java.util.*
 
@@ -36,7 +37,11 @@ afterEvaluate {
       )
     allowedLicensesFile = rootProject.projectDir.resolve("gradle/license/allowed-licenses.json")
     renderers =
-      arrayOf(InventoryHtmlReportRenderer("index.html"), JsonReportRenderer(), XmlReportRenderer())
+      arrayOf<ReportRenderer>(
+        InventoryHtmlReportRenderer("index.html"),
+        JsonReportRenderer(),
+        XmlReportRenderer(),
+      )
     excludeBoms = true
     excludes =
       arrayOf(

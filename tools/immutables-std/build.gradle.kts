@@ -25,5 +25,5 @@ dependencies {
   api(libs.immutables.value.annotations)
 
   processor(libs.immutables.value.processor)
-  processor(project)
+  processor(project(":nessie-immutables-std"))
 }
