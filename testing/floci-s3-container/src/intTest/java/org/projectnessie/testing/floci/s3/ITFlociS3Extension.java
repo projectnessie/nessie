@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -29,45 +29,45 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-@ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
-public class ITMinioExtension {
+@ExtendWith({FlociS3Extension.class, SoftAssertionsExtension.class})
+public class ITFlociS3Extension {
   @InjectSoftAssertions private SoftAssertions soft;
 
   @Test
   public void smokeTest(
-      @Minio(accessKey = "myaccesskey", secretKey = "mysecretkey", bucket = "mybucket")
-          MinioAccess minio,
+      @FlociS3(accessKey = "myaccesskey", secretKey = "mysecretkey", bucket = "mybucket")
+          FlociS3Access flociS3,
       @TempDir Path dir)
       throws Exception {
-    soft.assertThat(minio.hostPort()).isNotEmpty();
-    soft.assertThat(minio.s3endpoint()).isNotEmpty().startsWith("http");
+    soft.assertThat(flociS3.hostPort()).isNotEmpty();
+    soft.assertThat(flociS3.s3endpoint()).isNotEmpty().startsWith("http");
 
-    soft.assertThat(minio.bucket()).isNotEmpty().isEqualTo("mybucket");
-    soft.assertThat(minio.accessKey()).isNotEmpty().isEqualTo("myaccesskey");
-    soft.assertThat(minio.secretKey()).isNotEmpty().isEqualTo("mysecretkey");
+    soft.assertThat(flociS3.bucket()).isNotEmpty().isEqualTo("mybucket");
+    soft.assertThat(flociS3.accessKey()).isNotEmpty().isEqualTo("myaccesskey");
+    soft.assertThat(flociS3.secretKey()).isNotEmpty().isEqualTo("mysecretkey");
 
-    soft.assertThat(minio.icebergProperties())
-        .containsEntry("s3.access-key-id", minio.accessKey())
-        .containsEntry("s3.secret-access-key", minio.secretKey())
-        .containsEntry("s3.endpoint", minio.s3endpoint())
+    soft.assertThat(flociS3.icebergProperties())
+        .containsEntry("s3.access-key-id", flociS3.accessKey())
+        .containsEntry("s3.secret-access-key", flociS3.secretKey())
+        .containsEntry("s3.endpoint", flociS3.s3endpoint())
         .containsKey("http-client.type");
 
-    soft.assertThat(minio.hadoopConfig())
+    soft.assertThat(flociS3.hadoopConfig())
         .isNotNull()
-        .containsEntry("fs.s3a.access.key", minio.accessKey())
-        .containsEntry("fs.s3a.secret.key", minio.secretKey())
-        .containsEntry("fs.s3a.endpoint", minio.s3endpoint());
+        .containsEntry("fs.s3a.access.key", flociS3.accessKey())
+        .containsEntry("fs.s3a.secret.key", flociS3.secretKey())
+        .containsEntry("fs.s3a.endpoint", flociS3.s3endpoint());
 
-    minio.s3put("some-key", RequestBody.fromString("hello world"));
+    flociS3.s3put("some-key", RequestBody.fromString("hello world"));
 
-    soft.assertThat(minio.s3BucketUri("some-key"))
-        .isEqualTo(URI.create("s3://" + minio.bucket() + "/some-key"));
+    soft.assertThat(flociS3.s3BucketUri("some-key"))
+        .isEqualTo(URI.create("s3://" + flociS3.bucket() + "/some-key"));
 
-    try (S3Client client = minio.s3Client()) {
+    try (S3Client client = flociS3.s3Client()) {
       soft.assertThat(client).isNotNull();
 
       try (ResponseInputStream<GetObjectResponse> getObject =
-          client.getObject(b -> b.bucket(minio.bucket()).key("some-key"))) {
+          client.getObject(b -> b.bucket(flociS3.bucket()).key("some-key"))) {
         GetObjectResponse getResponse = getObject.response();
         soft.assertThat(getResponse).isNotNull();
         soft.assertThat(getResponse.contentType()).startsWith("text/plain; charset");

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -21,12 +21,12 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
-public class ITMinioExtensionParameters {
+@ExtendWith({FlociS3Extension.class, SoftAssertionsExtension.class})
+public class ITFlociS3ExtensionParameters {
   @InjectSoftAssertions private SoftAssertions soft;
 
   @Test
-  public void fields2(@Minio MinioAccess param1, @Minio MinioAccess param2) {
+  public void fields2(@FlociS3 FlociS3Access param1, @FlociS3 FlociS3Access param2) {
     soft.assertThat(param1).isNotNull();
     soft.assertThat(param2).isNotNull();
     soft.assertThat(param1).isNotSameAs(param2);

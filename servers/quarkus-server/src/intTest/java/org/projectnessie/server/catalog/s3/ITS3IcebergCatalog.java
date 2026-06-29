@@ -28,27 +28,27 @@ import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
+import org.projectnessie.testing.floci.s3.FlociS3Container;
 
-@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(FlociS3TestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 public class ITS3IcebergCatalog extends AbstractIcebergCatalogIntTests {
 
   @SuppressWarnings("unused")
-  // Injected by MinioTestResourceLifecycleManager
-  private MinioContainer minio;
+  // Injected by FlociS3TestResourceLifecycleManager
+  private FlociS3Container flociS3;
 
   @Override
   protected Map<String, String> catalogOptions() {
     return singletonMap(
-        CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri(scheme(), "").toString());
+        CatalogProperties.WAREHOUSE_LOCATION, flociS3.s3BucketUri(scheme(), "").toString());
   }
 
   @Override
   protected String temporaryLocation() {
-    return minio.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
+    return flociS3.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
   }
 
   @Override
@@ -59,8 +59,8 @@ public class ITS3IcebergCatalog extends AbstractIcebergCatalogIntTests {
             .getOrDefault(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.io.ResolvingFileIO");
     Map<String, String> props = new HashMap<>(io.properties());
     props.put(S3FileIOProperties.REMOTE_SIGNING_ENABLED, "false");
-    props.put(S3FileIOProperties.ACCESS_KEY_ID, minio.accessKey());
-    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, minio.secretKey());
+    props.put(S3FileIOProperties.ACCESS_KEY_ID, flociS3.accessKey());
+    props.put(S3FileIOProperties.SECRET_ACCESS_KEY, flociS3.secretKey());
     return CatalogUtil.loadFileIO(ioImpl, props, new Configuration(false));
   }
 

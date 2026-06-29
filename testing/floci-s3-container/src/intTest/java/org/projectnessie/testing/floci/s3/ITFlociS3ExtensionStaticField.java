@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -24,30 +24,30 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
+@ExtendWith({FlociS3Extension.class, SoftAssertionsExtension.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class ITMinioExtensionStaticField {
+public class ITFlociS3ExtensionStaticField {
   @InjectSoftAssertions private SoftAssertions soft;
 
-  @Minio private static MinioAccess minioStaticField;
+  @FlociS3 private static FlociS3Access flociS3StaticField;
 
-  static MinioAccess memoizedStaticInstance;
+  static FlociS3Access memoizedStaticInstance;
 
   @Order(101)
   @Test
   public void fields1() {
-    soft.assertThat(minioStaticField).isNotNull();
+    soft.assertThat(flociS3StaticField).isNotNull();
 
-    soft.assertThat(minioStaticField.bucket()).isNotEmpty();
-    soft.assertThat(minioStaticField.accessKey()).isNotEmpty();
-    soft.assertThat(minioStaticField.secretKey()).isNotEmpty();
+    soft.assertThat(flociS3StaticField.bucket()).isNotEmpty();
+    soft.assertThat(flociS3StaticField.accessKey()).isNotEmpty();
+    soft.assertThat(flociS3StaticField.secretKey()).isNotEmpty();
 
-    memoizedStaticInstance = minioStaticField;
+    memoizedStaticInstance = flociS3StaticField;
   }
 
   @Order(102)
   @Test
   public void fields2() {
-    soft.assertThat(minioStaticField).isSameAs(memoizedStaticInstance);
+    soft.assertThat(flociS3StaticField).isSameAs(memoizedStaticInstance);
   }
 }

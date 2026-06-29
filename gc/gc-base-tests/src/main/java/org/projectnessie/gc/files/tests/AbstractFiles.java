@@ -113,9 +113,9 @@ public abstract class AbstractFiles {
   /**
    * Creates many files, lists the files, deletes 10% of the created files, lists again.
    *
-   * <p>Note for Minio: the configuration used for tests is not particularly fast - creating 100000
-   * objects with 4 threads (more crashes w/ timeouts) takes about ~30 minutes (plus ~3 seconds for
-   * listing 100000 objects, plus ~3 seconds for deleting 10000 objects).
+   * <p>Note for Floci S3: the configuration used for tests is not particularly fast - creating
+   * 100000 objects with 4 threads (more crashes w/ timeouts) takes about ~30 minutes (plus ~3
+   * seconds for listing 100000 objects, plus ~3 seconds for deleting 10000 objects).
    */
   @Test
   public void manyFiles() throws Exception {

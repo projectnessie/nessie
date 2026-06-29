@@ -19,6 +19,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager.CLIENT_ROLE_ARN;
+import static org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager.SERVER_ROLE_ARN;
 
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.vertx.http.HttpServer;
@@ -42,9 +44,9 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.Catalogs;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
+import org.projectnessie.testing.floci.s3.FlociS3Container;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 public abstract class AbstractAssumeRoleIceberg {
@@ -87,8 +89,8 @@ public abstract class AbstractAssumeRoleIceberg {
       """;
 
   @SuppressWarnings("unused")
-  // Injected by MinioTestResourceLifecycleManager
-  private MinioContainer minio;
+  // Injected by FlociS3TestResourceLifecycleManager
+  private FlociS3Container flociS3;
 
   private static final Catalogs CATALOGS = new Catalogs();
 
@@ -103,9 +105,9 @@ public abstract class AbstractAssumeRoleIceberg {
     return CATALOGS.getCatalog(
         Map.of(
             AwsClientProperties.CLIENT_REGION,
-            MinioTestResourceLifecycleManager.TEST_REGION,
+            FlociS3TestResourceLifecycleManager.TEST_REGION,
             CatalogProperties.WAREHOUSE_LOCATION,
-            minio.s3BucketUri(scheme(), "").toString()),
+            flociS3.s3BucketUri(scheme(), "").toString()),
         httpServer);
   }
 
@@ -200,8 +202,10 @@ public abstract class AbstractAssumeRoleIceberg {
     // Attempts to create files blocked by the server side IAM policy, breaks the createTable() call
     assertThatThrownBy(() -> catalog.createTable(TableIdentifier.of(ns, "table1"), schema))
         .isInstanceOf(ForbiddenException.class)
-        // Exception depends on the AWSSDK version
-        .hasMessageMatching(".*(S3Exception|AccessDeniedException): Access Denied.*")
+        // Exception message depends on the S3 emulator and AWSSDK version
+        .hasMessageMatching(
+            ".*(S3Exception|AccessDeniedException): "
+                + "(Access Denied|User is not authorized to perform: s3:PutObject).*")
         // make sure the error comes from the Catalog Server
         .hasStackTraceContaining("org.apache.iceberg.rest.HTTPClient");
   }
@@ -218,7 +222,7 @@ public abstract class AbstractAssumeRoleIceberg {
 
     // Attempts to create snapshot files are blocked by the session IAM policy
     assertThatThrownBy(() -> table.newAppend().appendFile(FILE_A).commit())
-        .hasMessageContaining("Access Denied")
+        .hasMessageMatching(".*(Access Denied|User is not authorized to perform: s3:PutObject).*")
         // make sure the error happens on the client side
         .hasStackTraceContaining("software.amazon.awssdk.services.s3.DefaultS3Client")
         .hasStackTraceContaining("org.apache.iceberg.SnapshotProducer");
@@ -231,17 +235,16 @@ public abstract class AbstractAssumeRoleIceberg {
           .put("nessie.catalog.service.s3.default-options.request-signing-enabled", "false")
           .put("nessie.catalog.service.s3.default-options.server-iam.enabled", "true")
           .put("nessie.catalog.service.s3.default-options.server-iam.policy", IAM_POLICY)
+          .put("nessie.catalog.service.s3.default-options.server-iam.assume-role", SERVER_ROLE_ARN)
           .put("nessie.catalog.service.s3.default-options.client-iam.enabled", "true")
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.statements[0]", IAM_STATEMENT_1)
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.statements[1]", IAM_STATEMENT_2)
-          .put(
-              "nessie.catalog.service.s3.default-options.client-iam.assume-role",
-              "test-role") // Note: unused by Minio
+          .put("nessie.catalog.service.s3.default-options.client-iam.assume-role", CLIENT_ROLE_ARN)
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.external-id",
-              "test-external-id") // Note: unused by Minio
+              "test-external-id")
           .build();
     }
   }

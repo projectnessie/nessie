@@ -27,11 +27,11 @@ import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleMan
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakClientSecret;
 import org.projectnessie.quarkus.tests.profiles.KeycloakTestResourceLifecycleManager.KeycloakTokenEndpointUri;
 import org.projectnessie.server.catalog.AbstractTrino;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
 import org.projectnessie.testing.keycloak.OAuthUtils;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(FlociS3TestResourceLifecycleManager.class)
 @WithTestResource(KeycloakTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITOAuthTrinoS3.Profile.class)

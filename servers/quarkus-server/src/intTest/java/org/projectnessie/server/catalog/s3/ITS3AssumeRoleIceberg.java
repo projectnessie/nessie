@@ -18,9 +18,9 @@ package org.projectnessie.server.catalog.s3;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
 
-@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(FlociS3TestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3AssumeRoleIceberg.Profile.class)
 public class ITS3AssumeRoleIceberg extends AbstractAssumeRoleIceberg {
