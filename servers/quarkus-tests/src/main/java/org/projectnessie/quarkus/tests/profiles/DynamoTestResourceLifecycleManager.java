@@ -38,7 +38,7 @@ public class DynamoTestResourceLifecycleManager
     dynamo = new DynamoDB2BackendTestFactory();
 
     try {
-      // Only start the Docker container (local Dynamo-compatible).
+      // Only start the Floci-backed DynamoDB test container.
       dynamo.start(containerNetworkId);
     } catch (Exception e) {
       throw new RuntimeException(e);
