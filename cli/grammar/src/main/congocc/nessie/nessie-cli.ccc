@@ -536,15 +536,17 @@ ListContentsStatement
     [ <FILTER>
       { setOptionalNextTokenTypes(); }
       /filter/=Value
-    | [ <STARTING>
-        { setOptionalNextTokenTypes(); }
-        <WITH> /startsWith/=Value
-        { setOptionalNextTokenTypes(TokenType.CONTAINING); }
-      ]
+    | <STARTING>
+      { setOptionalNextTokenTypes(); }
+      <WITH> /startsWith/=Value
+      { setOptionalNextTokenTypes(TokenType.CONTAINING); }
       [ <CONTAINING>
         { setOptionalNextTokenTypes(); }
         /contains/=Value
       ]
+    | <CONTAINING>
+      { setOptionalNextTokenTypes(); }
+      /contains/=Value
     ]
     ;
 
@@ -555,16 +557,19 @@ ListReferencesStatement
       { setOptionalNextTokenTypes(); }
       /filter/=Value
       { setOptionalNextTokenTypes(TokenType.IN); }
-    | [ <STARTING>
-        { setOptionalNextTokenTypes(); }
-        <WITH> /startsWith/=Value
-        { setOptionalNextTokenTypes(TokenType.CONTAINING, TokenType.IN); }
-      ]
+    | <STARTING>
+      { setOptionalNextTokenTypes(); }
+      <WITH> /startsWith/=Value
+      { setOptionalNextTokenTypes(TokenType.CONTAINING, TokenType.IN); }
       [ <CONTAINING>
         { setOptionalNextTokenTypes(); }
         /contains/=Value
         { setOptionalNextTokenTypes(TokenType.IN); }
       ]
+    | <CONTAINING>
+      { setOptionalNextTokenTypes(); }
+      /contains/=Value
+      { setOptionalNextTokenTypes(TokenType.IN); }
     ]
     #if !omitSparkSql
     [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
