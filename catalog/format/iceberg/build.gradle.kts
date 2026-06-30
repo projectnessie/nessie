@@ -44,6 +44,7 @@ dependencies {
 
   avroSchemaImplementation(libs.avro)
   avroSchemaImplementation(libs.guava)
+  avroSchemaImplementation(libs.slf4j.nop)
   avroSchemaImplementation("org.apache.iceberg:iceberg-core:$versionIceberg")
 
   runtimeOnly(libs.zstd.jni)
