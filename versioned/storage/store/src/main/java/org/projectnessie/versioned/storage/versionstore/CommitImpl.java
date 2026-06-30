@@ -101,6 +101,7 @@ class CommitImpl extends BaseCommitHelper {
   private final ContentMapping contentMapping;
   private final CommitLogic commitLogic;
 
+  @SuppressWarnings("ReferenceEquality")
   CommitImpl(
       @Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
@@ -235,6 +236,7 @@ class CommitImpl extends BaseCommitHelper {
     }
   }
 
+  @SuppressWarnings("ReferenceEquality")
   void commitAddOperations(
       List<Operation> operations,
       CreateCommit.Builder commit,
@@ -330,6 +332,7 @@ class CommitImpl extends BaseCommitHelper {
     }
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private static void commitAddUnchanged(
       StoreIndex<CommitOp> headIndex,
       StoreIndex<CommitOp> expectedIndex,

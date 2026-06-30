@@ -131,6 +131,7 @@ public class ValidatingVersionStoreImpl extends VersionStoreImpl implements Vali
     private final Throwable initial = persist.lastWrite.get();
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void assertNoWrites() {
       RuntimeException current = persist.lastWrite.get();
       soft.assertThatCode(
