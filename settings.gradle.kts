@@ -87,7 +87,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-  id("com.gradle.develocity") version ("4.4.3")
+  id("com.gradle.develocity") version ("4.5.0")
   if (
     providers.environmentVariable("CI").isPresent ||
       providers.systemProperty("allow-java-download").map(String::toBoolean).getOrElse(false)
