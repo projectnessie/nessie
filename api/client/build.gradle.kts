@@ -74,11 +74,7 @@ dependencies {
   testFixturesApi(libs.undertow.core)
   testFixturesApi(libs.undertow.servlet)
   testFixturesApi(libs.httpclient5)
-  testFixturesImplementation(libs.logback.classic) {
-    version { require(libs.versions.logback.compat.get()) }
-    // Logback 1.3 brings Slf4j 2.0, which doesn't work with Spark up to 3.3
-    exclude("org.slf4j", "slf4j-api")
-  }
+  testFixturesImplementation(libs.logback.classic)
 
   testImplementation(libs.wiremock)
 

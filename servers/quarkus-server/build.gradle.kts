@@ -180,6 +180,7 @@ dependencies {
     exclude("com.sun.jersey")
     exclude("commons-cli", "commons-cli")
     exclude("jakarta.activation", "jakarta.activation-api")
+    exclude("jakarta.servlet.jsp")
     exclude("javax.servlet", "javax.servlet-api")
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
@@ -188,6 +189,10 @@ dependencies {
     exclude("org.slf4j", "slf4j-reload4j")
     exclude("org.eclipse.jetty")
     exclude("org.apache.zookeeper")
+    exclude("org.glassfish.jersey.core")
+    exclude("org.glassfish.jersey.containers")
+    exclude("org.glassfish.jersey.inject")
+    exclude("org.glassfish.jaxb")
   }
 
   // These two testFixturesRuntimeOnly are here to avoid the 'Failed to index javax...: Class does
