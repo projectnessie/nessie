@@ -54,6 +54,7 @@ public final class HashValidator {
    * @param namedRef the namedRef, required.
    * @param parsed the parsed hash, or {@code null} if no hash was provided.
    */
+  @SuppressWarnings("ReferenceEquality")
   public void validate(NamedRef namedRef, @Nullable ParsedHash parsed) {
     if (refMustBeBranch) {
       checkArgument(namedRef instanceof BranchName, "%s must be a branch.", refDescription);

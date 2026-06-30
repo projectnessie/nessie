@@ -200,7 +200,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
   }
 
-  @SuppressWarnings("Slf4jSignOnlyFormat")
+  @SuppressWarnings({"ReferenceEquality", "Slf4jSignOnlyFormat"})
   private static Stream<FileReference> handleNotFound(
       ContentReference contentReference, Exception notFoundCandidate, String kind) {
     boolean notFound = false;
