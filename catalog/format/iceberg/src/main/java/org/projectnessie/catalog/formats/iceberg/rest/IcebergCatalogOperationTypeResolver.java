@@ -26,7 +26,7 @@ import org.projectnessie.model.Content;
 public class IcebergCatalogOperationTypeResolver implements CatalogOperationTypeResolver {
   @Override
   public Class<? extends CatalogOperation> forContentType(@NotNull Content.Type type) {
-    if (type == ICEBERG_TABLE || type == ICEBERG_VIEW) {
+    if (ICEBERG_TABLE.equals(type) || ICEBERG_VIEW.equals(type)) {
       return IcebergCatalogOperation.class;
     }
     return null;
