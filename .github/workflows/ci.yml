@@ -844,8 +844,12 @@ jobs:
       - name: Install fixtures
         run: |
           # Install Gateway API CRDs
-          helm template eg oci://docker.io/envoyproxy/gateway-crds-helm \
+          helm pull oci://docker.io/envoyproxy/gateway-crds-helm \
             --version v1.7.0 \
+            --untar \
+            --untardir "$RUNNER_TEMP/helm-charts"
+
+          helm template eg "$RUNNER_TEMP/helm-charts/gateway-crds-helm" \
             --set crds.gatewayAPI.enabled=true \
             --set crds.gatewayAPI.channel=standard \
             --set crds.envoyGateway.enabled=false \
