@@ -69,7 +69,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Override
   @Test
   void testDeliverySuccessNoRetry() {
-    super.testDeliverySuccessNoRetry();
+    deliverySuccessNoRetry();
     verify(delegate).deliverySuccessful(1);
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger).debug("Event delivered successfully");
@@ -79,7 +79,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Override
   @Test
   void testDeliverySuccessWithRetry() {
-    super.testDeliverySuccessWithRetry();
+    deliverySuccessWithRetry();
     verify(delegate).deliverySuccessful(3);
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger)
@@ -101,7 +101,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Override
   @Test
   void testDeliveryFailureWithRetry() {
-    super.testDeliveryFailureWithRetry();
+    deliveryFailureWithRetry();
     verify(delegate).deliveryFailed(eq(3), any());
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger)
@@ -123,7 +123,7 @@ class TestLoggingEventDelivery extends TestRetriableEventDelivery<LoggingEventDe
   @Override
   @Test
   void testDeliveryRejected() {
-    super.testDeliveryRejected();
+    deliveryRejected();
     verify(delegate).deliveryRejected();
     verify(logger).debug("Starting delivery for event: {}", event);
     verify(logger).debug("Subscriber rejected event, aborting delivery");

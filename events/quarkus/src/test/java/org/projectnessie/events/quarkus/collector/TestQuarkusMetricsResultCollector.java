@@ -37,7 +37,7 @@ class TestQuarkusMetricsResultCollector extends TestQuarkusResultCollector {
   @Override
   @Test
   void testAcceptedBySubscribers() {
-    super.testAcceptedBySubscribers();
+    acceptedBySubscribers();
     assertThat(registry.get(NESSIE_RESULTS_TOTAL).counter().count()).isEqualTo(1);
     assertThat(registry.find(NESSIE_RESULTS_REJECTED).counter()).isNull();
   }
@@ -45,7 +45,7 @@ class TestQuarkusMetricsResultCollector extends TestQuarkusResultCollector {
   @Override
   @Test
   void testRejectedBySubscribers() {
-    super.testRejectedBySubscribers();
+    rejectedBySubscribers();
     assertThat(registry.get(NESSIE_RESULTS_TOTAL).counter().count()).isEqualTo(1);
     assertThat(registry.get(NESSIE_RESULTS_REJECTED).counter().count()).isEqualTo(1);
   }
