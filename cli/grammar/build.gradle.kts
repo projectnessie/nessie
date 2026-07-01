@@ -62,31 +62,34 @@ abstract class Generate : JavaExec() {
   @get:OutputDirectory abstract val outputDir: DirectoryProperty
 }
 
-val genNessieCliGrammarDir = project.layout.buildDirectory.dir("generated/sources/congocc/nessie")
-val genNessieCliSyntaxDir =
-  project.layout.buildDirectory.dir("generated/resources/nessie-cli-syntax")
-val genNessieSparkSyntaxDir =
-  project.layout.buildDirectory.dir("generated/resources/nessie-spark-syntax")
-val genJsonGrammarDir = project.layout.buildDirectory.dir("generated/sources/congocc/json")
-
 val generateNessieGrammar =
   tasks.register<Generate>("generateNessieGrammar") {
-    sourceDir = projectDir.resolve("src/main/congocc/nessie")
-    val sourceFile =
-      sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString()
+    val genNessieCliGrammarDir = layout.buildDirectory.dir("generated/sources/congocc/nessie")
+    val prjDir = layout.projectDirectory
+
+    sourceDir = prjDir.dir("src/main/congocc/nessie")
+
     outputDir = genNessieCliGrammarDir
 
     classpath(congocc)
 
-    doFirst { delete(genNessieCliGrammarDir) }
+    doFirst { genNessieCliGrammarDir.get().asFile.deleteRecursively() }
 
     mainClass = "org.congocc.app.Main"
-    workingDir(projectDir)
+    workingDir(prjDir)
 
     argumentProviders.add(
       CommandLineArgumentProvider {
+        val sourceFile =
+          sourceDir.file("nessie-cli-java.ccc").get().asFile.relativeTo(prjDir.asFile)
         val base =
-          listOf("-d", genNessieCliGrammarDir.get().asFile.toString(), "-jdk17", "-n", sourceFile)
+          listOf(
+            "-d",
+            genNessieCliGrammarDir.get().asFile.toString(),
+            "-jdk17",
+            "-n",
+            sourceFile.toString(),
+          )
         if (logger.isInfoEnabled) base else (base + listOf("-q"))
       }
     )
@@ -94,15 +97,19 @@ val generateNessieGrammar =
 
 val generateJsonGrammar =
   tasks.register<Generate>("generateJsonGrammar") {
-    sourceDir = projectDir.resolve("src/main/congocc/json")
+    val genJsonGrammarDir = layout.buildDirectory.dir("generated/sources/congocc/json")
+
+    val prjDir = layout.projectDirectory
+
+    sourceDir = prjDir.dir("src/main/congocc/json")
     outputDir = genJsonGrammarDir
 
     classpath(congocc)
 
-    doFirst { delete(genJsonGrammarDir) }
+    doFirst { genJsonGrammarDir.get().asFile.deleteRecursively() }
 
     mainClass = "org.congocc.app.Main"
-    workingDir(projectDir)
+    workingDir(prjDir)
 
     argumentProviders.add(
       CommandLineArgumentProvider {
@@ -112,7 +119,7 @@ val generateJsonGrammar =
             genJsonGrammarDir.get().asFile.toString(),
             "-jdk17",
             "-n",
-            sourceDir.get().file("jsonc.ccc").asFile.relativeTo(projectDir).toString(),
+            sourceDir.file("jsonc.ccc").get().asFile.relativeTo(prjDir.asFile).toString(),
           )
         if (logger.isInfoEnabled) base else (base + listOf("-q"))
       }
@@ -124,14 +131,18 @@ val compileJava =
 
 val generateNessieCliSyntax =
   tasks.register<Generate>("generateNessieCliSyntax") {
+    val genNessieCliSyntaxDir = layout.buildDirectory.dir("generated/resources/nessie-cli-syntax")
+
+    val prjDir = layout.projectDirectory
+
     dependsOn(compileJava)
 
-    sourceDir = projectDir.resolve("src/main/congocc/nessie")
+    sourceDir = prjDir.dir("src/main/congocc/nessie")
     outputDir = genNessieCliSyntaxDir
 
     classpath(syntaxGen, configurations.runtimeClasspath, compileJava)
 
-    doFirst { delete(genNessieCliSyntaxDir) }
+    doFirst { genNessieCliSyntaxDir.get().asFile.deleteRecursively() }
 
     mainClass = "org.projectnessie.nessie.cli.syntax.SyntaxTool"
     workingDir(projectDir)
@@ -139,7 +150,7 @@ val generateNessieCliSyntax =
       CommandLineArgumentProvider {
         listOf(
           genNessieCliSyntaxDir.get().dir("org/projectnessie/nessie/cli/syntax").asFile.toString(),
-          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString(),
+          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(prjDir.asFile).toString(),
           "omitSparkSql=true",
         )
       }
@@ -148,17 +159,22 @@ val generateNessieCliSyntax =
 
 val generateNessieSparkSyntax =
   tasks.register<Generate>("generateNessieSparkSyntax") {
+    val genNessieSparkSyntaxDir =
+      layout.buildDirectory.dir("generated/resources/nessie-spark-syntax")
+
+    val prjDir = layout.projectDirectory
+
     dependsOn(compileJava)
 
-    sourceDir = projectDir.resolve("src/main/congocc/nessie")
+    sourceDir = prjDir.dir("src/main/congocc/nessie")
     outputDir = genNessieSparkSyntaxDir
 
     classpath(syntaxGen, configurations.runtimeClasspath, compileJava)
 
-    doFirst { delete(genNessieSparkSyntaxDir) }
+    doFirst { genNessieSparkSyntaxDir.get().asFile.deleteRecursively() }
 
     mainClass = "org.projectnessie.nessie.cli.syntax.SyntaxTool"
-    workingDir(projectDir)
+    workingDir(prjDir)
     argumentProviders.add(
       CommandLineArgumentProvider {
         listOf(
@@ -167,7 +183,7 @@ val generateNessieSparkSyntax =
             .dir("org/projectnessie/nessie/cli/spark-syntax")
             .asFile
             .toString(),
-          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(projectDir).toString(),
+          sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(prjDir.asFile).toString(),
         )
       }
     )
@@ -180,12 +196,12 @@ tasks.named("sourcesJar") { dependsOn(generateNessieCliSyntax, generateNessieSpa
 sourceSets {
   main {
     java {
-      srcDir(genNessieCliGrammarDir)
-      srcDir(genJsonGrammarDir)
+      srcDir(generateNessieGrammar)
+      srcDir(generateJsonGrammar)
     }
     resources {
-      srcDir(genNessieCliSyntaxDir)
-      srcDir(genNessieSparkSyntaxDir)
+      srcDir(generateNessieCliSyntax)
+      srcDir(generateNessieSparkSyntax)
     }
   }
 }

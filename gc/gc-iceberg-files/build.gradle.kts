@@ -88,9 +88,10 @@ tasks.withType(Test::class.java).configureEach {
   systemProperty("aws.region", "us-east-1")
   // Java 23 & Hadoop
   systemProperty("java.security.manager", "allow")
+  val tmpDir = layout.buildDirectory.dir("tmpdir")
   jvmArgumentProviders.add(
     CommandLineArgumentProvider {
-      val tmpdir = project.layout.buildDirectory.get().asFile.resolve("tmpdir")
+      val tmpdir = tmpDir.get().asFile
       tmpdir.mkdirs()
       listOf("-Djava.io.tmpdir=$tmpdir")
     }

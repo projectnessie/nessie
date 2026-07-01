@@ -62,8 +62,10 @@ components {
 if (plugins.hasPlugin("io.quarkus")) {
   // This directory somehow disappears... Maybe some weird Quarkus code.
   val testFixturesDir = layout.buildDirectory.dir("resources/testFixtures")
-  tasks.named("quarkusGenerateCodeTests").configure { doFirst { mkdir(testFixturesDir) } }
-  tasks.withType<Test>().configureEach { doFirst { mkdir(testFixturesDir) } }
+  tasks.named("quarkusGenerateCodeTests").configure {
+    doFirst { testFixturesDir.get().asFile.mkdirs() }
+  }
+  tasks.withType<Test>().configureEach { doFirst { testFixturesDir.get().asFile.mkdirs() } }
 }
 
 tasks.withType<Test>().configureEach {
@@ -148,12 +150,14 @@ testing {
 
           systemProperty("nessie.integrationTest", "true")
 
+          val buildDirFile = layout.buildDirectory.asFile
+
           // For Quarkus...
           //
           // io.quarkus.test.junit.IntegrationTestUtil.determineBuildOutputDirectory(java.net.URL)
           // is not smart enough :(
           if (hasQuarkus) {
-            systemProperty("build.output.directory", layout.buildDirectory.asFile.get())
+            systemProperty("build.output.directory", buildDirFile.get())
             dependsOn(tasks.named("quarkusBuild"))
           }
         }
