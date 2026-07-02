@@ -54,6 +54,8 @@ dependencies {
     exclude("org.glassfish.jersey.inject")
     exclude("org.glassfish.jaxb")
   }
+  intTestRuntimeOnly(libs.hadoop.hdfs)
+  intTestRuntimeOnly(libs.hadoop.hdfs.client)
   // Bump the jabx-impl version 2.2.3-1 via hadoop-common to make it work with Java 17+
   implementation(libs.jaxb.impl)
 
