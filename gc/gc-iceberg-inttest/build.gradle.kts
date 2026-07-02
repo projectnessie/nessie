@@ -49,7 +49,7 @@ dependencies {
   implementation(nessieProject("nessie-gc-iceberg-mock"))
   implementation(nessieProject("nessie-gc-iceberg-files"))
   implementation(nessieProject("nessie-object-storage-mock"))
-  implementation(nessieProject("nessie-minio-testcontainer"))
+  implementation(nessieProject("nessie-floci-s3-testcontainer"))
 
   implementation(platform(libs.jackson.bom))
 
@@ -121,8 +121,8 @@ dependencies {
     exclude("io.grpc", "grpc-testing")
   }
 
-  intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
-  intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
+  intTestImplementation(nessieProject("nessie-floci-az-testcontainer"))
+  intTestImplementation(nessieProject("nessie-floci-gcp-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(nessieProject("nessie-immutables-std"))

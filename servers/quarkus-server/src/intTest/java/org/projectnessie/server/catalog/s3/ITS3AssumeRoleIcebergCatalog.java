@@ -29,12 +29,12 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.intellij.lang.annotations.Language;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
-import org.projectnessie.minio.MinioContainer;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
-import org.projectnessie.server.catalog.MinioTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
+import org.projectnessie.testing.floci.s3.FlociS3Container;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
-@WithTestResource(MinioTestResourceLifecycleManager.class)
+@WithTestResource(FlociS3TestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 @TestProfile(ITS3AssumeRoleIcebergCatalog.Profile.class)
 public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests {
@@ -46,18 +46,18 @@ public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests
       """;
 
   @SuppressWarnings("unused")
-  // Injected by MinioTestResourceLifecycleManager
-  private MinioContainer minio;
+  // Injected by FlociS3TestResourceLifecycleManager
+  private FlociS3Container flociS3;
 
   @Override
   protected Map<String, String> catalogOptions() {
     return singletonMap(
-        CatalogProperties.WAREHOUSE_LOCATION, minio.s3BucketUri(scheme(), "").toString());
+        CatalogProperties.WAREHOUSE_LOCATION, flociS3.s3BucketUri(scheme(), "").toString());
   }
 
   @Override
   protected String temporaryLocation() {
-    return minio.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
+    return flociS3.s3BucketUri(scheme(), "/temp/" + UUID.randomUUID()).toString();
   }
 
   @Override
@@ -95,10 +95,10 @@ public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests
           .put("nessie.catalog.service.s3.default-options.client-iam.statements[0]", IAM_ALLOW_TEMP)
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.assume-role",
-              "test-role") // Note: unused by Minio
+              "arn:aws:iam::123456789012:role/client-role")
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.external-id",
-              "test-external-id") // Note: unused by Minio
+              "test-external-id")
           .build();
     }
   }

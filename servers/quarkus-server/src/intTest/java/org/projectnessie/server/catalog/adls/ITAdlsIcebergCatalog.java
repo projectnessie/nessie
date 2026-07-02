@@ -24,12 +24,12 @@ import java.net.URI;
 import java.util.Map;
 import org.apache.iceberg.CatalogProperties;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
-import org.projectnessie.server.catalog.AzuriteTestResourceLifecycleManager;
+import org.projectnessie.server.catalog.FlociAzTestResourceLifecycleManager;
 import org.projectnessie.server.catalog.WarehouseAccount;
 import org.projectnessie.server.catalog.WarehouseAccountSecret;
 import org.projectnessie.server.catalog.WarehouseLocation;
 
-@WithTestResource(AzuriteTestResourceLifecycleManager.class)
+@WithTestResource(FlociAzTestResourceLifecycleManager.class)
 @QuarkusIntegrationTest
 public class ITAdlsIcebergCatalog extends AbstractIcebergCatalogIntTests {
 

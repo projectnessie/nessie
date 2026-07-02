@@ -57,6 +57,7 @@ errorprone-annotations = { module = "com.google.errorprone:error_prone_annotatio
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 errorprone-slf4j = { module = "jp.skypencil.errorprone.slf4j:errorprone-slf4j", version.ref = "errorproneSlf4j" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+floci-testcontainers = { module = "io.floci:testcontainers-floci", version = "2.11.0" }
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 google-cloud-bigdataoss-gcs-connector = { module = "com.google.cloud.bigdataoss:gcs-connector", version.ref = "googleCloudBigdataoss" }
 google-cloud-bigdataoss-gcsio = { module = "com.google.cloud.bigdataoss:gcsio", version.ref = "googleCloudBigdataoss" }
@@ -100,8 +101,6 @@ junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-lowkey-vault-client = { module = "com.github.nagyesta.lowkey-vault:lowkey-vault-client", version = "7.3.0" }
-lowkey-vault-testcontainers = { module = "com.github.nagyesta.lowkey-vault:lowkey-vault-testcontainers", version = "7.3.0" }
 keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 keycloak-client-common-synced = { module = "org.keycloak:keycloak-client-common-synced", version.ref = "keycloak" }
 mariadb-java-client = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.5.9" }

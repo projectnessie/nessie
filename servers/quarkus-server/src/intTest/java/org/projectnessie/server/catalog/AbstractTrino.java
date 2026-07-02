@@ -181,15 +181,13 @@ public abstract class AbstractTrino {
     public Map<String, String> getConfigOverrides() {
       return ImmutableMap.<String, String>builder()
           .put("nessie.catalog.service.s3.default-options.request-signing-enabled", "false")
-          .put(
-              "nessie.catalog.service.s3.default-options.client-iam.enabled",
-              "true") // Note: unused by Minio
+          .put("nessie.catalog.service.s3.default-options.client-iam.enabled", "true")
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.assume-role",
-              "test-role") // Note: unused by Minio
+              "arn:aws:iam::123456789012:role/client-role")
           .put(
               "nessie.catalog.service.s3.default-options.client-iam.external-id",
-              "test-external-id") // Note: unused by Minio
+              "test-external-id")
           .build();
     }
   }

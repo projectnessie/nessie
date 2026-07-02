@@ -146,13 +146,13 @@ dependencies {
   testFixturesApi(testFixtures(project(":nessie-quarkus-common")))
 
   testFixturesApi(platform(libs.testcontainers.bom))
+  testFixturesApi(libs.floci.testcontainers)
   testFixturesApi("org.testcontainers:testcontainers")
   testFixturesApi(project(":nessie-keycloak-testcontainer"))
-  testFixturesApi("org.testcontainers:testcontainers-localstack")
   testFixturesApi("org.testcontainers:testcontainers-vault")
-  testFixturesApi(project(":nessie-azurite-testcontainer"))
-  testFixturesApi(project(":nessie-gcs-testcontainer"))
-  testFixturesApi(project(":nessie-minio-testcontainer"))
+  testFixturesApi(project(":nessie-floci-az-testcontainer"))
+  testFixturesApi(project(":nessie-floci-gcp-testcontainer"))
+  testFixturesApi(project(":nessie-floci-s3-testcontainer"))
   testFixturesApi(project(":nessie-trino-testcontainer"))
   testFixturesApi(project(":nessie-object-storage-mock"))
   testFixturesApi(project(":nessie-catalog-format-iceberg"))
@@ -161,7 +161,9 @@ dependencies {
   testFixturesApi(project(":nessie-catalog-secrets-api"))
 
   testFixturesApi(platform(libs.awssdk.bom))
+  testFixturesImplementation("software.amazon.awssdk:iam")
   testFixturesApi("software.amazon.awssdk:secretsmanager")
+  testFixturesImplementation("software.amazon.awssdk:url-connection-client")
   testFixturesApi(libs.quarkus.vault.deployment)
 
   testFixturesApi(enforcedPlatform(libs.quarkus.azure.services.bom))
@@ -211,7 +213,6 @@ dependencies {
   intTestImplementation(enforcedPlatform(libs.testcontainers.bom))
   intTestImplementation("io.quarkus:quarkus-test-keycloak-server")
   intTestImplementation(project(":nessie-keycloak-testcontainer"))
-  intTestImplementation(libs.lowkey.vault.testcontainers)
 
   intTestImplementation(platform(libs.awssdk.bom))
   intTestImplementation("software.amazon.awssdk:s3")
