@@ -37,6 +37,9 @@ dependencies {
   // hadoop-common brings Jackson in ancient versions, pulling in the Jackson BOM to avoid that
   implementation(platform(libs.jackson.bom))
   implementation(libs.hadoop.common) {
+    exclude("jakarta.activation", "jakarta.activation-api")
+    exclude("jakarta.servlet.jsp")
+    exclude("javax.servlet", "javax.servlet-api")
     exclude("javax.servlet.jsp", "jsp-api")
     exclude("javax.ws.rs", "javax.ws.rs-api")
     exclude("log4j", "log4j")
@@ -46,6 +49,10 @@ dependencies {
     exclude("org.eclipse.jetty")
     exclude("org.apache.hadoop")
     exclude("org.apache.zookeeper")
+    exclude("org.glassfish.jersey.core")
+    exclude("org.glassfish.jersey.containers")
+    exclude("org.glassfish.jersey.inject")
+    exclude("org.glassfish.jaxb")
   }
   // Bump the jabx-impl version 2.2.3-1 via hadoop-common to make it work with Java 17+
   implementation(libs.jaxb.impl)

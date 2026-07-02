@@ -57,11 +57,7 @@ dependencies {
   }
   intTestRuntimeOnly(libs.hadoop.aws)
 
-  testFixturesRuntimeOnly(libs.logback.classic) {
-    version { strictly(libs.versions.logback.compat.get()) }
-    // Logback 1.3 brings Slf4j 2.0, which doesn't work with Spark up to 3.3
-    exclude("org.slf4j", "slf4j-api")
-  }
+  testFixturesRuntimeOnly(libs.logback.classic)
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j) {
     version { require(libs.versions.slf4j.compat.get()) }
   }
