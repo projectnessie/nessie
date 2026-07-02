@@ -59,6 +59,15 @@ public class JdbcOptions {
   int fetchSize = 100;
 
   @CommandLine.Option(
+      names = "--jdbc-pool-max-size",
+      defaultValue = "5",
+      description =
+          "Maximum JDBC connection pool size, defaults to 5. The sweep/expire phase holds one "
+              + "streaming connection plus one per --expiry-parallelism worker, so set this to at "
+              + "least --expiry-parallelism + 1 to avoid connection-acquisition timeouts.")
+  int poolMaxSize = 5;
+
+  @CommandLine.Option(
       names = "--jdbc-schema",
       description =
           "How to create the database schema. "
@@ -69,6 +78,7 @@ public class JdbcOptions {
     AgroalJdbcDataSourceProvider.Builder jdbcDsBuilder =
         AgroalJdbcDataSourceProvider.builder()
             .jdbcUrl(url)
+            .poolMaxSize(poolMaxSize)
             .usernamePasswordCredentials(user, password);
     properties.forEach(jdbcDsBuilder::putJdbcProperties);
     AgroalJdbcDataSourceProvider dataSourceProvider = jdbcDsBuilder.build();
