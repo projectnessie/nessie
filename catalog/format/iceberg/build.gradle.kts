@@ -69,22 +69,21 @@ dependencies {
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
 }
 
-val generatedAvroSchemas =
-  layout.buildDirectory.asFile.map { it.resolve("generated/avroSchemas") }.get()
-
 val generateAvroSchemas =
   tasks.register<JavaExec>("generateAvroSchemas") {
+    val generatedAvroSchemas = layout.buildDirectory.dir("generated/avroSchemas").map { it.asFile }
+
     dependsOn(tasks.named("avroSchemaClasses"))
 
     classpath(avroSchemaRuntimeClasspath, tasks.named("compileAvroSchemaJava"))
 
     mainClass.set("org.projectnessie.catalog.formats.iceberg.GenerateAvroSchemas")
-    args("$generatedAvroSchemas/org/projectnessie/catalog/formats/iceberg")
+    args("${generatedAvroSchemas.get()}/org/projectnessie/catalog/formats/iceberg")
 
     outputs.cacheIf { true }
     outputs.dir(generatedAvroSchemas)
 
-    doFirst { delete(generatedAvroSchemas) }
+    doFirst { generatedAvroSchemas.get().deleteRecursively() }
   }
 
 sourceSets.named("main") { resources { srcDir(generateAvroSchemas) } }

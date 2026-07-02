@@ -27,6 +27,9 @@ dependencies {
 }
 
 tasks.named<JavaCompile>("compileJava") {
+  val mavenGroupId = project.group
+  val mavenArtifactId = project.name
+  val mavenName = project.description ?: project.name
   doFirst {
     // The Quarkus extension Gradle plugin emits a warning without this hack:
     // `Unable to determine artifact coordinates from: .../pom.xml`
@@ -36,9 +39,9 @@ tasks.named<JavaCompile>("compileJava") {
       """
       <project>
         <modelVersion>4.0.0</modelVersion>
-        <groupId>${project.group}</groupId>
-        <artifactId>${project.name}</artifactId>
-        <name>${project.description ?: project.name}</name>
+        <groupId>$mavenGroupId</groupId>
+        <artifactId>$mavenArtifactId</artifactId>
+        <name>$mavenName</name>
       </project>
       """
         .trimIndent() + "\n"

@@ -19,8 +19,8 @@ plugins { id("nessie-conventions-java17") }
 extra["maven.name"] =
   "Code to generate markdown documentation files for 'properties' and smallrye-config"
 
-val genProjects = configurations.create("genProjects")
-val genSources = configurations.create("genSources")
+val genProjects = configurations.register("genProjects")
+val genSources = configurations.register("genSources")
 
 val genProjectPaths =
   listOf(
@@ -57,31 +57,38 @@ dependencies {
   genProjects(libs.smallrye.config.core)
 }
 
+val libraryFiles = providers.provider {}
+
 tasks.named<Test>("test") {
   // The test needs the classpath for the necessary dependencies (annotations + smallrye-config).
   // Resolving the dependencies must happen during task execution (not configuration).
-  jvmArgumentProviders.add(
-    CommandLineArgumentProvider {
-      // So, in theory, all 'org.gradle.category' attributes should use the type
-      // org.gradle.api.attributes.Category,
-      // as Category.CATEGORY_ATTRIBUTE is defined. BUT! Some attributes have an attribute type ==
-      // String.class!
+  // So, in theory, all 'org.gradle.category' attributes should use the type
+  // org.gradle.api.attributes.Category,
+  // as Category.CATEGORY_ATTRIBUTE is defined. BUT! Some attributes have an attribute type ==
+  // String.class!
 
-      val categoryAttributeAsString = Attribute.of("org.gradle.category", String::class.java)
+  val categoryAttributeAsString = Attribute.of("org.gradle.category", String::class.java)
 
-      val libraries =
-        genProjects.incoming.artifacts
-          .filter { a ->
-            // dependencies:
-            //  org.gradle.category=library
-            val category =
-              a.variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-                ?: a.variant.attributes.getAttribute(categoryAttributeAsString)
-            category != null && category.toString() == Category.LIBRARY
-          }
-          .map { a -> a.file }
+  val libs = genProjects.map {
+    it.incoming.artifacts
+      .filter { a ->
+        // dependencies:
+        //  org.gradle.category=library
+        val category =
+          a.variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
+            ?: a.variant.attributes.getAttribute(categoryAttributeAsString)
+        category != null && category.toString() == Category.LIBRARY
+      }
+      .map { a -> a.file }
+  }
 
-      listOf("-Dtesting.libraries=" + libraries.joinToString(":"))
-    }
-  )
+  jvmArgumentProviders.add(ConfigDocsGenCommandLineArgumentProvider(libs))
+}
+
+private class ConfigDocsGenCommandLineArgumentProvider(
+  @get:Classpath val libraries: Provider<List<File>>
+) : CommandLineArgumentProvider {
+  override fun asArguments(): Iterable<String> {
+    return listOf("-Dtesting.libraries=" + libraries.get().joinToString(":"))
+  }
 }

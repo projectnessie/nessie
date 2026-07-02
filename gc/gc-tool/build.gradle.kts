@@ -135,7 +135,7 @@ val generateAutoComplete =
     val completionScriptsDir =
       project.layout.buildDirectory.dir("classes/java/main/META-INF/completion")
 
-    doFirst { mkdir(completionScriptsDir) }
+    doFirst { completionScriptsDir.get().asFile.mkdirs() }
 
     mainClass = "picocli.AutoComplete"
     classpath(configurations.named("runtimeClasspath"), compileJava)
