@@ -78,7 +78,7 @@ public class JdbcOptions {
     AgroalJdbcDataSourceProvider.Builder jdbcDsBuilder =
         AgroalJdbcDataSourceProvider.builder()
             .jdbcUrl(url)
-            .poolMaxSize(poolMaxSize)
+            .poolMaxSize(Math.max(2, poolMaxSize))
             .usernamePasswordCredentials(user, password);
     properties.forEach(jdbcDsBuilder::putJdbcProperties);
     AgroalJdbcDataSourceProvider dataSourceProvider = jdbcDsBuilder.build();
