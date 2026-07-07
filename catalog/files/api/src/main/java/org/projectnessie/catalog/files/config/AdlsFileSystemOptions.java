@@ -26,7 +26,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsFileSystemOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAdlsFileSystemOptions.class)
 @JsonDeserialize(as = ImmutableAdlsFileSystemOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAdlsFileSystemOptions.class)
 public interface AdlsFileSystemOptions extends BucketOptions {
 
   Duration DELEGATION_KEY_DEFAULT_EXPIRY = Duration.ofDays(7).minus(1, ChronoUnit.SECONDS);

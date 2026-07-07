@@ -30,7 +30,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSignerSignature.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSignerSignature.class)
 @JsonDeserialize(as = ImmutableSignerSignature.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSignerSignature.class)
 public abstract class SignerSignature {
 
   public abstract String prefix();

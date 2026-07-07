@@ -24,7 +24,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSecretStore.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSecretStore.class)
 @JsonDeserialize(as = ImmutableSecretStore.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSecretStore.class)
 public interface SecretStore {
   /**
    * Override to set the file path to a custom SSL key or trust store. {@code

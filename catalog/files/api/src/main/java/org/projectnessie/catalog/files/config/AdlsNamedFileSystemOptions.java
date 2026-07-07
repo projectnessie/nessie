@@ -22,7 +22,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsNamedFileSystemOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 @JsonDeserialize(as = ImmutableAdlsNamedFileSystemOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAdlsNamedFileSystemOptions.class)
 @SuppressWarnings("immutables:subtype")
 public interface AdlsNamedFileSystemOptions extends AdlsFileSystemOptions, PerBucket {
 

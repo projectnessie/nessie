@@ -23,7 +23,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableAdlsUserDelegation.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAdlsUserDelegation.class)
 @JsonDeserialize(as = ImmutableAdlsUserDelegation.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAdlsUserDelegation.class)
 public interface AdlsUserDelegation {
 
   /**

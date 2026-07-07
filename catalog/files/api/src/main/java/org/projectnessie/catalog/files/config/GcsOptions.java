@@ -39,7 +39,9 @@ import org.projectnessie.storage.uri.StorageUri;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableGcsOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGcsOptions.class)
 @JsonDeserialize(as = ImmutableGcsOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGcsOptions.class)
 public interface GcsOptions {
 
   /**
