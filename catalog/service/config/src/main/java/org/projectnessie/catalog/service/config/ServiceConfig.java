@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableServiceConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableServiceConfig.class)
 @JsonDeserialize(as = ImmutableServiceConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableServiceConfig.class)
 public interface ServiceConfig {
   /**
    * Nessie tries to verify the connectivity to the object stores configured for each warehouse and

@@ -15,10 +15,14 @@
  */
 package org.projectnessie.server.error;
 
+import static io.restassured.RestAssured.given;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.restassured.http.ContentType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -33,6 +37,7 @@ import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.client.rest.NessieInternalServerException;
+import org.projectnessie.error.ErrorCode;
 import org.projectnessie.error.NessieBackendThrottledException;
 import org.projectnessie.error.NessieBadRequestException;
 import org.projectnessie.error.NessieConflictException;
@@ -60,16 +65,19 @@ class TestNessieError {
   }
 
   private static HttpClient client;
+  private static ObjectMapper mapper;
+  private static URI errorTestUri;
 
   @BeforeAll
   static void setup(@NessieClientUri URI uri) {
-    ObjectMapper mapper =
+    mapper =
         new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    errorTestUri = uri.resolve("../nessieErrorTest/");
     client =
         HttpClient.builder()
-            .setBaseUri(uri.resolve("../nessieErrorTest"))
+            .setBaseUri(errorTestUri)
             .setObjectMapper(mapper)
             .addResponseFilter(new NessieHttpResponseFilter())
             .build();
@@ -210,6 +218,65 @@ class TestNessieError {
                 + "org.projectnessie.versioned.BackendLimitExceededException: Store.getValues-throttled");
   }
 
+  @Test
+  void malformedJsonErrorPayloadShape() throws Exception {
+    JsonNode error =
+        putBasicEntity("not really valid json", Response.Status.BAD_REQUEST.getStatusCode());
+
+    assertNessieErrorPayload(
+        error, Response.Status.BAD_REQUEST, ErrorCode.BAD_REQUEST, "Unrecognized token 'not'");
+    assertNoDiagnosticFields(error);
+  }
+
+  @Test
+  void validationErrorPayloadShape() throws Exception {
+    JsonNode error = putBasicEntity("{}", Response.Status.BAD_REQUEST.getStatusCode());
+
+    assertNessieErrorPayload(error, Response.Status.BAD_REQUEST, ErrorCode.BAD_REQUEST, "value");
+    assertNoDiagnosticFields(error);
+  }
+
+  @Test
+  void nessieNotFoundErrorPayloadShape() throws Exception {
+    JsonNode error =
+        readErrorPayload(
+            given()
+                .baseUri(errorTestUri.toString())
+                .accept(ContentType.JSON)
+                .get("nessieNotFound")
+                .then()
+                .statusCode(Response.Status.NOT_FOUND.getStatusCode())
+                .contentType(ContentType.JSON)
+                .extract()
+                .asString());
+
+    assertNessieErrorPayload(
+        error, Response.Status.NOT_FOUND, ErrorCode.REFERENCE_NOT_FOUND, "not-there-message");
+    assertNoDiagnosticFields(error);
+  }
+
+  @Test
+  void throttledErrorPayloadShape() throws Exception {
+    JsonNode error =
+        readErrorPayload(
+            given()
+                .baseUri(errorTestUri.toString())
+                .accept(ContentType.JSON)
+                .get("unhandledExceptionInTvsStore/throttle")
+                .then()
+                .statusCode(Response.Status.TOO_MANY_REQUESTS.getStatusCode())
+                .contentType(ContentType.JSON)
+                .extract()
+                .asString());
+
+    assertNessieErrorPayload(
+        error,
+        Response.Status.TOO_MANY_REQUESTS,
+        ErrorCode.TOO_MANY_REQUESTS,
+        "Backend store refused to process the request");
+    assertNoDiagnosticFields(error);
+  }
+
   void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();
@@ -223,5 +290,41 @@ class TestNessieError {
 
       throw targetException;
     }
+  }
+
+  private static JsonNode putBasicEntity(String body, int expectedStatus) throws Exception {
+    return readErrorPayload(
+        given()
+            .baseUri(errorTestUri.toString())
+            .contentType(ContentType.JSON)
+            .accept(ContentType.JSON)
+            .body(body)
+            .put("basicEntity")
+            .then()
+            .statusCode(expectedStatus)
+            .contentType(ContentType.JSON)
+            .extract()
+            .asString());
+  }
+
+  private static JsonNode readErrorPayload(String json) throws Exception {
+    return mapper.readTree(json);
+  }
+
+  private void assertNessieErrorPayload(
+      JsonNode error, Response.Status status, ErrorCode errorCode, String messagePart) {
+    soft.assertThat(error.get("status").asInt()).isEqualTo(status.getStatusCode());
+    soft.assertThat(error.get("reason").asText()).isEqualTo(status.getReasonPhrase());
+    soft.assertThat(error.get("errorCode").asText()).isEqualTo(errorCode.name());
+    soft.assertThat(error.get("message").asText()).contains(messagePart);
+  }
+
+  private void assertNoDiagnosticFields(JsonNode error) {
+    soft.assertThat(
+            error.path("serverStackTrace").isNull()
+                || error.path("serverStackTrace").isMissingNode())
+        .isTrue();
+    soft.assertThat(error.has("clientProcessingException")).isFalse();
+    soft.assertThat(error.has("clientProcessingError")).isFalse();
   }
 }

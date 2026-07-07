@@ -30,7 +30,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableCatalogConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableCatalogConfig.class)
 @JsonDeserialize(as = ImmutableCatalogConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableCatalogConfig.class)
 public interface CatalogConfig {
 
   /**
