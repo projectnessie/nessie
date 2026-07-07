@@ -34,7 +34,9 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieError.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieError.class)
 @JsonDeserialize(as = ImmutableNessieError.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieError.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface NessieError {
 
@@ -53,6 +55,7 @@ public interface NessieError {
   /** Nessie-specific error code. */
   @Value.Default
   @JsonDeserialize(using = ErrorCode.Deserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = ErrorCode.Deserializer3.class)
   default ErrorCode getErrorCode() {
     return ErrorCode.UNKNOWN;
   }

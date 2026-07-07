@@ -26,7 +26,9 @@ import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableGetNamespacesResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGetNamespacesResponse.class)
 @JsonDeserialize(as = ImmutableGetNamespacesResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGetNamespacesResponse.class)
 public interface GetNamespacesResponse {
   @NotNull
   @jakarta.validation.constraints.NotNull

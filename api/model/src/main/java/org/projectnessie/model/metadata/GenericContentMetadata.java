@@ -27,12 +27,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.ContentMetadata;
 import org.projectnessie.model.metadata.GenericContentMetadataSerialization.GenericContentMetadataDeserializer;
+import org.projectnessie.model.metadata.GenericContentMetadataSerialization.GenericContentMetadataDeserializer3;
 import org.projectnessie.model.metadata.GenericContentMetadataSerialization.GenericContentMetadataSerializer;
+import org.projectnessie.model.metadata.GenericContentMetadataSerialization.GenericContentMetadataSerializer3;
 
 /** Default/fallback representation of unknown content-metadata variants. */
 @Value.Immutable
 @JsonSerialize(using = GenericContentMetadataSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = GenericContentMetadataSerializer3.class)
 @JsonDeserialize(using = GenericContentMetadataDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = GenericContentMetadataDeserializer3.class)
 public interface GenericContentMetadata extends ContentMetadata {
 
   @Override

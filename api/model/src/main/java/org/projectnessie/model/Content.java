@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.types.ContentTypeIdResolver;
 import org.projectnessie.model.types.ContentTypes;
+import org.projectnessie.model.types.Jackson3ContentTypeIdResolver;
 
 /** Base class for an object stored within Nessie. */
 @Schema(
@@ -52,11 +53,14 @@ import org.projectnessie.model.types.ContentTypes;
     },
     discriminatorProperty = "type")
 @JsonTypeIdResolver(ContentTypeIdResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(Jackson3ContentTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public abstract class Content {
 
   @JsonDeserialize(using = Util.ContentTypeDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Util.ContentTypeDeserializer3.class)
   @JsonSerialize(using = Util.ContentTypeSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Util.ContentTypeSerializer3.class)
   @Schema(
       type = SchemaType.STRING,
       description =

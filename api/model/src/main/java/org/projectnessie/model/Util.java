@@ -275,6 +275,33 @@ final class Util {
     }
   }
 
+  static final class ContentTypeDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<Content.Type> {
+    @Override
+    public Content.Type deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      String name = p.readValueAs(String.class);
+      return name != null ? ContentTypes.forName(name) : null;
+    }
+  }
+
+  static final class ContentTypeSerializer3
+      extends tools.jackson.databind.ValueSerializer<Content.Type> {
+    @Override
+    public void serialize(
+        Content.Type value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      if (value == null) {
+        gen.writeNull();
+      } else {
+        gen.writeString(value.name());
+      }
+    }
+  }
+
   static final class RepositoryConfigTypeDeserializer
       extends JsonDeserializer<RepositoryConfig.Type> {
     @Override
@@ -290,6 +317,33 @@ final class Util {
     public void serialize(
         RepositoryConfig.Type value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      if (value == null) {
+        gen.writeNull();
+      } else {
+        gen.writeString(value.name());
+      }
+    }
+  }
+
+  static final class RepositoryConfigTypeDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<RepositoryConfig.Type> {
+    @Override
+    public RepositoryConfig.Type deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      String name = p.readValueAs(String.class);
+      return name != null ? RepositoryConfigTypes.forName(name) : null;
+    }
+  }
+
+  static final class RepositoryConfigTypeSerializer3
+      extends tools.jackson.databind.ValueSerializer<RepositoryConfig.Type> {
+    @Override
+    public void serialize(
+        RepositoryConfig.Type value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
       if (value == null) {
         gen.writeNull();
       } else {
@@ -326,6 +380,26 @@ final class Util {
     @Override
     public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Duration.parse(p.getText());
+    }
+  }
+
+  static class DurationSerializer3 extends tools.jackson.databind.ValueSerializer<Duration> {
+    @Override
+    public void serialize(
+        Duration value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext provider)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.toString());
+    }
+  }
+
+  static class DurationDeserializer3 extends tools.jackson.databind.ValueDeserializer<Duration> {
+    @Override
+    public Duration deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return Duration.parse(p.getString());
     }
   }
 }

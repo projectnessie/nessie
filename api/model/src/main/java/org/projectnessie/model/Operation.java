@@ -81,11 +81,15 @@ public interface Operation {
               + "representing a new content object, so without a content-id, in the same commit.")
   @Value.Immutable
   @JsonSerialize(as = ImmutablePut.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutablePut.class)
   @JsonDeserialize(as = ImmutablePut.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
   interface Put extends Operation {
     @NotNull
     @jakarta.validation.constraints.NotNull
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getContent();
 
     @Nullable
@@ -93,6 +97,8 @@ public interface Operation {
     @Deprecated
     @SuppressWarnings("DeprecatedIsStillUsed")
     @JsonView(Views.V1.class)
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getExpectedContent();
 
     /**
@@ -138,7 +144,9 @@ public interface Operation {
               + "with the current `Content` in the the `value` field. See `Put` operation.")
   @Value.Immutable
   @JsonSerialize(as = ImmutableDelete.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDelete.class)
   @JsonDeserialize(as = ImmutableDelete.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDelete.class)
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
 
@@ -149,7 +157,9 @@ public interface Operation {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableUnchanged.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableUnchanged.class)
   @JsonDeserialize(as = ImmutableUnchanged.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableUnchanged.class)
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
 

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.annotation.Nullable;
@@ -46,7 +47,11 @@ import org.projectnessie.model.RepositoryConfig;
  */
 @Value.Immutable
 @JsonSerialize(using = GenericRepositoryConfig.RepositoryConfigUnknownTypeSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = GenericRepositoryConfig.RepositoryConfigUnknownTypeSerializer3.class)
 @JsonDeserialize(using = GenericRepositoryConfig.RepositoryConfigUnknownTypeDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = GenericRepositoryConfig.RepositoryConfigUnknownTypeDeserializer3.class)
 public abstract class GenericRepositoryConfig implements RepositoryConfig {
 
   @Override
@@ -100,6 +105,76 @@ public abstract class GenericRepositoryConfig implements RepositoryConfig {
         type = "UNKNOWN_CONTENT_TYPE";
       }
       return GenericRepositoryConfig.repositoryConfigUnknownType(type.toString(), all);
+    }
+  }
+
+  static final class RepositoryConfigUnknownTypeSerializer3
+      extends tools.jackson.databind.ValueSerializer<GenericRepositoryConfig> {
+
+    @Override
+    public void serializeWithType(
+        GenericRepositoryConfig value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers,
+        tools.jackson.databind.jsontype.TypeSerializer typeSer)
+        throws tools.jackson.core.JacksonException {
+      gen.writeStartObject();
+      gen.writeStringProperty("type", value.getType().name());
+      for (Entry<String, Object> entry : value.getAttributes().entrySet()) {
+        gen.writePOJOProperty(entry.getKey(), entry.getValue());
+      }
+      gen.writeEndObject();
+    }
+
+    @Override
+    public void serialize(
+        GenericRepositoryConfig value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  static final class RepositoryConfigUnknownTypeDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<GenericRepositoryConfig> {
+
+    @Override
+    public GenericRepositoryConfig deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      if (p.currentToken() == tools.jackson.core.JsonToken.START_OBJECT) {
+        return fromMap(p.readValueAs(Map.class));
+      }
+
+      Map<String, Object> all = new LinkedHashMap<>();
+      Object type = p.getTypeId();
+      for (tools.jackson.core.JsonToken token = p.currentToken();
+          token == tools.jackson.core.JsonToken.PROPERTY_NAME;
+          token = p.nextToken()) {
+        String fieldName = p.currentName();
+        p.nextToken();
+        Object value = p.readValueAs(Object.class);
+        if ("type".equals(fieldName)) {
+          type = value;
+        } else {
+          all.put(fieldName, value);
+        }
+      }
+
+      if (type == null) {
+        type = "UNKNOWN_CONTENT_TYPE";
+      }
+      return GenericRepositoryConfig.repositoryConfigUnknownType(type.toString(), all);
+    }
+
+    private GenericRepositoryConfig fromMap(Map<?, ?> all) {
+      Map<String, Object> attributes = new LinkedHashMap<>();
+      all.forEach((key, value) -> attributes.put(key.toString(), value));
+      Object type = attributes.remove("type");
+      if (type == null) {
+        type = "UNKNOWN_CONTENT_TYPE";
+      }
+      return GenericRepositoryConfig.repositoryConfigUnknownType(type.toString(), attributes);
     }
   }
 

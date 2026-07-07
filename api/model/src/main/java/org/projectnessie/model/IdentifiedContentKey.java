@@ -30,7 +30,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableIdentifiedContentKey.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIdentifiedContentKey.class)
 @JsonDeserialize(as = ImmutableIdentifiedContentKey.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIdentifiedContentKey.class)
 public interface IdentifiedContentKey {
   @NotNull
   @jakarta.validation.constraints.NotNull
@@ -63,7 +65,9 @@ public interface IdentifiedContentKey {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableIdentifiedElement.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIdentifiedElement.class)
   @JsonDeserialize(as = ImmutableIdentifiedElement.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIdentifiedElement.class)
   interface IdentifiedElement {
     @Value.Parameter(order = 1)
     String element();

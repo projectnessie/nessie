@@ -84,4 +84,15 @@ public enum ErrorCode {
       return name != null ? ErrorCode.parse(name) : null;
     }
   }
+
+  public static final class Deserializer3
+      extends tools.jackson.databind.ValueDeserializer<ErrorCode> {
+    @Override
+    public ErrorCode deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      String name = p.readValueAs(String.class);
+      return name != null ? ErrorCode.parse(name) : null;
+    }
+  }
 }

@@ -38,7 +38,9 @@ import org.projectnessie.model.Validation;
     })
 @Value.Immutable
 @JsonSerialize(as = ImmutableTransplant.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableTransplant.class)
 @JsonDeserialize(as = ImmutableTransplant.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableTransplant.class)
 public interface Transplant extends BaseMergeTransplant {
 
   @NotNull

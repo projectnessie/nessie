@@ -31,7 +31,9 @@ import org.projectnessie.model.ser.Views;
 @Schema(type = SchemaType.OBJECT, title = "Commit Response")
 @Value.Immutable
 @JsonSerialize(as = ImmutableCommitResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableCommitResponse.class)
 @JsonDeserialize(as = ImmutableCommitResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableCommitResponse.class)
 public interface CommitResponse {
 
   static ImmutableCommitResponse.Builder builder() {
@@ -87,7 +89,9 @@ public interface CommitResponse {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableAddedContent.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddedContent.class)
   @JsonDeserialize(as = ImmutableAddedContent.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddedContent.class)
   interface AddedContent {
     @NotNull
     @jakarta.validation.constraints.NotNull

@@ -37,7 +37,9 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentKey.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentKey.class)
 @JsonDeserialize(as = ImmutableContentKey.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentKey.class)
 public abstract class ContentKey implements Comparable<ContentKey>, Elements {
 
   /** Maximum number of characters in a key. Note: characters can take up to 3 bytes via UTF-8. */

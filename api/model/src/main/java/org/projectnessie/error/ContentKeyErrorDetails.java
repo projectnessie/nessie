@@ -26,7 +26,9 @@ import org.projectnessie.model.ContentKey;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentKeyErrorDetails.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentKeyErrorDetails.class)
 @JsonDeserialize(as = ImmutableContentKeyErrorDetails.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentKeyErrorDetails.class)
 @JsonTypeName(ContentKeyErrorDetails.TYPE)
 public interface ContentKeyErrorDetails extends NessieErrorDetails {
 

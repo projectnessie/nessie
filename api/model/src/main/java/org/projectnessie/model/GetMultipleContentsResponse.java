@@ -32,7 +32,9 @@ import org.projectnessie.model.ser.Views;
 @Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsResponse")
 @Value.Immutable
 @JsonSerialize(as = ImmutableGetMultipleContentsResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGetMultipleContentsResponse.class)
 @JsonDeserialize(as = ImmutableGetMultipleContentsResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGetMultipleContentsResponse.class)
 public interface GetMultipleContentsResponse {
 
   @NotNull
@@ -62,7 +64,9 @@ public interface GetMultipleContentsResponse {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableContentWithKey.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentWithKey.class)
   @JsonDeserialize(as = ImmutableContentWithKey.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentWithKey.class)
   interface ContentWithKey {
 
     @NotNull
@@ -73,6 +77,8 @@ public interface GetMultipleContentsResponse {
     @NotNull
     @jakarta.validation.constraints.NotNull
     @Value.Parameter(order = 2)
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getContent();
 
     @Nullable

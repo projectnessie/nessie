@@ -27,7 +27,9 @@ import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableEntriesResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableEntriesResponse.class)
 @JsonDeserialize(as = ImmutableEntriesResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableEntriesResponse.class)
 public interface EntriesResponse extends PaginatedResponse {
 
   static ImmutableEntriesResponse.Builder builder() {
@@ -49,7 +51,9 @@ public interface EntriesResponse extends PaginatedResponse {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableEntry.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableEntry.class)
   @JsonDeserialize(as = ImmutableEntry.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableEntry.class)
   interface Entry {
 
     static ImmutableEntry.Builder builder() {
@@ -77,6 +81,8 @@ public interface EntriesResponse extends PaginatedResponse {
     @Value.Parameter(order = 4)
     @Nullable
     @jakarta.annotation.Nullable // for V1 backwards compatibility
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getContent();
 
     @Value.Check

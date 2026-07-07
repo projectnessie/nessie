@@ -37,7 +37,9 @@ import org.immutables.value.Value;
             + "the commit, for example if the commit object itself or its index information is missing.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceHistoryState.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceHistoryState.class)
 @JsonDeserialize(as = ImmutableReferenceHistoryState.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceHistoryState.class)
 public interface ReferenceHistoryState {
   @Schema(description = "Nessie commit ID.")
   @Value.Parameter(order = 1)

@@ -26,11 +26,16 @@ import org.immutables.value.Value;
 @Tag(name = "v2")
 @Value.Immutable
 @JsonSerialize(as = ImmutableUpdateRepositoryConfigRequest.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableUpdateRepositoryConfigRequest.class)
 @JsonDeserialize(as = ImmutableUpdateRepositoryConfigRequest.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    as = ImmutableUpdateRepositoryConfigRequest.class)
 public interface UpdateRepositoryConfigRequest {
   /**
    * The previous value of the updated repository configuration object. This will be {@code null},
    * if the repository configuration was created.
    */
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3RepositoryConfigTypeIdResolver.class)
   RepositoryConfig getConfig();
 }

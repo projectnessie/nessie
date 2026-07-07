@@ -28,9 +28,13 @@ import org.immutables.value.Value;
 @Tag(name = "v2")
 @Value.Immutable
 @JsonSerialize(as = ImmutableRepositoryConfigResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRepositoryConfigResponse.class)
 @JsonDeserialize(as = ImmutableRepositoryConfigResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRepositoryConfigResponse.class)
 public interface RepositoryConfigResponse {
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3RepositoryConfigTypeIdResolver.class)
   @Schema(
       title = "Repository configuration objects for the requested types.",
       description =

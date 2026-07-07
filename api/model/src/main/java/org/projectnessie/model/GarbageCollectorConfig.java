@@ -42,7 +42,9 @@ import org.immutables.value.Value;
 @Tag(name = "v2")
 @Value.Immutable
 @JsonSerialize(as = ImmutableGarbageCollectorConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGarbageCollectorConfig.class)
 @JsonDeserialize(as = ImmutableGarbageCollectorConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGarbageCollectorConfig.class)
 @JsonTypeName("GARBAGE_COLLECTOR")
 public interface GarbageCollectorConfig extends RepositoryConfig {
 
@@ -93,7 +95,9 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
   @jakarta.annotation.Nullable
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @JsonSerialize(using = Util.DurationSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Util.DurationSerializer3.class)
   @JsonDeserialize(using = Util.DurationDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Util.DurationDeserializer3.class)
   Duration getNewFilesGracePeriod();
 
   @Schema(title = "The total number of expected live files for a single content.")
@@ -115,7 +119,9 @@ public interface GarbageCollectorConfig extends RepositoryConfig {
               + "Reference name patterns are regular expressions.")
   @Value.Immutable
   @JsonSerialize(as = ImmutableReferenceCutoffPolicy.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceCutoffPolicy.class)
   @JsonDeserialize(as = ImmutableReferenceCutoffPolicy.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceCutoffPolicy.class)
   interface ReferenceCutoffPolicy {
     static ReferenceCutoffPolicy referenceCutoffPolicy(String referenceNamePattern, String policy) {
       return ImmutableReferenceCutoffPolicy.of(referenceNamePattern, policy);

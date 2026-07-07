@@ -27,7 +27,10 @@ import org.immutables.value.Value;
 @Tag(name = "v2")
 @Value.Immutable
 @JsonSerialize(as = ImmutableUpdateRepositoryConfigResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableUpdateRepositoryConfigResponse.class)
 @JsonDeserialize(as = ImmutableUpdateRepositoryConfigResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    as = ImmutableUpdateRepositoryConfigResponse.class)
 public interface UpdateRepositoryConfigResponse {
   /**
    * The previous value of the updated repository config. If no previous value for the same
@@ -35,6 +38,8 @@ public interface UpdateRepositoryConfigResponse {
    */
   @Nullable
   @jakarta.annotation.Nullable
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3RepositoryConfigTypeIdResolver.class)
   @Schema(
       implementation = RepositoryConfig.class,
       title = "The previous state of the repository configuration object.",

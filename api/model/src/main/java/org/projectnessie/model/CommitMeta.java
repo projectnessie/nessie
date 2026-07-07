@@ -50,7 +50,10 @@ import org.projectnessie.model.ser.Views;
     // Smallrye does neither support JsonFormat nor javax.validation.constraints.Pattern :(
     properties = {@SchemaProperty(name = "hash", pattern = Validation.HASH_REGEX)})
 @JsonSerialize(as = ImmutableCommitMeta.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(using = CommitMetaDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = CommitMeta.Jackson3CommitMetaDeserializer.class)
 public abstract class CommitMeta {
 
   /**
@@ -124,14 +127,18 @@ public abstract class CommitMeta {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Jackson3InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Jackson3InstantDeserializer.class)
   public abstract Instant getCommitTime();
 
   /** Original commit time in UTC. Set by the server. */
   @Nullable
   @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Jackson3InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Jackson3InstantDeserializer.class)
   public abstract Instant getAuthorTime();
 
   /**
@@ -267,7 +274,80 @@ public abstract class CommitMeta {
 
     @Override
     public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-      return Instant.parse(p.getText());
+      return Instant.parse(p.getValueAsString());
+    }
+  }
+
+  public static class Jackson3InstantSerializer
+      extends tools.jackson.databind.ValueSerializer<Instant> {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
+
+    @Override
+    public void serialize(
+        Instant value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext provider)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(FORMATTER.format(value));
+    }
+  }
+
+  public static class Jackson3InstantDeserializer
+      extends tools.jackson.databind.ValueDeserializer<Instant> {
+    @Override
+    public Instant deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return Instant.parse(p.getValueAsString());
+    }
+  }
+
+  public static class Jackson3CommitMetaDeserializer
+      extends tools.jackson.databind.ValueDeserializer<CommitMeta> {
+    private static final tools.jackson.databind.ObjectMapper MAPPER =
+        tools.jackson.databind.json.JsonMapper.builder().build();
+
+    private void toArray(
+        tools.jackson.databind.node.ObjectNode node, String singleAttr, String arrayAttr) {
+      if (!node.has(arrayAttr)) {
+        tools.jackson.databind.node.ArrayNode array = node.withArray(arrayAttr);
+        if (node.has(singleAttr)) {
+          tools.jackson.databind.JsonNode value = node.get(singleAttr);
+          if (!value.isNull()) {
+            array.add(value);
+          }
+        }
+      }
+      node.remove(singleAttr);
+    }
+
+    private void toMapOfLists(
+        tools.jackson.databind.node.ObjectNode node, String singleAttr, String arrayAttr) {
+      if (!node.has(arrayAttr)) {
+        tools.jackson.databind.node.ObjectNode mapOfLists = node.putObject(arrayAttr);
+        if (node.has(singleAttr) && node.get(singleAttr).isObject()) {
+          tools.jackson.databind.node.ObjectNode map =
+              (tools.jackson.databind.node.ObjectNode) node.get(singleAttr);
+          for (Map.Entry<String, tools.jackson.databind.JsonNode> entry : map.properties()) {
+            mapOfLists.putArray(entry.getKey()).add(entry.getValue());
+          }
+        }
+      }
+      node.remove(singleAttr);
+    }
+
+    @Override
+    public CommitMeta deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      tools.jackson.databind.node.ObjectNode node =
+          p.readValueAs(tools.jackson.databind.node.ObjectNode.class);
+      toArray(node, "author", "authors");
+      toArray(node, "signedOffBy", "allSignedOffBy");
+      toMapOfLists(node, "properties", "allProperties");
+      org.projectnessie.model.ser.CommitMetaSer value =
+          MAPPER.convertValue(node, org.projectnessie.model.ser.CommitMetaSer.class);
+      return CommitMeta.builder().from(value).build();
     }
   }
 }
