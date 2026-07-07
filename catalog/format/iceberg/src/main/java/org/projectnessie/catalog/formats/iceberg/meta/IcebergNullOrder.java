@@ -28,7 +28,11 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(using = IcebergNullOrder.IcebergNullOrderSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = IcebergNullOrder.IcebergNullOrderSerializer3.class)
 @JsonDeserialize(using = IcebergNullOrder.IcebergNullOrderDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = IcebergNullOrder.IcebergNullOrderDeserializer3.class)
 public interface IcebergNullOrder {
   String name();
 
@@ -52,6 +56,33 @@ public interface IcebergNullOrder {
     public IcebergNullOrder deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
+      return switch (text) {
+        case NULLS_FIRST_VALUE -> NULLS_FIRST;
+        case NULLS_LAST_VALUE -> NULLS_LAST;
+        default -> ImmutableIcebergNullOrder.of(text, text);
+      };
+    }
+  }
+
+  class IcebergNullOrderSerializer3
+      extends tools.jackson.databind.ValueSerializer<IcebergNullOrder> {
+    @Override
+    public void serialize(
+        IcebergNullOrder value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.jsonValue());
+    }
+  }
+
+  class IcebergNullOrderDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergNullOrder> {
+    @Override
+    public IcebergNullOrder deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      String text = p.getString();
       return switch (text) {
         case NULLS_FIRST_VALUE -> NULLS_FIRST;
         case NULLS_LAST_VALUE -> NULLS_LAST;

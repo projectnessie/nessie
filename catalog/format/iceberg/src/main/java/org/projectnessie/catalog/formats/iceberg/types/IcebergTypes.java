@@ -140,4 +140,56 @@ final class IcebergTypes {
       }
     }
   }
+
+  static final class IcebergPrimitiveSerializer3
+      extends tools.jackson.databind.ValueSerializer<IcebergPrimitiveType> {
+    @Override
+    public void serialize(
+        IcebergPrimitiveType value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.type());
+    }
+  }
+
+  static final class IcebergPrimitiveDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergPrimitiveType> {
+    @Override
+    public IcebergPrimitiveType deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return primitiveFromString(p.getValueAsString());
+    }
+  }
+
+  static final class IcebergTypeDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergType> {
+    @Override
+    public IcebergType deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return switch (p.currentToken()) {
+        case VALUE_STRING -> primitiveFromString(p.getValueAsString());
+        case START_OBJECT -> p.readValueAs(IcebergComplexType.class);
+        default -> throw new IllegalArgumentException("unexpected token " + p.currentToken());
+      };
+    }
+  }
+
+  static final class IcebergTypeSerializer3
+      extends tools.jackson.databind.ValueSerializer<IcebergType> {
+    @Override
+    public void serialize(
+        IcebergType value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      if (value instanceof IcebergPrimitiveType) {
+        gen.writeString(value.type());
+      } else {
+        gen.writePOJO(value);
+      }
+    }
+  }
 }

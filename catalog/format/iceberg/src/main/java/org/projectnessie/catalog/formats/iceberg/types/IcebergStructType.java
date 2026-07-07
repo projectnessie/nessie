@@ -36,8 +36,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergStructType.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergStructType.class)
 @JsonDeserialize(as = ImmutableIcebergStructType.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergStructType.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(IcebergStructType.TYPE_NAME)
 public interface IcebergStructType extends IcebergComplexType {

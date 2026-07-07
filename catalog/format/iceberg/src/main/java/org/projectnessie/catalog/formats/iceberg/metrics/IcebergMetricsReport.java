@@ -29,6 +29,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
       name = IcebergMetricsReport.COMMIT_REPORT_NAME),
 })
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergMetricsReport {
   String COMMIT_REPORT_NAME = "commit-report";

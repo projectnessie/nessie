@@ -28,7 +28,11 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(using = IcebergDirection.IcebergDirectionSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = IcebergDirection.IcebergDirectionSerializer3.class)
 @JsonDeserialize(using = IcebergDirection.IcebergDirectionDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = IcebergDirection.IcebergDirectionDeserializer3.class)
 public interface IcebergDirection {
   String name();
 
@@ -52,6 +56,33 @@ public interface IcebergDirection {
     public IcebergDirection deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
+      return switch (text) {
+        case ASC_VALUE -> ASC;
+        case DESC_VALUE -> DESC;
+        default -> ImmutableIcebergDirection.of(text, text);
+      };
+    }
+  }
+
+  class IcebergDirectionSerializer3
+      extends tools.jackson.databind.ValueSerializer<IcebergDirection> {
+    @Override
+    public void serialize(
+        IcebergDirection value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.jsonValue());
+    }
+  }
+
+  class IcebergDirectionDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergDirection> {
+    @Override
+    public IcebergDirection deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      String text = p.getString();
       return switch (text) {
         case ASC_VALUE -> ASC;
         case DESC_VALUE -> DESC;

@@ -27,8 +27,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergCommitViewRequest.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergCommitViewRequest.class)
 @JsonDeserialize(as = ImmutableIcebergCommitViewRequest.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergCommitViewRequest.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergCommitViewRequest extends IcebergUpdateEntityRequest {
 

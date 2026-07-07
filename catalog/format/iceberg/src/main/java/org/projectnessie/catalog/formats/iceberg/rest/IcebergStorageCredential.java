@@ -25,8 +25,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergStorageCredential.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergStorageCredential.class)
 @JsonDeserialize(as = ImmutableIcebergStorageCredential.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergStorageCredential.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergStorageCredential {
   /**

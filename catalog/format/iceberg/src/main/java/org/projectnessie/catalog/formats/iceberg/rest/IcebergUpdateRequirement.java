@@ -40,6 +40,8 @@ import org.projectnessie.model.ContentKey;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -112,7 +114,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-table-uuid")
   @JsonSerialize(as = ImmutableAssertTableUUID.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertTableUUID.class)
   @JsonDeserialize(as = ImmutableAssertTableUUID.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertTableUUID.class)
   interface AssertTableUUID extends AssertUUID {
 
     @Override
@@ -125,7 +129,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-view-uuid")
   @JsonSerialize(as = ImmutableAssertViewUUID.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertViewUUID.class)
   @JsonDeserialize(as = ImmutableAssertViewUUID.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertViewUUID.class)
   interface AssertViewUUID extends AssertUUID {
 
     @Override
@@ -138,7 +144,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-create")
   @JsonSerialize(as = ImmutableAssertCreate.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertCreate.class)
   @JsonDeserialize(as = ImmutableAssertCreate.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertCreate.class)
   interface AssertCreate extends IcebergUpdateRequirement {
     static AssertCreate assertTableDoesNotExist() {
       return ImmutableAssertCreate.builder().build();
@@ -165,7 +173,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-ref-snapshot-id")
   @JsonSerialize(as = ImmutableAssertRefSnapshotId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertRefSnapshotId.class)
   @JsonDeserialize(as = ImmutableAssertRefSnapshotId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertRefSnapshotId.class)
   interface AssertRefSnapshotId extends IcebergUpdateRequirement {
     String ref();
 
@@ -206,7 +216,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-last-assigned-field-id")
   @JsonSerialize(as = ImmutableAssertLastAssignedFieldId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertLastAssignedFieldId.class)
   @JsonDeserialize(as = ImmutableAssertLastAssignedFieldId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertLastAssignedFieldId.class)
   interface AssertLastAssignedFieldId extends IcebergUpdateRequirement {
     int lastAssignedFieldId();
 
@@ -226,7 +238,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-current-schema-id")
   @JsonSerialize(as = ImmutableAssertCurrentSchemaId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertCurrentSchemaId.class)
   @JsonDeserialize(as = ImmutableAssertCurrentSchemaId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertCurrentSchemaId.class)
   interface AssertCurrentSchemaId extends IcebergUpdateRequirement {
     int currentSchemaId();
 
@@ -256,7 +270,11 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-last-assigned-partition-id")
   @JsonSerialize(as = ImmutableAssertLastAssignedPartitionId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      as = ImmutableAssertLastAssignedPartitionId.class)
   @JsonDeserialize(as = ImmutableAssertLastAssignedPartitionId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      as = ImmutableAssertLastAssignedPartitionId.class)
   interface AssertLastAssignedPartitionId extends IcebergUpdateRequirement {
     int lastAssignedPartitionId();
 
@@ -276,7 +294,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-default-spec-id")
   @JsonSerialize(as = ImmutableAssertDefaultSpecId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertDefaultSpecId.class)
   @JsonDeserialize(as = ImmutableAssertDefaultSpecId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertDefaultSpecId.class)
   interface AssertDefaultSpecId extends IcebergUpdateRequirement {
     int defaultSpecId();
 
@@ -300,7 +320,9 @@ public interface IcebergUpdateRequirement {
   @NessieImmutable
   @JsonTypeName("assert-default-sort-order-id")
   @JsonSerialize(as = ImmutableAssertDefaultSortOrderId.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssertDefaultSortOrderId.class)
   @JsonDeserialize(as = ImmutableAssertDefaultSortOrderId.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssertDefaultSortOrderId.class)
   interface AssertDefaultSortOrderId extends IcebergUpdateRequirement {
     int defaultSortOrderId();
 

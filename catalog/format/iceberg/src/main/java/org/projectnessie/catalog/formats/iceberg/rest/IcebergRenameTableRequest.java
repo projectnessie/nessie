@@ -25,8 +25,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergRenameTableRequest.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergRenameTableRequest.class)
 @JsonDeserialize(as = ImmutableIcebergRenameTableRequest.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergRenameTableRequest.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergRenameTableRequest {
   IcebergTableIdentifier source();

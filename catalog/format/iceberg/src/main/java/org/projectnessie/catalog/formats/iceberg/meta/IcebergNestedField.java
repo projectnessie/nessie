@@ -33,8 +33,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergNestedField.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergNestedField.class)
 @JsonDeserialize(as = ImmutableIcebergNestedField.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergNestedField.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergNestedField {
 

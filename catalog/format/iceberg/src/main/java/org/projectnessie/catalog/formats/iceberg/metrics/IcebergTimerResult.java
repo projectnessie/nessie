@@ -33,15 +33,21 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergTimerResult.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergTimerResult.class)
 @JsonDeserialize(as = ImmutableIcebergTimerResult.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergTimerResult.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergTimerResult {
 
   long count();
 
   @JsonSerialize(using = TimeUnitSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = TimeUnitSerializer3.class)
   @JsonDeserialize(using = TimeUnitDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = TimeUnitDeserializer3.class)
   TimeUnit timeUnit();
 
   long totalDuration();
@@ -66,6 +72,26 @@ public interface IcebergTimerResult {
     @Override
     public TimeUnit deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return TimeUnit.valueOf(p.getText().toUpperCase(Locale.ROOT));
+    }
+  }
+
+  final class TimeUnitSerializer3 extends tools.jackson.databind.ValueSerializer<TimeUnit> {
+    @Override
+    public void serialize(
+        TimeUnit value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.name().toLowerCase(Locale.ROOT));
+    }
+  }
+
+  final class TimeUnitDeserializer3 extends tools.jackson.databind.ValueDeserializer<TimeUnit> {
+    @Override
+    public TimeUnit deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return TimeUnit.valueOf(p.getString().toUpperCase(Locale.ROOT));
     }
   }
 }

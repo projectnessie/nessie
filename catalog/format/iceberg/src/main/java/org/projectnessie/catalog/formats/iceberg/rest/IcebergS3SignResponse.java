@@ -27,8 +27,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergS3SignResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergS3SignResponse.class)
 @JsonDeserialize(as = ImmutableIcebergS3SignResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergS3SignResponse.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergS3SignResponse {
   String uri();

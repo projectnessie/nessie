@@ -29,6 +29,10 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(using = NessieNullOrder.NessieNullOrderSerializer.class)
 @JsonDeserialize(using = NessieNullOrder.NessieNullOrderDeserializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = NessieNullOrder.NessieNullOrderSerializer3.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = NessieNullOrder.NessieNullOrderDeserializer3.class)
 public interface NessieNullOrder {
   String name();
 
@@ -52,6 +56,30 @@ public interface NessieNullOrder {
     public NessieNullOrder deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
+      return switch (text) {
+        case NULLS_FIRST_VALUE -> NULLS_FIRST;
+        case NULLS_LAST_VALUE -> NULLS_LAST;
+        default -> ImmutableNessieNullOrder.of(text, text);
+      };
+    }
+  }
+
+  class NessieNullOrderSerializer3 extends tools.jackson.databind.ValueSerializer<NessieNullOrder> {
+    @Override
+    public void serialize(
+        NessieNullOrder value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers) {
+      gen.writeString(value.jsonValue());
+    }
+  }
+
+  class NessieNullOrderDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<NessieNullOrder> {
+    @Override
+    public NessieNullOrder deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt) {
+      String text = p.getString();
       return switch (text) {
         case NULLS_FIRST_VALUE -> NULLS_FIRST;
         case NULLS_LAST_VALUE -> NULLS_LAST;

@@ -31,8 +31,14 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(using = IcebergEndpoint.IcebergEndpointSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = IcebergEndpoint.IcebergEndpointSerializer3.class)
 @JsonDeserialize(using = IcebergEndpoint.IcebergEndpointDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = IcebergEndpoint.IcebergEndpointDeserializer3.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergEndpoint {
   String httpMethod();
@@ -55,6 +61,31 @@ public interface IcebergEndpoint {
     @Override
     public IcebergEndpoint deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
+      String val = p.getValueAsString();
+      int i = val.indexOf(' ');
+      String method = val.substring(0, i);
+      String path = val.substring(i + 1);
+      return icebergEndpoint(method, path);
+    }
+  }
+
+  class IcebergEndpointSerializer3 extends tools.jackson.databind.ValueSerializer<IcebergEndpoint> {
+    @Override
+    public void serialize(
+        IcebergEndpoint value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeString(value.httpMethod() + " " + value.path());
+    }
+  }
+
+  class IcebergEndpointDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergEndpoint> {
+    @Override
+    public IcebergEndpoint deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
       String val = p.getValueAsString();
       int i = val.indexOf(' ');
       String method = val.substring(0, i);

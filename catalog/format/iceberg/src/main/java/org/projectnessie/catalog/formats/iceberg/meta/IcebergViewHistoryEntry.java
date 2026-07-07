@@ -24,8 +24,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergViewHistoryEntry.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergViewHistoryEntry.class)
 @JsonDeserialize(as = ImmutableIcebergViewHistoryEntry.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergViewHistoryEntry.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergViewHistoryEntry {
   long timestampMs();

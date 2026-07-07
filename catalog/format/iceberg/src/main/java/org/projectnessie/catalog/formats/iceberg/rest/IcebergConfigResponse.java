@@ -29,8 +29,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergConfigResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergConfigResponse.class)
 @JsonDeserialize(as = ImmutableIcebergConfigResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergConfigResponse.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergConfigResponse {
   Map<String, String> defaults();

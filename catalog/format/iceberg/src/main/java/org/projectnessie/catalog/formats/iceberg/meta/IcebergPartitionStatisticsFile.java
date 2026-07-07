@@ -24,8 +24,13 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergPartitionStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergPartitionStatisticsFile.class)
 @JsonDeserialize(as = ImmutableIcebergPartitionStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    as = ImmutableIcebergPartitionStatisticsFile.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergPartitionStatisticsFile {
 

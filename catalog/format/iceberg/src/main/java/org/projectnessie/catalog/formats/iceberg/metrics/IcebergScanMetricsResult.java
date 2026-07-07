@@ -26,8 +26,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergScanMetricsResult.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergScanMetricsResult.class)
 @JsonDeserialize(as = ImmutableIcebergScanMetricsResult.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergScanMetricsResult.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergScanMetricsResult {
   @Nullable

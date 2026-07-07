@@ -27,8 +27,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergSnapshotRef.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergSnapshotRef.class)
 @JsonDeserialize(as = ImmutableIcebergSnapshotRef.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergSnapshotRef.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergSnapshotRef {
   static Builder builder() {

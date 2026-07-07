@@ -29,6 +29,10 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonSerialize(using = NessieSortDirection.NessieSortDirectionSerializer.class)
 @JsonDeserialize(using = NessieSortDirection.NessieSortDirectionDeserializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = NessieSortDirection.NessieSortDirectionSerializer3.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = NessieSortDirection.NessieSortDirectionDeserializer3.class)
 public interface NessieSortDirection {
   String name();
 
@@ -53,6 +57,31 @@ public interface NessieSortDirection {
     public NessieSortDirection deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
       String text = p.getText();
+      return switch (text) {
+        case ASC_VALUE -> ASC;
+        case DESC_VALUE -> DESC;
+        default -> ImmutableNessieSortDirection.of(text, text);
+      };
+    }
+  }
+
+  class NessieSortDirectionSerializer3
+      extends tools.jackson.databind.ValueSerializer<NessieSortDirection> {
+    @Override
+    public void serialize(
+        NessieSortDirection value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers) {
+      gen.writeString(value.jsonValue());
+    }
+  }
+
+  class NessieSortDirectionDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<NessieSortDirection> {
+    @Override
+    public NessieSortDirection deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt) {
+      String text = p.getString();
       return switch (text) {
         case ASC_VALUE -> ASC;
         case DESC_VALUE -> DESC;

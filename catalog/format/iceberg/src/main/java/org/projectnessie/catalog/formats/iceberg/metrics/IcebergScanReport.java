@@ -31,8 +31,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonTypeName(SCAN_REPORT_NAME)
 @JsonSerialize(as = ImmutableIcebergScanReport.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergScanReport.class)
 @JsonDeserialize(as = ImmutableIcebergScanReport.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergScanReport.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergScanReport extends IcebergMetricsReport {
   String tableName();
