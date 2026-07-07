@@ -25,7 +25,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieDecimalTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieDecimalTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieDecimalTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieDecimalTypeSpec.class)
 public interface NessieDecimalTypeSpec extends NessieTypeSpec {
   int scale();
 

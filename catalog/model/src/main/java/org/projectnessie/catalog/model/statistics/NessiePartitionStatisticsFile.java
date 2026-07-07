@@ -21,7 +21,10 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessiePartitionStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessiePartitionStatisticsFile.class)
 @JsonDeserialize(as = ImmutableNessiePartitionStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    as = ImmutableNessiePartitionStatisticsFile.class)
 public interface NessiePartitionStatisticsFile {
 
   static NessiePartitionStatisticsFile partitionStatisticsFile(

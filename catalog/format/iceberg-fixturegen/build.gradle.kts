@@ -35,6 +35,9 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
+
   implementation(libs.jakarta.annotation.api) // 'implementation' for smallrye-config
   compileOnly(libs.jakarta.validation.api)
 

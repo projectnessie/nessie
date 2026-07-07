@@ -26,7 +26,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieSortField.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieSortField.class)
 @JsonDeserialize(as = ImmutableNessieSortField.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieSortField.class)
 public interface NessieSortField extends Hashable {
 
   UUID sourceFieldId();
@@ -34,7 +36,10 @@ public interface NessieSortField extends Hashable {
   NessieTypeSpec type();
 
   @JsonSerialize(using = NessieFieldTransformSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = NessieFieldTransformSerializer3.class)
   @JsonDeserialize(using = NessieFieldTransformDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = NessieFieldTransformDeserializer3.class)
   NessieFieldTransform transformSpec();
 
   NessieNullOrder nullOrder();

@@ -24,7 +24,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 // TODO Iceberg: ??
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieIntervalTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieIntervalTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieIntervalTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieIntervalTypeSpec.class)
 public interface NessieIntervalTypeSpec extends NessieTypeSpec {
 
   @Override

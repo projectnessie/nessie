@@ -71,8 +71,13 @@ dependencies {
 
   testFixturesImplementation(platform(libs.jackson.bom))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
+  testFixturesCompileOnly(platform(libs.jackson3.bom))
+  testFixturesCompileOnly("tools.jackson.core:jackson-databind")
 
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
+
+  testCompileOnly(platform(libs.jackson3.bom))
+  testCompileOnly("tools.jackson.core:jackson-databind")
 }
 
 testing {

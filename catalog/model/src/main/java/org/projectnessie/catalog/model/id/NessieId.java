@@ -26,7 +26,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * of the ID. Nessie Catalog IDs consist only of bytes.
  */
 @JsonSerialize(using = NessieIdSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = NessieIdSerializer3.class)
 @JsonDeserialize(using = NessieIdDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(using = NessieIdDeserializer3.class)
 public interface NessieId extends Hashable {
 
   static NessieId randomNessieId() {

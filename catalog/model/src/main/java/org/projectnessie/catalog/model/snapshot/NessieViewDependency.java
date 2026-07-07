@@ -30,7 +30,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieViewDependency.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieViewDependency.class)
 @JsonDeserialize(as = ImmutableNessieViewDependency.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieViewDependency.class)
 public interface NessieViewDependency {
   @Nullable
   @jakarta.annotation.Nullable

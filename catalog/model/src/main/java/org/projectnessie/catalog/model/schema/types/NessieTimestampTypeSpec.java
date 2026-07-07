@@ -26,7 +26,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 // TODO Iceberg: ??
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieTimestampTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieTimestampTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieTimestampTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieTimestampTypeSpec.class)
 public interface NessieTimestampTypeSpec extends NessieTypeSpec {
 
   int precision();

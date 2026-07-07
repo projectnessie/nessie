@@ -109,11 +109,19 @@ public interface NessieEntitySnapshot<E extends NessieEntity> {
   @jakarta.annotation.Nullable
   // Can be null, if for example no Iceberg snapshot exists in a table-metadata
   @JsonSerialize(using = CommitMeta.InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = CommitMeta.Jackson3InstantSerializer.class)
   @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = CommitMeta.Jackson3InstantDeserializer.class)
   Instant snapshotCreatedTimestamp();
 
   @JsonSerialize(using = CommitMeta.InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = CommitMeta.Jackson3InstantSerializer.class)
   @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = CommitMeta.Jackson3InstantDeserializer.class)
   // FIXME is this nullable? The builder method says yes, but the interface says no.
   Instant lastUpdatedTimestamp();
 

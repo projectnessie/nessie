@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessiePartitionField.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessiePartitionField.class)
 @JsonDeserialize(as = ImmutableNessiePartitionField.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessiePartitionField.class)
 public interface NessiePartitionField extends Hashable {
   int NO_FIELD_ID = -1;
 
@@ -41,7 +43,10 @@ public interface NessiePartitionField extends Hashable {
   NessieTypeSpec type();
 
   @JsonSerialize(using = NessieFieldTransformSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = NessieFieldTransformSerializer3.class)
   @JsonDeserialize(using = NessieFieldTransformDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = NessieFieldTransformDeserializer3.class)
   NessieFieldTransform transformSpec();
 
   // TODO Iceberg specific

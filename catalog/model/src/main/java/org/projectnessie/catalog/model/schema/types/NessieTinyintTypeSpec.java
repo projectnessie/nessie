@@ -23,7 +23,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 // TODO Supported in Delta, not supported in Iceberg (needs conversion!)
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieTinyintTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieTinyintTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieTinyintTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieTinyintTypeSpec.class)
 public interface NessieTinyintTypeSpec extends NessieTypeSpec {
 
   @Override

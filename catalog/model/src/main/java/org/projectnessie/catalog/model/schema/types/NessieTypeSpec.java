@@ -34,9 +34,14 @@ import org.projectnessie.catalog.model.id.Hashable;
 
 /** Field/column type specification base. */
 @JsonTypeIdResolver(NessieTypeIdResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(NessieTypeIdResolver3.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type")
 @JsonSerialize(using = NessieTypeSpec.NessieTypeSpecSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = NessieTypeSpec.NessieTypeSpecSerializer3.class)
 @JsonDeserialize(using = NessieTypeSpec.NessieTypeSpecDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = NessieTypeSpec.NessieTypeSpecDeserializer3.class)
 public interface NessieTypeSpec extends Hashable {
 
   @Value.NonAttribute
@@ -81,6 +86,27 @@ public interface NessieTypeSpec extends Hashable {
     @Override
     public NessieTypeSpec deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException {
+      return p.readValueAs(NessieTypeSpecSerialized.class).unwrap();
+    }
+  }
+
+  class NessieTypeSpecSerializer3 extends tools.jackson.databind.ValueSerializer<NessieTypeSpec> {
+    @Override
+    public void serialize(
+        NessieTypeSpec value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writePOJO(NessieTypeSpecSerialized.wrap(value));
+    }
+  }
+
+  class NessieTypeSpecDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<NessieTypeSpec> {
+    @Override
+    public NessieTypeSpec deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
       return p.readValueAs(NessieTypeSpecSerialized.class).unwrap();
     }
   }
