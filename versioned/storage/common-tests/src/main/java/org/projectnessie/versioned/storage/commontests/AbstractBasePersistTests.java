@@ -69,7 +69,6 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFrom
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 import static org.projectnessie.versioned.storage.common.persist.Reference.reference;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -133,6 +132,8 @@ import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
 import org.projectnessie.versioned.storage.testextension.NessieStoreConfig;
 import org.projectnessie.versioned.storage.testextension.PersistExtension;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Basic {@link Persist} tests to be run by every implementation. */
 @ExtendWith({PersistExtension.class, SoftAssertionsExtension.class})
@@ -186,7 +187,7 @@ public class AbstractBasePersistTests {
   public void genericObj(
       @SuppressWarnings("unused") ObjType realType, Function<ObjId, Obj> realObjBuilder)
       throws Exception {
-    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+    ObjectMapper mapper = JsonMapper.builder().findAndAddModules().build();
 
     ObjId idReal = randomObjId();
     ObjId idGeneric = randomObjId();
@@ -201,8 +202,7 @@ public class AbstractBasePersistTests {
     long referenced = 42L;
 
     Obj genericObj =
-        contextualReader(mapper, genericType, idGeneric, versionToken, referenced)
-            .readValue(json, genericType.targetClass());
+        contextualReader(mapper, genericType, idGeneric, versionToken, referenced).readValue(json);
     soft.assertThat(persist.storeObj(genericObj)).isTrue();
 
     Obj genericFetched = persist.fetchObj(idGeneric);

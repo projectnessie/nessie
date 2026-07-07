@@ -44,6 +44,9 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
+  implementation("tools.jackson.datatype:jackson-datatype-guava")
 
   // required for custom object serialization tests
   implementation("com.fasterxml.jackson.core:jackson-databind")

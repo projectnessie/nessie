@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import java.io.IOException;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 public class ObjIdSerializer extends StdSerializer<ObjId> {
 
@@ -28,8 +28,8 @@ public class ObjIdSerializer extends StdSerializer<ObjId> {
   }
 
   @Override
-  public void serialize(ObjId value, JsonGenerator gen, SerializerProvider provider)
-      throws IOException {
+  public void serialize(ObjId value, JsonGenerator gen, SerializationContext provider)
+      throws JacksonException {
     gen.writeBinary(value.asByteArray());
   }
 }

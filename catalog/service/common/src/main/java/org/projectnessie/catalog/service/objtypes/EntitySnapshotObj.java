@@ -18,8 +18,6 @@ package org.projectnessie.catalog.service.objtypes;
 import static org.projectnessie.catalog.service.objtypes.transfer.CatalogObjIds.snapshotIdForContent;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.dynamicCaching;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
@@ -31,6 +29,8 @@ import org.projectnessie.nessie.tasks.api.TaskObj;
 import org.projectnessie.nessie.tasks.api.TaskState;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /** Represents the snapshot/state of a table or view. */
 @NessieImmutable

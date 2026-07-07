@@ -708,6 +708,7 @@ software.amazon.awssdk:utils-lite
 software.amazon.eventstream:eventstream
 tools.jackson.core:jackson-core
 tools.jackson.core:jackson-databind
+tools.jackson.dataformat:jackson-dataformat-smile
 
 ---
 

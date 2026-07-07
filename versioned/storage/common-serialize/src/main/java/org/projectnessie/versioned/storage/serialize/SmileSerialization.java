@@ -19,23 +19,28 @@ import static org.projectnessie.versioned.storage.common.json.ObjIdHelper.contex
 import static org.projectnessie.versioned.storage.common.util.Compressions.compressDefault;
 import static org.projectnessie.versioned.storage.common.util.Compressions.uncompress;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 import org.projectnessie.versioned.storage.common.objtypes.Compression;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.dataformat.smile.SmileMapper;
 
 public final class SmileSerialization {
 
-  private static final ObjectMapper SMILE_MAPPER = new SmileMapper().findAndRegisterModules();
+  private static final ObjectMapper SMILE_MAPPER =
+      SmileMapper.builder()
+          .enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+          .polymorphicTypeValidator(
+              BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build())
+          .findAndAddModules()
+          .build();
   private static final ObjectWriter SMILE_WRITER = SMILE_MAPPER.writerWithView(StorageView.class);
 
   private SmileSerialization() {}
@@ -47,13 +52,9 @@ public final class SmileSerialization {
       ObjType type,
       long referenced,
       Compression compression) {
-    try {
-      ObjectReader reader = contextualReader(SMILE_MAPPER, type, id, versionToken, referenced);
-      data = uncompress(compression, data);
-      return reader.readValue(data, type.targetClass());
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    ObjectReader reader = contextualReader(SMILE_MAPPER, type, id, versionToken, referenced);
+    data = uncompress(compression, data);
+    return reader.readValue(data);
   }
 
   public static Obj deserializeObj(
@@ -92,10 +93,6 @@ public final class SmileSerialization {
   }
 
   public static byte[] serializeObj(Obj obj, Consumer<Compression> compression) {
-    try {
-      return compressDefault(SMILE_WRITER.writeValueAsBytes(obj), compression);
-    } catch (JsonProcessingException e) {
-      throw new UncheckedIOException(e);
-    }
+    return compressDefault(SMILE_WRITER.writeValueAsBytes(obj), compression);
   }
 }

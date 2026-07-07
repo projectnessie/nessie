@@ -25,6 +25,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @Value.Immutable
 @JsonSerialize(as = ImmutableVersionedTestObj2.class)
 @JsonDeserialize(as = ImmutableVersionedTestObj2.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableVersionedTestObj2.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableVersionedTestObj2.class)
 public interface VersionedTestObj2 extends UpdateableObj {
 
   ObjType TYPE = CustomObjType.customObjType("versioned2", "vers2", VersionedTestObj2.class);

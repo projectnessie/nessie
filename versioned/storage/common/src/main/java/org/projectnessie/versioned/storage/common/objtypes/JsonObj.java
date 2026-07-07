@@ -19,14 +19,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /** A generic {@link Obj} that can be used to store any JSON-serializable object. */
 @Value.Immutable
@@ -70,7 +70,8 @@ public interface JsonObj extends Obj {
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.CLASS,
         include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-        property = "t")
+        property = "t",
+        visible = true)
     @Nullable
     Object object();
   }

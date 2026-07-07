@@ -19,14 +19,14 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.customObjType;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSignerKeysObj.class)

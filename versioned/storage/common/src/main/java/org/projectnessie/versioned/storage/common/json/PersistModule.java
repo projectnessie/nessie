@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import tools.jackson.databind.module.SimpleModule;
 
 public class PersistModule extends SimpleModule {
 

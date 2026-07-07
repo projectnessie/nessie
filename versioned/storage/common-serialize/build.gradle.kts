@@ -24,15 +24,24 @@ dependencies {
   api(project(":nessie-versioned-storage-common"))
   api(project(":nessie-versioned-storage-common-proto"))
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.dataformat:jackson-dataformat-smile")
 
   // required for custom object serialization tests
+  testImplementation(platform(libs.jackson.bom))
+  testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
   testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-guava")
   testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
   testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+  testImplementation(platform(libs.jackson3.bom))
+  testImplementation("tools.jackson.datatype:jackson-datatype-guava")
 
   testImplementation(project(":nessie-versioned-storage-common-tests"))
+  testImplementation(project(":nessie-catalog-files-api"))
+  testImplementation(project(":nessie-catalog-model"))
+  testImplementation(project(":nessie-catalog-service-config"))
+  testImplementation(project(":nessie-catalog-service-common"))
+  testImplementation(project(":nessie-tasks-api"))
 
   testCompileOnly(project(":nessie-immutables-std"))
   testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))

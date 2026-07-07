@@ -17,16 +17,16 @@ package org.projectnessie.versioned.storage.common.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class TestObjIdSerialization {
 
-  final ObjectMapper objectMapper = new ObjectMapper().registerModule(new PersistModule());
+  final ObjectMapper objectMapper = JsonMapper.builder().addModule(new PersistModule()).build();
 
   static Stream<ObjId> objectIds() {
     return Stream.of(
@@ -39,7 +39,7 @@ class TestObjIdSerialization {
 
   @ParameterizedTest
   @MethodSource("objectIds")
-  void testSerializeDeserialize(ObjId id) throws IOException {
+  void testSerializeDeserialize(ObjId id) {
     byte[] bytes = objectMapper.writeValueAsBytes(id);
     ObjId actual = objectMapper.readValue(bytes, ObjId.class);
     assertThat(actual).isEqualTo(id);

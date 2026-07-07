@@ -17,13 +17,14 @@ package org.projectnessie.versioned.storage.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteBuffer;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class Ser {
   private Ser() {}
 
-  public static final ObjectMapper SHARED_OBJECT_MAPPER = new ObjectMapper();
+  public static final ObjectMapper SHARED_OBJECT_MAPPER = JsonMapper.shared();
 
   public static int varIntLen(int v) {
     checkArgument(v >= 0);

@@ -22,4 +22,6 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableJsonTestBean.class)
 @JsonDeserialize(as = ImmutableJsonTestBean.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableJsonTestBean.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableJsonTestBean.class)
 public interface JsonTestBean extends SimpleTestBean {}

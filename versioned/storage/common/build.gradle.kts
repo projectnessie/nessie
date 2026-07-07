@@ -40,9 +40,8 @@ dependencies {
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   implementation(libs.snappy.java)
 
@@ -56,6 +55,10 @@ dependencies {
   testImplementation(project(":nessie-versioned-storage-testextension"))
   testImplementation(project(":nessie-versioned-storage-inmemory"))
   testImplementation(project(":nessie-versioned-storage-common-tests"))
+  testImplementation(platform(libs.jackson.bom))
+  testImplementation("com.fasterxml.jackson.core:jackson-databind")
+  testImplementation(platform(libs.jackson3.bom))
+  testImplementation("tools.jackson.datatype:jackson-datatype-guava")
   testImplementation(libs.threeten.extra)
   testRuntimeOnly(libs.logback.classic)
 
