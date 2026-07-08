@@ -15,17 +15,16 @@
  */
 package org.projectnessie.objectstoragemock.s3;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-public class EtagSerializer extends JsonSerializer<String> {
+public class EtagSerializer extends ValueSerializer<String> {
 
   @Override
   public void serialize(
-      String s, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-      throws IOException {
+      String s, JsonGenerator jsonGenerator, SerializationContext serializationContext)
+      throws tools.jackson.core.JacksonException {
     if (!s.startsWith("\"") && !s.endsWith("\"")) {
       s = '\"' + s + '\"';
     }

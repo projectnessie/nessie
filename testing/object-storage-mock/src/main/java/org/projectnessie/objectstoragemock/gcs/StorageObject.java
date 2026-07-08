@@ -17,16 +17,16 @@ package org.projectnessie.objectstoragemock.gcs;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.fasterxml.jackson.databind.util.StdDateFormat;
-import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import org.immutables.value.Value;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ext.javatime.deser.InstantDeserializer;
+import tools.jackson.databind.ext.javatime.ser.InstantSerializer;
+import tools.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.databind.util.StdDateFormat;
 
 @JsonSerialize(as = ImmutableStorageObject.class)
 @JsonDeserialize(as = ImmutableStorageObject.class)

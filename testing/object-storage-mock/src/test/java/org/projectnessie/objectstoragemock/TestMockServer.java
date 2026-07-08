@@ -17,10 +17,6 @@ package org.projectnessie.objectstoragemock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.io.ByteStreams;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -40,6 +36,11 @@ import org.projectnessie.objectstoragemock.ObjectStorageMock.MockServer;
 import org.projectnessie.objectstoragemock.s3.Buckets;
 import org.projectnessie.objectstoragemock.s3.ErrorResponse;
 import org.projectnessie.objectstoragemock.s3.ListAllMyBucketsResult;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.dataformat.xml.XmlMapper;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestMockServer extends AbstractObjectStorageMockServer {
@@ -181,6 +182,6 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
     return ((HttpURLConnection) conn).getResponseCode();
   }
 
-  private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
-  private static final ObjectMapper XML_MAPPER = new XmlMapper();
+  private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().build();
+  private static final ObjectMapper XML_MAPPER = XmlMapper.builder().build();
 }

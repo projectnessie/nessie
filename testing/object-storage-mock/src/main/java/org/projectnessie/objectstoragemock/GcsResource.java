@@ -25,9 +25,6 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.projectnessie.objectstoragemock.s3.S3Constants.RANGE;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -47,7 +44,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.core.UriInfo;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.Date;
@@ -67,13 +63,18 @@ import org.projectnessie.objectstoragemock.gcs.UploadType;
 import org.projectnessie.objectstoragemock.util.Holder;
 import org.projectnessie.objectstoragemock.util.PrefixSpliterator;
 import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @IfBuildProfile("never-include")
 public class GcsResource {
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  public static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
   @Inject ObjectStorageMock mockServer;
 
   @GET
@@ -312,7 +313,7 @@ public class GcsResource {
                 JsonNode contentTypeNode = metadata.get("contentType");
                 String ct =
                     contentTypeNode != null
-                        ? contentTypeNode.textValue()
+                        ? contentTypeNode.stringValue()
                         : "application/octet-stream";
                 obj =
                     updater
@@ -349,7 +350,7 @@ public class GcsResource {
               }
               default -> throw new IllegalArgumentException("Unknown upload type: " + uploadType);
             };
-          } catch (IOException e) {
+          } catch (JacksonException e) {
             throw new RuntimeException(e);
           } catch (UnsupportedOperationException e) {
             return Response.status(405, "POST object not allowed").build();
