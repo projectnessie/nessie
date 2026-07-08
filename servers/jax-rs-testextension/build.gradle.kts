@@ -49,9 +49,7 @@ dependencies {
   api("org.glassfish.jersey.ext.cdi:jersey-cdi-rs-inject")
   api("org.glassfish.jersey.ext.cdi:jersey-weld2-se")
 
-  api(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
+  api(platform(libs.jersey.test.framework.provider.bundle))
   api("org.glassfish.jersey.test-framework:jersey-test-framework-core")
   api("org.glassfish.jersey.test-framework:jersey-test-framework-util")
   api("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2")
