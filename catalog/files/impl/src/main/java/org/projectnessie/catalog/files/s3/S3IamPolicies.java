@@ -117,7 +117,7 @@ final class S3IamPolicies {
       for (StorageUri location : readonly) {
         String bucket = iamEscapeString(location.requiredAuthority());
         String path = iamEscapeString(location.pathWithoutLeadingTrailingSlash());
-        resources.add(format("arn:aws:s3:::%s%s/*", bucket, path));
+        resources.add(format("arn:aws:s3:::%s/%s/*", bucket, path));
         // For write.object-storage.enabled=true / before Iceberg 1.7.0
         resources.add(format("arn:aws:s3:::%s/*/%s/*", bucket, path));
         // For write.object-storage.enabled=true / since Iceberg 1.7.0
