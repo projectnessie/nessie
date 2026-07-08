@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import org.projectnessie.model.CommitMeta;
@@ -23,12 +22,16 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
 import org.projectnessie.nessie.relocated.protobuf.ByteString.Output;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class CommitMetaSerializer implements Serializer<CommitMeta> {
 
   public static final Serializer<CommitMeta> METADATA_SERIALIZER = new CommitMetaSerializer();
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER =
+      JsonMapper.builder().enable(MapperFeature.DEFAULT_VIEW_INCLUSION).build();
 
   @Override
   public ByteString toBytes(CommitMeta value) {
