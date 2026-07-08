@@ -62,28 +62,33 @@ fun DependencyHandler.quarkusExtension(project: Project, extension: String): Dep
   quarkusBom(project, "quarkus-$extension-bom")
 
 fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependency {
-  val noQuarkusEnforcedPlatform =
-    project.providers.systemProperty("quarkus.custom.noEnforcedPlatform").map(String::toBoolean)
-  val quarkusCustomVersion = project.providers.systemProperty("quarkus.custom.version")
+  val isNoQuarkusEnforcedPlatform =
+    project.providers
+      .systemProperty("quarkus.custom.noEnforcedPlatform")
+      .map(String::toBoolean)
+      .getOrElse(false)
+  val quarkusCustomVersion = project.providers.systemProperty("quarkus.custom.version").orNull
+  val isSnapshot = quarkusCustomVersion?.endsWith("-SNAPSHOT") ?: false
+  val quarkusDeclaredVersion =
+    project.libs().findVersion("quarkus").map { it.requiredVersion }.get()
+  val isQuarkusBom = extension == "quarkus-bom"
+  val useDeclaredVersion = quarkusCustomVersion == null || (isSnapshot && !isQuarkusBom)
+  val quarkusVersion = if (useDeclaredVersion) quarkusDeclaredVersion else quarkusCustomVersion
 
   if (
     project.providers.gradleProperty("release").isPresent &&
-      (noQuarkusEnforcedPlatform.getOrElse(false) || quarkusCustomVersion.isPresent)
+      (isNoQuarkusEnforcedPlatform || quarkusCustomVersion != null)
   )
     throw GradleException(
       "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed"
     )
 
-  val quarkusVersion =
-    quarkusCustomVersion.getOrElse(project.libs().findVersion("quarkus").get().requiredVersion)
-
   val group =
-    if (noQuarkusEnforcedPlatform.getOrElse(false) && extension == "quarkus-bom") "io.quarkus"
+    if ((isNoQuarkusEnforcedPlatform || isSnapshot) && isQuarkusBom) "io.quarkus"
     else "io.quarkus.platform"
   val notation = "$group:$extension:$quarkusVersion"
 
-  return if (noQuarkusEnforcedPlatform.getOrElse(false)) platform(notation)
-  else enforcedPlatform(notation)
+  return if (isNoQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
 }
 
 fun Project.cassandraDriverTweak() {
