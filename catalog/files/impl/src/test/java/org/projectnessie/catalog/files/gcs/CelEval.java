@@ -30,7 +30,7 @@ import org.projectnessie.cel.relocated.com.google.api.expr.v1alpha1.Type;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptCreateException;
 import org.projectnessie.cel.tools.ScriptHost;
-import org.projectnessie.cel.types.jackson.JacksonRegistry;
+import org.projectnessie.cel.types.jackson3.Jackson3Registry;
 
 /** CEL Utilities used by {@link TestGcsDownscopedCredentials}. */
 final class CelEval {
@@ -88,7 +88,7 @@ final class CelEval {
   static final List<Object> types = List.of(ResourceComposite.class);
 
   private static final ScriptHost SCRIPT_HOST =
-      ScriptHost.newBuilder().registry(JacksonRegistry.newRegistry()).build();
+      ScriptHost.newBuilder().registry(Jackson3Registry.newRegistry()).build();
 
   public static Script scriptFor(String expr) throws ScriptCreateException {
     return SCRIPT_HOST
