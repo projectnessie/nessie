@@ -27,7 +27,6 @@ import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalid
 import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.objtypes.StringObj.stringData;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -63,6 +62,7 @@ import org.projectnessie.versioned.storage.common.objtypes.StringObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
+import tools.jackson.databind.json.JsonMapper;
 
 @QuarkusTest
 @TestProfile(value = TestCacheInvalidation.Profile.class)
@@ -129,7 +129,7 @@ public class TestCacheInvalidation {
           .extracting(URI::getQuery)
           .isEqualTo("sender=" + serverInstanceId);
 
-      soft.assertThat(new ObjectMapper().readValue(body.get(), CacheInvalidations.class))
+      soft.assertThat(JsonMapper.shared().readValue(body.get(), CacheInvalidations.class))
           .extracting(CacheInvalidations::invalidations, list(CacheInvalidation.class))
           .first()
           .extracting(CacheInvalidationEvictReference.class::cast)
@@ -236,7 +236,7 @@ public class TestCacheInvalidation {
               asList(
                   cacheInvalidationEvictObj("", id1.asByteArray()),
                   cacheInvalidationEvictObj("", id2.asByteArray())));
-      new ObjectMapper().writeValue(outputStream, obj);
+      JsonMapper.shared().writeValue(outputStream, obj);
     }
 
     soft.assertThat(urlConn.getResponseCode()).isEqualTo(204);

@@ -28,7 +28,8 @@ dependencies {
   implementation("io.quarkus:quarkus-core")
   implementation("io.quarkus:quarkus-rest")
 
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(libs.guava)

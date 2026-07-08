@@ -29,7 +29,6 @@ import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalid
 import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -41,6 +40,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
+import tools.jackson.databind.json.JsonMapper;
 
 public class TestCacheInvalidationReceiver {
 
@@ -66,7 +66,7 @@ public class TestCacheInvalidationReceiver {
               when(r.getHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER)).thenReturn(token);
             });
     RequestBody reqBody = mock(RequestBody.class);
-    when(reqBody.asString()).thenReturn(new ObjectMapper().writeValueAsString(invalidations));
+    when(reqBody.asString()).thenReturn(JsonMapper.shared().writeValueAsString(invalidations));
     when(rc.body()).thenReturn(reqBody);
 
     receiver.cacheInvalidations(rc);

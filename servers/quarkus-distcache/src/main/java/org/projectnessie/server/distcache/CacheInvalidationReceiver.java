@@ -15,11 +15,9 @@
  */
 package org.projectnessie.server.distcache;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static java.util.Collections.emptyList;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromByteArray;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.vertx.http.ManagementInterface;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
@@ -37,6 +35,9 @@ import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidationConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 // See https://quarkus.io/guides/management-interface-reference#management-endpoint-application
 @Singleton
@@ -60,9 +61,10 @@ public class CacheInvalidationReceiver implements DistributedCacheInvalidationCo
     this.validTokens =
         new HashSet<>(storeConfig.cacheInvalidationValidTokens().orElse(emptyList()));
     this.objectMapper =
-        new ObjectMapper()
+        JsonMapper.builder()
             // forward compatibility
-            .disable(FAIL_ON_UNKNOWN_PROPERTIES);
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
   }
 
   @Override
