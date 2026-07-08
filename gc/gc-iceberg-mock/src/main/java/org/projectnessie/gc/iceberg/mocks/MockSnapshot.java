@@ -18,13 +18,13 @@ package org.projectnessie.gc.iceberg.mocks;
 import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.dataFileBase;
 import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.manifestFileLocation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nullable;
 import java.util.stream.Stream;
 import org.apache.iceberg.io.OutputFile;
 import org.immutables.value.Value;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 @Value.Immutable
 public abstract class MockSnapshot {

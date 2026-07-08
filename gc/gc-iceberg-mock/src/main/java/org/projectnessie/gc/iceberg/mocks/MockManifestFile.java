@@ -18,8 +18,6 @@ package org.projectnessie.gc.iceberg.mocks;
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.projectnessie.gc.iceberg.mocks.IcebergFileIOMocking.dataFilePath;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -40,6 +38,8 @@ import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.types.Types.StructType;
 import org.immutables.value.Value;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Value.Immutable
 public abstract class MockManifestFile implements IndexedRecord {

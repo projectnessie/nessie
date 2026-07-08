@@ -17,7 +17,6 @@ package org.projectnessie.gc.iceberg.mocks;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,6 +30,7 @@ import org.apache.iceberg.io.PositionOutputStream;
 import org.apache.iceberg.io.SeekableInputStream;
 import org.apache.iceberg.view.ViewMetadata;
 import org.apache.iceberg.view.ViewMetadataParser;
+import tools.jackson.databind.JsonNode;
 
 public abstract class IcebergFileIOMocking implements FileIO {
 
