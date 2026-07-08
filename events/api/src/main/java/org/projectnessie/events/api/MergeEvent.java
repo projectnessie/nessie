@@ -27,6 +27,8 @@ import org.projectnessie.model.Reference;
 @Value.Immutable
 @JsonSerialize(as = ImmutableMergeEvent.class)
 @JsonDeserialize(as = ImmutableMergeEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableMergeEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableMergeEvent.class)
 public interface MergeEvent extends MultiReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Override

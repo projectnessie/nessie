@@ -59,6 +59,10 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
+  runtimeOnly(platform(libs.jackson3.bom))
+  runtimeOnly("tools.jackson.core:jackson-databind")
 
   compileOnly(libs.microprofile.openapi)
 
@@ -70,6 +74,8 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.immutables.value.annotations)
+  testCompileOnly(platform(libs.jackson3.bom))
+  testCompileOnly("tools.jackson.core:jackson-databind")
 }
 
 tasks.withType<Checkstyle> { exclude("**/generated/**") }

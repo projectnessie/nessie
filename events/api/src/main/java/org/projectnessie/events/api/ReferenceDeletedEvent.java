@@ -23,6 +23,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceDeletedEvent.class)
 @JsonDeserialize(as = ImmutableReferenceDeletedEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceDeletedEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceDeletedEvent.class)
 public interface ReferenceDeletedEvent extends ReferenceEvent, WithHashBeforeEvent {
 
   @Value.Default

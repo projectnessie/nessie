@@ -26,6 +26,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentRemovedEvent.class)
 @JsonDeserialize(as = ImmutableContentRemovedEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentRemovedEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentRemovedEvent.class)
 public interface ContentRemovedEvent extends ContentEvent {
 
   @Override
