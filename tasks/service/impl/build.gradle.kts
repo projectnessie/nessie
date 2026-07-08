@@ -54,8 +54,8 @@ dependencies {
   testCompileOnly(project(":nessie-immutables-std"))
   testAnnotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
-  testImplementation(platform(libs.jackson.bom))
-  testImplementation("com.fasterxml.jackson.core:jackson-databind")
+  testImplementation(platform(libs.jackson3.bom))
+  testImplementation("tools.jackson.core:jackson-databind")
   testImplementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(project(":nessie-versioned-storage-testextension"))
