@@ -18,7 +18,6 @@ package org.projectnessie.tools.contentgenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.tools.contentgenerator.RunContentGenerator.runGeneratorCmd;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
@@ -46,10 +45,12 @@ import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class ITRefreshContent extends AbstractContentGeneratorTest {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.shared();
 
   private static final ContentKey key1 = ContentKey.of("test", "key1");
   private static final ContentKey key2 = ContentKey.of("test", "key2");
