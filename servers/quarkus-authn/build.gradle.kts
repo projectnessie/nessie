@@ -31,13 +31,7 @@ dependencies {
   implementation("io.quarkus:quarkus-security")
   implementation("io.quarkus:quarkus-vertx-http")
 
-  implementation(platform(libs.cel.bom))
-  implementation("org.projectnessie.cel:cel-standalone")
-
   compileOnly(libs.microprofile.openapi)
-
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)

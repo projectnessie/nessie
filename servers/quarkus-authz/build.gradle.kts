@@ -36,8 +36,8 @@ dependencies {
 
   compileOnly(libs.microprofile.openapi)
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
