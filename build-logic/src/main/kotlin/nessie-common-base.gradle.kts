@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import com.diffplug.spotless.LineEnding
+
 plugins { id("com.diffplug.spotless") }
 
 apply<PublishingHelperPlugin>()
@@ -25,6 +27,11 @@ if (
     !System.getProperty("idea.sync.active").toBoolean()
 ) {
   spotless {
+    // Don't use the default (`GIT_ATTRIBUTES_FAST_ALLSAME`) here, because that reads external state
+    // like files, properties, Git attributes. Neither of these is configuration-cache-friendly,
+    // leading to config-cache-rebuilds.
+    lineEndings = LineEnding.UNIX
+
     format("xml") {
       target("src/**/*.xml", "src/**/*.xsd")
       eclipseWtp(com.diffplug.spotless.extra.wtp.EclipseWtpFormatterStep.XML)
@@ -76,7 +83,7 @@ if (
       java {
         googleJavaFormat(libsRequiredVersion("googleJavaFormat"))
         licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
-        target("src/**/java/**")
+        target("src/**/*.java")
         targetExclude("build/**")
       }
     }
