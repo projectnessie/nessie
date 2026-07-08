@@ -62,8 +62,8 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.microprofile.openapi)
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  runtimeOnly(platform(libs.jackson.bom))
+  runtimeOnly("com.fasterxml.jackson.core:jackson-databind")
 
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
