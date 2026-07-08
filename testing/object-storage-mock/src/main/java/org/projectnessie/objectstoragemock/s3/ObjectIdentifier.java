@@ -18,14 +18,17 @@ package org.projectnessie.objectstoragemock.s3;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 public interface ObjectIdentifier {
 
   @JsonProperty("Key")
+  @JacksonXmlProperty(localName = "Key")
   @Value.Parameter(order = 1)
   String key();
 
   @JsonProperty("VersionId")
+  @JacksonXmlProperty(localName = "VersionId")
   @Nullable
   @Value.Parameter(order = 2)
   String versionId();

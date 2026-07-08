@@ -56,6 +56,7 @@ import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -336,6 +337,39 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
             s3.deleteObjects(
                 b -> b.bucket(BUCKET).delete(d -> d.objects(oi -> oi.key(MY_OBJECT_KEY)))))
         .isNotNull();
+  }
+
+  @SuppressWarnings({"unchecked", "resource"})
+  @Test
+  public void batchDeleteNestedObjects() {
+    Map<String, MockObject> objects = new HashMap<>();
+
+    createServer(
+        b ->
+            b.putBuckets(
+                BUCKET,
+                Bucket.builder()
+                    .object(objects::get)
+                    .deleter(o -> objects.remove(o) != null)
+                    .build()));
+
+    MockObject obj = ImmutableMockObject.builder().build();
+    String key1 = "foo/bar/baz/mytable/metadata/00000.metadata.json";
+    String key2 = "foo/bar/baz/othertable/metadata/00000.metadata.json";
+    objects.put(key1, obj);
+    objects.put(key2, obj);
+
+    soft.assertThat(
+            s3.deleteObjects(
+                b ->
+                    b.bucket(BUCKET)
+                        .delete(
+                            d ->
+                                d.objects(
+                                    ObjectIdentifier.builder().key(key1).build(),
+                                    ObjectIdentifier.builder().key(key2).build()))))
+        .isNotNull();
+    soft.assertThat(objects).isEmpty();
   }
 
   @SuppressWarnings("resource")

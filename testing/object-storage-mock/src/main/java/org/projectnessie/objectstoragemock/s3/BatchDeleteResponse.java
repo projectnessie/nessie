@@ -17,11 +17,11 @@ package org.projectnessie.objectstoragemock.s3;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import java.util.List;
 import org.immutables.value.Value;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 @JsonRootName("DeleteResult")
 @JsonSerialize(as = ImmutableBatchDeleteResponse.class)

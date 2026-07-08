@@ -35,7 +35,6 @@ dependencies {
   implementation("org.glassfish.jersey.containers:jersey-container-servlet")
   implementation("org.glassfish.jersey.containers:jersey-container-jetty-http")
   implementation("org.glassfish.jersey.inject:jersey-hk2")
-  implementation("org.glassfish.jersey.media:jersey-media-json-jackson")
 
   compileOnly(libs.errorprone.annotations)
   compileOnly(project(":nessie-immutables-std"))
@@ -43,13 +42,12 @@ dependencies {
 
   implementation(libs.guava)
 
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
-  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-  implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider")
-  implementation("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-xml-provider")
+  implementation("tools.jackson.core:jackson-databind")
+  implementation("tools.jackson.dataformat:jackson-dataformat-xml")
+  implementation("tools.jackson.jakarta.rs:jackson-jakarta-rs-json-provider")
+  implementation("tools.jackson.jakarta.rs:jackson-jakarta-rs-xml-provider")
 
   compileOnly(libs.avro)
 
