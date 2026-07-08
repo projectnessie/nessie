@@ -23,10 +23,6 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.smallrye.config.core)
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
-
   compileOnly(project(":nessie-immutables"))
   annotationProcessor(project(":nessie-immutables", configuration = "processor"))
   // javax/jakarta

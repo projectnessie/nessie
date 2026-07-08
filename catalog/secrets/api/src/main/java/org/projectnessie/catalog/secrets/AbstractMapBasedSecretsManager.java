@@ -17,26 +17,14 @@ package org.projectnessie.catalog.secrets;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import java.util.Map;
 import java.util.Optional;
 
 public abstract class AbstractMapBasedSecretsManager implements SecretsManager {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  @SuppressWarnings("unchecked")
   protected static Map<String, String> parseOrSingle(String s) {
-    if (!s.trim().startsWith("{")) {
-      return Map.of("value", s);
-    }
-    try {
-      return MAPPER.readValue(s, Map.class);
-    } catch (JsonProcessingException e) {
-      return Map.of("value", s);
-    }
+    return SecretJsonParser.parseOrSingle(s);
   }
 
   @Override
