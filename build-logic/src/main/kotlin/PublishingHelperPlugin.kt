@@ -21,11 +21,8 @@ import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationVariant
 import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.component.ModuleComponentSelector
-import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
@@ -37,9 +34,11 @@ import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.SigningExtension
@@ -54,148 +53,143 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     extensions.create("publishingHelper", PublishingHelperExtension::class.java)
 
     plugins.withType<MavenPublishPlugin>().configureEach {
-      configure<PublishingExtension> {
-        publications {
-          register<MavenPublication>("maven") {
-            val mavenPublication = this
-            afterEvaluate {
-              // This MUST happen in an 'afterEvaluate' to ensure that the Shadow*Plugin has
-              // been applied.
-              if (project.plugins.hasPlugin(ShadowPlugin::class.java)) {
-                configureShadowPublishing(project, mavenPublication)
-              } else {
-                val component = components.firstOrNull { c ->
-                  c.name == "javaPlatform" || c.name == "java"
+      val publication =
+        extensions.getByType<PublishingExtension>().publications.register<MavenPublication>(
+          "maven"
+        ) {
+          val publishingHelper = extensions.getByType<PublishingHelperExtension>()
+          val projectName = project.name
+          val projectDescription = project.description
+          val projectVersion = project.version.toString()
+          val isRootProject = project == rootProject
+          val parentGroup = project.parent?.group?.toString()
+          val parentName = project.parent?.name
+          val parentVersion = project.parent?.version?.toString()
+
+          groupId = project.group.toString()
+          version = projectVersion
+
+          pom {
+            name.set(publishingHelper.mavenName.orElse(projectName))
+            description.set(projectDescription)
+
+            if (isRootProject) {
+              val repoUrl =
+                publishingHelper.nessieRepoName.map { "https://github.com/projectnessie/$it" }
+              val scmUrl = repoUrl.map { "scm:git:$it" }
+              val developers =
+                parsePeopleFile(
+                  providers
+                    .fileContents(layout.projectDirectory.file("gradle/developers.csv"))
+                    .asText
+                    .get(),
+                  "gradle/developers.csv",
+                  minColumns = 3,
+                  maxColumns = 3,
+                )
+              val contributors =
+                parsePeopleFile(
+                  providers
+                    .fileContents(layout.projectDirectory.file("gradle/contributors.csv"))
+                    .asText
+                    .get(),
+                  "gradle/contributors.csv",
+                  minColumns = 2,
+                  maxColumns = 2,
+                )
+
+              inceptionYear.set(publishingHelper.inceptionYear)
+              url.set(repoUrl)
+              organization {
+                name.set("Project Nessie")
+                url.set("https://projectnessie.org")
+              }
+              licenses {
+                license {
+                  name.set("Apache-2.0") // SPDX-ID
+                  url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                 }
-                if (component is AdhocComponentWithVariants) {
-                  listOf("testFixturesApiElements", "testFixturesRuntimeElements").forEach { cfg ->
-                    configurations.findByName(cfg)?.apply {
-                      component.addVariantsFromConfiguration(this) { skip() }
-                    }
+              }
+              mailingLists {
+                mailingList {
+                  name.set("Project Nessie List")
+                  subscribe.set("projectnessie-subscribe@googlegroups.com")
+                  unsubscribe.set("projectnessie-unsubscribe@googlegroups.com")
+                  post.set("projectnessie@googlegroups.com")
+                  archive.set("https://groups.google.com/g/projectnessie")
+                }
+              }
+              scm {
+                connection.set(scmUrl)
+                developerConnection.set(scmUrl)
+                url.set(repoUrl.map { "$it/tree/main" })
+                if (!projectVersion.endsWith("-SNAPSHOT")) {
+                  tag.set("nessie-$projectVersion")
+                }
+              }
+              issueManagement {
+                system.set("GitHub")
+                url.set(repoUrl.map { "$it/issues" })
+              }
+              developers {
+                developers.forEach { person ->
+                  developer {
+                    id.set(person[0])
+                    name.set(person[1])
+                    url.set(person[2])
                   }
                 }
-                from(component)
               }
-
-              suppressPomMetadataWarningsFor("testApiElements")
-              suppressPomMetadataWarningsFor("testJavadocElements")
-              suppressPomMetadataWarningsFor("testRuntimeElements")
-              suppressPomMetadataWarningsFor("testSourcesElements")
-
-              mavenPublication.groupId = "$group"
-              mavenPublication.version = project.version.toString()
+              contributors {
+                contributors.forEach { person ->
+                  contributor {
+                    name.set(person[0])
+                    url.set(person[1])
+                  }
+                }
+              }
             }
 
-            tasks.named("generatePomFileForMavenPublication").configure {
-              pom {
-                val ep = project.extensions.getByType(PublishingHelperExtension::class.java)
-                name.set(ep.mavenName.orElse(project.name))
-                description.set(project.description)
-                if (project != rootProject) {
-                  withXml {
-                    val projectNode = asNode()
-
-                    val parentNode = projectNode.appendNode("parent")
-                    parentNode.appendNode("groupId", parent!!.group)
-                    parentNode.appendNode("artifactId", parent!!.name)
-                    parentNode.appendNode("version", parent!!.version)
-
-                    addMissingMandatoryDependencyVersions(projectNode)
-                  }
-                }
-
-                inputs
-                  .file(rootProject.file("gradle/developers.csv"))
-                  .withPathSensitivity(PathSensitivity.RELATIVE)
-                inputs
-                  .file(rootProject.file("gradle/contributors.csv"))
-                  .withPathSensitivity(PathSensitivity.RELATIVE)
-                doFirst {
-                  val e = rootProject.extensions.getByType(PublishingHelperExtension::class.java)
-
-                  val nessieRepoName = e.nessieRepoName.get()
-
-                  inceptionYear.set(e.inceptionYear.get())
-                  url.set("https://github.com/projectnessie/$nessieRepoName")
-                  organization {
-                    name.set("Project Nessie")
-                    url.set("https://projectnessie.org")
-                  }
-                  licenses {
-                    license {
-                      name.set("Apache-2.0") // SPDX-ID
-                      url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                  }
-                  mailingLists {
-                    mailingList {
-                      name.set("Project Nessie List")
-                      subscribe.set("projectnessie-subscribe@googlegroups.com")
-                      unsubscribe.set("projectnessie-unsubscribe@googlegroups.com")
-                      post.set("projectnessie@googlegroups.com")
-                      archive.set("https://groups.google.com/g/projectnessie")
-                    }
-                  }
-                  scm {
-                    connection.set("scm:git:https://github.com/projectnessie/$nessieRepoName")
-                    developerConnection.set(
-                      "scm:git:https://github.com/projectnessie/$nessieRepoName"
-                    )
-                    url.set("https://github.com/projectnessie/$nessieRepoName/tree/main")
-                    val version = project.version.toString()
-                    if (!version.endsWith("-SNAPSHOT")) {
-                      tag.set("nessie-$version")
-                    }
-                  }
-                  issueManagement {
-                    system.set("GitHub")
-                    url.set("https://github.com/projectnessie/$nessieRepoName/issues")
-                  }
-                  developers {
-                    rootProject.layout.projectDirectory
-                      .file("gradle/developers.csv")
-                      .asFile
-                      .readLines()
-                      .map { line -> line.trim() }
-                      .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
-                      .forEach { line ->
-                        val args = line.split(",")
-                        if (args.size < 3) {
-                          throw GradleException(
-                            "gradle/developers.csv contains invalid line '${line}'"
-                          )
-                        }
-                        developer {
-                          id.set(args[0])
-                          name.set(args[1])
-                          url.set(args[2])
-                        }
-                      }
-                  }
-                  contributors {
-                    rootProject.layout.projectDirectory
-                      .file("gradle/contributors.csv")
-                      .asFile
-                      .readLines()
-                      .map { line -> line.trim() }
-                      .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
-                      .forEach { line ->
-                        val args = line.split(",")
-                        if (args.size > 2) {
-                          throw GradleException(
-                            "gradle/contributors.csv contains invalid line '${line}'"
-                          )
-                        }
-                        contributor {
-                          name.set(args[0])
-                          url.set(args[1])
-                        }
-                      }
-                  }
-                }
+            if (!isRootProject) {
+              withXml {
+                val projectNode = asNode()
+                val parentNode = projectNode.appendNode("parent")
+                parentNode.appendNode("groupId", parentGroup)
+                parentNode.appendNode("artifactId", parentName)
+                parentNode.appendNode("version", parentVersion)
               }
             }
           }
+
+          suppressPomMetadataWarningsFor("testApiElements")
+          suppressPomMetadataWarningsFor("testJavadocElements")
+          suppressPomMetadataWarningsFor("testRuntimeElements")
+          suppressPomMetadataWarningsFor("testSourcesElements")
+        }
+
+      if (project.plugins.hasPlugin(ShadowPlugin::class.java)) {
+        publication.configure { configureShadowPublishing(project, this) }
+      } else {
+        publication.configure {
+          val component = components.findByName("javaPlatform")
+          if (component != null) {
+            from(component)
+          } else {
+            configureJavaPublishing(this)
+          }
+        }
+      }
+
+      configureSigning(publication.get())
+
+      tasks.named("generatePomFileForMavenPublication", GenerateMavenPom::class.java).configure {
+        if (project == rootProject) {
+          inputs
+            .file(layout.projectDirectory.file("gradle/developers.csv"))
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+          inputs
+            .file(layout.projectDirectory.file("gradle/contributors.csv"))
+            .withPathSensitivity(PathSensitivity.RELATIVE)
         }
       }
     }
@@ -206,23 +200,55 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     tasks.withType<GenerateModuleMetadata>().configureEach {
       suppressedValidationErrors.add("enforced-platform")
     }
+  }
 
-    if (project.providers.gradleProperty("release").isPresent) {
+  private fun Project.configureJavaPublishing(mavenPublication: MavenPublication) {
+    val component = components.findByName("java") ?: return
+    if (component is AdhocComponentWithVariants) {
+      listOf("testFixturesApiElements", "testFixturesRuntimeElements").forEach { cfg ->
+        configurations.findByName(cfg)?.apply {
+          component.addVariantsFromConfiguration(this) { skip() }
+        }
+      }
+    }
+    mavenPublication.from(component)
+  }
+
+  private fun Project.configureSigning(mavenPublication: MavenPublication) {
+    if (providers.gradleProperty("release").isPresent) {
       plugins.withType<SigningPlugin>().configureEach {
         configure<SigningExtension> {
-          val signingKey = project.providers.gradleProperty("signingKey").orNull
-          val signingPassword = project.providers.gradleProperty("signingPassword").orNull
+          val signingKey = providers.gradleProperty("signingKey").orNull
+          val signingPassword = providers.gradleProperty("signingPassword").orNull
           useInMemoryPgpKeys(signingKey, signingPassword)
-          val publishing = project.extensions.getByType(PublishingExtension::class.java)
-          afterEvaluate { sign(publishing.publications.getByName("maven")) }
+          sign(mavenPublication)
 
-          if (project.providers.gradleProperty("useGpgAgent").isPresent) {
+          if (providers.gradleProperty("useGpgAgent").isPresent) {
             useGpgCmd()
           }
         }
       }
     }
   }
+
+  private fun parsePeopleFile(
+    text: String,
+    path: String,
+    minColumns: Int,
+    maxColumns: Int,
+  ): List<List<String>> =
+    text
+      .lineSequence()
+      .map { line -> line.trim() }
+      .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
+      .map { line ->
+        val args = line.split(",")
+        if (args.size < minColumns || args.size > maxColumns) {
+          throw GradleException("$path contains invalid line '${line}'")
+        }
+        args
+      }
+      .toList()
 
   /**
    * "Proper" publication of shadow-jar instead of the "main" jar, with "the right" Gradle's module
@@ -242,6 +268,12 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     }
 
     val shadowJar = project.tasks.named("shadowJar")
+    val shadowProjectDependencies =
+      project.configurations
+        .getByName("shadow")
+        .allDependencies
+        .withType(ProjectDependency::class.java)
+        .map { PomDependency(it.group, it.name, it.version) }
 
     val shadowApiElements =
       project.configurations.create("shadowApiElements") {
@@ -285,8 +317,12 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     }
     // Sonatype requires the javadoc and sources jar to be present, but the
     // Shadow extension does not publish those.
-    component.addVariantsFromConfiguration(project.configurations.getByName("javadocElements")) {}
-    component.addVariantsFromConfiguration(project.configurations.getByName("sourcesElements")) {}
+    project.configurations.findByName("javadocElements")?.let {
+      component.addVariantsFromConfiguration(it) {}
+    }
+    project.configurations.findByName("sourcesElements")?.let {
+      component.addVariantsFromConfiguration(it) {}
+    }
     mavenPublication.from(component)
 
     // This a replacement to add dependencies to the pom, if necessary. Equivalent to
@@ -299,73 +335,19 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
         val dependenciesNode =
           if ((depNode as NodeList).isNotEmpty()) depNode[0] as Node
           else node.appendNode("dependencies")
-        project.configurations.getByName("shadow").allDependencies.forEach {
-          if (it is ProjectDependency) {
-            val dependencyNode = dependenciesNode.appendNode("dependency")
-            dependencyNode.appendNode("groupId", it.group)
-            dependencyNode.appendNode("artifactId", it.name)
-            dependencyNode.appendNode("version", it.version)
-            dependencyNode.appendNode("scope", "runtime")
-          }
+        shadowProjectDependencies.forEach {
+          val dependencyNode = dependenciesNode.appendNode("dependency")
+          dependencyNode.appendNode("groupId", it.groupId)
+          dependencyNode.appendNode("artifactId", it.artifactId)
+          dependencyNode.appendNode("version", it.version)
+          dependencyNode.appendNode("scope", "runtime")
         }
       }
     }
-  }
-
-  /**
-   * Scans the generated pom.xml for `<dependencies>` in `<dependencyManagement>` that do not have a
-   * `<version>` and adds one, if possible. Maven kinda requires `<version>` tags there, even if the
-   * `<dependency>` without a `<version>` is a bom and that bom's version is available transitively.
-   */
-  private fun Project.addMissingMandatoryDependencyVersions(projectNode: Node) {
-    xmlNode(xmlNode(projectNode, "dependencyManagement"), "dependencies")?.children()?.forEach {
-      val dependency = it as Node
-      if (xmlNode(dependency, "version") == null) {
-        val depGroup = xmlNode(dependency, "groupId")!!.text()
-        val depName = xmlNode(dependency, "artifactId")!!.text()
-
-        var depResult =
-          findDependency(configurations.findByName("runtimeClasspath"), depGroup, depName)
-        if (depResult == null) {
-          depResult =
-            findDependency(configurations.findByName("testRuntimeClasspath"), depGroup, depName)
-        }
-
-        if (depResult != null) {
-          val req = depResult.requested as ModuleComponentSelector
-          dependency.appendNode("version", req.version)
-        }
-      }
-    }
-  }
-
-  private fun findDependency(
-    config: Configuration?,
-    depGroup: String,
-    depName: String,
-  ): DependencyResult? {
-    if (config != null) {
-      val depResult =
-        config.incoming.resolutionResult.allDependencies.find { depResult ->
-          val req = depResult.requested
-          if (req is ModuleComponentSelector) req.group == depGroup && req.module == depName
-          else false
-        }
-      return depResult
-    }
-    return null
-  }
-
-  private fun xmlNode(node: Node?, child: String): Node? {
-    val found = node?.get(child)
-    if (found is NodeList) {
-      if (found.isNotEmpty()) {
-        return found[0] as Node
-      }
-    }
-    return null
   }
 }
+
+private data class PomDependency(val groupId: String?, val artifactId: String, val version: String?)
 
 abstract class PublishingHelperExtension {
   abstract val mavenName: Property<String>
