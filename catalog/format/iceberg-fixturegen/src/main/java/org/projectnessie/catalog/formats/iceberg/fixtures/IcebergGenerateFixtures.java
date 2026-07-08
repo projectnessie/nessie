@@ -21,7 +21,6 @@ import static java.util.UUID.randomUUID;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.tableMetadataSimple;
 import static org.projectnessie.catalog.formats.iceberg.fixtures.IcebergFixtures.viewMetadataSimple;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,13 +35,18 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSnapshot;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSortOrder;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergViewMetadata;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class IcebergGenerateFixtures {
+  private static final ObjectMapper MAPPER =
+      JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
+
   private IcebergGenerateFixtures() {}
 
   @FunctionalInterface
@@ -72,9 +76,7 @@ public class IcebergGenerateFixtures {
     byte[] data;
     try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(bytes)) {
-      IcebergJson.objectMapper()
-          .enable(SerializationFeature.INDENT_OUTPUT)
-          .writeValue(gzip, simpleTableMetadata);
+      MAPPER.writeValue(gzip, simpleTableMetadata);
       gzip.flush();
       data = bytes.toByteArray();
     }
@@ -95,9 +97,7 @@ public class IcebergGenerateFixtures {
     byte[] data;
     try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(bytes)) {
-      IcebergJson.objectMapper()
-          .enable(SerializationFeature.INDENT_OUTPUT)
-          .writeValue(gzip, simpleViewMetadata);
+      MAPPER.writeValue(gzip, simpleViewMetadata);
       gzip.flush();
       data = bytes.toByteArray();
     }
@@ -116,10 +116,7 @@ public class IcebergGenerateFixtures {
         tableMetadataSimple().formatVersion(icebergSpecVersion).build();
     return writer.write(
         URI.create("table-metadata-simple-no-manifest/table-metadata-simple-no-manifest.json"),
-        IcebergJson.objectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .writeValueAsString(simpleTableMetadata)
-            .getBytes(UTF_8));
+        MAPPER.writeValueAsString(simpleTableMetadata).getBytes(UTF_8));
   }
 
   public static String generateSimpleMetadataForView(ObjectWriter writer, int icebergSpecVersion)
@@ -128,10 +125,7 @@ public class IcebergGenerateFixtures {
         viewMetadataSimple().formatVersion(icebergSpecVersion).build();
     return writer.write(
         URI.create("view-metadata-simple-no-manifest/view-metadata-simple-no-manifest.json"),
-        IcebergJson.objectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .writeValueAsString(simpViewMetadata)
-            .getBytes(UTF_8));
+        MAPPER.writeValueAsString(simpViewMetadata).getBytes(UTF_8));
   }
 
   public static String generateMetadataWithManifestList(String basePath, ObjectWriter writer)
@@ -204,10 +198,7 @@ public class IcebergGenerateFixtures {
     metadataConsumer.accept(icebergMetadataWithManifestList);
     return writer.write(
         URI.create("table-metadata-with-manifest-list/table-metadata-with-manifest-list.json"),
-        IcebergJson.objectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .writeValueAsString(icebergMetadataWithManifestList)
-            .getBytes(UTF_8));
+        MAPPER.writeValueAsString(icebergMetadataWithManifestList).getBytes(UTF_8));
   }
 
   public static String generateMetadataWithManifests(String basePath, ObjectWriter writer)
@@ -272,9 +263,6 @@ public class IcebergGenerateFixtures {
             .build();
     return writer.write(
         URI.create("table-metadata-with-manifests/table-metadata-with-manifests.json"),
-        IcebergJson.objectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .writeValueAsString(icebergMetadataWithManifests)
-            .getBytes(UTF_8));
+        MAPPER.writeValueAsString(icebergMetadataWithManifests).getBytes(UTF_8));
   }
 }

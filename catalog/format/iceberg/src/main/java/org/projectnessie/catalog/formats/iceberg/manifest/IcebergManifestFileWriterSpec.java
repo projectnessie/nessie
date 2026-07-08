@@ -15,7 +15,6 @@
  */
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -39,22 +38,14 @@ public interface IcebergManifestFileWriterSpec {
 
   @Value.Default
   default String schemaAsJsonString() {
-    try {
-      return spec().jsonWriter().writeValueAsString(schema());
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    return spec().jsonWriter().writeValueAsString(schema());
   }
 
   IcebergPartitionSpec partitionSpec();
 
   @Value.Default
   default String partitionSpecAsJsonString() {
-    try {
-      return spec().jsonWriter().writeValueAsString(partitionSpec().fields());
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    return spec().jsonWriter().writeValueAsString(partitionSpec().fields());
   }
 
   long addedSnapshotId();

@@ -31,12 +31,9 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.avro)
 
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-
-  compileOnly(platform(libs.jackson3.bom))
-  compileOnly("tools.jackson.core:jackson-databind")
+  implementation("tools.jackson.core:jackson-databind")
 
   implementation(libs.jakarta.annotation.api) // 'implementation' for smallrye-config
   compileOnly(libs.jakarta.validation.api)

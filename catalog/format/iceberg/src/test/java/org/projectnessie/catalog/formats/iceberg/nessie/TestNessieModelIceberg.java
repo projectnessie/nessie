@@ -62,7 +62,6 @@ import static org.projectnessie.catalog.model.schema.NessieNullOrder.NULLS_LAST;
 import static org.projectnessie.catalog.model.schema.NessieSortDirection.ASC;
 import static org.projectnessie.catalog.model.snapshot.NessieViewRepresentation.NessieViewSQLRepresentation.nessieViewSQLRepresentation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -121,6 +120,8 @@ import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.model.snapshot.NessieViewSnapshot;
 import org.projectnessie.catalog.model.snapshot.TableFormat;
 import org.projectnessie.model.ContentKey;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestNessieModelIceberg {
@@ -214,7 +215,7 @@ public class TestNessieModelIceberg {
     var specJson = PartitionSpecParser.toJson(spec);
     var sortJson = SortOrderParser.toJson(sort);
 
-    var nessieMapper = new ObjectMapper().findAndRegisterModules();
+    var nessieMapper = JsonMapper.builder().build();
     var icebergSchema = nessieMapper.readValue(schemaJson, IcebergSchema.class);
     var icebergSpec = nessieMapper.readValue(specJson, IcebergPartitionSpec.class);
     var icebergSort = nessieMapper.readValue(sortJson, IcebergSortOrder.class);

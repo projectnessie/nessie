@@ -43,6 +43,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   runtimeOnly("com.fasterxml.jackson.datatype:jackson-datatype-guava")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
