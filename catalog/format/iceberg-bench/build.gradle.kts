@@ -45,6 +45,8 @@ dependencies {
 
   jmhImplementation(libs.guava)
   jmhImplementation(libs.avro)
+
+  implementation(platform(libs.junit.bom))
 }
 
 jmh { jmhVersion.set(libs.versions.jmh.get()) }

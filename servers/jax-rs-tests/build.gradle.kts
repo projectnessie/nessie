@@ -52,5 +52,6 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
 
+  testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 }
