@@ -18,10 +18,6 @@ package org.projectnessie.catalog.files.s3;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +34,18 @@ import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.ImmutableS3ClientIam;
 import org.projectnessie.catalog.files.config.S3ClientIam;
 import org.projectnessie.storage.uri.StorageUri;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class TestS3IamPolicies {
 
   @InjectSoftAssertions protected SoftAssertions soft;
+
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   @Test
   void multipleStorageLocations() throws Exception {
@@ -66,7 +69,7 @@ class TestS3IamPolicies {
 
     String policy = S3IamPolicies.locationDependentPolicy(clientIam, locations);
 
-    String pretty = new ObjectMapper().readValue(policy, JsonNode.class).toPrettyString();
+    String pretty = MAPPER.readValue(policy, JsonNode.class).toPrettyString();
 
     soft.assertThat(pretty)
         .isEqualTo(
@@ -134,18 +137,18 @@ class TestS3IamPolicies {
     soft.assertThatCode(
             () -> {
               String policy = S3IamPolicies.locationDependentPolicy(iam, locations);
-              ObjectNode json = new ObjectMapper().readValue(policy, ObjectNode.class);
+              ObjectNode json = MAPPER.readValue(policy, ObjectNode.class);
               ArrayNode statements = json.withArray("Statement");
               List<String> resources = new ArrayList<>();
               for (JsonNode statement : statements) {
                 JsonNode res = statement.get("Resource");
                 if (res.isArray()) {
                   for (JsonNode re : res) {
-                    resources.add(re.asText());
+                    resources.add(re.stringValue());
                   }
                 }
-                if (res.isTextual()) {
-                  resources.add(res.asText());
+                if (res.isString()) {
+                  resources.add(res.stringValue());
                 }
               }
               assertThat(resources).containsExactlyElementsOf(expectedResources);

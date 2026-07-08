@@ -60,6 +60,9 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   compileOnly(libs.microprofile.openapi)
 
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
+
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 

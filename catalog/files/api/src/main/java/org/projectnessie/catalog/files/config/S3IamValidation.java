@@ -15,14 +15,16 @@
  */
 package org.projectnessie.catalog.files.config;
 
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import software.amazon.awssdk.policybuilder.iam.IamPolicyReader;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 final class S3IamValidation {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
   private static final IamPolicyReader IAM_POLICY_READER = IamPolicyReader.create();
 
   private S3IamValidation() {}
@@ -59,18 +61,27 @@ final class S3IamValidation {
   }
 
   private static void parseStatement(String stmt) {
-    try (MappingIterator<Object> values = MAPPER.readerFor(ObjectNode.class).readValues(stmt)) {
-      if (values.hasNext()) {
-        Object value = values.nextValue();
-        if (!(value instanceof ObjectNode)) {
-          throw new IOException("Invalid statement");
-        }
+    requireJsonObjectShape(stmt);
+    try (MappingIterator<JsonNode> values = MAPPER.readerFor(JsonNode.class).readValues(stmt)) {
+      if (!values.hasNext()) {
+        throw new IOException("Invalid statement");
+      }
+      JsonNode value = values.nextValue();
+      if (!(value instanceof ObjectNode)) {
+        throw new IOException("Invalid statement");
       }
       if (values.hasNext()) {
         throw new IOException("Invalid statement");
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private static void requireJsonObjectShape(String stmt) {
+    String trimmed = stmt.trim();
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+      throw new RuntimeException(new IOException("Invalid statement"));
     }
   }
 }

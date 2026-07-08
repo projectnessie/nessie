@@ -18,11 +18,6 @@ package org.projectnessie.catalog.files.s3;
 import static java.lang.String.format;
 import static org.projectnessie.catalog.files.s3.S3Utils.iamEscapeString;
 
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -35,10 +30,17 @@ import java.util.stream.Stream;
 import org.projectnessie.catalog.files.api.StorageLocations;
 import org.projectnessie.catalog.files.config.S3ClientIam;
 import org.projectnessie.storage.uri.StorageUri;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 final class S3IamPolicies {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   private S3IamPolicies() {}
 
@@ -144,15 +146,14 @@ final class S3IamPolicies {
             .build(ParsedIamStatements::parseStatement);
 
     private static ObjectNode parseStatement(String stmt) {
-      try (MappingIterator<Object> values = MAPPER.readerFor(ObjectNode.class).readValues(stmt)) {
-        ObjectNode node = null;
-        if (values.hasNext()) {
-          Object value = values.nextValue();
-          if (value instanceof ObjectNode objectNode) {
-            node = objectNode;
-          } else {
-            throw new IOException("Invalid statement");
-          }
+      requireJsonObjectShape(stmt);
+      try (MappingIterator<JsonNode> values = MAPPER.readerFor(JsonNode.class).readValues(stmt)) {
+        if (!values.hasNext()) {
+          throw new IOException("Invalid statement");
+        }
+        JsonNode value = values.nextValue();
+        if (!(value instanceof ObjectNode node)) {
+          throw new IOException("Invalid statement");
         }
         if (values.hasNext()) {
           throw new IOException("Invalid statement");
@@ -160,6 +161,13 @@ final class S3IamPolicies {
         return node;
       } catch (IOException e) {
         throw new RuntimeException(e);
+      }
+    }
+
+    private static void requireJsonObjectShape(String stmt) {
+      String trimmed = stmt.trim();
+      if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+        throw new RuntimeException(new IOException("Invalid statement"));
       }
     }
   }
