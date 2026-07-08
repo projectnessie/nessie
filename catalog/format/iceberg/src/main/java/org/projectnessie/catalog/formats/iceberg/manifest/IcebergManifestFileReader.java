@@ -15,8 +15,6 @@
  */
 package org.projectnessie.catalog.formats.iceberg.manifest;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
@@ -30,6 +28,9 @@ import org.projectnessie.catalog.formats.iceberg.IcebergSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionField;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergPartitionSpec;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergSchema;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
 
 public abstract class IcebergManifestFileReader
     implements AutoCloseable, Iterator<IcebergManifestEntry> {
@@ -63,16 +64,19 @@ public abstract class IcebergManifestFileReader
 
         IcebergSpec spec = IcebergSpec.forVersion(formatVersion);
         datumReader.avroSchema = spec.avroBundle().schemaManifestEntry();
-        IcebergSchema schema = spec.jsonReader().readValue(schemaJson, IcebergSchema.class);
+        IcebergSchema schema = spec.jsonReader().forType(IcebergSchema.class).readValue(schemaJson);
         IcebergPartitionSpec partitionSpec;
         try (JsonParser parser = spec.jsonReader().createParser(specJson)) {
           try {
             List<IcebergPartitionField> partitionFields =
-                parser.readValueAs(new TypeReference<List<IcebergPartitionField>>() {});
+                spec.jsonReader()
+                    .forType(new TypeReference<List<IcebergPartitionField>>() {})
+                    .readValue(parser);
             partitionSpec = IcebergPartitionSpec.partitionSpec(specId, partitionFields);
-          } catch (IOException e) {
+          } catch (JacksonException e) {
             // workaround for https://github.com/apache/iceberg-python/pull/846
-            partitionSpec = spec.jsonReader().readValue(specJson, IcebergPartitionSpec.class);
+            partitionSpec =
+                spec.jsonReader().forType(IcebergPartitionSpec.class).readValue(specJson);
           }
         }
 

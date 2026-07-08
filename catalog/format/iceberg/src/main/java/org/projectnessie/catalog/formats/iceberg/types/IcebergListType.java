@@ -18,6 +18,7 @@ package org.projectnessie.catalog.formats.iceberg.types;
 import static org.projectnessie.catalog.formats.iceberg.manifest.Avro.avroNullable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -37,6 +38,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @tools.jackson.databind.annotation.JsonNaming(
     tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonPropertyOrder({"type", "elementId", "element", "elementRequired"})
 @JsonTypeName(IcebergListType.TYPE_NAME)
 public interface IcebergListType extends IcebergComplexType {
   String ELEMENT_ID_PROP = "element-id";

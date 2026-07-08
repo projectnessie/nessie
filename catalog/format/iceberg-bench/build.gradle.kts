@@ -39,9 +39,9 @@ dependencies {
   jmhImplementation(project(":nessie-versioned-storage-common-serialize"))
   jmhImplementation("org.apache.iceberg:iceberg-core:$versionIceberg")
 
-  jmhImplementation(platform(libs.jackson.bom))
+  jmhImplementation(platform(libs.jackson3.bom))
   jmhImplementation("com.fasterxml.jackson.core:jackson-annotations")
-  jmhImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+  jmhImplementation("tools.jackson.core:jackson-databind")
 
   jmhImplementation(libs.guava)
   jmhImplementation(libs.avro)

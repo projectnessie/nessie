@@ -41,12 +41,8 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-
-  compileOnly(platform(libs.jackson3.bom))
-  compileOnly("tools.jackson.core:jackson-core")
-  compileOnly("tools.jackson.core:jackson-databind")
-  runtimeOnly(platform(libs.jackson3.bom))
-  runtimeOnly("tools.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   avroSchemaImplementation(libs.avro)
   avroSchemaImplementation(libs.guava)

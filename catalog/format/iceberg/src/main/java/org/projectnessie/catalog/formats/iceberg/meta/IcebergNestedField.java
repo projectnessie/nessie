@@ -20,6 +20,7 @@ import static org.projectnessie.catalog.formats.iceberg.manifest.Avro.makeCompat
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -40,6 +41,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @tools.jackson.databind.annotation.JsonNaming(
     tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonPropertyOrder({"id", "name", "required", "type", "doc"})
 public interface IcebergNestedField {
 
   static Builder builder() {

@@ -44,6 +44,8 @@ public interface IcebergScanReport extends IcebergMetricsReport {
   long snapshotId();
 
   // TODO add a specific sub type for Nessie Catalog?
+  @tools.jackson.databind.annotation.JsonSerialize(using = JsonNodeSerializer3.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = JsonNodeDeserializer3.class)
   JsonNode filter();
 
   int schemaId();
@@ -55,6 +57,33 @@ public interface IcebergScanReport extends IcebergMetricsReport {
   IcebergScanMetricsResult metrics();
 
   Map<String, String> metadata();
+
+  class JsonNodeSerializer3 extends tools.jackson.databind.ValueSerializer<JsonNode> {
+    @Override
+    public void serialize(
+        JsonNode value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
+      gen.writeRawValue(value.toString());
+    }
+  }
+
+  class JsonNodeDeserializer3 extends tools.jackson.databind.ValueDeserializer<JsonNode> {
+    private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON2_MAPPER =
+        new com.fasterxml.jackson.databind.ObjectMapper();
+
+    @Override
+    public JsonNode deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      try {
+        return JACKSON2_MAPPER.readTree(p.readValueAsTree().toString());
+      } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+        throw new IllegalArgumentException("Could not deserialize JSON filter", e);
+      }
+    }
+  }
 
   static Builder builder() {
     return ImmutableIcebergScanReport.builder();

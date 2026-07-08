@@ -24,7 +24,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.EMPTY_OBJ_ID;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import io.quarkus.vertx.http.HttpServer;
@@ -101,6 +100,7 @@ import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Reference;
 import org.projectnessie.storage.uri.StorageUri;
+import tools.jackson.databind.ObjectMapper;
 
 public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatalog> {
 
@@ -192,6 +192,18 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
   // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
   protected static <T> T readValue(ObjectMapper mapper, URL url, Class<T> clazz) throws Exception {
+    URLConnection conn = url.openConnection();
+    try (var input = conn.getInputStream()) {
+      return mapper.readValue(input, clazz);
+    }
+  }
+
+  // This is needed for tests that also use Iceberg's RESTSerializers, which only works for Jackson
+  // 2.
+  // Prevent deprecation warning for ObjectMapper.readValue(URL, Class<T>)
+  protected static <T> T readValue(
+      com.fasterxml.jackson.databind.ObjectMapper mapper, URL url, Class<T> clazz)
+      throws Exception {
     URLConnection conn = url.openConnection();
     try (var input = conn.getInputStream()) {
       return mapper.readValue(input, clazz);
