@@ -19,14 +19,15 @@ import static org.jline.utils.AttributedStyle.CYAN;
 import static org.jline.utils.AttributedStyle.GREEN;
 import static org.jline.utils.AttributedStyle.YELLOW;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintWriter;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStyle;
 import org.projectnessie.nessie.cli.jsongrammar.JsonCLexer;
 import org.projectnessie.nessie.cli.jsongrammar.Token;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Minimalistic JSON pretty-print and highlighting. */
 public class JsonPretty {
@@ -43,7 +44,7 @@ public class JsonPretty {
   private static final AttributedStyle STYLE_SEPARATOR = AttributedStyle.DEFAULT;
   private static final AttributedStyle STYLE_BRACKET_BRACE = AttributedStyle.DEFAULT;
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   public JsonPretty(Terminal terminal, PrintWriter writer) {
     this.terminal = terminal;
@@ -54,7 +55,7 @@ public class JsonPretty {
     String str = null;
     try {
       str = MAPPER.writeValueAsString(object);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
     prettyPrint(str);

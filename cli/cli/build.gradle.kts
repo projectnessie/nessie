@@ -64,6 +64,8 @@ dependencies {
 
   runtimeOnly(platform(libs.jackson.bom))
   runtimeOnly("com.fasterxml.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))

@@ -21,8 +21,6 @@ import static java.util.Objects.requireNonNull;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_CLIENT_NAME;
 import static org.projectnessie.nessie.cli.commands.CommandsFactory.buildCommandInstance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -71,6 +69,10 @@ import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @Command(
     name = "nessie-cli.jar",
@@ -102,6 +104,7 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
   public static final AttributedStyle STYLE_ERROR_EMPHASIZE1 = STYLE_ERROR.italic().underline();
   public static final AttributedStyle STYLE_ERROR_EMPHASIZE2 =
       STYLE_ERROR.bold().italic().underline();
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   private String prompt;
   private String rightPrompt;
@@ -295,10 +298,11 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
         URLConnection conn = requireNonNull(url, latestNessieReleaseUrl).openConnection();
         ObjectNode latestRelease;
         try (var input = conn.getInputStream()) {
-          latestRelease = new ObjectMapper().readValue(input, ObjectNode.class);
+          latestRelease = MAPPER.readValue(input, ObjectNode.class);
         }
 
-        String latestReleaseVersion = latestRelease.get("tag_name").asText().replace("nessie-", "");
+        String latestReleaseVersion =
+            latestRelease.get("tag_name").stringValue().replace("nessie-", "");
         if (!version.equals(latestReleaseVersion)) {
           writer.println(
               new AttributedString(
@@ -311,11 +315,11 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
                   .toAnsi(terminal));
           writer.println(
               "Please download the latest version of the Nessie CLI from "
-                  + latestRelease.get("html_url").asText());
+                  + latestRelease.get("html_url").stringValue());
         } else {
           writer.println("You are running the latest release of Nessie CLI");
         }
-      } catch (IOException e) {
+      } catch (IOException | JacksonException e) {
         writer.println(
             "Cannot check for the latest Nessie release version: "
                 + new AttributedString(e.toString(), STYLE_ERROR).toAnsi(terminal));
