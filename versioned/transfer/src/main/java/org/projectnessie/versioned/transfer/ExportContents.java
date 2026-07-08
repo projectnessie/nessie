@@ -20,7 +20,6 @@ import static org.projectnessie.versioned.VersionStore.KeyRestrictions.NO_KEY_RE
 import static org.projectnessie.versioned.storage.common.objtypes.StandardObjType.COMMIT;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import java.util.ArrayList;
@@ -55,6 +54,7 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersio
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.OperationType;
+import tools.jackson.core.JacksonException;
 
 /**
  * Creates export artifacts by generating artificial commits from the latest content object values
@@ -197,7 +197,7 @@ final class ExportContents extends ExportCommon {
   private ByteString contentToValue(Content content) {
     try {
       return ByteString.copyFromUtf8(exporter.objectMapper().writeValueAsString(content));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

@@ -17,7 +17,6 @@ package org.projectnessie.versioned.transfer;
 
 import static org.projectnessie.versioned.transfer.ExportImportConstants.DEFAULT_BUFFER_SIZE;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -37,6 +36,8 @@ import org.projectnessie.versioned.store.DefaultStoreWorker;
 import org.projectnessie.versioned.transfer.files.ExportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportVersion;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Value.Immutable
 public abstract class NessieExporter {
@@ -183,7 +184,7 @@ public abstract class NessieExporter {
 
   @Value.Default
   ObjectMapper objectMapper() {
-    return new ObjectMapper();
+    return JsonMapper.shared();
   }
 
   @Value.Default
