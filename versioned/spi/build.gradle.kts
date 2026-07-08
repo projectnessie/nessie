@@ -21,7 +21,6 @@ publishingHelper { mavenName = "Nessie - Versioned Store SPI" }
 dependencies {
   implementation(project(":nessie-model"))
   api(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   compileOnly(libs.microprofile.openapi)
@@ -30,7 +29,8 @@ dependencies {
   compileOnly("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations")
   compileOnly(libs.micrometer.core)
 
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(libs.guava)
@@ -42,7 +42,7 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testRuntimeOnly(libs.logback.classic)
 
-  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(platform(libs.jackson3.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testCompileOnly(libs.microprofile.openapi)

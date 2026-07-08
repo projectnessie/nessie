@@ -17,19 +17,19 @@ package org.projectnessie.versioned;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ser.Views;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public class TestCommitMetaSerializer {
 
   @Test
-  void testCommitSerde() throws JsonProcessingException {
+  void testCommitSerde() {
     CommitMeta expectedCommit =
         ImmutableCommitMeta.builder()
             .commitTime(Instant.now())
@@ -40,9 +40,10 @@ public class TestCommitMetaSerializer {
             .message("commit msg")
             .build();
 
+    var mapper = JsonMapper.builder().enable(MapperFeature.DEFAULT_VIEW_INCLUSION).build();
     ByteString expectedBytes =
         ByteString.copyFrom(
-            new ObjectMapper().writerWithView(Views.V1.class).writeValueAsBytes(expectedCommit));
+            mapper.writerWithView(Views.V1.class).writeValueAsBytes(expectedCommit));
     CommitMeta actualCommit = CommitMetaSerializer.METADATA_SERIALIZER.fromBytes(expectedBytes);
     assertThat(actualCommit).isEqualTo(expectedCommit);
     ByteString actualBytes = CommitMetaSerializer.METADATA_SERIALIZER.toBytes(expectedCommit);
