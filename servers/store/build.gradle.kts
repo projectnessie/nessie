@@ -24,8 +24,8 @@ dependencies {
   api(project(":nessie-server-store-proto"))
   implementation(libs.guava)
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.microprofile.openapi)
@@ -35,7 +35,7 @@ dependencies {
   testImplementation(libs.guava)
   testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(platform(libs.jackson3.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   testImplementation(platform(libs.junit.bom))
