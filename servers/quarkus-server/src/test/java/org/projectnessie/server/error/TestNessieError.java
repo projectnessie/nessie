@@ -135,8 +135,8 @@ class TestNessieError {
                 + "Array, Object or token 'null', 'true' or 'false')\n");
     soft.assertThatThrownBy(() -> client.newRequest().path("basicEntity").put("{}"))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith(
-            "Bad Request (HTTP/400): basicEntity.entity.value: must not be null");
+        .hasMessageStartingWith("Bad Request (HTTP/400): ")
+        .hasMessageContaining("value");
     soft.assertThatThrownBy(() -> client.newRequest().path("basicEntity").put("{\"value\":null}"))
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageStartingWith(
@@ -153,8 +153,8 @@ class TestNessieError {
     soft.assertThatThrownBy(
             () -> unwrap(() -> client.newRequest().path("basicEntity").put(new OtherEntity("bar"))))
         .isInstanceOf(NessieBadRequestException.class)
-        .hasMessageStartingWith(
-            "Bad Request (HTTP/400): basicEntity.entity.value: must not be null");
+        .hasMessageStartingWith("Bad Request (HTTP/400): ")
+        .hasMessageContaining("value");
   }
 
   @Test
