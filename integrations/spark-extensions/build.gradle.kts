@@ -74,6 +74,17 @@ dependencies {
   nessieQuarkusServer(nessieProject("nessie-quarkus", "quarkusRunner"))
 }
 
+val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).orElse(false)
+
+val syncSharedSrcIntTest = tasks.register<Sync>("syncSharedSrcIntTest") {
+  into(layout.buildDirectory.dir("shared-src/intTest"))
+  from(layout.settingsDirectory.dir("integrations/spark-extensions/shared/src/intTest"))
+}
+sourceSets.intTest {
+  java.srcDir(syncSharedSrcIntTest.map { t -> t.destinationDir.resolve("java") })
+  resources.srcDir(syncSharedSrcIntTest.map { t -> t.destinationDir.resolve("resources") })
+}
+
 forceJavaVersionForTests(sparkScala.runtimeJavaVersion)
 
 tasks.named<ShadowJar>("shadowJar").configure {

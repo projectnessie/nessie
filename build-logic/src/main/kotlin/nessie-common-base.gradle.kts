@@ -77,6 +77,11 @@ if (
         target("helm/nessie/templates/**")
         targetExclude("helm/nessie/templates/tests/**")
       }
+      java {
+        googleJavaFormat(libsRequiredVersion("googleJavaFormat"))
+        licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
+        target("integrations/spark-extensions/shared/src/**/*.java")
+      }
     }
 
     if (project.plugins.hasPlugin("java-base")) {
@@ -84,7 +89,6 @@ if (
         googleJavaFormat(libsRequiredVersion("googleJavaFormat"))
         licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"))
         target("src/**/*.java")
-        targetExclude("build/**")
       }
     }
     if (project.plugins.hasPlugin("scala")) {
