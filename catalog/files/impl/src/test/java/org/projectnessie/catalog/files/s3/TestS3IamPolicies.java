@@ -116,7 +116,7 @@ class TestS3IamPolicies {
               }, {
                 "Effect" : "Allow",
                 "Action" : [ "s3:GetObject", "s3:GetObjectVersion" ],
-                "Resource" : [ "arn:aws:s3:::bucket3read/path/bar/*", "arn:aws:s3:::bucket3/*/read/path/bar/*", "arn:aws:s3:::bucket3/*/*/*/*/read/path/bar/*", "arn:aws:s3:::bucket4read/other/bar/*", "arn:aws:s3:::bucket4/*/read/other/bar/*", "arn:aws:s3:::bucket4/*/*/*/*/read/other/bar/*" ]
+                "Resource" : [ "arn:aws:s3:::bucket3/read/path/bar/*", "arn:aws:s3:::bucket3/*/read/path/bar/*", "arn:aws:s3:::bucket3/*/*/*/*/read/path/bar/*", "arn:aws:s3:::bucket4/read/other/bar/*", "arn:aws:s3:::bucket4/*/read/other/bar/*", "arn:aws:s3:::bucket4/*/*/*/*/read/other/bar/*" ]
               }, {
                 "Effect" : "Deny",
                 "Action" : "s3:*",
