@@ -33,6 +33,7 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   compileOnly(project(":nessie-immutables-std"))
 
+  intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)
 }

@@ -39,6 +39,7 @@ dependencies {
   compileOnly(platform(libs.junit.bom))
   compileOnly("org.junit.jupiter:junit-jupiter-api")
 
+  intTestImplementation(platform(libs.junit.bom))
   intTestImplementation(libs.bundles.junit.testing)
   intTestRuntimeOnly(libs.logback.classic)
 }

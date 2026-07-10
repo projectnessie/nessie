@@ -26,5 +26,6 @@ dependencies {
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
+  testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
 }
