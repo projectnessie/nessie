@@ -28,7 +28,9 @@ import org.projectnessie.model.Conflict;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceConflicts.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceConflicts.class)
 @JsonDeserialize(as = ImmutableReferenceConflicts.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceConflicts.class)
 @JsonTypeName(ReferenceConflicts.TYPE)
 public interface ReferenceConflicts extends NessieErrorDetails {
   String TYPE = "REFERENCE_CONFLICTS";

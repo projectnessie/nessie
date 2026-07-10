@@ -30,7 +30,9 @@ import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableIcebergView.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergView.class)
 @JsonDeserialize(as = ImmutableIcebergView.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergView.class)
 @JsonTypeName("ICEBERG_VIEW")
 public abstract class IcebergView extends IcebergContent {
 

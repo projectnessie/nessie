@@ -27,7 +27,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "RefLogResponse", deprecated = true, hidden = true)
 @JsonSerialize(as = ImmutableRefLogResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRefLogResponse.class)
 @JsonDeserialize(as = ImmutableRefLogResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRefLogResponse.class)
 @Deprecated // Not supported since API v2
 public interface RefLogResponse extends PaginatedResponse {
 
@@ -39,7 +41,9 @@ public interface RefLogResponse extends PaginatedResponse {
   @Value.Immutable
   @Schema(type = SchemaType.OBJECT, title = "RefLogResponseEntry", deprecated = true, hidden = true)
   @JsonSerialize(as = ImmutableRefLogResponseEntry.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRefLogResponseEntry.class)
   @JsonDeserialize(as = ImmutableRefLogResponseEntry.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRefLogResponseEntry.class)
   @Deprecated // Not supported since API v2
   interface RefLogResponseEntry {
     static ImmutableRefLogResponseEntry.Builder builder() {

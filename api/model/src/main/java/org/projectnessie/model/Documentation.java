@@ -24,7 +24,9 @@ import org.immutables.value.Value;
 /** Represents documentation for a content object in Nessie. */
 @Value.Immutable
 @JsonSerialize(as = ImmutableDocumentation.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDocumentation.class)
 @JsonDeserialize(as = ImmutableDocumentation.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDocumentation.class)
 public interface Documentation {
   static ImmutableDocumentation.Builder builder() {
     return ImmutableDocumentation.builder();

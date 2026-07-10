@@ -39,13 +39,16 @@ import org.immutables.value.Value;
     })
 @Value.Immutable
 @JsonSerialize(as = ImmutableConflict.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableConflict.class)
 @JsonDeserialize(as = ImmutableConflict.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableConflict.class)
 @JsonIgnoreProperties(
     // need to ignore unknown properties as this type can be used in `ReferenceConflicts`
     ignoreUnknown = true)
 public interface Conflict {
   @Value.Parameter(order = 1)
   @JsonDeserialize(using = ConflictType.Deserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = ConflictType.Deserializer3.class)
   ConflictType conflictType();
 
   @Value.Parameter(order = 2)
@@ -124,6 +127,23 @@ public interface Conflict {
       @Override
       public ConflictType deserialize(JsonParser p, DeserializationContext ctxt)
           throws IOException {
+        String name = p.readValueAs(String.class);
+        return ConflictType.parse(name);
+      }
+    }
+
+    public static final class Deserializer3
+        extends tools.jackson.databind.ValueDeserializer<ConflictType> {
+
+      @Override
+      public ConflictType getNullValue(tools.jackson.databind.DeserializationContext ctxt) {
+        return UNKNOWN;
+      }
+
+      @Override
+      public ConflictType deserialize(
+          tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+          throws tools.jackson.core.JacksonException {
         String name = p.readValueAs(String.class);
         return ConflictType.parse(name);
       }

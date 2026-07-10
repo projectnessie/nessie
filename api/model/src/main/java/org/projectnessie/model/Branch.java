@@ -29,7 +29,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "Branch")
 @JsonSerialize(as = ImmutableBranch.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
 public interface Branch extends Reference {
 

@@ -27,7 +27,9 @@ import org.immutables.value.Value;
 @Schema(type = SchemaType.OBJECT, title = "Operations")
 @Value.Immutable
 @JsonSerialize(as = ImmutableOperations.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableOperations.class)
 @JsonDeserialize(as = ImmutableOperations.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableOperations.class)
 public interface Operations {
 
   @NotNull

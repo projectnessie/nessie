@@ -29,7 +29,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "Tag")
 @JsonSerialize(as = ImmutableTag.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableTag.class)
 @JsonDeserialize(as = ImmutableTag.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableTag.class)
 @JsonTypeName("TAG")
 public interface Tag extends Reference {
 

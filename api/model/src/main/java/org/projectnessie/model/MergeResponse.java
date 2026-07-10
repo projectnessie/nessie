@@ -36,7 +36,9 @@ import org.projectnessie.model.ser.Views;
 @Schema(type = SchemaType.OBJECT, title = "Merge Response")
 @Value.Immutable
 @JsonSerialize(as = ImmutableMergeResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableMergeResponse.class)
 @JsonDeserialize(as = ImmutableMergeResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableMergeResponse.class)
 public interface MergeResponse {
   /** Indicates whether the merge or transplant operation has been applied. */
   @Value.Default
@@ -110,7 +112,9 @@ public interface MergeResponse {
   @Schema(type = SchemaType.OBJECT, title = "Merge Per-Content-Key details")
   @Value.Immutable
   @JsonSerialize(as = ImmutableContentKeyDetails.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentKeyDetails.class)
   @JsonDeserialize(as = ImmutableContentKeyDetails.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentKeyDetails.class)
   interface ContentKeyDetails {
     ContentKey getKey();
 
@@ -120,6 +124,8 @@ public interface MergeResponse {
     @Deprecated // for removal, #getConflict() is a proper replacement
     @Value.Default
     @JsonDeserialize(using = ContentKeyConflict.Deserializer.class)
+    @tools.jackson.databind.annotation.JsonDeserialize(
+        using = ContentKeyConflict.Deserializer3.class)
     @Schema(deprecated = true, hidden = true)
     @JsonView(Views.V1.class)
     default ContentKeyConflict getConflictType() {
@@ -167,6 +173,17 @@ public interface MergeResponse {
       @Override
       public ContentKeyConflict deserialize(JsonParser p, DeserializationContext ctxt)
           throws IOException {
+        String name = p.readValueAs(String.class);
+        return name != null ? ContentKeyConflict.parse(name) : null;
+      }
+    }
+
+    static final class Deserializer3
+        extends tools.jackson.databind.ValueDeserializer<ContentKeyConflict> {
+      @Override
+      public ContentKeyConflict deserialize(
+          tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+          throws tools.jackson.core.JacksonException {
         String name = p.readValueAs(String.class);
         return name != null ? ContentKeyConflict.parse(name) : null;
       }

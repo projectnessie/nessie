@@ -29,6 +29,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 import org.projectnessie.model.CommitMeta.InstantDeserializer;
 import org.projectnessie.model.CommitMeta.InstantSerializer;
+import org.projectnessie.model.CommitMeta.Jackson3InstantDeserializer;
+import org.projectnessie.model.CommitMeta.Jackson3InstantSerializer;
 import org.projectnessie.model.ser.Views;
 
 /** configuration object to tell a client how a server is configured. */
@@ -38,7 +40,9 @@ import org.projectnessie.model.ser.Views;
     description = "Configuration object to tell a client how a server is configured.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieConfiguration.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieConfiguration.class)
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieConfiguration.class)
 public abstract class NessieConfiguration {
 
   /**
@@ -121,7 +125,9 @@ public abstract class NessieConfiguration {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Jackson3InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Jackson3InstantDeserializer.class)
   public abstract Instant getRepositoryCreationTimestamp();
 
   /**
@@ -137,7 +143,9 @@ public abstract class NessieConfiguration {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonSerialize(using = InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(using = Jackson3InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(using = Jackson3InstantDeserializer.class)
   public abstract Instant getOldestPossibleCommitTimestamp();
 
   /** Additional properties, currently undefined and always empty (not present in JSON). */

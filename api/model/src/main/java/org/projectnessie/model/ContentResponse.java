@@ -26,7 +26,9 @@ import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentResponse.class)
 @JsonDeserialize(as = ImmutableContentResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentResponse.class)
 public interface ContentResponse {
 
   static ImmutableContentResponse.Builder builder() {
@@ -36,6 +38,8 @@ public interface ContentResponse {
   @NotNull
   @jakarta.validation.constraints.NotNull
   @Value.Parameter(order = 1)
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
   Content getContent();
 
   /**

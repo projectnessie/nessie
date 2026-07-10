@@ -55,7 +55,9 @@ import org.projectnessie.model.ser.Views;
             + "field and the previous value of 'IcebergTable' in the 'expectedContent' field.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableIcebergTable.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
 public abstract class IcebergTable extends IcebergContent {
 

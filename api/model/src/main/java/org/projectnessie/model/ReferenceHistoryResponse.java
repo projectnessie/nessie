@@ -38,7 +38,9 @@ import org.immutables.value.Value;
             + "the commit, for example if the commit object itself or its index information is missing.")
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceHistoryResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceHistoryResponse.class)
 @JsonDeserialize(as = ImmutableReferenceHistoryResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceHistoryResponse.class)
 public interface ReferenceHistoryResponse {
 
   static ImmutableReferenceHistoryResponse.Builder builder() {

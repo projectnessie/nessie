@@ -43,7 +43,9 @@ import org.immutables.value.Value;
         """)
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferenceMetadata.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferenceMetadata.class)
 @JsonDeserialize(as = ImmutableReferenceMetadata.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferenceMetadata.class)
 @JsonTypeName("REFERENCE_METADATA")
 public interface ReferenceMetadata {
 

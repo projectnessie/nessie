@@ -25,7 +25,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableUDF.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableUDF.class)
 @JsonDeserialize(as = ImmutableUDF.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableUDF.class)
 @JsonTypeName("UDF")
 public abstract class UDF extends Content {
 

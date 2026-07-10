@@ -27,7 +27,9 @@ import org.immutables.value.Value;
 @Schema(type = SchemaType.OBJECT, title = "GetMultipleContentsRequest")
 @Value.Immutable
 @JsonSerialize(as = ImmutableGetMultipleContentsRequest.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGetMultipleContentsRequest.class)
 @JsonDeserialize(as = ImmutableGetMultipleContentsRequest.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGetMultipleContentsRequest.class)
 public interface GetMultipleContentsRequest {
 
   @NotNull

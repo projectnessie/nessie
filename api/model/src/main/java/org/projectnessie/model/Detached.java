@@ -36,7 +36,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "Detached commit hash")
 @JsonSerialize(as = ImmutableDetached.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDetached.class)
 @JsonDeserialize(as = ImmutableDetached.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDetached.class)
 @JsonTypeName("DETACHED")
 public interface Detached extends Reference {
 

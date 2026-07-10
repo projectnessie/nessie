@@ -36,6 +36,8 @@ import org.immutables.value.Value;
     },
     discriminatorProperty = "type")
 @JsonTypeIdResolver(NessieErrorDetailsTypeIdResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(
+    Jackson3NessieErrorDetailsTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface NessieErrorDetails {

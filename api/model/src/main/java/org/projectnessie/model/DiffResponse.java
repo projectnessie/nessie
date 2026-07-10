@@ -28,7 +28,9 @@ import org.projectnessie.model.ser.Views;
 @Schema(type = SchemaType.OBJECT, title = "DiffResponse")
 @Value.Immutable
 @JsonSerialize(as = ImmutableDiffResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDiffResponse.class)
 @JsonDeserialize(as = ImmutableDiffResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDiffResponse.class)
 public interface DiffResponse extends PaginatedResponse {
 
   static ImmutableDiffResponse.Builder builder() {
@@ -57,7 +59,9 @@ public interface DiffResponse extends PaginatedResponse {
 
   @Value.Immutable
   @JsonSerialize(as = ImmutableDiffEntry.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDiffEntry.class)
   @JsonDeserialize(as = ImmutableDiffEntry.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDiffEntry.class)
   interface DiffEntry {
     @Value.Parameter(order = 1)
     ContentKey getKey();
@@ -66,11 +70,15 @@ public interface DiffResponse extends PaginatedResponse {
     @jakarta.annotation.Nullable
     @Value.Parameter(order = 2)
     @SuppressWarnings("immutables:from")
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getFrom();
 
     @Nullable
     @jakarta.annotation.Nullable
     @Value.Parameter(order = 3)
+    @tools.jackson.databind.annotation.JsonTypeIdResolver(
+        org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
     Content getTo();
 
     static DiffEntry diffEntry(ContentKey key, Content from) {

@@ -25,7 +25,9 @@ import org.immutables.value.Value;
 @Schema(type = SchemaType.OBJECT, title = "SingleReferenceResponse")
 @Value.Immutable
 @JsonSerialize(as = ImmutableSingleReferenceResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSingleReferenceResponse.class)
 @JsonDeserialize(as = ImmutableSingleReferenceResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSingleReferenceResponse.class)
 public interface SingleReferenceResponse {
 
   static ImmutableSingleReferenceResponse.Builder builder() {

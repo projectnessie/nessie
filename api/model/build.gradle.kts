@@ -31,6 +31,10 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-core")
+  compileOnly("tools.jackson.core:jackson-databind")
+
   // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
   compileOnly(libs.javax.ws.rs)
@@ -118,6 +122,30 @@ testing {
         implementation.add(project())
         implementation.add(platform(libs.jetty.bom))
         implementation.add("org.eclipse.jetty:jetty-http")
+        compileOnly(libs.microprofile.openapi)
+      }
+
+      targets {
+        all {
+          testTask.configure {
+            usesService(
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+            )
+          }
+          tasks.named("test").configure { dependsOn(testTask) }
+        }
+      }
+    }
+
+    register("testJackson3", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      dependencies {
+        implementation.add(project())
+        implementation.add(platform(libs.jackson3.bom))
+        implementation.add("tools.jackson.core:jackson-databind")
+        implementation.add(platform(libs.junit.bom))
+        implementation.add(libs.assertj.core)
         compileOnly(libs.microprofile.openapi)
       }
 

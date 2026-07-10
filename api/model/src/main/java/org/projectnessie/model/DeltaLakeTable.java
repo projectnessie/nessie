@@ -25,7 +25,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 @JsonTypeName("DELTA_LAKE_TABLE")
 public abstract class DeltaLakeTable extends Content {
 

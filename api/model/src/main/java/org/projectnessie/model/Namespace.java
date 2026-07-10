@@ -41,7 +41,9 @@ import org.immutables.value.Value.Derived;
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableNamespace.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNamespace.class)
 @JsonDeserialize(as = ImmutableNamespace.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNamespace.class)
 @JsonTypeName("NAMESPACE")
 public abstract class Namespace extends Content implements Elements {
 

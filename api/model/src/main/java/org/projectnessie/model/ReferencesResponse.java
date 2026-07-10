@@ -23,7 +23,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableReferencesResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableReferencesResponse.class)
 @JsonDeserialize(as = ImmutableReferencesResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableReferencesResponse.class)
 public interface ReferencesResponse extends PaginatedResponse {
 
   static ImmutableReferencesResponse.Builder builder() {

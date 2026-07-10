@@ -21,9 +21,11 @@ import javax.validation.constraints.NotEmpty;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.projectnessie.model.metadata.ContentMetadataVariantResolver;
+import org.projectnessie.model.metadata.Jackson3ContentMetadataVariantResolver;
 
 @Schema(type = SchemaType.OBJECT, title = "ContentMetadata", discriminatorProperty = "variant")
 @JsonTypeIdResolver(ContentMetadataVariantResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(Jackson3ContentMetadataVariantResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "variant", visible = true)
 public interface ContentMetadata {
 

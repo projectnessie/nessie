@@ -27,7 +27,9 @@ import org.projectnessie.model.ser.Views;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableMergeKeyBehavior.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableMergeKeyBehavior.class)
 @JsonDeserialize(as = ImmutableMergeKeyBehavior.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableMergeKeyBehavior.class)
 public interface MergeKeyBehavior {
 
   ContentKey getKey();
@@ -48,6 +50,8 @@ public interface MergeKeyBehavior {
   @JsonView(Views.V2.class)
   @Nullable
   @jakarta.annotation.Nullable
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
   Content getExpectedTargetContent();
 
   /**
@@ -65,6 +69,8 @@ public interface MergeKeyBehavior {
   @JsonView(Views.V2.class)
   @Nullable
   @jakarta.annotation.Nullable
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.types.Jackson3ContentTypeIdResolver.class)
   Content getResolvedContent();
 
   /**
@@ -107,6 +113,8 @@ public interface MergeKeyBehavior {
    */
   @JsonInclude(Include.NON_EMPTY)
   @JsonView(Views.V2.class)
+  @tools.jackson.databind.annotation.JsonTypeIdResolver(
+      org.projectnessie.model.metadata.Jackson3ContentMetadataVariantResolver.class)
   List<ContentMetadata> getMetadata();
 
   static ImmutableMergeKeyBehavior.Builder builder() {

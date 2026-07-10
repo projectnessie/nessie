@@ -25,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.immutables.value.Value;
+import org.projectnessie.model.types.Jackson3RepositoryConfigTypeIdResolver;
 import org.projectnessie.model.types.RepositoryConfigTypeIdResolver;
 import org.projectnessie.model.types.RepositoryConfigTypes;
 
@@ -39,6 +40,7 @@ import org.projectnessie.model.types.RepositoryConfigTypes;
     discriminatorProperty = "type")
 @Tag(name = "v2")
 @JsonTypeIdResolver(RepositoryConfigTypeIdResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(Jackson3RepositoryConfigTypeIdResolver.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public interface RepositoryConfig {
 
@@ -53,7 +55,11 @@ public interface RepositoryConfig {
   Type getType();
 
   @JsonDeserialize(using = Util.RepositoryConfigTypeDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = Util.RepositoryConfigTypeDeserializer3.class)
   @JsonSerialize(using = Util.RepositoryConfigTypeSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = Util.RepositoryConfigTypeSerializer3.class)
   @Schema(
       type = SchemaType.STRING,
       name = "RepositoryConfigType",

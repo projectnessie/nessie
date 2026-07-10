@@ -24,7 +24,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableNamespaceUpdate.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNamespaceUpdate.class)
 @JsonDeserialize(as = ImmutableNamespaceUpdate.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNamespaceUpdate.class)
 public abstract class NamespaceUpdate {
 
   @Nullable

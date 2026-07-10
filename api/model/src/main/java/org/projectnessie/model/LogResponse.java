@@ -31,7 +31,9 @@ import org.projectnessie.model.ser.Views;
 @Value.Immutable
 @Schema(type = SchemaType.OBJECT, title = "LogResponse")
 @JsonSerialize(as = ImmutableLogResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableLogResponse.class)
 @JsonDeserialize(as = ImmutableLogResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableLogResponse.class)
 public interface LogResponse extends PaginatedResponse {
 
   @NotNull
@@ -45,7 +47,9 @@ public interface LogResponse extends PaginatedResponse {
   @Value.Immutable
   @Schema(type = SchemaType.OBJECT, title = "LogEntry")
   @JsonSerialize(as = ImmutableLogEntry.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableLogEntry.class)
   @JsonDeserialize(as = ImmutableLogEntry.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableLogEntry.class)
   interface LogEntry {
     static ImmutableLogEntry.Builder builder() {
       return ImmutableLogEntry.builder();
