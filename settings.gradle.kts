@@ -21,6 +21,16 @@ import org.gradle.kotlin.dsl.support.serviceOf
 
 includeBuild("build-logic") { name = "nessie-build-logic" }
 
+val includedBuildsFile = file(".included-builds.properties")
+
+if (includedBuildsFile.isFile) {
+  val props = Properties()
+  includedBuildsFile.reader().use {
+    props.load(it)
+  }
+  props.forEach { n, path -> includeBuild(path) { name = n.toString() } }
+}
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
   throw GradleException("Build requires Java 21")
 }
