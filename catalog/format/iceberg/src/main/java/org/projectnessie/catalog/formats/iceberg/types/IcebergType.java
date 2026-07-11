@@ -26,8 +26,13 @@ import org.apache.avro.Schema;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergNestedField;
 
 @JsonSerialize(using = IcebergTypes.IcebergTypeSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = IcebergTypes.IcebergTypeSerializer3.class)
 @JsonDeserialize(using = IcebergTypes.IcebergTypeDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = IcebergTypes.IcebergTypeDeserializer3.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergType {
 

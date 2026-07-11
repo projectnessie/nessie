@@ -42,6 +42,12 @@ dependencies {
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
 
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-core")
+  compileOnly("tools.jackson.core:jackson-databind")
+  runtimeOnly(platform(libs.jackson3.bom))
+  runtimeOnly("tools.jackson.core:jackson-databind")
+
   avroSchemaImplementation(libs.avro)
   avroSchemaImplementation(libs.guava)
   avroSchemaImplementation(libs.slf4j.nop)
@@ -67,6 +73,36 @@ dependencies {
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
 
   testFixturesApi("org.apache.iceberg:iceberg-core:$versionIceberg")
+}
+
+testing {
+  suites {
+    register("testJackson3", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      dependencies {
+        implementation.add(project())
+        implementation.add(project(":nessie-catalog-model"))
+        implementation.add(platform(libs.jackson3.bom))
+        implementation.add("tools.jackson.core:jackson-databind")
+        compileOnly.add(platform(libs.jackson.bom))
+        compileOnly.add("com.fasterxml.jackson.core:jackson-databind")
+        implementation.add(platform(libs.junit.bom))
+        implementation.add(libs.assertj.core)
+      }
+
+      targets {
+        all {
+          testTask.configure {
+            usesService(
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+            )
+          }
+          tasks.named("test").configure { dependsOn(testTask) }
+        }
+      }
+    }
+  }
 }
 
 val generateAvroSchemas =

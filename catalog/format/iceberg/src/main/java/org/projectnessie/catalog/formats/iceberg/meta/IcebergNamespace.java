@@ -39,8 +39,14 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(using = IcebergNamespace.IcebergNamespaceSerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(
+    using = IcebergNamespace.IcebergNamespaceSerializer3.class)
 @JsonDeserialize(using = IcebergNamespace.IcebergNamespaceDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = IcebergNamespace.IcebergNamespaceDeserializer3.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergNamespace {
   @Value.Parameter(order = 1)
@@ -107,6 +113,42 @@ public interface IcebergNamespace {
     public void serialize(
         IcebergNamespace namespace, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      gen.writeStartArray();
+      for (String level : namespace.levels()) {
+        gen.writeString(level);
+      }
+      gen.writeEndArray();
+    }
+  }
+
+  class IcebergNamespaceDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<IcebergNamespace> {
+    @Override
+    public IcebergNamespace deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      checkArgument(p.currentToken() == tools.jackson.core.JsonToken.START_ARRAY);
+      Builder b = builder();
+      while (true) {
+        switch (p.nextToken()) {
+          case VALUE_STRING -> b.addLevel(p.getString());
+          case END_ARRAY -> {
+            return b.build();
+          }
+          default -> throw new IllegalArgumentException("Unexpected token " + p.currentToken());
+        }
+      }
+    }
+  }
+
+  class IcebergNamespaceSerializer3
+      extends tools.jackson.databind.ValueSerializer<IcebergNamespace> {
+    @Override
+    public void serialize(
+        IcebergNamespace namespace,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
       gen.writeStartArray();
       for (String level : namespace.levels()) {
         gen.writeString(level);

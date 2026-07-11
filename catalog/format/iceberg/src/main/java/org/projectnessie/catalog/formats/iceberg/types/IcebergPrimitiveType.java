@@ -25,8 +25,17 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
     as = String.class,
     using = IcebergTypes.IcebergPrimitiveSerializer.class,
     typing = JsonSerialize.Typing.DYNAMIC)
+@tools.jackson.databind.annotation.JsonSerialize(
+    as = String.class,
+    using = IcebergTypes.IcebergPrimitiveSerializer3.class,
+    typing = tools.jackson.databind.annotation.JsonSerialize.Typing.DYNAMIC)
 @JsonDeserialize(as = String.class, using = IcebergTypes.IcebergPrimitiveDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    as = String.class,
+    using = IcebergTypes.IcebergPrimitiveDeserializer3.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class IcebergPrimitiveType implements IcebergType {
 

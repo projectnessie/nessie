@@ -31,8 +31,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergSchema.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergSchema.class)
 @JsonDeserialize(as = ImmutableIcebergSchema.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergSchema.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergSchema {
   int INITIAL_SCHEMA_ID = 0;

@@ -29,8 +29,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @JsonTypeName(COMMIT_REPORT_NAME)
 @JsonSerialize(as = ImmutableIcebergCommitReport.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergCommitReport.class)
 @JsonDeserialize(as = ImmutableIcebergCommitReport.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergCommitReport.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergCommitReport extends IcebergMetricsReport {
   String tableName();

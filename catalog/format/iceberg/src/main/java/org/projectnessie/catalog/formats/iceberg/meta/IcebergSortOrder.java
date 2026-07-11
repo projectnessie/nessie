@@ -29,8 +29,12 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergSortOrder.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergSortOrder.class)
 @JsonDeserialize(as = ImmutableIcebergSortOrder.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergSortOrder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface IcebergSortOrder {
 

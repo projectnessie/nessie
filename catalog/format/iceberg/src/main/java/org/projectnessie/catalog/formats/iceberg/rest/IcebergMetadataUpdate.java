@@ -57,6 +57,8 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /** Iceberg metadata update objects serialized according to the Iceberg REST Catalog schema. */
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "action")
 @JsonSubTypes({
@@ -127,7 +129,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("upgrade-format-version")
   @JsonSerialize(as = ImmutableUpgradeFormatVersion.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableUpgradeFormatVersion.class)
   @JsonDeserialize(as = ImmutableUpgradeFormatVersion.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableUpgradeFormatVersion.class)
   interface UpgradeFormatVersion extends IcebergMetadataUpdate {
 
     int formatVersion();
@@ -152,7 +156,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-snapshots")
   @JsonSerialize(as = ImmutableRemoveSnapshots.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemoveSnapshots.class)
   @JsonDeserialize(as = ImmutableRemoveSnapshots.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemoveSnapshots.class)
   interface RemoveSnapshots extends IcebergMetadataUpdate {
 
     List<Long> snapshotIds();
@@ -167,7 +173,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-properties")
   @JsonSerialize(as = ImmutableRemoveProperties.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemoveProperties.class)
   @JsonDeserialize(as = ImmutableRemoveProperties.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemoveProperties.class)
   interface RemoveProperties extends IcebergMetadataUpdate {
 
     @JsonAlias({"removals", "removed"})
@@ -195,7 +203,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("add-view-version")
   @JsonSerialize(as = ImmutableAddViewVersion.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddViewVersion.class)
   @JsonDeserialize(as = ImmutableAddViewVersion.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddViewVersion.class)
   interface AddViewVersion extends IcebergMetadataUpdate {
 
     IcebergViewVersion viewVersion();
@@ -226,7 +236,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-current-view-version")
   @JsonSerialize(as = ImmutableSetCurrentViewVersion.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetCurrentViewVersion.class)
   @JsonDeserialize(as = ImmutableSetCurrentViewVersion.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetCurrentViewVersion.class)
   interface SetCurrentViewVersion extends IcebergMetadataUpdate {
 
     long viewVersionId();
@@ -245,7 +257,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-statistics")
   @JsonSerialize(as = ImmutableSetStatistics.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetStatistics.class)
   @JsonDeserialize(as = ImmutableSetStatistics.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetStatistics.class)
   interface SetStatistics extends IcebergMetadataUpdate {
 
     // Becomes deprecated w/ Iceberg 1.8, see https://github.com/apache/iceberg/pull/12010
@@ -266,7 +280,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-statistics")
   @JsonSerialize(as = ImmutableRemoveStatistics.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemoveStatistics.class)
   @JsonDeserialize(as = ImmutableRemoveStatistics.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemoveStatistics.class)
   interface RemoveStatistics extends IcebergMetadataUpdate {
 
     long snapshotId();
@@ -284,7 +300,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-partition-statistics")
   @JsonSerialize(as = ImmutableSetPartitionStatistics.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetPartitionStatistics.class)
   @JsonDeserialize(as = ImmutableSetPartitionStatistics.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetPartitionStatistics.class)
   interface SetPartitionStatistics extends IcebergMetadataUpdate {
 
     IcebergPartitionStatisticsFile partitionStatistics();
@@ -307,7 +325,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-partition-statistics")
   @JsonSerialize(as = ImmutableRemovePartitionStatistics.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemovePartitionStatistics.class)
   @JsonDeserialize(as = ImmutableRemovePartitionStatistics.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemovePartitionStatistics.class)
   interface RemovePartitionStatistics extends IcebergMetadataUpdate {
     long snapshotId();
 
@@ -324,7 +344,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("assign-uuid")
   @JsonSerialize(as = ImmutableAssignUUID.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAssignUUID.class)
   @JsonDeserialize(as = ImmutableAssignUUID.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAssignUUID.class)
   interface AssignUUID extends IcebergMetadataUpdate {
     String uuid();
 
@@ -348,7 +370,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("add-schema")
   @JsonSerialize(as = ImmutableAddSchema.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddSchema.class)
   @JsonDeserialize(as = ImmutableAddSchema.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddSchema.class)
   interface AddSchema extends IcebergMetadataUpdate {
     IcebergSchema schema();
 
@@ -374,7 +398,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-schemas")
   @JsonSerialize(as = ImmutableRemoveSchemas.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemoveSchemas.class)
   @JsonDeserialize(as = ImmutableRemoveSchemas.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemoveSchemas.class)
   interface RemoveSchemas extends IcebergMetadataUpdate {
     Set<Integer> schemaIds();
 
@@ -399,7 +425,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-current-schema")
   @JsonSerialize(as = ImmutableSetCurrentSchema.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetCurrentSchema.class)
   @JsonDeserialize(as = ImmutableSetCurrentSchema.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetCurrentSchema.class)
   interface SetCurrentSchema extends IcebergMetadataUpdate {
     /** ID of the schema to become the current one or {@code -1} to use the last added schema. */
     int schemaId();
@@ -426,7 +454,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("add-spec")
   @JsonSerialize(as = ImmutableAddPartitionSpec.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddPartitionSpec.class)
   @JsonDeserialize(as = ImmutableAddPartitionSpec.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddPartitionSpec.class)
   interface AddPartitionSpec extends IcebergMetadataUpdate {
     IcebergPartitionSpec spec();
 
@@ -450,7 +480,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-partition-specs")
   @JsonSerialize(as = ImmutableRemovePartitionSpecs.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemovePartitionSpecs.class)
   @JsonDeserialize(as = ImmutableRemovePartitionSpecs.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemovePartitionSpecs.class)
   interface RemovePartitionSpecs extends IcebergMetadataUpdate {
     List<Integer> specIds();
 
@@ -474,7 +506,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-default-spec")
   @JsonSerialize(as = ImmutableSetDefaultPartitionSpec.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetDefaultPartitionSpec.class)
   @JsonDeserialize(as = ImmutableSetDefaultPartitionSpec.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetDefaultPartitionSpec.class)
   interface SetDefaultPartitionSpec extends IcebergMetadataUpdate {
     /**
      * ID of the partition spec to become the current one or {@code -1} to use the last added
@@ -496,7 +530,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("add-snapshot")
   @JsonSerialize(as = ImmutableAddSnapshot.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddSnapshot.class)
   @JsonDeserialize(as = ImmutableAddSnapshot.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddSnapshot.class)
   interface AddSnapshot extends IcebergMetadataUpdate {
     IcebergSnapshot snapshot();
 
@@ -583,7 +619,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("add-sort-order")
   @JsonSerialize(as = ImmutableAddSortOrder.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAddSortOrder.class)
   @JsonDeserialize(as = ImmutableAddSortOrder.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAddSortOrder.class)
   interface AddSortOrder extends IcebergMetadataUpdate {
     IcebergSortOrder sortOrder();
 
@@ -612,7 +650,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-default-sort-order")
   @JsonSerialize(as = ImmutableSetDefaultSortOrder.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetDefaultSortOrder.class)
   @JsonDeserialize(as = ImmutableSetDefaultSortOrder.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetDefaultSortOrder.class)
   interface SetDefaultSortOrder extends IcebergMetadataUpdate {
 
     /**
@@ -635,7 +675,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-location")
   @JsonSerialize(as = ImmutableSetLocation.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetLocation.class)
   @JsonDeserialize(as = ImmutableSetLocation.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetLocation.class)
   interface SetLocation extends IcebergMetadataUpdate {
     String location();
 
@@ -669,7 +711,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-properties")
   @JsonSerialize(as = ImmutableSetProperties.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetProperties.class)
   @JsonDeserialize(as = ImmutableSetProperties.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetProperties.class)
   interface SetProperties extends IcebergMetadataUpdate {
     @JsonAlias({"updates", "updated"})
     Map<String, String> updates();
@@ -700,7 +744,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("set-snapshot-ref")
   @JsonSerialize(as = ImmutableSetSnapshotRef.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSetSnapshotRef.class)
   @JsonDeserialize(as = ImmutableSetSnapshotRef.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSetSnapshotRef.class)
   interface SetSnapshotRef extends IcebergMetadataUpdate {
     String refName();
 
@@ -740,7 +786,9 @@ public interface IcebergMetadataUpdate {
   @NessieImmutable
   @JsonTypeName("remove-snapshot-ref")
   @JsonSerialize(as = ImmutableRemoveSnapshotRef.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableRemoveSnapshotRef.class)
   @JsonDeserialize(as = ImmutableRemoveSnapshotRef.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableRemoveSnapshotRef.class)
   interface RemoveSnapshotRef extends IcebergMetadataUpdate {
 
     String refName();

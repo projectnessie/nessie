@@ -34,7 +34,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 /** Server-side representation of Iceberg metadata updates. */
 @NessieImmutable
 @JsonSerialize(as = ImmutableIcebergCatalogOperation.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergCatalogOperation.class)
 @JsonDeserialize(as = ImmutableIcebergCatalogOperation.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableIcebergCatalogOperation.class)
 public abstract class IcebergCatalogOperation implements CatalogOperation {
   @Override
   public abstract ContentKey getKey();

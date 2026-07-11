@@ -28,6 +28,8 @@ import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -44,7 +46,10 @@ public interface IcebergViewRepresentation {
   @NessieImmutable
   @JsonTypeName("sql")
   @JsonSerialize(as = ImmutableIcebergSQLViewRepresentation.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableIcebergSQLViewRepresentation.class)
   @JsonDeserialize(as = ImmutableIcebergSQLViewRepresentation.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      as = ImmutableIcebergSQLViewRepresentation.class)
   interface IcebergSQLViewRepresentation extends IcebergViewRepresentation {
     String sql();
 
