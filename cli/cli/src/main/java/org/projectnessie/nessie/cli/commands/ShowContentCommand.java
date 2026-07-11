@@ -18,8 +18,8 @@ package org.projectnessie.nessie.cli.commands;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_BOLD;
 import static org.projectnessie.nessie.cli.cli.BaseNessieCli.STYLE_FAINT;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.view.BaseView;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
@@ -45,9 +44,20 @@ import org.projectnessie.nessie.cli.cmdspec.ShowContentCommandSpec;
 import org.projectnessie.nessie.cli.grammar.Node;
 import org.projectnessie.nessie.cli.grammar.Token;
 import org.projectnessie.nessie.cli.jsonpretty.JsonPretty;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class ShowContentCommand extends NessieListingCommand<ShowContentCommandSpec> {
+  private static final ObjectMapper MAPPER =
+      JsonMapper.builder().addMixIn(Content.class, ContentJsonMixin.class).build();
+
   public ShowContentCommand() {}
+
+  @JsonPropertyOrder({"type", "id"})
+  private abstract static class ContentJsonMixin {
+    @SuppressWarnings("UnusedMethod")
+    abstract String getId();
+  }
 
   @Override
   protected Stream<String> executeListing(@Nonnull BaseNessieCli cli, ShowContentCommandSpec spec)
@@ -100,8 +110,7 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
           new AttributedString("Nessie metadata:", AttributedStyle.BOLD.underline())
               .toAnsi(terminal));
 
-      String jsonString =
-          new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(content);
+      String jsonString = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(content);
       jsonPretty.prettyPrint(jsonString);
 
       // Iceberg
@@ -136,13 +145,7 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
                         .toAnsi(terminal));
 
                 try {
-                  ObjectMapper mapper = new ObjectMapper();
-                  RESTSerializers.registerAll(mapper);
-
-                  String metaJsonString =
-                      mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metadata);
-
-                  jsonPretty.prettyPrint(metaJsonString);
+                  jsonPretty.prettyPrint(IcebergMetadataJson.toPrettyJson(metadata));
                 } catch (JsonProcessingException e) {
                   throw new RuntimeException(e);
                 }
