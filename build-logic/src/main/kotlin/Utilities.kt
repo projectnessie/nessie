@@ -53,6 +53,17 @@ import org.gradle.kotlin.dsl.project
 import org.gradle.process.JavaForkOptions
 import org.gradle.work.DisableCachingByDefault
 
+val noSourceCheckProjects =
+  listOf(
+    ":nessie-spark-extensions-base_2.12",
+    ":nessie-spark-extensions-basetests_2.12",
+    ":nessie-spark-extensions-3.4_2.12",
+    ":nessie-spark-extensions-3.4_2.13",
+    ":nessie-spark-extensions-3.5_2.12",
+    ":nessie-spark-extensions-3.5_2.13",
+    ":nessie-spark-extensions-4.0_2.13",
+  )
+
 fun Project.libs(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 fun DependencyHandler.quarkusPlatform(project: Project): Dependency =

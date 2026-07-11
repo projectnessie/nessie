@@ -31,7 +31,7 @@ apply<CopiedCodeCheckerPlugin>()
 //
 
 if (
-  !project.extra.has("duplicated-project-sources") &&
+  !noSourceCheckProjects.contains(project.path) &&
     !System.getProperty("idea.sync.active").toBoolean()
 ) {
   spotless {
