@@ -15,10 +15,18 @@
  */
 
 import com.diffplug.spotless.LineEnding
+import copiedcode.CopiedCodeCheckerPlugin
 
 plugins { id("com.diffplug.spotless") }
 
 apply<PublishingHelperPlugin>()
+
+tasks.register("codeChecks").configure {
+  group = "build"
+  description = "Runs code style and license checks"
+}
+
+apply<CopiedCodeCheckerPlugin>()
 
 //
 
