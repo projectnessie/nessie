@@ -18,6 +18,8 @@ import java.io.ByteArrayOutputStream
 import java.util.Properties
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.process.ExecOperations
 
 plugins {
@@ -146,46 +148,45 @@ if (
   providers.gradleProperty("release").isPresent ||
     providers.gradleProperty("jarWithGitInfo").isPresent
 ) {
-  val generateGitBuildInfo =
-    rootProject.tasks.findByName("generateGitBuildInfo")?.let {
-      rootProject.tasks.named("generateGitBuildInfo", GenerateGitBuildInfo::class.java)
+  val gitBuildInfo =
+    gradle.sharedServices.registerIfAbsent("gitBuildInfo", GitBuildInfoService::class.java) {
+      parameters.versionFile.set(layout.settingsDirectory.file("version.txt"))
     }
-      ?: rootProject.tasks.register("generateGitBuildInfo", GenerateGitBuildInfo::class.java) {
-        versionFile.set(rootProject.layout.projectDirectory.file("version.txt"))
-        outputFile.set(
-          rootProject.layout.buildDirectory.file("generated/git-build-info.properties")
-        )
-      }
 
   tasks.withType<Jar>().configureEach {
-    val buildInfoFile = generateGitBuildInfo.flatMap { it.outputFile }
-    dependsOn(generateGitBuildInfo)
-    inputs.file(buildInfoFile).withPathSensitivity(PathSensitivity.NONE)
+    usesService(gitBuildInfo)
+    outputs.doNotCacheIf("Git build information intentionally reflects the current checkout") {
+      true
+    }
+    outputs.upToDateWhen { false }
+    inputs
+      .file(gitBuildInfo.flatMap { it.parameters.versionFile })
+      .withPathSensitivity(PathSensitivity.NONE)
     doFirst {
-      val buildInfo = Properties()
-      buildInfoFile.get().asFile.reader(Charsets.UTF_8).use { buildInfo.load(it) }
-      manifest.attributes(buildInfo.entries.associate { it.key.toString() to it.value.toString() })
+      manifest.attributes(gitBuildInfo.get().buildInfo())
     }
   }
 }
 
-@DisableCachingByDefault(
-  because = "Git build information intentionally reflects the current checkout"
-)
-abstract class GenerateGitBuildInfo : DefaultTask() {
-  @get:InputFile
-  @get:PathSensitive(PathSensitivity.NONE)
-  abstract val versionFile: RegularFileProperty
-
-  @get:OutputFile abstract val outputFile: RegularFileProperty
+abstract class GitBuildInfoService : BuildService<GitBuildInfoService.Parameters> {
+  interface Parameters : BuildServiceParameters {
+    val versionFile: RegularFileProperty
+  }
 
   @get:Inject abstract val execOperations: ExecOperations
 
-  @TaskAction
-  fun generate() {
-    val info =
+  private var buildInfo: Map<String, String>? = null
+
+  @Synchronized
+  fun buildInfo(): Map<String, String> {
+    val existing = buildInfo
+    if (existing != null) {
+      return existing
+    }
+
+    val computed =
       mapOf(
-        "Nessie-Version" to versionFile.get().asFile.readText(Charsets.UTF_8).trim(),
+        "Nessie-Version" to parameters.versionFile.get().asFile.readText(Charsets.UTF_8).trim(),
         "Nessie-Build-Git-Head" to execProc("git", "rev-parse", "HEAD"),
         "Nessie-Build-Git-Describe" to execProc("git", "describe", "--tags"),
         "Nessie-Build-Timestamp" to execProc("date", "+%Y-%m-%d-%H:%M:%S%:z"),
@@ -193,11 +194,8 @@ abstract class GenerateGitBuildInfo : DefaultTask() {
         "Nessie-Build-Java-Version" to System.getProperty("java.version"),
       )
 
-    val output = outputFile.get().asFile
-    output.parentFile.mkdirs()
-    output.writer(Charsets.UTF_8).use { writer ->
-      info.forEach { (key, value) -> writer.appendLine("$key=$value") }
-    }
+    buildInfo = computed
+    return computed
   }
 
   private fun execProc(cmd: String, vararg args: String): String {
