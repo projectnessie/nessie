@@ -15,12 +15,13 @@
  */
 package org.projectnessie.catalog.secrets;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 final class SecretJsonParser {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.shared();
 
   private SecretJsonParser() {}
 
@@ -31,7 +32,7 @@ final class SecretJsonParser {
     }
     try {
       return MAPPER.readValue(s, Map.class);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return Map.of("value", s);
     }
   }
