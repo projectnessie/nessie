@@ -22,7 +22,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieMapTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieMapTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieMapTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieMapTypeSpec.class)
 public interface NessieMapTypeSpec extends NessieTypeSpec {
 
   NessieTypeSpec keyType();

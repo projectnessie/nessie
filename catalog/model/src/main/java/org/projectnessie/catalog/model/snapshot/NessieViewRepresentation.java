@@ -26,6 +26,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@tools.jackson.databind.annotation.JsonNaming(
+    tools.jackson.databind.PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -37,7 +39,10 @@ public interface NessieViewRepresentation {
   @NessieImmutable
   @JsonTypeName("sql")
   @JsonSerialize(as = ImmutableNessieViewSQLRepresentation.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieViewSQLRepresentation.class)
   @JsonDeserialize(as = ImmutableNessieViewSQLRepresentation.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      as = ImmutableNessieViewSQLRepresentation.class)
   interface NessieViewSQLRepresentation extends NessieViewRepresentation {
     String sql();
 

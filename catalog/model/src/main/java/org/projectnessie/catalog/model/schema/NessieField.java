@@ -28,7 +28,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieField.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieField.class)
 @JsonDeserialize(as = ImmutableNessieField.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieField.class)
 public interface NessieField {
   int NO_COLUMN_ID = -1;
 

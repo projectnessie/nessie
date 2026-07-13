@@ -23,7 +23,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieIcebergBlobMetadata.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieIcebergBlobMetadata.class)
 @JsonDeserialize(as = ImmutableNessieIcebergBlobMetadata.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieIcebergBlobMetadata.class)
 public interface NessieIcebergBlobMetadata {
 
   static NessieIcebergBlobMetadata blobMetadata(

@@ -60,3 +60,32 @@ dependencies {
   protobufSchemaGen(libs.jandex)
   testFixturesApi(libs.jandex)
 }
+
+testing {
+  suites {
+    register("testJackson3", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      dependencies {
+        implementation.add(project())
+        implementation.add(platform(libs.jackson3.bom))
+        implementation.add("tools.jackson.core:jackson-databind")
+        compileOnly.add(platform(libs.jackson.bom))
+        compileOnly.add("com.fasterxml.jackson.core:jackson-databind")
+        implementation.add(platform(libs.junit.bom))
+        implementation.add(libs.assertj.core)
+      }
+
+      targets {
+        all {
+          testTask.configure {
+            usesService(
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+            )
+          }
+          tasks.named("test").configure { dependsOn(testTask) }
+        }
+      }
+    }
+  }
+}

@@ -49,7 +49,11 @@ public interface NessieEntity {
   // FIXME move this serializer out of CommitMeta - or add module
   // com.fasterxml.jackson.datatype:jackson-datatype-jsr310
   @JsonSerialize(using = InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = org.projectnessie.model.CommitMeta.Jackson3InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = org.projectnessie.model.CommitMeta.Jackson3InstantDeserializer.class)
   Instant createdTimestamp();
 
   @SuppressWarnings("unused")

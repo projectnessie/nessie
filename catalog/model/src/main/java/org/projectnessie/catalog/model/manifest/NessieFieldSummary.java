@@ -30,7 +30,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieFieldSummary.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieFieldSummary.class)
 @JsonDeserialize(as = ImmutableNessieFieldSummary.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieFieldSummary.class)
 public interface NessieFieldSummary extends Hashable {
   @Override
   default void hash(NessieIdHasher idHasher) {

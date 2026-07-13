@@ -42,7 +42,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieViewSnapshot.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieViewSnapshot.class)
 @JsonDeserialize(as = ImmutableNessieViewSnapshot.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieViewSnapshot.class)
 @JsonTypeName("VIEW")
 // Suppress: "Constructor parameters should be better defined on the same level of inheritance
 // hierarchy..."

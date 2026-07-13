@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieStruct.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieStruct.class)
 @JsonDeserialize(as = ImmutableNessieStruct.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieStruct.class)
 public interface NessieStruct extends Hashable {
   static NessieStruct nessieStruct(List<NessieField> fields, String icebergRecordName) {
     return ImmutableNessieStruct.of(fields, icebergRecordName);

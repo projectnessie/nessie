@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieSortDefinition.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieSortDefinition.class)
 @JsonDeserialize(as = ImmutableNessieSortDefinition.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieSortDefinition.class)
 public interface NessieSortDefinition {
 
   int NO_SORT_ORDER_ID = -1;

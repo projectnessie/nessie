@@ -26,6 +26,7 @@ import org.projectnessie.model.ContentKey;
  * represented by specific subclasses, loaded via {@link CatalogOperationTypeIdResolver}.
  */
 @JsonTypeIdResolver(CatalogOperationTypeIdResolver.class)
+@tools.jackson.databind.annotation.JsonTypeIdResolver(CatalogOperationTypeIdResolver3.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "type", visible = true)
 public interface CatalogOperation {
 

@@ -25,7 +25,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieFixedTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieFixedTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieFixedTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieFixedTypeSpec.class)
 public interface NessieFixedTypeSpec extends NessieTypeSpec {
 
   int length();

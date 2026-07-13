@@ -33,7 +33,10 @@ import java.util.Objects;
  * <p>This implementation
  */
 @JsonSerialize(using = BooleanArray.BooleanArraySerializer.class)
+@tools.jackson.databind.annotation.JsonSerialize(using = BooleanArray.BooleanArraySerializer3.class)
 @JsonDeserialize(using = BooleanArray.BooleanArrayDeserializer.class)
+@tools.jackson.databind.annotation.JsonDeserialize(
+    using = BooleanArray.BooleanArrayDeserializer3.class)
 public final class BooleanArray {
   private final byte[] data;
 
@@ -129,6 +132,28 @@ public final class BooleanArray {
     @Override
     public void serialize(BooleanArray value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
+      gen.writeBinary(value.data);
+    }
+  }
+
+  public static final class BooleanArrayDeserializer3
+      extends tools.jackson.databind.ValueDeserializer<BooleanArray> {
+    @Override
+    public BooleanArray deserialize(
+        tools.jackson.core.JsonParser p, tools.jackson.databind.DeserializationContext ctxt)
+        throws tools.jackson.core.JacksonException {
+      return new BooleanArray(p.getBinaryValue());
+    }
+  }
+
+  public static final class BooleanArraySerializer3
+      extends tools.jackson.databind.ValueSerializer<BooleanArray> {
+    @Override
+    public void serialize(
+        BooleanArray value,
+        tools.jackson.core.JsonGenerator gen,
+        tools.jackson.databind.SerializationContext serializers)
+        throws tools.jackson.core.JacksonException {
       gen.writeBinary(value.data);
     }
   }

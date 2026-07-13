@@ -31,7 +31,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessiePartitionDefinition.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessiePartitionDefinition.class)
 @JsonDeserialize(as = ImmutableNessiePartitionDefinition.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessiePartitionDefinition.class)
 public interface NessiePartitionDefinition {
 
   int NO_PARTITION_SPEC_ID = -1;

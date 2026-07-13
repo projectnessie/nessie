@@ -32,7 +32,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieSchema.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieSchema.class)
 @JsonDeserialize(as = ImmutableNessieSchema.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieSchema.class)
 public interface NessieSchema {
 
   int NO_SCHEMA_ID = -1;

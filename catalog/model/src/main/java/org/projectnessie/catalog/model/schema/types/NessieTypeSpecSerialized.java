@@ -30,7 +30,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieTypeSpecSerialized.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieTypeSpecSerialized.class)
 @JsonDeserialize(as = ImmutableNessieTypeSpecSerialized.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieTypeSpecSerialized.class)
 public interface NessieTypeSpecSerialized {
   String type();
 

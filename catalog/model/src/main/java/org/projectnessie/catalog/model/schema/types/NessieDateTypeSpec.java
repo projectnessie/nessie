@@ -25,7 +25,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 // TODO Iceberg: ??
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieDateTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieDateTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieDateTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieDateTypeSpec.class)
 public interface NessieDateTypeSpec extends NessieTypeSpec {
 
   @Override

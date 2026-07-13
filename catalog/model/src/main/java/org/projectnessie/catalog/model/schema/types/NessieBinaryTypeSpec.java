@@ -22,7 +22,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieBinaryTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieBinaryTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieBinaryTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieBinaryTypeSpec.class)
 public interface NessieBinaryTypeSpec extends NessieTypeSpec {
 
   @Override

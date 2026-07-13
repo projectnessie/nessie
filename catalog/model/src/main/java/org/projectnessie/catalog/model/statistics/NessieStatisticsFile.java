@@ -22,7 +22,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieStatisticsFile.class)
 @JsonDeserialize(as = ImmutableNessieStatisticsFile.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieStatisticsFile.class)
 public interface NessieStatisticsFile {
 
   static NessieStatisticsFile statisticsFile(

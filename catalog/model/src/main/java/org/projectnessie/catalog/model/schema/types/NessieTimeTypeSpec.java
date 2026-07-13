@@ -23,7 +23,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 // TODO Supported in Iceberg, not supported in Delta (needs conversion!)
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieTimeTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieTimeTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieTimeTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieTimeTypeSpec.class)
 public interface NessieTimeTypeSpec extends NessieTypeSpec {
 
   int precision();

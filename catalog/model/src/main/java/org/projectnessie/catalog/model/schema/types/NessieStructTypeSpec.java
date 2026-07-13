@@ -25,7 +25,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieStructTypeSpec.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieStructTypeSpec.class)
 @JsonDeserialize(as = ImmutableNessieStructTypeSpec.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieStructTypeSpec.class)
 public interface NessieStructTypeSpec extends NessieTypeSpec {
 
   NessieStruct struct();

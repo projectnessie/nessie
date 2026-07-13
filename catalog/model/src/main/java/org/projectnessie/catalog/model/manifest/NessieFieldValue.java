@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieFieldValue.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieFieldValue.class)
 @JsonDeserialize(as = ImmutableNessieFieldValue.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieFieldValue.class)
 public interface NessieFieldValue extends Hashable {
   UUID fieldId();
 

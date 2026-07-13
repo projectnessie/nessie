@@ -28,7 +28,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableNessieFieldsSummary.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableNessieFieldsSummary.class)
 @JsonDeserialize(as = ImmutableNessieFieldsSummary.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableNessieFieldsSummary.class)
 public interface NessieFieldsSummary {
 
   // Only for Iceberg
