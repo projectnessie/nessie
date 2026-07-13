@@ -25,7 +25,7 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Server - Store (Proto)" }
 
-dependencies { api(project(path = ":nessie-protobuf-relocated", configuration = "shadow")) }
+dependencies { api(project(":nessie-protobuf-relocated")) }
 
 // *.proto files taken from https://github.com/googleapis/googleapis/ repo, available as a git
 // submodule

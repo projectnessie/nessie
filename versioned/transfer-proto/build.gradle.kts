@@ -25,7 +25,7 @@ plugins {
 
 publishingHelper { mavenName = "Nessie - Export/Import - Serialization (Proto)" }
 
-dependencies { api(project(path = ":nessie-protobuf-relocated", configuration = "shadow")) }
+dependencies { api(project(":nessie-protobuf-relocated")) }
 
 extensions.configure<ProtobufExtension> {
   // Configure the protoc executable
