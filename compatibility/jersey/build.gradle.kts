@@ -47,9 +47,7 @@ dependencies {
   implementation("org.glassfish.jersey.ext.cdi:jersey-cdi1x")
   implementation("org.glassfish.jersey.ext.cdi:jersey-cdi-rs-inject")
   implementation("org.glassfish.jersey.ext.cdi:jersey-weld2-se")
-  implementation(
-    platform("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle")
-  )
+  implementation(platform(libs.jersey.test.framework.provider.bundle))
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-core")
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-util")
   implementation(

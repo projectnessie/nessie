@@ -90,6 +90,7 @@ javax-validation-api = { module = "javax.validation:validation-api", version = "
 javax-ws-rs = { module = "javax.ws.rs:javax.ws.rs-api", version = "2.1.1" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version = "4.0.9" }
 jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version = "4.0.2" }
+jersey-test-framework-provider-bundle = { module = "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-bundle", version = "4.0.2" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "26.1.0" }
 jetty-bom = { module = "org.eclipse.jetty:jetty-bom", version = "12.1.11" }
 jline = { module = "org.jline:jline", version = "4.3.1" }
