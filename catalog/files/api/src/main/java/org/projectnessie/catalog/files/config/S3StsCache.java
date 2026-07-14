@@ -26,7 +26,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableS3StsCache.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3StsCache.class)
 @JsonDeserialize(as = ImmutableS3StsCache.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3StsCache.class)
 public interface S3StsCache {
 
   /** Default value for {@link #sessionCacheMaxSize()}. */

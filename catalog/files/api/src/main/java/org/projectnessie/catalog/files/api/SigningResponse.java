@@ -24,7 +24,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSigningResponse.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSigningResponse.class)
 @JsonDeserialize(as = ImmutableSigningResponse.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSigningResponse.class)
 public interface SigningResponse {
   URI uri();
 

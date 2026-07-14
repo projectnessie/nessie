@@ -22,7 +22,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableS3NamedBucketOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3NamedBucketOptions.class)
 @JsonDeserialize(as = ImmutableS3NamedBucketOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3NamedBucketOptions.class)
 @SuppressWarnings("immutables:subtype")
 public interface S3NamedBucketOptions extends S3BucketOptions, PerBucket {
 

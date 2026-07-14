@@ -30,7 +30,9 @@ import org.projectnessie.storage.uri.StorageUri;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableS3Options.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3Options.class)
 @JsonDeserialize(as = ImmutableS3Options.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3Options.class)
 public interface S3Options {
 
   /**

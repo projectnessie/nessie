@@ -32,7 +32,9 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableS3Config.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3Config.class)
 @JsonDeserialize(as = ImmutableS3Config.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3Config.class)
 public interface S3Config {
 
   Optional<S3Http> http();

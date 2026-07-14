@@ -31,7 +31,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSignerParams.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableSignerParams.class)
 @JsonDeserialize(as = ImmutableSignerParams.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableSignerParams.class)
 public abstract class SignerParams {
 
   private static final ObjectMapper SMILE_MAPPER = new SmileMapper().findAndRegisterModules();

@@ -25,5 +25,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @Value.Style(allParameters = false)
 @JsonSerialize(as = ImmutableS3ServerIam.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3ServerIam.class)
 @JsonDeserialize(as = ImmutableS3ServerIam.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3ServerIam.class)
 public interface S3ServerIam extends S3Iam {}

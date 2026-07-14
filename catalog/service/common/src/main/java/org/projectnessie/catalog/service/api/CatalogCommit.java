@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 @NessieImmutable
 @Value.Style(jdkOnly = true)
 @JsonSerialize(as = ImmutableCatalogCommit.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableCatalogCommit.class)
 @JsonDeserialize(as = ImmutableCatalogCommit.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableCatalogCommit.class)
 public interface CatalogCommit {
 
   List<CatalogOperation> getOperations();

@@ -22,7 +22,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableGcsNamedBucketOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGcsNamedBucketOptions.class)
 @JsonDeserialize(as = ImmutableGcsNamedBucketOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGcsNamedBucketOptions.class)
 @SuppressWarnings("immutables:subtype")
 public interface GcsNamedBucketOptions extends GcsBucketOptions, PerBucket {
 

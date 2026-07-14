@@ -34,7 +34,9 @@ import org.projectnessie.storage.uri.StorageUri;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableAdlsOptions.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAdlsOptions.class)
 @JsonDeserialize(as = ImmutableAdlsOptions.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAdlsOptions.class)
 public interface AdlsOptions {
 
   /** Override the default read block size used when writing to ADLS. */

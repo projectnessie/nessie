@@ -25,7 +25,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableS3Http.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableS3Http.class)
 @JsonDeserialize(as = ImmutableS3Http.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableS3Http.class)
 public interface S3Http {
 
   /** Override the default maximum number of pooled connections. */

@@ -38,7 +38,9 @@ import org.projectnessie.nessie.docgen.annotations.ConfigDocs.ConfigItem;
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableAdlsConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAdlsConfig.class)
 @JsonDeserialize(as = ImmutableAdlsConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAdlsConfig.class)
 public interface AdlsConfig {
 
   /**

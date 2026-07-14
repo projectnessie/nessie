@@ -27,7 +27,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 /** System level configuration for Google Cloud Storage (GCS) object stores. */
 @NessieImmutable
 @JsonSerialize(as = ImmutableGcsConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGcsConfig.class)
 @JsonDeserialize(as = ImmutableGcsConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGcsConfig.class)
 public interface GcsConfig {
 
   /** Override the default read timeout. */

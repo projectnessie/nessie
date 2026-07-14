@@ -45,6 +45,11 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-annotations")
   runtimeOnly("com.fasterxml.jackson.datatype:jackson-datatype-guava")
 
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
+  runtimeOnly(platform(libs.jackson3.bom))
+  runtimeOnly("tools.jackson.core:jackson-databind")
+
   // javax/jakarta
   compileOnly(libs.jakarta.ws.rs.api)
   compileOnly(libs.jakarta.enterprise.cdi.api)
@@ -60,4 +65,34 @@ dependencies {
 
   testCompileOnly(project(":nessie-immutables"))
   testAnnotationProcessor(project(":nessie-immutables", configuration = "processor"))
+}
+
+testing {
+  suites {
+    register("testJackson3", JvmTestSuite::class.java) {
+      useJUnitJupiter(libsRequiredVersion("junit"))
+
+      dependencies {
+        implementation.add(project())
+        implementation.add(project(":nessie-catalog-model"))
+        implementation.add(platform(libs.jackson3.bom))
+        implementation.add("tools.jackson.core:jackson-databind")
+        compileOnly.add(platform(libs.jackson.bom))
+        compileOnly.add("com.fasterxml.jackson.core:jackson-databind")
+        implementation.add(platform(libs.junit.bom))
+        implementation.add(libs.assertj.core)
+      }
+
+      targets {
+        all {
+          testTask.configure {
+            usesService(
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+            )
+          }
+          tasks.named("test").configure { dependsOn(testTask) }
+        }
+      }
+    }
+  }
 }

@@ -23,7 +23,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableGcsDownscopedCredentials.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableGcsDownscopedCredentials.class)
 @JsonDeserialize(as = ImmutableGcsDownscopedCredentials.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableGcsDownscopedCredentials.class)
 public interface GcsDownscopedCredentials {
   /**
    * Flag to enable the currently experimental option to send short-lived and scoped-down
