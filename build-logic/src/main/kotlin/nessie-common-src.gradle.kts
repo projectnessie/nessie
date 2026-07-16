@@ -39,7 +39,8 @@ if (noCheckstyle) {
 } else {
   checkstyle {
     toolVersion = libsRequiredVersion("checkstyle")
-    config = rootProject.resources.text.fromFile("codestyle/checkstyle-config.xml")
+    config =
+      resources.text.fromFile(layout.settingsDirectory.file("codestyle/checkstyle-config.xml"))
     isShowViolations = true
     isIgnoreFailures = false
   }
@@ -94,13 +95,13 @@ tasks.withType<JavaCompile>().configureEach {
   } else {
     options.errorprone.disableWarningsInGeneratedCode = true
 
-    val errorproneRules = rootProject.projectDir.resolve("codestyle/errorprone-rules.properties")
+    val errorproneRules = layout.settingsDirectory.file("codestyle/errorprone-rules.properties")
     inputs.file(errorproneRules).withPathSensitivity(PathSensitivity.RELATIVE)
 
     val checksMapProperty =
       objects
         .mapProperty(String::class.java, CheckSeverity::class.java)
-        .convention(provider { errorproneRules(errorproneRules) })
+        .convention(provider { errorproneRules(errorproneRules.asFile) })
 
     options.errorprone.checks.putAll(checksMapProperty)
     options.errorprone.excludedPaths =

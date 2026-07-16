@@ -77,13 +77,13 @@ if (
     val additionalJarContent =
       tasks.register("additionalJarContent", Sync::class.java) {
         // Have to manually declare the inputs of this task here on top of the from/include below
-        inputs.files(rootProject.layout.files("LICENSE", "NOTICE"))
+        inputs.files(layout.settingsDirectory.files("LICENSE", "NOTICE"))
         inputs.property(
           "groupArtifactVersion",
           "${project.group}:${project.name}:${project.version}",
         )
         dependsOn("generatePomFileForMavenPublication")
-        from(rootProject.rootDir) {
+        from(layout.settingsDirectory) {
           include("LICENSE", "NOTICE")
           eachFile {
             this.path =
@@ -108,8 +108,9 @@ if (
 }
 
 val bannedDependencies = lazy {
-  rootProject
+  layout.settingsDirectory
     .file("gradle/banned-dependencies.txt")
+    .asFile
     .readText(Charsets.UTF_8)
     .trim()
     .lines()
