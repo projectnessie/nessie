@@ -20,6 +20,7 @@ import static org.projectnessie.catalog.secrets.BasicCredentials.basicCredential
 import static org.projectnessie.catalog.secrets.KeySecret.keySecret;
 import static org.projectnessie.catalog.secrets.TokenSecret.tokenSecret;
 
+import io.floci.testcontainers.FlociContainer;
 import java.net.URI;
 import java.time.Instant;
 import org.assertj.core.api.SoftAssertions;
@@ -36,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -51,28 +51,26 @@ public class ITAwsSecretsProvider {
   @InjectSoftAssertions SoftAssertions soft;
 
   @Container
-  static LocalStackContainer localstack =
-      new LocalStackContainer(
+  static FlociContainer floci =
+      new FlociContainer(
               ContainerSpecHelper.builder()
-                  .name("localstack")
+                  .name("floci")
                   .containerClass(ITAwsSecretsProvider.class)
                   .build()
                   .dockerImageName(null)
-                  .asCompatibleSubstituteFor("localstack/localstack"))
-          .withLogConsumer(c -> LOGGER.info("[LOCALSTACK] {}", c.getUtf8StringWithoutLineEnding()))
-          .withServices("secretsmanager");
+                  .asCompatibleSubstituteFor("floci/floci"))
+          .withLogConsumer(c -> LOGGER.info("[FLOCI] {}", c.getUtf8StringWithoutLineEnding()));
 
   @Test
   public void awsSecretsManager() {
-    URI secretsManagerEndpoint = localstack.getEndpoint();
+    URI secretsManagerEndpoint = URI.create(floci.getEndpoint());
     try (SecretsManagerClient client =
         SecretsManagerClient.builder()
             .endpointOverride(secretsManagerEndpoint)
-            .region(Region.of(localstack.getRegion()))
+            .region(Region.of(floci.getRegion()))
             .credentialsProvider(
                 StaticCredentialsProvider.create(
-                    AwsBasicCredentials.create(
-                        localstack.getAccessKey(), localstack.getSecretKey())))
+                    AwsBasicCredentials.create(floci.getAccessKey(), floci.getSecretKey())))
             .build()) {
 
       String instantStr = "2024-06-05T20:38:16Z";
