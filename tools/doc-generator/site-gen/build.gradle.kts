@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
+import docgen.GenerateCliGrammarMarkdown
+import docgen.GenerateJavaHelpMarkdown
+import docgen.GenerateJavaJarHelpMarkdown
+import docgen.GenerateMarkdownDocs
 
 plugins {
   `java-library`
@@ -79,91 +81,22 @@ dependencies {
 
 val generatedMarkdownDocsDir = layout.buildDirectory.dir("generatedMarkdownDocs")
 
-val generatedMarkdownDocs = tasks.register<JavaExec>("generatedMarkdownDocs") {
-
-  mainClass = "org.projectnessie.nessie.docgen.DocGenTool"
-
-  outputs.cacheIf { true }
-  outputs.dir(generatedMarkdownDocsDir)
-  inputs.files(doclet)
-  inputs.files(genProjects)
-  inputs.files(genSources)
-
-  doFirst {
-    delete(generatedMarkdownDocsDir)
-  }
-
-  argumentProviders.add(CommandLineArgumentProvider {
-
-    // So, in theory, all 'org.gradle.category' attributes should use the type
-    // org.gradle.api.attributes.Category,
-    // as Category.CATEGORY_ATTRIBUTE is defined. BUT! Some attributes have an attribute type ==
-    // String.class!
-    val categoryAttributeAsString = Attribute.of("org.gradle.category", String::class.java)
-
-    val classes = genProjects.incoming.artifacts
-      .filter { a ->
-        // dependencies:
-        //  org.gradle.category=library
-        val category =
-          a.variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-            ?: a.variant.attributes.getAttribute(categoryAttributeAsString)
-        category != null && category.toString() == Category.LIBRARY
-      }
-      .map { a -> a.file }
-
-    val sources = genSources.incoming.artifacts
-      .filter { a ->
-        // sources:
-        //  org.gradle.category=verification
-        //  org.gradle.verificationtype=main-sources
-
-        val category = a.variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-        val verificationType =
-          a.variant.attributes.getAttribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE)
-        category != null &&
-          category.name == Category.VERIFICATION &&
-          verificationType != null &&
-          verificationType.name == VerificationType.MAIN_SOURCES &&
-          a.file.name != "resources"
-      }
-      .map { a -> a.file }
-
-    listOf(
-      "--classpath", classes.joinToString(":"),
-      "--sourcepath", sources.joinToString(":"),
-      "--destination", generatedMarkdownDocsDir.get().toString()
-    ) + (if (logger.isInfoEnabled) listOf("--verbose") else listOf())
-  })
-
-  classpath(doclet)
+val generatedMarkdownDocs = tasks.register<GenerateMarkdownDocs>("generatedMarkdownDocs") {
+  mainClass.set("org.projectnessie.nessie.docgen.DocGenTool")
+  toolClasspath.from(doclet)
+  classpathArtifacts.from(genProjects)
+  sourceArtifacts.from(genSources)
+  destinationDirectory.set(generatedMarkdownDocsDir)
+  verbose.set(logger.isInfoEnabled)
 }
 
 val cliHelpDir = layout.buildDirectory.dir("cliHelp")
 
-val cliHelp = tasks.register<JavaExec>("cliHelp") {
-  mainClass = "-jar"
-
-  inputs.files(cliRunner)
-  outputs.cacheIf { true }
-  outputs.dir(cliHelpDir)
-
-  classpath(cliRunner)
-
-  mainClass = "org.projectnessie.nessie.cli.cli.NessieCliMain"
-  args("--help", "--non-ansi")
-
-  doFirst {
-    delete(cliHelpDir)
-  }
-
-  standardOutput = ByteArrayOutputStream()
-
-  doLast {
-    cliHelpDir.get().asFile.mkdirs()
-
-    file(cliHelpDir.get().file("cli-help.md")).writeText("```\n$standardOutput\n```\n")
-  }
+val cliHelp = tasks.register<GenerateJavaHelpMarkdown>("cliHelp") {
+  runtimeClasspath.from(cliRunner)
+  mainClass.set("org.projectnessie.nessie.cli.cli.NessieCliMain")
+  arguments.set(listOf("--help", "--non-ansi"))
+  outputFile.set(cliHelpDir.map { it.file("cli-help.md") })
 }
 
 val gcHelpDir = layout.buildDirectory.dir("gcHelp")
@@ -188,29 +121,14 @@ for (cmdArgs in listOf(
     "show-licenses").map { cmd -> listOf("help-$cmd", "help", cmd) }
 ) {
   val name = cmdArgs[0]
-  val t = tasks.register<JavaExec>("gc-$name")
+  val t = tasks.register<GenerateJavaHelpMarkdown>("gc-$name")
   t.configure {
-    inputs.files(gcRunner)
-    val dir = layout.buildDirectory.dir("gc-$name")
-    outputs.cacheIf { true }
-    outputs.dir(dir)
-
-    classpath(gcRunner)
-
-    val gcMainClass = "org.projectnessie.gc.tool.cli.CLI"
-
-    mainClass = gcMainClass
-    args(cmdArgs.subList(1, cmdArgs.size))
-
-    standardInput = InputStream.nullInputStream()
-    standardOutput = ByteArrayOutputStream()
-
-    doLast {
-      dir.get().asFile.mkdirs()
-      file(dir.get().file("gc-$name.md")).writeText("```\n$standardOutput\n```\n")
-    }
+    runtimeClasspath.from(gcRunner)
+    mainClass.set("org.projectnessie.gc.tool.cli.CLI")
+    arguments.set(cmdArgs.subList(1, cmdArgs.size))
+    outputFile.set(layout.buildDirectory.file("gc-$name/gc-$name.md"))
   }
-  gcHelp.configure { from(t) }
+  gcHelp.configure { from(t.flatMap { it.outputFile }) }
 }
 
 val serverAdminHelpDir = layout.buildDirectory.dir("serverAdminHelp")
@@ -218,6 +136,12 @@ val serverAdminHelpDir = layout.buildDirectory.dir("serverAdminHelp")
 val serverAdminHelp = tasks.register<Sync>("serverAdminHelp") {
   into(serverAdminHelpDir)
 }
+
+val serverAdminExecutableJar = layout.file(serverAdminRunner.elements.map { it.single().asFile })
+val java21Launcher = javaToolchains.launcherFor {
+  languageVersion.set(JavaLanguageVersion.of(21))
+}
+var previousServerAdminHelp: TaskProvider<GenerateJavaJarHelpMarkdown>? = null
 
 for (cmdArgs in listOf(
   listOf("help", "help")) +
@@ -232,26 +156,24 @@ for (cmdArgs in listOf(
       "show-licenses").map { cmd -> listOf("help-$cmd", "help", cmd) }
 ) {
   val name = cmdArgs[0]
-  val t = tasks.register<JavaExec>("serverAdmin-$name")
+  val previous = previousServerAdminHelp
+  val t = tasks.register<GenerateJavaJarHelpMarkdown>("serverAdmin-$name")
   t.configure {
-    inputs.files(serverAdminRunner)
-    val dir = layout.buildDirectory.dir("serverAdmin-$name")
-    outputs.cacheIf { true }
-    outputs.dir(dir)
-
-    classpath(serverAdminRunner)
-
-    args(cmdArgs.subList(1, cmdArgs.size))
-
-    standardInput = InputStream.nullInputStream()
-    standardOutput = ByteArrayOutputStream()
-
-    doLast {
-      dir.get().asFile.mkdirs()
-      file(dir.get().file("serverAdmin-$name.md")).writeText("```\n$standardOutput\n```\n")
-    }
+    executableJar.set(serverAdminExecutableJar)
+    javaLauncher.set(java21Launcher)
+    arguments.set(cmdArgs.subList(1, cmdArgs.size))
+    outputFile.set(layout.buildDirectory.file("serverAdmin-$name/serverAdmin-$name.md"))
+    previous?.let { mustRunAfter(it) }
   }
-  serverAdminHelp.configure { from(t) }
+  previousServerAdminHelp = t
+  serverAdminHelp.configure { from(t.flatMap { it.outputFile }) }
+}
+
+val cliGrammarDocsDir = layout.buildDirectory.dir("cliGrammarDocs")
+
+val cliGrammarDocs = tasks.register<GenerateCliGrammarMarkdown>("cliGrammarDocs") {
+  cliGrammarArchive.set(layout.file(cliGrammar.elements.map { it.single().asFile }))
+  outputDirectory.set(cliGrammarDocsDir)
 }
 
 tasks.register<Sync>("generateDocs") {
@@ -259,30 +181,19 @@ tasks.register<Sync>("generateDocs") {
   dependsOn(cliHelp)
   dependsOn(gcHelp)
   dependsOn(serverAdminHelp)
+  dependsOn(cliGrammarDocs)
 
   val targetDir = layout.buildDirectory.dir("markdown-docs")
 
-  inputs.files(cliGrammar)
   outputs.dir(targetDir)
 
   into(targetDir)
 
-  from(generatedMarkdownDocsDir)
-  from(cliHelpDir)
+  from(generatedMarkdownDocs.flatMap { it.destinationDirectory })
+  from(cliHelp.flatMap { it.outputFile })
   from(gcHelpDir)
   from(serverAdminHelpDir)
-  from(provider { zipTree(cliGrammar.singleFile) }) {
-    include("org/projectnessie/nessie/cli/syntax/*.help.txt")
-    include("org/projectnessie/nessie/cli/syntax/*.md")
-    eachFile { path = if (name.endsWith(".help.txt")) "cli-help-${name.replace(".help.txt", ".md")}" else "cli-syntax-$name" }
-  }
-  from(provider { zipTree(cliGrammar.singleFile) }) {
-    include("org/projectnessie/nessie/cli/spark-syntax/*.help.txt")
-    include("org/projectnessie/nessie/cli/spark-syntax/*.md")
-    eachFile { path = if (name.endsWith(".help.txt")) "cli-help-${name.replace(".help.txt", ".md")}" else "spark-sql-syntax-$name" }
-  }
+  from(cliGrammarDocs.flatMap { it.outputDirectory })
 
   duplicatesStrategy = DuplicatesStrategy.FAIL
-
-  doLast { delete(targetDir.get().dir("org")) }
 }
