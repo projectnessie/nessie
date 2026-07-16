@@ -16,7 +16,6 @@
 
 // Nessie root project
 
-import copiedcode.CopiedCodeCheckerPlugin
 import java.util.Properties
 import javax.inject.Inject
 import org.gradle.api.file.ProjectLayout
@@ -188,12 +187,3 @@ abstract class ListChildProjectsTask : DefaultTask() {
     }
   }
 }
-
-allprojects {
-  tasks.register("codeChecks").configure {
-    group = "build"
-    description = "Runs code style and license checks"
-  }
-}
-
-apply<CopiedCodeCheckerPlugin>()

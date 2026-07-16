@@ -33,6 +33,8 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.IgnoreEmptyDirectories
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -78,29 +80,49 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     val extension =
       extensions.create("copiedCodeChecks", CopiedCodeCheckerExtension::class.java, project)
 
-    if (rootProject == this) {
-      // Apply this plugin to all projects
-      afterEvaluate { subprojects { plugins.apply(CopiedCodeCheckerPlugin::class.java) } }
+    val sharedConfiguration =
+      if (project.path == ":") {
+        gradle.sharedServices.registerIfAbsent(
+          COPIED_CODE_CHECKER_CONFIGURATION_SERVICE_NAME,
+          CopiedCodeCheckerConfigurationService::class.java,
+        ) {
+          parameters.excludedContentTypePatterns.set(extension.excludedContentTypePatterns)
+          parameters.includedContentTypePatterns.set(extension.includedContentTypePatterns)
+          parameters.includeUnrecognizedContentType.set(extension.includeUnrecognizedContentType)
+          parameters.magicWord.set(extension.magicWord)
+          parameters.licenseFile.set(extension.licenseFile)
+          parameters.rootDirectory.set(layout.projectDirectory)
+        }
+      } else {
+        gradle.sharedServices.registerIfAbsent(
+          COPIED_CODE_CHECKER_CONFIGURATION_SERVICE_NAME,
+          CopiedCodeCheckerConfigurationService::class.java,
+        ) {}
+      }
 
+    if (project.path == ":") {
       val checkCopiedCodeMentionsExist =
         tasks.register(
           CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME,
           CheckCopiedCodeMentionsExistTask::class.java,
         ) {
           licenseFile.set(extension.licenseFile)
-          rootDirectory.set(rootProject.layout.projectDirectory)
+          rootDirectory.set(layout.projectDirectory)
         }
 
       tasks.named("codeChecks").configure { dependsOn(checkCopiedCodeMentionsExist) }
     } else {
-      val rootExtension = rootProject.extensions.getByType(CopiedCodeCheckerExtension::class.java)
-      extension.excludedContentTypePatterns.convention(rootExtension.excludedContentTypePatterns)
-      extension.includedContentTypePatterns.convention(rootExtension.includedContentTypePatterns)
-      extension.includeUnrecognizedContentType.convention(
-        rootExtension.includeUnrecognizedContentType
+      extension.excludedContentTypePatterns.convention(
+        sharedConfiguration.flatMap { it.parameters.excludedContentTypePatterns }
       )
-      extension.magicWord.convention(rootExtension.magicWord)
-      extension.licenseFile.convention(rootExtension.licenseFile)
+      extension.includedContentTypePatterns.convention(
+        sharedConfiguration.flatMap { it.parameters.includedContentTypePatterns }
+      )
+      extension.includeUnrecognizedContentType.convention(
+        sharedConfiguration.flatMap { it.parameters.includeUnrecognizedContentType }
+      )
+      extension.magicWord.convention(sharedConfiguration.flatMap { it.parameters.magicWord })
+      extension.licenseFile.convention(sharedConfiguration.flatMap { it.parameters.licenseFile })
     }
 
     val checkForCopiedCode =
@@ -110,7 +132,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
         excludedContentTypePatterns.set(extension.excludedContentTypePatterns)
         includeUnrecognizedContentType.set(extension.includeUnrecognizedContentType)
         magicWord.set(extension.magicWord)
-        rootDirectory.set(rootProject.layout.projectDirectory)
+        rootDirectory.set(sharedConfiguration.flatMap { it.parameters.rootDirectory })
         projectDirectory.set(layout.projectDirectory)
         buildDirectory.set(layout.buildDirectory)
 
@@ -127,8 +149,27 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
   }
 
   companion object {
+    private const val COPIED_CODE_CHECKER_CONFIGURATION_SERVICE_NAME =
+      "copiedCodeCheckerConfiguration"
     private const val CHECK_FOR_COPIED_CODE_TASK_NAME = "checkForCopiedCode"
     private const val CHECK_COPIED_CODE_MENTIONS_EXIST_TASK_NAME = "checkCopiedCodeMentionsExist"
+  }
+}
+
+abstract class CopiedCodeCheckerConfigurationService :
+  BuildService<CopiedCodeCheckerConfigurationService.Parameters> {
+  interface Parameters : BuildServiceParameters {
+    val excludedContentTypePatterns: SetProperty<String>
+
+    val includedContentTypePatterns: SetProperty<String>
+
+    val includeUnrecognizedContentType: Property<Boolean>
+
+    val magicWord: Property<String>
+
+    val licenseFile: RegularFileProperty
+
+    val rootDirectory: DirectoryProperty
   }
 }
 
