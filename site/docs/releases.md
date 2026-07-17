@@ -2,6 +2,52 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.108.2 Release (July 17, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.2).
+
+### New Features
+
+- Helm chart: support for `startupProbe` has been added.
+
+### Commits
+* test: run dynamodb storage tests on floci (#12741)
+* Allow using locally built Quarkus in Nessie (#12734)
+* Dev-local included builds (#12733)
+* Jackson 3 slice - catalog/service (#12729)
+* test: cover cloud secrets with floci emulators (#12740)
+* test: replace aws secrets localstack with floci (#12739)
+* Some more config-cache compatibility improvements (#12738)
+* Make copied-code checks config-cache compatible (#12737)
+* Make generate-docs configuration-cache friendly (#12736)
+* Jackson 3 slice - catalog/files + catalog/service (#12728)
+* Prepare for making NMCP setup work with config-cache (#12721)
+* Jackson 3 slice - catalog/model (#12719)
+* Jackson 3 slice - catalog/secrets (#12720)
+* Jackson 3 slice - cli/ (#12714)
+* Jackson 3 slice - catalog/format/iceberg (#12702)
+* Jackson 3 slice - cli/cli (#12707)
+* Build: add missing junit-bom platform notions (#12706)
+* Jackson 3 slice - api/model (#12701)
+* Don't use symlinks for shared input directories (#12695)
+* Fix missing '/' in readonly S3 resource ARN in credential vending (#12704)
+* Just add jackson3-bom (#12696)
+* Make spotless-config nicer to Gradle config-cache (#12694)
+* GC tool: add --jdbc-pool-max-size option (#12671)
+* Some more Gradle config cache fixes (#12666)
+* Fix remaining build tooling warnings (#12649)
+* Fix Helm CRD fixture install with Helm 4.2.2 (#12644)
+* Refactor tests to avoid direct test invocation (#12648)
+* Fix CongoCC optional grammar warnings (#12650)
+* Suppress intentional sentinel reference checks (#12652)
+* Fix content type reference equality warnings (#12651)
+* Suppress intentional storage identity checks (#12653)
+* Suppress intentional classloader identity checks (#12654)
+* Fix simple non-reference compiler warnings (#12647)
+* Suppress generated parser unchecked warning (#12646)
+* Fix local build warning sources (#12645)
+* Tackle heap issues (#12622)
+
 ## 0.108.1 Release (June 24, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.1).
