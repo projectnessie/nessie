@@ -18,14 +18,14 @@ package org.projectnessie.nessie.tasks.api;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.tasks.api.JacksonSerializers.InstantAsLongDeserializer;
 import org.projectnessie.nessie.tasks.api.JacksonSerializers.InstantAsLongSerializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /** Task state as a value object. */
 @Value.Immutable

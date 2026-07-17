@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.GenericObj.VER
 import static org.projectnessie.versioned.storage.common.objtypes.GenericObjTypeMapper.newGenericObjType;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
@@ -36,6 +35,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.commontests.objtypes.SimpleTestObj;
 import org.projectnessie.versioned.storage.commontests.objtypes.VersionedTestObj;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestGenericObj {
@@ -43,8 +44,8 @@ public class TestGenericObj {
 
   @ParameterizedTest
   @MethodSource
-  public void genericObj(ObjType realType, ObjId id, Obj realObj) throws Exception {
-    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+  public void genericObj(ObjType realType, ObjId id, Obj realObj) {
+    ObjectMapper mapper = JsonMapper.builder().findAndAddModules().build();
 
     ObjType genericType = newGenericObjType("genericType_" + UUID.randomUUID());
     String versionToken =
@@ -54,7 +55,7 @@ public class TestGenericObj {
 
     Obj genericObj =
         contextualReader(mapper, genericType, id, versionToken, realObj.referenced())
-            .readValue(json, genericType.targetClass());
+            .readValue(json);
     soft.assertThat(genericObj)
         .isInstanceOf(GenericObj.class)
         .extracting(GenericObj.class::cast)
@@ -69,7 +70,7 @@ public class TestGenericObj {
     String jsonGeneric = mapper.writeValueAsString(genericObj);
     Obj deserRealObj =
         contextualReader(mapper, realType, id, versionToken, realObj.referenced())
-            .readValue(jsonGeneric, realType.targetClass());
+            .readValue(jsonGeneric);
     soft.assertThat(deserRealObj).isEqualTo(realObj);
   }
 

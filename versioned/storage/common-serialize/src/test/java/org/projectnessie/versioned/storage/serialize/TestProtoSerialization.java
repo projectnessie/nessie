@@ -277,6 +277,8 @@ public class TestProtoSerialization {
   @Value.Immutable
   @JsonSerialize(as = ImmutableJsonTestModel.class)
   @JsonDeserialize(as = ImmutableJsonTestModel.class)
+  @tools.jackson.databind.annotation.JsonSerialize(as = ImmutableJsonTestModel.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableJsonTestModel.class)
   public interface JsonTestModel {
     ObjId parent();
 

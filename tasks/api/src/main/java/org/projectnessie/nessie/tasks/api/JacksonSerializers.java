@@ -15,25 +15,21 @@
  */
 package org.projectnessie.nessie.tasks.api;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import java.io.IOException;
 import java.time.Instant;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ValueSerializer;
 
 public final class JacksonSerializers {
   private JacksonSerializers() {}
 
-  public static final class InstantAsLongDeserializer extends StdDeserializer<Instant> {
-    public InstantAsLongDeserializer() {
-      super(Instant.class);
-    }
-
+  public static final class InstantAsLongDeserializer extends ValueDeserializer<Instant> {
     @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
       if (p.currentToken().isNumeric()) {
         long millis = p.getValueAsLong();
         return Instant.ofEpochMilli(millis);
@@ -42,14 +38,10 @@ public final class JacksonSerializers {
     }
   }
 
-  public static final class InstantAsLongSerializer extends StdSerializer<Instant> {
-    public InstantAsLongSerializer() {
-      super(Instant.class);
-    }
-
+  public static final class InstantAsLongSerializer extends ValueSerializer<Instant> {
     @Override
-    public void serialize(Instant value, JsonGenerator gen, SerializerProvider serializers)
-        throws IOException {
+    public void serialize(Instant value, JsonGenerator gen, SerializationContext serializers)
+        throws JacksonException {
       if (value == null) {
         gen.writeNull();
       } else {

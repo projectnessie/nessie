@@ -26,7 +26,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.StandardObjTyp
 import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_MAPPER;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -153,19 +152,11 @@ class RepositoryConfigBackend {
   }
 
   private static byte[] serialize(RepositoryConfig repositoryConfig) {
-    try {
-      return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryConfig);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryConfig);
   }
 
   private static RepositoryConfig deserialize(StringValue value) {
-    try {
-      return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryConfig.class);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryConfig.class);
   }
 
   /** Retrieves the configs-reference, creates the reference, if it does not exist. */

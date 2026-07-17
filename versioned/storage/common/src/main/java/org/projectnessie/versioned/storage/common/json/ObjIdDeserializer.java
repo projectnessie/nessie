@@ -15,11 +15,11 @@
  */
 package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import java.io.IOException;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 public class ObjIdDeserializer extends StdDeserializer<ObjId> {
 
@@ -28,7 +28,7 @@ public class ObjIdDeserializer extends StdDeserializer<ObjId> {
   }
 
   @Override
-  public ObjId deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+  public ObjId deserialize(JsonParser p, DeserializationContext ctx) throws JacksonException {
     return ObjId.objIdFromByteArray(p.getBinaryValue());
   }
 }

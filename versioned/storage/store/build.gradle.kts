@@ -37,9 +37,9 @@ dependencies {
   implementation(libs.guava)
   implementation(libs.slf4j.api)
 
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("tools.jackson.core:jackson-databind")
 
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))

@@ -15,19 +15,18 @@
  */
 package org.projectnessie.versioned.storage.common.json;
 
-import com.fasterxml.jackson.annotation.JacksonInject;
-import com.fasterxml.jackson.databind.InjectableValues;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.InjectableValues;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
 
 public final class ObjIdHelper {
 
   /**
    * The key used to store the injectable {@link ObjId} instance, representing the id of the object
    * being deserialized. Meant to be used in methods and constructor parameters annotated with
-   * {@link JacksonInject}.
+   * {@code JacksonInject}.
    */
   public static final String OBJ_ID_KEY = "nessie.storage.ObjId";
 

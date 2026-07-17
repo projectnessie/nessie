@@ -15,14 +15,14 @@
  */
 package org.projectnessie.versioned.storage.cache;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.function.Consumer;
 import org.immutables.value.Value;
 import org.projectnessie.versioned.storage.common.objtypes.CustomObjType;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
 import org.projectnessie.versioned.storage.common.persist.ObjTypeBundle;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 public class CacheTestObjTypeBundle implements ObjTypeBundle {
 

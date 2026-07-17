@@ -34,7 +34,6 @@ import static org.projectnessie.versioned.storage.common.util.Ser.SHARED_OBJECT_
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -147,19 +146,11 @@ final class RepositoryLogicImpl implements RepositoryLogic {
   }
 
   private static RepositoryDescription deserialize(StringValue value) {
-    try {
-      return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return SHARED_OBJECT_MAPPER.readValue(value.completeValue(), RepositoryDescription.class);
   }
 
   private static byte[] serialize(RepositoryDescription repositoryDescription) {
-    try {
-      return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryDescription);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return SHARED_OBJECT_MAPPER.writeValueAsBytes(repositoryDescription);
   }
 
   private void addRepositoryDescription(
@@ -185,7 +176,7 @@ final class RepositoryLogicImpl implements RepositoryLogic {
       // can safely ignore the response from storeObj() - it's fine, if the obj already exists
       persist.storeObj(string);
       b.addAdds(commitAdd(KEY_REPO_DESCRIPTION, 0, requireNonNull(string.id()), null, null));
-    } catch (ObjTooLargeException | IOException e) {
+    } catch (ObjTooLargeException e) {
       throw new RuntimeException(e);
     }
   }

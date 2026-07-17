@@ -18,12 +18,12 @@ package org.projectnessie.catalog.service.objtypes;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
 import javax.crypto.spec.SecretKeySpec;
 import org.immutables.value.Value;
 import org.projectnessie.nessie.immutables.NessieImmutable;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableSignerKey.class)

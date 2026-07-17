@@ -18,8 +18,6 @@ package org.projectnessie.catalog.service.objtypes;
 import static org.projectnessie.catalog.service.objtypes.transfer.CatalogObjIds.entityIdForContent;
 import static org.projectnessie.versioned.storage.common.objtypes.CustomObjType.customObjType;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.immutables.value.Value;
 import org.projectnessie.catalog.model.NessieEntity;
@@ -28,6 +26,8 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.versioned.storage.common.objtypes.UpdateableObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.projectnessie.versioned.storage.common.persist.ObjType;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableEntityObj.class)

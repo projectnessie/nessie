@@ -30,7 +30,7 @@ dependencies {
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.microprofile.openapi)
 
-  compileOnly(platform(libs.jackson.bom))
+  compileOnly(platform(libs.jackson3.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
 
   compileOnly(libs.errorprone.annotations)
@@ -58,6 +58,6 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
 
-  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly(platform(libs.jackson3.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
 }

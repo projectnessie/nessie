@@ -25,6 +25,8 @@ import org.projectnessie.versioned.storage.common.persist.ObjType;
 @Value.Immutable
 @JsonSerialize(as = ImmutableAnotherTestObj.class)
 @JsonDeserialize(as = ImmutableAnotherTestObj.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableAnotherTestObj.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableAnotherTestObj.class)
 public interface AnotherTestObj extends Obj, AnotherTestBean {
 
   ObjType TYPE = CustomObjType.customObjType("another", "oth", AnotherTestObj.class);
