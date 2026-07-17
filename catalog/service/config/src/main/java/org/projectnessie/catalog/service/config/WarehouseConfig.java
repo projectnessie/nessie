@@ -28,7 +28,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 @NessieImmutable
 @JsonSerialize(as = ImmutableWarehouseConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableWarehouseConfig.class)
 @JsonDeserialize(as = ImmutableWarehouseConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableWarehouseConfig.class)
 public interface WarehouseConfig {
 
   /**

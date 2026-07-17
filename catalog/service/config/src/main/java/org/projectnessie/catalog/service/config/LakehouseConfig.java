@@ -31,7 +31,9 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
  */
 @NessieImmutable
 @JsonSerialize(as = ImmutableLakehouseConfig.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableLakehouseConfig.class)
 @JsonDeserialize(as = ImmutableLakehouseConfig.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableLakehouseConfig.class)
 public interface LakehouseConfig {
   // "nessie.catalog"
   CatalogConfig catalog();
