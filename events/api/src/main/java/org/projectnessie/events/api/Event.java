@@ -83,6 +83,10 @@ public interface Event {
    */
   @JsonSerialize(using = CommitMeta.InstantSerializer.class)
   @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = CommitMeta.Jackson3InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = CommitMeta.Jackson3InstantDeserializer.class)
   Instant getEventCreationTimestamp();
 
   /**

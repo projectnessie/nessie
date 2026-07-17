@@ -24,9 +24,10 @@ dependencies {
   implementation(project(":nessie-events-api"))
   implementation(project(":nessie-events-spi"))
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-core")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  compileOnly(platform(libs.jackson.bom))
+  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
 
   implementation(libs.slf4j.api)
 
@@ -43,6 +44,10 @@ dependencies {
 
   testCompileOnly(libs.microprofile.openapi)
   testCompileOnly(libs.jakarta.annotation.api)
+  testCompileOnly(platform(libs.jackson.bom))
+  testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly(platform(libs.jackson3.bom))
+  testCompileOnly("tools.jackson.core:jackson-databind")
 }
 
 tasks.withType(Test::class).configureEach {

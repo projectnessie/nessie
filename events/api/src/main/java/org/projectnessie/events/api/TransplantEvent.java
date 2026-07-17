@@ -26,6 +26,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTransplantEvent.class)
 @JsonDeserialize(as = ImmutableTransplantEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableTransplantEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableTransplantEvent.class)
 public interface TransplantEvent
     extends MultiReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 

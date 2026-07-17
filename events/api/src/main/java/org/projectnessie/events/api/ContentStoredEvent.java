@@ -27,6 +27,8 @@ import org.projectnessie.model.Content;
 @Value.Immutable
 @JsonSerialize(as = ImmutableContentStoredEvent.class)
 @JsonDeserialize(as = ImmutableContentStoredEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableContentStoredEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableContentStoredEvent.class)
 public interface ContentStoredEvent extends ContentEvent {
   @Override
   @Value.Default

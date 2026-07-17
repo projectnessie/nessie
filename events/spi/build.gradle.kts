@@ -28,6 +28,8 @@ dependencies {
   // Jackson
   compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
 
   // Testing
   testImplementation(platform(libs.junit.bom))
@@ -35,4 +37,6 @@ dependencies {
 
   testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly(platform(libs.jackson3.bom))
+  testCompileOnly("tools.jackson.core:jackson-databind")
 }

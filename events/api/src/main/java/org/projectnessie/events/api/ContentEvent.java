@@ -39,6 +39,10 @@ public interface ContentEvent extends ReferenceEvent {
   /** The timestamp of the commit that the content was stored in or removed from. */
   @JsonSerialize(using = CommitMeta.InstantSerializer.class)
   @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
+  @tools.jackson.databind.annotation.JsonSerialize(
+      using = CommitMeta.Jackson3InstantSerializer.class)
+  @tools.jackson.databind.annotation.JsonDeserialize(
+      using = CommitMeta.Jackson3InstantDeserializer.class)
   Instant getCommitCreationTimestamp();
 
   /** The key of the content that was stored or removed. */

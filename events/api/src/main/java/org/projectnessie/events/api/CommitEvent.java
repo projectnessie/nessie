@@ -27,6 +27,8 @@ import org.projectnessie.model.CommitMeta;
 @Value.Immutable
 @JsonSerialize(as = ImmutableCommitEvent.class)
 @JsonDeserialize(as = ImmutableCommitEvent.class)
+@tools.jackson.databind.annotation.JsonSerialize(as = ImmutableCommitEvent.class)
+@tools.jackson.databind.annotation.JsonDeserialize(as = ImmutableCommitEvent.class)
 public interface CommitEvent extends ReferenceEvent, WithHashBeforeEvent, WithHashAfterEvent {
 
   @Override

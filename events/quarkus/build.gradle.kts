@@ -46,7 +46,10 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api")
 
   // Jackson
+  compileOnly(platform(libs.jackson.bom))
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  compileOnly(platform(libs.jackson3.bom))
+  compileOnly("tools.jackson.core:jackson-databind")
 
   testImplementation(project(":nessie-model"))
 
@@ -63,6 +66,9 @@ dependencies {
   testImplementation(libs.bundles.junit.testing)
   testImplementation(libs.awaitility)
 
+  testCompileOnly(platform(libs.jackson.bom))
   testCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  testCompileOnly(platform(libs.jackson3.bom))
+  testCompileOnly("tools.jackson.core:jackson-databind")
   testCompileOnly(libs.microprofile.openapi)
 }
