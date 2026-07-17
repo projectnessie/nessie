@@ -167,6 +167,52 @@ public class TestIcebergContentToFiles {
     }
   }
 
+  /**
+   * Table metadata whose {@code location} property does not cover the actual files, simulating for
+   * example data files written via {@code write.data.path} or files kept from a previous table
+   * location, see <a href="https://github.com/projectnessie/nessie/issues/10817">issue #10817</a>.
+   * Extraction must not fail, files outside the base location must be returned with their absolute
+   * URIs.
+   */
+  @Test
+  public void filesOutsideBaseLocation() {
+    String tableId = UUID.randomUUID().toString();
+    String tableMetaLocation = tableMetadataLocation(tableId, 0);
+    MockSnapshot tableSnapshot =
+        ImmutableMockSnapshot.builder()
+            .manifestListLocation(manifestListLocation(tableId, 0))
+            .tableUuid(tableId)
+            .build();
+    // The declared table location is different from the location of the metadata, manifest-list,
+    // manifest and data files, so none of the files can be relativized.
+    String declaredLocation = "mock://declared-location/" + tableId;
+    MockTableMetadata tableMetadata =
+        ImmutableMockTableMetadata.builder()
+            .location(declaredLocation)
+            .tableUuid(tableId)
+            .addSnapshots(tableSnapshot)
+            .build();
+    IcebergFileIOMocking fileIO = IcebergFileIOMocking.forSingleSnapshot(tableMetadata);
+    ContentReference contentReference =
+        icebergContent(
+            ICEBERG_TABLE, "cid", "12345678", ContentKey.of("foo", "bar"), tableMetaLocation, 0L);
+    StorageUri base = StorageUri.of(declaredLocation + "/");
+
+    IcebergContentToFiles contentToFiles = IcebergContentToFiles.builder().io(fileIO).build();
+    try (Stream<FileReference> extractFiles = contentToFiles.extractFiles(contentReference)) {
+      assertThat(extractFiles)
+          .allSatisfy(f -> assertThat(f.base()).isEqualTo(base))
+          .allSatisfy(f -> assertThat(f.path().isAbsolute()).isTrue())
+          .allSatisfy(f -> assertThat(f.absolutePath()).isEqualTo(f.path()))
+          .map(FileReference::absolutePath)
+          .containsExactlyInAnyOrder(
+              StorageUri.of(tableMetaLocation),
+              StorageUri.of(manifestListLocation(tableId, 0)),
+              StorageUri.of(manifestFileLocation(tableId, 0, 0)),
+              StorageUri.of(dataFilePath(tableId, 0, 0, 0)));
+    }
+  }
+
   @Test
   public void safeAgainstMissingTableMetadata() {
     InputFile inputFile = mock(InputFile.class);

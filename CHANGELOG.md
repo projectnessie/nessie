@@ -20,6 +20,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: Nessie GC no longer fails with `Path must be relative` when Iceberg content references files
+  that are not located under the location declared in the table's metadata, for example data files
+  written via `write.data.path` or files kept from a previous table location (#10817). Such files
+  are now tracked by their absolute URIs: they are recognized as live while sweeping the content's
+  base locations and are never deleted when they are outside all base locations.
+
 ### Commits
 
 ## [0.107.6] Release (2026-05-27)

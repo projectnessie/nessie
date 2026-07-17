@@ -70,7 +70,19 @@ public abstract class PerContentDeleteExpired {
           }
         };
 
-    long identifiedLiveFiles = identifyLiveFiles(filter, addBaseLocation);
+    LiveFilesStats liveFilesStats = identifyLiveFiles(filter, addBaseLocation);
+    long identifiedLiveFiles = liveFilesStats.liveFiles;
+
+    boolean matchAbsolutePaths = liveFilesStats.absolutePaths > 0;
+    if (matchAbsolutePaths) {
+      LOGGER.warn(
+          "live-set#{} content#{}: {} live files are referenced via absolute URIs outside the "
+              + "content's base locations. Those files are matched by their absolute URIs during "
+              + "expiry, files outside all base locations are never deleted.",
+          expireParameters().liveContentSet().id(),
+          contentId(),
+          liveFilesStats.absolutePaths);
+    }
 
     double expectedFpp = filter.expectedFpp();
     long approximateElementCount = filter.approximateElementCount();
@@ -93,7 +105,8 @@ public abstract class PerContentDeleteExpired {
     return baseLocations.stream()
         .map(
             baseLocation -> {
-              try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
+              try (Stream<FileReference> fileObjects =
+                  identifyExpiredFiles(filter, baseLocation, matchAbsolutePaths)) {
                 return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
               } catch (Exception e) {
                 String msg = "Failed to expire objects in base location " + baseLocation;
@@ -109,7 +122,7 @@ public abstract class PerContentDeleteExpired {
    * Content} objects.
    */
   @SuppressWarnings("UnstableApiUsage")
-  private long identifyLiveFiles(
+  private LiveFilesStats identifyLiveFiles(
       BloomFilter<StorageUri> filter, Consumer<StorageUri> addBaseLocation) {
     LOGGER.debug(
         "live-set#{} content#{}: Start collecting files and base locations, max file modification time: {}.",
@@ -117,7 +130,7 @@ public abstract class PerContentDeleteExpired {
         contentId(),
         expireParameters().maxFileModificationTime());
 
-    long liveFileCount;
+    LiveFilesStats liveFilesStats = new LiveFilesStats();
     try (Stream<FileReference> contents =
         expireParameters()
             .liveContentSet()
@@ -128,12 +141,17 @@ public abstract class PerContentDeleteExpired {
                   Stream<FileReference> r = expireParameters().contentToFiles().extractFiles(c);
                   return r;
                 })) {
-      liveFileCount =
-          contents
-              .peek(f -> addBaseLocation.accept(f.base()))
-              .map(FileReference::path)
-              .peek(filter::put)
-              .count();
+      contents
+          .peek(f -> addBaseLocation.accept(f.base()))
+          .map(FileReference::path)
+          .forEach(
+              path -> {
+                if (path.isAbsolute()) {
+                  liveFilesStats.absolutePaths++;
+                }
+                filter.put(path);
+                liveFilesStats.liveFiles++;
+              });
     }
 
     LOGGER.debug(
@@ -141,22 +159,28 @@ public abstract class PerContentDeleteExpired {
             + "false-positive-probability of {} (configured: {}).",
         expireParameters().liveContentSet().id(),
         contentId(),
-        liveFileCount,
+        liveFilesStats.liveFiles,
         expireParameters().expectedFileCount(),
         filter.expectedFpp(),
         expireParameters().falsePositiveProbability());
 
-    return liveFileCount;
+    return liveFilesStats;
   }
 
   /**
    * Second part of {@link #expire()} to walk all base locations and identify the files that are not
    * referenced by any live content object.
+   *
+   * <p>If {@code matchAbsolutePaths} is {@code true}, the live-files bloom filter contains at least
+   * one absolute URI for a file outside the content's base locations, so listed files are also
+   * matched by their absolute URIs, in case such a file is located under another base location of
+   * the same content, for example an older table location.
    */
   @SuppressWarnings("UnstableApiUsage")
   @MustBeClosed
   private Stream<FileReference> identifyExpiredFiles(
-      BloomFilter<StorageUri> filter, StorageUri baseLocation) throws NessieFileIOException {
+      BloomFilter<StorageUri> filter, StorageUri baseLocation, boolean matchAbsolutePaths)
+      throws NessieFileIOException {
     ExpireStats expireStats = new ExpireStats();
     long maxFileTime = expireParameters().maxFileModificationTime().toEpochMilli();
 
@@ -171,7 +195,8 @@ public abstract class PerContentDeleteExpired {
     return list.filter(
             f -> {
               expireStats.totalFiles++;
-              if (filter.mightContain(f.path())) {
+              if (filter.mightContain(f.path())
+                  || (matchAbsolutePaths && filter.mightContain(f.absolutePath()))) {
                 expireStats.liveFiles++;
                 return false;
               }
@@ -203,6 +228,11 @@ public abstract class PerContentDeleteExpired {
     long expiredFiles = 0;
     long liveFiles = 0;
     long newFiles = 0;
+  }
+
+  private static final class LiveFilesStats {
+    long liveFiles = 0;
+    long absolutePaths = 0;
   }
 
   @SuppressWarnings("UnstableApiUsage")
