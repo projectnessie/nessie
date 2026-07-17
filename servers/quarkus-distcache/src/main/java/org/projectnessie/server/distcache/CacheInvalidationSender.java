@@ -25,8 +25,6 @@ import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalid
 import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidationEvictReference.cacheInvalidationEvictReference;
 import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.quarkus.runtime.Startup;
 import io.vertx.core.Future;
@@ -61,6 +59,9 @@ import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @ApplicationScoped
 @Startup
@@ -77,7 +78,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private final String invalidationUri;
   private final long requestTimeout;
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper = JsonMapper.shared();
   private final Lock lock = new ReentrantLock();
   private final int batchSize;
   private final BlockingQueue<CacheInvalidation> invalidations = new LinkedBlockingQueue<>();
@@ -248,7 +249,7 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
     String json;
     try {
       json = objectMapper.writeValueAsString(cacheInvalidations(batch));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
 

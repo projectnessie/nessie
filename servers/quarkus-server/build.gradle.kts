@@ -135,6 +135,8 @@ dependencies {
   }
   testFixturesApi(quarkusPlatform(project))
   testFixturesImplementation("com.fasterxml.jackson.core:jackson-annotations")
+  testImplementation(platform(libs.jackson3.bom))
+  testImplementation("tools.jackson.core:jackson-databind")
   testFixturesApi("io.quarkus:quarkus-test-security")
   testFixturesApi("io.quarkus:quarkus-test-oidc-server")
   testFixturesImplementation("io.quarkus:quarkus-junit-config")

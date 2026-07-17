@@ -31,7 +31,6 @@ import static org.projectnessie.server.distcache.CacheInvalidations.CacheInvalid
 import static org.projectnessie.server.distcache.CacheInvalidations.cacheInvalidations;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -65,6 +64,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.quarkus.config.QuarkusStoreConfig;
 import org.projectnessie.server.distcache.CacheInvalidations.CacheInvalidation;
 import org.projectnessie.versioned.storage.cache.DistributedCacheInvalidation;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestCacheInvalidationSender {
@@ -398,7 +399,7 @@ public class TestCacheInvalidationSender {
         buildConfig(
             tokens, Optional.of(serviceNames), Duration.ofSeconds(10), Duration.ofSeconds(10));
 
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = JsonMapper.shared();
 
     AtomicReference<String> body = new AtomicReference<>();
     AtomicReference<URI> reqUri = new AtomicReference<>();
@@ -458,7 +459,7 @@ public class TestCacheInvalidationSender {
     List<CacheInvalidation> expected =
         invalidations().map(args -> args.get()[1]).map(CacheInvalidation.class::cast).toList();
 
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = JsonMapper.shared();
 
     AtomicReference<String> body = new AtomicReference<>();
     AtomicReference<URI> reqUri = new AtomicReference<>();
