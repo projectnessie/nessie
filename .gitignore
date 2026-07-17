@@ -77,3 +77,4 @@ __pycache__/
 metastore_db/
 
 /.env
+/.included-builds.properties
