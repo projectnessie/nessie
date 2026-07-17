@@ -38,7 +38,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public class DynamoDBBackendTestFactory implements BackendTestFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBBackendTestFactory.class);
-  public static final int DYNAMODB_PORT = 8000;
+  public static final int DYNAMODB_PORT = 4566;
 
   private GenericContainer<?> container;
   private String endpointURI;
@@ -66,7 +66,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
   public DynamoDbClient buildNewClient() {
     return DynamoClientProducer.builder()
         .endpointURI(endpointURI)
-        .region("US_WEST_2")
+        .region(US_WEST_2.id())
         .credentialsProvider(
             StaticCredentialsProvider.create(AwsBasicCredentials.create("xxx", "xxx")))
         .build()
@@ -82,7 +82,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
 
     DockerImageName dockerImage =
         ContainerSpecHelper.builder()
-            .name("dynamodb-local")
+            .name("floci")
             .containerClass(DynamoDBBackendTestFactory.class)
             .build()
             .dockerImageName(null);
@@ -91,8 +91,7 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
       GenericContainer<?> c =
           new GenericContainer<>(dockerImage)
               .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-              .withExposedPorts(DYNAMODB_PORT)
-              .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb");
+              .withExposedPorts(DYNAMODB_PORT);
       containerNetworkId.ifPresent(c::withNetworkMode);
       try {
         c.start();
