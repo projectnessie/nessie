@@ -32,20 +32,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.gc.tool.cli.util.RunCLI;
-import org.projectnessie.minio.Minio;
-import org.projectnessie.minio.MinioAccess;
-import org.projectnessie.minio.MinioExtension;
 import org.projectnessie.spark.extensions.SparkSqlTestBase;
+import org.projectnessie.testing.floci.s3.FlociS3;
+import org.projectnessie.testing.floci.s3.FlociS3Access;
+import org.projectnessie.testing.floci.s3.FlociS3Extension;
 
-/** Full Nessie GC round trip test with Nessie, Spark, Iceberg, Minio. */
-@ExtendWith({MinioExtension.class, SoftAssertionsExtension.class})
+/** Full Nessie GC round trip test with Nessie, Spark, Iceberg, FlociS3. */
+@ExtendWith({FlociS3Extension.class, SoftAssertionsExtension.class})
 public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
 
   public static final String JDBC_URL = "jdbc:h2:mem:gc_int_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
 
   @InjectSoftAssertions private SoftAssertions soft;
 
-  @Minio static MinioAccess minio;
+  @FlociS3 static FlociS3Access flociS3;
 
   @TempDir Path tempDir;
 
@@ -58,9 +58,9 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
   protected Map<String, String> sparkHadoop() {
     Map<String, String> r = new HashMap<>();
     r.put("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-    r.put("fs.s3a.access.key", minio.accessKey());
-    r.put("fs.s3a.secret.key", minio.secretKey());
-    r.put("fs.s3a.endpoint", minio.s3endpoint());
+    r.put("fs.s3a.access.key", flociS3.accessKey());
+    r.put("fs.s3a.secret.key", flociS3.secretKey());
+    r.put("fs.s3a.endpoint", flociS3.s3endpoint());
     return r;
   }
 
@@ -68,19 +68,19 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
     r.put(CatalogProperties.FILE_IO_IMPL, "org.apache.iceberg.aws.s3.S3FileIO");
-    r.putAll(minio.icebergProperties());
+    r.putAll(flociS3.icebergProperties());
 
     System.setProperty("aws.region", "us-east-1");
-    System.setProperty("aws.s3.endpoint", minio.s3endpoint());
-    System.setProperty("aws.s3.accessKey", minio.accessKey());
-    System.setProperty("aws.s3.secretAccessKey", minio.secretKey());
+    System.setProperty("aws.s3.endpoint", flociS3.s3endpoint());
+    System.setProperty("aws.s3.accessKey", flociS3.accessKey());
+    System.setProperty("aws.s3.secretAccessKey", flociS3.secretKey());
 
     return r;
   }
 
   @Test
   public void fullRoundTrip(@TempDir Path workDir) throws Exception {
-    String tableUri = format("s3://%s/tables/foo", minio.bucket());
+    String tableUri = format("s3://%s/tables/foo", flociS3.bucket());
 
     sql(
         "CREATE TABLE nessie.foo (some_int bigint, some_data string) USING iceberg LOCATION '%s'",
@@ -138,7 +138,7 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
         args.add(nessieUriV2.toASCIIString());
       }
       case "sweep", "expire", "deferred-deletes" ->
-          minio
+          flociS3
               .icebergProperties()
               .forEach(
                   (k, v) -> {

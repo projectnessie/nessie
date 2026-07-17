@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.minio;
+package org.projectnessie.testing.floci.s3;
 
 import java.net.URI;
 import java.util.Map;
@@ -21,13 +21,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * Provides access to Minio via a preconfigured S3 client and providing the by default randomized
+ * Provides access to FlociS3 via a preconfigured S3 client and providing the by default randomized
  * bucket and access/secret keys.
  *
  * <p>Annotate JUnit test instance or static fields or method parameters of this type with {@link
- * Minio}.
+ * FlociS3}.
  */
-public interface MinioAccess {
+public interface FlociS3Access {
 
   /** Host and port, separated by '{@code :}'. */
   String hostPort();
