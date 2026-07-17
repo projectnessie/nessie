@@ -36,9 +36,8 @@ dependencies {
   implementation(project(":nessie-versioned-storage-store"))
   runtimeOnly(project(":nessie-catalog-service-transfer"))
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
-  implementation("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   compileOnly(libs.microprofile.openapi)
   compileOnly(libs.errorprone.annotations)
@@ -51,8 +50,8 @@ dependencies {
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
-  testFixturesImplementation(platform(libs.jackson.bom))
-  testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
+  testFixturesImplementation(platform(libs.jackson3.bom))
+  testFixturesImplementation("tools.jackson.core:jackson-databind")
   testFixturesImplementation(libs.guava)
   testFixturesImplementation(libs.logback.classic)
   testFixturesApi(libs.jakarta.annotation.api)
@@ -89,7 +88,7 @@ dependencies {
   add("relatedObjectsCompileOnly", project(":nessie-versioned-storage-common"))
   add("relatedObjectsCompileOnly", project(":nessie-model"))
   add("relatedObjectsCompileOnly", libs.microprofile.openapi)
-  add("relatedObjectsCompileOnly", platform(libs.jackson.bom))
+  add("relatedObjectsCompileOnly", platform(libs.jackson3.bom))
   add("relatedObjectsCompileOnly", "com.fasterxml.jackson.core:jackson-annotations")
 }
 

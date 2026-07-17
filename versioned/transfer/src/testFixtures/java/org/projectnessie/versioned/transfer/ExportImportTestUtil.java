@@ -19,8 +19,6 @@ import static org.projectnessie.versioned.storage.common.objtypes.CommitHeaders.
 import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.COMMIT_OP_SERIALIZER;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.model.CommitMeta;
@@ -30,11 +28,14 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.storage.common.indexes.StoreIndexes;
 import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 final class ExportImportTestUtil {
   private ExportImportTestUtil() {}
 
-  static final ObjectMapper MAPPER = new ObjectMapper();
+  static final ObjectMapper MAPPER = JsonMapper.shared();
 
   static ObjId intToObjId(int i) {
     return objIdFromString(String.format("%08x", i));
@@ -50,7 +51,7 @@ final class ExportImportTestUtil {
           MAPPER
               .writerWithView(Views.V1.class)
               .writeValueAsString(CommitMeta.fromMessage("commit # " + i)));
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
   }

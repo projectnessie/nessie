@@ -20,7 +20,6 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogQuery.commitLogQuery;
 import static org.projectnessie.versioned.storage.common.logic.ReferencesQuery.referencesQuery;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +50,7 @@ import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndFork
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Operation;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.OperationType;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.Ref;
+import tools.jackson.core.JacksonException;
 
 final class ExportPersist extends ExportCommon {
 
@@ -218,7 +218,7 @@ final class ExportPersist extends ExportCommon {
                       .setValue(ByteString.copyFrom(modelContentBytes));
 
                   handleGenericObjs(transferRelatedObjects.contentRelatedObjects(modelContent));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                   throw new RuntimeException(e);
                 }
               }

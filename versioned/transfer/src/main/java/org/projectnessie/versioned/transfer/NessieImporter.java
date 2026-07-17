@@ -21,7 +21,6 @@ import static org.projectnessie.versioned.transfer.ExportImportConstants.EXPORT_
 import static org.projectnessie.versioned.transfer.ExportImportConstants.HEADS_AND_FORKS;
 import static org.projectnessie.versioned.transfer.ExportImportConstants.REPOSITORY_DESCRIPTION;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import org.immutables.value.Value;
@@ -36,6 +35,8 @@ import org.projectnessie.versioned.transfer.files.ImportFileSupplier;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.ExportMeta;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.HeadsAndForks;
 import org.projectnessie.versioned.transfer.serialize.TransferTypes.RepositoryDescriptionProto;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Value.Immutable
 public abstract class NessieImporter {
@@ -114,7 +115,7 @@ public abstract class NessieImporter {
 
   @Value.Default
   ObjectMapper objectMapper() {
-    return new ObjectMapper();
+    return JsonMapper.shared();
   }
 
   @Value.Default
