@@ -17,10 +17,6 @@ package org.projectnessie.tools.contentgenerator.cli;
 
 import static java.util.Collections.singletonList;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterators;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -45,6 +41,11 @@ import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.Reference;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public abstract class BulkCommittingCommand extends CommittingCommand {
 
@@ -257,7 +258,7 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
   }
 
   private void processJson(NessieApiV2 api, InputStream input) throws IOException {
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = JsonMapper.shared();
     JsonParser parser = mapper.createParser(input);
 
     JsonToken token = parser.nextToken();
@@ -288,11 +289,13 @@ public abstract class BulkCommittingCommand extends CommittingCommand {
       List<String> keyElements = new ArrayList<>();
       node.required("key")
           .required("elements")
-          .elements()
-          .forEachRemaining(n -> keyElements.add(n.asText()));
+          .values()
+          .forEach(n -> keyElements.add(n.stringValue()));
 
       String refName =
-          branchSelector.ref == null ? node.required("reference").asText() : branchSelector.ref;
+          branchSelector.ref == null
+              ? node.required("reference").stringValue()
+              : branchSelector.ref;
 
       perRef.computeIfAbsent(refName, key -> new ArrayList<>()).add(ContentKey.of(keyElements));
     }

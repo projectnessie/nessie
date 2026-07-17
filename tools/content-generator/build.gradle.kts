@@ -39,9 +39,9 @@ dependencies {
   compileOnly(libs.microprofile.openapi)
   runtimeOnly(libs.slf4j.api)
 
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation("tools.jackson.core:jackson-databind")
 
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
@@ -53,7 +53,7 @@ dependencies {
 
   testFixturesApi(libs.microprofile.openapi)
   testFixturesCompileOnly(libs.picocli)
-  testFixturesCompileOnly(platform(libs.jackson.bom))
+  testFixturesCompileOnly(platform(libs.jackson3.bom))
   testFixturesCompileOnly("com.fasterxml.jackson.core:jackson-annotations")
   testFixturesApi(libs.httpclient5)
 
