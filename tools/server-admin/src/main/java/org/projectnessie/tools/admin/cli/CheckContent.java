@@ -23,9 +23,6 @@ import static org.projectnessie.versioned.storage.versionstore.RefMapping.object
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.storeKeyToKey;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -43,6 +40,10 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.versionstore.ContentMapping;
 import picocli.CommandLine;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @CommandLine.Command(
     name = "check-content",
@@ -101,6 +102,7 @@ public class CheckContent extends BaseCommand {
   private final AtomicInteger keysProcessed = new AtomicInteger();
   private final AtomicInteger errorDetected = new AtomicInteger();
 
+  private ObjectMapper mapper;
   private JsonGenerator generator;
   private StoreIndex<CommitOp> index;
 
@@ -137,11 +139,8 @@ public class CheckContent extends BaseCommand {
   private void check(PrintWriter out) throws Exception {
     // Note: Do not use try-with-resources to avoid closing the output. The caller takes care of
     // that.
-    generator =
-        new ObjectMapper()
-            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-            .getFactory()
-            .createGenerator(out);
+    mapper = JsonMapper.builder().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).build();
+    generator = mapper.createGenerator(out);
 
     generator.writeStartArray();
 
@@ -214,18 +213,19 @@ public class CheckContent extends BaseCommand {
     }
 
     try {
-      generator.writeObject(builder.build());
+      mapper.writeValue(generator, builder.build());
 
       // Write a new line after each object to make monitoring I/O more pleasant and predictable
-      Object out = generator.getOutputTarget();
-      if (out instanceof PrintWriter pw) {
-        pw.println();
-      }
+      out().println();
       generator.flush();
 
     } catch (Exception e) {
       throw new AssertionError(e);
     }
+  }
+
+  private PrintWriter out() {
+    return (PrintWriter) generator.streamWriteOutputTarget();
   }
 
   private void iterateKeys(Hash hash) throws ReferenceNotFoundException {

@@ -18,12 +18,12 @@ package org.projectnessie.tools.admin.cli;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.annotation.Nullable;
 import org.immutables.value.Value;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableCheckContentEntry.class)

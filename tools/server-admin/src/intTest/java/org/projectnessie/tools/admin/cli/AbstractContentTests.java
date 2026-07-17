@@ -25,8 +25,6 @@ import static org.projectnessie.versioned.storage.versionstore.TypeMapping.keyTo
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 import static org.projectnessie.versioned.store.DefaultStoreWorker.payloadForContent;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import java.io.File;
@@ -51,9 +49,12 @@ import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.store.DefaultStoreWorker;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 abstract class AbstractContentTests<OutputType> {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.shared();
 
   private final Persist persist;
   private final Class<OutputType> outputClass;

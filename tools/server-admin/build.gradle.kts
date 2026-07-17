@@ -76,8 +76,8 @@ dependencies {
   implementation(quarkusExtension(project, "amazon-services"))
   implementation("io.quarkus:quarkus-picocli")
 
-  implementation(platform(libs.jackson.bom))
-  implementation("com.fasterxml.jackson.core:jackson-databind")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   implementation(libs.agroal.pool)
@@ -86,8 +86,6 @@ dependencies {
 
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.microprofile.openapi)
-  compileOnly("com.fasterxml.jackson.core:jackson-annotations")
-
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
 
