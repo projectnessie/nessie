@@ -73,8 +73,7 @@ public abstract class PerContentDeleteExpired {
     LiveFilesStats liveFilesStats = identifyLiveFiles(filter, addBaseLocation);
     long identifiedLiveFiles = liveFilesStats.liveFiles;
 
-    boolean matchAbsolutePaths = liveFilesStats.absolutePaths > 0;
-    if (matchAbsolutePaths) {
+    if (liveFilesStats.absolutePaths > 0) {
       LOGGER.warn(
           "live-set#{} content#{}: {} live files are referenced via absolute URIs outside the "
               + "content's base locations. Those files are matched by their absolute URIs during "
@@ -105,8 +104,7 @@ public abstract class PerContentDeleteExpired {
     return baseLocations.stream()
         .map(
             baseLocation -> {
-              try (Stream<FileReference> fileObjects =
-                  identifyExpiredFiles(filter, baseLocation, matchAbsolutePaths)) {
+              try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
                 return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
               } catch (Exception e) {
                 String msg = "Failed to expire objects in base location " + baseLocation;
@@ -146,11 +144,11 @@ public abstract class PerContentDeleteExpired {
           .map(FileReference::path)
           .forEach(
               path -> {
+                filter.put(path);
+                liveFilesStats.liveFiles++;
                 if (path.isAbsolute()) {
                   liveFilesStats.absolutePaths++;
                 }
-                filter.put(path);
-                liveFilesStats.liveFiles++;
               });
     }
 
@@ -171,16 +169,15 @@ public abstract class PerContentDeleteExpired {
    * Second part of {@link #expire()} to walk all base locations and identify the files that are not
    * referenced by any live content object.
    *
-   * <p>If {@code matchAbsolutePaths} is {@code true}, the live-files bloom filter contains at least
-   * one absolute URI for a file outside the content's base locations, so listed files are also
-   * matched by their absolute URIs, in case such a file is located under another base location of
+   * <p>Listed files are matched by their path relative to the base location and by their absolute
+   * URI: files outside the content's base locations are referenced by their absolute URI in the
+   * live-files bloom filter, and such a file can still be located under another base location of
    * the same content, for example an older table location.
    */
   @SuppressWarnings("UnstableApiUsage")
   @MustBeClosed
   private Stream<FileReference> identifyExpiredFiles(
-      BloomFilter<StorageUri> filter, StorageUri baseLocation, boolean matchAbsolutePaths)
-      throws NessieFileIOException {
+      BloomFilter<StorageUri> filter, StorageUri baseLocation) throws NessieFileIOException {
     ExpireStats expireStats = new ExpireStats();
     long maxFileTime = expireParameters().maxFileModificationTime().toEpochMilli();
 
@@ -195,8 +192,7 @@ public abstract class PerContentDeleteExpired {
     return list.filter(
             f -> {
               expireStats.totalFiles++;
-              if (filter.mightContain(f.path())
-                  || (matchAbsolutePaths && filter.mightContain(f.absolutePath()))) {
+              if (filter.mightContain(f.path()) || filter.mightContain(f.absolutePath())) {
                 expireStats.liveFiles++;
                 return false;
               }
