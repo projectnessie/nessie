@@ -121,8 +121,8 @@ dependencies {
     exclude("io.grpc", "grpc-testing")
   }
 
-  intTestImplementation(nessieProject("nessie-azurite-testcontainer"))
-  intTestImplementation(nessieProject("nessie-gcs-testcontainer"))
+  intTestImplementation(nessieProject("nessie-floci-az-testcontainer"))
+  intTestImplementation(nessieProject("nessie-floci-gcp-testcontainer"))
   intTestRuntimeOnly(libs.hadoop.azure)
 
   intTestCompileOnly(nessieProject("nessie-immutables-std"))

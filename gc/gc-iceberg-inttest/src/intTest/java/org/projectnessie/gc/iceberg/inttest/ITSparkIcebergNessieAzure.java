@@ -22,19 +22,19 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.iceberg.files.IcebergFiles;
 import org.projectnessie.storage.uri.StorageUri;
-import org.projectnessie.testing.azurite.Azurite;
-import org.projectnessie.testing.azurite.AzuriteAccess;
-import org.projectnessie.testing.azurite.AzuriteExtension;
+import org.projectnessie.testing.floci.az.FlociAz;
+import org.projectnessie.testing.floci.az.FlociAzAccess;
+import org.projectnessie.testing.floci.az.FlociAzExtension;
 
 @Disabled(
     "1) Needs an Iceberg release with https://github.com/apache/iceberg/pull/10045 "
-        + "2) Azurite is incompatible with ADLS v2 list-prefix REST endpoint")
-@ExtendWith(AzuriteExtension.class)
+        + "2) FlociAz is incompatible with ADLS v2 list-prefix REST endpoint")
+@ExtendWith(FlociAzExtension.class)
 public class ITSparkIcebergNessieAzure extends AbstractITSparkIcebergNessieObjectStorage {
 
   public static final String BUCKET_URI = "/my/prefix";
 
-  private static @Azurite AzuriteAccess azuriteAccess;
+  private static @FlociAz FlociAzAccess flociAzAccess;
 
   @Override
   Storage storage() {
@@ -43,34 +43,34 @@ public class ITSparkIcebergNessieAzure extends AbstractITSparkIcebergNessieObjec
 
   @Override
   protected String warehouseURI() {
-    return azuriteAccess.location(BUCKET_URI);
+    return flociAzAccess.location(BUCKET_URI);
   }
 
   @Override
   protected Map<String, String> sparkHadoop() {
-    return azuriteAccess.hadoopConfig();
+    return flociAzAccess.hadoopConfig();
   }
 
   @Override
   protected Map<String, String> nessieParams() {
     Map<String, String> r = new HashMap<>(super.nessieParams());
-    r.putAll(azuriteAccess.icebergProperties());
+    r.putAll(flociAzAccess.icebergProperties());
     return r;
   }
 
   @Override
   IcebergFiles icebergFiles() {
     Configuration conf = new Configuration();
-    azuriteAccess.hadoopConfig().forEach(conf::set);
+    flociAzAccess.hadoopConfig().forEach(conf::set);
 
     return IcebergFiles.builder()
-        .properties(azuriteAccess.icebergProperties())
+        .properties(flociAzAccess.icebergProperties())
         .hadoopConfiguration(conf)
         .build();
   }
 
   @Override
   protected StorageUri bucketUri() {
-    return StorageUri.of(azuriteAccess.location(BUCKET_URI));
+    return StorageUri.of(flociAzAccess.location(BUCKET_URI));
   }
 }
