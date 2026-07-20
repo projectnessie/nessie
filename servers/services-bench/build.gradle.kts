@@ -37,7 +37,7 @@ dependencies {
 
   // 'implementation' is necessary here, becasue of the `jmhCompileGeneratedClasses` task
   implementation(libs.microprofile.openapi)
-  implementation(platform(libs.jackson.bom))
+  implementation(platform(libs.jackson3.bom))
   implementation("com.fasterxml.jackson.core:jackson-annotations")
 
   jmhImplementation(libs.jmh.core)
