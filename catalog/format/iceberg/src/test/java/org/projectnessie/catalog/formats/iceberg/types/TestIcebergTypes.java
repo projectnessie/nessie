@@ -59,7 +59,8 @@ public class TestIcebergTypes {
   public void types(IcebergType type, String expected) throws Exception {
     String json = IcebergSpec.V2.jsonWriter().writeValueAsString(type);
     soft.assertThat(json).isEqualTo(expected);
-    IcebergType deserialized = IcebergSpec.V2.jsonReader().readValue(json, IcebergType.class);
+    IcebergType deserialized =
+        IcebergSpec.V2.jsonReader().forType(IcebergType.class).readValue(json);
     soft.assertThat(deserialized).isEqualTo(type);
   }
 

@@ -61,7 +61,7 @@ public class TestJsonSerialization {
     String metadataJson = TableMetadataParser.toJson(metadata);
 
     IcebergTableMetadata deserialized2 =
-        spec.jsonReader().readValue(metadataJson, IcebergTableMetadata.class);
+        spec.jsonReader().forType(IcebergTableMetadata.class).readValue(metadataJson);
     soft.assertThat(deserialized2).isEqualTo(tableMetadata);
   }
 

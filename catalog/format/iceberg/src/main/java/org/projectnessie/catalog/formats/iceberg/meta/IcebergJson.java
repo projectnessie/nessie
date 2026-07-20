@@ -15,22 +15,13 @@
  */
 package org.projectnessie.catalog.formats.iceberg.meta;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class IcebergJson {
   private IcebergJson() {}
 
   public static ObjectMapper objectMapper() {
-    return JsonLazyInit.OBJECT_MAPPER;
-  }
-
-  private static final class JsonLazyInit {
-    private JsonLazyInit() {}
-
-    private static final ObjectMapper OBJECT_MAPPER;
-
-    static {
-      OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
-    }
+    return JsonMapper.shared();
   }
 }

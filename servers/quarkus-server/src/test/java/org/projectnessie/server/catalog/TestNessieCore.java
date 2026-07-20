@@ -26,7 +26,6 @@ import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.S3_WAREHOUSE_LOCATION;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.vertx.http.HttpServer;
@@ -66,6 +65,7 @@ import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.objectstoragemock.HeapStorageBucket;
 import org.projectnessie.storage.uri.StorageUri;
+import tools.jackson.databind.JsonNode;
 
 @QuarkusTest
 @TestProfile(value = S3UnitTestProfiles.S3UnitTestProfile.class)

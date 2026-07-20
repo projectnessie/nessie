@@ -15,12 +15,13 @@
  */
 package org.projectnessie.catalog.formats.iceberg;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.projectnessie.catalog.formats.iceberg.manifest.Avro;
 import org.projectnessie.catalog.formats.iceberg.manifest.AvroBundle;
-import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.json.JsonMapper;
 
 public enum IcebergSpec {
   V1(IcebergSpecV1.class, 1),
@@ -49,7 +50,7 @@ public enum IcebergSpec {
     if (jsonView == IcebergSpecV2.class) {
       return IcebergJsonReadersWriters.readerV2;
     }
-    return IcebergJson.objectMapper().readerWithView(jsonView());
+    return IcebergJsonReadersWriters.mapper.readerWithView(jsonView());
   }
 
   public ObjectWriter jsonWriter() {
@@ -59,7 +60,7 @@ public enum IcebergSpec {
     if (jsonView == IcebergSpecV2.class) {
       return IcebergJsonReadersWriters.writerV2;
     }
-    return IcebergJson.objectMapper().writerWithView(jsonView());
+    return IcebergJsonReadersWriters.mapper.writerWithView(jsonView());
   }
 
   public AvroBundle avroBundle() {
@@ -83,13 +84,14 @@ public enum IcebergSpec {
   }
 
   private static final class IcebergJsonReadersWriters {
+    static final ObjectMapper mapper;
     static final ObjectReader readerV1;
     static final ObjectReader readerV2;
     static final ObjectWriter writerV1;
     static final ObjectWriter writerV2;
 
     static {
-      ObjectMapper mapper = IcebergJson.objectMapper();
+      mapper = JsonMapper.builder().enable(MapperFeature.DEFAULT_VIEW_INCLUSION).build();
       readerV1 = mapper.readerWithView(IcebergSpecV1.class);
       readerV2 = mapper.readerWithView(IcebergSpecV2.class);
       writerV1 = mapper.writerWithView(IcebergSpecV1.class);

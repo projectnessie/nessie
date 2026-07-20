@@ -188,7 +188,8 @@ public class JsonSerializeBench {
       throws IOException {
     return IcebergSpec.forVersion(param.tableMetadata.formatVersion())
         .jsonReader()
-        .readValue(param.json, IcebergTableMetadata.class);
+        .forType(IcebergTableMetadata.class)
+        .readValue(param.json);
   }
 
   @Benchmark
