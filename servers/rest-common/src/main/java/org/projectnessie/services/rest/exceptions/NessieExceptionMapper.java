@@ -27,6 +27,7 @@ import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.error.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
 
 /**
  * "Default" exception mapper implementations, mostly used to serialize the {@link
@@ -56,6 +57,7 @@ public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
       message = exception.getCause().getMessage();
     } else if (exception instanceof JsonParseException
         || exception instanceof JsonMappingException
+        || exception instanceof JacksonException
         || exception instanceof IllegalArgumentException) {
       errorCode = ErrorCode.BAD_REQUEST;
       message = exception.getMessage();

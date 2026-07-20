@@ -36,9 +36,13 @@ dependencies {
   implementation(platform(libs.jackson.bom))
   implementation("com.fasterxml.jackson.core:jackson-databind")
   compileOnly("com.fasterxml.jackson.core:jackson-annotations")
+  implementation(platform(libs.jackson3.bom))
+  implementation("tools.jackson.core:jackson-databind")
 
   testImplementation(libs.jakarta.validation.api)
   testImplementation(libs.jakarta.ws.rs.api)
+  testImplementation(platform(libs.jersey.bom))
+  testImplementation("org.glassfish.jersey.core:jersey-common")
 
   testCompileOnly(libs.microprofile.openapi)
 
