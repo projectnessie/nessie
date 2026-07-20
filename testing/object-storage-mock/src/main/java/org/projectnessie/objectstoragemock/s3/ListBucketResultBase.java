@@ -16,9 +16,9 @@
 package org.projectnessie.objectstoragemock.s3;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import jakarta.annotation.Nullable;
 import java.util.List;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 public interface ListBucketResultBase {
   interface Builder<B extends Builder<B>> {

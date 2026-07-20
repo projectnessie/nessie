@@ -17,12 +17,12 @@ package org.projectnessie.objectstoragemock;
 
 import static java.util.Objects.requireNonNull;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.OptionalLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.immutables.value.Value;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(as = ImmutableRange.class)
 @JsonDeserialize(as = ImmutableRange.class)

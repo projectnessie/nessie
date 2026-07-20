@@ -15,9 +15,9 @@
  */
 package org.projectnessie.objectstoragemock.adlsgen2;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(as = ImmutableDataLakeStorageError.class)
 @JsonDeserialize(as = ImmutableDataLakeStorageError.class)

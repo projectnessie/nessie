@@ -33,9 +33,6 @@ import static org.projectnessie.objectstoragemock.s3.S3Constants.RANGE;
 import static org.projectnessie.objectstoragemock.s3.S3Constants.START_AFTER;
 import static org.projectnessie.objectstoragemock.s3.S3Constants.X_AMZ_REQUEST_ID;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.quarkus.arc.profile.IfBuildProfile;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
@@ -87,6 +84,9 @@ import org.projectnessie.objectstoragemock.s3.S3ObjectIdentifier;
 import org.projectnessie.objectstoragemock.util.Holder;
 import org.projectnessie.objectstoragemock.util.PrefixSpliterator;
 import org.projectnessie.objectstoragemock.util.StartAfterSpliterator;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_XML)

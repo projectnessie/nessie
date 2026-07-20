@@ -15,16 +15,15 @@
  */
 package org.projectnessie.objectstoragemock.s3;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
-public class EtagDeserializer extends JsonDeserializer<String> {
+public class EtagDeserializer extends ValueDeserializer<String> {
 
   @Override
   public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException {
+      throws tools.jackson.core.JacksonException {
     String deserialized = jsonParser.readValueAs(String.class);
 
     if (deserialized.startsWith("\"") && deserialized.endsWith("\"")) {

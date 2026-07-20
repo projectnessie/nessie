@@ -15,7 +15,6 @@
  */
 package org.projectnessie.objectstoragemock;
 
-import com.fasterxml.jackson.jakarta.rs.xml.JacksonXMLProvider;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.net.URI;
@@ -41,6 +40,8 @@ import org.projectnessie.objectstoragemock.sts.ImmutableCredentials;
 import org.projectnessie.objectstoragemock.sts.ImmutableRoleUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
+import tools.jackson.jakarta.rs.xml.JacksonXMLProvider;
 
 @Value.Immutable
 public abstract class ObjectStorageMock {
@@ -214,6 +215,7 @@ public abstract class ObjectStorageMock {
             this.bind(ObjectStorageMock.this).to(ObjectStorageMock.class);
           }
         });
+    config.register(JacksonJsonProvider.class);
     config.register(JacksonXMLProvider.class);
 
     config.register(S3Resource.class);

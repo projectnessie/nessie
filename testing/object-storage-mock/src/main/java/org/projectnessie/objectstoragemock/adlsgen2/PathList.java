@@ -15,10 +15,10 @@
  */
 package org.projectnessie.objectstoragemock.adlsgen2;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import org.immutables.value.Value;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(as = ImmutablePathList.class)
 @JsonDeserialize(as = ImmutablePathList.class)

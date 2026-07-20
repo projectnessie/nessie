@@ -16,9 +16,9 @@
 package org.projectnessie.objectstoragemock.sts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(as = ImmutableRoleUser.class)
 @JsonDeserialize(as = ImmutableRoleUser.class)
