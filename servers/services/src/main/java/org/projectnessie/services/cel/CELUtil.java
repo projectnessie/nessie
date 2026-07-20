@@ -20,7 +20,7 @@ import java.util.List;
 import org.projectnessie.cel.checker.Decls;
 import org.projectnessie.cel.relocated.com.google.api.expr.v1alpha1.Decl;
 import org.projectnessie.cel.tools.ScriptHost;
-import org.projectnessie.cel.types.jackson.JacksonRegistry;
+import org.projectnessie.cel.types.jackson3.Jackson3Registry;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
@@ -38,7 +38,7 @@ public final class CELUtil {
 
   public static final String CONTAINER = "org.projectnessie.model";
   public static final ScriptHost SCRIPT_HOST =
-      ScriptHost.newBuilder().registry(JacksonRegistry.newRegistry()).build();
+      ScriptHost.newBuilder().registry(Jackson3Registry.newRegistry()).build();
 
   public static final String VAR_REF = "ref";
   public static final String VAR_REF_TYPE = "refType";
