@@ -25,18 +25,38 @@ publishingHelper { mavenName = "Nessie - Relocated Protobuf ${libs.protobuf.java
 
 dependencies { compileOnly(libs.protobuf.java) }
 
-val shadowJar = tasks.named<ShadowJar>("shadowJar")
-
-shadowJar.configure {
-  relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
-  manifest {
-    attributes["Specification-Title"] = "Google Protobuf"
-    attributes["Specification-Version"] = libs.protobuf.java.get().version
+val shadowJar =
+  tasks.named<ShadowJar>("shadowJar") {
+    relocate("com.google.protobuf", "org.projectnessie.nessie.relocated.protobuf")
+    manifest {
+      attributes["Specification-Title"] = "Google Protobuf"
+      attributes["Specification-Version"] = libs.protobuf.java.get().version
+    }
+    configurations = listOf(project.configurations.getByName("compileClasspath"))
+    dependencies { include(dependency(libs.protobuf.java.get())) }
   }
-  configurations = listOf(project.configurations.getByName("compileClasspath"))
-  dependencies { include(dependency(libs.protobuf.java.get())) }
-}
 
 tasks.named("compileJava").configure { finalizedBy(shadowJar) }
 
 tasks.named("processResources").configure { finalizedBy(shadowJar) }
+
+shadow {
+  addShadowVariantIntoJavaComponent = false
+}
+
+listOf("shadowRuntimeElements").forEach { configurationName ->
+  configurations.named(configurationName) {
+    isCanBeConsumed = false
+  }
+}
+
+listOf("apiElements", "runtimeElements").forEach { configurationName ->
+  configurations.named(configurationName) {
+    outgoing.artifacts.clear()
+    outgoing.artifact(shadowJar)
+    outgoing.variants.removeAll { true }
+    attributes {
+      attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.SHADOWED))
+    }
+  }
+}

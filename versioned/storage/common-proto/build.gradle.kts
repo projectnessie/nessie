@@ -27,7 +27,7 @@ publishingHelper { mavenName = "Nessie - Storage - Common proto" }
 
 description = "Protobuf definition for the serialization for storage objects."
 
-dependencies { api(project(path = ":nessie-protobuf-relocated", configuration = "shadow")) }
+dependencies { api(project(":nessie-protobuf-relocated")) }
 
 // *.proto files taken from https://github.com/googleapis/googleapis/ repo, available as a git
 // submodule

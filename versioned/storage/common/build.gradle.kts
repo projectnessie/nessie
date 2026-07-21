@@ -34,7 +34,7 @@ dependencies {
   compileOnly(libs.errorprone.annotations)
   implementation(libs.agrona)
   implementation(libs.guava)
-  implementation(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
+  implementation(project(":nessie-protobuf-relocated"))
   implementation(libs.slf4j.api)
 
   compileOnly(project(":nessie-immutables-std"))

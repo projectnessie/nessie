@@ -20,7 +20,7 @@ publishingHelper { mavenName = "Nessie - Versioned Store SPI" }
 
 dependencies {
   implementation(project(":nessie-model"))
-  api(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
+  api(project(":nessie-protobuf-relocated"))
   compileOnly(project(":nessie-immutables-std"))
   annotationProcessor(project(":nessie-immutables-std", configuration = "processor"))
   compileOnly(libs.microprofile.openapi)

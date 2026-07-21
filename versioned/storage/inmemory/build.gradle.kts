@@ -22,7 +22,7 @@ description = "Storage implementation using in-memory maps, not persisting."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
-  implementation(project(path = ":nessie-protobuf-relocated", configuration = "shadow"))
+  implementation(project(":nessie-protobuf-relocated"))
 
   compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
