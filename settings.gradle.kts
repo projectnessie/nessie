@@ -212,8 +212,6 @@ if (gradle.parent == null) {
 
   val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
 
-  val noSourceChecksProjects = mutableSetOf<String>()
-
   val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
   val allScalaVersions = mutableSetOf<String>()
   var first = true
@@ -233,8 +231,6 @@ if (gradle.parent == null) {
         .buildFileName = "../build.gradle.kts"
       if (first) {
         first = false
-      } else {
-        noSourceChecksProjects.add(":$artifactId")
       }
       if (ideSyncActive) {
         break
@@ -242,26 +238,13 @@ if (gradle.parent == null) {
     }
   }
 
-  first = true
   for (scalaVersion in allScalaVersions) {
     for (name in listOf("base", "basetests")) {
       val prj = "nessie-spark-extensions-${name}_$scalaVersion"
       nessieProject(prj, groupIdIntegrations, file("integrations/spark-extensions-${name}"))
-      if (!first) {
-        noSourceChecksProjects.add(":$prj")
-      }
-    }
-    if (first) {
-      first = false
     }
     if (ideSyncActive) {
       break
-    }
-  }
-
-  gradle.beforeProject {
-    if (noSourceChecksProjects.contains(this.path)) {
-      project.extra["duplicated-project-sources"] = true
     }
   }
 }

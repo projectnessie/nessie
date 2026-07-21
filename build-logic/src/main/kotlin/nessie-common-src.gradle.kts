@@ -32,8 +32,7 @@ plugins {
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Checkstyle
 
-val noCheckstyle =
-  project.name.endsWith("-proto") || project.extra.has("duplicated-project-sources")
+val noCheckstyle = project.name.endsWith("-proto") || noSourceCheckProjects.contains(project.path)
 
 // Exclude projects that only generate Java from protobuf
 if (noCheckstyle) {
@@ -90,11 +89,14 @@ if (noCheckstyle) {
   }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-  options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
-  if (project.extra.has("duplicated-project-sources")) {
+if (noSourceCheckProjects.contains(project.path)) {
+  tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
     options.errorprone.disableAllChecks = true
-  } else {
+  }
+} else {
+  tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-XDaddTypeAnnotationsToSymbol=true")
     options.errorprone.disableWarningsInGeneratedCode = true
 
     val errorproneRules = layout.settingsDirectory.file("codestyle/errorprone-rules.properties")
