@@ -89,6 +89,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
    * Provides a {@link Stream} with the {@link FileReference}s referencing the table-metadata, the
    * {@link Snapshot#manifestListLocation() manifest-list}, all {@link ManifestFile manifest-files}
    * and all {@link org.apache.iceberg.DataFile data files}.
+   *
+   * <p>Files that are located under the content's base location (the {@code location} declared in
+   * the table/view metadata) are returned with a path relative to that base location. Files outside
+   * the base location, for example data files written to a different {@code write.data.path} or
+   * files kept from a previous table location, are returned with their absolute {@link
+   * FileReference#path() path}. Such files are matched by their absolute URI during the expire
+   * phase and are never deleted when they are outside all of the content's base locations.
    */
   @Override
   @MustBeClosed
@@ -197,6 +204,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
 
   private static Stream<FileReference> extractFilesRelativize(
       Stream<StorageUri> allFiles, StorageUri baseUri) {
+    // StorageUri.relativize() returns the file's URI unchanged, if the file is not located under
+    // 'baseUri', yielding a FileReference with an absolute path.
     return allFiles.map(baseUri::relativize).map(u -> FileReference.of(u, baseUri, -1L));
   }
 

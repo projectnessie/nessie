@@ -20,11 +20,21 @@ import static com.google.common.base.Preconditions.checkArgument;
 import org.immutables.value.Value;
 import org.projectnessie.storage.uri.StorageUri;
 
-/** References a file using a {@link #base()} URI plus a relative {@link #path()}. */
+/**
+ * References a file using a {@link #base()} URI plus a {@link #path()}, which is usually relative
+ * to {@link #base()}.
+ *
+ * <p>The {@link #path()} is absolute for files that are not located under {@link #base()}, for
+ * example Iceberg data files that live outside the location declared in the table's metadata (via
+ * {@code write.data.path}, {@code write.metadata.path}, a changed table location or the like).
+ */
 @Value.Immutable
 public interface FileReference {
 
-  /** URI to the file/directory relative to {@link #base()}. */
+  /**
+   * URI to the file/directory, relative to {@link #base()} if the file is located under {@link
+   * #base()}, otherwise the absolute URI of the file.
+   */
   @Value.Parameter(order = 1)
   StorageUri path();
 
@@ -38,7 +48,8 @@ public interface FileReference {
   long modificationTimeMillisEpoch();
 
   /**
-   * Absolute path to the file/directory. Virtually equivalent to {@code base().resolve(path())}.
+   * Absolute path to the file/directory. Virtually equivalent to {@code base().resolve(path())},
+   * which yields {@link #path()} itself, if {@link #path()} is absolute.
    */
   @Value.Lazy
   default StorageUri absolutePath() {
@@ -48,7 +59,6 @@ public interface FileReference {
   @Value.Check
   default void check() {
     checkArgument(base().isAbsolute(), "Base location must be absolute: %s", base());
-    checkArgument(!path().isAbsolute(), "Path must be relative: %s", path());
   }
 
   static ImmutableFileReference.Builder builder() {
