@@ -2,6 +2,42 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.108.3 Release (July 23, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.3).
+
+### Fixes
+
+- GC: Nessie GC no longer fails with `Path must be relative` when Iceberg content references files
+  that are not located under the location declared in the table's metadata, for example data files
+  written via `write.data.path` or files kept from a previous table location (#10817). Such files
+  are now tracked by their absolute URIs: they are recognized as live while sweeping the content's
+  base locations and are never deleted when they are outside all base locations.
+
+### Commits
+* Make nessie-protobuf-relocated produce a "proper" runtime-elements (#12735)
+* GC: handle Iceberg files outside the table's declared location (#12765)
+* Remove usage of `project.extra` for Gradle config-cache (#12785)
+* Make git-info injection into built jars config-cache compatible (#12786)
+* Jackson 3 slice - CEL usages (#12760)
+* Jackson 3 slice - object-storage-mock (#12759)
+* Jackson 3 slice - versioned/spi (#12776)
+* Jackson 3 slice - tasks/service (#12775)
+* Jackson 3 slice - servers/quarkus-authn + authz (#12774)
+* Jackson 3 slice - catalog/format/iceberg* - prefer Jackson 3 (#12773)
+* Jackson 3 slice - servers/runtime-common (#12772)
+* Jackson 3 slice - servers/services-bench + servers/store (#12771)
+* test: replace azurite and fake gcs helpers with floci (#12770)
+* Jackson 3 slice - some more migrations (#12777)
+* Jackson 3 slice - tools/server-admin (#12763)
+* Jackson 3 slice - tools/content-generator (#12762)
+* Jackson 3 slice - events/ (#12761)
+* Jackson 3 slice - gc/gc-iceberg-mock (#12758)
+* Jackson 3 slice - servers/quarkus-distcache (#12757)
+* Jackson 3 slice - versioned/transfer (#12756)
+* Jackson 3 slice - versioned/storage/common et al + `Obj`s (#12755)
+* test: replace minio helper with floci s3 (#12743)
+
 ## 0.108.2 Release (July 17, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.2).
