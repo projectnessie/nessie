@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `LIST` `CONTENTS` <br>
       \[ `ON` \[ **ReferenceType** \] **ExistingReference** \] <br>
       \[ `AT` \[ `TIMESTAMP` | `COMMIT` \] **TimestampOrCommit** \] <br>
