@@ -1,0 +1,120 @@
+{{/**
+
+  Copyright (C) 2025 Dremio
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+**/}}
+
+{{- if .Values.gc.enabled -}}
+{{- if not .Values.gc.schedule -}}
+{{- fail "gc.schedule is required when gc.enabled is true" -}}
+{{- end -}}
+{{- if and (not .Values.gc.command) (not .Values.gc.args) (not .Values.gc.extraArgs) -}}
+{{- fail "gc.args (or gc.command/gc.extraArgs) must specify the GC subcommand to run when gc.enabled is true" -}}
+{{- end -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-gc" (include "nessie.fullname" .) | trunc 52 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nessie.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gc
+spec:
+  schedule: {{ .Values.gc.schedule | quote }}
+  concurrencyPolicy: {{ .Values.gc.concurrencyPolicy }}
+  suspend: {{ .Values.gc.suspend }}
+  {{- with .Values.gc.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+  {{- end }}
+  successfulJobsHistoryLimit: {{ .Values.gc.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.gc.failedJobsHistoryLimit }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "nessie.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gc
+    spec:
+      backoffLimit: {{ .Values.gc.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            {{- /*
+              Use a GC-specific app name so these pods do NOT match the Nessie
+              Service selector (nessie.selectorLabels), which would otherwise add
+              the GC pods as Service endpoints even though they don't serve the
+              Nessie API/management ports.
+            */}}
+            helm.sh/chart: {{ include "nessie.chart" . }}
+            app.kubernetes.io/name: {{ printf "%s-gc" (include "nessie.name" .) | trunc 63 | trimSuffix "-" }}
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/version: {{ .Chart.Version | quote }}
+            app.kubernetes.io/managed-by: {{ .Release.Service }}
+            app.kubernetes.io/component: gc
+            {{- with .Values.gc.podLabels }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          {{- with .Values.gc.podAnnotations }}
+          annotations:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- if .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- tpl (toYaml .Values.imagePullSecrets) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gc.serviceAccountName }}
+          serviceAccountName: {{ tpl . $ }}
+          {{- end }}
+          restartPolicy: {{ .Values.gc.restartPolicy }}
+          securityContext:
+            {{- tpl (toYaml .Values.podSecurityContext) . | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}-gc
+              securityContext:
+                {{- tpl (toYaml .Values.securityContext) . | nindent 16 }}
+              image: "{{ tpl .Values.gc.image.repository . }}:{{ tpl .Values.gc.image.tag . | default .Chart.Version }}"
+              imagePullPolicy: {{ tpl .Values.gc.image.pullPolicy . }}
+              {{- with .Values.gc.command }}
+              command:
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
+              {{- if or .Values.gc.args .Values.gc.extraArgs }}
+              args:
+                {{- with .Values.gc.args }}
+                {{- tpl (toYaml .) $ | nindent 16 }}
+                {{- end }}
+                {{- with .Values.gc.extraArgs }}
+                {{- tpl (toYaml .) $ | nindent 16 }}
+                {{- end }}
+              {{- end }}
+              {{- with .Values.gc.env }}
+              env:
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
+              resources:
+                {{- tpl (toYaml .Values.gc.resources) . | nindent 16 }}
+          {{- with .Values.gc.nodeSelector }}
+          nodeSelector:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gc.affinity }}
+          affinity:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.gc.tolerations }}
+          tolerations:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+{{- end }}
