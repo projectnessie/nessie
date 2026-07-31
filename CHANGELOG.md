@@ -20,10 +20,14 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+### Commits
+
+## [0.108.4] Release (2026-07-31)
+
+### Fixes
+
 - GC: Nessie GC was missing an explicit dependency to Apache HTTP client v4, which is required for Iceberg.
   The AWSSDK update to 2.46.0 in 0.107.9 changed the default to Apache client v5, so v4 was missing.
-
-### Commits
 
 ## [0.108.3] Release (2026-07-23)
 
@@ -1214,7 +1218,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.108.3...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.108.4...HEAD
+[0.108.4]: https://github.com/projectnessie/nessie/compare/nessie-0.108.3...nessie-0.108.4
 [0.108.3]: https://github.com/projectnessie/nessie/compare/nessie-0.107.6...nessie-0.108.3
 [0.107.6]: https://github.com/projectnessie/nessie/compare/nessie-0.107.2...nessie-0.107.6
 [0.107.2]: https://github.com/projectnessie/nessie/compare/nessie-0.107.0...nessie-0.107.2

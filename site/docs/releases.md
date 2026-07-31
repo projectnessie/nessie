@@ -2,6 +2,18 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.108.4 Release (July 31, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.4).
+
+### Fixes
+
+- GC: Nessie GC was missing an explicit dependency to Apache HTTP client v4, which is required for Iceberg.
+  The AWSSDK update to 2.46.0 in 0.107.9 changed the default to Apache client v5, so v4 was missing.
+
+### Commits
+* Ensure that both Apache HTTP Client v4 and v5 are present (#12822)
+
 ## 0.108.3 Release (July 23, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.3).
