@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar [-hV] [COMMAND]
 Nessie Server Admin Tool

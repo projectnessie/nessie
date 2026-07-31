@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar erase-repository [-hV]
        [--confirmation-code=<confirmationCode>] [-r=<newDefaultBranch>]

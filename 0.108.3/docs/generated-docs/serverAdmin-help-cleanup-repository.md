@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar cleanup-repository [-hV]
        [--allow-duplicate-commit-traversal] [--dry-run]

@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Creates a new commit in Nessie to set the state of the given content-keys to the same state as those content keys
 existed on the `TO STATE` reference.
 
