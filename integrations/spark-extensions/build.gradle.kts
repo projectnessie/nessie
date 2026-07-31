@@ -51,11 +51,19 @@ dependencies {
   testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-aws:$versionIceberg")
-  testFixturesImplementation("org.apache.iceberg:iceberg-aws-bundle:$versionIceberg")
   intTestRuntimeOnly(libs.hadoop.client) {
     exclude("org.slf4j", "slf4j-reload4j")
   }
-  intTestRuntimeOnly(libs.hadoop.aws)
+  intTestRuntimeOnly(libs.hadoop.aws) {
+    exclude("software.amazon.awssdk", "bundle")
+  }
+  intTestRuntimeOnly(platform(libs.awssdk.bom))
+  intTestRuntimeOnly("software.amazon.awssdk:apache-client")
+  intTestRuntimeOnly("software.amazon.awssdk:s3-transfer-manager")
+  intTestRuntimeOnly("software.amazon.awssdk:dynamodb")
+  intTestRuntimeOnly("software.amazon.awssdk:glue")
+  intTestRuntimeOnly("software.amazon.awssdk:kms")
+  intTestRuntimeOnly("software.amazon.awssdk:sts")
 
   testFixturesRuntimeOnly(libs.logback.classic)
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j) {

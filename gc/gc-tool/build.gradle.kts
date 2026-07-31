@@ -71,6 +71,8 @@ dependencies {
 
   implementation(platform(libs.awssdk.bom))
   runtimeOnly("software.amazon.awssdk:s3")
+  runtimeOnly("software.amazon.awssdk:apache-client")
+  runtimeOnly("software.amazon.awssdk:apache5-client")
   runtimeOnly("software.amazon.awssdk:url-connection-client")
   runtimeOnly("software.amazon.awssdk:sts")
   runtimeOnly("software.amazon.awssdk:kms")

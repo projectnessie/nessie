@@ -50,7 +50,7 @@ public class ITFlociS3Extension {
         .containsEntry("s3.access-key-id", flociS3.accessKey())
         .containsEntry("s3.secret-access-key", flociS3.secretKey())
         .containsEntry("s3.endpoint", flociS3.s3endpoint())
-        .containsKey("http-client.type");
+        .doesNotContainKey("http-client.type");
 
     soft.assertThat(flociS3.hadoopConfig())
         .isNotNull()

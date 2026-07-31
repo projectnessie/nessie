@@ -20,6 +20,9 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: Nessie GC was missing an explicit dependency to Apache HTTP client v4, which is required for Iceberg.
+  The AWSSDK update to 2.46.0 in 0.107.9 changed the default to Apache client v5, so v4 was missing.
+
 ### Commits
 
 ## [0.108.3] Release (2026-07-23)

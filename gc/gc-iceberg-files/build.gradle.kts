@@ -76,7 +76,11 @@ dependencies {
   testFixturesApi(platform(libs.awssdk.bom))
   testFixturesApi("software.amazon.awssdk:s3")
   testFixturesRuntimeOnly("software.amazon.awssdk:sts")
-  testFixturesRuntimeOnly(libs.hadoop.aws)
+  testFixturesRuntimeOnly("software.amazon.awssdk:kms")
+  testFixturesRuntimeOnly(libs.hadoop.aws) {
+    exclude("software.amazon.awssdk", "bundle")
+  }
+  testFixturesRuntimeOnly("software.amazon.awssdk:apache-client")
 
   testFixturesRuntimeOnly(platform(libs.google.cloud.storage.bom))
   testFixturesRuntimeOnly(platform(libs.google.cloud.libraries.bom))
