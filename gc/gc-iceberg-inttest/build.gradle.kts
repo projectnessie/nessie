@@ -100,16 +100,18 @@ dependencies {
   )
 
   intTestRuntimeOnly(libs.hadoop.client)
-  intTestRuntimeOnly(libs.hadoop.aws)
-  intTestRuntimeOnly("software.amazon.awssdk:sts")
+  intTestRuntimeOnly(libs.hadoop.aws) {
+    exclude("software.amazon.awssdk", "bundle")
+  }
 
   intTestImplementation(platform(libs.awssdk.bom))
   intTestImplementation("software.amazon.awssdk:s3")
-  runtimeOnly("software.amazon.awssdk:url-connection-client")
-  // TODO those are needed, because Spark serializes some configuration stuff (Spark broadcast)
+  intTestRuntimeOnly("software.amazon.awssdk:s3-transfer-manager")
   intTestRuntimeOnly("software.amazon.awssdk:dynamodb")
   intTestRuntimeOnly("software.amazon.awssdk:glue")
   intTestRuntimeOnly("software.amazon.awssdk:kms")
+  intTestRuntimeOnly("software.amazon.awssdk:sts")
+  intTestRuntimeOnly("software.amazon.awssdk:apache-client")
 
   intTestImplementation(platform(libs.google.cloud.storage.bom))
   intTestRuntimeOnly(platform(libs.google.cloud.libraries.bom))

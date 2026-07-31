@@ -136,7 +136,6 @@ public final class FlociS3Container extends FlociContainer implements FlociS3Acc
     props.put("s3.secret-access-key", secretKey());
     props.put("s3.endpoint", s3endpoint());
     props.put("s3.path-style-access", "true");
-    props.put("http-client.type", "urlconnection");
     return props;
   }
 

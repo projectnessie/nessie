@@ -93,7 +93,9 @@ dependencies {
   )
 
   intTestRuntimeOnly(libs.hadoop.client)
-  intTestRuntimeOnly(libs.hadoop.aws)
+  intTestRuntimeOnly(libs.hadoop.aws) {
+    exclude("software.amazon.awssdk", "bundle")
+  }
   intTestRuntimeOnly("software.amazon.awssdk:sts")
 
   intTestRuntimeOnly(platform(libs.awssdk.bom))

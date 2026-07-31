@@ -37,7 +37,6 @@ public class TestIcebergS3Files extends AbstractFiles {
     props.put("s3.endpoint", server.getS3BaseUri().toString());
     // must enforce path-style access because S3Resource has the bucket name in its path
     props.put("s3.path-style-access", "true");
-    props.put("http-client.type", "urlconnection");
 
     return props;
   }
