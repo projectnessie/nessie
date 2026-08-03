@@ -504,6 +504,7 @@ io.smallrye.common:smallrye-common-function
 io.smallrye.common:smallrye-common-io
 io.smallrye.common:smallrye-common-net
 io.smallrye.common:smallrye-common-os
+io.smallrye.common:smallrye-common-search
 io.smallrye.common:smallrye-common-ref
 io.smallrye.common:smallrye-common-vertx-context
 io.smallrye.config:smallrye-config
