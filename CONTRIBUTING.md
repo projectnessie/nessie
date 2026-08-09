@@ -140,6 +140,137 @@ consult the [docs](https://docs.gradle.org/current/userguide/toolchains.html).
 Apache Spark does **only** work with Java 11 (or 8), so all tests using Spark use the Gradle toolchain mechanism
 to force Java 11 for the execution of those tests.
 
+### Worked example: adding a new Nessie CLI command
+
+This walks through a real contribution end to end: adding `SHOW DIFF`, a `git diff`-style command
+to the [Nessie CLI](site/in-dev/cli.md) that compares the content of two references. It's a good
+template for any change that adds a new REPL command, because it touches every layer of the
+`cli/` module:
+
+* `cli/grammar` &mdash; the [congocc](https://parsers.org/) grammar (`cli/grammar/src/main/congocc`)
+  that lexes and parses CLI input, plus the generated-at-build-time parser classes it produces.
+* `cli/grammar/.../cmdspec` &mdash; small `@Value.Immutable` interfaces that describe the
+  parameters of a parsed statement, independent of the grammar.
+* `cli/cli/.../commands` &mdash; the `NessieCommand` implementations that actually talk to the
+  Nessie API and print output.
+
+1. **Add any new keyword token** to the lexer
+   (`cli/grammar/src/main/congocc/nessie/nessie-cli-lexer.ccc`). Tokens are grouped and ordered by
+   length:
+
+   ```text
+   TOKEN #Keyword
+     : ...
+     | <DIFF: "DIFF">
+     | <FROM: "FROM">
+     | <INTO: "INTO">
+     ...
+   ```
+
+2. **Add the grammar production** in `cli/grammar/src/main/congocc/nessie/nessie-cli.ccc` and wire
+   it into its parent statement. Named captures (`/from/=ExistingReference`) become accessors on
+   the generated statement class; `setOptionalNextTokenTypes(...)` only drives auto-completion
+   hints, it does not affect parsing:
+
+   ```text
+   ShowStatement
+       : <SHOW>
+       ( ShowLogStatement
+       | ShowContentStatement
+       | ShowReferenceStatement
+       | ShowDiffStatement      // new alternative, one new leading token (DIFF)
+       )
+       ;
+
+   ShowDiffStatement
+       : <DIFF>
+         [ <FROM> [ /fromType/=ReferenceType ] /from/=ExistingReference
+           [ <AT> [ <TIMESTAMP> | <COMMIT> ] /fromAt/=TimestampOrCommit ] ]
+         <TO> [ /toType/=ReferenceType ] /to/=ExistingReference
+         [ <AT> [ <TIMESTAMP> | <COMMIT> ] /toAt/=TimestampOrCommit ]
+       ;
+   ```
+
+3. **Declare a `CommandSpec`** (`cli/grammar/.../cmdspec/ShowDiffCommandSpec.java`) describing the
+   statement's parameters, and register it in `CommandType`:
+
+   ```java
+   @Value.Immutable
+   public interface ShowDiffCommandSpec extends CommandSpec, CatalogAware {
+     @Override
+     default CommandType commandType() {
+       return CommandType.SHOW_DIFF;
+     }
+
+     @Nullable String getFromRef();
+     @Nullable String getFromTimestampOrHash();
+     String getToRef(); // mandatory, unlike getFromRef()
+     @Nullable String getToTimestampOrHash();
+   }
+   ```
+
+4. **Bridge the generated parser node to the spec** with an `INJECT` block in
+   `nessie-cli-java.ccc`, using `stringValueOf("<capture name>")` to read named captures:
+
+   ```text
+   INJECT ShowDiffStatement : implements ShowDiffCommandSpec;
+   INJECT ShowDiffStatement :
+   import org.projectnessie.nessie.cli.cmdspec.*;
+   {
+     public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+     @Override
+     public String getFromRef() {
+       return stringValueOf("from");
+     }
+
+     @Override
+     public String getToRef() {
+       return stringValueOf("to");
+     }
+     // ... remaining accessors follow the same pattern
+   }
+   ```
+
+5. **Implement the command** (`cli/cli/.../commands/ShowDiffCommand.java`), typically extending
+   `NessieListingCommand` for paged, `less`-style output, and register it in
+   `CommandsFactory.COMMAND_FACTORIES`:
+
+   ```java
+   public class ShowDiffCommand extends NessieListingCommand<ShowDiffCommandSpec> {
+     @Override
+     protected Stream<String> executeListing(BaseNessieCli cli, ShowDiffCommandSpec spec)
+         throws Exception {
+       NessieApiV2 api = cli.mandatoryNessieApi();
+       String fromRefName =
+           spec.getFromRef() != null ? spec.getFromRef() : cli.getCurrentReference().getName();
+
+       Stream<DiffEntry> diffs =
+           api.getDiff().fromRefName(fromRefName).toRefName(spec.getToRef()).stream();
+       return diffs.map(this::formatEntry); // "A key", "D key" or "M key", git-status style
+     }
+   }
+   ```
+
+   ```java
+   // CommandsFactory.java
+   COMMAND_FACTORIES.put(CommandType.SHOW_DIFF, ShowDiffCommand::new);
+   ```
+
+6. **Cover it with tests.** `cli/grammar/.../syntax/TestSyntax.java` pins the exact pretty-printed
+   syntax for each production (useful as a regression check on the grammar itself), and
+   `cli/cli/.../commands/TestShowDiff.java` exercises the command end to end against a real,
+   in-memory Nessie server via `BaseTestCommand`/`NessieCliTester`.
+
+7. **Document it**: add a `<Statement>.help.txt` resource under
+   `cli/grammar/src/main/resources/org/projectnessie/nessie/cli/syntax/` (picked up by the CLI's
+   own `HELP` command), add a `{% include %}` section to `site/in-dev/cli.md`, and add a bullet
+   under `### New Features` in `CHANGELOG.md`.
+
+None of this requires touching the `HELP` command, autocompletion, or the REPL dispatcher: those
+are generic over `CommandType`/`CommandsFactory` and pick up any new command automatically once
+it's registered.
+
 ### Development environments
 
 Nessie's primary development environment is Linux. The code base can be built on macOS and Windows.
