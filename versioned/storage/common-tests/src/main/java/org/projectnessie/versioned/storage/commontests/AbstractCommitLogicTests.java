@@ -46,6 +46,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,6 +85,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObservingPersist;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -849,5 +852,86 @@ public class AbstractCommitLogicTests {
     }
 
     return head;
+  }
+
+  /**
+   * Merges against a deep history must not load commits one-by-one. Before prefetch, each parent
+   * was a {@code persist.fetchTypedObj} (one JDBC round-trip). After, {@link
+   * Persist#fetchTypedObjsIfExist} loads {@link CommitObj#tail()} in chunks of at most 100.
+   */
+  @Test
+  public void mergeBasePrefetchesDeepHistory() throws Exception {
+    assertMergeBasePrefetchesDeepHistory(persist, soft);
+  }
+
+  public static void assertMergeBasePrefetchesDeepHistory(Persist persist, SoftAssertions soft)
+      throws Exception {
+    CommitLogic setup = commitLogic(persist);
+    ObjId tip =
+        requireNonNull(setup.doCommit(stdCommit().message("root").build(), emptyList())).id();
+    int depth = 120;
+    for (int i = 0; i < depth; i++) {
+      tip =
+          requireNonNull(
+                  setup.doCommit(
+                      stdCommit().parentCommitId(tip).message("c" + i).build(), emptyList()))
+              .id();
+    }
+    ObjId branch =
+        requireNonNull(
+                setup.doCommit(
+                    stdCommit().parentCommitId(tip).message("branch").build(), emptyList()))
+            .id();
+
+    int commitCount = depth + 2;
+    CountingPersist counting = new CountingPersist(persist);
+    CommitLogic mergeLogic = commitLogic(counting);
+
+    soft.assertThat(mergeLogic.findMergeBase(tip, branch)).isEqualTo(tip);
+
+    soft.assertThat(counting.fetchTypedObjCalls)
+        .as("merge-base must not use per-id fetchTypedObj")
+        .isZero();
+    soft.assertThat(counting.fetchTypedObjsIfExistCalls)
+        .as("bulk fetches should be far below the commit count (was N+1)")
+        .isPositive()
+        .isLessThan(commitCount / 5);
+    soft.assertThat(counting.maxFetchTypedObjsIfExistChunk)
+        .as("each bulk fetch is at most the prefetch chunk, and more than one id")
+        .isBetween(2, 100);
+    soft.assertThat(counting.uniqueFetchIds).hasSizeGreaterThanOrEqualTo(commitCount);
+    soft.assertThat(counting.fetchTypedObjsIfExistIds)
+        .as("each commit fetched once; overlapping tails must not be re-queued")
+        .isEqualTo(counting.uniqueFetchIds.size());
+  }
+
+  public static final class CountingPersist extends ObservingPersist {
+    int fetchTypedObjCalls;
+    int fetchTypedObjsIfExistCalls;
+    int fetchTypedObjsIfExistIds;
+    int maxFetchTypedObjsIfExistChunk;
+    final Set<ObjId> uniqueFetchIds = new HashSet<>();
+
+    public CountingPersist(Persist delegate) {
+      super(delegate);
+    }
+
+    @Override
+    @Nonnull
+    public <T extends Obj> T fetchTypedObj(
+        @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+      fetchTypedObjCalls++;
+      return super.fetchTypedObj(id, type, typeClass);
+    }
+
+    @Override
+    public <T extends Obj> T[] fetchTypedObjsIfExist(
+        @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+      fetchTypedObjsIfExistCalls++;
+      fetchTypedObjsIfExistIds += ids.length;
+      maxFetchTypedObjsIfExistChunk = Math.max(maxFetchTypedObjsIfExistChunk, ids.length);
+      uniqueFetchIds.addAll(Arrays.asList(ids));
+      return super.fetchTypedObjsIfExist(ids, type, typeClass);
+    }
   }
 }
