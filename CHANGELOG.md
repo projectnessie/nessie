@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- JDBC2 version store: experimental persist dialect for Microsoft SQL Server (`jdbc:sqlserver://` URLs). Taken from #12288 by @scotchr.
+
 ### Changes
 
 ### Deprecations
