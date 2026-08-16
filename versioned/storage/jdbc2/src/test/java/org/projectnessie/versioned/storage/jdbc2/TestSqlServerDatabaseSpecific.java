@@ -34,10 +34,14 @@ class TestSqlServerDatabaseSpecific {
 
   @Test
   void columnTypesUseNvarcharVarbinary900AndBit() {
-    assertEquals("NVARCHAR(255)", db.columnTypes().get(Jdbc2ColumnType.NAME));
+    assertEquals(
+        "NVARCHAR(255) COLLATE Latin1_General_100_BIN2",
+        db.columnTypes().get(Jdbc2ColumnType.NAME));
     assertEquals("VARBINARY(900)", db.columnTypes().get(Jdbc2ColumnType.OBJ_ID));
     assertEquals("BIT", db.columnTypes().get(Jdbc2ColumnType.BOOL));
-    assertEquals("VARBINARY(MAX)", db.columnTypes().get(Jdbc2ColumnType.VARBINARY));
+    assertEquals(
+        "NVARCHAR(255) COLLATE Latin1_General_100_BIN2",
+        db.columnTypes().get(Jdbc2ColumnType.VARCHAR));
   }
 
   @Test
@@ -79,7 +83,7 @@ class TestSqlServerDatabaseSpecific {
   @Test
   void wrapInsert_refsBecomesMerge() {
     String merged = db.wrapInsert(ADD_REFERENCE);
-    assertTrue(merged.startsWith("MERGE INTO " + SqlConstants.TABLE_REFS));
+    assertTrue(merged.startsWith("MERGE INTO " + SqlConstants.TABLE_REFS + " WITH (HOLDLOCK)"));
     assertTrue(merged.contains("WHEN NOT MATCHED BY TARGET THEN INSERT"));
     assertTrue(merged.contains("ON t." + COL_REPO_ID + " = s." + COL_REPO_ID));
     assertTrue(
@@ -90,7 +94,7 @@ class TestSqlServerDatabaseSpecific {
   @Test
   void wrapInsert_storeObjBecomesMerge() {
     String merged = db.wrapInsert(STORE_OBJ);
-    assertTrue(merged.startsWith("MERGE INTO " + TABLE_OBJS));
+    assertTrue(merged.startsWith("MERGE INTO " + TABLE_OBJS + " WITH (HOLDLOCK)"));
     assertTrue(merged.contains("WHEN NOT MATCHED BY TARGET THEN INSERT"));
     assertTrue(merged.contains("ON t." + COL_REPO_ID + " = s." + COL_REPO_ID));
     assertTrue(merged.contains("AND t." + COL_OBJ_ID + " = s." + COL_OBJ_ID));

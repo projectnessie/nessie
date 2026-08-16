@@ -23,7 +23,7 @@ import java.util.Map;
 /** SQL Server-specific dialect for the JDBC2 backend. */
 final class SqlServerDatabaseSpecific implements DatabaseSpecific {
 
-  private static final String VARCHAR = "NVARCHAR(255)";
+  private static final String VARCHAR = "NVARCHAR(255) COLLATE Latin1_General_100_BIN2";
   private static final String VARBINARY_MAX = "VARBINARY(MAX)";
 
   /** Max key length for nonclustered index; OBJ_ID is used in PK. */
@@ -91,7 +91,7 @@ final class SqlServerDatabaseSpecific implements DatabaseSpecific {
     if (sql.contains(SqlConstants.TABLE_REFS)) {
       return "MERGE INTO "
           + SqlConstants.TABLE_REFS
-          + " AS t USING (SELECT ? AS "
+          + " WITH (HOLDLOCK) AS t USING (SELECT ? AS "
           + SqlConstants.COL_REPO_ID
           + ", ? AS "
           + SqlConstants.COL_REFS_NAME
@@ -146,7 +146,7 @@ final class SqlServerDatabaseSpecific implements DatabaseSpecific {
     if (sql.contains(SqlConstants.TABLE_OBJS)) {
       return "MERGE INTO "
           + SqlConstants.TABLE_OBJS
-          + " AS t USING (SELECT ? AS "
+          + " WITH (HOLDLOCK) AS t USING (SELECT ? AS "
           + SqlConstants.COL_REPO_ID
           + ", ? AS "
           + SqlConstants.COL_OBJ_ID
