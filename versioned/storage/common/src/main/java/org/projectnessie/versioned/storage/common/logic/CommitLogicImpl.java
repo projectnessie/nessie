@@ -56,10 +56,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -68,7 +66,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
@@ -844,7 +841,7 @@ final class CommitLogicImpl implements CommitLogic {
 
   private ObjId identifyMergeBase(ObjId targetId, ObjId sourceId, boolean respectMergeParents) {
     return MergeBase.builder()
-        .loadCommit(new MergeBaseCommitLoader())
+        .loadCommits(this::fetchCommitsIfExist)
         .targetCommitId(targetId)
         .fromCommitId(sourceId)
         .respectMergeParents(respectMergeParents)
@@ -852,66 +849,9 @@ final class CommitLogicImpl implements CommitLogic {
         .identifyMergeBase();
   }
 
-  /**
-   * Bulk-loads commits while {@link MergeBase} walks parents, using {@link CommitObj#tail()} the
-   * same way {@link CommitLogIter} does, via {@code persist.fetchTypedObjsIfExist} in chunks of
-   * {@value MergeBaseCommitLoader#PREFETCH_CHUNK}.
-   */
-  private final class MergeBaseCommitLoader implements Function<ObjId, CommitObj> {
-    static final int PREFETCH_CHUNK = 100;
-
-    private final Map<ObjId, CommitObj> cache = new HashMap<>();
-    private final Set<ObjId> pending = new LinkedHashSet<>();
-
-    @Override
-    public CommitObj apply(ObjId commitId) {
-      if (EMPTY_OBJ_ID.equals(commitId)) {
-        return null;
-      }
-      if (cache.containsKey(commitId)) {
-        return cache.get(commitId);
-      }
-      enqueue(commitId);
-      int fetched = 0;
-      while (!pending.isEmpty()) {
-        if (cache.containsKey(commitId) && fetched >= PREFETCH_CHUNK) {
-          break;
-        }
-        fetched += fetchChunk();
-      }
-      return cache.get(commitId);
-    }
-
-    private void enqueue(ObjId id) {
-      if (id != null && !EMPTY_OBJ_ID.equals(id) && !cache.containsKey(id)) {
-        pending.add(id);
-      }
-    }
-
-    private int fetchChunk() {
-      int n = Math.min(PREFETCH_CHUNK, pending.size());
-      ObjId[] ids = new ObjId[n];
-      Iterator<ObjId> it = pending.iterator();
-      for (int i = 0; i < n; i++) {
-        ids[i] = it.next();
-        it.remove();
-      }
-      // perform a bulk-load against the database, populates the cache
-      CommitObj[] objs = persist.fetchTypedObjsIfExist(ids, COMMIT, CommitObj.class);
-      for (int i = 0; i < n; i++) {
-        cache.put(ids[i], objs[i]);
-      }
-      // Cache the whole chunk first so overlapping CommitObj.tail() windows do not
-      // re-queue ids that were already fetched in this round-trip.
-      for (int i = 0; i < n; i++) {
-        CommitObj obj = objs[i];
-        if (obj != null) {
-          obj.tail().forEach(this::enqueue);
-          obj.secondaryParents().forEach(this::enqueue);
-        }
-      }
-      return n;
-    }
+  private List<CommitObj> fetchCommitsIfExist(List<ObjId> ids) {
+    return Arrays.asList(
+        persist.fetchTypedObjsIfExist(ids.toArray(new ObjId[0]), COMMIT, CommitObj.class));
   }
 
   @Nullable

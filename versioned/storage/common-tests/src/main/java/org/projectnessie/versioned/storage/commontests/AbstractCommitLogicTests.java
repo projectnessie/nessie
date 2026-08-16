@@ -855,64 +855,66 @@ public class AbstractCommitLogicTests {
   }
 
   /**
-   * Merges against a deep history must not load commits one-by-one. Before prefetch, each parent
-   * was a {@code persist.fetchTypedObj} (one JDBC round-trip). After, {@link
-   * Persist#fetchTypedObjsIfExist} loads {@link CommitObj#tail()} in chunks of at most 100.
+   * Identifying the merge base of two branches that diverged long ago must not load the commits
+   * one-by-one: that is one {@link Persist#fetchTypedObj} per commit, which on a deep history means
+   * one database round-trip per commit.
    */
   @Test
-  public void mergeBasePrefetchesDeepHistory() throws Exception {
-    assertMergeBasePrefetchesDeepHistory(persist, soft);
-  }
-
-  public static void assertMergeBasePrefetchesDeepHistory(Persist persist, SoftAssertions soft)
-      throws Exception {
+  public void mergeBaseLoadsDeepHistoryInBatches() throws Exception {
     CommitLogic setup = commitLogic(persist);
-    ObjId tip =
-        requireNonNull(setup.doCommit(stdCommit().message("root").build(), emptyList())).id();
-    int depth = 120;
-    for (int i = 0; i < depth; i++) {
-      tip =
-          requireNonNull(
-                  setup.doCommit(
-                      stdCommit().parentCommitId(tip).message("c" + i).build(), emptyList()))
-              .id();
-    }
-    ObjId branch =
-        requireNonNull(
-                setup.doCommit(
-                    stdCommit().parentCommitId(tip).message("branch").build(), emptyList()))
-            .id();
+    int perBranch = 60;
+    ObjId forkPoint = addCommits(setup, 1, EMPTY_OBJ_ID, 0);
+    ObjId branchA = addCommits(setup, perBranch, forkPoint, 1);
+    ObjId branchB = addCommits(setup, perBranch, forkPoint, 2);
+    int walked = 2 * perBranch + 1;
 
-    int commitCount = depth + 2;
     CountingPersist counting = new CountingPersist(persist);
-    CommitLogic mergeLogic = commitLogic(counting);
 
-    soft.assertThat(mergeLogic.findMergeBase(tip, branch)).isEqualTo(tip);
+    soft.assertThat(commitLogic(counting).findMergeBase(branchA, branchB)).isEqualTo(forkPoint);
 
     soft.assertThat(counting.fetchTypedObjCalls)
-        .as("merge-base must not use per-id fetchTypedObj")
+        .as("merge-base must not load commits one at a time")
         .isZero();
     soft.assertThat(counting.fetchTypedObjsIfExistCalls)
-        .as("bulk fetches should be far below the commit count (was N+1)")
+        .as("round-trips must be far below the number of commits walked")
         .isPositive()
-        .isLessThan(commitCount / 5);
-    soft.assertThat(counting.maxFetchTypedObjsIfExistChunk)
-        .as("each bulk fetch is at most the prefetch chunk, and more than one id")
-        .isBetween(2, 100);
-    soft.assertThat(counting.uniqueFetchIds).hasSizeGreaterThanOrEqualTo(commitCount);
+        .isLessThan(walked / 4);
+    soft.assertThat(counting.maxFetchTypedObjsIfExistChunk).isGreaterThan(1);
+    soft.assertThat(counting.uniqueFetchIds)
+        .as("no more commits may be loaded than the walk visits")
+        .hasSizeLessThanOrEqualTo(walked);
     soft.assertThat(counting.fetchTypedObjsIfExistIds)
-        .as("each commit fetched once; overlapping tails must not be re-queued")
+        .as("no commit may be loaded twice")
         .isEqualTo(counting.uniqueFetchIds.size());
   }
 
-  public static final class CountingPersist extends ObservingPersist {
+  /**
+   * A batch must follow the commits that are actually walked. With the merge base right next to
+   * both heads, only a bounded look-ahead may be loaded, not a window of unrelated history.
+   */
+  @Test
+  public void mergeBaseNearHeadsLoadsFewCommits() throws Exception {
+    CommitLogic setup = commitLogic(persist);
+    ObjId tip = addCommits(setup, 120, EMPTY_OBJ_ID, 0);
+    ObjId branch = addCommits(setup, 1, tip, 1);
+
+    CountingPersist counting = new CountingPersist(persist);
+
+    soft.assertThat(commitLogic(counting).findMergeBase(tip, branch)).isEqualTo(tip);
+
+    soft.assertThat(counting.uniqueFetchIds)
+        .as("only the commits around the merge base, plus at most one look-ahead window")
+        .hasSizeLessThan(50);
+  }
+
+  static final class CountingPersist extends ObservingPersist {
     int fetchTypedObjCalls;
     int fetchTypedObjsIfExistCalls;
     int fetchTypedObjsIfExistIds;
     int maxFetchTypedObjsIfExistChunk;
     final Set<ObjId> uniqueFetchIds = new HashSet<>();
 
-    public CountingPersist(Persist delegate) {
+    CountingPersist(Persist delegate) {
       super(delegate);
     }
 
