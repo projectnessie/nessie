@@ -50,8 +50,6 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 public final class GcsClients {
   private GcsClients() {}
 
-  // Required for use as a downscoping source credential in GcsStorageSupplier; unscoped
-  // credentials make Google's STS token exchange fail with "invalid_scope".
   private static final List<String> CLOUD_PLATFORM_SCOPES =
       List.of("https://www.googleapis.com/auth/cloud-platform");
 
