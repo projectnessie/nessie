@@ -1,3 +1,7 @@
 # Dockerfile to provide the image name and tag to a test.
 # Version is managed by Renovate - do not edit.
-FROM mcr.microsoft.com/mssql/server:2022-latest
+#
+# Microsoft SQL Server container EULA (accepted via MSSQLServerContainer.acceptLicense()):
+# https://go.microsoft.com/fwlink/?linkid=857698
+# Re-check the EULA when bumping this tag. Renovate must not auto-merge this image.
+FROM mcr.microsoft.com/mssql/server:2022-CU26-ubuntu-22.04

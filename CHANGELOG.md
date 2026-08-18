@@ -14,8 +14,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
-- JDBC2 persist backend: experimental Microsoft SQL Server dialect, taken from #12288 by @scotchr. Nessie server / Quarkus datasource wiring is not included yet.
-
 ### Changes
 
 ### Deprecations
