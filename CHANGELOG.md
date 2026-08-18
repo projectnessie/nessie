@@ -10,6 +10,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
+- Catalog/GCS: Down-scoped credentials, enabled via
+  `nessie.catalog.service.gcs.default-options.downscoped-credentials.enable`, were not functional and
+  failed every credential-vending request. They work now. Vended credentials are scoped to a table's
+  location, so they do not cover tables using `write.object-storage.enabled=true`, which writes data
+  files under a randomized prefix that Credential Access Boundary conditions cannot express. Do not
+  enable down-scoped credentials for warehouses whose tables use that layout.
+
 ### Breaking changes
 
 ### New Features
@@ -19,6 +26,14 @@ as necessary. Empty sections will not end in the release notes.
 ### Deprecations
 
 ### Fixes
+
+- Catalog/GCS: Fix down-scoped credentials, which failed for every request. The source credential was
+  not scoped, so Google's token exchange rejected it with `invalid_scope`, and the generated Credential
+  Access Boundary conditions used CEL `matches()`, which Google's IAM CEL implementation does not
+  support.
+- Catalog/GCS: Vended credentials scoped to a table location no longer grant access to sibling
+  locations whose name starts with the same characters, for example a credential for
+  `warehouse/orders` granting access to `warehouse/orders2`.
 
 ### Commits
 

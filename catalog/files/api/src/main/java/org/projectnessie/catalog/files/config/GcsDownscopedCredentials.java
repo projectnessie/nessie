@@ -33,6 +33,11 @@ public interface GcsDownscopedCredentials {
    *
    * <p>The current default is to not enable short-lived and scoped-down credentials, but the
    * default may change to enable in the future.
+   *
+   * <p>Credentials are scoped to a table's location. Tables using {@code
+   * write.object-storage.enabled=true} write their data files under a randomized prefix that
+   * precedes the table path, which cannot be expressed as a scope, so clients are denied access to
+   * those data files.
    */
   Optional<Boolean> enable();
 

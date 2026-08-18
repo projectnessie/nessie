@@ -238,6 +238,18 @@ available for S3 and GCS. Operators must account for that weaker granularity whe
 delegation.
 `(documented)`
 
+GCS credential vending scopes down-scoped tokens by object-name prefix. Credential Access Boundary
+conditions support only prefix, suffix, and equality comparisons, so a location is matched as a path
+prefix terminated by `/` and object access is limited to objects below that location. Object listing
+additionally permits the location itself as a list prefix, which can reveal the names of sibling
+locations sharing that prefix but does not grant read access to them. `(documented)`
+
+Tables with `write.object-storage.enabled=true` write data files under a randomized prefix that
+precedes the table path. Credential Access Boundary conditions cannot express that shape, so
+down-scoped GCS credentials do not cover those data files and clients are denied access to them.
+Operators must not enable GCS down-scoped credentials for warehouses whose tables use that layout.
+`(documented)`
+
 ## Secrets And Credential Configuration
 
 Server-side secrets can be supplied through Quarkus configuration mechanisms and supported external
