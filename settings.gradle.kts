@@ -15,6 +15,7 @@
  */
 
 import java.net.URI
+import java.time.Duration
 import java.util.Properties
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.kotlin.dsl.support.serviceOf
@@ -98,6 +99,7 @@ dependencyResolutionManagement {
 
 plugins {
   id("com.gradle.develocity") version ("4.5.0")
+  id("com.gradleup.nmcp.settings") version ("1.6.1")
   if (
     providers.environmentVariable("CI").isPresent ||
       providers.systemProperty("allow-java-download").map(String::toBoolean).getOrElse(false)
@@ -250,3 +252,23 @@ if (gradle.parent == null) {
 }
 
 rootProject.name = "nessie"
+
+// Pass environment variables:
+//    ORG_GRADLE_PROJECT_sonatypeUsername
+//    ORG_GRADLE_PROJECT_sonatypePassword
+// Gradle targets:
+//    publishAggregationToCentralPortal
+//    publishAggregationToCentralPortalSnapshots
+//    (nmcpZipAggregation to just generate the single, aggregated deployment zip)
+// Ref: Maven Central Publisher API:
+//    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
+nmcpSettings {
+  centralPortal {
+    providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypeUsername").orNull?.let(username::set)
+    providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypePassword").orNull?.let(password::set)
+    publishingType.set(if (isCI) "AUTOMATIC" else "USER_MANAGED")
+    publishingTimeout.set(Duration.ofMinutes(120))
+    validationTimeout.set(Duration.ofMinutes(120))
+    publicationName.set("nessie-$baseVersion")
+  }
+}
