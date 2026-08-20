@@ -21,7 +21,7 @@ plugins { id("nessie-conventions-java17") }
 publishingHelper { mavenName = "Nessie - Storage - JDBC2" }
 
 description =
-  "Storage implementation for JDBC, supports H2, PostgreSQL, CockroachDB, MariaDB and MySQL (via MariaDB Driver)."
+  "Storage implementation for JDBC, supports H2, PostgreSQL, CockroachDB, MariaDB, MySQL (via MariaDB Driver), and Microsoft SQL Server."
 
 dependencies {
   implementation(project(":nessie-versioned-storage-common"))
@@ -48,6 +48,7 @@ dependencies {
   testRuntimeOnly(libs.h2)
   intTestRuntimeOnly(libs.postgresql)
   intTestRuntimeOnly(libs.mariadb.java.client)
+  intTestRuntimeOnly(libs.mssql.jdbc)
   intTestRuntimeOnly(platform(libs.testcontainers.bom))
   intTestRuntimeOnly(libs.docker.java.api)
   testFixturesImplementation(platform(libs.junit.bom))

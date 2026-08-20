@@ -116,6 +116,20 @@
       ],
     },
 
+    // SQL Server container EULA can change on image upgrades. Review the EULA before merge.
+    {
+      matchManagers: [
+        'dockerfile',
+        'devcontainer',
+        'docker-compose',
+      ],
+      automerge: false,
+      platformAutomerge: false,
+      matchPackageNames: [
+        'mcr.microsoft.com/mssql/server',
+      ],
+    },
+
     // Dockerfile for google-cloud-cli, basically no minor/patch version, daily major version updates
     {
       matchManagers: [
