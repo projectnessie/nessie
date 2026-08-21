@@ -16,7 +16,6 @@
 package org.projectnessie.catalog.files.gcs;
 
 import static java.lang.String.format;
-import static java.util.regex.Pattern.quote;
 import static org.projectnessie.catalog.files.gcs.GcsClients.buildCredentials;
 
 import com.google.auth.Credentials;
@@ -52,9 +51,6 @@ import org.slf4j.LoggerFactory;
 
 public final class GcsStorageSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(GcsStorageSupplier.class);
-
-  // Suitable for both old object-storage layout (before Iceberg 1.7.0) and new (since 1.7.0)
-  static final String RANDOMIZED_PART = "([A-Za-z0-9=]+/|[01]{4}/[01]{4}/[01]{4}/[01]{8}/)?";
 
   private final HttpTransportFactory httpTransportFactory;
   private final GcsConfig gcsConfig;
@@ -163,26 +159,21 @@ public final class GcsStorageSupplier {
             location -> {
               String bucket = location.requiredAuthority();
               readBuckets.add(bucket);
+              boolean writeable = storageLocations.writeableLocations().contains(location);
+              if (writeable) {
+                writeBuckets.add(bucket);
+              }
+
               String path = location.pathWithoutLeadingTrailingSlash();
               List<String> resourceExpressions =
                   readConditionsMap.computeIfAbsent(bucket, key -> new ArrayList<>());
-
               resourceExpressions.add(resourceNameBucketPathExpression(bucket, path));
+              resourceExpressions.add(objectListPrefixExpression(path));
 
-              // list
-              String listPathExpression =
-                  format(
-                      "api.getAttribute('storage.googleapis.com/objectListPrefix', '').matches('"
-                          + RANDOMIZED_PART
-                          + "%s.*')",
-                      quoteForCelString(path));
-              resourceExpressions.add(listPathExpression);
-
-              if (storageLocations.writeableLocations().contains(location)) {
-                writeBuckets.add(bucket);
-                List<String> writeExpressions =
-                    writeConditionsMap.computeIfAbsent(bucket, key -> new ArrayList<>());
-                writeExpressions.add(resourceNameBucketPathExpression(bucket, path));
+              if (writeable) {
+                writeConditionsMap
+                    .computeIfAbsent(bucket, key -> new ArrayList<>())
+                    .add(resourceNameBucketPathExpression(bucket, path));
               }
             });
 
@@ -212,20 +203,34 @@ public final class GcsStorageSupplier {
   }
 
   static String resourceNameBucketPathExpression(String bucket, String path) {
-    return "resource.name.matches('"
-        + quoteForCelString(format("projects/_/buckets/%s/objects/", bucket))
-        + RANDOMIZED_PART
+    return "resource.name.startsWith('"
+        + quoteForCelString(
+            format("projects/_/buckets/%s/objects/%s", bucket, withTrailingSlash(path)))
+        + "')";
+  }
+
+  private static String objectListPrefixExpression(String path) {
+    String attribute = "api.getAttribute('storage.googleapis.com/objectListPrefix', '')";
+    return attribute
+        + ".startsWith('"
+        + quoteForCelString(withTrailingSlash(path))
+        + "') || "
+        + attribute
+        + " == '"
         + quoteForCelString(path)
-        + ".*')";
+        + "'";
+  }
+
+  private static String withTrailingSlash(String path) {
+    return path.isEmpty() ? path : path + "/";
   }
 
   private static String quoteForCelString(String str) {
-    String quoted = quote(str);
-    StringBuilder sb = new StringBuilder(quoted.length() * 3 / 2);
+    StringBuilder sb = new StringBuilder(str.length() * 3 / 2);
 
-    int l = quoted.length();
+    int l = str.length();
     for (int i = 0; i < l; i++) {
-      char c = quoted.charAt(i);
+      char c = str.charAt(i);
       switch (c) {
         case '\'' -> sb.append("\\'");
         case '\"' -> sb.append("\\\"");

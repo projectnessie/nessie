@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.projectnessie.catalog.files.config.GcsBucketOptions;
@@ -48,6 +49,9 @@ import org.projectnessie.catalog.secrets.TokenSecret;
 
 public final class GcsClients {
   private GcsClients() {}
+
+  private static final List<String> CLOUD_PLATFORM_SCOPES =
+      List.of("https://www.googleapis.com/auth/cloud-platform");
 
   public static Storage buildStorage(
       GcsConfig gcsConfig,
@@ -140,13 +144,15 @@ public final class GcsClients {
                   .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
 
           return UserCredentials.fromStream(
-              new ByteArrayInputStream(
-                  secretsProvider
-                      .getSecret(secretName, SecretType.KEY, KeySecret.class)
-                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
-                      .key()
-                      .getBytes(UTF_8)),
-              transportFactory);
+                  new ByteArrayInputStream(
+                      secretsProvider
+                          .getSecret(secretName, SecretType.KEY, KeySecret.class)
+                          .orElseThrow(
+                              () -> new IllegalStateException("auth-credentials-json missing"))
+                          .key()
+                          .getBytes(UTF_8)),
+                  transportFactory)
+              .createScoped(CLOUD_PLATFORM_SCOPES);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
@@ -159,13 +165,15 @@ public final class GcsClients {
                   .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"));
 
           return ServiceAccountCredentials.fromStream(
-              new ByteArrayInputStream(
-                  secretsProvider
-                      .getSecret(secretName, SecretType.KEY, KeySecret.class)
-                      .orElseThrow(() -> new IllegalStateException("auth-credentials-json missing"))
-                      .key()
-                      .getBytes(UTF_8)),
-              transportFactory);
+                  new ByteArrayInputStream(
+                      secretsProvider
+                          .getSecret(secretName, SecretType.KEY, KeySecret.class)
+                          .orElseThrow(
+                              () -> new IllegalStateException("auth-credentials-json missing"))
+                          .key()
+                          .getBytes(UTF_8)),
+                  transportFactory)
+              .createScoped(CLOUD_PLATFORM_SCOPES);
         } catch (IOException e) {
           throw new RuntimeException(e);
         }
@@ -196,7 +204,7 @@ public final class GcsClients {
       }
       case APPLICATION_DEFAULT -> {
         try {
-          return GoogleCredentials.getApplicationDefault();
+          return GoogleCredentials.getApplicationDefault().createScoped(CLOUD_PLATFORM_SCOPES);
         } catch (IOException e) {
           throw new IllegalArgumentException("Unable to load default credentials", e);
         }
