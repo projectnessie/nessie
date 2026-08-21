@@ -38,6 +38,11 @@ public interface GcsDownscopedCredentials {
    * write.object-storage.enabled=true} write their data files under a randomized prefix that
    * precedes the table path, which cannot be expressed as a scope, so clients are denied access to
    * those data files.
+   *
+   * <p>With {@code auth-type=ACCESS_TOKEN} or {@code auth-type=USER} the configured credential is
+   * used with its existing OAuth scopes and must already have the {@code
+   * https://www.googleapis.com/auth/cloud-platform} scope. Nessie requests that scope for
+   * service-account credentials and for Application Default Credentials that support scoping.
    */
   Optional<Boolean> enable();
 
