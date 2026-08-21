@@ -42,7 +42,6 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.SigningExtension
-import org.gradle.plugins.signing.SigningPlugin
 
 /** Applies common configurations to all Nessie projects. */
 @Suppress("unused")
@@ -216,16 +215,14 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
   private fun Project.configureSigning(mavenPublication: MavenPublication) {
     if (providers.gradleProperty("release").isPresent) {
-      plugins.withType<SigningPlugin>().configureEach {
-        configure<SigningExtension> {
-          val signingKey = providers.gradleProperty("signingKey").orNull
-          val signingPassword = providers.gradleProperty("signingPassword").orNull
-          useInMemoryPgpKeys(signingKey, signingPassword)
-          sign(mavenPublication)
+      configure<SigningExtension> {
+        val signingKey = providers.gradleProperty("signingKey").orNull
+        val signingPassword = providers.gradleProperty("signingPassword").orNull
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(mavenPublication)
 
-          if (providers.gradleProperty("useGpgAgent").isPresent) {
-            useGpgCmd()
-          }
+        if (providers.gradleProperty("useGpgAgent").isPresent) {
+          useGpgCmd()
         }
       }
     }
