@@ -14,6 +14,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- CLI: Added the `SHOW DIFF [FROM [<type>] <ref>] TO [<type>] <ref>` command, which prints a
+  `git diff`-style listing of the content keys that were added, removed or changed between two
+  references (or between the current reference and another one).
+
 ### Changes
 
 ### Deprecations

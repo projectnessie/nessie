@@ -1,0 +1,10 @@
+Shows the differences in content between two references, git-diff style.
+
+Compares the content keys visible on the `FROM` reference against the content keys visible on
+the `TO` reference and lists which keys were added (`A`), removed (`D`) or changed (`M`), similar
+to `git diff <ref1> <ref2>`.
+
+If the `FROM` reference is omitted, it defaults to the current reference of the Nessie CLI. The
+`TO` reference is mandatory. Both references accept the same `AT TIMESTAMP`/`AT COMMIT` clauses
+as `SHOW LOG` and `SHOW REFERENCE`, to compare specific points in time rather than the current
+head of a branch or tag.
