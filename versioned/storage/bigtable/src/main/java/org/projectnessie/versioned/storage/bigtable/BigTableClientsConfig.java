@@ -86,19 +86,69 @@ public interface BigTableClientsConfig {
   /** Total timeout (including retries) for Bigtable API calls. */
   Optional<Duration> totalTimeout();
 
-  /** Minimum number of gRPC channels. Refer to Google docs for details. */
-  OptionalInt minChannelCount();
-
-  /** Maximum number of gRPC channels. Refer to Google docs for details. */
-  OptionalInt maxChannelCount();
-
-  /** Initial number of gRPC channels. Refer to Google docs for details */
+  /**
+   * Initial number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
+   * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
+   * #minChannelCount()} are what actually determine burst headroom; dynamic resizing is too coarse
+   * to react to bursts shorter than a minute.
+   */
   OptionalInt initialChannelCount();
 
-  /** Minimum number of RPCs per channel. Refer to Google docs for details. */
+  /**
+   * Minimum number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
+   * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
+   * #initialChannelCount()} are what actually determine burst headroom; dynamic resizing is too
+   * coarse to react to bursts shorter than a minute.
+   *
+   * <p>Note that setting this to the same value as {@link #minChannelCount()} turns the channel
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>. Also, leaving
+   * both RPC thresholds unset has the same effect.
+   */
+  OptionalInt minChannelCount();
+
+  /**
+   * Maximum number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Note that setting this to the same value as {@link #minChannelCount()} turns the channel
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>. Also, leaving
+   * both RPC thresholds unset has the same effect.
+   */
+  OptionalInt maxChannelCount();
+
+  /**
+   * Minimum number of RPCs per channel, the threshold below which channels are removed from the
+   * pool. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Two traps, now documented in the javadocs and chart comments:
+   *
+   * <p>Note that with a value of {@code 0}, the pool only ever scales down after an interval in
+   * which no RPCs were outstanding at all.
+   */
   OptionalInt minRpcsPerChannel();
 
-  /** Maximum number of RPCs per channel. Refer to Google docs for details. */
+  /**
+   * Maximum number of RPCs per channel, the threshold above which channels are added to the pool.
+   * Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Note that gRPC starts queuing requests locally beyond 100 concurrent RPCs per channel, so
+   * this should be left well below that. Setting this to {@link Integer#MAX_VALUE} while {@link
+   * #minRpcsPerChannel()} is {@code 0} turns the channel pool into a statically sized one, which
+   * disables all dynamic resizing.
+   */
   OptionalInt maxRpcsPerChannel();
 
   /** Enables telemetry with OpenCensus. */

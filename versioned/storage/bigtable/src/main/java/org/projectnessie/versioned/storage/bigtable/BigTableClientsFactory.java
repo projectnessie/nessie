@@ -25,6 +25,7 @@ import com.google.cloud.bigtable.admin.v2.BigtableTableAdminSettings;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
 import com.google.cloud.bigtable.data.v2.stub.EnhancedBigtableStubSettings;
+import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.time.Duration;
@@ -56,23 +57,6 @@ public final class BigTableClientsFactory {
     config.quotaProjectId().ifPresent(dataSettings.stubSettings()::setQuotaProjectId);
     config.endpoint().ifPresent(dataSettings.stubSettings()::setEndpoint);
 
-    ChannelPoolSettings defaultPoolSettings = ChannelPoolSettings.builder().build();
-
-    ChannelPoolSettings poolSettings =
-        ChannelPoolSettings.builder()
-            .setMinChannelCount(
-                config.minChannelCount().orElse(defaultPoolSettings.getMinChannelCount()))
-            .setMaxChannelCount(
-                config.maxChannelCount().orElse(defaultPoolSettings.getMaxChannelCount()))
-            .setInitialChannelCount(
-                config.initialChannelCount().orElse(defaultPoolSettings.getInitialChannelCount()))
-            .setMinRpcsPerChannel(
-                config.minRpcsPerChannel().orElse(defaultPoolSettings.getMinRpcsPerChannel()))
-            .setMaxRpcsPerChannel(
-                config.maxRpcsPerChannel().orElse(defaultPoolSettings.getMaxRpcsPerChannel()))
-            .setPreemptiveRefreshEnabled(true)
-            .build();
-
     EnhancedBigtableStubSettings.Builder stubSettings = dataSettings.stubSettings();
 
     for (RetrySettings.Builder retrySettings :
@@ -95,14 +79,27 @@ public final class BigTableClientsFactory {
 
     InstantiatingGrpcChannelProvider transportChannelProvider =
         (InstantiatingGrpcChannelProvider) stubSettings.getTransportChannelProvider();
-    InstantiatingGrpcChannelProvider.Builder transportChannelProviderBuilder =
-        transportChannelProvider.toBuilder();
     stubSettings.setTransportChannelProvider(
-        transportChannelProviderBuilder.setChannelPoolSettings(poolSettings).build());
+        transportChannelProvider.toBuilder()
+            .setChannelPoolSettings(
+                channelPoolSettings(transportChannelProvider.getChannelPoolSettings(), config))
+            .build());
 
     applyCommonDataClientSettings(dataSettings);
 
     return BigtableDataClient.create(dataSettings.build());
+  }
+
+  @VisibleForTesting
+  static ChannelPoolSettings channelPoolSettings(
+      ChannelPoolSettings defaults, BigTableClientsConfig config) {
+    ChannelPoolSettings.Builder poolSettings = defaults.toBuilder();
+    config.minChannelCount().ifPresent(poolSettings::setMinChannelCount);
+    config.maxChannelCount().ifPresent(poolSettings::setMaxChannelCount);
+    config.initialChannelCount().ifPresent(poolSettings::setInitialChannelCount);
+    config.minRpcsPerChannel().ifPresent(poolSettings::setMinRpcsPerChannel);
+    config.maxRpcsPerChannel().ifPresent(poolSettings::setMaxRpcsPerChannel);
+    return poolSettings.build();
   }
 
   // OpenCensus is deprecated in BT for removal
