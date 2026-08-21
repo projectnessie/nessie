@@ -93,8 +93,10 @@ public interface BigTableClientsConfig {
    *
    * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
    * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
-   * #minChannelCount()} are what actually determine burst headroom; dynamic resizing is too coarse
-   * to react to bursts shorter than a minute.
+   * #minChannelCount()} are what actually determine burst headroom.
+   *
+   * <p>When {@link #minChannelCount()} or {@link #maxChannelCount()} is configured such that the
+   * inherited value would fall outside that range, the inherited value is adjusted to fit.
    */
   OptionalInt initialChannelCount();
 
@@ -105,12 +107,16 @@ public interface BigTableClientsConfig {
    *
    * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
    * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
-   * #initialChannelCount()} are what actually determine burst headroom; dynamic resizing is too
-   * coarse to react to bursts shorter than a minute.
+   * #initialChannelCount()} are what actually determine burst headroom.
    *
-   * <p>Note that setting this to the same value as {@link #minChannelCount()} turns the channel
-   * pool into a statically sized one, which <em>disables all dynamic resizing</em>. Also, leaving
-   * both RPC thresholds unset has the same effect.
+   * <p>Note that setting this to the same value as {@link #maxChannelCount()} turns the channel
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>.
+   *
+   * <p>Note also that this must not exceed {@link #maxRpcsPerChannel()}, whose inherited value is
+   * typically much smaller than the maximum channel count; raising this above that threshold
+   * requires raising the threshold as well.
+   *
+   * <p>When this exceeds an inherited {@link #maxChannelCount()}, the latter is raised to match.
    */
   OptionalInt minChannelCount();
 
@@ -120,8 +126,9 @@ public interface BigTableClientsConfig {
    * <p>When unset, the value tuned by the Bigtable client library is used.
    *
    * <p>Note that setting this to the same value as {@link #minChannelCount()} turns the channel
-   * pool into a statically sized one, which <em>disables all dynamic resizing</em>. Also, leaving
-   * both RPC thresholds unset has the same effect.
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>.
+   *
+   * <p>When this is below an inherited {@link #minChannelCount()}, the latter is lowered to match.
    */
   OptionalInt maxChannelCount();
 
@@ -131,10 +138,10 @@ public interface BigTableClientsConfig {
    *
    * <p>When unset, the value tuned by the Bigtable client library is used.
    *
-   * <p>Two traps, now documented in the javadocs and chart comments:
-   *
    * <p>Note that with a value of {@code 0}, the pool only ever scales down after an interval in
    * which no RPCs were outstanding at all.
+   *
+   * <p>When this exceeds an inherited {@link #maxRpcsPerChannel()}, the latter is raised to match.
    */
   OptionalInt minRpcsPerChannel();
 
@@ -147,7 +154,10 @@ public interface BigTableClientsConfig {
    * <p>Note that gRPC starts queuing requests locally beyond 100 concurrent RPCs per channel, so
    * this should be left well below that. Setting this to {@link Integer#MAX_VALUE} while {@link
    * #minRpcsPerChannel()} is {@code 0} turns the channel pool into a statically sized one, which
-   * disables all dynamic resizing.
+   * <em>disables all dynamic resizing</em>.
+   *
+   * <p>When this is below an inherited {@link #minRpcsPerChannel()}, the latter is lowered to
+   * match.
    */
   OptionalInt maxRpcsPerChannel();
 

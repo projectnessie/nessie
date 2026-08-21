@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.storage.bigtable;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.versioned.storage.bigtable.BigTableClientsFactory.channelPoolSettings;
 
@@ -89,6 +90,117 @@ class TestBigTableClientsFactory {
     assertThat(settings.getMaxRpcsPerChannel()).isEqualTo(inherited.getMaxRpcsPerChannel());
     assertThat(settings.isPreemptiveRefreshEnabled())
         .isEqualTo(inherited.isPreemptiveRefreshEnabled());
+  }
+
+  @Test
+  void configuredMaxChannelCountBelowInheritedInitialChannelCount() {
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.maxChannelCount()).thenReturn(OptionalInt.of(1));
+
+    ChannelPoolSettings settings = channelPoolSettings(defaultChannelPoolSettings(), config);
+
+    assertThat(settings.getMaxChannelCount()).isEqualTo(1);
+    assertThat(settings.getInitialChannelCount()).isEqualTo(1);
+    assertThat(settings.getMinChannelCount()).isEqualTo(1);
+  }
+
+  @Test
+  void configuredMinChannelCountAboveInheritedInitialChannelCount() {
+    ChannelPoolSettings inherited = defaultChannelPoolSettings();
+    int min = inherited.getInitialChannelCount() + 5;
+
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.minChannelCount()).thenReturn(OptionalInt.of(min));
+    // Required because min-channel-count must not exceed max-rpcs-per-channel.
+    when(config.maxRpcsPerChannel()).thenReturn(OptionalInt.of(min));
+
+    ChannelPoolSettings settings = channelPoolSettings(inherited, config);
+
+    assertThat(settings.getMinChannelCount()).isEqualTo(min);
+    assertThat(settings.getInitialChannelCount()).isEqualTo(min);
+    assertThat(settings.getMaxChannelCount()).isEqualTo(inherited.getMaxChannelCount());
+  }
+
+  @Test
+  void configuredMinChannelCountAboveInheritedMaxChannelCount() {
+    ChannelPoolSettings inherited = defaultChannelPoolSettings();
+    int min = inherited.getMaxChannelCount() + 5;
+
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.minChannelCount()).thenReturn(OptionalInt.of(min));
+    when(config.maxRpcsPerChannel()).thenReturn(OptionalInt.of(min));
+
+    ChannelPoolSettings settings = channelPoolSettings(inherited, config);
+
+    assertThat(settings.getMinChannelCount()).isEqualTo(min);
+    assertThat(settings.getMaxChannelCount()).isEqualTo(min);
+    assertThat(settings.getInitialChannelCount()).isEqualTo(min);
+  }
+
+  @Test
+  void configuredMinRpcsPerChannelAboveInheritedMaxRpcsPerChannel() {
+    ChannelPoolSettings inherited = defaultChannelPoolSettings();
+    int minRpcs = inherited.getMaxRpcsPerChannel() + 10;
+
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.minRpcsPerChannel()).thenReturn(OptionalInt.of(minRpcs));
+
+    ChannelPoolSettings settings = channelPoolSettings(inherited, config);
+
+    assertThat(settings.getMinRpcsPerChannel()).isEqualTo(minRpcs);
+    assertThat(settings.getMaxRpcsPerChannel()).isEqualTo(minRpcs);
+  }
+
+  /**
+   * A configured maximum below the inherited minimum RPCs per channel lowers the latter. The
+   * inherited settings are synthetic here: the Bigtable client library's own minimum is 1, and the
+   * only value below that, 0, is rejected by an unrelated {@code ChannelPoolSettings} precondition
+   * requiring {@code min-channel-count <= max-rpcs-per-channel}.
+   */
+  @Test
+  void configuredMaxRpcsPerChannelBelowInheritedMinRpcsPerChannel() {
+    ChannelPoolSettings inherited =
+        defaultChannelPoolSettings().toBuilder().setMinRpcsPerChannel(20).build();
+
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.maxRpcsPerChannel()).thenReturn(OptionalInt.of(5));
+
+    ChannelPoolSettings settings = channelPoolSettings(inherited, config);
+
+    assertThat(settings.getMaxRpcsPerChannel()).isEqualTo(5);
+    assertThat(settings.getMinRpcsPerChannel()).isEqualTo(5);
+  }
+
+  @Test
+  void conflictingExplicitRpcsPerChannelAreRejected() {
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.minRpcsPerChannel()).thenReturn(OptionalInt.of(10));
+    when(config.maxRpcsPerChannel()).thenReturn(OptionalInt.of(5));
+
+    ChannelPoolSettings defaults = defaultChannelPoolSettings();
+    assertThatThrownBy(() -> channelPoolSettings(defaults, config))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("rpcsPerChannel range is invalid");
+  }
+
+  @Test
+  void conflictingExplicitChannelCountsAreRejected() {
+    BigTableClientsConfig config = Mockito.mock(BigTableClientsConfig.class);
+    when(config.initialChannelCount()).thenReturn(OptionalInt.of(10));
+    when(config.maxChannelCount()).thenReturn(OptionalInt.of(1));
+
+    ChannelPoolSettings defaults = defaultChannelPoolSettings();
+    assertThatThrownBy(() -> channelPoolSettings(defaults, config))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("initial channel count");
+  }
+
+  @Test
+  void staticallySizedChannelPoolSettingsArePreserved() {
+    ChannelPoolSettings inherited = ChannelPoolSettings.staticallySized(1);
+    ChannelPoolSettings actual =
+        channelPoolSettings(inherited, Mockito.mock(BigTableClientsConfig.class));
+    assertThat(actual).isEqualTo(inherited);
   }
 
   private static ChannelPoolSettings defaultChannelPoolSettings() {

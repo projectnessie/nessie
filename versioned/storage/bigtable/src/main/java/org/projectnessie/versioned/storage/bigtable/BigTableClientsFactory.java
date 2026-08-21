@@ -93,13 +93,43 @@ public final class BigTableClientsFactory {
   @VisibleForTesting
   static ChannelPoolSettings channelPoolSettings(
       ChannelPoolSettings defaults, BigTableClientsConfig config) {
-    ChannelPoolSettings.Builder poolSettings = defaults.toBuilder();
-    config.minChannelCount().ifPresent(poolSettings::setMinChannelCount);
-    config.maxChannelCount().ifPresent(poolSettings::setMaxChannelCount);
-    config.initialChannelCount().ifPresent(poolSettings::setInitialChannelCount);
-    config.minRpcsPerChannel().ifPresent(poolSettings::setMinRpcsPerChannel);
-    config.maxRpcsPerChannel().ifPresent(poolSettings::setMaxRpcsPerChannel);
-    return poolSettings.build();
+
+    // An inherited value may fall outside an explicitly configured bound, a combination that
+    // ChannelPoolSettings.build() rejects. Let the explicitly configured value win in such a case;
+    // a conflict between two explicitly configured values is still reported as an error.
+
+    int minChannels = config.minChannelCount().orElse(defaults.getMinChannelCount());
+    int maxChannels = config.maxChannelCount().orElse(defaults.getMaxChannelCount());
+    if (minChannels > maxChannels) {
+      if (config.minChannelCount().isEmpty()) {
+        minChannels = maxChannels;
+      } else if (config.maxChannelCount().isEmpty()) {
+        maxChannels = minChannels;
+      }
+    }
+
+    int minRpcs = config.minRpcsPerChannel().orElse(defaults.getMinRpcsPerChannel());
+    int maxRpcs = config.maxRpcsPerChannel().orElse(defaults.getMaxRpcsPerChannel());
+    if (minRpcs > maxRpcs) {
+      if (config.minRpcsPerChannel().isEmpty()) {
+        minRpcs = maxRpcs;
+      } else if (config.maxRpcsPerChannel().isEmpty()) {
+        maxRpcs = minRpcs;
+      }
+    }
+
+    int initialChannels = config.initialChannelCount().orElse(defaults.getInitialChannelCount());
+    if (config.initialChannelCount().isEmpty()) {
+      initialChannels = Math.min(Math.max(initialChannels, minChannels), maxChannels);
+    }
+
+    return defaults.toBuilder()
+        .setMinChannelCount(minChannels)
+        .setMaxChannelCount(maxChannels)
+        .setInitialChannelCount(initialChannels)
+        .setMinRpcsPerChannel(minRpcs)
+        .setMaxRpcsPerChannel(maxRpcs)
+        .build();
   }
 
   // OpenCensus is deprecated in BT for removal
