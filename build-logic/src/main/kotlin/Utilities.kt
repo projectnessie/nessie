@@ -62,6 +62,7 @@ val noSourceCheckProjects =
     ":nessie-spark-extensions-3.5_2.12",
     ":nessie-spark-extensions-3.5_2.13",
     ":nessie-spark-extensions-4.0_2.13",
+    ":nessie-spark-extensions-4.1_2.13",
   )
 
 fun Project.libs(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -412,7 +413,8 @@ fun javaVersionForSpark(sparkMajorVersion: String): Int {
     "3.3",
     "3.4",
     "3.5",
-    "4.0" -> 17
+    "4.0",
+    "4.1" -> 17
     else ->
       throw IllegalArgumentException(
         "Do not know which Java version Spark $sparkMajorVersion supports"
