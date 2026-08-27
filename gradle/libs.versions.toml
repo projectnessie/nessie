@@ -25,7 +25,7 @@ opentelemetry = "1.65.0"
 opentelemetryAlpha = "1.31.0-alpha"
 picocli = "4.7.6"
 protobuf = "4.36.0"
-quarkus = "3.38.3"
+quarkus = "3.39.1"
 quarkusVault = "4.9.0"
 slf4j = "2.0.18"
 
