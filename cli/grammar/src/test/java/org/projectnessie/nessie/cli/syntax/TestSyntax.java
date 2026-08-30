@@ -108,6 +108,22 @@ public class TestSyntax {
                 [ ExistingReference ]\s
                 [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
         arguments(
+            "ShowDiffStatement",
+            """
+            {TERMINAL:DIFF}\s
+                {PRE:[} {TERMINAL:FROM} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]} {POST:]}\s
+                {TERMINAL:TO}\s
+                {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]}\s
+                {NON_TERMINAL:ExistingReference}\s
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}""",
+            """
+            SHOW DIFF\s
+                [ FROM [ ReferenceType ] ExistingReference [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ] ]\s
+                TO\s
+                [ ReferenceType ]\s
+                ExistingReference\s
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
+        arguments(
             "MergeBehaviorKind",
             "{TERMINAL:NORMAL} {SEP:|} {TERMINAL:FORCE} {SEP:|} {TERMINAL:DROP}",
             "NORMAL | FORCE | DROP"),
@@ -122,7 +138,7 @@ public class TestSyntax {
                 {SEP:|} {TERMINAL:ALTER} {PRE:[} {TERMINAL:NAMESPACE} {POST:]}
                 {SEP:|} {TERMINAL:DROP} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {POST:]}
                 {SEP:|} {TERMINAL:LIST} {PRE:[} {TERMINAL:CONTENTS} {SEP:|} {TERMINAL:REFERENCES} {POST:]}
-                {SEP:|} {TERMINAL:SHOW} {PRE:[} {TERMINAL:LOG} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:REFERENCE} {POST:]}
+                {SEP:|} {TERMINAL:SHOW} {PRE:[} {TERMINAL:LOG} {SEP:|} {TERMINAL:TABLE} {SEP:|} {TERMINAL:VIEW} {SEP:|} {TERMINAL:NAMESPACE} {SEP:|} {TERMINAL:REFERENCE} {SEP:|} {TERMINAL:DIFF} {POST:]}
                 {SEP:|} {TERMINAL:ASSIGN} {PRE:[} {TERMINAL:BRANCH} {SEP:|} {TERMINAL:TAG} {POST:]}
                 {SEP:|} {TERMINAL:MERGE}
                 {SEP:|} {TERMINAL:REVERT}
@@ -138,7 +154,7 @@ public class TestSyntax {
                 | ALTER [ NAMESPACE ]
                 | DROP [ BRANCH | TAG | NAMESPACE | TABLE | VIEW ]
                 | LIST [ CONTENTS | REFERENCES ]
-                | SHOW [ LOG | TABLE | VIEW | NAMESPACE | REFERENCE ]
+                | SHOW [ LOG | TABLE | VIEW | NAMESPACE | REFERENCE | DIFF ]
                 | ASSIGN [ BRANCH | TAG ]
                 | MERGE
                 | REVERT
