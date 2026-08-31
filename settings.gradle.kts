@@ -99,7 +99,7 @@ dependencyResolutionManagement {
 
 plugins {
   id("com.gradle.develocity") version ("4.5.0")
-  id("com.gradleup.nmcp.settings") version ("1.6.1")
+  id("com.gradleup.nmcp.settings") version ("1.6.2")
   if (
     providers.environmentVariable("CI").isPresent ||
       providers.systemProperty("allow-java-download").map(String::toBoolean).getOrElse(false)
