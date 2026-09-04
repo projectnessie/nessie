@@ -219,6 +219,30 @@ bigtable:
     # # -- The secret key storing the Google Cloud service account JSON key.
     # key: sa_json
 
+  # gRPC channel pool settings. All of these are optional: when left unset, the values tuned by the
+  # Bigtable client library are used. Only override them if you have measured a need to.
+  # See https://cloud.google.com/bigtable/docs/reference/libraries for details.
+  channelPool:
+    # -- The initial number of gRPC channels.
+    # Since the pool grows by at most two channels per minute, this is what determines how much
+    # concurrency is available to a short burst of requests. Dynamic resizing is too coarse to react
+    # to bursts shorter than a minute, so size this for the expected peak.
+    initialChannelCount: ~
+    # -- The minimum number of gRPC channels; the pool never shrinks below this.
+    # Note: setting this to the same value as maxChannelCount turns the pool into a statically sized
+    # one, which disables all dynamic resizing.
+    minChannelCount: ~
+    # -- The maximum number of gRPC channels; the pool never grows beyond this.
+    maxChannelCount: ~
+    # -- The number of concurrent RPCs per channel below which channels are removed from the pool.
+    # Note: with a value of 0, the pool only ever scales down after an interval in which no RPCs
+    # were outstanding at all.
+    minRpcsPerChannel: ~
+    # -- The number of concurrent RPCs per channel above which channels are added to the pool.
+    # Note: gRPC starts queuing requests locally beyond 100 concurrent RPCs per channel, so keep
+    # this well below that.
+    maxRpcsPerChannel: ~
+
 # -- The Nessie catalog server configuration.
 catalog:
 
