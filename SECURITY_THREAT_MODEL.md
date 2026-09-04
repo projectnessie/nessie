@@ -224,6 +224,11 @@ a missing-table or future-location fallback. Missing content may be handled as a
 case where the signer endpoint was already minted for that location; authorization and unexpected
 lookup failures are fail-closed conditions. `(documented)`
 
+S3 request signing may recognize custom virtual-host endpoints that do not use AWS-style `s3`
+hostnames. This recognition is anchored to a bucket derived from the signer-authorized warehouse,
+write, or read locations; it does not widen the table paths permitted by current-location,
+historical-location, metadata-file, or object-storage-layout checks. `(documented)`
+
 Object-store credentials or temporary access material exposed through catalog features are in scope only
 for configured credential-vending or request-signing modes. Operators are responsible for cloud IAM
 policy scope, role trust policies, external IDs, token/session duration, and bucket or filesystem

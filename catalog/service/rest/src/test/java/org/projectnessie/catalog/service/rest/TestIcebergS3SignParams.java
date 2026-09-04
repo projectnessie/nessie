@@ -19,6 +19,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.ICEBERG_V1;
@@ -43,11 +44,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.ImmutableSigningResponse;
 import org.projectnessie.catalog.files.api.RequestSigner;
+import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
 import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
@@ -101,6 +104,12 @@ class TestIcebergS3SignParams {
       "https://old-bucket.s3.amazonaws.com/ns/table1/data/file1.parquet";
 
   static final String metadataJsonUri = s3BucketAws + locationPart + "/metadata/metadata.json";
+  static final String customWarehouseLocation = "s3://example-bucket/warehouse/";
+  static final String customBaseLocation = customWarehouseLocation + locationPart;
+  static final String customVirtualHostBaseUri =
+      "https://example-bucket.obs.example.com/warehouse/";
+  static final String customDataFileUri =
+      customVirtualHostBaseUri + locationPart + "/data/file1.parquet";
 
   final IcebergS3SignRequest writeRequest =
       IcebergS3SignRequest.builder()
@@ -255,6 +264,73 @@ class TestIcebergS3SignParams {
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectSuccess(response);
+  }
+
+  @Test
+  void verifyAndSignSuccessCustomVirtualHostRead() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+    when(signer.sign(any())).thenReturn(signingResponse);
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .uri(customDataFileUri)
+                    .method("GET")
+                    .build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .build();
+
+    expectSuccess(icebergSigner.verifyAndSign());
+
+    ArgumentCaptor<SigningRequest> signingRequest = ArgumentCaptor.forClass(SigningRequest.class);
+    verify(signer).sign(signingRequest.capture());
+    soft.assertThat(signingRequest.getValue().bucket()).contains("example-bucket");
+  }
+
+  @Test
+  void verifyAndSignSuccessCustomVirtualHostWrite() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+    when(signer.sign(any())).thenReturn(signingResponse);
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder().from(writeRequest).uri(customDataFileUri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .build();
+
+    expectSuccess(icebergSigner.verifyAndSign());
+
+    ArgumentCaptor<SigningRequest> signingRequest = ArgumentCaptor.forClass(SigningRequest.class);
+    verify(signer).sign(signingRequest.capture());
+    soft.assertThat(signingRequest.getValue().bucket()).contains("example-bucket");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "https://other-bucket.obs.example.com/warehouse/ns/table1_cafebabe/data/file1.parquet",
+        "https://example-bucket.obs.example.com/outside/ns/table1_cafebabe/data/file1.parquet"
+      })
+  void verifyAndSignFailureCustomVirtualHostNotAllowed(String uri) throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(IcebergS3SignRequest.builder().from(writeRequest).uri(uri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .build();
+
+    expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + uri);
+    verifyNoInteractions(signer);
   }
 
   @Test
@@ -433,6 +509,26 @@ class TestIcebergS3SignParams {
             .build();
     Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
     expectFailure(response, "URI not allowed for signing: " + dataFileUri);
+  }
+
+  private SnapshotResponse customVirtualHostSnapshotResponse() {
+    Content customTable =
+        IcebergTable.of(customBaseLocation + "/metadata/metadata.json", 1, 1, 1, 1);
+    NessieTableSnapshot customSnapshot =
+        NessieTableSnapshot.builder()
+            .id(NessieId.randomNessieId())
+            .entity(nessieTable)
+            .icebergLocation(customBaseLocation)
+            .lastUpdatedTimestamp(Instant.now())
+            .build();
+    return SnapshotResponse.forEntity(
+        Branch.of("main", "12345678"),
+        customTable,
+        "metadata.json",
+        "application/json",
+        key,
+        customTable,
+        customSnapshot);
   }
 
   private ImmutableIcebergS3SignParams.Builder newBuilder() {
