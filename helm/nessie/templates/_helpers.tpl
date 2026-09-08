@@ -112,6 +112,23 @@ names should coincide with jdbc schemes in connection URIs.
 {{- end }}
 
 {{/*
+Apply BigTable gRPC channel pool options. All options are optional: when left unset, the values
+tuned by the BigTable client library are used.
+*/}}
+{{- define "nessie.applyBigTableChannelPoolOptions" -}}
+{{- $root := index . 0 -}}{{/* the object to introspect */}}
+{{- $prefix := index . 1 -}}{{/* the current prefix */}}
+{{- $map := index . 2 -}}{{/* the destination map */}}
+{{- with $root -}}
+{{- include "nessie.addConfigOption" (list .initialChannelCount $map ( print $prefix "initial-channel-count" )) -}}
+{{- include "nessie.addConfigOption" (list .minChannelCount $map ( print $prefix "min-channel-count" )) -}}
+{{- include "nessie.addConfigOption" (list .maxChannelCount $map ( print $prefix "max-channel-count" )) -}}
+{{- include "nessie.addConfigOption" (list .minRpcsPerChannel $map ( print $prefix "min-rpcs-per-channel" )) -}}
+{{- include "nessie.addConfigOption" (list .maxRpcsPerChannel $map ( print $prefix "max-rpcs-per-channel" )) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Apply Nessie Catalog (Iceberg REST) options.
 */}}
 {{- define "nessie.applyCatalogIcebergOptions" -}}
