@@ -265,6 +265,7 @@ com.google.auto.value:auto-value-annotations
 com.google.cloud.bigdataoss:gcs-connector
 com.google.cloud.bigdataoss:gcsio
 com.google.cloud.bigdataoss:util
+com.google.cloud.bigdataoss:util-hadoop
 com.google.cloud:google-cloud-bigtable
 com.google.cloud:google-cloud-core
 com.google.cloud:google-cloud-core-grpc
