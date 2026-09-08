@@ -164,6 +164,13 @@ val allLoadedProjects = mutableListOf<ProjectDescriptor>()
 gradle.beforeProject {
   version = baseVersion
   group = checkNotNull(projectPathToGroupId[path]) { "No groupId for project $path" }
+
+  if (name.startsWith("nessie-spark-extensions")) {
+    // The Scala variants share project directories, so isolate their outputs before plugins such
+    // as NMCP derive locations from the build directory.
+    val scalaMajorVersion = name.substringAfterLast('_')
+    layout.buildDirectory.set(layout.projectDirectory.dir("build/$scalaMajorVersion"))
+  }
 }
 
 fun nessieProject(name: String, groupId: String, directory: File): ProjectDescriptor {
