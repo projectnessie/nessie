@@ -58,7 +58,6 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
         ) {
           val publishingHelper = extensions.getByType<PublishingHelperExtension>()
           val projectName = project.name
-          val projectDescription = project.description
           val projectVersion = project.version.toString()
           val isRootProject = project == rootProject
           val parentGroup = project.parent?.group?.toString()
@@ -70,7 +69,6 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
           pom {
             name.set(publishingHelper.mavenName.orElse(projectName))
-            description.set(projectDescription)
 
             if (isRootProject) {
               val repoUrl =
@@ -182,6 +180,9 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
       configureSigning(publication.get())
 
       tasks.named("generatePomFileForMavenPublication", GenerateMavenPom::class.java).configure {
+        // Project build scripts assign their descriptions after applying the convention plugins.
+        pom.description.set(project.description)
+
         if (project == rootProject) {
           inputs
             .file(layout.projectDirectory.file("gradle/developers.csv"))
@@ -314,12 +315,12 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     }
     // Sonatype requires the javadoc and sources jar to be present, but the
     // Shadow extension does not publish those.
-    project.configurations.findByName("javadocElements")?.let {
-      component.addVariantsFromConfiguration(it) {}
-    }
-    project.configurations.findByName("sourcesElements")?.let {
-      component.addVariantsFromConfiguration(it) {}
-    }
+    // Those configurations can be created after the Shadow plugin has been applied.
+    project.configurations
+      .matching { it.name == "javadocElements" || it.name == "sourcesElements" }
+      .configureEach {
+        component.addVariantsFromConfiguration(this) {}
+      }
     mavenPublication.from(component)
 
     // This a replacement to add dependencies to the pom, if necessary. Equivalent to
