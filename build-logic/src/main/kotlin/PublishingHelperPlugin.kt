@@ -49,7 +49,12 @@ class PublishingHelperPlugin
 @Inject
 constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Plugin<Project> {
   override fun apply(project: Project): Unit = project.run {
-    extensions.create("publishingHelper", PublishingHelperExtension::class.java)
+    val publishingHelper =
+      extensions.create("publishingHelper", PublishingHelperExtension::class.java)
+
+    afterEvaluate {
+      description?.let { publishingHelper.mavenDescription.convention(it) }
+    }
 
     plugins.withType<MavenPublishPlugin>().configureEach {
       val publication =
@@ -69,6 +74,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
           pom {
             name.set(publishingHelper.mavenName.orElse(projectName))
+            description.set(publishingHelper.mavenDescription)
 
             if (isRootProject) {
               val repoUrl =
@@ -180,9 +186,6 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
       configureSigning(publication.get())
 
       tasks.named("generatePomFileForMavenPublication", GenerateMavenPom::class.java).configure {
-        // Project build scripts assign their descriptions after applying the convention plugins.
-        pom.description.set(project.description)
-
         if (project == rootProject) {
           inputs
             .file(layout.projectDirectory.file("gradle/developers.csv"))
@@ -349,6 +352,7 @@ private data class PomDependency(val groupId: String?, val artifactId: String, v
 
 abstract class PublishingHelperExtension {
   abstract val mavenName: Property<String>
+  abstract val mavenDescription: Property<String>
   abstract val nessieRepoName: Property<String>
   abstract val inceptionYear: Property<String>
 }
