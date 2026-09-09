@@ -11,8 +11,8 @@ Currently supported versions are listed below.
 
 | Version  | Supported          |
 |----------|--------------------|
-| 0.108.6   | :white_check_mark: |
-| < 0.108.6 | :x:                |
+| 0.108.7   | :white_check_mark: |
+| < 0.108.7 | :x:                |
 
 All Nessie 0.x.x versions are considered beta or even alpha releases and not supported after
 release of Nessie 1.0.0.
