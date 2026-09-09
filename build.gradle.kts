@@ -77,6 +77,10 @@ tasks.named("nmcpPublishAggregationToCentralPortal") {
   dependsOn(checkNmcpAggregationSparkArtifacts)
 }
 
+tasks.named("nmcpPublishAggregationToCentralPortalSnapshots") {
+  dependsOn(checkNmcpAggregationSparkArtifacts)
+}
+
 val buildToolIntegrationGradle =
   tasks.register<Exec>("buildToolIntegrationGradle") {
     group = "Verification"
