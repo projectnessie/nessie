@@ -10,22 +10,6 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Upgrade notes
 
-### Breaking changes
-
-### New Features
-
-### Changes
-
-### Deprecations
-
-### Fixes
-
-### Commits
-
-## [0.108.5] Release (2026-09-08)
-
-### Upgrade notes
-
 - Catalog/GCS: Down-scoped credentials, enabled via
   `nessie.catalog.service.gcs.default-options.downscoped-credentials.enable`, were not functional and
   failed every credential-vending request. They work now. Vended credentials are scoped to a table's
@@ -39,10 +23,16 @@ as necessary. Empty sections will not end in the release notes.
   `nessie.version.store.persist.bigtable.initial-channel-count=1` together with
   `nessie.version.store.persist.bigtable.max-channel-count=1`, although this is not recommended.
 
+### Breaking changes
+
 ### New Features
 
 - Helm chart: the BigTable gRPC channel pool settings can now be configured via the new
   `bigtable.channelPool` values, instead of having to go through `advancedConfig`.
+
+### Changes
+
+### Deprecations
 
 ### Fixes
 
@@ -61,6 +51,8 @@ as necessary. Empty sections will not end in the release notes.
   per channel, this silently capped BigTable throughput per Nessie instance and surfaced as
   `DEADLINE_EXCEEDED` errors under load, once the local queuing had exhausted a request's total
   timeout.
+
+### Commits
 
 ## [0.108.4] Release (2026-07-31)
 
