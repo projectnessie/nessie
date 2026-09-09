@@ -98,7 +98,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-  id("com.gradle.develocity") version ("4.5.0")
+  id("com.gradle.develocity") version ("4.5.1")
   id("com.gradleup.nmcp.settings") version ("1.6.2")
   if (
     providers.environmentVariable("CI").isPresent ||
