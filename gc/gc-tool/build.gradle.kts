@@ -81,7 +81,10 @@ dependencies {
   implementation(platform(libs.google.cloud.libraries.bom))
   runtimeOnly("com.google.cloud:google-cloud-storage")
   runtimeOnly("com.google.cloud:google-cloud-nio")
-  runtimeOnly(libs.google.cloud.bigdataoss.gcs.connector)
+  runtimeOnly(libs.google.cloud.bigdataoss.gcs.connector) {
+    // brings junit:junit + hamcrest :(
+    exclude("io.grpc", "grpc-testing")
+  }
   runtimeOnly(libs.google.cloud.bigdataoss.gcsio) {
     // brings junit:junit + hamcrest :(
     exclude("io.grpc", "grpc-testing")
