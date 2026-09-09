@@ -2,9 +2,9 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
-## 0.108.5 Release (September 08, 2026)
+## 0.108.8 Release (September 09, 2026)
 
-See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.5).
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.8).
 
 ### Upgrade notes
 
@@ -45,6 +45,12 @@ See [Release information on GitHub](https://github.com/projectnessie/nessie/rele
   timeout.
 
 ### Commits
+* Remove inomplete releases from releases page
+* Remove incomplete releases from site
+* remove incomplete releases from CHANGELOG.md
+* Fix publication again
+* Fix Maven publication (#12994)
+* Fix Spark artifacts in NMCP aggregation (#12990)
 * Add another BSD-3-clause license pattern (#12989)
 * Update license mentions (#12986)
 * BigTable: don't collapse the gRPC channel pool to a single channel (#12917)
