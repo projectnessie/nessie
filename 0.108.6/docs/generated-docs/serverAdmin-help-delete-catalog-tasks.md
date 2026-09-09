@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar delete-catalog-tasks [-hV]
        [-B=<batchSize>] [-H=<hash>] [-r=<ref>] [-k=<keyElements>]...

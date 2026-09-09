@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Secrets manager and mapping configuration. 
 
 Currently the following secrets managers are supported:   
