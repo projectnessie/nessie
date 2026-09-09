@@ -1,4 +1,6 @@
 ---
+search:
+  exclude: true
 title: "Nessie Server Admin Tool"
 ---
 
