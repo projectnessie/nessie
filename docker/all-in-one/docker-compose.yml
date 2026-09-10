@@ -70,7 +70,7 @@ services:
 
   nessie:
     # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
-    image: ghcr.io/projectnessie/nessie:0.108.7
+    image: ghcr.io/projectnessie/nessie:0.108.8
     ports:
       # API port
       - "19120:19120"
@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.108.7
+      image: ghcr.io/projectnessie/nessie-cli:0.108.8
       depends_on:
         nessie:
           condition: service_healthy
