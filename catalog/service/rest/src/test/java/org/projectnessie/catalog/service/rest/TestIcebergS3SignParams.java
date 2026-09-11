@@ -266,6 +266,32 @@ class TestIcebergS3SignParams {
     expectSuccess(response);
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"warehouse", "write", "read"})
+  void requestedLocationWithSpecialCharacters(String locationSource) {
+    String location = "s3://example-bucket/warehouse with space/table[1]%";
+    ImmutableIcebergS3SignParams.Builder builder =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .uri(
+                        "https://example-bucket.obs.example.com/"
+                            + "warehouse%20with%20space/table%5B1%5D%25/data/file.parquet")
+                    .build())
+            .writeLocations(List.of());
+    switch (locationSource) {
+      case "warehouse" -> builder.warehouseLocation(location);
+      case "write" -> builder.addWriteLocations(location);
+      case "read" -> builder.addReadLocations(location);
+      default -> throw new IllegalArgumentException(locationSource);
+    }
+    IcebergS3SignParams icebergSigner = builder.build();
+
+    soft.assertThat(icebergSigner.requestedS3Uri()).isEqualTo(location + "/data/file.parquet");
+    soft.assertThat(icebergSigner.requestedBucket()).contains("example-bucket");
+  }
+
   @Test
   void verifyAndSignSuccessCustomVirtualHostRead() throws Exception {
     when(catalogService.retrieveSnapshot(
