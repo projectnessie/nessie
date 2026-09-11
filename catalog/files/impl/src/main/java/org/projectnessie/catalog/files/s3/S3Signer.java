@@ -71,9 +71,13 @@ public class S3Signer implements RequestSigner {
             .method(SdkHttpMethod.fromValue(clientRequest.method()))
             .headers(clientRequest.headers());
 
-    S3BucketOptions bucketOptions =
-        s3Options.resolveOptionsForUri(
-            StorageUri.of(S3Utils.asS3Location(clientRequest.uri().toString())));
+    String uriString = uri.toString();
+    String s3Location =
+        clientRequest
+            .bucket()
+            .map(bucket -> S3Utils.asS3Location(uriString, bucket))
+            .orElseGet(() -> S3Utils.asS3Location(uriString));
+    S3BucketOptions bucketOptions = s3Options.resolveOptionsForUri(StorageUri.of(s3Location));
     AwsCredentialsProvider credentialsProvider =
         S3Clients.serverCredentialsProvider(bucketOptions, s3sessions, secretsProvider);
     AwsCredentialsIdentity credentials = credentialsProvider.resolveCredentials();

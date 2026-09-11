@@ -17,7 +17,6 @@ package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import static org.projectnessie.catalog.files.s3.S3Utils.extractBucketName;
 import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_S3_SIGN;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
@@ -59,6 +58,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergContent;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,10 +102,37 @@ abstract class IcebergS3SignParams {
         "locations must be S3 URIs");
   }
 
-  @Value.Lazy
   String requestedS3Uri() {
-    return S3Utils.asS3Location(request().uri());
+    return requestedLocation().uri();
   }
+
+  Optional<String> requestedBucket() {
+    return requestedLocation().bucket();
+  }
+
+  @Value.Lazy
+  RequestedLocation requestedLocation() {
+    return Stream.concat(
+            Stream.of(warehouseLocation()),
+            Stream.concat(writeLocations().stream(), readLocations().stream()))
+        .map(StorageUri::of)
+        .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
+        .map(StorageUri::authority)
+        .flatMap(Stream::ofNullable)
+        .distinct()
+        .map(
+            bucket ->
+                new RequestedLocation(
+                    S3Utils.asS3Location(request().uri(), bucket), Optional.of(bucket)))
+        .filter(
+            location ->
+                location.bucket().orElseThrow().equals(StorageUri.of(location.uri()).authority()))
+        .findFirst()
+        .orElseGet(
+            () -> new RequestedLocation(S3Utils.asS3Location(request().uri()), Optional.empty()));
+  }
+
+  record RequestedLocation(String uri, Optional<String> bucket) {}
 
   @Value.Lazy
   boolean write() {
@@ -275,12 +302,16 @@ abstract class IcebergS3SignParams {
 
   private IcebergS3SignResponse sign(String uriToSign) {
     URI uri = URI.create(uriToSign);
-    Optional<String> bucket = extractBucketName(uri);
     Optional<String> body = Optional.ofNullable(request().body());
 
     SigningRequest signingRequest =
         SigningRequest.signingRequest(
-            uri, request().method(), request().region(), bucket, body, request().headers());
+            uri,
+            request().method(),
+            request().region(),
+            requestedBucket(),
+            body,
+            request().headers());
 
     SigningResponse signed = signer().sign(signingRequest);
 
@@ -297,7 +328,8 @@ abstract class IcebergS3SignParams {
                 List.of()));
     String s3Uri = requestedS3Uri();
     LOGGER.warn(
-        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request method: {}, warehouse: {}, writeable locations: {}, readable locations: {}",
+        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request"
+            + " method: {}, warehouse: {}, writeable locations: {}, readable locations: {}",
         key(),
         ref(),
         s3Uri,

@@ -111,6 +111,22 @@ class TestS3Utils {
     assertThat(S3Utils.asS3Location(location)).isEqualTo(expected);
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "https://example-bucket.obs.example.com/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://example-bucket.s3.amazonaws.com/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://example-bucket.other.s3.amazonaws.com/mydir/myfile, example-bucket,"
+        + " s3://example-bucket.other/mydir/myfile",
+    "https://obs.example.com/example-bucket/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://not-example-bucket.obs.example.com/mydir/myfile, example-bucket, s3://mydir/myfile",
+  })
+  void asS3LocationWithBucketHint(String location, String bucket, String expected) {
+    assertThat(S3Utils.asS3Location(location, bucket)).isEqualTo(expected);
+  }
+
   @Test
   void asS3LocationErrors() {
     assertThatThrownBy(() -> S3Utils.asS3Location("ftp://localhost:9000/mybucket/mydir/myfile"))
@@ -125,5 +141,17 @@ class TestS3Utils {
     assertThatThrownBy(() -> S3Utils.asS3Location("https://s3.us-east-1.amazonaws.com"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid S3 URI: 'https://s3.us-east-1.amazonaws.com'");
+
+    assertThatThrownBy(
+            () ->
+                S3Utils.asS3Location("ftp://example-bucket.obs.example.com/key", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Unsupported URI scheme: 'ftp'");
+    assertThatThrownBy(() -> S3Utils.asS3Location("http:///key", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("No host in URI: 'http:///key'");
+    assertThatThrownBy(() -> S3Utils.asS3Location("https://obs.example.com/", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid S3 URI: 'https://obs.example.com/'");
   }
 }
