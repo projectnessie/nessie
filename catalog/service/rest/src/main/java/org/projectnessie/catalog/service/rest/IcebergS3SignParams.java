@@ -58,6 +58,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergContent;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,10 +115,10 @@ abstract class IcebergS3SignParams {
     return Stream.concat(
             Stream.of(warehouseLocation()),
             Stream.concat(writeLocations().stream(), readLocations().stream()))
-        .map(URI::create)
-        .filter(uri -> S3Utils.isS3scheme(uri.getScheme()))
-        .map(S3Utils::extractBucketName)
-        .flatMap(Optional::stream)
+        .map(StorageUri::of)
+        .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
+        .map(StorageUri::authority)
+        .flatMap(Stream::ofNullable)
         .distinct()
         .map(
             bucket ->
@@ -125,7 +126,7 @@ abstract class IcebergS3SignParams {
                     S3Utils.asS3Location(request().uri(), bucket), Optional.of(bucket)))
         .filter(
             location ->
-                location.bucket().orElseThrow().equals(URI.create(location.uri()).getAuthority()))
+                location.bucket().orElseThrow().equals(StorageUri.of(location.uri()).authority()))
         .findFirst()
         .orElseGet(
             () -> new RequestedLocation(S3Utils.asS3Location(request().uri()), Optional.empty()));
