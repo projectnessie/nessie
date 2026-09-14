@@ -355,8 +355,6 @@ fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkMajorVersion = if (sparkScala[0][0].isDigit()) sparkScala[0] else "3.5"
   val scalaMajorVersion = sparkScala[1]
 
-  project.layout.buildDirectory.set(layout.buildDirectory.dir(scalaMajorVersion).get())
-
   return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
 }
 

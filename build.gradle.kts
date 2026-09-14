@@ -73,8 +73,28 @@ val checkNmcpAggregationSparkArtifacts =
     version.set(project.version.toString())
   }
 
+val checkNmcpAggregationPublishingRequirements =
+  tasks.register<CheckNmcpAggregationPublishingRequirements>(
+    "checkNmcpAggregationPublishingRequirements"
+  ) {
+    group = "Verification"
+    description =
+      "Checks that the NMCP aggregation zip satisfies Maven Central publishing requirements."
+
+    dependsOn("nmcpZipAggregation")
+    aggregationZip.set(layout.buildDirectory.file("nmcp/zip/aggregation.zip"))
+    artifactsRequiringClassifiers.set(listOf("nessie-gc-tool"))
+    version.set(project.version.toString())
+  }
+
 tasks.named("nmcpPublishAggregationToCentralPortal") {
   dependsOn(checkNmcpAggregationSparkArtifacts)
+  dependsOn(checkNmcpAggregationPublishingRequirements)
+}
+
+tasks.named("nmcpPublishAggregationToCentralPortalSnapshots") {
+  dependsOn(checkNmcpAggregationSparkArtifacts)
+  dependsOn(checkNmcpAggregationPublishingRequirements)
 }
 
 val buildToolIntegrationGradle =
@@ -251,6 +271,88 @@ abstract class CheckNmcpAggregationSparkArtifacts : DefaultTask() {
       Regex(
         Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
           """\d{8}\.\d{6}-\d+\.jar"""
+      )
+
+    return entry.startsWith(artifactDir) &&
+      (fileName == expectedReleaseFileName ||
+        (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+  }
+}
+
+abstract class CheckNmcpAggregationPublishingRequirements : DefaultTask() {
+  @get:InputFile abstract val aggregationZip: RegularFileProperty
+
+  @get:Input abstract val artifactsRequiringClassifiers: ListProperty<String>
+
+  @get:Input abstract val version: Property<String>
+
+  @TaskAction
+  fun checkAggregationZip() {
+    val resolvedVersion = version.get()
+
+    ZipFile(aggregationZip.get().asFile).use { zip ->
+      val entries = zip.entries().asSequence().toList()
+      val entryNames = entries.map { it.name }.toSet()
+      val rootPomDir = "org/projectnessie/nessie/nessie/$resolvedVersion/"
+      val rootPom = entries.singleOrNull {
+        it.name.startsWith(rootPomDir) && it.name.endsWith(".pom")
+      }
+
+      check(rootPom != null) {
+        "NMCP aggregation zip is missing the root POM for version $resolvedVersion"
+      }
+
+      val rootPomText = zip.getInputStream(rootPom).bufferedReader().use { it.readText() }
+      check(Regex("<description>\\s*[^<\\s]").containsMatchIn(rootPomText)) {
+        "NMCP aggregation root POM is missing the project description for version $resolvedVersion"
+      }
+
+      val missingClassifiedArtifacts =
+        artifactsRequiringClassifiers.get().mapNotNull { artifactId ->
+          val artifactDir =
+            entries
+              .asSequence()
+              .map { it.name }
+              .filter { it.endsWith(".pom") }
+              .map { it.substringBeforeLast('/') + "/" }
+              .singleOrNull {
+                it.removeSuffix("/").substringBeforeLast('/').substringAfterLast('/') == artifactId
+              }
+
+          if (artifactDir == null) {
+            "$artifactId (publication)"
+          } else {
+            val missing =
+              listOf("sources", "javadoc").filter { classifier ->
+                entryNames.none {
+                  isJar(it, artifactDir, artifactId, resolvedVersion, classifier)
+                }
+              }
+            if (missing.isEmpty()) null else "$artifactId (${missing.joinToString(", ")})"
+          }
+        }
+
+      check(missingClassifiedArtifacts.isEmpty()) {
+        "NMCP aggregation zip is missing classified artifacts for version $resolvedVersion: " +
+          missingClassifiedArtifacts.joinToString(", ")
+      }
+    }
+  }
+
+  private fun isJar(
+    entry: String,
+    artifactDir: String,
+    artifactId: String,
+    version: String,
+    classifier: String?,
+  ): Boolean {
+    val fileName = entry.substringAfterLast('/')
+    val classifierSuffix = classifier?.let { "-$it" }.orEmpty()
+    val expectedReleaseFileName = "$artifactId-$version$classifierSuffix.jar"
+    val expectedSnapshotFileName =
+      Regex(
+        Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+          """\d{8}\.\d{6}-\d+$classifierSuffix\.jar"""
       )
 
     return entry.startsWith(artifactDir) &&

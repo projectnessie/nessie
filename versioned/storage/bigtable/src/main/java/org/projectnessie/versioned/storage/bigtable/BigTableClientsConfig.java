@@ -86,19 +86,79 @@ public interface BigTableClientsConfig {
   /** Total timeout (including retries) for Bigtable API calls. */
   Optional<Duration> totalTimeout();
 
-  /** Minimum number of gRPC channels. Refer to Google docs for details. */
-  OptionalInt minChannelCount();
-
-  /** Maximum number of gRPC channels. Refer to Google docs for details. */
-  OptionalInt maxChannelCount();
-
-  /** Initial number of gRPC channels. Refer to Google docs for details */
+  /**
+   * Initial number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
+   * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
+   * #minChannelCount()} are what actually determine burst headroom.
+   *
+   * <p>When {@link #minChannelCount()} or {@link #maxChannelCount()} is configured such that the
+   * inherited value would fall outside that range, the inherited value is adjusted to fit.
+   */
   OptionalInt initialChannelCount();
 
-  /** Minimum number of RPCs per channel. Refer to Google docs for details. */
+  /**
+   * Minimum number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Channel pools resize at most once per minute and by at most two channels at a time. Dynamic
+   * resizing therefore cannot react to a burst shorter than a minute, so this setting and {@link
+   * #initialChannelCount()} are what actually determine burst headroom.
+   *
+   * <p>Note that setting this to the same value as {@link #maxChannelCount()} turns the channel
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>.
+   *
+   * <p>Note also that this must not exceed {@link #maxRpcsPerChannel()}, whose inherited value is
+   * typically much smaller than the maximum channel count; raising this above that threshold
+   * requires raising the threshold as well.
+   *
+   * <p>When this exceeds an inherited {@link #maxChannelCount()}, the latter is raised to match.
+   */
+  OptionalInt minChannelCount();
+
+  /**
+   * Maximum number of gRPC channels. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Note that setting this to the same value as {@link #minChannelCount()} turns the channel
+   * pool into a statically sized one, which <em>disables all dynamic resizing</em>.
+   *
+   * <p>When this is below an inherited {@link #minChannelCount()}, the latter is lowered to match.
+   */
+  OptionalInt maxChannelCount();
+
+  /**
+   * Minimum number of RPCs per channel, the threshold below which channels are removed from the
+   * pool. Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Note that with a value of {@code 0}, the pool only ever scales down after an interval in
+   * which no RPCs were outstanding at all.
+   *
+   * <p>When this exceeds an inherited {@link #maxRpcsPerChannel()}, the latter is raised to match.
+   */
   OptionalInt minRpcsPerChannel();
 
-  /** Maximum number of RPCs per channel. Refer to Google docs for details. */
+  /**
+   * Maximum number of RPCs per channel, the threshold above which channels are added to the pool.
+   * Refer to Google docs for details.
+   *
+   * <p>When unset, the value tuned by the Bigtable client library is used.
+   *
+   * <p>Note that gRPC starts queuing requests locally beyond 100 concurrent RPCs per channel, so
+   * this should be left well below that. Setting this to {@link Integer#MAX_VALUE} while {@link
+   * #minRpcsPerChannel()} is {@code 0} turns the channel pool into a statically sized one, which
+   * <em>disables all dynamic resizing</em>.
+   *
+   * <p>When this is below an inherited {@link #minRpcsPerChannel()}, the latter is lowered to
+   * match.
+   */
   OptionalInt maxRpcsPerChannel();
 
   /** Enables telemetry with OpenCensus. */

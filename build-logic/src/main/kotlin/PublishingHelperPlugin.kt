@@ -49,7 +49,12 @@ class PublishingHelperPlugin
 @Inject
 constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Plugin<Project> {
   override fun apply(project: Project): Unit = project.run {
-    extensions.create("publishingHelper", PublishingHelperExtension::class.java)
+    val publishingHelper =
+      extensions.create("publishingHelper", PublishingHelperExtension::class.java)
+
+    afterEvaluate {
+      description?.let { publishingHelper.mavenDescription.convention(it) }
+    }
 
     plugins.withType<MavenPublishPlugin>().configureEach {
       val publication =
@@ -58,7 +63,6 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
         ) {
           val publishingHelper = extensions.getByType<PublishingHelperExtension>()
           val projectName = project.name
-          val projectDescription = project.description
           val projectVersion = project.version.toString()
           val isRootProject = project == rootProject
           val parentGroup = project.parent?.group?.toString()
@@ -70,7 +74,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
 
           pom {
             name.set(publishingHelper.mavenName.orElse(projectName))
-            description.set(projectDescription)
+            description.set(publishingHelper.mavenDescription)
 
             if (isRootProject) {
               val repoUrl =
@@ -314,12 +318,12 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     }
     // Sonatype requires the javadoc and sources jar to be present, but the
     // Shadow extension does not publish those.
-    project.configurations.findByName("javadocElements")?.let {
-      component.addVariantsFromConfiguration(it) {}
-    }
-    project.configurations.findByName("sourcesElements")?.let {
-      component.addVariantsFromConfiguration(it) {}
-    }
+    // Those configurations can be created after the Shadow plugin has been applied.
+    project.configurations
+      .matching { it.name == "javadocElements" || it.name == "sourcesElements" }
+      .configureEach {
+        component.addVariantsFromConfiguration(this) {}
+      }
     mavenPublication.from(component)
 
     // This a replacement to add dependencies to the pom, if necessary. Equivalent to
@@ -348,6 +352,7 @@ private data class PomDependency(val groupId: String?, val artifactId: String, v
 
 abstract class PublishingHelperExtension {
   abstract val mavenName: Property<String>
+  abstract val mavenDescription: Property<String>
   abstract val nessieRepoName: Property<String>
   abstract val inceptionYear: Property<String>
 }
