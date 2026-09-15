@@ -14,6 +14,9 @@ Functionality supported:
 * Delete content objects
 * Create missing namespaces
 
+Options that specify the number of commits, tables, or copies require a value of at least 1. Invalid
+values are rejected before the tool connects to Nessie.
+
 ```
 $ java -jar nessie-content-generator-0.58.1.jar -h
 Usage: nessie-content-generator [-hV] [-u=<uri>] [COMMAND]
