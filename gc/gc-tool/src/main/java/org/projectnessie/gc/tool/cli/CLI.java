@@ -26,6 +26,7 @@ import org.projectnessie.gc.tool.cli.commands.DeferredDeleteFiles;
 import org.projectnessie.gc.tool.cli.commands.DeleteLiveSets;
 import org.projectnessie.gc.tool.cli.commands.JdbcCreateSchema;
 import org.projectnessie.gc.tool.cli.commands.JdbcDumpSchema;
+import org.projectnessie.gc.tool.cli.commands.JdbcTruncateTables;
 import org.projectnessie.gc.tool.cli.commands.ListDeferredDeletions;
 import org.projectnessie.gc.tool.cli.commands.ListLiveSets;
 import org.projectnessie.gc.tool.cli.commands.MarkAndSweep;
@@ -57,7 +58,8 @@ import picocli.CommandLine.HelpCommand;
       JdbcDumpSchema.class,
       JdbcCreateSchema.class,
       CompletionScript.class,
-      ThirdPartyLicenses.class
+      ThirdPartyLicenses.class,
+      JdbcTruncateTables.class
     })
 public class CLI {
 
