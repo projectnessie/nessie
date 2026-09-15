@@ -101,6 +101,14 @@ public final class S3Utils {
   }
 
   public static String asS3Location(String uri) {
+    return asS3Location(uri, Optional.empty());
+  }
+
+  public static String asS3Location(String uri, String bucketHint) {
+    return asS3Location(uri, Optional.of(requireNonNull(bucketHint, "Bucket hint missing")));
+  }
+
+  private static String asS3Location(String uri, Optional<String> bucketHint) {
     URI httpUri = URI.create(uri);
     checkArgument(httpUri.getScheme() != null, "No scheme in URI: '%s'", httpUri);
     checkArgument(httpUri.getHost() != null, "No host in URI: '%s'", httpUri);
@@ -111,9 +119,15 @@ public final class S3Utils {
     String bucket;
     String key;
     Matcher matcher = S3_HOST_PATTERN.matcher(httpUri.getHost());
+    Optional<String> customVirtualHostedBucket =
+        bucketHint.filter(hint -> httpUri.getHost().startsWith(hint + "."));
     if (matcher.matches() && matcher.group(2) != null) {
       // virtual-hosted style
       bucket = matcher.group(2);
+      key = httpUri.getPath();
+    } else if (customVirtualHostedBucket.isPresent()) {
+      // virtual-hosted style with a caller-provided bucket for custom S3 endpoints
+      bucket = customVirtualHostedBucket.get();
       key = httpUri.getPath();
     } else {
       // path-style access style
