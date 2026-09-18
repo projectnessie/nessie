@@ -180,8 +180,9 @@ public interface QuarkusStoreConfig extends StoreConfig {
   OptionalDouble cacheCapacityOvershoot();
 
   @WithName(CONFIG_REFERENCE_CACHE_TTL)
+  @WithDefault(DEFAULT_REFERENCE_CACHE_TTL)
   @Override
-  Optional<Duration> referenceCacheTtl();
+  Duration referenceCacheTtl();
 
   @WithName(CONFIG_REFERENCE_NEGATIVE_CACHE_TTL)
   @Override
