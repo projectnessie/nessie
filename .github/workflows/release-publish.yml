@@ -55,7 +55,7 @@ jobs:
     outputs:
       release-version: ${{ steps.get_version.outputs.release-version }}
       git-tag: ${{ steps.get_version.outputs.git-tag }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 10
     steps:
@@ -81,7 +81,7 @@ jobs:
 
   publish-maven-central:
     name: Publish to Maven Central
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 240
     needs:
@@ -156,7 +156,7 @@ jobs:
 
   publish-images:
     name: Publish images
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 60
     needs:
@@ -230,7 +230,7 @@ jobs:
 
   publish-helm:
     name: Publish Helm Chart
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 60
     needs:
@@ -292,7 +292,7 @@ jobs:
           gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --input put_body
 
   publish-openapi:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: release
     needs:
@@ -366,7 +366,7 @@ jobs:
 
 
   create-github-release:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: release
     needs:
