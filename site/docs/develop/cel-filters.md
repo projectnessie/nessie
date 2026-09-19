@@ -51,18 +51,40 @@ entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
 entry.namespace.startsWith('some.name.space') && entry.contentType in ['ICEBERG_TABLE','DELTA_LAKE_TABLE']
 size(entry.keyElements) == 4
 entry.encodedKey.startsWith('foo.')
+entry.encodedKey == 'foo' || entry.encodedKey.startsWith('foo.')
+entry.contentType == 'NAMESPACE' && size(entry.keyElements) == 2 && entry.encodedKey.startsWith('foo.')
 ```
+
+`encodedKey` is the dotted path of the content key. A prefix match with a
+trailing `.` selects children; `==` plus that prefix also keeps the namespace
+entry itself.
 
 ## Commit log
 
 `GET /api/v2/trees/{ref}/history`
 
-Variables:
+The expression is evaluated against `commit` and `operations`:
 
-* `commit` with `author` (string), `committer` (string), `commitTime` (timestamp),
-  `hash` (string), `message` (string), `properties` (map)
-* `operations` (list). Each operation has `type` (`PUT` or `DELETE`), `key`,
-  `encodedKey`, `keyElements`, `namespace`, `namespaceElements`, `name`
+| Field | Type | Notes |
+| --- | --- | --- |
+| `commit.author` | string | |
+| `commit.committer` | string | |
+| `commit.commitTime` | timestamp | |
+| `commit.hash` | string | |
+| `commit.message` | string | |
+| `commit.properties` | map | |
+
+`operations` is a list. Each element has:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `type` | string | `PUT` or `DELETE` |
+| `key` | string | Full key |
+| `encodedKey` | string | Dotted path |
+| `keyElements` | list of strings | |
+| `namespace` | string | |
+| `namespaceElements` | list of strings | |
+| `name` | string | Simple table name |
 
 `operations` is only populated when `fetch=ALL`. Without that, an expression
 that inspects `operations` never sees any ops.
@@ -85,12 +107,14 @@ Filtered commits disappear from the log. You can still tell a gap by comparing
 
 `GET /api/v2/trees/`
 
-Variables bound by the server:
+The expression is evaluated against:
 
-* `ref` — `name`, `hash`, and metadata on the reference object
-* `refMeta` — `ReferenceMetadata` (never null, may be empty). OpenAPI calls this `metadata`.
-* `commit` — shortcut to the HEAD commit meta (never null, may be empty)
-* `refType` — `BRANCH` or `TAG`
+| Field | Type | Notes |
+| --- | --- | --- |
+| `ref` | object | `name`, `hash`, and metadata on the reference |
+| `refMeta` | object | `ReferenceMetadata` (never null, may be empty) |
+| `commit` | object | HEAD commit meta (never null, may be empty) |
+| `refType` | string | `BRANCH` or `TAG` |
 
 `refMeta` and `commit` are only useful when `fetch=ALL`.
 
@@ -108,20 +132,23 @@ commit.message == 'invent awesome things'
 
 The expression is evaluated against `key` (a content-key object, not `entry`):
 
-| Field | Type |
-| --- | --- |
-| `name` | string |
-| `namespace` | string |
-| `key` | string |
-| `encodedKey` | string |
-| `keyElements` | list of strings |
-| `namespaceElements` | list of strings |
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | Simple table name |
+| `namespace` | string | Parent namespace, dotted path |
+| `key` | string | Full key |
+| `encodedKey` | string | Dotted path |
+| `keyElements` | list of strings | |
+| `namespaceElements` | list of strings | |
 
-Examples: `key.namespace=='foo'` or `key.name=='table'`.
+Examples:
+
+```
+key.namespace=='foo'
+key.name=='table'
+```
 
 ## Tips
 
-* Start from the OpenAPI examples on the `filter` parameter; those are the
-  expressions the tests use.
 * `startsWith` / `in` / `exists` / `size` are the usual operators. `==` is exact match.
 * Namespace elements in keys are joined with `.` in `encodedKey` and `namespace`.
