@@ -1,6 +1,6 @@
 {{/**
 
-  Copyright (C) 2025 Dremio
+  Copyright (C) 2026 Dremio
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -103,8 +103,10 @@ spec:
               env:
                 {{- tpl (toYaml .) $ | nindent 16 }}
               {{- end }}
+              {{- with .Values.gc.resources }}
               resources:
-                {{- tpl (toYaml .Values.gc.resources) . | nindent 16 }}
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
           {{- with .Values.gc.nodeSelector }}
           nodeSelector:
             {{- tpl (toYaml .) $ | nindent 12 }}
