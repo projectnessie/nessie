@@ -227,7 +227,11 @@ lookup failures are fail-closed conditions. `(documented)`
 S3 request signing may recognize custom virtual-host endpoints that do not use AWS-style `s3`
 hostnames. This recognition is anchored to a bucket derived from the signer-authorized warehouse,
 write, or read locations; it does not widen the table paths permitted by current-location,
-historical-location, metadata-file, or object-storage-layout checks. `(documented)`
+historical-location, metadata-file, or object-storage-layout checks. When more than one of those
+buckets matches the request host, signing is rejected. Visit order must not choose among
+overlapping names such as `foo` and `foo.bar`: endpoint and path-style settings are applied only
+after a single bucket authority is selected, so an ambiguous match fails closed instead of signing
+with another bucket's credentials. `(documented)`
 
 Object-store credentials or temporary access material exposed through catalog features are in scope only
 for configured credential-vending or request-signing modes. Operators are responsible for cloud IAM
