@@ -112,24 +112,52 @@ abstract class IcebergS3SignParams {
 
   @Value.Lazy
   RequestedLocation requestedLocation() {
-    return Stream.concat(
-            Stream.of(warehouseLocation()),
-            Stream.concat(writeLocations().stream(), readLocations().stream()))
-        .map(StorageUri::of)
-        .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
-        .map(StorageUri::authority)
-        .flatMap(Stream::ofNullable)
-        .distinct()
-        .map(
-            bucket ->
-                new RequestedLocation(
-                    S3Utils.asS3Location(request().uri(), bucket), Optional.of(bucket)))
-        .filter(
-            location ->
-                location.bucket().orElseThrow().equals(StorageUri.of(location.uri()).authority()))
+    // Reject when more than one authorized bucket matches. findFirst() is ambiguous for
+    // overlapping names: warehouse "foo" and historical bucket "foo.bar" both match host
+    // "foo.bar.obs.example.com", and the warehouse is visited first, so the path is authorized
+    // and credentials are selected as "foo" while the request is addressed to "foo.bar".
+    // Endpoint and path-style access cannot break the tie here. S3Options resolves those only
+    // after a single bucket is known (resolveOptionsForUri requires an exact authority match,
+    // the same way clients are configured). Guessing either candidate would sign with the wrong
+    // bucket, so fail closed instead.
+    List<RequestedLocation> matches =
+        Stream.concat(
+                Stream.of(warehouseLocation()),
+                Stream.concat(writeLocations().stream(), readLocations().stream()))
+            .map(StorageUri::of)
+            .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
+            .map(StorageUri::authority)
+            .flatMap(Stream::ofNullable)
+            .distinct()
+            .map(this::matchRequestedBucket)
+            .flatMap(Optional::stream)
+            .toList();
+    if (matches.size() > 1) {
+      throw ambiguousBucket(matches);
+    }
+    return matches.stream()
         .findFirst()
         .orElseGet(
             () -> new RequestedLocation(S3Utils.asS3Location(request().uri()), Optional.empty()));
+  }
+
+  /**
+   * Interprets the request URI as an S3 location using {@code bucket} as the virtual-host hint. A
+   * hint that does not reproduce the same bucket, or that cannot be applied to this URI, is not a
+   * match. Callers must consider every candidate; a later hint can throw when the path is not a
+   * valid path-style location even though an earlier hint already matched.
+   */
+  private Optional<RequestedLocation> matchRequestedBucket(String bucket) {
+    String location;
+    try {
+      location = S3Utils.asS3Location(request().uri(), bucket);
+    } catch (IllegalArgumentException ignored) {
+      return Optional.empty();
+    }
+    if (!bucket.equals(StorageUri.of(location).authority())) {
+      return Optional.empty();
+    }
+    return Optional.of(new RequestedLocation(location, Optional.of(bucket)));
   }
 
   record RequestedLocation(String uri, Optional<String> bucket) {}
@@ -316,6 +344,30 @@ abstract class IcebergS3SignParams {
     SigningResponse signed = signer().sign(signingRequest);
 
     return icebergS3SignResponse(signed.uri().toString(), signed.headers());
+  }
+
+  private IcebergException ambiguousBucket(List<RequestedLocation> matches) {
+    String requestUri = request().uri();
+    IcebergException exception =
+        new IcebergException(
+            icebergError(
+                Status.FORBIDDEN.getStatusCode(),
+                "NotAuthorizedException",
+                "URI not allowed for signing: " + requestUri,
+                List.of()));
+    // Do not call requestedS3Uri() here: that re-enters requestedLocation().
+    LOGGER.warn(
+        "Ambiguous signing request; buckets {} all match {}: key: {}, ref: {}, request method:"
+            + " {}, warehouse: {}, writeable locations: {}, readable locations: {}",
+        matches.stream().map(location -> location.bucket().orElseThrow()).toList(),
+        requestUri,
+        key(),
+        ref(),
+        request().method(),
+        warehouseLocation(),
+        writeLocations(),
+        readLocations());
+    return exception;
   }
 
   private IcebergException unauthorized() {

@@ -484,6 +484,58 @@ class TestIcebergS3SignParams {
     expectFailure(response, "URI not allowed for signing: " + metadataJsonUri);
   }
 
+  @Test
+  void verifyAndSignFailureOverlappingCurrentAndHistoricalBuckets() throws Exception {
+    String warehouse = "s3://foo/warehouse/";
+    String currentLocation = warehouse + locationPart;
+    String historicalLocation = "s3://foo.bar/warehouse/" + locationPart;
+    String requestUri =
+        "https://foo.bar.obs.example.com/warehouse/" + locationPart + "/data/file1.parquet";
+
+    Content content = IcebergTable.of(currentLocation + "/metadata/metadata.json", 1, 1, 1, 1);
+    NessieTableSnapshot snapshot =
+        NessieTableSnapshot.builder()
+            .id(NessieId.randomNessieId())
+            .entity(nessieTable)
+            .icebergLocation(currentLocation)
+            .addAdditionalKnownLocations(historicalLocation)
+            .lastUpdatedTimestamp(Instant.now())
+            .build();
+    SnapshotResponse response =
+        SnapshotResponse.forEntity(
+            Branch.of("main", "12345678"),
+            content,
+            "metadata.json",
+            "application/json",
+            key,
+            content,
+            snapshot);
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(response));
+
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .method("GET")
+                    .uri(requestUri)
+                    .build())
+            .warehouseLocation(warehouse)
+            .writeLocations(List.of(currentLocation))
+            .readLocations(List.of(historicalLocation))
+            .build();
+
+    // foo.bar.obs.example.com matches both warehouse bucket "foo" and historical bucket
+    // "foo.bar". Resolution must not select "foo" (and must not sign with that bucket).
+    soft.assertThatThrownBy(icebergSigner::requestedBucket)
+        .isInstanceOf(IcebergException.class)
+        .hasMessage("URI not allowed for signing: " + requestUri);
+    expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + requestUri);
+    verifyNoInteractions(signer);
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"GET", "HEAD", "OPTIONS", "TRACE"})
   void verifyAndSignSuccessReadAncientLocation(String method) throws Exception {
