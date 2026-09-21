@@ -20,8 +20,8 @@
 {{- if not .Values.gc.schedule -}}
 {{- fail "gc.schedule is required when gc.enabled is true" -}}
 {{- end -}}
-{{- if and (not .Values.gc.command) (not .Values.gc.args) (not .Values.gc.extraArgs) -}}
-{{- fail "gc.args (or gc.command/gc.extraArgs) must specify the GC subcommand to run when gc.enabled is true" -}}
+{{- if and (not .Values.gc.command) (not .Values.gc.args) -}}
+{{- fail "gc.args (or gc.command) must specify the GC subcommand to run when gc.enabled is true" -}}
 {{- end -}}
 apiVersion: batch/v1
 kind: CronJob
@@ -90,12 +90,9 @@ spec:
               command:
                 {{- tpl (toYaml .) $ | nindent 16 }}
               {{- end }}
-              {{- if or .Values.gc.args .Values.gc.extraArgs }}
+              {{- if .Values.gc.args }}
               args:
                 {{- with .Values.gc.args }}
-                {{- tpl (toYaml .) $ | nindent 16 }}
-                {{- end }}
-                {{- with .Values.gc.extraArgs }}
                 {{- tpl (toYaml .) $ | nindent 16 }}
                 {{- end }}
               {{- end }}

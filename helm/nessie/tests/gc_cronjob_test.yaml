@@ -88,8 +88,7 @@ tests:
         enabled: true
         concurrencyPolicy: Replace
         serviceAccountName: nessie-gc-sa
-        args: [ "gc" ]
-        extraArgs: [ "--inmemory" ]
+        args: [ "gc", "--inmemory" ]
         env:
           - name: NESSIE_URI
             value: http://nessie:19120/api/v2
@@ -128,4 +127,4 @@ tests:
         enabled: true
     asserts:
       - failedTemplate:
-          errorMessage: gc.args (or gc.command/gc.extraArgs) must specify the GC subcommand to run when gc.enabled is true
+          errorMessage: gc.args (or gc.command) must specify the GC subcommand to run when gc.enabled is true

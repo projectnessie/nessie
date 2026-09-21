@@ -1132,7 +1132,7 @@ podDisruptionBudget:
 # -- Optional Nessie Garbage Collection (GC) CronJob. When enabled, the chart renders a Kubernetes
 # CronJob that runs the Nessie GC tool image on a schedule. The chart only provides the schedulable
 # scaffolding; configure the GC tool's behavior (version store connection, command, options) via
-# `gc.args`, `gc.extraArgs`, and `gc.env`. See https://projectnessie.org/nessie-latest/gc/ for the
+# `gc.args` and `gc.env`. See https://projectnessie.org/nessie-latest/gc/ for the
 # GC tool documentation.
 gc:
   # -- Whether to enable the Nessie GC CronJob.
@@ -1149,12 +1149,9 @@ gc:
   # -- The entrypoint command for the GC container. Leave empty to use the image's default entrypoint.
   command: []
   # -- Arguments for the GC container, replacing the image's default arguments. Use this to invoke the
-  # desired GC subcommand (for example `gc`) together with its options. At least one of `gc.command`,
-  # `gc.args`, or `gc.extraArgs` is required when `gc.enabled` is true.
+  # desired GC subcommand (for example `gc`) together with its options. At least one of `gc.command`
+  # or `gc.args` is required when `gc.enabled` is true.
   args: []
-  # -- Additional arguments appended after `gc.args`. Useful for adding flags without redefining the
-  # full argument list.
-  extraArgs: []
   # -- Environment variables to set in the GC container. Use this to configure the version store
   # connection and other GC settings.
   env: []
