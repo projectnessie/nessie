@@ -8,13 +8,32 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+- BigTable: the gRPC channel pool is no longer capped at a single channel by default. Deployments
+  that relied on the previous (unintended) behavior and have sized their BigTable instance around
+  one connection per Nessie instance may see more concurrent connections to BigTable. The previous
+  behavior can be restored by setting
+  `nessie.version.store.persist.bigtable.initial-channel-count=1` together with
+  `nessie.version.store.persist.bigtable.max-channel-count=1`, although this is not recommended.
+
 ### Upgrade notes
 
 ### Breaking changes
 
 ### New Features
 
+- Helm chart: the BigTable gRPC channel pool settings can now be configured via the new
+  `bigtable.channelPool` values, instead of having to go through `advancedConfig`.
+
 ### Changes
+
+- BigTable: unset channel pool settings are no longer taken from GAX's generic defaults, but from
+  the settings tuned by the BigTable client library. The GAX defaults
+  (`min-rpcs-per-channel=0` and `max-rpcs-per-channel=Integer.MAX_VALUE`) made the channel pool
+  statically sized, which prevented gax from ever resizing it and pinned it to a single channel for
+  the lifetime of the client. Since gRPC starts queuing requests locally beyond 100 concurrent RPCs
+  per channel, this silently capped BigTable throughput per Nessie instance and surfaced as
+  `DEADLINE_EXCEEDED` errors under load, once the local queuing had exhausted a request's total
+  timeout.
 
 ### Deprecations
 
