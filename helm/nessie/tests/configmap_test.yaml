@@ -44,3 +44,57 @@ tests:
           path: metadata.annotations
           value:
             foo: configmap-nessie-nessie-ns
+  - it: should not set bigtable channel pool options by default
+    set:
+      versionStoreType: BIGTABLE
+    asserts:
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: bigtable\.(initial|min|max)-(channel-count|rpcs-per-channel)
+  - it: should set bigtable channel pool options if defined
+    set:
+      versionStoreType: BIGTABLE
+      bigtable:
+        channelPool:
+          initialChannelCount: 10
+          minChannelCount: 10
+          maxChannelCount: 50
+          minRpcsPerChannel: 1
+          maxRpcsPerChannel: 25
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.initial-channel-count=10
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.min-channel-count=10
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.max-channel-count=50
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.min-rpcs-per-channel=1
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.max-rpcs-per-channel=25
+  # Zero is a meaningful value for min-rpcs-per-channel, so it must not be dropped as if unset.
+  - it: should set bigtable channel pool options that are zero
+    set:
+      versionStoreType: BIGTABLE
+      bigtable:
+        channelPool:
+          minRpcsPerChannel: 0
+    asserts:
+      - matchRegex:
+          path: data["application.properties"]
+          pattern: nessie\.version\.store\.persist\.bigtable\.min-rpcs-per-channel=0
+  - it: should not set bigtable channel pool options for other version store types
+    set:
+      versionStoreType: IN_MEMORY
+      bigtable:
+        channelPool:
+          maxRpcsPerChannel: 25
+    asserts:
+      - notMatchRegex:
+          path: data["application.properties"]
+          pattern: bigtable\.max-rpcs-per-channel
