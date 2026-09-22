@@ -21,6 +21,19 @@
 
 # When this workflow pushes the release tag (e.g. `nessie-0.5.1`), the `release-publish.yml`
 # workflow publishes the release artifacts.
+#
+# Release scenarios:
+# * Mainline: leave `releaseFromBranch` empty (or use `main`) and select a normal bump type.
+#   The tag is a normal release, publishes the `latest` images, and becomes the GitHub latest.
+# * Maintenance patch: select a non-main maintenance branch, normally named `release-*`, and use
+#   `patch`. From `x.y.z-SNAPSHOT`, this creates the normal `x.y.z` release. `ci.yml` runs CI for
+#   `release-*` branches. It does not move current image, documentation, or GitHub-release pointers.
+# * Qualified maintenance fix: select a non-main maintenance branch and use `fix<N>`. From
+#   `x.y.z-SNAPSHOT`, this creates `x.y.z-fix<N>`, a GitHub prerelease without current pointers.
+#
+# For a maintenance release with another numeric base, commit the desired `<base>-SNAPSHOT` to the
+# maintenance branch before dispatching this workflow. The release commit records the derived mode
+# in `release-metadata.properties`; the tag-triggered publisher uses that metadata, not its branch.
 
 # Projectnessie really prefers a linear git history - aka no merges. PRs must not be merged
 # while the release workflow runs. In case the git history would not be linear, this workflow will
@@ -37,7 +50,7 @@ on:
   workflow_dispatch:
     inputs:
       releaseFromBranch:
-        description: 'The branch name the release from, leave empty to release from latest commit on main.'
+        description: 'The branch to release from. Leave empty for mainline release from main; every other branch is a maintenance release.'
         required: false
       bumpType:
         description: 'Version transition: `patch`, `minor`, `major`, `none`, or `fix<N>` for a qualified release. Default is `minor`.'
@@ -83,8 +96,22 @@ jobs:
         cache-disabled: true
         validate-wrappers: false
 
+    - name: Determine release policy
+      run: |
+        if [[ "${RELEASE_FROM}" == main ]] ; then
+          echo "RELEASE_MODE=mainline" >> ${GITHUB_ENV}
+        else
+          echo "RELEASE_MODE=maintenance" >> ${GITHUB_ENV}
+        fi
+
+    - name: Validate release policy
+      run: bash tools/releases/release-metadata.sh validate-create-input "${RELEASE_MODE}" "${BUMP_TYPE}"
+
     - name: Bump to release version
       run: ./gradlew :bumpVersion --bumpType "${BUMP_TYPE}" --bumpToRelease
+
+    - name: Record release metadata
+      run: bash tools/releases/release-metadata.sh write release-metadata.properties "${RELEASE_MODE}"
 
     - name: Get release version
       run: |
@@ -106,11 +133,13 @@ jobs:
         | Git tag name            | \`nessie-${RELEASE_VERSION}\` | 
         | Previous Git tag        | \`${LAST_TAG}\`               | 
         | Release from branch     | ${RELEASE_FROM}               | 
+        | Release mode            | ${RELEASE_MODE}               |
         | Bump type               | ${BUMP_TYPE}                  |
         | Before release Git HEAD | \`$(git rev-parse HEAD)\`     |
         !
 
     - name: Update .md files referencing latest Nessie version
+      if: env.RELEASE_MODE == 'mainline'
       run: |
         LAST_VERSION="${LAST_TAG#nessie-}"
         LAST_VERSION_PATTERN="$(echo ${LAST_VERSION} | sed 's/\([^.]*\)[.]\([^.]*\)[.].*/\1\\.\2/')\\."
@@ -122,6 +151,7 @@ jobs:
     # Two steps that verify that the README.md, SECURITY.md and server-upgrade.md files contain
     # information about the release, ignoring the patch version
     - name: Check release version number in text files
+      if: env.RELEASE_MODE == 'mainline'
       run: |
         FAILS=""
         # version pattern without patch version
@@ -138,6 +168,7 @@ jobs:
       run: ./gradlew :patchChangelog
 
     - name: Update site
+      if: env.RELEASE_MODE == 'mainline'
       shell: bash
       working-directory: site
       run: |
@@ -197,6 +228,7 @@ jobs:
         | Git tag name           | \`${GIT_TAG}\`\           | 
         | Previous Git tag       | \`${LAST_TAG}\`           | 
         | Release from branch    | ${RELEASE_FROM}           | 
+        | Release mode           | ${RELEASE_MODE}           |
         | Bump type              | ${BUMP_TYPE}              |
         | Release Git HEAD       | \`$(git rev-parse HEAD)\` |
         !
@@ -232,7 +264,9 @@ jobs:
     # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
     - name: Push tag + branch
       run: |
-        # Push changes to docs to site-docs branch
-        (cd site/build/site-docs ; git push --no-verify origin HEAD:site-docs)
+        if [[ "${RELEASE_MODE}" == mainline ]] ; then
+          # Push changes to docs to site-docs branch
+          (cd site/build/site-docs ; git push --no-verify origin HEAD:site-docs)
+        fi
 
         git push --no-verify origin HEAD:${RELEASE_FROM} ${GIT_TAG}
