@@ -42,7 +42,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
     project.tasks.register<BumpVersionTask>("bumpVersion") {
       group = "Release Support"
       description =
-        "Bumps the version to the next patch/minor/major version as a snapshot, see ' ./gradlew help --task :bumpVersion '."
+        "Transitions the version to a release or next development version, see ' ./gradlew help --task :bumpVersion '."
       versionFile.set(project.extensions.getByType(ReleaseSupport::class.java).versionFile)
     }
   }
@@ -77,12 +77,16 @@ class ReleaseSupportPlugin : Plugin<Project> {
     @Internal
     var bumpToRelease: Boolean = false
 
+    private var bumpType: String = "none"
+
     @Option(
       option = "bumpType",
-      description = "Defines which part of the version should be bumped, defaults to 'none'.",
+      description =
+        "Defines the version transition: none, patch, minor, major, or fix<N>; defaults to none.",
     )
-    @Internal
-    var bumpType: BumpType = BumpType.none
+    fun setBumpType(value: String) {
+      bumpType = value
+    }
 
     @TaskAction
     fun bumpVersion() {
@@ -91,15 +95,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
 
       logger.lifecycle("Current version is $currentVersion.")
 
-      val nextVersion =
-        when (bumpType) {
-          BumpType.none -> currentVersion
-          BumpType.patch -> currentVersion.bumpPatch()
-          BumpType.minor -> currentVersion.bumpMinor()
-          BumpType.major -> currentVersion.bumpMajor()
-        }
-
-      val finalVersion = if (bumpToRelease) nextVersion.asRelease() else nextVersion.asSnapshot()
+      val finalVersion = ReleaseVersionTransition.apply(currentVersion, bumpType, bumpToRelease)
 
       if (finalVersion < currentVersion) {
         throw GradleException(
@@ -115,13 +111,67 @@ class ReleaseSupportPlugin : Plugin<Project> {
       }
     }
   }
+}
 
-  @Suppress("EnumEntryName")
-  enum class BumpType {
-    // lower-case, used as command line option values
-    none,
-    patch,
-    minor,
-    major,
+internal object ReleaseVersionTransition {
+  private val fixQualifier = Regex("fix[1-9][0-9]*")
+
+  fun apply(currentVersion: VersionTuple, bumpType: String, bumpToRelease: Boolean): VersionTuple {
+    val transition = parseBumpType(bumpType)
+    requireSupportedPrerelease(currentVersion)
+
+    if (transition is BumpType.Fix) {
+      require(bumpToRelease) { "A fix<N> bump type requires --bumpToRelease" }
+      require(currentVersion.snapshot) {
+        "A fix<N> bump type requires a -SNAPSHOT source version, but was $currentVersion"
+      }
+      return currentVersion.withPrerelease(transition.qualifier)
+    }
+
+    val nextVersion =
+      when (transition) {
+        BumpType.None -> currentVersion
+        BumpType.Patch -> if (bumpToRelease) currentVersion else currentVersion.bumpPatch()
+        BumpType.Minor -> currentVersion.bumpMinor()
+        BumpType.Major -> currentVersion.bumpMajor()
+        is BumpType.Fix -> error("Handled above")
+      }
+
+    return if (bumpToRelease) nextVersion.asRelease() else nextVersion.asSnapshot()
+  }
+
+  private fun parseBumpType(value: String): BumpType =
+    when (value) {
+      "none" -> BumpType.None
+      "patch" -> BumpType.Patch
+      "minor" -> BumpType.Minor
+      "major" -> BumpType.Major
+      else ->
+        if (fixQualifier.matches(value)) {
+          BumpType.Fix(value)
+        } else {
+          throw IllegalArgumentException(
+            "Unsupported bump type '$value'; expected none, patch, minor, major, or fix<N>"
+          )
+        }
+    }
+
+  private fun requireSupportedPrerelease(version: VersionTuple) {
+    val prerelease = version.prerelease
+    require(prerelease == null || prerelease == "SNAPSHOT" || fixQualifier.matches(prerelease)) {
+      "Unsupported prerelease '$prerelease' in version $version"
+    }
+  }
+
+  private sealed class BumpType {
+    data object None : BumpType()
+
+    data object Patch : BumpType()
+
+    data object Minor : BumpType()
+
+    data object Major : BumpType()
+
+    data class Fix(val qualifier: String) : BumpType()
   }
 }
