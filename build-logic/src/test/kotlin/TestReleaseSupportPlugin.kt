@@ -109,15 +109,15 @@ class TestReleaseSupportPlugin {
     assertThat(Files.readString(versionFile)).isEqualTo("1.2.3-fix1")
   }
 
-  private fun bumpTask(
-    projectDir: Path,
-    versionFile: Path,
-  ): ReleaseSupportPlugin.BumpVersionTask {
+  private fun bumpTask(projectDir: Path, versionFile: Path): ReleaseSupportPlugin.BumpVersionTask {
     val project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build()
     project.pluginManager.apply(ReleaseSupportPlugin::class.java)
+    project.extensions
+      .getByType(ReleaseSupportPlugin.ReleaseSupport::class.java)
+      .versionFile
+      .set(versionFile.toFile())
     return project.tasks
       .named("bumpVersion", ReleaseSupportPlugin.BumpVersionTask::class.java)
       .get()
-      .also { it.versionFile.set(versionFile.toFile()) }
   }
 }
