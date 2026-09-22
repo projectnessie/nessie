@@ -8,16 +8,30 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Highlights
 
+### Upgrade notes
+
+### Breaking changes
+
+### New Features
+
+### Changes
+
+### Deprecations
+
+### Fixes
+
+### Commits
+
+## [0.106.2] Release (2026-09-22)
+
+### Highlights
+
 - BigTable: the gRPC channel pool is no longer capped at a single channel by default. Deployments
   that relied on the previous (unintended) behavior and have sized their BigTable instance around
   one connection per Nessie instance may see more concurrent connections to BigTable. The previous
   behavior can be restored by setting
   `nessie.version.store.persist.bigtable.initial-channel-count=1` together with
   `nessie.version.store.persist.bigtable.max-channel-count=1`, although this is not recommended.
-
-### Upgrade notes
-
-### Breaking changes
 
 ### New Features
 
@@ -34,12 +48,6 @@ as necessary. Empty sections will not end in the release notes.
   per channel, this silently capped BigTable throughput per Nessie instance and surfaced as
   `DEADLINE_EXCEEDED` errors under load, once the local queuing had exhausted a request's total
   timeout.
-
-### Deprecations
-
-### Fixes
-
-### Commits
 
 ## [0.106.0] Release (2025-12-05)
 
@@ -1196,7 +1204,8 @@ as necessary. Empty sections will not end in the release notes.
 - Tests: Make `ITCassandraBackendFactory` less flaky (#7186)
 - IntelliJ: Exclude some more directories from indexing (#7181)
 
-[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...HEAD
+[Unreleased]: https://github.com/projectnessie/nessie/compare/nessie-0.106.2...HEAD
+[0.106.2]: https://github.com/projectnessie/nessie/compare/nessie-0.106.0...nessie-0.106.2
 [0.106.0]: https://github.com/projectnessie/nessie/compare/nessie-0.105.7...nessie-0.106.0
 [0.105.7]: https://github.com/projectnessie/nessie/compare/nessie-0.105.6...nessie-0.105.7
 [0.105.6]: https://github.com/projectnessie/nessie/compare/nessie-0.105.3...nessie-0.105.6
