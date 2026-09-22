@@ -55,10 +55,19 @@ jobs:
     outputs:
       release-version: ${{ steps.get_version.outputs.release-version }}
       git-tag: ${{ steps.get_version.outputs.git-tag }}
+      release-mode: ${{ steps.get_release_mode.outputs.release-mode }}
     runs-on: ubuntu-24.04
     environment: release
     timeout-minutes: 10
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ github.event_name == 'push' }}
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        with:
+          ref: refs/tags/${{ github.event.inputs.releaseTag }}
       # GH doesn't provide just the tag name, so this step strips `/refs/tags/nessie-` from `GITHUB_REF`
       # and provides the outputs for the Git tag and the release-version derived from it, in case of a manual run,
       # uses the input `releaseTag` as the input tag name.
@@ -78,6 +87,13 @@ jobs:
             echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
             exit 1
           fi
+
+      - name: Read release mode
+        id: get_release_mode
+        run: |
+          RELEASE_MODE="$(bash tools/releases/release-metadata.sh read release-metadata.properties)"
+          bash tools/releases/release-metadata.sh validate-version "${RELEASE_MODE}" "${{ steps.get_version.outputs.release-version }}"
+          echo "release-mode=${RELEASE_MODE}" >> ${GITHUB_OUTPUT}
 
   publish-maven-central:
     name: Publish to Maven Central
@@ -161,6 +177,8 @@ jobs:
     timeout-minutes: 60
     needs:
       - prepare
+    env:
+      RELEASE_MODE: ${{needs.prepare.outputs.release-mode}}
     steps:
       ### BEGIN runner setup
       - name: Checkout
@@ -188,34 +206,46 @@ jobs:
 
       - name: Publish Nessie Server
         run: |
+          IMAGE_TAG_OPTIONS=()
+          if [[ "${RELEASE_MODE}" == maintenance ]] ; then IMAGE_TAG_OPTIONS+=(--no-latest) ; fi
           tools/dockerbuild/build-push-images.sh \
             -g ":nessie-quarkus" \
             -p "servers/quarkus-server" \
             -d "Dockerfile-server" \
+            "${IMAGE_TAG_OPTIONS[@]}" \
             ghcr.io/projectnessie/nessie
 
       - name: Publish Nessie GC
         run: |
+          IMAGE_TAG_OPTIONS=()
+          if [[ "${RELEASE_MODE}" == maintenance ]] ; then IMAGE_TAG_OPTIONS+=(--no-latest) ; fi
           tools/dockerbuild/build-push-images.sh \
             -g ":nessie-gc-tool" \
             -p "gc/gc-tool" \
             -d "Dockerfile-gctool" \
+            "${IMAGE_TAG_OPTIONS[@]}" \
             ghcr.io/projectnessie/nessie-gc
 
       - name: Publish Nessie Server Admin Tool
         run: |
+          IMAGE_TAG_OPTIONS=()
+          if [[ "${RELEASE_MODE}" == maintenance ]] ; then IMAGE_TAG_OPTIONS+=(--no-latest) ; fi
           tools/dockerbuild/build-push-images.sh \
             -g ":nessie-server-admin-tool" \
             -p "tools/server-admin" \
             -d "Dockerfile-admintool" \
+            "${IMAGE_TAG_OPTIONS[@]}" \
             ghcr.io/projectnessie/nessie-server-admin
 
       - name: Publish Nessie CLI
         run: |
+          IMAGE_TAG_OPTIONS=()
+          if [[ "${RELEASE_MODE}" == maintenance ]] ; then IMAGE_TAG_OPTIONS+=(--no-latest) ; fi
           tools/dockerbuild/build-push-images.sh \
             -g ":nessie-cli" \
             -p "cli/cli" \
             -d "Dockerfile-cli" \
+            "${IMAGE_TAG_OPTIONS[@]}" \
             ghcr.io/projectnessie/nessie-cli
 
       # NOTE: GH container registry behaves a bit weird when new images are added.
@@ -378,6 +408,7 @@ jobs:
     env:
       RELEASE_VERSION: ${{needs.prepare.outputs.release-version}}
       GIT_TAG: ${{needs.prepare.outputs.git-tag}}
+      RELEASE_MODE: ${{needs.prepare.outputs.release-mode}}
       NOTES_FILE: current-release-notes.md
     steps:
       ### BEGIN runner setup
@@ -422,4 +453,14 @@ jobs:
         run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
 
       - name: Create Nessie release in GitHub
-        run: gh release create ${GIT_TAG} --notes-file ${NOTES_FILE} --title "Nessie ${RELEASE_VERSION}" current-release-artifacts/*
+        run: |
+          RELEASE_OPTIONS=()
+          if [[ "${RELEASE_MODE}" == mainline ]] ; then
+            RELEASE_OPTIONS+=(--latest)
+          else
+            RELEASE_OPTIONS+=(--latest=false)
+          fi
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]] ; then
+            RELEASE_OPTIONS+=(--prerelease)
+          fi
+          gh release create ${GIT_TAG} "${RELEASE_OPTIONS[@]}" --notes-file ${NOTES_FILE} --title "Nessie ${RELEASE_VERSION}" current-release-artifacts/*
