@@ -52,7 +52,7 @@ jobs:
     timeout-minutes: 60
     if: github.repository == 'projectnessie/nessie'
     env:
-      RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
+      RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch || 'main' }}
       BUMP_TYPE: ${{ github.event.inputs.bumpType }}
     permissions:
       contents: write
@@ -228,11 +228,11 @@ jobs:
       run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
 
     # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
-    # 'main' branch and break the linear history for the Nessie git repo.
+    # release branch and break the linear history for the Nessie git repo.
     # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
     - name: Push tag + branch
       run: |
         # Push changes to docs to site-docs branch
         (cd site/build/site-docs ; git push --no-verify origin HEAD:site-docs)
 
-        git push --no-verify origin HEAD:main ${GIT_TAG}
+        git push --no-verify origin HEAD:${RELEASE_FROM} ${GIT_TAG}
