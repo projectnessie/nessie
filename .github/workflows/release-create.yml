@@ -40,7 +40,7 @@ on:
         description: 'The branch name the release from, leave empty to release from latest commit on main.'
         required: false
       bumpType:
-        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `none` for patch releases). Default is `minor`.'
+        description: 'Version transition: `patch`, `minor`, `major`, `none`, or `fix<N>` for a qualified release. Default is `minor`.'
         required: true
         type: string
         default: "minor"
@@ -84,7 +84,7 @@ jobs:
         validate-wrappers: false
 
     - name: Bump to release version
-      run: ./gradlew :bumpVersion --bumpType ${{ env.BUMP_TYPE }} --bumpToRelease
+      run: ./gradlew :bumpVersion --bumpType "${BUMP_TYPE}" --bumpToRelease
 
     - name: Get release version
       run: |
@@ -146,7 +146,7 @@ jobs:
     - name: Bump version in helm/nessie
       shell: bash
       run: |
-        sed -i "s/^version: [0-9.]*$/version: ${RELEASE_VERSION}/" helm/nessie/Chart.yaml
+        sed -i "s/^version: [^[:space:]]*$/version: ${RELEASE_VERSION}/" helm/nessie/Chart.yaml
 
     # Updates the site/docs/releases.md file, takes the first four lines (the big heading),
     # adds a heading with the version and a note referencing the release notes on GitHub,
