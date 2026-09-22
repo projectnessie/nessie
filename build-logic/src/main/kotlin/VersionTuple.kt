@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
+import java.math.BigInteger
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.regex.Pattern
 
-/** Represents a version tuple with mandatory major, minor and patch numbers and snapshot-flag. */
-data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snapshot: Boolean) :
-  Comparable<VersionTuple> {
+/** Represents a semantic version with mandatory major, minor and patch numbers. */
+data class VersionTuple(
+  val major: Int,
+  val minor: Int,
+  val patch: Int,
+  val prerelease: String? = null,
+) : Comparable<VersionTuple> {
 
   companion object Factory {
     val pattern: Pattern =
@@ -47,27 +52,24 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
         throw IllegalArgumentException("Build metadata not supported")
       }
 
-      val snapshot = "SNAPSHOT" == prerelease
-
-      if (prerelease != null && !snapshot) {
-        throw IllegalArgumentException(
-          "Only SNAPSHOT prerelease supported, but $prerelease != SNAPSHOT"
-        )
-      }
-
-      return VersionTuple(major.toInt(), minor.toInt(), patch.toInt(), snapshot)
+      return VersionTuple(major.toInt(), minor.toInt(), patch.toInt(), prerelease)
     }
   }
 
-  fun bumpMajor(): VersionTuple = VersionTuple(major + 1, 0, 0, false)
+  val snapshot: Boolean
+    get() = prerelease == "SNAPSHOT"
 
-  fun bumpMinor(): VersionTuple = VersionTuple(major, minor + 1, 0, false)
+  fun bumpMajor(): VersionTuple = VersionTuple(major + 1, 0, 0)
 
-  fun bumpPatch(): VersionTuple = VersionTuple(major, minor, patch + 1, false)
+  fun bumpMinor(): VersionTuple = VersionTuple(major, minor + 1, 0)
 
-  fun asSnapshot(): VersionTuple = VersionTuple(major, minor, patch, true)
+  fun bumpPatch(): VersionTuple = VersionTuple(major, minor, patch + 1)
 
-  fun asRelease(): VersionTuple = VersionTuple(major, minor, patch, false)
+  fun asSnapshot(): VersionTuple = VersionTuple(major, minor, patch, "SNAPSHOT")
+
+  fun asRelease(): VersionTuple = VersionTuple(major, minor, patch)
+
+  fun withPrerelease(value: String): VersionTuple = VersionTuple(major, minor, patch, value)
 
   fun writeToFile(file: Path): Path = Files.writeString(file, toString())
 
@@ -87,13 +89,50 @@ data class VersionTuple(val major: Int, val minor: Int, val patch: Int, val snap
       return cmp
     }
 
-    if (snapshot == other.snapshot) {
+    if (prerelease == other.prerelease) {
       return 0
     }
-    return if (snapshot) -1 else 1
+
+    if (prerelease == null) {
+      return 1
+    }
+    if (other.prerelease == null) {
+      return -1
+    }
+
+    return comparePrerelease(prerelease, other.prerelease)
   }
 
   override fun toString(): String {
-    return "$major.$minor.$patch${if (snapshot) "-SNAPSHOT" else ""}"
+    return "$major.$minor.$patch${prerelease?.let { "-$it" } ?: ""}"
+  }
+
+  private fun comparePrerelease(left: String, right: String): Int {
+    val leftIdentifiers = left.split('.')
+    val rightIdentifiers = right.split('.')
+
+    for (i in 0 until minOf(leftIdentifiers.size, rightIdentifiers.size)) {
+      val leftIdentifier = leftIdentifiers[i]
+      val rightIdentifier = rightIdentifiers[i]
+      if (leftIdentifier == rightIdentifier) {
+        continue
+      }
+
+      val leftNumeric = leftIdentifier.all(Char::isDigit)
+      val rightNumeric = rightIdentifier.all(Char::isDigit)
+      val comparison =
+        when {
+          leftNumeric && rightNumeric ->
+            BigInteger(leftIdentifier).compareTo(BigInteger(rightIdentifier))
+          leftNumeric -> -1
+          rightNumeric -> 1
+          else -> leftIdentifier.compareTo(rightIdentifier)
+        }
+      if (comparison != 0) {
+        return comparison
+      }
+    }
+
+    return leftIdentifiers.size.compareTo(rightIdentifiers.size)
   }
 }

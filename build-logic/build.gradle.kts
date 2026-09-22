@@ -29,7 +29,9 @@ dependencies {
   testImplementation(baselibs.assertj.core)
   testImplementation("org.junit.jupiter:junit-jupiter-api")
   testImplementation("org.junit.jupiter:junit-jupiter-params")
+  testImplementation(gradleTestKit())
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
