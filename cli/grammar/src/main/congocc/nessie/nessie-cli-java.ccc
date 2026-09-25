@@ -640,6 +640,50 @@ import org.projectnessie.nessie.cli.cmdspec.*;
   }
 }
 
+INJECT ShowDiffStatement : implements ShowDiffCommandSpec;
+INJECT ShowDiffStatement :
+import org.projectnessie.nessie.cli.cmdspec.*;
+{
+  public static final List<TokenType> LEADING_TOKENS = List.of(TokenType.SHOW);
+
+  @Override
+  public String getInCatalog() {
+    return stringValueOf("inCatalog");
+  }
+
+  @Override
+  public String getFromRefType() {
+    Node type = getNamedChild("fromType");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getFromRef() {
+    return stringValueOf("from");
+  }
+
+  @Override
+  public String getFromTimestampOrHash() {
+    return stringValueOf("fromAt");
+  }
+
+  @Override
+  public String getToRefType() {
+    Node type = getNamedChild("toType");
+    return type != null ? type.getSource().toUpperCase() : null;
+  }
+
+  @Override
+  public String getToRef() {
+    return stringValueOf("to");
+  }
+
+  @Override
+  public String getToTimestampOrHash() {
+    return stringValueOf("toAt");
+  }
+}
+
 INJECT MergeBranchStatement : implements MergeBranchCommandSpec;
 INJECT MergeBranchStatement :
 import org.projectnessie.nessie.cli.cmdspec.*;
