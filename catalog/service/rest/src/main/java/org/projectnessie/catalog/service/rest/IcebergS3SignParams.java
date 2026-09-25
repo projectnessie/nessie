@@ -17,7 +17,6 @@ package org.projectnessie.catalog.service.rest;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import static org.projectnessie.catalog.files.s3.S3Utils.extractBucketName;
 import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps.CATALOG_S3_SIGN;
 import static org.projectnessie.catalog.formats.iceberg.rest.IcebergError.icebergError;
@@ -59,6 +58,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergContent;
+import org.projectnessie.storage.uri.StorageUri;
 import org.projectnessie.versioned.RequestMeta.RequestMetaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,10 +102,65 @@ abstract class IcebergS3SignParams {
         "locations must be S3 URIs");
   }
 
-  @Value.Lazy
   String requestedS3Uri() {
-    return S3Utils.asS3Location(request().uri());
+    return requestedLocation().uri();
   }
+
+  Optional<String> requestedBucket() {
+    return requestedLocation().bucket();
+  }
+
+  @Value.Lazy
+  RequestedLocation requestedLocation() {
+    // Reject when more than one authorized bucket matches. findFirst() is ambiguous for
+    // overlapping names: warehouse "foo" and historical bucket "foo.bar" both match host
+    // "foo.bar.obs.example.com", and the warehouse is visited first, so the path is authorized
+    // and credentials are selected as "foo" while the request is addressed to "foo.bar".
+    // Endpoint and path-style access cannot break the tie here. S3Options resolves those only
+    // after a single bucket is known (resolveOptionsForUri requires an exact authority match,
+    // the same way clients are configured). Guessing either candidate would sign with the wrong
+    // bucket, so fail closed instead.
+    List<RequestedLocation> matches =
+        Stream.concat(
+                Stream.of(warehouseLocation()),
+                Stream.concat(writeLocations().stream(), readLocations().stream()))
+            .map(StorageUri::of)
+            .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
+            .map(StorageUri::authority)
+            .flatMap(Stream::ofNullable)
+            .distinct()
+            .map(this::matchRequestedBucket)
+            .flatMap(Optional::stream)
+            .toList();
+    if (matches.size() > 1) {
+      throw ambiguousBucket(matches);
+    }
+    return matches.stream()
+        .findFirst()
+        .orElseGet(
+            () -> new RequestedLocation(S3Utils.asS3Location(request().uri()), Optional.empty()));
+  }
+
+  /**
+   * Interprets the request URI as an S3 location using {@code bucket} as the virtual-host hint. A
+   * hint that does not reproduce the same bucket, or that cannot be applied to this URI, is not a
+   * match. Callers must consider every candidate; a later hint can throw when the path is not a
+   * valid path-style location even though an earlier hint already matched.
+   */
+  private Optional<RequestedLocation> matchRequestedBucket(String bucket) {
+    String location;
+    try {
+      location = S3Utils.asS3Location(request().uri(), bucket);
+    } catch (IllegalArgumentException ignored) {
+      return Optional.empty();
+    }
+    if (!bucket.equals(StorageUri.of(location).authority())) {
+      return Optional.empty();
+    }
+    return Optional.of(new RequestedLocation(location, Optional.of(bucket)));
+  }
+
+  record RequestedLocation(String uri, Optional<String> bucket) {}
 
   @Value.Lazy
   boolean write() {
@@ -275,16 +330,44 @@ abstract class IcebergS3SignParams {
 
   private IcebergS3SignResponse sign(String uriToSign) {
     URI uri = URI.create(uriToSign);
-    Optional<String> bucket = extractBucketName(uri);
     Optional<String> body = Optional.ofNullable(request().body());
 
     SigningRequest signingRequest =
         SigningRequest.signingRequest(
-            uri, request().method(), request().region(), bucket, body, request().headers());
+            uri,
+            request().method(),
+            request().region(),
+            requestedBucket(),
+            body,
+            request().headers());
 
     SigningResponse signed = signer().sign(signingRequest);
 
     return icebergS3SignResponse(signed.uri().toString(), signed.headers());
+  }
+
+  private IcebergException ambiguousBucket(List<RequestedLocation> matches) {
+    String requestUri = request().uri();
+    IcebergException exception =
+        new IcebergException(
+            icebergError(
+                Status.FORBIDDEN.getStatusCode(),
+                "NotAuthorizedException",
+                "URI not allowed for signing: " + requestUri,
+                List.of()));
+    // Do not call requestedS3Uri() here: that re-enters requestedLocation().
+    LOGGER.warn(
+        "Ambiguous signing request; buckets {} all match {}: key: {}, ref: {}, request method:"
+            + " {}, warehouse: {}, writeable locations: {}, readable locations: {}",
+        matches.stream().map(location -> location.bucket().orElseThrow()).toList(),
+        requestUri,
+        key(),
+        ref(),
+        request().method(),
+        warehouseLocation(),
+        writeLocations(),
+        readLocations());
+    return exception;
   }
 
   private IcebergException unauthorized() {
@@ -297,7 +380,8 @@ abstract class IcebergS3SignParams {
                 List.of()));
     String s3Uri = requestedS3Uri();
     LOGGER.warn(
-        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request method: {}, warehouse: {}, writeable locations: {}, readable locations: {}",
+        "Unauthorized signing request: key: {}, ref: {}, s3-uri: {}, request uri: {}, request"
+            + " method: {}, warehouse: {}, writeable locations: {}, readable locations: {}",
         key(),
         ref(),
         s3Uri,
