@@ -17,7 +17,7 @@ package org.projectnessie.events.ri.messaging.nats.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.mapper.Serializer;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.message.Serializer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import org.projectnessie.model.ser.Views;
 // This type does effectively the same thing as the old ViewAwareJsonPayloadMapper.
 @ApplicationScoped
 @Alternative // Want to replace
-// io.quarkiverse.reactive.messaging.nats.jetstream.client.mapper.SerializerImpl
+// io.quarkiverse.reactive.messaging.nats.jetstream.client.message.JacksonSerializer
 public class ViewAwareSerializer implements Serializer {
   private final ObjectMapper objectMapper;
 
