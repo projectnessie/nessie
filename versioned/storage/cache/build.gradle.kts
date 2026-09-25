@@ -49,5 +49,6 @@ dependencies {
 
   testImplementation(platform(libs.junit.bom))
   testImplementation(libs.bundles.junit.testing)
+  testImplementation(libs.junit.pioneer)
   testRuntimeOnly(libs.logback.classic)
 }
