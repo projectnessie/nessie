@@ -35,7 +35,7 @@ on:
 jobs:
   code-checks:
     name: Quarkus CR - Compilation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,7 +61,7 @@ jobs:
 
   test:
     name: Quarkus CR - Test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -99,7 +99,7 @@ jobs:
 
   test-quarkus:
     name: Quarkus CR - Test Quarkus
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -151,7 +151,7 @@ jobs:
 
   int-test:
     name: Quarkus CR - intTest
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -208,7 +208,7 @@ jobs:
 
   int-test-stores:
     name: Quarkus CR - intTest versioned/stores
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -250,7 +250,7 @@ jobs:
 
   int-test-integrations:
     name: Quarkus CR - intTest integrations
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -291,7 +291,7 @@ jobs:
 
   int-test-quarkus-server:
     name: Quarkus CR - intTest Quarkus Server
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -331,7 +331,7 @@ jobs:
 
   int-test-quarkus-tool:
     name: Quarkus CR - intTest Admin Tool
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -371,7 +371,7 @@ jobs:
 
   int-test-quarkus-events:
     name: Quarkus CR - intTest Quarkus Events
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -411,7 +411,7 @@ jobs:
 
   docker-testing:
     name: Quarkus CR - Docker and Helm checks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -689,7 +689,7 @@ jobs:
 
   nesqueit:
     name: Quarkus CR - NesQuEIT
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       NESSIE_DIR: included-builds/nessie
