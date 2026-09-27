@@ -34,6 +34,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -45,6 +46,8 @@ import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
@@ -90,6 +93,14 @@ abstract class IcebergS3SignParams {
 
   abstract List<String> readLocations();
 
+  /**
+   * Addressing style bound into the signer token, see {@link SignerSignature#pathStyleAccess()}.
+   */
+  abstract Optional<Boolean> pathStyleAccess();
+
+  /** Used to resolve the endpoint of a bucket for virtual-hosted requests. */
+  abstract S3Options s3Options();
+
   abstract CatalogService catalogService();
 
   abstract RequestSigner signer();
@@ -107,60 +118,91 @@ abstract class IcebergS3SignParams {
   }
 
   Optional<String> requestedBucket() {
-    return requestedLocation().bucket();
+    return Optional.of(requestedLocation().bucket());
   }
 
+  /**
+   * Resolves the S3 location of the request URI.
+   *
+   * <p>Tokens without {@link #pathStyleAccess()} (AWS, and tokens minted before it existed) keep
+   * the heuristic of {@link S3Utils#asS3Location(String)}.
+   *
+   * <p>With path-style access, the bucket is the first path element.
+   *
+   * <p>With virtual-hosted style, the bucket is the leading subdomain of the host, in front of the
+   * bucket's endpoint host. Bucket names can contain dots, so the host is matched exactly against
+   * {@code <bucket>.<endpoint host>} for each bucket of the signed locations. A host like {@code
+   * foo.bar.obs.example.com} is then bucket {@code foo.bar} and never bucket {@code foo}, whether
+   * or not {@code foo.bar} is a signed bucket. A request that matches no signed bucket, or more
+   * than one, is rejected rather than reinterpreted as path-style or guessed: guessing wrong would
+   * authorize the path and select credentials for one bucket while signing a request addressed to
+   * another.
+   */
   @Value.Lazy
   RequestedLocation requestedLocation() {
-    // Reject when more than one authorized bucket matches. findFirst() is ambiguous for
-    // overlapping names: warehouse "foo" and historical bucket "foo.bar" both match host
-    // "foo.bar.obs.example.com", and the warehouse is visited first, so the path is authorized
-    // and credentials are selected as "foo" while the request is addressed to "foo.bar".
-    // Endpoint and path-style access cannot break the tie here. S3Options resolves those only
-    // after a single bucket is known (resolveOptionsForUri requires an exact authority match,
-    // the same way clients are configured). Guessing either candidate would sign with the wrong
-    // bucket, so fail closed instead.
+    String uri = request().uri();
+    if (pathStyleAccess().isEmpty()) {
+      return RequestedLocation.of(S3Utils.asS3Location(uri));
+    }
+    if (pathStyleAccess().get()) {
+      return RequestedLocation.of(S3Utils.asS3PathStyleLocation(uri));
+    }
+
     List<RequestedLocation> matches =
         Stream.concat(
                 Stream.of(warehouseLocation()),
                 Stream.concat(writeLocations().stream(), readLocations().stream()))
             .map(StorageUri::of)
-            .filter(uri -> S3Utils.isS3scheme(uri.scheme()))
+            .filter(location -> S3Utils.isS3scheme(location.scheme()))
             .map(StorageUri::authority)
             .flatMap(Stream::ofNullable)
             .distinct()
-            .map(this::matchRequestedBucket)
+            .map(bucket -> matchVirtualHostedBucket(uri, bucket))
             .flatMap(Optional::stream)
             .toList();
-    if (matches.size() > 1) {
-      throw ambiguousBucket(matches);
+    if (matches.size() != 1) {
+      throw notAllowed(
+          matches.isEmpty()
+              ? "Signing request is not addressed to the virtual host of a signed bucket"
+              : "Ambiguous signing request, buckets "
+                  + matches.stream().map(RequestedLocation::bucket).toList()
+                  + " all match");
     }
-    return matches.stream()
-        .findFirst()
-        .orElseGet(
-            () -> new RequestedLocation(S3Utils.asS3Location(request().uri()), Optional.empty()));
+    return matches.get(0);
   }
 
-  /**
-   * Interprets the request URI as an S3 location using {@code bucket} as the virtual-host hint. A
-   * hint that does not reproduce the same bucket, or that cannot be applied to this URI, is not a
-   * match. Callers must consider every candidate; a later hint can throw when the path is not a
-   * valid path-style location even though an earlier hint already matched.
-   */
-  private Optional<RequestedLocation> matchRequestedBucket(String bucket) {
-    String location;
+  private Optional<RequestedLocation> matchVirtualHostedBucket(String uri, String bucket) {
+    Optional<String> location;
     try {
-      location = S3Utils.asS3Location(request().uri(), bucket);
+      location = S3Utils.asS3VirtualHostedLocation(uri, bucket);
     } catch (IllegalArgumentException ignored) {
       return Optional.empty();
     }
-    if (!bucket.equals(StorageUri.of(location).authority())) {
-      return Optional.empty();
-    }
-    return Optional.of(new RequestedLocation(location, Optional.of(bucket)));
+    return location
+        .filter(l -> bucket.equals(StorageUri.of(l).authority()))
+        .filter(l -> isVirtualHostOf(uri, l, bucket))
+        .map(l -> new RequestedLocation(l, bucket));
   }
 
-  record RequestedLocation(String uri, Optional<String> bucket) {}
+  /**
+   * Whether the request host is exactly {@code <bucket>.<endpoint host>} for the endpoint that
+   * clients (external endpoint) or the Nessie server (endpoint) use for that bucket.
+   */
+  private boolean isVirtualHostOf(String uri, String location, String bucket) {
+    String host = URI.create(uri).getHost();
+    S3BucketOptions bucketOptions = s3Options().resolveOptionsForUri(StorageUri.of(location));
+    return Stream.of(bucketOptions.externalEndpoint(), bucketOptions.endpoint())
+        .flatMap(Optional::stream)
+        .map(URI::getHost)
+        .filter(Objects::nonNull)
+        .anyMatch(endpointHost -> host.equalsIgnoreCase(bucket + "." + endpointHost));
+  }
+
+  record RequestedLocation(String uri, String bucket) {
+    static RequestedLocation of(String location) {
+      return new RequestedLocation(location, StorageUri.of(location).requiredAuthority());
+    }
+  }
 
   @Value.Lazy
   boolean write() {
@@ -346,7 +388,7 @@ abstract class IcebergS3SignParams {
     return icebergS3SignResponse(signed.uri().toString(), signed.headers());
   }
 
-  private IcebergException ambiguousBucket(List<RequestedLocation> matches) {
+  private IcebergException notAllowed(String reason) {
     String requestUri = request().uri();
     IcebergException exception =
         new IcebergException(
@@ -357,13 +399,14 @@ abstract class IcebergS3SignParams {
                 List.of()));
     // Do not call requestedS3Uri() here: that re-enters requestedLocation().
     LOGGER.warn(
-        "Ambiguous signing request; buckets {} all match {}: key: {}, ref: {}, request method:"
-            + " {}, warehouse: {}, writeable locations: {}, readable locations: {}",
-        matches.stream().map(location -> location.bucket().orElseThrow()).toList(),
+        "{}: request uri: {}, key: {}, ref: {}, request method: {}, path-style access: {},"
+            + " warehouse: {}, writeable locations: {}, readable locations: {}",
+        reason,
         requestUri,
         key(),
         ref(),
         request().method(),
+        pathStyleAccess(),
         warehouseLocation(),
         writeLocations(),
         readLocations());

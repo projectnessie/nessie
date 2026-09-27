@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -355,12 +356,30 @@ public class IcebergConfigurer {
             .warehouseLocation(normalizedWarehouseLocation)
             .writeLocations(normalizedWriteLocations)
             .readLocations(normalizedReadLocations)
+            .pathStyleAccess(signedPathStyleAccess(locations.warehouseLocation()))
             .build()
             .toPathParam(signerKey);
 
     config.accept(S3_SIGNER_ENDPOINT, uriInfo.icebergS3SignerPathWithPath(prefix, pathParam));
 
     return true;
+  }
+
+  /**
+   * The addressing style to bind into the S3 signer token, which lets the signer derive the bucket
+   * of a virtual-hosted request from the host instead of guessing between virtual-hosted and
+   * path-style interpretations.
+   *
+   * <p>Only returned when the warehouse bucket configures a custom (non-AWS) endpoint <em>and</em>
+   * explicitly configures path-style access. Everything else, notably AWS, gets no value, so its
+   * tokens keep the exact representation and signature they had before this attribute existed.
+   */
+  private Optional<Boolean> signedPathStyleAccess(StorageUri warehouseLocation) {
+    S3BucketOptions bucketOptions = lakehouseConfig.s3().resolveOptionsForUri(warehouseLocation);
+    if (bucketOptions.endpoint().isEmpty() && bucketOptions.externalEndpoint().isEmpty()) {
+      return Optional.empty();
+    }
+    return bucketOptions.pathStyleAccess();
   }
 
   static boolean icebergWriteObjectStorage(

@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.rest;
 import static com.google.common.hash.Hashing.hmacSha256;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.hash.Hasher;
@@ -47,10 +48,25 @@ public abstract class SignerSignature {
 
   public abstract long expirationTimestamp();
 
+  /**
+   * Addressing style of the S3 client the token was minted for, only present when the bucket
+   * explicitly configures it for a custom endpoint. When absent, the bucket of a signing request is
+   * resolved against the signed locations, as for tokens minted before this attribute existed.
+   *
+   * <p>Absent values are neither serialized nor signed, so tokens without this attribute keep
+   * exactly the same representation and signature as before it was introduced.
+   */
+  @JsonInclude(JsonInclude.Include.NON_ABSENT)
+  public abstract Optional<Boolean> pathStyleAccess();
+
   @SuppressWarnings("UnstableApiUsage")
   public String sign(SignerKey signerKey) {
     Hasher hasher = hmacSha256(signerKey.secretKeySpec()).newHasher();
     hasher.putLong(expirationTimestamp());
+    // Only hashed when present, so signatures of tokens without it stay unchanged. Hashed directly
+    // after the fixed-width timestamp, where tokens without it always continue with "prefix=", so
+    // it cannot be confused with the tail of a variable-length location value.
+    pathStyleAccess().ifPresent(pathStyle -> hasher.putString("p=" + pathStyle, UTF_8));
     hasher.putString("prefix=" + prefix(), UTF_8);
     hasher.putString("identifier=" + identifier(), UTF_8);
     hasher.putString("b=" + warehouseLocation(), UTF_8);

@@ -52,6 +52,10 @@ import org.projectnessie.catalog.files.api.ImmutableSigningResponse;
 import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.api.SigningRequest;
 import org.projectnessie.catalog.files.api.SigningResponse;
+import org.projectnessie.catalog.files.config.ImmutableS3BucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3NamedBucketOptions;
+import org.projectnessie.catalog.files.config.ImmutableS3Options;
+import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.formats.iceberg.nessie.CatalogOps;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergException;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
@@ -110,6 +114,15 @@ class TestIcebergS3SignParams {
       "https://example-bucket.obs.example.com/warehouse/";
   static final String customDataFileUri =
       customVirtualHostBaseUri + locationPart + "/data/file1.parquet";
+
+  static final S3Options customEndpointS3Options =
+      ImmutableS3Options.builder()
+          .defaultOptions(
+              ImmutableS3BucketOptions.builder()
+                  .endpoint(URI.create("https://obs.example.com"))
+                  .pathStyleAccess(false)
+                  .build())
+          .build();
 
   final IcebergS3SignRequest writeRequest =
       IcebergS3SignRequest.builder()
@@ -279,6 +292,7 @@ class TestIcebergS3SignParams {
                         "https://example-bucket.obs.example.com/"
                             + "warehouse%20with%20space/table%5B1%5D%25/data/file.parquet")
                     .build())
+            .pathStyleAccess(false)
             .writeLocations(List.of());
     switch (locationSource) {
       case "warehouse" -> builder.warehouseLocation(location);
@@ -308,6 +322,7 @@ class TestIcebergS3SignParams {
                     .build())
             .warehouseLocation(customWarehouseLocation)
             .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(false)
             .build();
 
     expectSuccess(icebergSigner.verifyAndSign());
@@ -329,6 +344,7 @@ class TestIcebergS3SignParams {
                 IcebergS3SignRequest.builder().from(writeRequest).uri(customDataFileUri).build())
             .warehouseLocation(customWarehouseLocation)
             .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(false)
             .build();
 
     expectSuccess(icebergSigner.verifyAndSign());
@@ -353,6 +369,7 @@ class TestIcebergS3SignParams {
             .request(IcebergS3SignRequest.builder().from(writeRequest).uri(uri).build())
             .warehouseLocation(customWarehouseLocation)
             .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(false)
             .build();
 
     expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + uri);
@@ -485,34 +502,13 @@ class TestIcebergS3SignParams {
   }
 
   @Test
-  void verifyAndSignFailureOverlappingCurrentAndHistoricalBuckets() throws Exception {
-    String warehouse = "s3://foo/warehouse/";
-    String currentLocation = warehouse + locationPart;
-    String historicalLocation = "s3://foo.bar/warehouse/" + locationPart;
+  void verifyAndSignOverlappingCurrentAndHistoricalBuckets() throws Exception {
     String requestUri =
         "https://foo.bar.obs.example.com/warehouse/" + locationPart + "/data/file1.parquet";
-
-    Content content = IcebergTable.of(currentLocation + "/metadata/metadata.json", 1, 1, 1, 1);
-    NessieTableSnapshot snapshot =
-        NessieTableSnapshot.builder()
-            .id(NessieId.randomNessieId())
-            .entity(nessieTable)
-            .icebergLocation(currentLocation)
-            .addAdditionalKnownLocations(historicalLocation)
-            .lastUpdatedTimestamp(Instant.now())
-            .build();
-    SnapshotResponse response =
-        SnapshotResponse.forEntity(
-            Branch.of("main", "12345678"),
-            content,
-            "metadata.json",
-            "application/json",
-            key,
-            content,
-            snapshot);
     when(catalogService.retrieveSnapshot(
             any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
-        .thenReturn(CompletableFuture.completedStage(response));
+        .thenReturn(CompletableFuture.completedStage(fooAndFooBarSnapshotResponse()));
+    when(signer.sign(any())).thenReturn(signingResponse);
 
     IcebergS3SignParams icebergSigner =
         newBuilder()
@@ -522,17 +518,186 @@ class TestIcebergS3SignParams {
                     .method("GET")
                     .uri(requestUri)
                     .build())
-            .warehouseLocation(warehouse)
-            .writeLocations(List.of(currentLocation))
-            .readLocations(List.of(historicalLocation))
+            .warehouseLocation("s3://foo/warehouse/")
+            .writeLocations(List.of(fooCurrentLocation))
+            .readLocations(List.of(fooBarHistoricalLocation))
+            .pathStyleAccess(false)
             .build();
 
-    // foo.bar.obs.example.com matches both warehouse bucket "foo" and historical bucket
-    // "foo.bar". Resolution must not select "foo" (and must not sign with that bucket).
+    // foo.bar.obs.example.com starts with both "foo." and "foo.bar.", but only "foo.bar" is the
+    // virtual host in front of the endpoint obs.example.com.
+    soft.assertThat(icebergSigner.requestedBucket()).contains("foo.bar");
+    soft.assertThat(icebergSigner.requestedS3Uri())
+        .isEqualTo(fooBarHistoricalLocation + "/data/file1.parquet");
+
+    expectSuccess(icebergSigner.verifyAndSign());
+
+    ArgumentCaptor<SigningRequest> signingRequest = ArgumentCaptor.forClass(SigningRequest.class);
+    verify(signer).sign(signingRequest.capture());
+    soft.assertThat(signingRequest.getValue().bucket()).contains("foo.bar");
+  }
+
+  @Test
+  void verifyAndSignFailureOverlappingBucketNotSigned() throws Exception {
+    String requestUri =
+        "https://foo.bar.obs.example.com/warehouse/" + locationPart + "/data/file1.parquet";
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(fooSnapshotResponse(List.of())));
+
+    // Only "foo" is signed and known. The request is addressed to bucket "foo.bar" and must not be
+    // signed with the credentials of "foo".
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .method("GET")
+                    .uri(requestUri)
+                    .build())
+            .warehouseLocation("s3://foo/warehouse/")
+            .writeLocations(List.of(fooCurrentLocation))
+            .pathStyleAccess(false)
+            .build();
+
     soft.assertThatThrownBy(icebergSigner::requestedBucket)
         .isInstanceOf(IcebergException.class)
         .hasMessage("URI not allowed for signing: " + requestUri);
     expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + requestUri);
+    verifyNoInteractions(signer);
+  }
+
+  @Test
+  void verifyAndSignFailureOverlappingBucketNotSignedAws() throws Exception {
+    String requestUri =
+        "https://foo.bar.s3.amazonaws.com/warehouse/" + locationPart + "/data/file1.parquet";
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiRead(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(fooSnapshotResponse(List.of())));
+
+    // Tokens without pathStyleAccess (AWS) keep resolving the bucket from the AWS host name, so
+    // the request is not attributed to the only known bucket "foo".
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .method("GET")
+                    .uri(requestUri)
+                    .build())
+            .warehouseLocation("s3://foo/warehouse/")
+            .writeLocations(List.of(fooCurrentLocation))
+            .build();
+
+    soft.assertThat(icebergSigner.requestedBucket()).contains("foo.bar");
+    expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + requestUri);
+    verifyNoInteractions(signer);
+  }
+
+  @Test
+  void verifyAndSignFailureAmbiguousVirtualHost() throws Exception {
+    String requestUri =
+        "https://foo.bar.obs.example.com/warehouse/" + locationPart + "/data/file1.parquet";
+
+    // Per-bucket endpoints can make one host a valid virtual host of two signed buckets.
+    S3Options s3Options =
+        ImmutableS3Options.builder()
+            .from(customEndpointS3Options)
+            .putBucket(
+                "foo",
+                ImmutableS3NamedBucketOptions.builder()
+                    .authority("foo")
+                    .endpoint(URI.create("https://bar.obs.example.com"))
+                    .build())
+            .build();
+
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder()
+                    .from(readRequest)
+                    .method("GET")
+                    .uri(requestUri)
+                    .build())
+            .warehouseLocation("s3://foo/warehouse/")
+            .writeLocations(List.of(fooCurrentLocation))
+            .readLocations(List.of(fooBarHistoricalLocation))
+            .pathStyleAccess(false)
+            .s3Options(s3Options)
+            .build();
+
+    soft.assertThatThrownBy(icebergSigner::requestedBucket)
+        .isInstanceOf(IcebergException.class)
+        .hasMessage("URI not allowed for signing: " + requestUri);
+    verifyNoInteractions(signer);
+  }
+
+  @Test
+  void verifyAndSignSuccessPathStyle() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+    when(signer.sign(any())).thenReturn(signingResponse);
+
+    // With path-style access, the host is not considered, even if it starts with the bucket name.
+    String requestUri =
+        "https://example-bucket.obs.example.com/example-bucket/warehouse/"
+            + locationPart
+            + "/data/file1.parquet";
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(IcebergS3SignRequest.builder().from(writeRequest).uri(requestUri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(true)
+            .build();
+
+    soft.assertThat(icebergSigner.requestedS3Uri())
+        .isEqualTo(customBaseLocation + "/data/file1.parquet");
+    expectSuccess(icebergSigner.verifyAndSign());
+
+    ArgumentCaptor<SigningRequest> signingRequest = ArgumentCaptor.forClass(SigningRequest.class);
+    verify(signer).sign(signingRequest.capture());
+    soft.assertThat(signingRequest.getValue().bucket()).contains("example-bucket");
+  }
+
+  @Test
+  void verifyAndSignFailureVirtualHostWithPathStyle() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder().from(writeRequest).uri(customDataFileUri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(true)
+            .build();
+
+    expectFailure(
+        icebergSigner.verifyAndSign(), "URI not allowed for signing: " + customDataFileUri);
+    verifyNoInteractions(signer);
+  }
+
+  @Test
+  void verifyAndSignFailureCustomVirtualHostWithoutPathStyleAccess() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+
+    // Tokens without pathStyleAccess keep the previous behavior, which only recognizes AWS virtual
+    // hosts. Custom endpoints need path-style-access=false configured explicitly.
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder().from(writeRequest).uri(customDataFileUri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .build();
+
+    expectFailure(
+        icebergSigner.verifyAndSign(), "URI not allowed for signing: " + customDataFileUri);
     verifyNoInteractions(signer);
   }
 
@@ -589,6 +754,33 @@ class TestIcebergS3SignParams {
     expectFailure(response, "URI not allowed for signing: " + dataFileUri);
   }
 
+  static final String fooCurrentLocation = "s3://foo/warehouse/" + locationPart;
+  static final String fooBarHistoricalLocation = "s3://foo.bar/warehouse/" + locationPart;
+
+  private SnapshotResponse fooAndFooBarSnapshotResponse() {
+    return fooSnapshotResponse(List.of(fooBarHistoricalLocation));
+  }
+
+  private SnapshotResponse fooSnapshotResponse(List<String> historicalLocations) {
+    Content content = IcebergTable.of(fooCurrentLocation + "/metadata/metadata.json", 1, 1, 1, 1);
+    NessieTableSnapshot snapshot =
+        NessieTableSnapshot.builder()
+            .id(NessieId.randomNessieId())
+            .entity(nessieTable)
+            .icebergLocation(fooCurrentLocation)
+            .additionalKnownLocations(historicalLocations)
+            .lastUpdatedTimestamp(Instant.now())
+            .build();
+    return SnapshotResponse.forEntity(
+        Branch.of("main", "12345678"),
+        content,
+        "metadata.json",
+        "application/json",
+        key,
+        content,
+        snapshot);
+  }
+
   private SnapshotResponse customVirtualHostSnapshotResponse() {
     Content customTable =
         IcebergTable.of(customBaseLocation + "/metadata/metadata.json", 1, 1, 1, 1);
@@ -616,6 +808,7 @@ class TestIcebergS3SignParams {
         .key(key)
         .warehouseLocation(warehouseLocation)
         .addWriteLocations(baseLocation)
+        .s3Options(customEndpointS3Options)
         .catalogService(catalogService)
         .signer(signer);
   }

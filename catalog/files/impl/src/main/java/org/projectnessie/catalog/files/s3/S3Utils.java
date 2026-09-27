@@ -100,15 +100,69 @@ public final class S3Utils {
     return Optional.ofNullable(auth);
   }
 
+  /**
+   * Converts an S3 HTTP URI to an S3 location, recognizing virtual-hosted style only for hosts that
+   * look like AWS S3 endpoints ({@code <bucket>.s3.<region>...} or {@code <bucket>.s3-<region>...})
+   * and using path style otherwise.
+   *
+   * <p>This is only a heuristic. Use {@link #asS3VirtualHostedLocation(String, String)} or {@link
+   * #asS3PathStyleLocation(String)} when the addressing style is known.
+   */
   public static String asS3Location(String uri) {
-    return asS3Location(uri, Optional.empty());
+    URI httpUri = parseHttpUri(uri);
+    Matcher matcher = S3_HOST_PATTERN.matcher(httpUri.getHost());
+    if (matcher.matches() && matcher.group(2) != null) {
+      // virtual-hosted style
+      return "s3://" + matcher.group(2) + httpUri.getPath();
+    }
+    return pathStyleLocation(httpUri);
   }
 
-  public static String asS3Location(String uri, String bucketHint) {
-    return asS3Location(uri, Optional.of(requireNonNull(bucketHint, "Bucket hint missing")));
+  /**
+   * Converts an S3 HTTP URI for {@code bucket} to an S3 location, using {@linkplain
+   * #asS3VirtualHostedLocation(String, String) virtual-hosted style} if the host starts with {@code
+   * bucket}, {@linkplain #asS3PathStyleLocation(String) path style} otherwise.
+   */
+  public static String asS3Location(String uri, String bucket) {
+    return asS3VirtualHostedLocation(uri, bucket).orElseGet(() -> asS3PathStyleLocation(uri));
   }
 
-  private static String asS3Location(String uri, Optional<String> bucketHint) {
+  /**
+   * Converts a path-style S3 HTTP URI, as in {@code https://<endpoint>/<bucket>/<key>}, to an S3
+   * location. The host is not considered.
+   */
+  public static String asS3PathStyleLocation(String uri) {
+    return pathStyleLocation(parseHttpUri(uri));
+  }
+
+  /**
+   * Converts a virtual-hosted-style S3 HTTP URI for {@code bucket}, as in {@code
+   * https://<bucket>.<endpoint>/<key>}, to an S3 location.
+   *
+   * <p>This only checks that {@code bucket} is the leading part of the host. Bucket names can
+   * contain dots, so a host for bucket {@code foo.bar} also starts with {@code foo.}; callers that
+   * need to rule that out must check the remainder of the host against the endpoint.
+   *
+   * @return the S3 location, or empty if the host does not start with {@code bucket}
+   */
+  public static Optional<String> asS3VirtualHostedLocation(String uri, String bucket) {
+    requireNonNull(bucket, "Bucket missing");
+    URI httpUri = parseHttpUri(uri);
+    if (!httpUri.getHost().startsWith(bucket + ".")) {
+      return Optional.empty();
+    }
+    return Optional.of("s3://" + bucket + httpUri.getPath());
+  }
+
+  private static String pathStyleLocation(URI httpUri) {
+    String httpUriPath = httpUri.getPath();
+    Matcher matcher = S3_PATH_PATTERN.matcher(httpUriPath);
+    checkArgument(matcher.matches(), "Invalid S3 URI: '%s'", httpUri);
+    String bucket = matcher.group(1);
+    return "s3://" + bucket + httpUriPath.substring(bucket.length() + 1);
+  }
+
+  private static URI parseHttpUri(String uri) {
     URI httpUri = URI.create(uri);
     checkArgument(httpUri.getScheme() != null, "No scheme in URI: '%s'", httpUri);
     checkArgument(httpUri.getHost() != null, "No host in URI: '%s'", httpUri);
@@ -116,28 +170,7 @@ public final class S3Utils {
         httpUri.getScheme().matches("http|https"),
         "Unsupported URI scheme: '%s'",
         httpUri.getScheme());
-    String bucket;
-    String key;
-    Matcher matcher = S3_HOST_PATTERN.matcher(httpUri.getHost());
-    Optional<String> customVirtualHostedBucket =
-        bucketHint.filter(hint -> httpUri.getHost().startsWith(hint + "."));
-    if (matcher.matches() && matcher.group(2) != null) {
-      // virtual-hosted style
-      bucket = matcher.group(2);
-      key = httpUri.getPath();
-    } else if (customVirtualHostedBucket.isPresent()) {
-      // virtual-hosted style with a caller-provided bucket for custom S3 endpoints
-      bucket = customVirtualHostedBucket.get();
-      key = httpUri.getPath();
-    } else {
-      // path-style access style
-      String httpUriPath = httpUri.getPath();
-      matcher = S3_PATH_PATTERN.matcher(httpUriPath);
-      checkArgument(matcher.matches(), "Invalid S3 URI: '%s'", httpUri);
-      bucket = matcher.group(1);
-      key = httpUriPath.substring(bucket.length() + 1);
-    }
-    return "s3://" + bucket + key;
+    return httpUri;
   }
 
   public static String iamEscapeString(String s) {

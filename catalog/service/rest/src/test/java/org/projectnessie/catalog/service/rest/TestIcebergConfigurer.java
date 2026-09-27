@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -46,7 +47,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.config.ImmutableS3BucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
+import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
@@ -57,6 +60,7 @@ import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
 import org.projectnessie.catalog.service.api.SignerKeysService;
+import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
 
@@ -70,16 +74,9 @@ public class TestIcebergConfigurer {
   @BeforeEach
   @SuppressWarnings({"UnnecessaryAssignment", "HttpUrlsUsage"})
   protected void setupIcebergConfigurer() {
-    SecretsProvider secretsProvider =
-        ResolvingSecretsProvider.builder()
-            .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
-            .build();
-    S3Options s3Options = ImmutableS3Options.builder().build();
-
     icebergConfigurer = new IcebergConfigurer();
     icebergConfigurer.uriInfo = () -> URI.create("http://foo:12434");
-    icebergConfigurer.objectIO =
-        new S3ObjectIO(new S3ClientSupplier(null, s3Options, null, secretsProvider), null);
+    configureS3(ImmutableS3Options.builder().build());
     Instant now = Instant.now();
     signerKey =
         SignerKey.builder()
@@ -101,6 +98,76 @@ public class TestIcebergConfigurer {
             return signerKey;
           }
         };
+  }
+
+  @SuppressWarnings("UnnecessaryAssignment")
+  private void configureS3(S3Options s3Options) {
+    SecretsProvider secretsProvider =
+        ResolvingSecretsProvider.builder()
+            .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
+            .build();
+    icebergConfigurer.objectIO =
+        new S3ObjectIO(new S3ClientSupplier(null, s3Options, null, secretsProvider), null);
+    icebergConfigurer.lakehouseConfig = mock(LakehouseConfig.class);
+    when(icebergConfigurer.lakehouseConfig.s3()).thenReturn(s3Options);
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void signerTokenPathStyleAccess(
+      S3BucketOptions bucketOptions, Optional<Boolean> expectedPathStyleAccess) {
+    configureS3(ImmutableS3Options.builder().defaultOptions(bucketOptions).build());
+
+    String loc = "s3://bucket/foo/bar";
+    IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
+    when(tm.location()).thenReturn(loc);
+    when(tm.properties()).thenReturn(Map.of());
+    NessieTableSnapshot nessieSnapshot =
+        NessieTableSnapshot.builder()
+            .lastUpdatedTimestamp(Instant.now())
+            .id(NessieId.randomNessieId())
+            .entity(
+                NessieTable.builder()
+                    .nessieContentId(UUID.randomUUID().toString())
+                    .createdTimestamp(Instant.now())
+                    .build())
+            .build();
+
+    IcebergTableConfig tableConfig =
+        icebergConfigurer.icebergConfigPerTable(
+            nessieSnapshot, "s3://bucket/", tm, "main", ContentKey.of("foo", "bar"), null, true);
+
+    URI endpoint = URI.create(tableConfig.config().get(S3_SIGNER_ENDPOINT));
+    SignerParams signerParams =
+        SignerParams.fromPathParam(
+            endpoint.getRawPath().substring(endpoint.getRawPath().lastIndexOf('/') + 1));
+    soft.assertThat(signerParams.signerSignature().pathStyleAccess())
+        .isEqualTo(expectedPathStyleAccess);
+  }
+
+  static Stream<Arguments> signerTokenPathStyleAccess() {
+    URI endpoint = URI.create("https://obs.example.com");
+    return Stream.of(
+        // AWS: never bound into the token, so AWS tokens are unchanged
+        arguments(ImmutableS3BucketOptions.builder().build(), Optional.empty()),
+        arguments(
+            ImmutableS3BucketOptions.builder().pathStyleAccess(false).build(), Optional.empty()),
+        arguments(
+            ImmutableS3BucketOptions.builder().pathStyleAccess(true).build(), Optional.empty()),
+        // Custom endpoint: only bound when explicitly configured
+        arguments(ImmutableS3BucketOptions.builder().endpoint(endpoint).build(), Optional.empty()),
+        arguments(
+            ImmutableS3BucketOptions.builder().endpoint(endpoint).pathStyleAccess(false).build(),
+            Optional.of(false)),
+        arguments(
+            ImmutableS3BucketOptions.builder().endpoint(endpoint).pathStyleAccess(true).build(),
+            Optional.of(true)),
+        arguments(
+            ImmutableS3BucketOptions.builder()
+                .externalEndpoint(endpoint)
+                .pathStyleAccess(false)
+                .build(),
+            Optional.of(false)));
   }
 
   @ParameterizedTest
