@@ -30,6 +30,7 @@ import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.config.S3StsCache;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import software.amazon.awssdk.endpoints.Endpoint;
+import software.amazon.awssdk.endpoints.EndpointUrl;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -74,7 +75,10 @@ public class StsClientsPool {
     builder.httpClient(sdkClient);
     if (parameters.endpoint().isPresent()) {
       CompletableFuture<Endpoint> endpointFuture =
-          completedFuture(Endpoint.builder().url(parameters.endpoint().get()).build());
+          completedFuture(
+              Endpoint.builder()
+                  .endpointUrl(EndpointUrl.fromUri(parameters.endpoint().get()))
+                  .build());
       builder.endpointProvider(params -> endpointFuture);
     }
     builder.region(Region.of(parameters.region()));
