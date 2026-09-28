@@ -370,16 +370,18 @@ public class IcebergConfigurer {
    * of a virtual-hosted request from the host instead of guessing between virtual-hosted and
    * path-style interpretations.
    *
-   * <p>Only returned when the warehouse bucket configures a custom (non-AWS) endpoint <em>and</em>
-   * explicitly configures path-style access. Everything else, notably AWS, gets no value, so its
-   * tokens keep the exact representation and signature they had before this attribute existed.
+   * <p>Returned when the warehouse bucket configures a custom (non-AWS) endpoint. An unset
+   * path-style access then defaults to virtual-hosted style ({@code false}), matching the AWS SDK
+   * v2 default used when the client is not told to force path style. AWS, which configures no
+   * custom endpoint, gets no value, so its tokens keep the exact representation and signature they
+   * had before this attribute existed.
    */
   private Optional<Boolean> signedPathStyleAccess(StorageUri warehouseLocation) {
     S3BucketOptions bucketOptions = lakehouseConfig.s3().resolveOptionsForUri(warehouseLocation);
     if (bucketOptions.endpoint().isEmpty() && bucketOptions.externalEndpoint().isEmpty()) {
       return Optional.empty();
     }
-    return bucketOptions.pathStyleAccess();
+    return Optional.of(bucketOptions.pathStyleAccess().orElse(false));
   }
 
   static boolean icebergWriteObjectStorage(

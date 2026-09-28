@@ -224,10 +224,12 @@ a missing-table or future-location fallback. Missing content may be handled as a
 case where the signer endpoint was already minted for that location; authorization and unexpected
 lookup failures are fail-closed conditions. `(documented)`
 
-S3 request signing recognizes virtual-hosted requests for custom endpoints only when the bucket
-explicitly configures `path-style-access=false`. That setting is bound into the signed token, and the
-request host must then be exactly `<bucket>.<endpoint host>` for one of the buckets of the
-signer-authorized warehouse, write, or read locations; any other request, including a match on more
+S3 request signing recognizes virtual-hosted requests for custom endpoints when the bucket
+configures a custom endpoint. An unset `path-style-access` defaults to virtual-hosted style
+(`false`), matching the AWS SDK v2 default; `path-style-access=true` selects path style. That
+setting is bound into the signed token, and the request host must then be exactly
+`<bucket>.<endpoint host>` for one of the buckets of the signer-authorized warehouse, write, or read
+locations; any other request, including a match on more
 than one bucket, is rejected rather than reinterpreted as path-style. Bucket names can contain dots,
 so a request to `foo.bar.<endpoint host>` is resolved to bucket `foo.bar` and never to a signed
 bucket `foo`, which would otherwise sign a request for one bucket with another bucket's credentials.

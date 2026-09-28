@@ -686,8 +686,8 @@ class TestIcebergS3SignParams {
             any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
         .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
 
-    // Tokens without pathStyleAccess keep the previous behavior, which only recognizes AWS virtual
-    // hosts. Custom endpoints need path-style-access=false configured explicitly.
+    // Tokens that omit pathStyleAccess (AWS, and tokens minted before the attribute existed) keep
+    // the previous behavior, which only recognizes AWS virtual hosts.
     IcebergS3SignParams icebergSigner =
         newBuilder()
             .request(

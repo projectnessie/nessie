@@ -46,7 +46,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.projectnessie.api.v2.params.ParsedReference;
 import org.projectnessie.catalog.files.api.ObjectIO;
+import org.projectnessie.catalog.files.api.RequestSigner;
 import org.projectnessie.catalog.files.config.ImmutableS3BucketOptions;
 import org.projectnessie.catalog.files.config.ImmutableS3Options;
 import org.projectnessie.catalog.files.config.S3BucketOptions;
@@ -54,15 +56,18 @@ import org.projectnessie.catalog.files.config.S3Options;
 import org.projectnessie.catalog.files.s3.S3ClientSupplier;
 import org.projectnessie.catalog.files.s3.S3ObjectIO;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergS3SignRequest;
 import org.projectnessie.catalog.model.NessieTable;
 import org.projectnessie.catalog.model.id.NessieId;
 import org.projectnessie.catalog.model.snapshot.NessieTableSnapshot;
 import org.projectnessie.catalog.secrets.ResolvingSecretsProvider;
 import org.projectnessie.catalog.secrets.SecretsProvider;
+import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SignerKeysService;
 import org.projectnessie.catalog.service.config.LakehouseConfig;
 import org.projectnessie.catalog.service.objtypes.SignerKey;
 import org.projectnessie.model.ContentKey;
+import org.projectnessie.model.Reference.ReferenceType;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestIcebergConfigurer {
@@ -143,6 +148,34 @@ public class TestIcebergConfigurer {
             endpoint.getRawPath().substring(endpoint.getRawPath().lastIndexOf('/') + 1));
     soft.assertThat(signerParams.signerSignature().pathStyleAccess())
         .isEqualTo(expectedPathStyleAccess);
+
+    // Unset path-style access on a custom endpoint is bound as virtual-hosted, so the signer
+    // reads the bucket from the host instead of the path.
+    if (expectedPathStyleAccess.equals(Optional.of(false))) {
+      String requestUri = "https://bucket.obs.example.com/foo/bar/data/file.parquet";
+      IcebergS3SignParams signParams =
+          ImmutableIcebergS3SignParams.builder()
+              .request(
+                  IcebergS3SignRequest.builder()
+                      .region("us-west-2")
+                      .method("GET")
+                      .uri(requestUri)
+                      .headers(Map.of())
+                      .properties(Map.of())
+                      .build())
+              .ref(ParsedReference.parsedReference("main", null, ReferenceType.BRANCH))
+              .key(ContentKey.of("foo", "bar"))
+              .warehouseLocation("s3://bucket/")
+              .writeLocations(List.of("s3://bucket/foo/bar"))
+              .pathStyleAccess(signerParams.signerSignature().pathStyleAccess())
+              .s3Options(ImmutableS3Options.builder().defaultOptions(bucketOptions).build())
+              .catalogService(mock(CatalogService.class))
+              .signer(mock(RequestSigner.class))
+              .build();
+      soft.assertThat(signParams.requestedBucket()).contains("bucket");
+      soft.assertThat(signParams.requestedS3Uri())
+          .isEqualTo("s3://bucket/foo/bar/data/file.parquet");
+    }
   }
 
   static Stream<Arguments> signerTokenPathStyleAccess() {
@@ -154,14 +187,18 @@ public class TestIcebergConfigurer {
             ImmutableS3BucketOptions.builder().pathStyleAccess(false).build(), Optional.empty()),
         arguments(
             ImmutableS3BucketOptions.builder().pathStyleAccess(true).build(), Optional.empty()),
-        // Custom endpoint: only bound when explicitly configured
-        arguments(ImmutableS3BucketOptions.builder().endpoint(endpoint).build(), Optional.empty()),
+        // Custom endpoint: unset path-style access defaults to virtual-hosted (false)
+        arguments(
+            ImmutableS3BucketOptions.builder().endpoint(endpoint).build(), Optional.of(false)),
         arguments(
             ImmutableS3BucketOptions.builder().endpoint(endpoint).pathStyleAccess(false).build(),
             Optional.of(false)),
         arguments(
             ImmutableS3BucketOptions.builder().endpoint(endpoint).pathStyleAccess(true).build(),
             Optional.of(true)),
+        arguments(
+            ImmutableS3BucketOptions.builder().externalEndpoint(endpoint).build(),
+            Optional.of(false)),
         arguments(
             ImmutableS3BucketOptions.builder()
                 .externalEndpoint(endpoint)
