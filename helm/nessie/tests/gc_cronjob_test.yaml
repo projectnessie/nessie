@@ -55,13 +55,33 @@ tests:
           path: metadata.labels["app.kubernetes.io/component"]
           value: gc
       # GC pods must NOT match the Nessie Service selector (name + instance), so
-      # the pod-template name label is GC-specific.
+      # the pod-template name label is GC-specific. The Job object carries the
+      # same GC labels.
       - equal:
           path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/name"]
           value: nessie-gc
       - equal:
           path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/component"]
           value: gc
+      - equal:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/name"]
+          value: nessie-gc
+      - equal:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/instance"]
+          value: nessie
+      - equal:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/component"]
+          value: gc
+      - equal:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - exists:
+          path: spec.jobTemplate.metadata.labels["helm.sh/chart"]
+      - exists:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/version"]
+      # gc.resources defaults to {} and must not render an empty resources block.
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.containers[0].resources
       # GC pods inherit the chart's hardened security contexts so they run in
       # restricted Pod Security namespaces.
       - equal:
