@@ -26,7 +26,7 @@ import static org.projectnessie.events.ri.messaging.MessageHeaders.INITIATOR;
 import static org.projectnessie.events.ri.messaging.MessageHeaders.REPOSITORY_ID;
 import static org.projectnessie.events.ri.messaging.MessageHeaders.SPEC_VERSION;
 
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.SubscribeMessageMetadata;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.message.Headers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -55,13 +55,19 @@ public class TestNatsJsonEventSubscriber extends AbstractMessagingEventSubscribe
 
   @Override
   protected void checkMessage(Message<Event> message, Event expectedPayload) {
-    SubscribeMessageMetadata metadata =
-        message.getMetadata().get(SubscribeMessageMetadata.class).orElseThrow();
-    assertThat(metadata.messageId()).isEqualTo(expectedPayload.getIdAsText());
+    Headers headers = headers(message);
+    assertThat(headers.messageId()).contains(expectedPayload.getIdAsText());
     String subject = AbstractNatsEventSubscriber.subject(expectedPayload);
-    assertThat(metadata.subject()).isEqualTo(subject);
-    checkHeaders(metadata.headers(), expectedPayload);
+    assertThat(headers.subject()).contains(subject);
+    checkHeaders(headers, expectedPayload);
     assertThat(message.getPayload()).isEqualTo(expectedPayload);
+  }
+
+  private static Headers headers(Message<?> message) {
+    for (Object metadata : message.getMetadata()) {
+      if (metadata instanceof Headers headers) return headers;
+    }
+    throw new AssertionError("NATS headers not found");
   }
 
   protected void checkHeaders(Map<String, List<String>> actual, Event event) {

@@ -15,10 +15,8 @@
  */
 package org.projectnessie.events.ri.messaging.nats;
 
-import io.quarkiverse.reactive.messaging.nats.jetstream.client.api.PublishMessageMetadata;
-import java.util.HashMap;
+import io.quarkiverse.reactive.messaging.nats.jetstream.client.message.PublishHeaders;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -46,26 +44,19 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
 
   @Override
   protected Message<T> createMessage(Event upstreamEvent, T messagePayload) {
-    Map<String, List<String>> headers = new HashMap<>();
+    PublishHeaders headers = PublishHeaders.of(upstreamEvent.getIdAsText());
     createHeaders(upstreamEvent, (name, value) -> headers.put(name, List.of(value)));
-    PublishMessageMetadata metadata =
-        PublishMessageMetadata.builder()
-            .messageId(upstreamEvent.getIdAsText())
-            .headers(headers)
-            .stream("nessie-events")
-            .subject(subject(upstreamEvent))
-            .build();
-    return Message.of(messagePayload, Metadata.of(metadata));
+    headers.setSubject(subject(upstreamEvent));
+    return Message.of(messagePayload, Metadata.of(headers));
   }
 
   @Override
   protected CompletionStage<Void> onWriteAck(Metadata metadata) {
     // Do NOT enable this log statement in production!
     if (LOGGER.isDebugEnabled()) {
-      PublishMessageMetadata jetStreamMetadata =
-          metadata.get(PublishMessageMetadata.class).orElseThrow();
-      String id = jetStreamMetadata.messageId();
-      String subject = jetStreamMetadata.subject();
+      PublishHeaders jetStreamHeaders = metadata.get(PublishHeaders.class).orElseThrow();
+      String id = jetStreamHeaders.messageId().orElseThrow();
+      String subject = jetStreamHeaders.subject().orElseThrow();
       LOGGER.debug("Event written: messageId={}, subject={}", id, subject);
     }
     return CompletableFuture.completedFuture(null); // immediate ack
@@ -73,10 +64,9 @@ public abstract class AbstractNatsEventSubscriber<T> extends AbstractMessagingEv
 
   @Override
   protected CompletionStage<Void> onWriteNack(Throwable error, Metadata metadata) {
-    PublishMessageMetadata jetStreamMetadata =
-        metadata.get(PublishMessageMetadata.class).orElseThrow();
-    String id = jetStreamMetadata.messageId();
-    String subject = jetStreamMetadata.subject();
+    PublishHeaders jetStreamHeaders = metadata.get(PublishHeaders.class).orElseThrow();
+    String id = jetStreamHeaders.messageId().orElseThrow();
+    String subject = jetStreamHeaders.subject().orElseThrow();
     LOGGER.error("Failed to write event: messageId={}, subject={}", id, subject, error);
     return CompletableFuture.completedFuture(null); // immediate ack
   }
