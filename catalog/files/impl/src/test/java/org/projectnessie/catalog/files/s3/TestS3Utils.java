@@ -129,7 +129,7 @@ class TestS3Utils {
 
   @ParameterizedTest
   @CsvSource({
-    "https://obs.example.com/example-bucket/mydir/myfile             , s3://example-bucket/mydir/myfile",
+    "https://obs.example.com/example-bucket/mydir/myfile               , s3://example-bucket/mydir/myfile",
     "https://example-bucket.obs.example.com/example-bucket/mydir/myfile, s3://example-bucket/mydir/myfile",
     "https://mybucket.s3.us-east-1.amazonaws.com/mydir/myfile          , s3://mydir/myfile",
     "http://127.0.0.1:9000/mybucket                                    , s3://mybucket",
