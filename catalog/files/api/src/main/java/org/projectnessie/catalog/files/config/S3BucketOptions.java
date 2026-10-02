@@ -57,6 +57,11 @@ public interface S3BucketOptions extends BucketOptions {
    * https://<domain>/<bucket>}. If false, a virtual-hosted style will be used instead, as in:
    * {@code https://<bucket>.<domain>}. If unspecified, the default will depend on the cloud
    * provider.
+   *
+   * <p>For a custom {@code endpoint}, an explicit value is also passed to the S3 request signer, so
+   * it knows how the client addresses the bucket. Set this to {@code false} for object stores that
+   * require virtual-hosted style, so that remote signing accepts {@code
+   * https://<bucket>.<endpoint-host>/<key>} requests.
    */
   Optional<Boolean> pathStyleAccess();
 

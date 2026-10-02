@@ -111,6 +111,48 @@ class TestS3Utils {
     assertThat(S3Utils.asS3Location(location)).isEqualTo(expected);
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "https://example-bucket.obs.example.com/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://example-bucket.s3.amazonaws.com/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://example-bucket.other.s3.amazonaws.com/mydir/myfile, example-bucket.other,"
+        + " s3://example-bucket.other/mydir/myfile",
+    "https://obs.example.com/example-bucket/mydir/myfile, example-bucket,"
+        + " s3://example-bucket/mydir/myfile",
+    "https://not-example-bucket.obs.example.com/mydir/myfile, example-bucket, s3://mydir/myfile",
+  })
+  void asS3LocationWithBucketHint(String location, String bucket, String expected) {
+    assertThat(S3Utils.asS3Location(location, bucket)).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://obs.example.com/example-bucket/mydir/myfile               , s3://example-bucket/mydir/myfile",
+    "https://example-bucket.obs.example.com/example-bucket/mydir/myfile, s3://example-bucket/mydir/myfile",
+    "https://mybucket.s3.us-east-1.amazonaws.com/mydir/myfile          , s3://mydir/myfile",
+    "http://127.0.0.1:9000/mybucket                                    , s3://mybucket",
+  })
+  void asS3PathStyleLocation(String location, String expected) {
+    assertThat(S3Utils.asS3PathStyleLocation(location)).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "https://example-bucket.obs.example.com/mydir/myfile, example-bucket, s3://example-bucket/mydir/myfile",
+    "https://foo.bar.obs.example.com/mydir/myfile       , foo.bar       , s3://foo.bar/mydir/myfile",
+    // The leading subdomain alone does not tell whether the bucket is "foo" or "foo.bar"
+    "https://foo.bar.obs.example.com/mydir/myfile       , foo           , s3://foo/mydir/myfile",
+    "https://obs.example.com/example-bucket/mydir/myfile, example-bucket,",
+    "https://example-bucket-2.obs.example.com/mydir     , example-bucket,",
+    "https://example-bucketobs.example.com/mydir        , example-bucket,",
+  })
+  void asS3VirtualHostedLocation(String location, String bucket, String expected) {
+    assertThat(S3Utils.asS3VirtualHostedLocation(location, bucket))
+        .isEqualTo(Optional.ofNullable(expected));
+  }
+
   @Test
   void asS3LocationErrors() {
     assertThatThrownBy(() -> S3Utils.asS3Location("ftp://localhost:9000/mybucket/mydir/myfile"))
@@ -125,5 +167,27 @@ class TestS3Utils {
     assertThatThrownBy(() -> S3Utils.asS3Location("https://s3.us-east-1.amazonaws.com"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid S3 URI: 'https://s3.us-east-1.amazonaws.com'");
+
+    assertThatThrownBy(
+            () ->
+                S3Utils.asS3Location("ftp://example-bucket.obs.example.com/key", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Unsupported URI scheme: 'ftp'");
+    assertThatThrownBy(() -> S3Utils.asS3Location("http:///key", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("No host in URI: 'http:///key'");
+    assertThatThrownBy(() -> S3Utils.asS3Location("https://obs.example.com/", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid S3 URI: 'https://obs.example.com/'");
+    assertThatThrownBy(
+            () -> S3Utils.asS3PathStyleLocation("https://example-bucket.obs.example.com/"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid S3 URI: 'https://example-bucket.obs.example.com/'");
+    assertThatThrownBy(
+            () ->
+                S3Utils.asS3VirtualHostedLocation(
+                    "ftp://example-bucket.obs.example.com/key", "example-bucket"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Unsupported URI scheme: 'ftp'");
   }
 }

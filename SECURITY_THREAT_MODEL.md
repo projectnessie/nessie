@@ -224,6 +224,20 @@ a missing-table or future-location fallback. Missing content may be handled as a
 case where the signer endpoint was already minted for that location; authorization and unexpected
 lookup failures are fail-closed conditions. `(documented)`
 
+S3 request signing recognizes virtual-hosted requests for custom endpoints when the bucket
+configures a custom endpoint. An unset `path-style-access` defaults to virtual-hosted style
+(`false`), matching the AWS SDK v2 default; `path-style-access=true` selects path style. That
+setting is bound into the signed token, and the request host must then be exactly
+`<bucket>.<endpoint host>` for one of the buckets of the signer-authorized warehouse, write, or read
+locations; any other request, including a match on more
+than one bucket, is rejected rather than reinterpreted as path-style. Bucket names can contain dots,
+so a request to `foo.bar.<endpoint host>` is resolved to bucket `foo.bar` and never to a signed
+bucket `foo`, which would otherwise sign a request for one bucket with another bucket's credentials.
+This does not widen the table paths permitted by current-location, historical-location,
+metadata-file, or object-storage-layout checks. Tokens without the setting, which includes AWS
+endpoints and tokens minted by earlier versions, keep the previous bucket resolution and signature.
+`(documented)`
+
 Object-store credentials or temporary access material exposed through catalog features are in scope only
 for configured credential-vending or request-signing modes. Operators are responsible for cloud IAM
 policy scope, role trust policies, external IDs, token/session duration, and bucket or filesystem

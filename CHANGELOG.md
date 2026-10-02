@@ -20,6 +20,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/S3: Remote request signing now accepts virtual-hosted requests for custom (non-AWS)
+  endpoints, for example object stores that only support virtual-hosted style. When such a bucket
+  leaves `path-style-access` unset, signing uses virtual-hosted style, matching the AWS SDK v2
+  default. Signer tokens for AWS endpoints, and tokens issued by earlier versions, are unchanged
+  and remain valid across the upgrade.
+
 ### Commits
 
 ## [0.108.8] Release (2026-09-09)
