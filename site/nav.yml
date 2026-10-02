@@ -38,6 +38,7 @@ nav:
       - develop/spec.md
       - develop/kernel.md
       - develop/rest.md
+      - develop/cel-filters.md
       - develop/python.md
       - develop/java.md
       - develop/content-types.md
