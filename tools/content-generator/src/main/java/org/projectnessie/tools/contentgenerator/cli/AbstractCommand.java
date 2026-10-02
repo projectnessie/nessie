@@ -23,9 +23,11 @@ import java.util.concurrent.Callable;
 import org.projectnessie.client.api.NessieApiV2;
 import org.projectnessie.error.BaseNessieClientServerException;
 import picocli.CommandLine;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.TypeConversionException;
 
 public abstract class AbstractCommand implements Callable<Integer> {
 
@@ -54,6 +56,23 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
   public NessieApiV2 createNessieApiInstance() {
     return parent.createNessieApiInstance();
+  }
+
+  static final class PositiveIntegerConverter implements ITypeConverter<Integer> {
+
+    @Override
+    public Integer convert(String value) {
+      int parsed;
+      try {
+        parsed = Integer.parseInt(value);
+      } catch (NumberFormatException e) {
+        throw new TypeConversionException(String.format("'%s' is not an integer", value));
+      }
+      if (parsed < 1) {
+        throw new TypeConversionException("value must be at least 1");
+      }
+      return parsed;
+    }
   }
 
   /** Convenience method declaration that allows to "just throw" Nessie API exceptions. */

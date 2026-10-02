@@ -15,7 +15,6 @@
  */
 package org.projectnessie.tools.contentgenerator.cli;
 
-import jakarta.validation.constraints.Min;
 import java.util.ArrayList;
 import java.util.List;
 import org.projectnessie.client.api.NessieApiV2;
@@ -35,12 +34,12 @@ public class CopyContent extends CommittingCommand {
       description = "Branch name for making changes (defaults to the default branch if not set).")
   private String ref;
 
-  @Min(value = 1, message = "At least one copy is to be made.")
   @Option(
       names = {"-n", "--num-copies"},
       required = true,
       defaultValue = "10000",
-      description = "Number of copies to make.")
+      description = "Number of copies to make.",
+      converter = PositiveIntegerConverter.class)
   private int numCopies;
 
   @Option(
@@ -52,8 +51,8 @@ public class CopyContent extends CommittingCommand {
   @Option(
       names = {"-t", "--to"},
       description =
-          "Content key pattern for the copies. Each element of the pattern may contain one instance of '%d',"
-              + " which will be replaced with the copy counter.",
+          "Content key pattern for the copies. Each element of the pattern may contain one instance"
+              + " of '%d', which will be replaced with the copy counter.",
       required = true)
   private List<String> keyPattern;
 
