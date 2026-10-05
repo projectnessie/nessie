@@ -46,7 +46,6 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.project
@@ -100,7 +99,11 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
     else "io.quarkus.platform"
   val notation = "$group:$extension:$quarkusVersion"
 
-  return if (isNoQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+  val base = if (isNoQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+  val plat = base as ExternalModuleDependency
+  plat.exclude(group = "com.fasterxml.jackson.core", module = "jackson-annotations")
+
+  return plat
 }
 
 fun Project.cassandraDriverTweak() {
