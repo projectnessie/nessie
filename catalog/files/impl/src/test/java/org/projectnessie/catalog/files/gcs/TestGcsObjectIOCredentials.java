@@ -37,7 +37,7 @@ import org.projectnessie.storage.uri.StorageUri;
 class TestGcsObjectIOCredentials {
 
   @Test
-  void emitsStructuredStorageCredentialsForDownscopedToken() {
+  void emitsOneStorageCredentialForDownscopedToken() {
     StorageUri warehouse = StorageUri.of("gs://bucket/warehouse");
     StorageUri table = StorageUri.of("gs://bucket/warehouse/table");
     StorageUri readonly = StorageUri.of("gs://bucket/warehouse/read");
@@ -62,14 +62,9 @@ class TestGcsObjectIOCredentials {
     assertThat(config)
         .containsEntry("gcs.oauth2.token", "oauth-token")
         .containsEntry("gcs.oauth2.token-expires-at", "12345");
-    assertThat(storageCredentials)
-        .containsKeys(
-            "gs://bucket/warehouse", "gs://bucket/warehouse/table", "gs://bucket/warehouse/read");
-    assertThat(storageCredentials.values())
-        .allSatisfy(
-            credential ->
-                assertThat(credential)
-                    .containsEntry("gcs.oauth2.token", "oauth-token")
-                    .containsEntry("gcs.oauth2.token-expires-at", "12345"));
+    assertThat(storageCredentials).containsOnlyKeys("gs://");
+    assertThat(storageCredentials.get("gs://"))
+        .containsEntry("gcs.oauth2.token", "oauth-token")
+        .containsEntry("gcs.oauth2.token-expires-at", "12345");
   }
 }

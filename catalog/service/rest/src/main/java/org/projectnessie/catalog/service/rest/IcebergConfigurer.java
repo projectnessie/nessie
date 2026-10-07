@@ -25,6 +25,7 @@ import static org.projectnessie.catalog.service.rest.AccessDelegation.REMOTE_SIG
 import static org.projectnessie.catalog.service.rest.AccessDelegation.VENDED_CREDENTIALS;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDelegationPredicate;
 
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
@@ -79,6 +80,10 @@ public class IcebergConfigurer {
 
   /** Path of the signer endpoint. */
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
+
+  static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+  static final String GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT =
+      "gcs.oauth2.refresh-credentials-endpoint";
 
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
@@ -223,6 +228,7 @@ public class IcebergConfigurer {
       IcebergTableMetadata tableMetadata,
       String prefix,
       ContentKey contentKey,
+      @Nullable String credentialsEndpoint,
       String dataAccess,
       boolean writeAccessGranted) {
     ImmutableIcebergTableConfig.Builder tableConfig = ImmutableIcebergTableConfig.builder();
@@ -286,6 +292,11 @@ public class IcebergConfigurer {
                 contentKey,
                 config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
+
+    if (credentialsEndpoint != null
+        && storageCredentials.stream().anyMatch(c -> c.config().containsKey(GCS_OAUTH2_TOKEN))) {
+      config.put(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+    }
 
     return tableConfig.config(config).storageCredentials(storageCredentials).build();
   }
