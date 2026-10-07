@@ -30,7 +30,6 @@ import java.nio.channels.Channels;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +57,10 @@ public class GcsObjectIO implements ObjectIO {
   static final String GCS_WRITE_CHUNK_SIZE = "gcs.channel.write.chunk-size-bytes";
   static final String GCS_DELETE_BATCH_SIZE = "gcs.delete.batch-size";
   static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+
+  /** Iceberg clients reject a refresh response that contains more than one GCS credential. */
+  static final String GCS_CREDENTIAL_PREFIX = "gs://";
+
   static final String GCS_OAUTH2_TOKEN_EXPIRES_AT = "gcs.oauth2.token-expires-at";
   static final String GCS_NO_AUTH = "gcs.no-auth";
 
@@ -213,23 +216,11 @@ public class GcsObjectIO implements ObjectIO {
                                 GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
 
                 credentialConfig.forEach(config);
-                credentialPrefixes(storageLocations)
-                    .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
+                storageCredential.accept(GCS_CREDENTIAL_PREFIX, credentialConfig);
               });
     }
 
     bucketOptions.tableConfigOverrides().forEach(config);
-  }
-
-  private static Set<String> credentialPrefixes(StorageLocations storageLocations) {
-    return Stream.concat(
-            Stream.of(storageLocations.warehouseLocation()),
-            Stream.concat(
-                storageLocations.writeableLocations().stream(),
-                storageLocations.readonlyLocations().stream()))
-        .filter(uri -> GcsLocation.isGcsScheme(uri.scheme()))
-        .map(StorageUri::toString)
-        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   @Override

@@ -20,6 +20,13 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/GCS: Iceberg clients now refresh vended GCS tokens before the tokens expire. Before, a
+  client kept the first token, and all its requests to GCS failed when that token expired. The table
+  configuration now contains `gcs.oauth2.refresh-credentials-endpoint`. A refresh returns
+  credentials for the head of the branch or tag that the client loaded the table from. When the
+  client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
+  The `storage-credentials` field now contains one GCS credential with the prefix `gs://`, not one
+  credential for each table location.
 - Catalog/S3: Remote request signing now accepts virtual-hosted requests for custom (non-AWS)
   endpoints, for example object stores that only support virtual-hosted style. When such a bucket
   leaves `path-style-access` unset, signing uses virtual-hosted style, matching the AWS SDK v2

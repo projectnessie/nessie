@@ -114,6 +114,7 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -166,7 +167,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, prefix, dataAccess, false);
+    return this.loadTable(tableRef, tableRef.reference(), prefix, dataAccess, false);
   }
 
   @Operation(operationId = "iceberg.v1.loadCredentials")
@@ -190,7 +191,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   }
 
   private Uni<IcebergLoadTableResponse> loadTable(
-      TableRef tableRef, String prefix, String dataAccess, boolean writeAccessValidated)
+      TableRef tableRef,
+      ParsedReference requestedReference,
+      String prefix,
+      String dataAccess,
+      boolean writeAccessValidated)
       throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
@@ -208,7 +213,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     IcebergLoadTableResponse.builder(),
                     warehouse.location(),
                     prefix,
-                    key,
+                    tableRef(key, requestedReference, tableRef.warehouse()),
                     dataAccess,
                     writeAccessValidated));
   }
@@ -220,9 +225,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           B builder,
           String warehouseLocation,
           String prefix,
-          ContentKey contentKey,
+          TableRef tableRef,
           String dataAccess,
           boolean writeAccessValidated) {
+    ContentKey contentKey = tableRef.contentKey();
     IcebergTableMetadata tableMetadata =
         (IcebergTableMetadata)
             snap.entityObject()
@@ -251,6 +257,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       }
     }
 
+    String credentialsPrefix = credentialsPrefix(tableRef, snap.effectiveReference());
+
     return loadTableResult(
         content.getMetadataLocation(),
         snap.nessieSnapshot(),
@@ -259,8 +267,19 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         builder,
         prefix,
         contentKey,
+        uriInfo.icebergTableCredentialsPath(credentialsPrefix, contentKey),
         dataAccess,
         writeAccessValidated);
+  }
+
+  /**
+   * A request for a branch or tag name gets credentials for the head of that reference on each
+   * refresh. A request for a hash or a timestamp gets credentials for the same commit.
+   */
+  static String credentialsPrefix(TableRef tableRef, Reference effectiveReference) {
+    ParsedReference requested = requireNonNull(tableRef.reference());
+    String hash = requested.hashWithRelativeSpec() != null ? effectiveReference.getHash() : null;
+    return encodePrefix(requested.name(), hash, tableRef.warehouse());
   }
 
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
@@ -272,6 +291,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           B builder,
           String prefix,
           ContentKey contentKey,
+          String credentialsEndpoint,
           String dataAccess,
           boolean writeAccessGranted) {
 
@@ -282,6 +302,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             tableMetadata,
             prefix,
             contentKey,
+            credentialsEndpoint,
             dataAccess,
             writeAccessGranted);
 
@@ -370,6 +391,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   IcebergCreateTableResponse.builder(),
                   prefix,
                   tableRef.contentKey(),
+                  // A staged table does not exist before the commit.
+                  null,
                   dataAccess,
                   true));
     }
@@ -389,7 +412,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     IcebergCreateTableResponse.builder(),
                     warehouse.location(),
                     prefix,
-                    tableRef.contentKey(),
+                    tableRef,
                     dataAccess,
                     true));
   }
@@ -457,6 +480,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getHash(),
                   BRANCH),
               tableRef.warehouse()),
+          reference,
           prefix,
           dataAccess,
           true);
@@ -515,6 +539,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
             tableRef.warehouse()),
+        reference,
         prefix,
         dataAccess,
         true);

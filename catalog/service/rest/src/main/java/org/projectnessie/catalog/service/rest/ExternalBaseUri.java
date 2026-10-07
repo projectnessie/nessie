@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.rest;
 import static java.lang.String.format;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
@@ -103,5 +104,16 @@ public interface ExternalBaseUri {
    */
   default String icebergS3SignerPathWithPath(String prefix, String signerParam) {
     return format("v1/%s/s3sign/%s", encode(prefix, UTF_8), signerParam);
+  }
+
+  /** The path, without a leading slash, of the {@code loadCredentials} endpoint for a table. */
+  default String icebergTableCredentialsPath(String prefix, ContentKey contentKey) {
+    String namespace =
+        contentKey.getNamespace().getElements().stream()
+            .map(level -> encode(level, UTF_8))
+            .collect(joining("%1F"));
+    return format(
+        "v1/%s/namespaces/%s/tables/%s/credentials",
+        encode(prefix, UTF_8), namespace, encode(contentKey.getName(), UTF_8));
   }
 }
