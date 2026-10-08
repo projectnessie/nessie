@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-gc.jar show-licenses [-hV]
 Show 3rd party license information.

@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.impersonation.enabled` | Whether to enable "impersonation" mode. If enabled, each access token obtained from the OAuth2  server using the configured initial grant type will be exchanged for a new token, using the  token exchange grant type.  |
