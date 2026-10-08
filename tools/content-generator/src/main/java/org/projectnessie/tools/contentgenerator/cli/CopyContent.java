@@ -51,8 +51,8 @@ public class CopyContent extends CommittingCommand {
   @Option(
       names = {"-t", "--to"},
       description =
-          "Content key pattern for the copies. Each element of the pattern may contain one instance"
-              + " of '%d', which will be replaced with the copy counter.",
+          "Content key pattern for the copies. Each element of the pattern may contain one instance of '%d',"
+              + " which will be replaced with the copy counter.",
       required = true)
   private List<String> keyPattern;
 
