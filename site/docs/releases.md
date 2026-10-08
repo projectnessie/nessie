@@ -2,6 +2,30 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.109.0 Release (October 08, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.109.0).
+
+### Fixes
+
+- Catalog/S3: Remote request signing now accepts virtual-hosted requests for custom (non-AWS)
+  endpoints, for example object stores that only support virtual-hosted style. When such a bucket
+  leaves `path-style-access` unset, signing uses virtual-hosted style, matching the AWS SDK v2
+  default. Signer tokens for AWS endpoints, and tokens issued by earlier versions, are unchanged
+  and remain valid across the upgrade.
+
+### Commits
+* Support custom S3 virtual-host request signing (#12865)
+* feat(helm): add optional Nessie GC CronJob (#12643)
+* Use docker.io for Google Cloud SDK (#13099)
+* Use `EndpointUrl` to fix deprecation warnings in `StsClientsPool` (#13093)
+* Support maintenance release publication policy (#13063)
+* Support qualified maintenance release versions (#13061)
+* Push releases to their source branch (#13060)
+* Add no-latest option to image publisher (#13059)
+* Revert "Update dependency ubuntu to v26 (#13048)"
+* Add Spark 4.1 extension (#12920)
+
 ## 0.108.8 Release (September 09, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.8).
