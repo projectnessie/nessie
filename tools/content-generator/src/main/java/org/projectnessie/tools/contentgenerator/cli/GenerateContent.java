@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.toList;
 import static org.projectnessie.model.ContentKey.fromPathString;
 import static org.projectnessie.tools.contentgenerator.keygen.KeyGenerator.newKeyGenerator;
 
-import jakarta.validation.constraints.Min;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -81,12 +80,12 @@ public class GenerateContent extends CommittingCommand {
           "Name of the default branch, uses the server's default branch if not specified.")
   private String defaultBranchName;
 
-  @Min(value = 1, message = "Must create at least one commit.")
   @Option(
       names = {"-n", "--num-commits"},
       required = true,
       defaultValue = "100",
-      description = "Number of commits to create.")
+      description = "Number of commits to create.",
+      converter = PositiveIntegerConverter.class)
   private int numCommits;
 
   @Option(
@@ -96,11 +95,11 @@ public class GenerateContent extends CommittingCommand {
               + "See java.time.Duration for argument format details.")
   private Duration runtimeDuration;
 
-  @Min(value = 1, message = "Must use at least one table (content-key).")
   @Option(
       names = {"-t", "--num-tables"},
       defaultValue = "1",
-      description = "Number of table names, each commit chooses a random table (content-key).")
+      description = "Number of table names, each commit chooses a random table (content-key).",
+      converter = PositiveIntegerConverter.class)
   private int numTables;
 
   @Option(

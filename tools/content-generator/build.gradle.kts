@@ -32,7 +32,6 @@ dependencies {
   annotationProcessor(libs.picocli.codegen)
   implementation(libs.guava)
 
-  compileOnly(libs.jakarta.validation.api)
   compileOnly(libs.jakarta.annotation.api)
   compileOnly(libs.findbugs.jsr305)
 
