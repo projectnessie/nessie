@@ -83,6 +83,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromRefName(branchName)
                     .defaultKeyMergeMode(MergeBehavior.FORCE)
                     .isFetchAdditionalInfo(true)
+                    .isReturnConflictAsResult(true)
                     .addKeyMergeModes(
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -92,7 +93,8 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     o.put("fromRefName", "testBranch")
                         .put("defaultKeyMergeMode", "FORCE")
                         .put("fromHash", HASH)
-                        .put("isFetchAdditionalInfo", true)
+                        .put("fetchAdditionalInfo", true)
+                        .put("returnConflictAsResult", true)
                         .set(
                             "keyMergeModes",
                             arrayNode()
@@ -120,7 +122,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromHash(HASH)
                     .fromRefName(branchName)
                     .keepIndividualCommits(true)
-                    .isDryRun(false)
+                    .isDryRun(true)
                     .addKeyMergeModes(
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -130,7 +132,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     o.put("fromRefName", "testBranch")
                         .put("keepIndividualCommits", true)
                         .put("fromHash", HASH)
-                        .put("isDryRun", false)
+                        .put("dryRun", true)
                         .set(
                             "keyMergeModes",
                             arrayNode()
