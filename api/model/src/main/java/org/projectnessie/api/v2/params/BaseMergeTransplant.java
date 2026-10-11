@@ -17,6 +17,7 @@ package org.projectnessie.api.v2.params;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,12 +59,14 @@ public interface BaseMergeTransplant {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
+  @JsonAlias("isDryRun")
   @JsonProperty("dryRun")
   Boolean isDryRun();
 
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
+  @JsonAlias("isFetchAdditionalInfo")
   @JsonProperty("fetchAdditionalInfo")
   Boolean isFetchAdditionalInfo();
 
@@ -75,6 +78,7 @@ public interface BaseMergeTransplant {
   @Nullable
   @jakarta.annotation.Nullable
   @JsonInclude(Include.NON_NULL)
+  @JsonAlias("isReturnConflictAsResult")
   @JsonProperty("returnConflictAsResult")
   Boolean isReturnConflictAsResult();
 }
