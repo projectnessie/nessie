@@ -114,6 +114,18 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                 ImmutableMerge.builder()
                     .fromHash(HASH)
                     .fromRefName(branchName)
+                    .isReturnConflictAsResult(true)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", branchName)
+                        .put("fromHash", HASH)
+                        .put("returnConflictAsResult", true)),
+        new Case(Merge.class)
+            .obj(
+                ImmutableMerge.builder()
+                    .fromHash(HASH)
+                    .fromRefName(branchName)
                     .keepIndividualCommits(true)
                     .build())
             .jsonNode(
@@ -128,7 +140,6 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromRefName(branchName)
                     .defaultKeyMergeMode(MergeBehavior.FORCE)
                     .isFetchAdditionalInfo(true)
-                    .isReturnConflictAsResult(true)
                     .addKeyMergeModes(
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -139,7 +150,6 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                         .put("defaultKeyMergeMode", "FORCE")
                         .put("fromHash", HASH)
                         .put("fetchAdditionalInfo", true)
-                        .put("returnConflictAsResult", true)
                         .set(
                             "keyMergeModes",
                             arrayNode()
@@ -167,7 +177,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromHash(HASH)
                     .fromRefName(branchName)
                     .keepIndividualCommits(true)
-                    .isDryRun(true)
+                    .isDryRun(false)
                     .addKeyMergeModes(
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
@@ -177,7 +187,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     o.put("fromRefName", "testBranch")
                         .put("keepIndividualCommits", true)
                         .put("fromHash", HASH)
-                        .put("dryRun", true)
+                        .put("dryRun", false)
                         .set(
                             "keyMergeModes",
                             arrayNode()
