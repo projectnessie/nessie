@@ -365,7 +365,7 @@ jobs:
       # update an existing version.
 
       - name: Create on SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
@@ -375,7 +375,7 @@ jobs:
           args: api:create projectnessie/nessie -f ./nessie-openapi-${{ env.RELEASE_VERSION }}.yaml --visibility=public
 
       - name: Unpublish on SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
@@ -385,7 +385,7 @@ jobs:
           args: api:unpublish projectnessie/nessie/${{ env.RELEASE_VERSION }}.yaml
 
       - name: Update SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
