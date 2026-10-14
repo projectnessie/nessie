@@ -163,7 +163,7 @@ jobs:
           cp tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip "${ARTIFACTS}"
 
       - name: Archive release artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-artifacts
           path: build-artifacts
@@ -290,7 +290,7 @@ jobs:
           mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
 
       - name: Archive Helm chart artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-helm
           path: ./nessie-helm-*.tgz
@@ -302,7 +302,7 @@ jobs:
           helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
 
       - name: Archive Helm chart index.yaml
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-helm-index.yaml
           path: index.yaml
@@ -354,7 +354,7 @@ jobs:
         run: cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml ./nessie-openapi-${RELEASE_VERSION}.yaml
 
       - name: Archive OpenAPI artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-openapi
           path: ./nessie-openapi-*.yaml
