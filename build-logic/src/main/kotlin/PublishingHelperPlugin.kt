@@ -59,7 +59,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     plugins.withType<MavenPublishPlugin>().configureEach {
       val publication =
         extensions.getByType<PublishingExtension>().publications.register<MavenPublication>(
-          "maven"
+          "maven",
         ) {
           val publishingHelper = extensions.getByType<PublishingHelperExtension>()
           val projectName = project.name
@@ -308,7 +308,7 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
     }
     // component.addVariantsFromConfiguration(configurations.getByName("runtimeElements")) {
     component.addVariantsFromConfiguration(
-      project.configurations.getByName("shadowRuntimeElements")
+      project.configurations.getByName("shadowRuntimeElements"),
     ) {
       if (isPublishable(configurationVariant)) {
         mapToMavenScope("runtime")

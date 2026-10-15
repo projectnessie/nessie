@@ -45,7 +45,7 @@ val configurationCacheRequested =
 
 if (isCI && configurationCacheRequested) {
   throw GradleException(
-    "Gradle configuration cache must not be enabled in CI because it can persist build configuration state to disk."
+    "Gradle configuration cache must not be enabled in CI because it can persist build configuration state to disk.",
   )
 }
 

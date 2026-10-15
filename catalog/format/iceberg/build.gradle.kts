@@ -96,7 +96,7 @@ testing {
         all {
           testTask.configure {
             usesService(
-              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service,
             )
           }
           tasks.named("test").configure { dependsOn(testTask) }

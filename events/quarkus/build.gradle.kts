@@ -19,7 +19,7 @@ plugins {
     .version(
       libs.plugins.quarkus.asProvider().map {
         System.getProperty("quarkus.custom.version", it.version.requiredVersion)
-      }
+      },
     )
   id("nessie-conventions-quarkus")
 }
