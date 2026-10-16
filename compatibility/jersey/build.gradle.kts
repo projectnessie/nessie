@@ -51,7 +51,7 @@ dependencies {
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-core")
   implementation("org.glassfish.jersey.test-framework:jersey-test-framework-util")
   implementation(
-    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2"
+    "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2",
   )
 
   implementation("org.jboss.weld.se:weld-se-core")

@@ -28,7 +28,7 @@ dependencies {
 
   val versionIceberg = libs.versions.iceberg.get()
   compileOnly(
-    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg"
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg",
   )
 
   implementation(nessieProject("nessie-cli-grammar"))

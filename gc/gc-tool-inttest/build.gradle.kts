@@ -64,7 +64,7 @@ dependencies {
   intTestRuntimeOnly(libs.logback.classic)
 
   intTestImplementation(
-    nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
+    nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"),
   )
   intTestImplementation(nessieProject("nessie-floci-s3-testcontainer"))
 
@@ -89,7 +89,7 @@ dependencies {
   // Reference the exact Iceberg version here, because the iceberg-bom might not contain all
   // Spark/Flink deps :(
   intTestRuntimeOnly(
-    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}",
   )
 
   intTestRuntimeOnly(libs.hadoop.client)
