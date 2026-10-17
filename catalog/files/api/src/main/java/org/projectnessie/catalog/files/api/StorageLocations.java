@@ -16,12 +16,15 @@
 package org.projectnessie.catalog.files.api;
 
 import java.util.List;
+import java.util.Optional;
 import org.projectnessie.nessie.immutables.NessieImmutable;
 import org.projectnessie.storage.uri.StorageUri;
 
 @NessieImmutable
 public interface StorageLocations {
   StorageUri warehouseLocation();
+
+  Optional<StorageUri> tableLocation();
 
   List<StorageUri> writeableLocations();
 
@@ -31,6 +34,16 @@ public interface StorageLocations {
       StorageUri warehouseLocation,
       Iterable<StorageUri> writeableLocations,
       Iterable<StorageUri> readonlyLocations) {
-    return ImmutableStorageLocations.of(warehouseLocation, writeableLocations, readonlyLocations);
+    return ImmutableStorageLocations.of(
+        warehouseLocation, Optional.empty(), writeableLocations, readonlyLocations);
+  }
+
+  static StorageLocations storageLocations(
+      StorageUri warehouseLocation,
+      StorageUri tableLocation,
+      Iterable<StorageUri> writeableLocations,
+      Iterable<StorageUri> readonlyLocations) {
+    return ImmutableStorageLocations.of(
+        warehouseLocation, Optional.of(tableLocation), writeableLocations, readonlyLocations);
   }
 }
