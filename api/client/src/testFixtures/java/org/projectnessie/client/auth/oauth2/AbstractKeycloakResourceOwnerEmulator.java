@@ -49,7 +49,7 @@ public abstract class AbstractKeycloakResourceOwnerEmulator
     String loginHtml = getHtmlPage(loginPageUrl, cookies);
     Matcher matcher = LOGIN_FORM_ACTION_PATTERN.matcher(loginHtml);
     assertThat(matcher.find()).isTrue();
-    URI loginActionUrl = new URI(matcher.group(1));
+    URI loginActionUrl = new URI(matcher.group(1).replace("&amp;", "&"));
     // send login form
     HttpURLConnection loginActionConn = openConnection(loginActionUrl);
     Map<String, String> data =
