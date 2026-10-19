@@ -230,9 +230,28 @@ abstract class IcebergS3SignParams {
     return checkLocation(warehouseLocation(), requestedS3Uri(), location);
   }
 
+  /**
+   * Whether {@code requested} is {@code location} itself or an object below it.
+   *
+   * <p>Locations are compared per S3 path element, never as raw string prefixes: {@code
+   * s3://b/ns1/table1} must not authorize {@code s3://b/ns1/table10/...}, which is a sibling
+   * location that merely shares a string prefix.
+   */
   @VisibleForTesting
   static boolean checkLocation(String warehouseLocation, String requested, String location) {
-    if (requested.startsWith(location)) {
+
+    String locationWithSlash;
+    String locationWithoutSlash;
+
+    if (location.endsWith("/")) {
+      locationWithSlash = location;
+      locationWithoutSlash = location.substring(0, location.length() - 1);
+    } else {
+      locationWithoutSlash = location;
+      locationWithSlash = locationWithoutSlash + "/";
+    }
+
+    if (requested.startsWith(locationWithSlash) || requested.equals(locationWithoutSlash)) {
       return true;
     }
 
@@ -248,11 +267,9 @@ abstract class IcebergS3SignParams {
       warehouseLocation += "/";
       warehouseLocationLength++;
     }
-    if (!location.endsWith("/")) {
-      location += "/";
-    }
 
-    if (!requested.startsWith(warehouseLocation) || !location.startsWith(warehouseLocation)) {
+    if (!requested.startsWith(warehouseLocation)
+        || !locationWithSlash.startsWith(warehouseLocation)) {
       return false;
     }
 
@@ -269,7 +286,7 @@ abstract class IcebergS3SignParams {
       requestedPath = requestedPath.substring(requestedSlash + 1);
     }
 
-    String locationPath = location.substring(warehouseLocationLength);
+    String locationPath = locationWithSlash.substring(warehouseLocationLength);
     return requestedPath.startsWith(locationPath);
   }
 
