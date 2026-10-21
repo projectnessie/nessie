@@ -13,7 +13,7 @@ Running Nessie on your laptop and accessing it using Spark SQL and Iceberg REST 
 The following starts Nessie with Minio and a predefined bucket.
 
 ```bash
-git clone projectnessie/nessie
+git clone https://github.com/projectnessie/nessie.git
 cd nessie/docker
 docker-compose -f catalog-auth-s3/docker-compose.yml up
 # or use podman-compose, if you're using Podman

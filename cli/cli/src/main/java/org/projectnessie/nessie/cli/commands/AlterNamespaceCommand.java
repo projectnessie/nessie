@@ -88,7 +88,7 @@ public class AlterNamespaceCommand extends NessieCommittingCommand<AlterNamespac
 
   @Override
   public String description() {
-    return "Changes a new namespace.";
+    return "Update an existing namespace.";
   }
 
   @Override

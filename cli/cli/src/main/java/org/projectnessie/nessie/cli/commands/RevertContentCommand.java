@@ -187,7 +187,7 @@ public class RevertContentCommand extends NessieCommittingCommand<RevertContentC
 
   @Override
   public String description() {
-    return "Create a new namespace.";
+    return "Revert content keys to a previous state.";
   }
 
   @Override

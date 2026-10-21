@@ -2,6 +2,89 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.109.0 Release (October 08, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.109.0).
+
+### Fixes
+
+- Catalog/S3: Remote request signing now accepts virtual-hosted requests for custom (non-AWS)
+  endpoints, for example object stores that only support virtual-hosted style. When such a bucket
+  leaves `path-style-access` unset, signing uses virtual-hosted style, matching the AWS SDK v2
+  default. Signer tokens for AWS endpoints, and tokens issued by earlier versions, are unchanged
+  and remain valid across the upgrade.
+
+### Commits
+* Support custom S3 virtual-host request signing (#12865)
+* feat(helm): add optional Nessie GC CronJob (#12643)
+* Use docker.io for Google Cloud SDK (#13099)
+* Use `EndpointUrl` to fix deprecation warnings in `StsClientsPool` (#13093)
+* Support maintenance release publication policy (#13063)
+* Support qualified maintenance release versions (#13061)
+* Push releases to their source branch (#13060)
+* Add no-latest option to image publisher (#13059)
+* Revert "Update dependency ubuntu to v26 (#13048)"
+* Add Spark 4.1 extension (#12920)
+
+## 0.108.8 Release (September 09, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.8).
+
+### Upgrade notes
+
+- Catalog/GCS: Down-scoped credentials, enabled via
+  `nessie.catalog.service.gcs.default-options.downscoped-credentials.enable`, were not functional and
+  failed every credential-vending request. They work now. Vended credentials are scoped to a table's
+  location, so they do not cover tables using `write.object-storage.enabled=true`, which writes data
+  files under a randomized prefix that Credential Access Boundary conditions cannot express. Do not
+  enable down-scoped credentials for warehouses whose tables use that layout.
+- BigTable: the gRPC channel pool is no longer capped at a single channel by default. Deployments
+  that relied on the previous (unintended) behavior and have sized their BigTable instance around
+  one connection per Nessie instance may see more concurrent connections to BigTable. The previous
+  behavior can be restored by setting
+  `nessie.version.store.persist.bigtable.initial-channel-count=1` together with
+  `nessie.version.store.persist.bigtable.max-channel-count=1`, although this is not recommended.
+
+### New Features
+
+- Helm chart: the BigTable gRPC channel pool settings can now be configured via the new
+  `bigtable.channelPool` values, instead of having to go through `advancedConfig`.
+
+### Fixes
+
+- Catalog/GCS: Fix down-scoped credentials, which failed for every request. The source credential was
+  not scoped, so Google's token exchange rejected it with `invalid_scope`, and the generated Credential
+  Access Boundary conditions used CEL `matches()`, which Google's IAM CEL implementation does not
+  support.
+- Catalog/GCS: Vended credentials scoped to a table location no longer grant access to sibling
+  locations whose name starts with the same characters, for example a credential for
+  `warehouse/orders` granting access to `warehouse/orders2`.
+- BigTable: unset channel pool settings are no longer taken from GAX's generic defaults, but from
+  the settings tuned by the BigTable client library. The GAX defaults
+  (`min-rpcs-per-channel=0` and `max-rpcs-per-channel=Integer.MAX_VALUE`) made the channel pool
+  statically sized, which prevented gax from ever resizing it and pinned it to a single channel for
+  the lifetime of the client. Since gRPC starts queuing requests locally beyond 100 concurrent RPCs
+  per channel, this silently capped BigTable throughput per Nessie instance and surfaced as
+  `DEADLINE_EXCEEDED` errors under load, once the local queuing had exhausted a request's total
+  timeout.
+
+### Commits
+* Remove inomplete releases from releases page
+* Remove incomplete releases from site
+* remove incomplete releases from CHANGELOG.md
+* Fix publication again
+* Fix Maven publication (#12994)
+* Fix Spark artifacts in NMCP aggregation (#12990)
+* Add another BSD-3-clause license pattern (#12989)
+* Update license mentions (#12986)
+* BigTable: don't collapse the gRPC channel pool to a single channel (#12917)
+* Catalog/GCS: fix down-scoped credentials failing on every request (#12901)
+* Fix publishing (#12916)
+* Make NMCP work with the configuration cache (#12764)
+* Add SQL Server dialect for the JDBC2 persist backend (#12885)
+* Fix incorrect CLI command descriptions (#12873)
+* Fix invalid git clone URL in try-nessie guide (#12874)
+
 ## 0.108.4 Release (July 31, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.108.4).

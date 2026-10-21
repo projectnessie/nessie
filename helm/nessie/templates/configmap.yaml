@@ -141,6 +141,7 @@ data:
     {{- $_ = set $map "quarkus.google.cloud.project-id" .Values.bigtable.projectId -}}
     {{- $_ = set $map "nessie.version.store.persist.bigtable.instance-id" .Values.bigtable.instanceId -}}
     {{- $_ = set $map "nessie.version.store.persist.bigtable.app-profile-id" .Values.bigtable.appProfileId -}}
+    {{- list .Values.bigtable.channelPool "nessie.version.store.persist.bigtable." $map | include "nessie.applyBigTableChannelPoolOptions" -}}
     {{- end -}}
 
     {{- if .Values.authentication.enabled -}}

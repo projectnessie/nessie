@@ -120,7 +120,7 @@ if (System.getProperty("idea.sync.active").toBoolean()) {
 
       delegateActions.testRunner =
         ActionDelegationConfig.TestRunner.valueOf(
-          System.getProperty("nessie.intellij.test-runner", "CHOOSE_PER_TEST")
+          System.getProperty("nessie.intellij.test-runner", "CHOOSE_PER_TEST"),
         )
     }
   }

@@ -42,7 +42,7 @@ dependencies {
   implementation("io.smallrye.config:smallrye-config-core")
   implementation("io.smallrye:smallrye-context-propagation")
   implementation(
-    "org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api"
+    "org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api",
   )
   implementation("org.eclipse.microprofile.health:microprofile-health-api")
 

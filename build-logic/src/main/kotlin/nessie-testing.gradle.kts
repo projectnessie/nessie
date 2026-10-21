@@ -89,7 +89,7 @@ tasks.withType<Test>().configureEach {
         "-Djunit.platform.reporting.output.dir=${reports.junitXml.outputLocation.get().asFile.absolutePath}",
         "-Djunit.jupiter.execution.timeout.default=5m",
       )
-    }
+    },
   )
   environment("TESTCONTAINERS_REUSE_ENABLE", "true")
 
@@ -105,7 +105,7 @@ tasks.withType<Test>().configureEach {
           "-Dquarkus.log.console.level=${testLogLevel("INFO")}",
           "-Dhttp.access.log.level=${testLogLevel()}",
         )
-      }
+      },
     )
 
     minHeapSize = testHeapSize ?: "768m"
@@ -127,7 +127,7 @@ testing {
         targets.all {
           testTask.configure {
             usesService(
-              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service
+              gradle.sharedServices.registrations.named("testParallelismConstraint").get().service,
             )
           }
         }
@@ -143,7 +143,7 @@ testing {
       targets.all {
         testTask.configure {
           usesService(
-            gradle.sharedServices.registrations.named("intTestParallelismConstraint").get().service
+            gradle.sharedServices.registrations.named("intTestParallelismConstraint").get().service,
           )
 
           shouldRunAfter(test)

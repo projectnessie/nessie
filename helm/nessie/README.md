@@ -8,7 +8,7 @@ helm-docs --chart-search-root=helm
 
 # Nessie Helm chart
 
-![Version: 0.108.4](https://img.shields.io/badge/Version-0.108.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.109.0](https://img.shields.io/badge/Version-0.109.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 A Helm chart for Nessie.
 
@@ -178,6 +178,11 @@ are unavailable.
 | autoscaling.targetCPUUtilizationPercentage | int | `80` | Optional; set to zero or empty to disable. |
 | autoscaling.targetMemoryUtilizationPercentage | string | `nil` | Optional; set to zero or empty to disable. |
 | bigtable.appProfileId | string | `"default"` | The Google Cloud Bigtable app profile ID. |
+| bigtable.channelPool.initialChannelCount | string | `nil` | The initial number of gRPC channels. Since the pool grows by at most two channels per minute, this is what determines how much concurrency is available to a short burst of requests. Dynamic resizing is too coarse to react to bursts shorter than a minute, so size this for the expected peak. |
+| bigtable.channelPool.maxChannelCount | string | `nil` | The maximum number of gRPC channels; the pool never grows beyond this. |
+| bigtable.channelPool.maxRpcsPerChannel | string | `nil` | The number of concurrent RPCs per channel above which channels are added to the pool. Note: gRPC starts queuing requests locally beyond 100 concurrent RPCs per channel, so keep this well below that. |
+| bigtable.channelPool.minChannelCount | string | `nil` | The minimum number of gRPC channels; the pool never shrinks below this. Note: setting this to the same value as maxChannelCount turns the pool into a statically sized one, which disables all dynamic resizing. |
+| bigtable.channelPool.minRpcsPerChannel | string | `nil` | The number of concurrent RPCs per channel below which channels are removed from the pool. Note: with a value of 0, the pool only ever scales down after an interval in which no RPCs were outstanding at all. |
 | bigtable.instanceId | string | `"nessie-bigtable"` | The Google Cloud Bigtable instance ID. |
 | bigtable.projectId | string | `"my-gcp-project"` | The Google Cloud project ID. |
 | bigtable.secret | object | `{}` | The secret to use to authenticate against BigTable. When provided, it is assumed that authentication will use a service account JSON key. See https://cloud.google.com/iam/docs/keys-create-delete for details on how to create a service account key. If left empty, then Workload Identity usage is assumed instead; in this case, make sure that the pod's service account has been granted access to BigTable. See https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to for details on how to create a suitable service account. Important: when using Workload Identity, unless the cluster is in Autopilot mode, it is also required to add the following nodeSelector label: iam.gke.io/gke-metadata-server-enabled: "true" This is not done automatically by this chart because this selector would be invalid for Autopilot clusters. |
@@ -348,6 +353,29 @@ are unavailable.
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.namespace | string | `""` | Optional namespace override for the backend Service. |
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].service.port | string | `nil` | Optional port override for the backend Service. When empty, the first service port is used. |
 | gatewayApi.httpRoutes[0].rules[0].backendRefs[0].weight | int | `1` | Optional backend weight. |
+| gc | object | `{"affinity":{},"args":[],"backoffLimit":3,"command":[],"concurrencyPolicy":"Forbid","enabled":false,"env":[],"failedJobsHistoryLimit":1,"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/projectnessie/nessie-gc","tag":""},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"resources":{},"restartPolicy":"Never","schedule":"0 2 * * *","serviceAccountName":"","startingDeadlineSeconds":null,"successfulJobsHistoryLimit":3,"suspend":false,"tolerations":[]}` | Optional Nessie Garbage Collection (GC) CronJob. When enabled, the chart renders a Kubernetes CronJob that runs the Nessie GC tool image on a schedule. The chart only provides the schedulable scaffolding; configure the GC tool's behavior (version store connection, command, options) via `gc.args` and `gc.env`. See https://projectnessie.org/nessie-latest/gc/ for the GC tool documentation. |
+| gc.affinity | object | `{}` | Affinity and anti-affinity for the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity. |
+| gc.args | list | `[]` | Arguments for the GC container, replacing the image's default arguments. Use this to invoke the desired GC subcommand (for example `gc`) together with its options. At least one of `gc.command` or `gc.args` is required when `gc.enabled` is true. |
+| gc.backoffLimit | int | `3` | The number of retries before considering the GC job as failed. |
+| gc.command | list | `[]` | The entrypoint command for the GC container. Leave empty to use the image's default entrypoint. |
+| gc.concurrencyPolicy | string | `"Forbid"` | The concurrency policy for the CronJob: Allow, Forbid, or Replace. |
+| gc.enabled | bool | `false` | Whether to enable the Nessie GC CronJob. |
+| gc.env | list | `[]` | Environment variables to set in the GC container. Use this to configure the version store connection and other GC settings. |
+| gc.failedJobsHistoryLimit | int | `1` | The number of failed finished jobs to retain in history. |
+| gc.image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
+| gc.image.repository | string | `"ghcr.io/projectnessie/nessie-gc"` | The GC tool image repository to pull from. |
+| gc.image.tag | string | `""` | Overrides the GC image tag whose default is the chart version. |
+| gc.nodeSelector | object | `{}` | Node labels which must match for the GC pod to be scheduled on that node. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector. |
+| gc.podAnnotations | object | `{}` | Annotations to add to the GC job pods. |
+| gc.podLabels | object | `{}` | Labels to add to the GC job pods. |
+| gc.resources | object | `{}` | Configures the resource requests and limits for the GC job pods. |
+| gc.restartPolicy | string | `"Never"` | The restart policy for the GC job pods: Never or OnFailure. |
+| gc.schedule | string | `"0 2 * * *"` | The cron schedule for the GC job, in standard cron format. Required when `gc.enabled` is true. |
+| gc.serviceAccountName | string | `""` | The name of an existing service account to use for the GC job pods. Leave empty to use the pod's default service account. |
+| gc.startingDeadlineSeconds | string | `nil` | Optional deadline in seconds for starting the job if it misses its scheduled time. Leave empty for no deadline. |
+| gc.successfulJobsHistoryLimit | int | `3` | The number of successful finished jobs to retain in history. |
+| gc.suspend | bool | `false` | Whether the CronJob is suspended (no new jobs are scheduled while true). |
+| gc.tolerations | list | `[]` | A list of tolerations to apply to the GC job pods. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/. |
 | image.configDir | string | `"/deployments/config"` | The path to the directory where the application.properties file should be mounted. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy. |
 | image.repository | string | `"ghcr.io/projectnessie/nessie"` | The image repository to pull from. |
