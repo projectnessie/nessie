@@ -75,7 +75,7 @@ val checkNmcpAggregationSparkArtifacts =
 
 val checkNmcpAggregationPublishingRequirements =
   tasks.register<CheckNmcpAggregationPublishingRequirements>(
-    "checkNmcpAggregationPublishingRequirements"
+    "checkNmcpAggregationPublishingRequirements",
   ) {
     group = "Verification"
     description =
@@ -270,7 +270,7 @@ abstract class CheckNmcpAggregationSparkArtifacts : DefaultTask() {
     val expectedSnapshotFileName =
       Regex(
         Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
-          """\d{8}\.\d{6}-\d+\.jar"""
+          """\d{8}\.\d{6}-\d+\.jar""",
       )
 
     return entry.startsWith(artifactDir) &&
@@ -352,7 +352,7 @@ abstract class CheckNmcpAggregationPublishingRequirements : DefaultTask() {
     val expectedSnapshotFileName =
       Regex(
         Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
-          """\d{8}\.\d{6}-\d+$classifierSuffix\.jar"""
+          """\d{8}\.\d{6}-\d+$classifierSuffix\.jar""",
       )
 
     return entry.startsWith(artifactDir) &&

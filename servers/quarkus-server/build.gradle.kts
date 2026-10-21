@@ -22,7 +22,7 @@ plugins {
     .version(
       libs.plugins.quarkus.asProvider().map {
         System.getProperty("quarkus.custom.version", it.version.requiredVersion)
-      }
+      },
     )
   id("nessie-conventions-quarkus")
   id("nessie-license-report")
@@ -260,7 +260,7 @@ quarkus {
         .attributes
         .map { e -> "quarkus.package.jar.manifest.attributes.\"${e.key}\"" to e.value.toString() }
         .toMap()
-    }
+    },
   )
   buildForkOptions {
     maxHeapSize = "4G"

@@ -70,7 +70,7 @@ services:
 
   nessie:
     # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
-    image: ghcr.io/projectnessie/nessie:0.108.8
+    image: ghcr.io/projectnessie/nessie:0.109.0
     ports:
       # API port
       - "19120:19120"
@@ -147,7 +147,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:13.2.3
+    image: docker.io/grafana/grafana:13.2.4
     depends_on:
       - prometheus
     ports:
@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.108.8
+      image: ghcr.io/projectnessie/nessie-cli:0.109.0
       depends_on:
         nessie:
           condition: service_healthy

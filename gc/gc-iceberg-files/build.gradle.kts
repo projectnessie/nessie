@@ -105,6 +105,6 @@ tasks.withType(Test::class.java).configureEach {
       val tmpdir = tmpDir.get().asFile
       tmpdir.mkdirs()
       listOf("-Djava.io.tmpdir=$tmpdir")
-    }
+    },
   )
 }

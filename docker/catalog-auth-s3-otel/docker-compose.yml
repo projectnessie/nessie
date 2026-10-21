@@ -61,7 +61,7 @@ services:
   ##      SELECT * FROM city;
   ##
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.108.8
+    image: ghcr.io/projectnessie/nessie:0.109.0
     ports:
       # API port
       - "19120:19120"
@@ -136,7 +136,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:13.2.3
+    image: docker.io/grafana/grafana:13.2.4
     depends_on:
       - prometheus
     ports:

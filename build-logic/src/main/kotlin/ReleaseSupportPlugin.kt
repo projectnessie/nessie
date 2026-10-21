@@ -61,7 +61,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
     @TaskAction
     fun showVersion() {
       logger.lifecycle(
-        "Current version is ${VersionTuple.fromFile(versionFile.get().asFile.toPath())}."
+        "Current version is ${VersionTuple.fromFile(versionFile.get().asFile.toPath())}.",
       )
     }
   }
@@ -99,7 +99,7 @@ class ReleaseSupportPlugin : Plugin<Project> {
 
       if (finalVersion < currentVersion) {
         throw GradleException(
-          "New version $finalVersion would be lower than current version $currentVersion"
+          "New version $finalVersion would be lower than current version $currentVersion",
         )
       }
 
@@ -151,7 +151,7 @@ internal object ReleaseVersionTransition {
           BumpType.Fix(value)
         } else {
           throw IllegalArgumentException(
-            "Unsupported bump type '$value'; expected none, patch, minor, major, or fix<N>"
+            "Unsupported bump type '$value'; expected none, patch, minor, major, or fix<N>",
           )
         }
     }
