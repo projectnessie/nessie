@@ -106,7 +106,7 @@ class LicenseFileValidation : DependencyFilter {
     if (!missingApacheMentions.isEmpty() || !missingFullMentions.isEmpty()) {
 
       throw GradleException(
-        "License information for the following artifacts is missing in the gradle/built-uber-dists/LICENSE-BINARY-DIST file: $missingError"
+        "License information for the following artifacts is missing in the gradle/built-uber-dists/LICENSE-BINARY-DIST file: $missingError",
       )
     }
 

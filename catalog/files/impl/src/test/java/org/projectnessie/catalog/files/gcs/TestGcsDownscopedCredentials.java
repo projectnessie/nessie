@@ -19,7 +19,6 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.projectnessie.catalog.files.gcs.GcsStorageSupplier.RANDOMIZED_PART;
 
 import com.google.auth.oauth2.CredentialAccessBoundary;
 import com.google.auth.oauth2.CredentialAccessBoundary.AccessBoundaryRule;
@@ -95,6 +94,9 @@ public class TestGcsDownscopedCredentials {
     for (AccessBoundaryRule rule : actual.getAccessBoundaryRules()) {
       String expr = rule.getAvailabilityCondition().getExpression();
 
+      // This local evaluator runs matches()/regex fine, but real IAM CEL rejects it outright.
+      soft.assertThat(expr).describedAs("Script '%s'", expr).doesNotContain(".matches(");
+
       soft.assertThatCode(
               () -> {
                 Script script = CelEval.scriptFor(expr);
@@ -130,8 +132,7 @@ public class TestGcsDownscopedCredentials {
     String bucketNegative = StorageUri.of(negativeCheck).requiredAuthority();
     String pathNegative = StorageUri.of(negativeCheck).pathWithoutLeadingTrailingSlash();
 
-    for (String res :
-        new String[] {resource, resource + "/hello.txt", resource + "/much/deeper/hello.txt"}) {
+    for (String res : new String[] {resource + "/hello.txt", resource + "/much/deeper/hello.txt"}) {
 
       String bucket = StorageUri.of(res).requiredAuthority();
       String path = StorageUri.of(res).pathWithoutLeadingTrailingSlash();
@@ -149,12 +150,19 @@ public class TestGcsDownscopedCredentials {
           .describedAs("positive, resource: %s", res)
           .isEqualTo(true);
 
+      r.setName(format("projects/_/buckets/%s/objects/%s/deadbeef/file.parquet", bucket, path));
+      soft.assertThat(
+              script.execute(
+                  Boolean.class, Map.of("api", new CelEval.ApiInterface(Map.of()), "resource", r)))
+          .describedAs("positive, nested below the location, resource: %s", res)
+          .isEqualTo(true);
+
       r.setName(format("projects/_/buckets/%s/objects/deadbeef/%s", bucket, path));
       soft.assertThat(
               script.execute(
                   Boolean.class, Map.of("api", new CelEval.ApiInterface(Map.of()), "resource", r)))
-          .describedAs("positive, object, resource: %s", res)
-          .isEqualTo(true);
+          .describedAs("negative, location not at the start, resource: %s", res)
+          .isEqualTo(false);
 
       // negative checks
 
@@ -166,13 +174,6 @@ public class TestGcsDownscopedCredentials {
               script.execute(
                   Boolean.class, Map.of("api", new CelEval.ApiInterface(Map.of()), "resource", r)))
           .describedAs("negative, resource: %s", res)
-          .isEqualTo(false);
-
-      r.setName(format("projects/_/buckets/%s/objects/deadbeef/%s", bucket, path));
-      soft.assertThat(
-              script.execute(
-                  Boolean.class, Map.of("api", new CelEval.ApiInterface(Map.of()), "resource", r)))
-          .describedAs("negative, object, resource: %s", res)
           .isEqualTo(false);
     }
   }
@@ -187,7 +188,9 @@ public class TestGcsDownscopedCredentials {
         //
         arguments("gs://buck.et/foo/bar/b.az", "gs://buckxet/foo/bar/bxaz"),
         //
-        arguments("gs://bucket/foo/bar/b.az", "gs://buckxet/foo/bar/bxaz")
+        arguments("gs://bucket/foo/bar/b.az", "gs://buckxet/foo/bar/bxaz"),
+        //
+        arguments("gs://bucket/foo/bar/baz2", "gs://bucket/foo/bar/baz")
         //
         );
   }
@@ -452,20 +455,22 @@ public class TestGcsDownscopedCredentials {
   }
 
   private static String listPrefix(String readOnly) {
-    return "api.getAttribute('storage.googleapis.com/objectListPrefix', '').matches('"
-        + RANDOMIZED_PART
-        + "\\\\Q"
+    String attribute = "api.getAttribute('storage.googleapis.com/objectListPrefix', '')";
+    return attribute
+        + ".startsWith('"
         + readOnly
-        + "\\\\E.*')";
+        + "/') || "
+        + attribute
+        + " == '"
+        + readOnly
+        + "'";
   }
 
   private static String resourceNameMatches(String bucketName, String writeable) {
-    return "resource.name.matches('\\\\Qprojects/_/buckets/"
+    return "resource.name.startsWith('projects/_/buckets/"
         + bucketName
-        + "/objects/\\\\E"
-        + RANDOMIZED_PART
-        + "\\\\Q"
+        + "/objects/"
         + writeable
-        + "\\\\E.*')";
+        + "/')";
   }
 }

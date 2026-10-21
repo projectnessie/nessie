@@ -61,7 +61,7 @@ services:
   ##      SELECT * FROM city;
   ##
   nessie:
-    image: ghcr.io/projectnessie/nessie:0.108.4
+    image: ghcr.io/projectnessie/nessie:0.109.0
     ports:
       # API port
       - "19120:19120"
@@ -117,7 +117,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: docker.io/prom/prometheus:v3.13.2
+    image: docker.io/prom/prometheus:v3.15.0
     ports:
       # Prometheus UI, browse to http://localhost:9093 to view metrics
       - "9093:9090"
@@ -136,7 +136,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:13.1.3
+    image: docker.io/grafana/grafana:13.2.4
     depends_on:
       - prometheus
     ports:
@@ -208,7 +208,7 @@ services:
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client2:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   #   curl http://127.0.0.1:8080/realms/iceberg/protocol/openid-connect/token --user client3:s3cr3t -d 'grant_type=client_credentials' -d 'scope=catalog'
   keycloak:
-    image: quay.io/keycloak/keycloak:26.7.1
+    image: quay.io/keycloak/keycloak:26.8.0
     ports:
       - "8080:8080"
       - "9001:9000"

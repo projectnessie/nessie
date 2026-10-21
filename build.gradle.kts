@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import java.time.Duration
 import java.util.zip.ZipFile
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.TaskAction
 import org.jetbrains.changelog.date
 import org.jetbrains.gradle.ext.settings
 import org.jetbrains.gradle.ext.taskTriggers
@@ -26,7 +27,6 @@ import org.jetbrains.gradle.ext.taskTriggers
 plugins {
   eclipse
   id("nessie-conventions-root")
-  alias(libs.plugins.nmcp)
   alias(libs.plugins.jetbrains.changelog)
 }
 
@@ -37,64 +37,6 @@ publishingHelper { mavenName = "Nessie" }
 description = "Transactional Catalog for Data Lakes"
 
 tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.DistributionType.ALL }
-
-// Pass environment variables:
-//    ORG_GRADLE_PROJECT_sonatypeUsername
-//    ORG_GRADLE_PROJECT_sonatypePassword
-// Gradle targets:
-//    publishAggregationToCentralPortal
-//    publishAggregationToCentralPortalSnapshots
-// Ref: Maven Central Publisher API:
-//    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
-nmcpAggregation {
-  centralPortal {
-    username.value(providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypeUsername"))
-    password.value(providers.environmentVariable("ORG_GRADLE_PROJECT_sonatypePassword"))
-    publishingType =
-      if (providers.environmentVariable("CI").isPresent) "AUTOMATIC" else "USER_MANAGED"
-    publishingTimeout = Duration.ofMinutes(120)
-    validationTimeout = Duration.ofMinutes(120)
-    publicationName = "${project.name}-$version"
-  }
-}
-
-allprojects {
-  pluginManager.withPlugin("maven-publish") {
-    fun configureNmcpPublishing() {
-      pluginManager.apply("com.gradleup.nmcp")
-
-      extensions.configure<PublishingExtension> {
-        repositories
-          .withType<MavenArtifactRepository>()
-          .matching { it.name == "nmcp" }
-          .configureEach { url = uri(layout.buildDirectory.dir("nmcp/m2").get().asFile) }
-      }
-      tasks
-        .withType<PublishToMavenRepository>()
-        .matching { it.name.endsWith("ToNmcpRepository") }
-        .configureEach {
-          doFirst { repository.url = uri(layout.buildDirectory.dir("nmcp/m2").get().asFile) }
-        }
-
-      // Do not use NMCP's deprecated publishAllProjectsProbablyBreakingProjectIsolation() helper
-      // here. Wire the producer configuration explicitly, so generated projects such as the Spark
-      // extension variants cannot be lost through implicit variant selection.
-      rootProject.dependencies.add(
-        "nmcpAggregation",
-        rootProject.dependencies.project(mapOf("path" to path, "configuration" to "nmcpProducer")),
-      )
-    }
-
-    if (name.startsWith("nessie-spark-extensions")) {
-      // Spark extension projects set a Scala-specific build directory in their build scripts.
-      // Apply NMCP after that, otherwise the NMCP publish repository points to build/nmcp/m2
-      // while the producer variant points to build/<scala>/nmcp/m2.
-      afterEvaluate { configureNmcpPublishing() }
-    } else {
-      configureNmcpPublishing()
-    }
-  }
-}
 
 val requiredNmcpSparkArtifacts = providers.provider {
   val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
@@ -121,51 +63,38 @@ val requiredNmcpSparkArtifacts = providers.provider {
 }
 
 val checkNmcpAggregationSparkArtifacts =
-  tasks.register("checkNmcpAggregationSparkArtifacts") {
+  tasks.register<CheckNmcpAggregationSparkArtifacts>("checkNmcpAggregationSparkArtifacts") {
     group = "Verification"
     description = "Checks that the NMCP aggregation zip contains all Spark extension artifacts."
 
-    val aggregationZip = layout.buildDirectory.file("nmcp/zip/aggregation.zip")
     dependsOn("nmcpZipAggregation")
-    inputs.file(aggregationZip)
+    aggregationZip.set(layout.buildDirectory.file("nmcp/zip/aggregation.zip"))
+    artifactIds.set(requiredNmcpSparkArtifacts)
+    version.set(project.version.toString())
+  }
 
-    doLast {
-      val version = project.version.toString()
-      val entries =
-        ZipFile(aggregationZip.get().asFile).use { zip ->
-          zip.entries().asSequence().map { it.name }.toSet()
-        }
+val checkNmcpAggregationPublishingRequirements =
+  tasks.register<CheckNmcpAggregationPublishingRequirements>(
+    "checkNmcpAggregationPublishingRequirements",
+  ) {
+    group = "Verification"
+    description =
+      "Checks that the NMCP aggregation zip satisfies Maven Central publishing requirements."
 
-      val missing =
-        requiredNmcpSparkArtifacts.get().filter { artifactId ->
-          val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$version/"
-          fun isMainJar(entry: String): Boolean {
-            val fileName = entry.substringAfterLast("/")
-            val expectedReleaseFileName = "$artifactId-$version.jar"
-            val expectedSnapshotFileName =
-              Regex(
-                Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
-                  """\d{8}\.\d{6}-\d+\.jar"""
-              )
-
-            return entry.startsWith(artifactDir) &&
-              (fileName == expectedReleaseFileName ||
-                (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
-          }
-
-          entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
-            entries.none(::isMainJar)
-        }
-
-      check(missing.isEmpty()) {
-        "NMCP aggregation zip is missing Spark artifacts for version $version: " +
-          missing.joinToString(", ")
-      }
-    }
+    dependsOn("nmcpZipAggregation")
+    aggregationZip.set(layout.buildDirectory.file("nmcp/zip/aggregation.zip"))
+    artifactsRequiringClassifiers.set(listOf("nessie-gc-tool"))
+    version.set(project.version.toString())
   }
 
 tasks.named("nmcpPublishAggregationToCentralPortal") {
   dependsOn(checkNmcpAggregationSparkArtifacts)
+  dependsOn(checkNmcpAggregationPublishingRequirements)
+}
+
+tasks.named("nmcpPublishAggregationToCentralPortalSnapshots") {
+  dependsOn(checkNmcpAggregationSparkArtifacts)
+  dependsOn(checkNmcpAggregationPublishingRequirements)
 }
 
 val buildToolIntegrationGradle =
@@ -298,5 +227,136 @@ tasks.named<Wrapper>("wrapper") {
     scriptLines.add(insertAtLine, $$". \"${APP_HOME}/gradle/gradlew-include.sh\"")
 
     scriptFile.writeText(scriptLines.joinToString("\n"))
+  }
+}
+
+abstract class CheckNmcpAggregationSparkArtifacts : DefaultTask() {
+  @get:InputFile abstract val aggregationZip: RegularFileProperty
+
+  @get:Input abstract val artifactIds: ListProperty<String>
+
+  @get:Input abstract val version: Property<String>
+
+  @TaskAction
+  fun checkAggregationZip() {
+    val resolvedVersion = version.get()
+    val entries =
+      ZipFile(aggregationZip.get().asFile).use { zip ->
+        zip.entries().asSequence().map { it.name }.toSet()
+      }
+
+    val missing =
+      artifactIds.get().filter { artifactId ->
+        val artifactDir = "org/projectnessie/nessie-integrations/$artifactId/$resolvedVersion/"
+
+        entries.none { it.startsWith(artifactDir) && it.endsWith(".pom") } ||
+          entries.none { entry -> isMainJar(entry, artifactDir, artifactId, resolvedVersion) }
+      }
+
+    check(missing.isEmpty()) {
+      "NMCP aggregation zip is missing Spark artifacts for version $resolvedVersion: " +
+        missing.joinToString(", ")
+    }
+  }
+
+  private fun isMainJar(
+    entry: String,
+    artifactDir: String,
+    artifactId: String,
+    version: String,
+  ): Boolean {
+    val fileName = entry.substringAfterLast("/")
+    val expectedReleaseFileName = "$artifactId-$version.jar"
+    val expectedSnapshotFileName =
+      Regex(
+        Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+          """\d{8}\.\d{6}-\d+\.jar""",
+      )
+
+    return entry.startsWith(artifactDir) &&
+      (fileName == expectedReleaseFileName ||
+        (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
+  }
+}
+
+abstract class CheckNmcpAggregationPublishingRequirements : DefaultTask() {
+  @get:InputFile abstract val aggregationZip: RegularFileProperty
+
+  @get:Input abstract val artifactsRequiringClassifiers: ListProperty<String>
+
+  @get:Input abstract val version: Property<String>
+
+  @TaskAction
+  fun checkAggregationZip() {
+    val resolvedVersion = version.get()
+
+    ZipFile(aggregationZip.get().asFile).use { zip ->
+      val entries = zip.entries().asSequence().toList()
+      val entryNames = entries.map { it.name }.toSet()
+      val rootPomDir = "org/projectnessie/nessie/nessie/$resolvedVersion/"
+      val rootPom = entries.singleOrNull {
+        it.name.startsWith(rootPomDir) && it.name.endsWith(".pom")
+      }
+
+      check(rootPom != null) {
+        "NMCP aggregation zip is missing the root POM for version $resolvedVersion"
+      }
+
+      val rootPomText = zip.getInputStream(rootPom).bufferedReader().use { it.readText() }
+      check(Regex("<description>\\s*[^<\\s]").containsMatchIn(rootPomText)) {
+        "NMCP aggregation root POM is missing the project description for version $resolvedVersion"
+      }
+
+      val missingClassifiedArtifacts =
+        artifactsRequiringClassifiers.get().mapNotNull { artifactId ->
+          val artifactDir =
+            entries
+              .asSequence()
+              .map { it.name }
+              .filter { it.endsWith(".pom") }
+              .map { it.substringBeforeLast('/') + "/" }
+              .singleOrNull {
+                it.removeSuffix("/").substringBeforeLast('/').substringAfterLast('/') == artifactId
+              }
+
+          if (artifactDir == null) {
+            "$artifactId (publication)"
+          } else {
+            val missing =
+              listOf("sources", "javadoc").filter { classifier ->
+                entryNames.none {
+                  isJar(it, artifactDir, artifactId, resolvedVersion, classifier)
+                }
+              }
+            if (missing.isEmpty()) null else "$artifactId (${missing.joinToString(", ")})"
+          }
+        }
+
+      check(missingClassifiedArtifacts.isEmpty()) {
+        "NMCP aggregation zip is missing classified artifacts for version $resolvedVersion: " +
+          missingClassifiedArtifacts.joinToString(", ")
+      }
+    }
+  }
+
+  private fun isJar(
+    entry: String,
+    artifactDir: String,
+    artifactId: String,
+    version: String,
+    classifier: String?,
+  ): Boolean {
+    val fileName = entry.substringAfterLast('/')
+    val classifierSuffix = classifier?.let { "-$it" }.orEmpty()
+    val expectedReleaseFileName = "$artifactId-$version$classifierSuffix.jar"
+    val expectedSnapshotFileName =
+      Regex(
+        Regex.escape("$artifactId-${version.removeSuffix("-SNAPSHOT")}-") +
+          """\d{8}\.\d{6}-\d+$classifierSuffix\.jar""",
+      )
+
+    return entry.startsWith(artifactDir) &&
+      (fileName == expectedReleaseFileName ||
+        (version.endsWith("-SNAPSHOT") && expectedSnapshotFileName.matches(fileName)))
   }
 }

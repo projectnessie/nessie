@@ -91,7 +91,7 @@ val generateNessieGrammar =
             sourceFile.toString(),
           )
         if (logger.isInfoEnabled) base else (base + listOf("-q"))
-      }
+      },
     )
   }
 
@@ -122,7 +122,7 @@ val generateJsonGrammar =
             sourceDir.file("jsonc.ccc").get().asFile.relativeTo(prjDir.asFile).toString(),
           )
         if (logger.isInfoEnabled) base else (base + listOf("-q"))
-      }
+      },
     )
   }
 
@@ -153,7 +153,7 @@ val generateNessieCliSyntax =
           sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(prjDir.asFile).toString(),
           "omitSparkSql=true",
         )
-      }
+      },
     )
   }
 
@@ -185,7 +185,7 @@ val generateNessieSparkSyntax =
             .toString(),
           sourceDir.get().file("nessie-cli-java.ccc").asFile.relativeTo(prjDir.asFile).toString(),
         )
-      }
+      },
     )
   }
 

@@ -253,6 +253,20 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
   }
 
   @Test
+  void referenceNamesAreCaseSensitive() throws Exception {
+    BranchName foo = BranchName.of("Foo");
+    BranchName fooLower = BranchName.of("foo");
+    Hash fooHash = store().create(foo, Optional.empty()).getHash();
+    Hash fooLowerHash = store().create(fooLower, Optional.empty()).getHash();
+    soft.assertThat(store().getNamedRef("Foo", GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(fooHash, foo);
+    soft.assertThat(store().getNamedRef("foo", GetNamedRefsParams.DEFAULT))
+        .extracting(ReferenceInfo::getHash, ReferenceInfo::getNamedRef)
+        .containsExactly(fooLowerHash, fooLower);
+  }
+
+  @Test
   void listBranchesOrTags() throws Exception {
     // Generate branches + tags with "interleaving" names
     Set<NamedRef> branches = new HashSet<>();

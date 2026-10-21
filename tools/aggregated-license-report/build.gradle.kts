@@ -43,7 +43,10 @@ dependencies {
         .map { it.trim() }
         .forEach { scalaVersion ->
           licenseReports(
-            nessieProject("nessie-spark-extensions-${sparkVersion}_$scalaVersion", "licenseReports")
+            nessieProject(
+              "nessie-spark-extensions-${sparkVersion}_$scalaVersion",
+              "licenseReports",
+            ),
           )
         }
     }

@@ -224,6 +224,20 @@ a missing-table or future-location fallback. Missing content may be handled as a
 case where the signer endpoint was already minted for that location; authorization and unexpected
 lookup failures are fail-closed conditions. `(documented)`
 
+S3 request signing recognizes virtual-hosted requests for custom endpoints when the bucket
+configures a custom endpoint. An unset `path-style-access` defaults to virtual-hosted style
+(`false`), matching the AWS SDK v2 default; `path-style-access=true` selects path style. That
+setting is bound into the signed token, and the request host must then be exactly
+`<bucket>.<endpoint host>` for one of the buckets of the signer-authorized warehouse, write, or read
+locations; any other request, including a match on more
+than one bucket, is rejected rather than reinterpreted as path-style. Bucket names can contain dots,
+so a request to `foo.bar.<endpoint host>` is resolved to bucket `foo.bar` and never to a signed
+bucket `foo`, which would otherwise sign a request for one bucket with another bucket's credentials.
+This does not widen the table paths permitted by current-location, historical-location,
+metadata-file, or object-storage-layout checks. Tokens without the setting, which includes AWS
+endpoints and tokens minted by earlier versions, keep the previous bucket resolution and signature.
+`(documented)`
+
 Object-store credentials or temporary access material exposed through catalog features are in scope only
 for configured credential-vending or request-signing modes. Operators are responsible for cloud IAM
 policy scope, role trust policies, external IDs, token/session duration, and bucket or filesystem
@@ -236,6 +250,18 @@ ADLS delegation has coarser permission granularity than S3 and GCS because ADLS 
 tokens are scoped at filesystem-level capabilities rather than the path-level IAM and STS mechanisms
 available for S3 and GCS. Operators must account for that weaker granularity when enabling ADLS
 delegation.
+`(documented)`
+
+GCS credential vending scopes down-scoped tokens by object-name prefix. Credential Access Boundary
+conditions support only prefix, suffix, and equality comparisons, so a location is matched as a path
+prefix terminated by `/` and object access is limited to objects below that location. Object listing
+additionally permits the location itself as a list prefix, which can reveal the names of sibling
+locations sharing that prefix but does not grant read access to them. `(documented)`
+
+Tables with `write.object-storage.enabled=true` write data files under a randomized prefix that
+precedes the table path. Credential Access Boundary conditions cannot express that shape, so
+down-scoped GCS credentials do not cover those data files and clients are denied access to them.
+Operators must not enable GCS down-scoped credentials for warehouses whose tables use that layout.
 `(documented)`
 
 ## Secrets And Credential Configuration

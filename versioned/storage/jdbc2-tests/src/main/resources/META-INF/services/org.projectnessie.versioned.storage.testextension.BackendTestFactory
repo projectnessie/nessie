@@ -18,3 +18,4 @@ org.projectnessie.versioned.storage.jdbc2tests.CockroachBackendTestFactory
 org.projectnessie.versioned.storage.jdbc2tests.H2BackendTestFactory
 org.projectnessie.versioned.storage.jdbc2tests.MariaDBBackendTestFactory
 org.projectnessie.versioned.storage.jdbc2tests.MySQLBackendTestFactory
+org.projectnessie.versioned.storage.jdbc2tests.MssqlBackendTestFactory
