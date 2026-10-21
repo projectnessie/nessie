@@ -62,8 +62,7 @@ public class TestInvalidOptions {
             new String[] {
               "content-refresh", "--key", "a", "--input", "/tmp/file.csv", "--format", "CSV_KEYS"
             },
-            "[-k=<key element> [-k=<key element>]... [-R]] and [-f=<input> -F=<format>"
-                + " [-S=<separator>]] are mutually exclusive "),
+            "[-k=<key element> [-k=<key element>]... [-R]] and [-f=<input> -F=<format> [-S=<separator>]] are mutually exclusive "),
         Arguments.of(
             new String[] {"content-refresh", "--format", "CONTENT_INFO_JSON"},
             "Missing required argument(s): --input=<input>"));
