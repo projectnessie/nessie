@@ -245,6 +245,85 @@ class TestIcebergS3SignParams {
             IcebergS3SignParams.checkLocation(
                 warehouseLocation + '/', requestedObjectStorageNew, location + '/'))
         .isTrue();
+
+    // The location itself (no trailing slash) is permitted, the location as a "sibling" prefix is
+    // not: 's3://b/ns/table1_cafebabe' must not authorize 's3://b/ns/table1_cafebabee/...'
+    soft.assertThat(IcebergS3SignParams.checkLocation(warehouseLocation, location, location))
+        .isTrue();
+    soft.assertThat(IcebergS3SignParams.checkLocation(warehouseLocation, location + "e", location))
+        .isFalse();
+    soft.assertThat(IcebergS3SignParams.checkLocation(warehouseLocation, location + "/", location))
+        .isTrue();
+
+    for (String wh : List.of(warehouseLocation, warehouseLocation + '/')) {
+      for (String loc : List.of(location, location + '/')) {
+        for (String requested :
+            List.of(requestedPlain, requestedObjectStorageOld, requestedObjectStorageNew)) {
+          for (String sibling :
+              List.of(
+                  // longer sibling: 'ns/table1_cafebabee/...'
+                  requested.replace(locationPart, locationPart + "e"),
+                  // 'ns/table1_cafebabe.bak/...'
+                  requested.replace(locationPart, locationPart + ".bak"),
+                  // shorter sibling: 'ns/table1_cafebab/...'
+                  requested.replace(
+                      locationPart, locationPart.substring(0, locationPart.length() - 1)),
+                  // sibling namespace sharing a prefix: 'nsx/table1_cafebabe/...'
+                  requested.replace(locationPart, "nsx/table1_cafebabe"),
+                  // parent namespace
+                  requested.replace(locationPart + "/data/", "ns/"))) {
+            soft.assertThat(IcebergS3SignParams.checkLocation(wh, sibling, loc))
+                .describedAs("warehouse=%s location=%s requested=%s", wh, loc, sibling)
+                .isFalse();
+          }
+        }
+      }
+    }
+  }
+
+  static Stream<Arguments> siblingMethodsAndUris() {
+    return Stream.concat(readMethodsAndUris(), writeMethodsAndUris())
+        .map(
+            args -> {
+              String uri = (String) args.get()[1];
+              return arguments(args.get()[0], uri.replace(locationPart, locationPart + "e"));
+            });
+  }
+
+  /**
+   * An allowed location must not authorize a sibling location that merely shares a string prefix,
+   * for an existing table ('location' is the table's current location).
+   */
+  @ParameterizedTest
+  @MethodSource("siblingMethodsAndUris")
+  void verifyAndSignFailureSiblingLocation(String method, String uri) throws Exception {
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), any(), eq(ICEBERG_V1)))
+        .thenReturn(successStage);
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder().from(readRequest).uri(uri).method(method).build())
+            .build();
+    Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
+    expectFailure(response, "URI not allowed for signing: " + uri);
+    verifyNoInteractions(signer);
+  }
+
+  /** Same as above, for a not yet existing table ('location' is the signer's write location). */
+  @ParameterizedTest
+  @MethodSource("siblingMethodsAndUris")
+  void verifyAndSignFailureSiblingLocationContentNotFound(String method, String uri)
+      throws Exception {
+    when(catalogService.retrieveSnapshot(any(), eq(key), isNull(), any(), eq(ICEBERG_V1)))
+        .thenThrow(new NessieContentNotFoundException(key, "main"));
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(
+                IcebergS3SignRequest.builder().from(readRequest).uri(uri).method(method).build())
+            .build();
+    Uni<IcebergS3SignResponse> response = icebergSigner.verifyAndSign();
+    expectFailure(response, "URI not allowed for signing: " + uri);
+    verifyNoInteractions(signer);
   }
 
   @ParameterizedTest

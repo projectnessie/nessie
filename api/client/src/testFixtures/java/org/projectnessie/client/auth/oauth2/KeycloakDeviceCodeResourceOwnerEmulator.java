@@ -130,7 +130,7 @@ public class KeycloakDeviceCodeResourceOwnerEmulator extends AbstractKeycloakRes
     String consentHtml = getHtmlPage(consentPageUrl, cookies);
     Matcher matcher = FORM_ACTION_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
-    URI formAction = URI.create(matcher.group(1));
+    URI formAction = URI.create(matcher.group(1).replace("&amp;", "&"));
     matcher = HIDDEN_CODE_PATTERN.matcher(consentHtml);
     assertThat(matcher.find()).isTrue();
     String deviceCode = matcher.group(1);

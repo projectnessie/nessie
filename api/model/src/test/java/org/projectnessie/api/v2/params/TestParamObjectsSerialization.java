@@ -15,11 +15,14 @@
  */
 package org.projectnessie.api.v2.params;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.model.JsonUtil.arrayNode;
 import static org.projectnessie.model.JsonUtil.objectNode;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
@@ -30,6 +33,32 @@ import org.projectnessie.model.TestModelObjectsSerialization;
  * intention to identify breaking cases whenever jackson version varies.
  */
 public class TestParamObjectsSerialization extends TestModelObjectsSerialization {
+
+  @Test
+  void testLegacyFlagNamesDeserialize() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    String flags =
+        "\"isDryRun\":true,\"isFetchAdditionalInfo\":true," + "\"isReturnConflictAsResult\":true";
+    Merge merge =
+        mapper.readValue(
+            "{\"fromRefName\":\"testBranch\",\"fromHash\":\"" + HASH + "\"," + flags + "}",
+            Merge.class);
+    Transplant transplant =
+        mapper.readValue(
+            "{\"fromRefName\":\"testBranch\",\"hashesToTransplant\":[\""
+                + HASH
+                + "\"],"
+                + flags
+                + "}",
+            Transplant.class);
+
+    assertThat(merge.isDryRun()).isTrue();
+    assertThat(merge.isFetchAdditionalInfo()).isTrue();
+    assertThat(merge.isReturnConflictAsResult()).isTrue();
+    assertThat(transplant.isDryRun()).isTrue();
+    assertThat(transplant.isFetchAdditionalInfo()).isTrue();
+    assertThat(transplant.isReturnConflictAsResult()).isTrue();
+  }
 
   @SuppressWarnings({
     "unused",
@@ -54,6 +83,22 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                 ImmutableTransplant.builder()
                     .addHashesToTransplant(HASH)
                     .fromRefName(branchName)
+                    .isDryRun(true)
+                    .isFetchAdditionalInfo(true)
+                    .isReturnConflictAsResult(true)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", branchName)
+                        .put("dryRun", true)
+                        .put("fetchAdditionalInfo", true)
+                        .put("returnConflictAsResult", true)
+                        .set("hashesToTransplant", arrayNode().add(HASH))),
+        new Case(Transplant.class)
+            .obj(
+                ImmutableTransplant.builder()
+                    .addHashesToTransplant(HASH)
+                    .fromRefName(branchName)
                     .message("test-msg")
                     .build())
             .jsonNode(
@@ -64,6 +109,18 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
         new Case(Merge.class)
             .obj(ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build())
             .jsonNode(o -> o.put("fromRefName", "testBranch").put("fromHash", HASH)),
+        new Case(Merge.class)
+            .obj(
+                ImmutableMerge.builder()
+                    .fromHash(HASH)
+                    .fromRefName(branchName)
+                    .isReturnConflictAsResult(true)
+                    .build())
+            .jsonNode(
+                o ->
+                    o.put("fromRefName", branchName)
+                        .put("fromHash", HASH)
+                        .put("returnConflictAsResult", true)),
         new Case(Merge.class)
             .obj(
                 ImmutableMerge.builder()
@@ -92,7 +149,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     o.put("fromRefName", "testBranch")
                         .put("defaultKeyMergeMode", "FORCE")
                         .put("fromHash", HASH)
-                        .put("isFetchAdditionalInfo", true)
+                        .put("fetchAdditionalInfo", true)
                         .set(
                             "keyMergeModes",
                             arrayNode()
@@ -130,7 +187,7 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     o.put("fromRefName", "testBranch")
                         .put("message", "test-msg")
                         .put("fromHash", HASH)
-                        .put("isDryRun", false)
+                        .put("dryRun", false)
                         .set(
                             "keyMergeModes",
                             arrayNode()
