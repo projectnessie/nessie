@@ -62,15 +62,15 @@ dependencies {
   forScala(sparkScala.scalaVersion, "intTestImplementation")
 
   intTestImplementation(
-    nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}")
+    nessieProject("nessie-spark-extensions-basetests_${sparkScala.scalaMajorVersion}"),
   )
   intTestImplementation(
     nessieProject(
-      "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}"
-    )
+      "nessie-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}",
+    ),
   )
   intTestImplementation(
-    nessieProject("nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}")
+    nessieProject("nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}"),
   )
 
   intTestImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
@@ -93,10 +93,10 @@ dependencies {
   // Reference the exact Iceberg version here, because the iceberg-bom might not contain all
   // Spark/Flink deps :(
   intTestRuntimeOnly(
-    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}",
   )
   intTestRuntimeOnly(
-    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}"
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:${libs.versions.iceberg.get()}",
   )
 
   intTestRuntimeOnly(libs.hadoop.client)
@@ -162,6 +162,6 @@ tasks.withType(Test::class.java).configureEach {
       val tmpdir = project.layout.buildDirectory.get().asFile.resolve("tmpdir")
       tmpdir.mkdirs()
       listOf("-Djava.io.tmpdir=$tmpdir")
-    }
+    },
   )
 }

@@ -67,6 +67,21 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+GC labels. The app name is suffixed with "-gc" so these pods do NOT match the
+Nessie Service selector (nessie.selectorLabels), which would otherwise add the
+GC pods as Service endpoints even though they don't serve the Nessie
+API/management ports.
+*/}}
+{{- define "nessie.gc.labels" -}}
+helm.sh/chart: {{ include "nessie.chart" . }}
+app.kubernetes.io/name: {{ printf "%s-gc" (include "nessie.name" .) | trunc 63 | trimSuffix "-" }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.Version | quote }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: gc
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "nessie.serviceAccountName" -}}

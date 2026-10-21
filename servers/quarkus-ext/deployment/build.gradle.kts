@@ -44,7 +44,7 @@ tasks.named<JavaCompile>("compileJava") {
         <name>$mavenName</name>
       </project>
       """
-        .trimIndent() + "\n"
+        .trimIndent() + "\n",
     )
   }
 }

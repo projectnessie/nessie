@@ -46,7 +46,6 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.project
@@ -62,6 +61,7 @@ val noSourceCheckProjects =
     ":nessie-spark-extensions-3.5_2.12",
     ":nessie-spark-extensions-3.5_2.13",
     ":nessie-spark-extensions-4.0_2.13",
+    ":nessie-spark-extensions-4.1_2.13",
   )
 
 fun Project.libs(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -91,7 +91,7 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
       (isNoQuarkusEnforcedPlatform || quarkusCustomVersion != null)
   )
     throw GradleException(
-      "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed"
+      "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed",
     )
 
   val group =
@@ -99,7 +99,11 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
     else "io.quarkus.platform"
   val notation = "$group:$extension:$quarkusVersion"
 
-  return if (isNoQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+  val base = if (isNoQuarkusEnforcedPlatform) platform(notation) else enforcedPlatform(notation)
+  val plat = base as ExternalModuleDependency
+  plat.exclude(group = "com.fasterxml.jackson.core", module = "jackson-annotations")
+
+  return plat
 }
 
 fun Project.cassandraDriverTweak() {
@@ -222,7 +226,7 @@ fun Test.useJavaVersion(requestedJavaVersion: Int) {
   javaLauncher.set(
     javaToolchains!!.launcherFor {
       languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
-    }
+    },
   )
 }
 
@@ -344,7 +348,7 @@ fun loadProperties(file: File): Properties {
  */
 fun Project.loadSparkScalaProperties(): Properties =
   loadProperties(
-    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile
+    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile,
   )
 
 /** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
@@ -410,10 +414,11 @@ fun javaVersionForSpark(sparkMajorVersion: String): Int {
     "3.3",
     "3.4",
     "3.5",
-    "4.0" -> 17
+    "4.0",
+    "4.1" -> 17
     else ->
       throw IllegalArgumentException(
-        "Do not know which Java version Spark $sparkMajorVersion supports"
+        "Do not know which Java version Spark $sparkMajorVersion supports",
       )
   }
 }
@@ -479,7 +484,7 @@ abstract class GeneratePomProperties : DefaultTask() {
       artifactId=${artifactId.get()}
       version=${version.get()}
     """
-          .trimIndent()
+          .trimIndent(),
       )
   }
 }

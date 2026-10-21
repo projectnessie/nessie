@@ -28,6 +28,7 @@ set -e
 IMAGE_NAME=""
 GITHUB=0
 LOCAL=0
+NO_LATEST=0
 GRADLE_PROJECT=""
 PROJECT_DIR=""
 DOCKERFILE="Dockerfile-server"
@@ -48,6 +49,7 @@ function usage() {
       -gh | --github                    GitHub actions mode
       -l | --local                      Only build the image for local use (not multi-platform),
                                         not pushed to a registry. Can build with 'docker' and 'podman'.
+      --no-latest                       Do not tag the image as latest or latest-java.
       -t | --tool                       Name of the podman/docker/podman-remote tool to use.
 
   Note: multiplatform builds only work with docker buildx, not implemented for podman.
@@ -95,6 +97,9 @@ while [[ $# -gt 0 ]]; do
     ;;
   -l | --local)
     LOCAL=1
+    ;;
+  --no-latest)
+    NO_LATEST=1
     ;;
   -t | --TOOL)
     TOOL="$2"
@@ -160,10 +165,13 @@ gh_endgroup
 
 if [[ ${LOCAL} == 1 ]] ; then
   gh_group "Docker build"
+  IMAGE_TAGS=(--tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}")
+  if [[ ${NO_LATEST} == 0 ]] ; then
+    IMAGE_TAGS=(--tag "${IMAGE_NAME}:latest" "${IMAGE_TAGS[@]}")
+  fi
   ${TOOL} build \
     --file "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
-    --tag "${IMAGE_NAME}:latest" \
-    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
+    "${IMAGE_TAGS[@]}" \
     --build-arg VERSION="${VERSION}" \
     "${BASE_DIR}/${PROJECT_DIR}"
   gh_endgroup
@@ -171,13 +179,21 @@ else
   gh_group "Docker buildx build"
   # All the platforms that are available
   PLATFORMS="linux/amd64,linux/arm64/v8,linux/ppc64le,linux/s390x"
+  IMAGE_TAGS=(
+    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}"
+    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java"
+  )
+  if [[ ${NO_LATEST} == 0 ]] ; then
+    IMAGE_TAGS=(
+      --tag "${IMAGE_NAME}:latest"
+      --tag "${IMAGE_NAME}:latest-java"
+      "${IMAGE_TAGS[@]}"
+    )
+  fi
   ${TOOL} buildx build \
     --file "${BASE_DIR}/tools/dockerbuild/docker/${DOCKERFILE}" \
     --platform "${PLATFORMS}" \
-    --tag "${IMAGE_NAME}:latest" \
-    --tag "${IMAGE_NAME}:latest-java" \
-    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}" \
-    --tag "${IMAGE_NAME}:${IMAGE_TAG_BASE}-java" \
+    "${IMAGE_TAGS[@]}" \
     --build-arg VERSION="${VERSION}" \
     "${BASE_DIR}/${PROJECT_DIR}" \
     --push \
@@ -186,8 +202,10 @@ else
     # Note: '--output type=registry' is needed to be able to push to a local registry (e.g. localhost:5000)
     # Note: '--provenance=false --sbom=false' work around UI issues in ghcr + quay showing 'unknown/unknown' architectures
     gh_summary "## Java image tags, built for ${PLATFORMS}"
-    gh_summary "* \`docker pull ${IMAGE_NAME}:latest\`"
-    gh_summary "* \`docker pull ${IMAGE_NAME}:latest-java\`"
+    if [[ ${NO_LATEST} == 0 ]] ; then
+      gh_summary "* \`docker pull ${IMAGE_NAME}:latest\`"
+      gh_summary "* \`docker pull ${IMAGE_NAME}:latest-java\`"
+    fi
     gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}\`"
     gh_summary "* \`docker pull ${IMAGE_NAME}:${IMAGE_TAG_BASE}-java\`"
   gh_endgroup

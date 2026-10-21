@@ -30,18 +30,11 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class TestVersionTuple {
   @ParameterizedTest
-  @ValueSource(strings = ["1", "v1", "1.0", "1.b"])
+  @ValueSource(strings = ["1", "v1", "1.0", "1.b", "1.2.3-01", "1.2.3-fix.01"])
   fun invalids(ver: String) {
     assertThatThrownBy { VersionTuple.create(ver) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessageEndingWith("is not a valid version string")
-  }
-
-  @Test
-  fun invalidPrerelease() {
-    assertThatThrownBy { VersionTuple.create("1.2.3-FOOBAR") }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Only SNAPSHOT prerelease supported, but FOOBAR != SNAPSHOT")
   }
 
   @ParameterizedTest
@@ -54,45 +47,46 @@ class TestVersionTuple {
 
   @Test
   fun asSnapshot() {
-    assertThat(VersionTuple(1, 2, 3, false).asSnapshot()).isEqualTo(VersionTuple(1, 2, 3, true))
-    assertThat(VersionTuple(1, 2, 3, true).asSnapshot()).isEqualTo(VersionTuple(1, 2, 3, true))
+    assertThat(VersionTuple(1, 2, 3).asSnapshot()).isEqualTo(VersionTuple(1, 2, 3, "SNAPSHOT"))
+    assertThat(VersionTuple(1, 2, 3, "fix1").asSnapshot())
+      .isEqualTo(VersionTuple(1, 2, 3, "SNAPSHOT"))
   }
 
   @Test
   fun asRelease() {
-    assertThat(VersionTuple(1, 2, 3, false).asRelease()).isEqualTo(VersionTuple(1, 2, 3, false))
-    assertThat(VersionTuple(1, 2, 3, true).asRelease()).isEqualTo(VersionTuple(1, 2, 3, false))
+    assertThat(VersionTuple(1, 2, 3).asRelease()).isEqualTo(VersionTuple(1, 2, 3))
+    assertThat(VersionTuple(1, 2, 3, "SNAPSHOT").asRelease()).isEqualTo(VersionTuple(1, 2, 3))
+    assertThat(VersionTuple(1, 2, 3, "fix1").asRelease()).isEqualTo(VersionTuple(1, 2, 3))
   }
 
   @Test
   fun bumpPatch() {
-    assertThat(VersionTuple(1, 2, 3, false).bumpPatch()).isEqualTo(VersionTuple(1, 2, 4, false))
-    assertThat(VersionTuple(1, 2, 3, true).bumpPatch()).isEqualTo(VersionTuple(1, 2, 4, false))
+    assertThat(VersionTuple(1, 2, 3).bumpPatch()).isEqualTo(VersionTuple(1, 2, 4))
+    assertThat(VersionTuple(1, 2, 3, "SNAPSHOT").bumpPatch()).isEqualTo(VersionTuple(1, 2, 4))
+    assertThat(VersionTuple(1, 2, 3, "fix1").bumpPatch()).isEqualTo(VersionTuple(1, 2, 4))
   }
 
   @Test
   fun bumpMinor() {
-    assertThat(VersionTuple(1, 2, 3, false).bumpMinor()).isEqualTo(VersionTuple(1, 3, 0, false))
-    assertThat(VersionTuple(1, 2, 3, true).bumpMinor()).isEqualTo(VersionTuple(1, 3, 0, false))
+    assertThat(VersionTuple(1, 2, 3).bumpMinor()).isEqualTo(VersionTuple(1, 3, 0))
+    assertThat(VersionTuple(1, 2, 3, "SNAPSHOT").bumpMinor()).isEqualTo(VersionTuple(1, 3, 0))
   }
 
   @Test
   fun bumpMajor() {
-    assertThat(VersionTuple(1, 2, 3, false).bumpMajor()).isEqualTo(VersionTuple(2, 0, 0, false))
-    assertThat(VersionTuple(1, 2, 3, true).bumpMajor()).isEqualTo(VersionTuple(2, 0, 0, false))
+    assertThat(VersionTuple(1, 2, 3).bumpMajor()).isEqualTo(VersionTuple(2, 0, 0))
+    assertThat(VersionTuple(1, 2, 3, "SNAPSHOT").bumpMajor()).isEqualTo(VersionTuple(2, 0, 0))
   }
 
   @Test
   fun fromFile(@TempDir dir: Path) {
     val file = dir.resolve("ver.txt")
     Files.writeString(file, "1.2.3")
-    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, false))
+    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3))
     Files.writeString(file, "1.2.3-SNAPSHOT")
-    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, true))
-    Files.writeString(file, "1.2.3\n")
-    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, false))
-    Files.writeString(file, "1.2.3-SNAPSHOT\n")
-    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, true))
+    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, "SNAPSHOT"))
+    Files.writeString(file, "1.2.3-fix1\n")
+    assertThat(VersionTuple.fromFile(file)).isEqualTo(VersionTuple(1, 2, 3, "fix1"))
   }
 
   @Test
@@ -102,29 +96,18 @@ class TestVersionTuple {
         VersionTuple::major,
         VersionTuple::minor,
         VersionTuple::patch,
+        VersionTuple::prerelease,
         VersionTuple::snapshot,
         VersionTuple::toString,
       )
-      .containsExactly(1, 2, 3, false, "1.2.3")
+      .containsExactly(1, 2, 3, null, false, "1.2.3")
   }
 
   @Test
-  fun validSnapshotVersion() {
-    assertThat(VersionTuple.create("1.2.3-SNAPSHOT"))
-      .extracting(
-        VersionTuple::major,
-        VersionTuple::minor,
-        VersionTuple::patch,
-        VersionTuple::snapshot,
-        VersionTuple::toString,
-      )
-      .containsExactly(1, 2, 3, true, "1.2.3-SNAPSHOT")
-  }
-
-  @Test
-  fun equals() {
-    assertThat(VersionTuple.create("1.2.3")).isEqualTo(VersionTuple(1, 2, 3, false))
-    assertThat(VersionTuple.create("1.2.3-SNAPSHOT")).isEqualTo(VersionTuple(1, 2, 3, true))
+  fun validPrereleaseVersions() {
+    assertThat(VersionTuple.create("1.2.3-SNAPSHOT")).isEqualTo(VersionTuple(1, 2, 3, "SNAPSHOT"))
+    assertThat(VersionTuple.create("1.2.3-fix1")).isEqualTo(VersionTuple(1, 2, 3, "fix1"))
+    assertThat(VersionTuple.create("1.2.3-alpha.1")).isEqualTo(VersionTuple(1, 2, 3, "alpha.1"))
   }
 
   @ParameterizedTest
@@ -142,19 +125,23 @@ class TestVersionTuple {
     @JvmStatic
     fun compare(): List<Arguments> =
       listOf(
-        arguments(VersionTuple.create("2.2.4"), VersionTuple(1, 2, 3, false), 1),
-        arguments(VersionTuple.create("2.2.4"), VersionTuple(1, 2, 3, true), 1),
-        arguments(VersionTuple.create("1.3.4"), VersionTuple(1, 2, 3, false), 1),
-        arguments(VersionTuple.create("1.3.4"), VersionTuple(1, 2, 3, true), 1),
-        arguments(VersionTuple.create("1.2.3"), VersionTuple(1, 2, 4, false), -1),
-        arguments(VersionTuple.create("1.2.4"), VersionTuple(1, 2, 3, false), 1),
-        arguments(VersionTuple.create("1.2.4"), VersionTuple(1, 2, 3, true), 1),
-        arguments(VersionTuple.create("1.2.4-SNAPSHOT"), VersionTuple(1, 2, 3, true), 1),
-        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 4, true), -1),
-        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 4, true), -1),
-        arguments(VersionTuple.create("1.2.3"), VersionTuple(1, 2, 3, false), 0),
-        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 3, true), 0),
-        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple(1, 2, 3, false), -1),
+        arguments(VersionTuple.create("2.2.4"), VersionTuple.create("1.2.3"), 1),
+        arguments(VersionTuple.create("1.3.4"), VersionTuple.create("1.2.3"), 1),
+        arguments(VersionTuple.create("1.2.3"), VersionTuple.create("1.2.4"), -1),
+        arguments(VersionTuple.create("1.2.4-SNAPSHOT"), VersionTuple.create("1.2.3-SNAPSHOT"), 1),
+        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple.create("1.2.3"), -1),
+        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple.create("1.2.3-fix1"), -1),
+        arguments(VersionTuple.create("1.2.3-fix1"), VersionTuple.create("1.2.3"), -1),
+        arguments(
+          VersionTuple.create("1.2.3-alpha.1"),
+          VersionTuple.create("1.2.3-alpha.beta"),
+          -1,
+        ),
+        arguments(VersionTuple.create("1.2.3-alpha.1"), VersionTuple.create("1.2.3-alpha.2"), -1),
+        arguments(VersionTuple.create("1.2.3-alpha"), VersionTuple.create("1.2.3-alpha.1"), -1),
+        arguments(VersionTuple.create("1.2.3-1"), VersionTuple.create("1.2.3-alpha"), -1),
+        arguments(VersionTuple.create("1.2.3-fix10"), VersionTuple.create("1.2.3-fix2"), -1),
+        arguments(VersionTuple.create("1.2.3-SNAPSHOT"), VersionTuple.create("1.2.3-SNAPSHOT"), 0),
       )
   }
 }

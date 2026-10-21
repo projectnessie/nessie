@@ -113,13 +113,13 @@ constructor(private val softwareComponentFactory: SoftwareComponentFactory) : Pl
       tasks.named("codeChecks").configure { dependsOn(checkCopiedCodeMentionsExist) }
     } else {
       extension.excludedContentTypePatterns.convention(
-        sharedConfiguration.flatMap { it.parameters.excludedContentTypePatterns }
+        sharedConfiguration.flatMap { it.parameters.excludedContentTypePatterns },
       )
       extension.includedContentTypePatterns.convention(
-        sharedConfiguration.flatMap { it.parameters.includedContentTypePatterns }
+        sharedConfiguration.flatMap { it.parameters.includedContentTypePatterns },
       )
       extension.includeUnrecognizedContentType.convention(
-        sharedConfiguration.flatMap { it.parameters.includeUnrecognizedContentType }
+        sharedConfiguration.flatMap { it.parameters.includeUnrecognizedContentType },
       )
       extension.magicWord.convention(sharedConfiguration.flatMap { it.parameters.magicWord })
       extension.licenseFile.convention(sharedConfiguration.flatMap { it.parameters.licenseFile })
@@ -212,7 +212,7 @@ abstract class CheckCopiedCodeMentionsExistTask : DefaultTask() {
       )
 
       throw GradleException(
-        "${nonExistingMentions.size} files mentioned in $licenseFileRelative do not exist, fix the $licenseFileRelative file."
+        "${nonExistingMentions.size} files mentioned in $licenseFileRelative do not exist, fix the $licenseFileRelative file.",
       )
     }
   }
@@ -340,7 +340,7 @@ abstract class CheckForCopiedCodeTask : DefaultTask() {
       )
 
       throw GradleException(
-        "${unmentionedFiles.size} files with the $magicWord marker need to be mentioned in $licenseFileRelative. See the messages above."
+        "${unmentionedFiles.size} files with the $magicWord marker need to be mentioned in $licenseFileRelative. See the messages above.",
       )
     }
   }

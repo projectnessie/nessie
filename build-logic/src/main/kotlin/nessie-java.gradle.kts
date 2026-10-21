@@ -51,7 +51,7 @@ tasks.withType<JavaCompile>().configureEach {
         args.add("-Xlint:deprecation")
       }
       args
-    }
+    },
   )
 
   doFirst {
