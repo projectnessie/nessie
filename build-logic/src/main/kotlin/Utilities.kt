@@ -91,7 +91,7 @@ fun DependencyHandler.quarkusBom(project: Project, extension: String): Dependenc
       (isNoQuarkusEnforcedPlatform || quarkusCustomVersion != null)
   )
     throw GradleException(
-      "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed"
+      "Publishing a Nessie release using a custom Quarkus version or w/o 'enforcedPlatform' is not allowed",
     )
 
   val group =
@@ -226,7 +226,7 @@ fun Test.useJavaVersion(requestedJavaVersion: Int) {
   javaLauncher.set(
     javaToolchains!!.launcherFor {
       languageVersion.set(JavaLanguageVersion.of(requestedJavaVersion))
-    }
+    },
   )
 }
 
@@ -348,7 +348,7 @@ fun loadProperties(file: File): Properties {
  */
 fun Project.loadSparkScalaProperties(): Properties =
   loadProperties(
-    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile
+    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile,
   )
 
 /** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
@@ -418,7 +418,7 @@ fun javaVersionForSpark(sparkMajorVersion: String): Int {
     "4.1" -> 17
     else ->
       throw IllegalArgumentException(
-        "Do not know which Java version Spark $sparkMajorVersion supports"
+        "Do not know which Java version Spark $sparkMajorVersion supports",
       )
   }
 }
@@ -484,7 +484,7 @@ abstract class GeneratePomProperties : DefaultTask() {
       artifactId=${artifactId.get()}
       version=${version.get()}
     """
-          .trimIndent()
+          .trimIndent(),
       )
   }
 }

@@ -35,7 +35,7 @@ on:
 jobs:
   code-checks:
     name: Quarkus CR - Compilation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,7 +61,7 @@ jobs:
 
   test:
     name: Quarkus CR - Test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,7 +88,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-test-reports
@@ -99,7 +99,7 @@ jobs:
 
   test-quarkus:
     name: Quarkus CR - Test Quarkus
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -139,7 +139,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-test-quarkus-reports
@@ -151,7 +151,7 @@ jobs:
 
   int-test:
     name: Quarkus CR - intTest
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -197,7 +197,7 @@ jobs:
             --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-reports
@@ -208,7 +208,7 @@ jobs:
 
   int-test-stores:
     name: Quarkus CR - intTest versioned/stores
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -239,7 +239,7 @@ jobs:
             $(cat ../persist-prjs.txt) $(cat ../storage-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-stores-reports
@@ -250,7 +250,7 @@ jobs:
 
   int-test-integrations:
     name: Quarkus CR - intTest integrations
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       SPARK_LOCAL_IP: localhost
@@ -280,7 +280,7 @@ jobs:
             $(cat ../spark-prjs.txt) --continue --scan
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-integrations-reports
@@ -291,7 +291,7 @@ jobs:
 
   int-test-quarkus-server:
     name: Quarkus CR - intTest Quarkus Server
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -319,7 +319,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-server-reports
@@ -331,7 +331,7 @@ jobs:
 
   int-test-quarkus-tool:
     name: Quarkus CR - intTest Admin Tool
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -359,7 +359,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-tool-reports
@@ -371,7 +371,7 @@ jobs:
 
   int-test-quarkus-events:
     name: Quarkus CR - intTest Quarkus Events
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -399,7 +399,7 @@ jobs:
           done
 
       - name: Capture Test Reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ failure() }}
         with:
           name: ci-inttest-quarkus-events-reports
@@ -411,7 +411,7 @@ jobs:
 
   docker-testing:
     name: Quarkus CR - Docker and Helm checks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -439,15 +439,15 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
           # https://helm.sh/docs/topics/version_skew/
-          version: 'v4.3.0'
+          version: 'v4.3.1'
 
       - name: Setup chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+        uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: '3.14'
+          python-version: '3.15'
 
       - name: Setup & Start Minikube
         uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
@@ -689,7 +689,7 @@ jobs:
 
   nesqueit:
     name: Quarkus CR - NesQuEIT
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       NESSIE_DIR: included-builds/nessie
@@ -749,7 +749,7 @@ jobs:
         run: mkdir "${{env.ICEBERG_DIR}}/bom"
 
       - name: Setup JDK
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: 'temurin'
           # Java 17 or 21 required for Nessie build, Java 17 required for Iceberg build, Java 11 required for Flink & Presto

@@ -31,7 +31,7 @@ class TestReleaseVersionTransition {
     expected: String,
   ) {
     assertThat(
-        ReleaseVersionTransition.apply(VersionTuple.create(current), bumpType, bumpToRelease)
+        ReleaseVersionTransition.apply(VersionTuple.create(current), bumpType, bumpToRelease),
       )
       .hasToString(expected)
   }

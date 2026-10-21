@@ -56,7 +56,7 @@ jobs:
       release-version: ${{ steps.get_version.outputs.release-version }}
       git-tag: ${{ steps.get_version.outputs.git-tag }}
       release-mode: ${{ steps.get_release_mode.outputs.release-mode }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 10
     steps:
@@ -97,7 +97,7 @@ jobs:
 
   publish-maven-central:
     name: Publish to Maven Central
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 240
     needs:
@@ -163,7 +163,7 @@ jobs:
           cp tools/aggregated-license-report/build/distributions/nessie-aggregated-license-report-${RELEASE_VERSION}.zip "${ARTIFACTS}"
 
       - name: Archive release artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-artifacts
           path: build-artifacts
@@ -172,7 +172,7 @@ jobs:
 
   publish-images:
     name: Publish images
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 60
     needs:
@@ -260,7 +260,7 @@ jobs:
 
   publish-helm:
     name: Publish Helm Chart
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: release
     timeout-minutes: 60
     needs:
@@ -281,7 +281,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
         with:
-          version: v4.3.0
+          version: v4.3.1
       ### END runner setup
 
       - name: Package Nessie Helm chart
@@ -290,7 +290,7 @@ jobs:
           mv nessie-${RELEASE_VERSION}.tgz nessie-helm-${RELEASE_VERSION}.tgz
 
       - name: Archive Helm chart artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-helm
           path: ./nessie-helm-*.tgz
@@ -302,7 +302,7 @@ jobs:
           helm repo index . --merge index.yaml --url https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}
 
       - name: Archive Helm chart index.yaml
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-helm-index.yaml
           path: index.yaml
@@ -322,7 +322,7 @@ jobs:
           gh api -X PUT /repos/projectnessie/charts.projectnessie.org/contents/index.yaml --input put_body
 
   publish-openapi:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: release
     needs:
@@ -354,7 +354,7 @@ jobs:
         run: cp api/model/build/generated/openapi/META-INF/openapi/openapi.yaml ./nessie-openapi-${RELEASE_VERSION}.yaml
 
       - name: Archive OpenAPI artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: nessie-release-openapi
           path: ./nessie-openapi-*.yaml
@@ -365,7 +365,7 @@ jobs:
       # update an existing version.
 
       - name: Create on SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
@@ -375,7 +375,7 @@ jobs:
           args: api:create projectnessie/nessie -f ./nessie-openapi-${{ env.RELEASE_VERSION }}.yaml --visibility=public
 
       - name: Unpublish on SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
@@ -385,7 +385,7 @@ jobs:
           args: api:unpublish projectnessie/nessie/${{ env.RELEASE_VERSION }}.yaml
 
       - name: Update SwaggerHub
-        uses: smartbear/swaggerhub-cli@8acddf54fcbf61b80440815de457c598788aa73d # v0.11.0
+        uses: smartbear/swaggerhub-cli@61cc3219348fcec3ff8802337916b6b526a07643 # v0.12.0
         continue-on-error: true
         env:
           XDG_CONFIG_HOME: "/tmp"
@@ -396,7 +396,7 @@ jobs:
 
 
   create-github-release:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     environment: release
     needs:
@@ -429,7 +429,7 @@ jobs:
         run: mkdir current-release-artifacts
 
       - name: Get release + OpenAPI + Helm chart artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: current-release-artifacts
           merge-multiple: true

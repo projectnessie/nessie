@@ -35,7 +35,7 @@ val includeNoticeLicenseFiles =
       rootProject.layout.files(
         "gradle/built-uber-dists/NOTICE-BINARY-DIST",
         "gradle/built-uber-dists/LICENSE-BINARY-DIST",
-      )
+      ),
     )
     inputs.property("version", project.version)
     from(rootProject.projectDir.resolve("gradle/built-uber-dists")) {
