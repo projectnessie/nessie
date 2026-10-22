@@ -22,6 +22,8 @@ import org.gradle.kotlin.dsl.support.serviceOf
 
 includeBuild("build-logic") { name = "nessie-build-logic" }
 
+includeBuild("gradle/license-check-plugin") { name = "nessie-license-check-plugin" }
+
 val includedBuildsFile = file(".included-builds.properties")
 
 if (includedBuildsFile.isFile) {
