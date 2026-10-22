@@ -15,7 +15,7 @@ Download options for this Nessie {{ versions.nessie }} release:
 * [Server Admin Tool](#nessie-server-admin-tool)
 * [REST OpenAPI](#nessie-rest-api)
 * [Maven Central](#nessie-artifacts-on-maven-central)
-* [License Reports](#license-reports)
+* [Licenses and notices](#licenses-and-notices)
 
 See also the [Nessie release page page for version {{ versions.nessie }} on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-{{ versions.nessie }})
 
@@ -229,6 +229,8 @@ The following examples show how to add the Nessie BOM to your build configuratio
     }
     ```
 
-## License Reports
+## Licenses and notices
 
-License reports for this release are [available via this link (zip file)](https://github.com/projectnessie/nessie/releases/download/nessie-{{ versions.nessie }}/nessie-aggregated-license-report-{{ versions.nessie }}.zip).
+Nessie distributable JARs include third-party license and notice information in
+`META-INF/resources/LICENSE.txt` and `META-INF/resources/NOTICE.txt`.
+Dependency license policy and packaged attribution are checked during release builds.

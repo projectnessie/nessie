@@ -38,6 +38,29 @@ description = "Transactional Catalog for Data Lakes"
 
 tasks.named<Wrapper>("wrapper").configure { distributionType = Wrapper.DistributionType.ALL }
 
+val distributionLicenseProjects =
+  mutableListOf(
+    "nessie-quarkus",
+    "nessie-server-admin-tool",
+    "nessie-gc-tool",
+    "nessie-content-generator",
+    "nessie-cli",
+  )
+val licenseSparkScala = loadProperties(file("integrations/spark-scala.properties"))
+
+licenseSparkScala["sparkVersions"].toString().split(",").forEach { spark ->
+  licenseSparkScala["sparkVersion-${spark.trim()}-scalaVersions"].toString().split(",").forEach {
+    scala ->
+    distributionLicenseProjects.add("nessie-spark-extensions-${spark.trim()}_${scala.trim()}")
+  }
+}
+
+tasks.register("checkDistributionLicenses") {
+  group = "verification"
+  description = "Checks licenses and packaged attribution for every distribution and Spark variant"
+  dependsOn(distributionLicenseProjects.map { ":$it:checkDistributionLicenses" })
+}
+
 val requiredNmcpSparkArtifacts = providers.provider {
   val sparkScala = loadProperties(file("integrations/spark-scala.properties"))
   val sparkVersions = sparkScala["sparkVersions"].toString().split(",").map { it.trim() }
@@ -148,6 +171,10 @@ spotless {
       "nessie-iceberg/*.gradle.kts",
       "*.gradle.kts",
       "build-logic/*.gradle.kts",
+      "gradle/license/*.gradle.kts",
+      "gradle/license-check-plugin/*.gradle.kts",
+      "gradle/license-check-plugin/src/**/*.kt",
+      "integrations/spark-extensions/*.gradle.kts",
       "build-logic/src/**/*.kt*",
     )
   }
