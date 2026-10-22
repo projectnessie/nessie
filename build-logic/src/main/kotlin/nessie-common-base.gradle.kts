@@ -49,14 +49,19 @@ if (
       ktfmt().googleStyle()
       licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"), "$")
       if (project == rootProject) {
-        target("*.gradle.kts", "build-logic/*.gradle.kts")
+        target(
+          "*.gradle.kts",
+          "build-logic/*.gradle.kts",
+          "gradle/license/*.kts",
+          "gradle/license-check-plugin/*.kts",
+        )
       }
     }
     if (project == rootProject) {
       kotlin {
         ktfmt().googleStyle()
         licenseHeaderFile(rootProject.file("codestyle/copyright-header-java.txt"), "$")
-        target("build-logic/src/**/kotlin/**")
+        target("build-logic/src/**/kotlin/**", "gradle/license-check-plugin/src/**/kotlin/**")
         targetExclude("build-logic/build/**")
       }
       yaml {

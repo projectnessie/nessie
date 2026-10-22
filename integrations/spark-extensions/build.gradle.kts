@@ -19,7 +19,15 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   id("nessie-conventions-spark")
   id("nessie-shadow-jar")
-  id("nessie-license-report")
+  id("nessie-shadow-license-checks")
+}
+
+apply(from = layout.settingsDirectory.file("gradle/license/licensee.gradle.kts"))
+
+tasks.named<VerifyNessieLicenseAttribution>("verifyLicenseAttribution") {
+  // The producer includes only Nessie-owned JARs; runtime policy still checks external
+  // dependencies.
+  allowEmptyExternalInventory.set(true)
 }
 
 val sparkScala = getSparkScalaVersionsForProject()
@@ -32,9 +40,15 @@ dependencies {
 
   implementation(nessieProject("nessie-cli-grammar"))
   implementation(project(":nessie-spark-extensions-base_${sparkScala.scalaMajorVersion}"))
-  compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  compileOnly("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  compileOnly("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  compileOnly("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  compileOnly("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
   implementation(nessieClientForIceberg())
   implementation(nessieProject("nessie-notice"))
 
@@ -47,8 +61,12 @@ dependencies {
 
   val versionIceberg = libs.versions.iceberg.get()
   testFixturesImplementation("org.apache.iceberg:iceberg-nessie:$versionIceberg")
-  testFixturesImplementation("org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
-  testFixturesImplementation("org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg")
+  testFixturesImplementation(
+    "org.apache.iceberg:iceberg-spark-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg",
+  )
+  testFixturesImplementation(
+    "org.apache.iceberg:iceberg-spark-extensions-${sparkScala.sparkMajorVersion}_${sparkScala.scalaMajorVersion}:$versionIceberg",
+  )
   testFixturesImplementation("org.apache.iceberg:iceberg-hive-metastore:$versionIceberg")
   testFixturesImplementation("org.apache.iceberg:iceberg-aws:$versionIceberg")
   intTestRuntimeOnly(libs.hadoop.client) {
@@ -69,9 +87,15 @@ dependencies {
   testFixturesImplementation(libs.slf4j.log4j.over.slf4j) {
     version { require(libs.versions.slf4j.compat.get()) }
   }
-  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
-  testFixturesImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") { forSpark(sparkScala.sparkVersion) }
+  testFixturesImplementation("org.apache.spark:spark-sql_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesImplementation("org.apache.spark:spark-core_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
+  testFixturesImplementation("org.apache.spark:spark-hive_${sparkScala.scalaMajorVersion}") {
+    forSpark(sparkScala.sparkVersion)
+  }
 
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
@@ -82,12 +106,15 @@ dependencies {
   nessieQuarkusServer(nessieProject("nessie-quarkus", "quarkusRunner"))
 }
 
-val ideaSyncActive = providers.systemProperty("idea.sync.active").map(String::toBoolean).orElse(false)
+val ideaSyncActive =
+  providers.systemProperty("idea.sync.active").map(String::toBoolean).orElse(false)
 
-val syncSharedSrcIntTest = tasks.register<Sync>("syncSharedSrcIntTest") {
-  into(layout.buildDirectory.dir("shared-src/intTest"))
-  from(layout.settingsDirectory.dir("integrations/spark-extensions/shared/src/intTest"))
-}
+val syncSharedSrcIntTest =
+  tasks.register<Sync>("syncSharedSrcIntTest") {
+    into(layout.buildDirectory.dir("shared-src/intTest"))
+    from(layout.settingsDirectory.dir("integrations/spark-extensions/shared/src/intTest"))
+  }
+
 sourceSets.intTest {
   java.srcDir(syncSharedSrcIntTest.map { t -> t.destinationDir.resolve("java") })
   resources.srcDir(syncSharedSrcIntTest.map { t -> t.destinationDir.resolve("resources") })
@@ -103,7 +130,8 @@ tasks.named<ShadowJar>("shadowJar").configure {
 }
 
 tasks.named<Test>("intTest").configure {
-  // Spark keeps a lot of stuff around in the JVM, breaking tests against different Iceberg catalogs, so give every test class its own JVM
+  // Spark keeps a lot of stuff around in the JVM, breaking tests against different Iceberg
+  // catalogs, so give every test class its own JVM
   forkEvery = 1
   inputs.files(nessieQuarkusServer)
   val execJarProvider =
@@ -111,10 +139,9 @@ tasks.named<Test>("intTest").configure {
       val file = c.incoming.artifactView {}.files.first()
       listOf("-Dnessie.exec-jar=${file.absolutePath}")
     }
-  val javaExec = javaToolchains.launcherFor {
-    this.languageVersion.set(JavaLanguageVersion.of(21))
-  }.map {
-    "-Djava-exec=${it.executablePath}"
-  }
-  jvmArgumentProviders.add(CommandLineArgumentProvider { execJarProvider.get() + listOf(javaExec.get()) })
+  val javaLauncher = javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(21)) }
+  val javaExec = javaLauncher.map { "-Djava-exec=${it.executablePath}" }
+  jvmArgumentProviders.add(
+    CommandLineArgumentProvider { execJarProvider.get() + listOf(javaExec.get()) },
+  )
 }
