@@ -15,10 +15,6 @@ For the full and concrete list of dependencies and code contained in Nessie
 binary distributions is contained in LICENSE for Nessie binary distributions
 (named LICENSE-BINARY-DIST in source distributions).
 
-The Nessie web site provides aggregated license reports for recent Nessie
-binary distributions, available at https://projectnessie.org/docs/ and
-https://projectnessie.org/downloads/.
-
 
 
 This product includes software developed at

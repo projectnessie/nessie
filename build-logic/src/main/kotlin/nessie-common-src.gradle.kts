@@ -216,5 +216,4 @@ tasks.named("codeChecks").configure {
   if (!noCheckstyle) {
     dependsOn("checkstyle")
   }
-  pluginManager.withPlugin("com.github.jk1.dependency-license-report") { dependsOn("checkLicense") }
 }
