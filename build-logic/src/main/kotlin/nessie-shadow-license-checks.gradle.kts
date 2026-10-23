@@ -22,6 +22,7 @@ plugins {
 }
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar")
+
 val generateLicenseInventory =
   tasks.register<GenerateShadowLicenseInventory>("generateLicenseInventory") {
     group = "verification"
@@ -59,3 +60,48 @@ val verifyLicenseAttribution =
     deliveredAttributionArchives.from(shadowJar.flatMap { it.archiveFile })
     validationReport.set(layout.buildDirectory.file("reports/licensee/attribution-validation.txt"))
   }
+
+// Transfer producer evidence for SBOMs as providers only, across the isolated script/classpath
+// boundary to configureDistributionSbom() in
+// gradle/license-check-plugin/src/main/kotlin/org/projectnessie/gradle/sbom/DistributionSbom.kt.
+
+extra["sbomShadow"] =
+  mapOf(
+    "selected" to
+      shadowJar.map {
+        it.includedDependencies
+      },
+    "archive" to
+      shadowJar.flatMap {
+        it.archiveFile
+      },
+    "minimized" to
+      shadowJar.flatMap {
+        it.minimizeJar
+      },
+    "metadata" to
+      shadowJar
+        .flatMap { it.configurations }
+        .map { configurations ->
+          configurations
+            .flatMap { it.resolvedConfiguration.resolvedArtifacts }
+            .groupBy { it.file.absolutePath }
+            .mapValues { (path, values) ->
+              val metadata =
+                values
+                  .map { artifact ->
+                    val id = artifact.moduleVersion.id
+                    mapOf(
+                      "group" to id.group,
+                      "name" to id.name,
+                      "version" to id.version,
+                      "classifier" to artifact.classifier.orEmpty(),
+                      "type" to artifact.type,
+                    )
+                  }
+                  .distinct()
+              require(metadata.size == 1) { "Ambiguous Shadow SBOM input: $path" }
+              metadata.single()
+            }
+        },
+  )
