@@ -45,10 +45,10 @@ public class Syntax {
   private static final int SPLIT_LINE_LENGTH = 60;
 
   public Syntax(Path grammarFile, Map<String, String> preprocessorSymbols) throws IOException {
-    this.grammar = new Grammar(null, "java", 17, false, preprocessorSymbols);
+    this.grammar = new Grammar(null, "java", false, preprocessorSymbols);
     this.level = "    ";
 
-    grammar.parse(grammarFile, true);
+    grammar.parse(grammarFile, grammar.getDefaultLexicalState());
 
     grammar.doSanityChecks();
     grammar.generateLexer();

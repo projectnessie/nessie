@@ -51,7 +51,7 @@ caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.2
 cel-bom = { module = "org.projectnessie.cel:cel-bom", version = "0.8.0" }
 checkstyle = { module = "com.puppycrawl.tools:checkstyle", version.ref = "checkstyle" }
 commons-text = { module = "org.apache.commons:commons-text", version = "1.15.0" }
-congocc = { module = "org.congocc:org.congocc.parser.generator", version = "2.1.0" }
+congocc = { module = "org.congocc:org.congocc.parser.generator", version = "2.2.0" }
 docker-java-api = { module = "com.github.docker-java:docker-java-api", version = "3.7.1" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
