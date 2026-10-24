@@ -20,8 +20,10 @@ import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
   id("nessie-conventions-java17")
   id("nessie-shadow-jar")
-  id("nessie-license-report")
+  id("nessie-shadow-license-checks")
 }
+
+apply(from = layout.settingsDirectory.file("gradle/license/licensee.gradle.kts"))
 
 publishingHelper { mavenName = "Nessie - CLI" }
 

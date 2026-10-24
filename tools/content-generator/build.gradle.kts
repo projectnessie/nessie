@@ -20,11 +20,14 @@ plugins {
   alias(libs.plugins.nessie.run)
   id("nessie-conventions-java17")
   id("nessie-shadow-jar")
-  id("nessie-license-report")
+  id("nessie-shadow-license-checks")
 }
+
+apply(from = layout.settingsDirectory.file("gradle/license/licensee.gradle.kts"))
 
 dependencies {
   implementation(project(":nessie-client"))
+  implementation(project(":nessie-notice"))
   runtimeOnly(libs.httpclient5)
 
   implementation(libs.picocli)
