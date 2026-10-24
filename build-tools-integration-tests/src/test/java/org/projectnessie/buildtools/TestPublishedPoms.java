@@ -111,10 +111,10 @@ public class TestPublishedPoms {
 
   @ParameterizedTest
   @ValueSource(strings = {
-    "nessie-spark-extensions-3.4_2.12",
-    "nessie-spark-extensions-3.4_2.13",
     "nessie-spark-extensions-3.5_2.12",
-    "nessie-spark-extensions-3.5_2.13"
+    "nessie-spark-extensions-3.5_2.13",
+    "nessie-spark-extensions-4.0_2.13",
+    "nessie-spark-extensions-4.1_2.13"
   })
   void checkIntegrationsPom(String artifactId) throws Exception {
     checkPom("org.projectnessie.nessie-integrations", artifactId);
