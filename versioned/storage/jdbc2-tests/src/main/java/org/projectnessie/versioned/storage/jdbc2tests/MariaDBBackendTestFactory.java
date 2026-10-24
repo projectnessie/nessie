@@ -33,7 +33,8 @@ public class MariaDBBackendTestFactory extends ContainerBackendTestFactory {
   @SuppressWarnings("resource")
   protected JdbcDatabaseContainer<?> createContainer() {
     return new MariaDBContainer(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
-        .withUrlParam("useBulkStmtsForInserts", "false");
+        .withUrlParam("useBulkStmtsForInserts", "false")
+        .withUrlParam("sslMode", "trust");
   }
 
   @Override

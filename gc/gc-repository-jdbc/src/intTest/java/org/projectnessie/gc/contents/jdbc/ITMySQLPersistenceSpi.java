@@ -29,7 +29,8 @@ public class ITMySQLPersistenceSpi extends AbstractJdbcPersistenceSpi {
   @BeforeAll
   static void createDataSource() throws Exception {
     container =
-        new MariaDBDriverMySQLContainer(dockerImage("mysql").asCompatibleSubstituteFor("mysql"));
+        new MariaDBDriverMySQLContainer(dockerImage("mysql").asCompatibleSubstituteFor("mysql"))
+            .withUrlParam("sslMode", "trust");
     container.start();
     initDataSource(container.getJdbcUrl());
   }
