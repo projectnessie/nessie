@@ -14,7 +14,8 @@ Download options for this Nessie ::NESSIE_VERSION:: release:
 * [Server Admin Tool](#nessie-server-admin-tool)
 * [REST OpenAPI](#nessie-rest-api)
 * [Maven Central](#nessie-artifacts-on-maven-central)
-* [License Reports](#license-reports)
+* [Software bill of materials](#software-bill-of-materials)
+* [Licenses and notices](#licenses-and-notices)
 
 GitHub [release page](https://github.com/projectnessie/nessie/releases/tag/nessie-::NESSIE_VERSION::) for ::NESSIE_VERSION:: with release artifacts.
 
@@ -229,6 +230,34 @@ The following examples show how to add the Nessie BOM to your build configuratio
     }
     ```
 
-## License Reports
+## Software bill of materials
 
-License reports for this release are [available via this link (zip file)](https://github.com/projectnessie/nessie/releases/download/nessie-::NESSIE_VERSION::/nessie-aggregated-license-report-::NESSIE_VERSION::.zip).
+Nessie publishes a software bill of materials (SBOM) for the server, admin tool,
+CLI, garbage collector, content generator and Spark JARs. These CycloneDX 1.6
+JSON files list the components used to build each JAR.
+
+On the GitHub release page, the SBOM filename is the JAR filename followed by
+`.cdx.json`. Its signature adds another `.asc`. SBOMs for the content generator
+and Spark JARs are also available there; those JARs can be downloaded from Maven
+Central.
+
+On Maven Central, SBOMs use the `runner-sbom-cyclonedx` classifier for the server
+and admin tool, and `sbom-cyclonedx` for the other JARs. The file extension is
+`json`. Maven Central and GitHub provide the same SBOM content.
+
+To check a downloaded JAR, first verify the SBOM's `.asc` signature with a trusted
+Nessie release signing key. Then compare the JAR's SHA-256 with the value in the
+SBOM's `metadata.component.hashes`.
+
+The SBOM describes known build inputs. It may not list dependencies bundled
+inside a third-party JAR or every relationship between components. Hashes of
+inputs before repackaging are labelled separately from the final JAR's hash.
+These SBOMs cover the JARs; container images and application directories are
+separate. License information is also provided in the packaged LICENSE and
+NOTICE files.
+
+## Licenses and notices
+
+Nessie distributable JARs include third-party license and notice information in
+`META-INF/resources/LICENSE.txt` and `META-INF/resources/NOTICE.txt`.
+Dependency license policy and packaged attribution are checked during release builds.

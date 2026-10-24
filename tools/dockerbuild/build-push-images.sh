@@ -161,6 +161,7 @@ fi
 #
 gh_group "Build Java"
 ./gradlew $CUSTOM_GRADLE_ARGS "${GRADLE_PROJECT}:clean" "${GRADLE_PROJECT}:build" -x "${GRADLE_PROJECT}:check"
+./gradlew $CUSTOM_GRADLE_ARGS "${GRADLE_PROJECT}:checkDistributionLicenses"
 gh_endgroup
 
 if [[ ${LOCAL} == 1 ]] ; then

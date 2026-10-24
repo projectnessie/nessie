@@ -37,6 +37,9 @@ jobs:
       - name: List projects
         run: ./gradlew --no-scan projects
 
+      - name: Check distribution licenses
+        run: ./gradlew --no-scan :checkDistributionLicenses -Prelease -Puber-jar
+
       - name: Gradle / publish snapshot
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
