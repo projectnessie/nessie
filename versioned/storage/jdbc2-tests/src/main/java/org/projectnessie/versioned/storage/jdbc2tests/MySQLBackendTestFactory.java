@@ -32,7 +32,7 @@ public class MySQLBackendTestFactory extends ContainerBackendTestFactory {
   @Nonnull
   @Override
   protected JdbcDatabaseContainer<?> createContainer() {
-    return new MariaDBDriverMySQLContainer(dockerImage("mysql"));
+    return new MariaDBDriverMySQLContainer(dockerImage("mysql")).withUrlParam("sslMode", "trust");
   }
 
   @Override
