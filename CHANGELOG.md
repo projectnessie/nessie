@@ -20,6 +20,14 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/GCS: Iceberg clients now refresh vended GCS tokens before the tokens expire. Before, a
+  client kept the first token, and all its requests to GCS failed when that token expired. The table
+  configuration now contains `gcs.oauth2.refresh-credentials-endpoint`. A refresh returns
+  credentials for the head of the branch or tag that the client loaded the table from. When the
+  client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
+  The `storage-credentials` field now contains one GCS credential, with the table location as the
+  prefix, not one credential for each location.
+
 ### Commits
 
 ## [0.109.0] Release (2026-10-08)
