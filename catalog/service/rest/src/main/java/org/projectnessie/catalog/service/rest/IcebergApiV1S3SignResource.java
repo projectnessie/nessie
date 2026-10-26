@@ -15,6 +15,8 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.SIGNER_TOKEN;
+
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
@@ -92,6 +94,23 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.UNKNOWN);
   }
 
+  @Operation(operationId = "iceberg.v1.s3sign.properties")
+  @POST
+  @Path("/v1/{prefix}/s3sign")
+  @Blocking
+  public Uni<IcebergS3SignResponse> s3signWithProperties(
+      IcebergS3SignRequest request, @PathParam("prefix") String prefix) {
+    String token = request.properties().get(SIGNER_TOKEN);
+    if (token == null || token.isEmpty()) {
+      throw new IllegalArgumentException("Missing signer token");
+    }
+    SignerParams params = SignerParams.fromPathParam(token);
+    if (!prefix.equals(params.signerSignature().prefix())) {
+      throw new IllegalArgumentException("Invalid signer prefix");
+    }
+    return signWithParams(request, prefix, params);
+  }
+
   @Operation(operationId = "iceberg.v1.s3sign.blob")
   @POST
   @Path("/v1/{prefix}/s3sign/{signedParams}")
@@ -101,7 +120,11 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
       @PathParam("prefix") String prefix,
       @PathParam("signedParams") String signedParams) {
 
-    SignerParams signerParams = SignerParams.fromPathParam(signedParams);
+    return signWithParams(request, prefix, SignerParams.fromPathParam(signedParams));
+  }
+
+  private Uni<IcebergS3SignResponse> signWithParams(
+      IcebergS3SignRequest request, String prefix, SignerParams signerParams) {
     SignerKey signerKey = signerKeysService.getSignerKey(signerParams.keyName());
 
     SignerSignature signerSignature = signerParams.signerSignature();

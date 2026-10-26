@@ -299,6 +299,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .metadataLocation(metadataLocation)
         .putAllConfig(config.config())
         .addAllStorageCredentials(config.storageCredentials())
+        .remoteSigningConfig(config.remoteSigningConfig().orElse(null))
         .build();
   }
 
