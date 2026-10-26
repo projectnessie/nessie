@@ -215,6 +215,11 @@ Nessie uses table metadata locations and warehouse configuration to determine th
 returned to clients. Warehouses determine default creation locations; existing table locations are used
 to look up matching object-store configuration when tables are loaded. `(documented)`
 
+Default creation locations append namespace and entity-name elements as individually percent-encoded
+path segments to the nearest explicit namespace location, or to the warehouse location. Leading dots
+are encoded as well. Existing stored entity locations and explicit namespace locations retain their
+original spelling. `(documented)`
+
 Nessie supports mechanisms such as S3 request signing and short-lived/down-scoped credentials for
 object-store access. These mechanisms are configuration-dependent and must be tailored to the query
 engine and deployment environment. `(documented)`
