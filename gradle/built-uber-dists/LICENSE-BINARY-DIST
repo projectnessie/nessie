@@ -686,6 +686,7 @@ software.amazon.awssdk:checksums-spi
 software.amazon.awssdk:crt-core
 software.amazon.awssdk:dynamodb
 software.amazon.awssdk:endpoints-spi
+software.amazon.awssdk:eventstream
 software.amazon.awssdk:http-auth
 software.amazon.awssdk:http-auth-aws
 software.amazon.awssdk:http-auth-aws-eventstream
