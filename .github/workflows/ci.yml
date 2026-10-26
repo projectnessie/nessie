@@ -959,15 +959,6 @@ jobs:
       - name: Iceberg Nessie test
         run: ./gradlew :iceberg:iceberg-nessie:test --scan
 
-      - name: Nessie Spark 3.4 / 2.13 Extensions test
-        run: |
-          ./gradlew \
-            -DscalaVersion=2.13 \
-            :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:test \
-            :nessie:nessie-iceberg:nessie-spark-extensions-3.4_2.13:intTest \
-            --continue \
-            --scan
-
       - name: Nessie Spark 3.5 / 2.13 Extensions test
         run: |
           ./gradlew \

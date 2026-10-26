@@ -45,6 +45,7 @@ import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.endpoints.Endpoint;
+import software.amazon.awssdk.endpoints.EndpointUrl;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -117,7 +118,8 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     URI endpoint = serverInstance.getStsEndpointURI();
 
     StsEndpointProvider provider =
-        params -> completedFuture(Endpoint.builder().url(endpoint).build());
+        params ->
+            completedFuture(Endpoint.builder().endpointUrl(EndpointUrl.fromUri(endpoint)).build());
 
     StsClient stsClient =
         StsClient.builder()
@@ -162,7 +164,6 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .extracting(ListBucketsResponse::buckets)
         .asInstanceOf(
             InstanceOfAssertFactories.list(software.amazon.awssdk.services.s3.model.Bucket.class))
-        .map(software.amazon.awssdk.services.s3.model.Bucket.class::cast)
         .map(software.amazon.awssdk.services.s3.model.Bucket::name)
         .containsExactlyInAnyOrder(BUCKET, "secret");
 
@@ -339,7 +340,7 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
         .isNotNull();
   }
 
-  @SuppressWarnings({"unchecked", "resource"})
+  @SuppressWarnings("resource")
   @Test
   public void batchDeleteNestedObjects() {
     Map<String, MockObject> objects = new HashMap<>();

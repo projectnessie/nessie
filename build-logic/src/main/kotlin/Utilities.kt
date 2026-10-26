@@ -56,8 +56,6 @@ val noSourceCheckProjects =
   listOf(
     ":nessie-spark-extensions-base_2.12",
     ":nessie-spark-extensions-basetests_2.12",
-    ":nessie-spark-extensions-3.4_2.12",
-    ":nessie-spark-extensions-3.4_2.13",
     ":nessie-spark-extensions-3.5_2.12",
     ":nessie-spark-extensions-3.5_2.13",
     ":nessie-spark-extensions-4.0_2.13",
@@ -340,17 +338,6 @@ fun loadProperties(file: File): Properties {
   return props
 }
 
-/**
- * Loads the Spark/Scala project matrix used by settings and dependency wiring.
- *
- * Keep this as a file read instead of root `extra` state so each project can derive its own
- * configuration without depending on mutable root-project state.
- */
-fun Project.loadSparkScalaProperties(): Properties =
-  loadProperties(
-    rootProject.layout.projectDirectory.file("integrations/spark-scala.properties").asFile,
-  )
-
 /** Resolves the Spark and Scala major versions for all `nessie-spark-extensions*` projects. */
 fun Project.getSparkScalaVersionsForProject(): SparkScalaVersions {
   val sparkScala = project.name.split("-").last().split("_")
@@ -380,15 +367,6 @@ fun Project.sparkDependencyVersion(sparkMajorVersion: String, scalaMajorVersion:
   return sparkDep.get().versionConstraint.preferredVersion
 }
 
-fun Project.useSparkScalaVersionsForProject(sparkMajorVersion: String): SparkScalaVersions {
-  val scalaMajorVersion =
-    loadSparkScalaProperties()["sparkVersion-${sparkMajorVersion}-scalaVersions"]
-      .toString()
-      .split(",")
-      .map { it.trim() }[0]
-  return useSparkScalaVersionsForProject(sparkMajorVersion, scalaMajorVersion)
-}
-
 fun Project.useSparkScalaVersionsForProject(
   sparkMajorVersion: String,
   scalaMajorVersion: String,
@@ -409,10 +387,7 @@ fun Project.useSparkScalaVersionsForProject(
  * Always yields Java 17.
  */
 fun javaVersionForSpark(sparkMajorVersion: String): Int {
-  val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
   return when (sparkMajorVersion) {
-    "3.3",
-    "3.4",
     "3.5",
     "4.0",
     "4.1" -> 17

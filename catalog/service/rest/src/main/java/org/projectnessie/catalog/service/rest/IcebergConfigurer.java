@@ -80,6 +80,8 @@ public class IcebergConfigurer {
   /** Path of the signer endpoint. */
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
+  static final String SIGNER_ENDPOINT = "signer.endpoint";
+
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
   @Inject ObjectIO objectIO;
@@ -360,7 +362,9 @@ public class IcebergConfigurer {
             .build()
             .toPathParam(signerKey);
 
-    config.accept(S3_SIGNER_ENDPOINT, uriInfo.icebergS3SignerPathWithPath(prefix, pathParam));
+    var signerEndpoint = uriInfo.icebergS3SignerPathWithPath(prefix, pathParam);
+    config.accept(S3_SIGNER_ENDPOINT, signerEndpoint);
+    config.accept(SIGNER_ENDPOINT, signerEndpoint);
 
     return true;
   }
