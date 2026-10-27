@@ -20,8 +20,10 @@ plugins {
   id("com.gradleup.shadow")
   id("nessie-conventions-java17")
   id("nessie-shadow-jar")
-  id("nessie-license-report")
+  id("nessie-shadow-license-checks")
 }
+
+apply(from = layout.settingsDirectory.file("gradle/license/licensee.gradle.kts"))
 
 publishingHelper { mavenName = "Nessie - GC - Standalone command line tool" }
 
@@ -182,6 +184,13 @@ val copyUberJar =
     into(project.layout.buildDirectory.dir("executable"))
     rename { "nessie-gc.jar" }
   }
+
+tasks.named<VerifyNessieLicenseAttribution>("verifyLicenseAttribution") {
+  // This copied executable is the GC container's actual input as well as a release artifact.
+  deliveredAttributionArchives.from(
+    copyUberJar.map { it.destinationDir.resolve("nessie-gc.jar") },
+  )
+}
 
 shadowJar.configure {
   manifest { attributes["Main-Class"] = mainClassName }
