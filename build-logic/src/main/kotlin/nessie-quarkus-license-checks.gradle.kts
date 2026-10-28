@@ -16,15 +16,23 @@
 
 plugins { id("nessie-license-checks") }
 
+val uberJar = providers.gradleProperty("uber-jar").isPresent
+val runnerName = if (uberJar) "${project.name}-${project.version}-runner" else "quarkus-run"
+val quarkusSbom = layout.buildDirectory.file("$runnerName-cyclonedx.json")
+// Quarkus generates this side file outside its declared application outputs. Without
+// declaring it on the generating task, a build-cache hit after clean loses the inventory.
+val quarkusSbomProducer =
+  tasks.named(if (uberJar) "quarkusBuild" else "quarkusAppPartsBuild") {
+    outputs.file(quarkusSbom).withPropertyName("cyclonedxSbom")
+  }
+
 val verifyLicenseAttribution =
   tasks.register<VerifyNessieLicenseAttribution>("verifyLicenseAttribution") {
     group = "verification"
     description = "Verifies shipped dependency policy coverage and delivered LICENSE/NOTICE"
     dependsOn("licensee", "quarkusBuild")
     licenseeReport.set(layout.buildDirectory.file("reports/licensee/artifacts.json"))
-    val uberJar = providers.gradleProperty("uber-jar").isPresent
-    val runnerName = if (uberJar) "${project.name}-${project.version}-runner" else "quarkus-run"
-    sbom.set(layout.buildDirectory.file("$runnerName-cyclonedx.json"))
+    sbom.set(quarkusSbomProducer.map { quarkusSbom.get() })
     licenseFile.set(layout.settingsDirectory.file("gradle/built-uber-dists/LICENSE-BINARY-DIST"))
     noticeFile.set(layout.settingsDirectory.file("gradle/built-uber-dists/NOTICE-BINARY-DIST"))
     projectGroups.set(setOf("org.projectnessie.nessie", "org.projectnessie.nessie-integrations"))
