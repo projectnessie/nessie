@@ -162,7 +162,7 @@ zstd-jni = { module = "com.github.luben:zstd-jni", version = "1.5.7-25" }
 
 [plugins]
 gatling = { id = "io.gatling.gradle", version = "3.16.0" }
-jmh = { id = "me.champeau.jmh", version = "0.7.3" }
+jmh = { id = "me.champeau.jmh", version = "0.7.4" }
 nessie-run = { id = "org.projectnessie", version = "0.32.7" }
 protobuf = { id = "com.google.protobuf", version = "0.10.0" }
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
