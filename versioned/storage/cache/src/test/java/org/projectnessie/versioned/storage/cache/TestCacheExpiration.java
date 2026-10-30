@@ -28,6 +28,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.nessie.relocated.protobuf.ByteString;
+import org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.CacheKey;
+import org.projectnessie.versioned.storage.cache.CaffeineCacheBackend.CacheValue;
 import org.projectnessie.versioned.storage.common.objtypes.ContentValueObj;
 
 @ExtendWith(SoftAssertionsExtension.class)
@@ -61,14 +63,13 @@ public class TestCacheExpiration {
     backend.put("repo", dynamicCachingObj);
     backend.put("repo", stdObj);
 
-    ConcurrentMap<CaffeineCacheBackend.CacheKeyValue, CaffeineCacheBackend.CacheKeyValue> cacheMap =
-        backend.cache.asMap();
+    ConcurrentMap<CacheKey, CacheValue> cacheMap = backend.cache.asMap();
 
     soft.assertThat(cacheMap)
-        .doesNotContainKey(CaffeineCacheBackend.cacheKeyForRead("repo", nonCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", dynamicCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", defaultCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", stdObj.id()))
+        .doesNotContainKey(new CacheKey("repo", nonCachingObj.id()))
+        .containsKey(new CacheKey("repo", dynamicCachingObj.id()))
+        .containsKey(new CacheKey("repo", defaultCachingObj.id()))
+        .containsKey(new CacheKey("repo", stdObj.id()))
         .hasSize(3);
 
     soft.assertThat(backend.get("repo", nonCachingObj.id())).isNull();
@@ -77,10 +78,10 @@ public class TestCacheExpiration {
     soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
-        .doesNotContainKey(CaffeineCacheBackend.cacheKeyForRead("repo", nonCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", dynamicCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", defaultCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", stdObj.id()))
+        .doesNotContainKey(new CacheKey("repo", nonCachingObj.id()))
+        .containsKey(new CacheKey("repo", dynamicCachingObj.id()))
+        .containsKey(new CacheKey("repo", defaultCachingObj.id()))
+        .containsKey(new CacheKey("repo", stdObj.id()))
         .hasSize(3);
 
     // increment clock by one - "dynamic" object should still be present
@@ -93,10 +94,10 @@ public class TestCacheExpiration {
     soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
-        .doesNotContainKey(CaffeineCacheBackend.cacheKeyForRead("repo", nonCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", dynamicCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", defaultCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", stdObj.id()))
+        .doesNotContainKey(new CacheKey("repo", nonCachingObj.id()))
+        .containsKey(new CacheKey("repo", dynamicCachingObj.id()))
+        .containsKey(new CacheKey("repo", defaultCachingObj.id()))
+        .containsKey(new CacheKey("repo", stdObj.id()))
         .hasSize(3);
 
     // increment clock by one again - "dynamic" object should go away
@@ -109,10 +110,10 @@ public class TestCacheExpiration {
     soft.assertThat(backend.get("repo", stdObj.id())).isEqualTo(stdObj);
 
     soft.assertThat(cacheMap)
-        .doesNotContainKey(CaffeineCacheBackend.cacheKeyForRead("repo", nonCachingObj.id()))
-        .doesNotContainKey(CaffeineCacheBackend.cacheKeyForRead("repo", dynamicCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", defaultCachingObj.id()))
-        .containsKey(CaffeineCacheBackend.cacheKeyForRead("repo", stdObj.id()));
+        .doesNotContainKey(new CacheKey("repo", nonCachingObj.id()))
+        .doesNotContainKey(new CacheKey("repo", dynamicCachingObj.id()))
+        .containsKey(new CacheKey("repo", defaultCachingObj.id()))
+        .containsKey(new CacheKey("repo", stdObj.id()));
     // note: Caffeine's cache-map incorrectly reports a size of 3 here, although the map itself only
     // returns the only left object
   }
