@@ -26,7 +26,6 @@ import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
-import static org.projectnessie.catalog.service.rest.IcebergConfigurer.SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.SIGNER_TOKEN;
 
 import java.net.URI;
@@ -364,8 +363,7 @@ public class TestIcebergConfigurer {
               List.of(normalizeS3Scheme(loc)),
               warehouseLocation,
               key.toPathStringEscaped());
-      soft.assertThat(tableConfig.config())
-          .containsEntry(SIGNER_ENDPOINT, "v1/" + encode(prefix, UTF_8) + "/s3sign");
+      soft.assertThat(tableConfig.config()).doesNotContainKey("signer.endpoint");
       soft.assertThat(tableConfig.remoteSigningConfig()).isPresent();
       var remoteSigningConfig = tableConfig.remoteSigningConfig().orElseThrow();
       soft.assertThat(remoteSigningConfig.headers()).isEmpty();
@@ -382,7 +380,8 @@ public class TestIcebergConfigurer {
       soft.assertThat(signPath).doesNotStartWith("/");
       soft.assertThat(signUri).isNotNull();
     } else {
-      soft.assertThat(tableConfig.config()).doesNotContainKeys(S3_SIGNER_ENDPOINT, SIGNER_ENDPOINT);
+      soft.assertThat(tableConfig.config())
+          .doesNotContainKeys(S3_SIGNER_ENDPOINT, "signer.endpoint");
       soft.assertThat(tableConfig.remoteSigningConfig()).isEmpty();
     }
   }

@@ -81,8 +81,6 @@ public class IcebergConfigurer {
   /** Path of the signer endpoint. */
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
-  static final String SIGNER_ENDPOINT = "signer.endpoint";
-
   static final String SIGNER_TOKEN = "nessie.signer-token";
 
   @Inject ServerConfig serverConfig;
@@ -369,9 +367,9 @@ public class IcebergConfigurer {
 
     var signerEndpoint = uriInfo.icebergS3SignerPathWithPath(prefix, pathParam);
     config.accept(S3_SIGNER_ENDPOINT, signerEndpoint);
-    // Iceberg 1.12+ forwards the opaque token in the request body. Keep the legacy endpoint
-    // above for clients that do not support remote-signing-config.
-    config.accept(SIGNER_ENDPOINT, uriInfo.icebergS3SignerPath(prefix));
+    // Iceberg 1.12+ computes the standard table signing path and forwards the opaque token
+    // in the request body. Do not emit signer.endpoint, which would override that path.
+    // Keep the legacy endpoint above for clients without remote-signing-config support.
     tableConfig.remoteSigningConfig(
         ImmutableIcebergRemoteSigningConfig.builder().putProperty(SIGNER_TOKEN, pathParam).build());
 

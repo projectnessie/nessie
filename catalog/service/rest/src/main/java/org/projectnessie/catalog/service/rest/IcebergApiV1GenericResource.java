@@ -76,6 +76,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
   public static final String V1_TABLE_REGISTER = "/v1/{prefix}/namespaces/{namespace}/register";
   public static final String V1_TABLE_METRICS =
       "/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics";
+  public static final String V1_TABLE_SIGN = V1_TABLE + "/sign";
   public static final String V1_TABLE_RENAME = "/v1/{prefix}/tables/rename";
   public static final String V1_TRANSACTIONS_COMMIT = "/v1/{prefix}/transactions/commit";
   public static final String V1_VIEWS = "/v1/{prefix}/namespaces/{namespace}/views";
@@ -116,6 +117,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
       icebergEndpoint("POST", V1_TABLE_REGISTER);
   public static final IcebergEndpoint V1_LOAD_CREDENTIALS =
       icebergEndpoint("GET", V1_TABLE_LOAD_CREDENTIALS);
+  public static final IcebergEndpoint V1_SIGN_REQUEST = icebergEndpoint("POST", V1_TABLE_SIGN);
   public static final IcebergEndpoint V1_REPORT_METRICS = icebergEndpoint("POST", V1_TABLE_METRICS);
 
   // view endpoints
@@ -148,6 +150,7 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
           V1_RENAME_TABLE,
           V1_REGISTER_TABLE,
           V1_LOAD_CREDENTIALS,
+          V1_SIGN_REQUEST,
           V1_REPORT_METRICS,
 
           // view endpoints

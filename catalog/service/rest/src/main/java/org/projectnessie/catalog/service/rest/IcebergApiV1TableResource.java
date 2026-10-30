@@ -114,6 +114,7 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -166,7 +167,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, prefix, dataAccess, false);
+    return this.loadTable(tableRef, signingPrefix(tableRef), dataAccess, false);
   }
 
   @Operation(operationId = "iceberg.v1.loadCredentials")
@@ -189,8 +190,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             });
   }
 
+  /**
+   * Registration pins the metadata lookup to its new commit. The signing prefix retains the
+   * client's requested reference so that this internal lookup hash does not constrain the token.
+   */
   private Uni<IcebergLoadTableResponse> loadTable(
-      TableRef tableRef, String prefix, String dataAccess, boolean writeAccessValidated)
+      TableRef tableRef, String signingPrefix, String dataAccess, boolean writeAccessValidated)
       throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
@@ -207,10 +212,19 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergLoadTableResponse.builder(),
                     warehouse.location(),
-                    prefix,
+                    signingPrefix,
                     key,
                     dataAccess,
                     writeAccessValidated));
+  }
+
+  private static String signingPrefix(TableRef tableRef) {
+    var reference = tableRef.reference();
+    // A table-name suffix can select a different reference than the catalog prefix. Bind the
+    // signer token (and the legacy endpoint) to that effective reference, including staged creates.
+    return Reference.toPathString(reference.name(), reference.hashWithRelativeSpec())
+        + "|"
+        + tableRef.warehouse();
   }
 
   @SuppressWarnings("EmptyCatch")
@@ -369,7 +383,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   warehouse.location(),
                   stagedTableMetadata,
                   IcebergCreateTableResponse.builder(),
-                  prefix,
+                  signingPrefix(tableRef),
                   tableRef.contentKey(),
                   dataAccess,
                   true));
@@ -389,7 +403,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergCreateTableResponse.builder(),
                     warehouse.location(),
-                    prefix,
+                    signingPrefix(tableRef),
                     tableRef.contentKey(),
                     dataAccess,
                     true));
@@ -458,7 +472,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getHash(),
                   BRANCH),
               tableRef.warehouse()),
-          prefix,
+          signingPrefix(tableRef),
           dataAccess,
           true);
     } else if (nessieCatalogUri) {
@@ -516,7 +530,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
             tableRef.warehouse()),
-        prefix,
+        signingPrefix(tableRef),
         dataAccess,
         true);
   }

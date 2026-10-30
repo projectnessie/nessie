@@ -88,11 +88,6 @@ public interface ExternalBaseUri {
     config.accept("uri", icebergBaseURI().toString());
   }
 
-  /** Path of the signer endpoint accepting its signed context in request properties. */
-  default String icebergS3SignerPath(String prefix) {
-    return format("v1/%s/s3sign", encode(prefix, UTF_8));
-  }
-
   /**
    * The path, without a leading slash, of the URI to sign a request to S3 for a specific content
    * key.
