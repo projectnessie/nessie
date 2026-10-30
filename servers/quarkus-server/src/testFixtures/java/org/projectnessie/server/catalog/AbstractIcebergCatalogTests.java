@@ -33,6 +33,8 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -152,6 +154,44 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     IcebergLoadCredentialsResponse response =
         readValue(IcebergJson.objectMapper(), credentials, IcebergLoadCredentialsResponse.class);
     verifyLoadCredentialsResponse(table, response);
+  }
+
+  @Test
+  public void loadCredentialsEndpointWithReferenceInPrefix() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    var namespace = Namespace.of("credentials_ref_ns");
+    var tableIdentifier = TableIdentifier.of(namespace, "table");
+
+    catalog.createNamespace(namespace);
+    Table table = catalog.buildTable(tableIdentifier, SCHEMA).create();
+
+    String hash;
+    try (NessieApiV2 api = nessieClientBuilder().build(NessieApiV2.class)) {
+      hash = api.getReference().refName("main").get().getHash();
+      api.createReference().reference(Branch.of("feature/x", hash)).sourceRefName("main").create();
+    }
+
+    Map<String, String> props = catalog.properties();
+    URI baseUri = URI.create(props.get("uri"));
+    String configuredPrefix = URLDecoder.decode(props.get("prefix"), UTF_8);
+    int warehouseIndex = configuredPrefix.indexOf('|');
+    String warehouse = warehouseIndex >= 0 ? configuredPrefix.substring(warehouseIndex) : "";
+
+    // The same prefixes as IcebergApiV1TableResource.credentialsPrefix() returns.
+    for (String ref : List.of("main@" + hash, "feature\u001fx@", "feature\u001fx@" + hash)) {
+      String prefix = URLEncoder.encode(ref + warehouse, UTF_8);
+      String path =
+          format(
+              "v1/%s/namespaces/%s/tables/%s/credentials",
+              prefix, namespace, tableIdentifier.name());
+      URL credentials = baseUri.resolve(path).toURL();
+
+      IcebergLoadCredentialsResponse response =
+          readValue(IcebergJson.objectMapper(), credentials, IcebergLoadCredentialsResponse.class);
+      verifyLoadCredentialsResponse(table, response);
+    }
   }
 
   protected void verifyLoadCredentialsResponse(
