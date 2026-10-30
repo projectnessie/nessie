@@ -70,6 +70,10 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
   @Nullable
   List<IcebergStorageCredential> storageCredentials();
 
+  @Nullable
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  IcebergRemoteSigningConfig remoteSigningConfig();
+
   @SuppressWarnings("unused")
   interface Builder<R extends IcebergLoadTableResult, B extends Builder<R, B>>
       extends IcebergBaseTableResult.Builder<R, B> {
@@ -95,6 +99,9 @@ public interface IcebergLoadTableResult extends IcebergBaseTableResult {
 
     @CanIgnoreReturnValue
     B addAllStorageCredentials(Iterable<? extends IcebergStorageCredential> elements);
+
+    @CanIgnoreReturnValue
+    B remoteSigningConfig(@Nullable IcebergRemoteSigningConfig remoteSigningConfig);
 
     @CanIgnoreReturnValue
     B putConfig(String key, String value);

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadTableResult;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergRemoteSigningConfig;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.model.ContentKey;
@@ -39,6 +40,8 @@ interface IcebergTableConfig {
 
   /** Values for {@link IcebergLoadTableResult#config()}. */
   Map<String, String> config();
+
+  Optional<IcebergRemoteSigningConfig> remoteSigningConfig();
 
   /** Values for {@link IcebergLoadTableResult#storageCredentials()}. */
   List<IcebergStorageCredential> storageCredentials();
