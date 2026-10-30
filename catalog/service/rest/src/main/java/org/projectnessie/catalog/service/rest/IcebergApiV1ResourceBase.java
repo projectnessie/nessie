@@ -298,6 +298,11 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   private static final String DEFAULT_REF_IN_PATH = "-";
   private static final Splitter NAMESPACE_ESCAPED_SPLITTER = Splitter.on(SEPARATOR);
 
+  static String encodePrefix(String refName, String hash, String warehouse) {
+    String prefix = Reference.toPathString(refName, hash).replace('/', SEPARATOR);
+    return warehouse != null ? prefix + "|" + warehouse : prefix;
+  }
+
   protected DecodedPrefix decodePrefix(String prefix) {
     String warehouse = null;
     ParsedReference parsedReference = null;
