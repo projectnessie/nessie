@@ -122,6 +122,13 @@ Iceberg configuration defaults and overrides can be configured for each warehous
 The default storage `location` when creating a table is determined from the current "warehouse" and the
 namespace in which the table is being created.
 
+Each namespace and table-name element is percent-encoded as a separate storage-path segment, including
+its leading dot, if present. For example, an element `part/name` becomes `part%2Fname`, while a literal
+`part%2Fname` becomes `part%252Fname`. Ordinary letters, digits, hyphens, underscores, tildes and
+non-leading dots keep their spelling. This applies to newly computed locations; existing table
+locations are unchanged. An explicit namespace location is used as given, with remaining name elements
+appended below the nearest such namespace.
+
 Examples, considering the above example Nessie configuration, assuming that a namespace `foo` exists:
 
 * Creating a table named `foo.fancy_table` when connecting to the default warehouse, would set the `location`
