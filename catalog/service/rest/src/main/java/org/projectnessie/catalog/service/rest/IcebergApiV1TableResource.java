@@ -167,7 +167,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, signingPrefix(tableRef), dataAccess, false);
+    return this.loadTable(tableRef, tableRef.reference(), dataAccess, false);
   }
 
   @Operation(operationId = "iceberg.v1.loadCredentials")
@@ -191,11 +191,15 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
   }
 
   /**
-   * Registration pins the metadata lookup to its new commit. The signing prefix retains the
-   * client's requested reference so that this internal lookup hash does not constrain the token.
+   * Registration pins the metadata lookup in {@code tableRef} to its new commit. The signing and
+   * credentials prefixes use the client's {@code requestedReference}, so that this internal lookup
+   * hash constrains neither the signer token nor credential refreshes.
    */
   private Uni<IcebergLoadTableResponse> loadTable(
-      TableRef tableRef, String signingPrefix, String dataAccess, boolean writeAccessValidated)
+      TableRef tableRef,
+      ParsedReference requestedReference,
+      String dataAccess,
+      boolean writeAccessValidated)
       throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
@@ -212,8 +216,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergLoadTableResponse.builder(),
                     warehouse.location(),
-                    signingPrefix,
-                    key,
+                    tableRef(key, requestedReference, tableRef.warehouse()),
                     dataAccess,
                     writeAccessValidated));
   }
@@ -227,16 +230,26 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         + tableRef.warehouse();
   }
 
+  /**
+   * A request for a branch or tag name gets credentials for the head of that reference on each
+   * refresh. A request for a hash or a timestamp gets credentials for the same commit.
+   */
+  static String credentialsPrefix(TableRef tableRef, Reference effectiveReference) {
+    ParsedReference requested = requireNonNull(tableRef.reference());
+    String hash = requested.hashWithRelativeSpec() != null ? effectiveReference.getHash() : null;
+    return encodePrefix(requested.name(), hash, tableRef.warehouse());
+  }
+
   @SuppressWarnings("EmptyCatch")
   private <R extends IcebergLoadTableResult, B extends IcebergLoadTableResult.Builder<R, B>>
       R loadTableResultFromSnapshotResponse(
           SnapshotResponse snap,
           B builder,
           String warehouseLocation,
-          String prefix,
-          ContentKey contentKey,
+          TableRef tableRef,
           String dataAccess,
           boolean writeAccessValidated) {
+    ContentKey contentKey = tableRef.contentKey();
     IcebergTableMetadata tableMetadata =
         (IcebergTableMetadata)
             snap.entityObject()
@@ -265,14 +278,17 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       }
     }
 
+    String credentialsPrefix = credentialsPrefix(tableRef, snap.effectiveReference());
+
     return loadTableResult(
         content.getMetadataLocation(),
         snap.nessieSnapshot(),
         warehouseLocation,
         tableMetadata,
         builder,
-        prefix,
+        signingPrefix(tableRef),
         contentKey,
+        uriInfo.icebergTableCredentialsPath(credentialsPrefix, contentKey),
         dataAccess,
         writeAccessValidated);
   }
@@ -286,6 +302,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           B builder,
           String prefix,
           ContentKey contentKey,
+          String credentialsEndpoint,
           String dataAccess,
           boolean writeAccessGranted) {
 
@@ -296,6 +313,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             tableMetadata,
             prefix,
             contentKey,
+            credentialsEndpoint,
             dataAccess,
             writeAccessGranted);
 
@@ -385,6 +403,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   IcebergCreateTableResponse.builder(),
                   signingPrefix(tableRef),
                   tableRef.contentKey(),
+                  // A staged table does not exist before the commit.
+                  null,
                   dataAccess,
                   true));
     }
@@ -403,8 +423,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergCreateTableResponse.builder(),
                     warehouse.location(),
-                    signingPrefix(tableRef),
-                    tableRef.contentKey(),
+                    tableRef,
                     dataAccess,
                     true));
   }
@@ -472,7 +491,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getHash(),
                   BRANCH),
               tableRef.warehouse()),
-          signingPrefix(tableRef),
+          reference,
           dataAccess,
           true);
     } else if (nessieCatalogUri) {
@@ -530,7 +549,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
             tableRef.warehouse()),
-        signingPrefix(tableRef),
+        reference,
         dataAccess,
         true);
   }
