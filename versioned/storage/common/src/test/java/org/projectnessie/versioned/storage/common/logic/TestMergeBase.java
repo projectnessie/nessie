@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.storage.common.logic;
 
+import static java.util.Collections.nCopies;
+import static java.util.stream.Collectors.toList;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogicImpl.NO_COMMON_ANCESTOR_IN_PARENTS_OF;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.ALL_FLAGS;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.CANDIDATE;
@@ -28,6 +30,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObj
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -57,7 +60,7 @@ public class TestMergeBase {
                 MergeBase.builder()
                     .targetCommitId(EMPTY_OBJ_ID)
                     .fromCommitId(EMPTY_OBJ_ID)
-                    .loadCommit(x -> null)
+                    .loadCommits(ids -> nCopies(ids.size(), null))
                     .build()
                     .identifyMergeBase())
         .isInstanceOf(NoSuchElementException.class)
@@ -69,7 +72,7 @@ public class TestMergeBase {
     CommitObj a = repo.add(repo.initialCommit());
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .targetCommitId(a.id())
                 .fromCommitId(a.id())
                 .build()
@@ -95,7 +98,7 @@ public class TestMergeBase {
     soft.assertThatThrownBy(
             () ->
                 MergeBase.builder()
-                    .loadCommit(repo::loadCommit)
+                    .loadCommits(repo::loadCommits)
                     .respectMergeParents(respectMergeParents)
                     .targetCommitId(c.id())
                     .fromCommitId(d.id())
@@ -125,7 +128,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(c.id())
                 .fromCommitId(b.id())
@@ -156,7 +159,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(d.id())
                 .fromCommitId(e.id())
@@ -188,7 +191,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(e.id())
                 .fromCommitId(f.id())
@@ -225,7 +228,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(f.id())
                 .fromCommitId(i.id())
@@ -261,7 +264,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(g.id())
                 .fromCommitId(j.id())
@@ -295,7 +298,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(reverse ? f.id() : g.id())
                 .fromCommitId(reverse ? g.id() : f.id())
@@ -332,7 +335,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(f.id())
                 .fromCommitId(h.id())
@@ -370,7 +373,7 @@ public class TestMergeBase {
 
     soft.assertThat(
             MergeBase.builder()
-                .loadCommit(repo::loadCommit)
+                .loadCommits(repo::loadCommits)
                 .respectMergeParents(respectMergeParents)
                 .targetCommitId(j.id())
                 .fromCommitId(k.id())
@@ -445,7 +448,11 @@ public class TestMergeBase {
       return commit;
     }
 
-    public CommitObj loadCommit(ObjId id) {
+    public List<CommitObj> loadCommits(List<ObjId> ids) {
+      return ids.stream().map(this::loadCommit).collect(toList());
+    }
+
+    CommitObj loadCommit(ObjId id) {
       CommitObj c = commits.get(id);
       loaded.add(c);
       return c;
