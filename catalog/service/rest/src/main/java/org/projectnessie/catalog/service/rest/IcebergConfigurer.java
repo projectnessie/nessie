@@ -87,6 +87,12 @@ public class IcebergConfigurer {
   static final String GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT =
       "gcs.oauth2.refresh-credentials-endpoint";
 
+  static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
+  static final String S3_REFRESH_CREDENTIALS_ENDPOINT = "client.refresh-credentials-endpoint";
+
+  static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
+  static final String ADLS_REFRESH_CREDENTIALS_ENDPOINT = "adls.refresh-credentials-endpoint";
+
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
   @Inject ObjectIO objectIO;
@@ -295,12 +301,34 @@ public class IcebergConfigurer {
                 config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
-    if (credentialsEndpoint != null
-        && storageCredentials.stream().anyMatch(c -> c.config().containsKey(GCS_OAUTH2_TOKEN))) {
-      config.put(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+    if (credentialsEndpoint != null) {
+      refreshCredentialsEndpoints(storageCredentials, credentialsEndpoint, config::put);
     }
 
     return tableConfig.config(config).storageCredentials(storageCredentials).build();
+  }
+
+  /**
+   * Iceberg clients refresh vended credentials only when the table configuration contains the
+   * refresh endpoint property for the storage type. Each property is sent only when a vended
+   * credential of that storage type exists.
+   */
+  static void refreshCredentialsEndpoints(
+      List<IcebergStorageCredential> storageCredentials,
+      String credentialsEndpoint,
+      BiConsumer<String, String> config) {
+    for (IcebergStorageCredential credential : storageCredentials) {
+      Set<String> keys = credential.config().keySet();
+      if (keys.contains(S3_ACCESS_KEY_ID)) {
+        config.accept(S3_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+      if (keys.contains(GCS_OAUTH2_TOKEN)) {
+        config.accept(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+      if (keys.stream().anyMatch(key -> key.startsWith(ADLS_SAS_TOKEN_PREFIX))) {
+        config.accept(ADLS_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+    }
   }
 
   /**
