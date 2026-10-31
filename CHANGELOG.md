@@ -20,6 +20,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: `--cutoff` reference name patterns containing a top-level alternation now match whole
+  reference names. Previously `dev|qa` also matched references starting with `dev` or ending with
+  `qa`, for example `devops`, which then got that cutoff policy instead of the default one. Review
+  such patterns before upgrading: references that relied on the partial match now use the default
+  cutoff policy.
+
 ### Commits
 
 ## [0.109.0] Release (2026-10-08)

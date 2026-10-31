@@ -27,6 +27,8 @@ import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.gc.identify.CutoffPolicy;
 import org.projectnessie.gc.identify.PerRefCutoffPolicySupplier;
 import org.projectnessie.gc.tool.cli.CLI;
@@ -145,6 +147,30 @@ public class TestMarkOptions {
     soft.assertThat(cutoffPolicySupplier.get(Branch.of("zyfoo", null)))
         .isEqualTo(CutoffPolicy.numCommits(1));
     soft.assertThat(cutoffPolicySupplier.get(Branch.of("meep", null)))
+        .isEqualTo(CutoffPolicy.numCommits(1));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"dev|qa", "(dev|qa)", "^dev$|^qa$"})
+  public void cutoffPatternMatchesWholeRefName(String pattern) {
+    MarkLive command =
+        parseCommand(
+            "mark",
+            "--jdbc-url",
+            "jdbc:foo:",
+            "--default-cutoff",
+            "1",
+            "--cutoff",
+            pattern + "=42");
+    MarkOptions options = command.markOptions;
+    PerRefCutoffPolicySupplier cutoffPolicySupplier = options.createPerRefCutoffPolicySupplier();
+    soft.assertThat(cutoffPolicySupplier.get(Branch.of("dev", null)))
+        .isEqualTo(CutoffPolicy.numCommits(42));
+    soft.assertThat(cutoffPolicySupplier.get(Branch.of("qa", null)))
+        .isEqualTo(CutoffPolicy.numCommits(42));
+    soft.assertThat(cutoffPolicySupplier.get(Branch.of("devops", null)))
+        .isEqualTo(CutoffPolicy.numCommits(1));
+    soft.assertThat(cutoffPolicySupplier.get(Branch.of("otherqa", null)))
         .isEqualTo(CutoffPolicy.numCommits(1));
   }
 
