@@ -63,6 +63,7 @@ import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
+import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -70,6 +71,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.objectstoragemock.Bucket;
@@ -84,6 +86,68 @@ import org.projectnessie.versioned.RequestMeta;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class TestCatalogServiceImpl extends AbstractCatalogService {
+
+  static Stream<Arguments> locationElements() {
+    return Stream.of(
+        arguments("table.name-1_2~", "table.name-1_2~"),
+        arguments("part/name", "part%2Fname"),
+        arguments("/name", "%2Fname"),
+        arguments("s3://example/name", "s3%3A%2F%2Fexample%2Fname"),
+        arguments("part/../name", "part%2F..%2Fname"),
+        arguments(".", "%2E"),
+        arguments("..", "%2E."),
+        arguments(".name", "%2Ename"),
+        arguments("part\\name", "part%5Cname"),
+        arguments("part%2Fname", "part%252Fname"),
+        arguments("name with space", "name%20with%20space"),
+        arguments("name?#@", "name%3F%23%40"),
+        arguments("café", "caf%C3%A9"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("locationElements")
+  public void locationForEntity(String element, String encoded) {
+    var warehouse = ImmutableWarehouseConfig.builder().location("s3://bucket/warehouse").build();
+    ContentKey namespace = ContentKey.of("namespace");
+    ContentKey key = ContentKey.of("namespace", element, "table");
+    List<ContentKey> parents = List.of(namespace, key.getParent(), key);
+
+    soft.assertThat(catalogService.locationForEntity(warehouse, key, parents, Map.of()).toString())
+        .isEqualTo("s3://bucket/warehouse/namespace/" + encoded + "/table");
+
+    // The nearest explicit namespace location is used without re-encoding it.
+    ContentKey inner = ContentKey.of("namespace", "inner");
+    ContentKey nestedTable = ContentKey.of("namespace", "inner", element);
+    Map<ContentKey, Content> namespaces =
+        Map.of(
+            namespace,
+            Namespace.builder()
+                .elements(namespace.getElements())
+                .putProperties("location", "s3://bucket/outer")
+                .build(),
+            inner,
+            Namespace.builder()
+                .elements(inner.getElements())
+                .putProperties("location", "s3://bucket/inner%20location")
+                .build());
+    soft.assertThat(
+            catalogService
+                .locationForEntity(
+                    warehouse, nestedTable, List.of(namespace, inner, nestedTable), namespaces)
+                .toString())
+        .isEqualTo("s3://bucket/inner%20location/" + encoded);
+
+    ContentKey table = ContentKey.of("namespace", element);
+    soft.assertThat(
+            catalogService
+                .locationForEntity(
+                    warehouse,
+                    table,
+                    List.of(namespace, table),
+                    Map.of(namespace, namespaces.get(namespace)))
+                .toString())
+        .isEqualTo("s3://bucket/outer/" + encoded);
+  }
 
   /** Check that a non-modifying catalog-commit is a no-op. */
   @Test

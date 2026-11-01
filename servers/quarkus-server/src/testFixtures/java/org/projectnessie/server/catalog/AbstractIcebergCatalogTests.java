@@ -86,6 +86,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
 import org.projectnessie.client.NessieClientBuilder;
@@ -283,8 +285,9 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     // TODO there's no API in Iceberg/Java to actually remove a partition spec :(
   }
 
-  @Test
-  public void testNewTableLocationFromParentNamespace() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  public void testNewTableLocationFromParentNamespace(boolean explicitNestedLocation) {
     @SuppressWarnings("resource")
     RESTCatalog catalog = catalog();
 
@@ -311,7 +314,16 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     assertThat(namespaceMeta).containsEntry("location", namespaceLocation);
 
     Namespace nestedNamespace = Namespace.of("new_table_location_from_namespace", "nested_level");
-    catalog.createNamespace(nestedNamespace, namespaceProps);
+    String expectedNamespaceLocation;
+    if (explicitNestedLocation) {
+      expectedNamespaceLocation = namespaceLocation + "/custom-nested";
+      Map<String, String> nestedNamespaceProps = new HashMap<>();
+      nestedNamespaceProps.put("location", expectedNamespaceLocation);
+      catalog.createNamespace(nestedNamespace, nestedNamespaceProps);
+    } else {
+      expectedNamespaceLocation = namespaceLocation + "/nested_level";
+      catalog.createNamespace(nestedNamespace);
+    }
 
     Table tableWithNsLoc =
         catalog
@@ -321,7 +333,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
             .create();
 
     String tableLocation = tableWithNsLoc.location();
-    assertThat(tableLocation).startsWith(namespaceLocation + "/nested_level/table_loc_from_ns_");
+    assertThat(tableLocation).startsWith(expectedNamespaceLocation + "/table_loc_from_ns_");
 
     View viewWithNsLoc =
         catalog
@@ -331,7 +343,7 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
             .withDefaultNamespace(nestedNamespace)
             .create();
     String viewLocation = viewWithNsLoc.location();
-    assertThat(viewLocation).startsWith(namespaceLocation + "/nested_level/view_loc_from_ns_");
+    assertThat(viewLocation).startsWith(expectedNamespaceLocation + "/view_loc_from_ns_");
   }
 
   @Test
