@@ -27,7 +27,7 @@ import org.projectnessie.nessie.immutables.NessieImmutable;
 
 /**
  * Composite result of {@link IcebergConfigurer#icebergConfigPerTable(NessieEntitySnapshot, String,
- * IcebergTableMetadata, String, ContentKey, String, boolean)}.
+ * IcebergTableMetadata, String, ContentKey, String, String, boolean)}.
  */
 @NessieImmutable
 interface IcebergTableConfig {

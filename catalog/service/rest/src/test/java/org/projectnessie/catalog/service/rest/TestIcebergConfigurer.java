@@ -24,6 +24,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.secrets.UnsafePlainTextSecretsManager.unsafePlainTextSecretsProvider;
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.ADLS_REFRESH_CREDENTIALS_ENDPOINT;
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT;
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_REFRESH_CREDENTIALS_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
 
@@ -71,6 +74,32 @@ import org.projectnessie.model.Reference.ReferenceType;
 
 @ExtendWith(SoftAssertionsExtension.class)
 public class TestIcebergConfigurer {
+  private static final String CREDENTIALS_ENDPOINT =
+      "v1/main/namespaces/ns/tables/table/credentials";
+  private static final Map<String, String> GCS_CREDENTIAL =
+      Map.of("gcs.oauth2.token", "token", "gcs.oauth2.token-expires-at", "12345");
+  private static final Map<String, String> S3_CREDENTIAL =
+      Map.of(
+          "s3.access-key-id",
+          "access-key",
+          "s3.secret-access-key",
+          "secret-key",
+          "s3.session-token",
+          "token",
+          "s3.session-token-expires-at-ms",
+          "12345");
+  private static final Map<String, String> ADLS_CREDENTIAL =
+      Map.of(
+          "adls.sas-token.account.dfs.core.windows.net",
+          "token",
+          "adls.sas-token-expires-at-ms.account.dfs.core.windows.net",
+          "12345");
+  private static final List<String> REFRESH_CREDENTIALS_ENDPOINTS =
+      List.of(
+          S3_REFRESH_CREDENTIALS_ENDPOINT,
+          GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT,
+          ADLS_REFRESH_CREDENTIALS_ENDPOINT);
+
   @InjectSoftAssertions protected SoftAssertions soft;
 
   protected IcebergConfigurer icebergConfigurer;
@@ -140,7 +169,14 @@ public class TestIcebergConfigurer {
 
     IcebergTableConfig tableConfig =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, "s3://bucket/", tm, "main", ContentKey.of("foo", "bar"), null, true);
+            nessieSnapshot,
+            "s3://bucket/",
+            tm,
+            "main",
+            ContentKey.of("foo", "bar"),
+            null,
+            null,
+            true);
 
     URI endpoint = URI.create(tableConfig.config().get(S3_SIGNER_ENDPOINT));
     SignerParams signerParams =
@@ -231,7 +267,7 @@ public class TestIcebergConfigurer {
 
     IcebergTableConfig config =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, "s3://bucket/", tm, "main", key, null, true);
+            nessieSnapshot, "s3://bucket/", tm, "main", key, null, null, true);
 
     soft.assertThat(config.updatedMetadataProperties())
         .isPresent()
@@ -258,16 +294,113 @@ public class TestIcebergConfigurer {
   }
 
   @Test
-  @SuppressWarnings("UnnecessaryAssignment")
   public void icebergConfigPerTableStorageCredentials() {
+    IcebergTableConfig tableConfig =
+        tableConfigWithStorageCredential(
+            "s3://bucket/path/table",
+            "s3://bucket/path",
+            Map.of("credential-key", "credential-value"),
+            CREDENTIALS_ENDPOINT);
+
+    soft.assertThat(tableConfig.config())
+        .containsEntry("legacy-key", "legacy-value")
+        .doesNotContainKeys(REFRESH_CREDENTIALS_ENDPOINTS.toArray(String[]::new));
+    soft.assertThat(tableConfig.storageCredentials())
+        .singleElement()
+        .satisfies(
+            credential -> {
+              soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
+              soft.assertThat(credential.config())
+                  .containsEntry("credential-key", "credential-value");
+            });
+  }
+
+  @Test
+  public void icebergConfigPerTableGcsRefreshCredentialsEndpoint() {
+    IcebergTableConfig tableConfig =
+        tableConfigWithStorageCredential(
+            "gs://bucket/path/table", "gs://bucket/path", GCS_CREDENTIAL, CREDENTIALS_ENDPOINT);
+
+    soft.assertThat(tableConfig.config())
+        .containsEntry(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, CREDENTIALS_ENDPOINT);
+  }
+
+  @Test
+  public void icebergConfigPerTableGcsWithoutCredentialsEndpoint() {
+    IcebergTableConfig tableConfig =
+        tableConfigWithStorageCredential(
+            "gs://bucket/path/table", "gs://bucket/path", GCS_CREDENTIAL, null);
+
+    soft.assertThat(tableConfig.config())
+        .doesNotContainKey(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT);
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void icebergConfigPerTableRefreshCredentialsEndpoint(
+      String tableLocation,
+      String credentialPrefix,
+      Map<String, String> credentialConfig,
+      String refreshProperty) {
+    IcebergTableConfig tableConfig =
+        tableConfigWithStorageCredential(
+            tableLocation, credentialPrefix, credentialConfig, CREDENTIALS_ENDPOINT);
+
+    soft.assertThat(tableConfig.config()).containsEntry(refreshProperty, CREDENTIALS_ENDPOINT);
+    soft.assertThat(tableConfig.config())
+        .doesNotContainKeys(
+            REFRESH_CREDENTIALS_ENDPOINTS.stream()
+                .filter(property -> !property.equals(refreshProperty))
+                .toArray(String[]::new));
+
+    // Staged creates have no credentials endpoint.
+    IcebergTableConfig stagedTableConfig =
+        tableConfigWithStorageCredential(tableLocation, credentialPrefix, credentialConfig, null);
+
+    soft.assertThat(stagedTableConfig.config())
+        .doesNotContainKeys(REFRESH_CREDENTIALS_ENDPOINTS.toArray(String[]::new));
+  }
+
+  static Stream<Arguments> icebergConfigPerTableRefreshCredentialsEndpoint() {
+    return Stream.of(
+        arguments(
+            "s3://bucket/path/table",
+            "s3://bucket/path",
+            S3_CREDENTIAL,
+            S3_REFRESH_CREDENTIALS_ENDPOINT),
+        arguments(
+            "gs://bucket/path/table",
+            "gs://bucket/path",
+            GCS_CREDENTIAL,
+            GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT),
+        arguments(
+            "abfss://container@account.dfs.core.windows.net/path/table",
+            "abfss://container@account.dfs.core.windows.net/path",
+            ADLS_CREDENTIAL,
+            ADLS_REFRESH_CREDENTIALS_ENDPOINT));
+  }
+
+  @Test
+  public void icebergTableCredentialsPath() {
+    soft.assertThat(
+            icebergConfigurer.uriInfo.icebergTableCredentialsPath(
+                "main|warehouse", ContentKey.of("ns1", "ns 2", "table")))
+        .isEqualTo("v1/main%7Cwarehouse/namespaces/ns1%1Fns+2/tables/table/credentials");
+  }
+
+  @SuppressWarnings("UnnecessaryAssignment")
+  private IcebergTableConfig tableConfigWithStorageCredential(
+      String tableLocation,
+      String credentialPrefix,
+      Map<String, String> credentialConfig,
+      String credentialsEndpoint) {
     ObjectIO objectIO = mock(ObjectIO.class);
     doAnswer(
             invocation -> {
               BiConsumer<String, String> config = invocation.getArgument(1);
               BiConsumer<String, Map<String, String>> storageCredential = invocation.getArgument(2);
               config.accept("legacy-key", "legacy-value");
-              storageCredential.accept(
-                  "s3://bucket/path", new HashMap<>(Map.of("credential-key", "credential-value")));
+              storageCredential.accept(credentialPrefix, new HashMap<>(credentialConfig));
               return null;
             })
         .when(objectIO)
@@ -280,7 +413,7 @@ public class TestIcebergConfigurer {
     icebergConfigurer.objectIO = objectIO;
 
     IcebergTableMetadata tm = mock(IcebergTableMetadata.class);
-    when(tm.location()).thenReturn("s3://bucket/path/table");
+    when(tm.location()).thenReturn(tableLocation);
     when(tm.properties()).thenReturn(Map.of());
 
     NessieTableSnapshot nessieSnapshot =
@@ -294,19 +427,15 @@ public class TestIcebergConfigurer {
                     .build())
             .build();
 
-    IcebergTableConfig tableConfig =
-        icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, "s3://bucket/", tm, "main", ContentKey.of("table"), null, true);
-
-    soft.assertThat(tableConfig.config()).containsEntry("legacy-key", "legacy-value");
-    soft.assertThat(tableConfig.storageCredentials())
-        .singleElement()
-        .satisfies(
-            credential -> {
-              soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
-              soft.assertThat(credential.config())
-                  .containsEntry("credential-key", "credential-value");
-            });
+    return icebergConfigurer.icebergConfigPerTable(
+        nessieSnapshot,
+        tableLocation,
+        tm,
+        "main",
+        ContentKey.of("table"),
+        credentialsEndpoint,
+        null,
+        true);
   }
 
   /** Verify compatibility with Iceberg < 1.5.0 S3 signer properties. */
@@ -335,7 +464,7 @@ public class TestIcebergConfigurer {
 
     IcebergTableConfig tableConfig =
         icebergConfigurer.icebergConfigPerTable(
-            nessieSnapshot, warehouseLocation, tm, prefix, key, null, true);
+            nessieSnapshot, warehouseLocation, tm, prefix, key, null, null, true);
     if (signUri != null) {
       soft.assertThat(tableConfig.config()).containsEntry(S3_SIGNER_URI, signUri);
       soft.assertThat(signUri).endsWith("/");
