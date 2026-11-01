@@ -54,6 +54,7 @@ import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergRemoteSigningConfig;
 import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.api.SignerKeysService;
@@ -80,7 +81,7 @@ public class IcebergConfigurer {
   /** Path of the signer endpoint. */
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
-  static final String SIGNER_ENDPOINT = "signer.endpoint";
+  static final String SIGNER_TOKEN = "nessie.signer-token";
 
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
@@ -286,7 +287,8 @@ public class IcebergConfigurer {
                 accessDelegationPredicate,
                 prefix,
                 contentKey,
-                config::put),
+                config::put,
+                tableConfig),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
     return tableConfig.config(config).storageCredentials(storageCredentials).build();
@@ -308,7 +310,8 @@ public class IcebergConfigurer {
       Predicate<AccessDelegation> accessDelegationPredicate,
       String prefix,
       ContentKey contentKey,
-      BiConsumer<String, String> config) {
+      BiConsumer<String, String> config,
+      ImmutableIcebergTableConfig.Builder tableConfig) {
     if (!accessDelegationPredicate.test(REMOTE_SIGNING)) {
       return false;
     }
@@ -364,7 +367,11 @@ public class IcebergConfigurer {
 
     var signerEndpoint = uriInfo.icebergS3SignerPathWithPath(prefix, pathParam);
     config.accept(S3_SIGNER_ENDPOINT, signerEndpoint);
-    config.accept(SIGNER_ENDPOINT, signerEndpoint);
+    // Iceberg 1.12+ computes the standard table signing path and forwards the opaque token
+    // in the request body. Do not emit signer.endpoint, which would override that path.
+    // Keep the legacy endpoint above for clients without remote-signing-config support.
+    tableConfig.remoteSigningConfig(
+        ImmutableIcebergRemoteSigningConfig.builder().putProperty(SIGNER_TOKEN, pathParam).build());
 
     return true;
   }

@@ -39,8 +39,10 @@ import org.projectnessie.catalog.formats.iceberg.rest.IcebergConfigResponse;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergCreateNamespaceRequest;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergEndpoint;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergMetadataUpdate;
+import org.projectnessie.catalog.formats.iceberg.rest.IcebergRemoteSigningConfig;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateRequirement;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergUpdateTableRequest;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergRemoteSigningConfig;
 import org.projectnessie.catalog.model.schema.NessieNullOrder;
 import org.projectnessie.catalog.model.schema.NessieSortDirection;
 import tools.jackson.databind.JsonNode;
@@ -61,7 +63,7 @@ class TestJackson3IcebergCompatibility {
   }
 
   @Test
-  void icebergTypesRoundTrip() throws Exception {
+  void icebergTypesRoundTrip() {
     assertThat(MAPPER.writeValueAsString(longType())).isEqualTo("\"long\"");
     assertThat(
             MAPPER.readValue(
@@ -78,7 +80,7 @@ class TestJackson3IcebergCompatibility {
   }
 
   @Test
-  void metadataRoundTrip() throws Exception {
+  void metadataRoundTrip() {
     IcebergTableMetadata metadata =
         IcebergTableMetadata.builder()
             .formatVersion(2)
@@ -115,7 +117,18 @@ class TestJackson3IcebergCompatibility {
   }
 
   @Test
-  void restPayloadsRoundTrip() throws Exception {
+  void remoteSigningConfigRoundTrip() {
+    var config =
+        ImmutableIcebergRemoteSigningConfig.builder()
+            .putProperty("nessie.signer-token", "opaque-token")
+            .build();
+    String json = MAPPER.writeValueAsString(config);
+    assertThat(MAPPER.readTree(json).has("headers")).isFalse();
+    assertThat(MAPPER.readValue(json, IcebergRemoteSigningConfig.class)).isEqualTo(config);
+  }
+
+  @Test
+  void restPayloadsRoundTrip() {
     IcebergConfigResponse config =
         IcebergConfigResponse.builder()
             .putDefault("warehouse", "s3://bucket")
@@ -141,7 +154,7 @@ class TestJackson3IcebergCompatibility {
   }
 
   @Test
-  void metadataUpdateAndRequirementPolymorphism() throws Exception {
+  void metadataUpdateAndRequirementPolymorphism() {
     String updateJson = "{\"action\":\"assign-uuid\",\"uuid\":\"table-uuid\"}";
     IcebergMetadataUpdate update = MAPPER.readValue(updateJson, IcebergMetadataUpdate.class);
     assertThat(update).isInstanceOf(IcebergMetadataUpdate.AssignUUID.class);
@@ -177,7 +190,7 @@ class TestJackson3IcebergCompatibility {
   }
 
   @Test
-  void metricsRoundTrip() throws Exception {
+  void metricsRoundTrip() {
     String json =
         """
         {

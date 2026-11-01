@@ -15,6 +15,8 @@
  */
 package org.projectnessie.catalog.service.rest;
 
+import static org.projectnessie.catalog.service.rest.IcebergConfigurer.SIGNER_TOKEN;
+
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.RequestScoped;
@@ -31,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
@@ -92,6 +95,37 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
     return errorMapper.toResponse(ex, IcebergEntityKind.UNKNOWN);
   }
 
+  @Operation(operationId = "iceberg.v1.s3sign.properties")
+  @POST
+  @Path("/v1/{prefix}/namespaces/{namespace}/tables/{table}/sign")
+  @Blocking
+  public Uni<IcebergS3SignResponse> s3signWithProperties(
+      IcebergS3SignRequest request,
+      @PathParam("prefix") String prefix,
+      @PathParam("namespace") String namespace,
+      @PathParam("table") String table) {
+    String token = request.properties().get(SIGNER_TOKEN);
+    if (token == null || token.isEmpty()) {
+      throw new IllegalArgumentException("Missing signer token");
+    }
+    SignerParams params = SignerParams.fromPathParam(token);
+    var signedPrefix = decodePrefix(params.signerSignature().prefix());
+    TableRef tableRef = decodeTableRef(prefix, namespace, table);
+    if (!Objects.equals(tableRef.warehouse(), signedPrefix.warehouse())) {
+      throw new IllegalArgumentException("Invalid signer prefix");
+    }
+    var signedReference = signedPrefix.parsedReference();
+    if (!tableRef
+            .contentKey()
+            .equals(ContentKey.fromPathString(params.signerSignature().identifier()))
+        || !Objects.equals(tableRef.reference().name(), signedReference.name())
+        || !Objects.equals(
+            tableRef.reference().hashWithRelativeSpec(), signedReference.hashWithRelativeSpec())) {
+      throw new IllegalArgumentException("Invalid signer table");
+    }
+    return signWithParams(request, params.signerSignature().prefix(), params);
+  }
+
   @Operation(operationId = "iceberg.v1.s3sign.blob")
   @POST
   @Path("/v1/{prefix}/s3sign/{signedParams}")
@@ -101,7 +135,11 @@ public class IcebergApiV1S3SignResource extends IcebergApiV1ResourceBase {
       @PathParam("prefix") String prefix,
       @PathParam("signedParams") String signedParams) {
 
-    SignerParams signerParams = SignerParams.fromPathParam(signedParams);
+    return signWithParams(request, prefix, SignerParams.fromPathParam(signedParams));
+  }
+
+  private Uni<IcebergS3SignResponse> signWithParams(
+      IcebergS3SignRequest request, String prefix, SignerParams signerParams) {
     SignerKey signerKey = signerKeysService.getSignerKey(signerParams.keyName());
 
     SignerSignature signerSignature = signerParams.signerSignature();
