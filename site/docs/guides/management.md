@@ -166,7 +166,8 @@ Relevant command line options for `java -jar nessie-gc.jar mark-live` (alias `ja
 nessie-gc.jar identify`):
 
 * `--cutoff reference-name-regex=cut-off-policy` the specified `cut-off-policy` is applied to all
-  named references that match the given reference name regular expression.
+  named references that match the given reference name regular expression. The regular expression
+  must match the whole reference name.
 * `--cutoff-ref-time` Defaults to "now", but can also be configured to another timestamp, if
   necessary.
 
