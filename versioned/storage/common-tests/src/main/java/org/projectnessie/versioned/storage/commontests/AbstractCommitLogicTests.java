@@ -46,6 +46,7 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.common.persist.ObjId.objIdFromString;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,6 +85,8 @@ import org.projectnessie.versioned.storage.common.objtypes.CommitObj;
 import org.projectnessie.versioned.storage.common.objtypes.CommitOp;
 import org.projectnessie.versioned.storage.common.persist.Obj;
 import org.projectnessie.versioned.storage.common.persist.ObjId;
+import org.projectnessie.versioned.storage.common.persist.ObjType;
+import org.projectnessie.versioned.storage.common.persist.ObservingPersist;
 import org.projectnessie.versioned.storage.common.persist.Persist;
 import org.projectnessie.versioned.storage.common.persist.Reference;
 import org.projectnessie.versioned.storage.testextension.NessiePersist;
@@ -849,5 +852,88 @@ public class AbstractCommitLogicTests {
     }
 
     return head;
+  }
+
+  /**
+   * Identifying the merge base of two branches that diverged long ago must not load the commits
+   * one-by-one: that is one {@link Persist#fetchTypedObj} per commit, which on a deep history means
+   * one database round-trip per commit.
+   */
+  @Test
+  public void mergeBaseLoadsDeepHistoryInBatches() throws Exception {
+    CommitLogic setup = commitLogic(persist);
+    int perBranch = 60;
+    ObjId forkPoint = addCommits(setup, 1, EMPTY_OBJ_ID, 0);
+    ObjId branchA = addCommits(setup, perBranch, forkPoint, 1);
+    ObjId branchB = addCommits(setup, perBranch, forkPoint, 2);
+    int walked = 2 * perBranch + 1;
+
+    CountingPersist counting = new CountingPersist(persist);
+
+    soft.assertThat(commitLogic(counting).findMergeBase(branchA, branchB)).isEqualTo(forkPoint);
+
+    soft.assertThat(counting.fetchTypedObjCalls)
+        .as("merge-base must not load commits one at a time")
+        .isZero();
+    soft.assertThat(counting.fetchTypedObjsIfExistCalls)
+        .as("round-trips must be far below the number of commits walked")
+        .isPositive()
+        .isLessThan(walked / 4);
+    soft.assertThat(counting.maxFetchTypedObjsIfExistChunk).isGreaterThan(1);
+    soft.assertThat(counting.uniqueFetchIds)
+        .as("no more commits may be loaded than the walk visits")
+        .hasSizeLessThanOrEqualTo(walked);
+    soft.assertThat(counting.fetchTypedObjsIfExistIds)
+        .as("no commit may be loaded twice")
+        .isEqualTo(counting.uniqueFetchIds.size());
+  }
+
+  /**
+   * A batch must follow the commits that are actually walked. With the merge base right next to
+   * both heads, only a bounded look-ahead may be loaded, not a window of unrelated history.
+   */
+  @Test
+  public void mergeBaseNearHeadsLoadsFewCommits() throws Exception {
+    CommitLogic setup = commitLogic(persist);
+    ObjId tip = addCommits(setup, 120, EMPTY_OBJ_ID, 0);
+    ObjId branch = addCommits(setup, 1, tip, 1);
+
+    CountingPersist counting = new CountingPersist(persist);
+
+    soft.assertThat(commitLogic(counting).findMergeBase(tip, branch)).isEqualTo(tip);
+
+    soft.assertThat(counting.uniqueFetchIds)
+        .as("only the commits around the merge base, plus at most one look-ahead window")
+        .hasSizeLessThan(50);
+  }
+
+  static final class CountingPersist extends ObservingPersist {
+    int fetchTypedObjCalls;
+    int fetchTypedObjsIfExistCalls;
+    int fetchTypedObjsIfExistIds;
+    int maxFetchTypedObjsIfExistChunk;
+    final Set<ObjId> uniqueFetchIds = new HashSet<>();
+
+    CountingPersist(Persist delegate) {
+      super(delegate);
+    }
+
+    @Override
+    @Nonnull
+    public <T extends Obj> T fetchTypedObj(
+        @Nonnull ObjId id, ObjType type, @Nonnull Class<T> typeClass) throws ObjNotFoundException {
+      fetchTypedObjCalls++;
+      return super.fetchTypedObj(id, type, typeClass);
+    }
+
+    @Override
+    public <T extends Obj> T[] fetchTypedObjsIfExist(
+        @Nonnull ObjId[] ids, ObjType type, @Nonnull Class<T> typeClass) {
+      fetchTypedObjsIfExistCalls++;
+      fetchTypedObjsIfExistIds += ids.length;
+      maxFetchTypedObjsIfExistChunk = Math.max(maxFetchTypedObjsIfExistChunk, ids.length);
+      uniqueFetchIds.addAll(Arrays.asList(ids));
+      return super.fetchTypedObjsIfExist(ids, type, typeClass);
+    }
   }
 }
