@@ -20,6 +20,12 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/S3, Catalog/ADLS: The table configuration now contains
+  `client.refresh-credentials-endpoint` for vended S3 credentials and
+  `adls.refresh-credentials-endpoint` for vended ADLS SAS tokens, so Iceberg clients can refresh
+  them before they expire. Iceberg Java clients up to and including 1.12 reject Nessie's refresh
+  responses and can fail within five minutes of the credentials expiring; see the Iceberg REST guide.
+
 ### Commits
 
 ## [0.110.0] Release (2026-11-06)
