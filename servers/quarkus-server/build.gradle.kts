@@ -104,6 +104,8 @@ dependencies {
 
   openapiSource(project(":nessie-model")) { isTransitive = false }
 
+  testImplementation(project(":nessie-tasks-api"))
+
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
