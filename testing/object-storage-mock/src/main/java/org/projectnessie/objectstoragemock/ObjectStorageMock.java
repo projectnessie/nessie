@@ -94,7 +94,7 @@ public abstract class ObjectStorageMock {
 
   @Value.Default
   public AccessCheckHandler accessCheckHandler() {
-    return (key) -> true;
+    return key -> true;
   }
 
   public interface MockServer extends AutoCloseable {
@@ -143,13 +143,12 @@ public abstract class ObjectStorageMock {
       for (Connector connector : server.getConnectors()) {
         connector.getConnectionFactories().stream()
             .filter(factory -> factory instanceof HttpConnectionFactory)
-            .forEach(
-                factory -> {
-                  HttpConfiguration httpConfig =
-                      ((HttpConnectionFactory) factory).getHttpConfiguration();
-                  httpConfig.setUriCompliance(
-                      UriCompliance.from(Set.of(UriCompliance.Violation.AMBIGUOUS_PATH_SEPARATOR)));
-                });
+            .forEach(factory -> {
+              HttpConfiguration httpConfig =
+                  ((HttpConnectionFactory) factory).getHttpConfiguration();
+              httpConfig.setUriCompliance(
+                  UriCompliance.from(Set.of(UriCompliance.Violation.AMBIGUOUS_PATH_SEPARATOR)));
+            });
       }
     }
 

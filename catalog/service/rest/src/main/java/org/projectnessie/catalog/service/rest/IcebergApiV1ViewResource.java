@@ -282,17 +282,16 @@ public class IcebergApiV1ViewResource extends IcebergApiV1ResourceBase {
     TableRef tableRef = decodeTableRef(prefix, namespace, view);
 
     return createOrUpdateEntity(tableRef, commitViewRequest, ICEBERG_VIEW, CATALOG_UPDATE_ENTITY)
-        .map(
-            snap -> {
-              IcebergViewMetadata viewMetadata =
-                  (IcebergViewMetadata)
-                      snap.entityObject()
-                          .orElseThrow(() -> new IllegalStateException("entity object missing"));
-              IcebergView content = (IcebergView) snap.content();
-              return IcebergLoadViewResponse.builder()
-                  .metadata(viewMetadata)
-                  .metadataLocation(content.getMetadataLocation())
-                  .build();
-            });
+        .map(snap -> {
+          IcebergViewMetadata viewMetadata =
+              (IcebergViewMetadata)
+                  snap.entityObject()
+                      .orElseThrow(() -> new IllegalStateException("entity object missing"));
+          IcebergView content = (IcebergView) snap.content();
+          return IcebergLoadViewResponse.builder()
+              .metadata(viewMetadata)
+              .metadataLocation(content.getMetadataLocation())
+              .build();
+        });
   }
 }

@@ -111,13 +111,9 @@ public class S3Resource {
     ImmutableBuckets.Builder buckets = ImmutableBuckets.builder();
     mockServer
         .buckets()
-        .forEach(
-            (name, bucket) ->
-                buckets.addBuckets(
-                    ImmutableBucket.builder()
-                        .name(name)
-                        .creationDate(bucket.creationDate())
-                        .build()));
+        .forEach((name, bucket) ->
+            buckets.addBuckets(
+                ImmutableBucket.builder().name(name).creationDate(bucket.creationDate()).build()));
     return ImmutableListAllMyBucketsResult.builder()
         .owner(TEST_OWNER)
         .buckets(buckets.build())

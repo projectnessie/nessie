@@ -141,30 +141,28 @@ public class ITUpgradePath {
             api.getAllReferences().stream()
                 .filter(r -> r.getName().startsWith(VERSION_BRANCH_PREFIX)))
         .isNotEmpty()
-        .allSatisfy(
-            ref -> {
-              String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
-              Stream<LogEntry> commitLog = api.getCommitLog().refName(ref.getName()).stream();
-              String commitMessage = "hello world " + versionFromRef;
-              assertThat(commitLog)
-                  .hasSize(1)
-                  .map(LogEntry::getCommitMeta)
-                  .map(CommitMeta::getMessage)
-                  .containsExactly(commitMessage);
-            })
-        .allSatisfy(
-            ref -> {
-              String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
-              ContentKey key = ContentKey.of("my-tables-table_name");
-              IcebergTable content =
-                  IcebergTable.of("metadata-location-" + versionFromRef, 42L, 43, 44, 45);
-              Map<ContentKey, Content> contents = api.getContent().reference(ref).key(key).get();
-              assertThat(contents)
-                  .hasSize(1)
-                  .extractingByKey(key)
-                  .extracting(AbstractCompatibilityTests::withoutContentId)
-                  .isEqualTo(content);
-            });
+        .allSatisfy(ref -> {
+          String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
+          Stream<LogEntry> commitLog = api.getCommitLog().refName(ref.getName()).stream();
+          String commitMessage = "hello world " + versionFromRef;
+          assertThat(commitLog)
+              .hasSize(1)
+              .map(LogEntry::getCommitMeta)
+              .map(CommitMeta::getMessage)
+              .containsExactly(commitMessage);
+        })
+        .allSatisfy(ref -> {
+          String versionFromRef = ref.getName().substring(VERSION_BRANCH_PREFIX.length());
+          ContentKey key = ContentKey.of("my-tables-table_name");
+          IcebergTable content =
+              IcebergTable.of("metadata-location-" + versionFromRef, 42L, 43, 44, 45);
+          Map<ContentKey, Content> contents = api.getContent().reference(ref).key(key).get();
+          assertThat(contents)
+              .hasSize(1)
+              .extractingByKey(key)
+              .extracting(AbstractCompatibilityTests::withoutContentId)
+              .isEqualTo(content);
+        });
   }
 
   // //////////////////////////////////////////////////////////////////////////////////////////
@@ -263,12 +261,11 @@ public class ITUpgradePath {
     assertThat(expectedKeyValues)
         .describedAs(
             "Content objects for %d keys, version %s, commit %s", checkKeys.size(), version, hash)
-        .allSatisfy(
-            (key, table) ->
-                assertThat(retrievedContents)
-                    .extractingByKey(key, type(IcebergTable.class))
-                    .extracting(IcebergTable::getSnapshotId, IcebergTable::getMetadataLocation)
-                    .containsExactly(table.getSnapshotId(), table.getMetadataLocation()));
+        .allSatisfy((key, table) ->
+            assertThat(retrievedContents)
+                .extractingByKey(key, type(IcebergTable.class))
+                .extracting(IcebergTable::getSnapshotId, IcebergTable::getMetadataLocation)
+                .containsExactly(table.getSnapshotId(), table.getMetadataLocation()));
   }
 
   @Test

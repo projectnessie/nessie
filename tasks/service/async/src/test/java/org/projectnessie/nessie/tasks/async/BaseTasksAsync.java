@@ -70,14 +70,13 @@ public abstract class BaseTasksAsync {
 
     stages.stream()
         .map(CompletionStage::toCompletableFuture)
-        .forEach(
-            cf -> {
-              try {
-                cf.get();
-              } catch (Exception e) {
-                throw new RuntimeException(e);
-              }
-            });
+        .forEach(cf -> {
+          try {
+            cf.get();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
 
     soft.assertThat(stages)
         .hasSize(num)
@@ -98,17 +97,15 @@ public abstract class BaseTasksAsync {
       int i2 = i;
       stages.add(
           async
-              .supply(
-                  () -> {
-                    semImmediate.release();
-                    return i2;
-                  })
+              .supply(() -> {
+                semImmediate.release();
+                return i2;
+              })
               // on CompletionStage
-              .thenApply(
-                  v -> {
-                    semStage.release();
-                    return v;
-                  }));
+              .thenApply(v -> {
+                semStage.release();
+                return v;
+              }));
     }
 
     soft.assertThat(semImmediate.tryAcquire(num, 10, TimeUnit.SECONDS)).isTrue();
@@ -117,14 +114,13 @@ public abstract class BaseTasksAsync {
     Set<Integer> nums =
         stages.stream()
             .map(CompletionStage::toCompletableFuture)
-            .map(
-                cf -> {
-                  try {
-                    return cf.get();
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .map(cf -> {
+              try {
+                return cf.get();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            })
             .collect(Collectors.toSet());
 
     soft.assertThat(stages)
@@ -142,10 +138,9 @@ public abstract class BaseTasksAsync {
     TasksAsync async = tasksAsync();
 
     CompletionStage<Void> stage =
-        async.call(
-            () -> {
-              throw new RuntimeException("hello");
-            });
+        async.call(() -> {
+          throw new RuntimeException("hello");
+        });
 
     Throwable mappedFailure =
         stage.handle((result, failure) -> failure).toCompletableFuture().get();
@@ -230,12 +225,11 @@ public abstract class BaseTasksAsync {
 
     AtomicReference<Object> result = new AtomicReference<>();
     AtomicReference<Throwable> error = new AtomicReference<>();
-    handle.whenComplete(
-        (r, t) -> {
-          cancelled.countDown();
-          result.set(r);
-          error.set(t);
-        });
+    handle.whenComplete((r, t) -> {
+      cancelled.countDown();
+      result.set(r);
+      error.set(t);
+    });
 
     handle.toCompletableFuture().cancel(true);
     soft.assertThat(cancelled.await(10, TimeUnit.SECONDS)).isTrue();

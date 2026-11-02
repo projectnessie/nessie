@@ -51,11 +51,10 @@ public class TestHttpClientBuilder {
 
   @Test
   void testIncompatibleApiInterface() {
-    assertThatThrownBy(
-            () ->
-                createClientBuilderFromSystemSettings()
-                    .withUri(URI.create("http://localhost"))
-                    .build(IncompatibleApiInterface.class))
+    assertThatThrownBy(() ->
+            createClientBuilderFromSystemSettings()
+                .withUri(URI.create("http://localhost"))
+                .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "API version org.projectnessie.client.http.TestHttpClientBuilder$IncompatibleApiInterface is not supported.");
@@ -63,23 +62,21 @@ public class TestHttpClientBuilder {
 
   @Test
   void testIncompatibleAuthProvider() {
-    assertThatThrownBy(
-            () ->
-                createClientBuilderFromSystemSettings()
-                    .withUri(URI.create("http://localhost"))
-                    .withAuthentication(new NessieAuthentication() {})
-                    .build(IncompatibleApiInterface.class))
+    assertThatThrownBy(() ->
+            createClientBuilderFromSystemSettings()
+                .withUri(URI.create("http://localhost"))
+                .withAuthentication(new NessieAuthentication() {})
+                .build(IncompatibleApiInterface.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("HttpClientBuilder only accepts instances of HttpAuthentication");
   }
 
   @Test
   void testInvalidUriScheme() {
-    assertThatThrownBy(
-            () ->
-                createClientBuilderFromSystemSettings()
-                    .withUri(URI.create("file:///foo/bar/baz"))
-                    .build(NessieApiV1.class))
+    assertThatThrownBy(() ->
+            createClientBuilderFromSystemSettings()
+                .withUri(URI.create("file:///foo/bar/baz"))
+                .build(NessieApiV1.class))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "Cannot start http client. file:///foo/bar/baz must be a valid http or https address");
@@ -92,14 +89,13 @@ public class TestHttpClientBuilder {
             cfg.withAuthentication(
                 BasicAuthenticationProvider.create("my_username", "very_secret")),
         cfg ->
-            cfg.withAuthenticationFromConfig(
-                prop ->
-                    switch (prop) {
-                      case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE -> "BASIC";
-                      case NessieConfigConstants.CONF_NESSIE_USERNAME -> "my_username";
-                      case NessieConfigConstants.CONF_NESSIE_PASSWORD -> "very_secret";
-                      default -> null;
-                    }));
+            cfg.withAuthenticationFromConfig(prop ->
+                switch (prop) {
+                  case NessieConfigConstants.CONF_NESSIE_AUTH_TYPE -> "BASIC";
+                  case NessieConfigConstants.CONF_NESSIE_USERNAME -> "my_username";
+                  case NessieConfigConstants.CONF_NESSIE_PASSWORD -> "very_secret";
+                  default -> null;
+                }));
   }
 
   @ParameterizedTest
@@ -128,12 +124,11 @@ public class TestHttpClientBuilder {
 
   @Test
   void testApiCompatibilityCheckDisabled() {
-    assertThatCode(
-            () ->
-                createClientBuilderFromSystemSettings()
-                    .withUri(URI.create("http://non-existent-host"))
-                    .withApiCompatibilityCheck(false)
-                    .build(NessieApiV2.class))
+    assertThatCode(() ->
+            createClientBuilderFromSystemSettings()
+                .withUri(URI.create("http://non-existent-host"))
+                .withApiCompatibilityCheck(false)
+                .build(NessieApiV2.class))
         .doesNotThrowAnyException();
   }
 
@@ -141,11 +136,10 @@ public class TestHttpClientBuilder {
   void testApiCompatibilityCheckDisabledWithSystemProperties() {
     System.setProperty(CONF_ENABLE_API_COMPATIBILITY_CHECK, "false");
     try {
-      assertThatCode(
-              () ->
-                  createClientBuilderFromSystemSettings()
-                      .withUri(URI.create("http://non-existent-host"))
-                      .build(NessieApiV2.class))
+      assertThatCode(() ->
+              createClientBuilderFromSystemSettings()
+                  .withUri(URI.create("http://non-existent-host"))
+                  .build(NessieApiV2.class))
           .doesNotThrowAnyException();
     } finally {
       System.clearProperty(CONF_ENABLE_API_COMPATIBILITY_CHECK);
@@ -155,18 +149,17 @@ public class TestHttpClientBuilder {
   @Test
   void testRequestResponseFilter() throws Exception {
     try (HttpTestServer server =
-        new HttpTestServer(
-            (req, resp) -> {
-              assertThat(req.getHeader("X-Test")).isEqualTo("test-value");
-              req.getInputStream().close();
-              HttpTestUtil.writeResponseBody(
-                  resp, "{\"maxSupportedApiVersion\":1}", "application/test+json");
-            })) {
+        new HttpTestServer((req, resp) -> {
+          assertThat(req.getHeader("X-Test")).isEqualTo("test-value");
+          req.getInputStream().close();
+          HttpTestUtil.writeResponseBody(
+              resp, "{\"maxSupportedApiVersion\":1}", "application/test+json");
+        })) {
       try (NessieApiV1 client =
           ((NessieHttpClientBuilder) createClientBuilderFromSystemSettings())
-              .addRequestFilter((ctx) -> ctx.putHeader("X-Test", "test-value"))
+              .addRequestFilter(ctx -> ctx.putHeader("X-Test", "test-value"))
               .addResponseFilter(
-                  (ctx) -> assertThat(ctx.getContentType()).isEqualTo("application/test+json"))
+                  ctx -> assertThat(ctx.getContentType()).isEqualTo("application/test+json"))
               .withUri(server.getUri())
               .build(NessieApiV1.class)) {
         client.getConfig();

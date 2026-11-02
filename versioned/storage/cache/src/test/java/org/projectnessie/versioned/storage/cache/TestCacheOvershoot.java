@@ -100,13 +100,12 @@ public class TestCacheOvershoot {
     var stop = new AtomicBoolean();
     try {
       for (int i = 0; i < numThreads; i++) {
-        executor.execute(
-            () -> {
-              while (!stop.get()) {
-                cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
-                Thread.yield();
-              }
-            });
+        executor.execute(() -> {
+          while (!stop.get()) {
+            cache.put("repo", SimpleTestObj.builder().id(randomObjId()).text(str).build());
+            Thread.yield();
+          }
+        });
       }
 
       for (int i = 0; i < 50 && !seenOvershoot; i++) {

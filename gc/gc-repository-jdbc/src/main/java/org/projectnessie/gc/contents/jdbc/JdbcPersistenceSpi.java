@@ -484,16 +484,15 @@ public abstract class JdbcPersistenceSpi implements PersistenceSpi {
         new ResultSetSplit<>(this::connection, fetchSize(), closeables::add, sql, prepare, fromRow);
 
     return StreamSupport.stream(split, false)
-        .onClose(
-            () -> {
-              Exception ex = JdbcHelper.forClose(closeables);
-              if (ex instanceof RuntimeException runtimeException) {
-                throw runtimeException;
-              }
-              if (ex != null) {
-                throw new RuntimeException(ex);
-              }
-            });
+        .onClose(() -> {
+          Exception ex = JdbcHelper.forClose(closeables);
+          if (ex instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+          }
+          if (ex != null) {
+            throw new RuntimeException(ex);
+          }
+        });
   }
 
   abstract DataSource dataSource();

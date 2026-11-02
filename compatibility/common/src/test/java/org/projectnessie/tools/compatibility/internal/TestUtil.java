@@ -112,13 +112,12 @@ class TestUtil {
         new URLClassLoader(new URL[] {new File("some-non-existing.jar").toURI().toURL()});
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
-    soft.assertThatThrownBy(
-            () ->
-                Util.withClassLoader(
-                    classLoader,
-                    () -> {
-                      throw new IllegalArgumentException("blah");
-                    }))
+    soft.assertThatThrownBy(() ->
+            Util.withClassLoader(
+                classLoader,
+                () -> {
+                  throw new IllegalArgumentException("blah");
+                }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("blah");
     soft.assertThat(Thread.currentThread().getContextClassLoader()).isSameAs(contextClassLoader);

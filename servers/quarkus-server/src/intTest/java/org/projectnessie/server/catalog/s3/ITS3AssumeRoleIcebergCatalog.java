@@ -74,16 +74,15 @@ public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests
   protected void verifyLoadCredentialsResponse(
       Table table, IcebergLoadCredentialsResponse response) {
     soft.assertThat(response.storageCredentials())
-        .anySatisfy(
-            credential -> {
-              soft.assertThat(credential.prefix()).startsWith(table.location());
-              soft.assertThat(credential.config())
-                  .containsKeys(
-                      "s3.access-key-id",
-                      "s3.secret-access-key",
-                      "s3.session-token",
-                      "s3.session-token-expires-at-ms");
-            });
+        .anySatisfy(credential -> {
+          soft.assertThat(credential.prefix()).startsWith(table.location());
+          soft.assertThat(credential.config())
+              .containsKeys(
+                  "s3.access-key-id",
+                  "s3.secret-access-key",
+                  "s3.session-token",
+                  "s3.session-token-expires-at-ms");
+        });
   }
 
   public static class Profile implements QuarkusTestProfile {

@@ -46,7 +46,8 @@ import org.projectnessie.model.Validation;
               Optional commit message for this merge request
 
               If not set, the server will generate a commit message automatically using metadata from the\s
-              merged commits."""),
+              merged commits.\
+              """),
       @SchemaProperty(
           name = "fromHash",
           pattern = Validation.HASH_REGEX,
@@ -55,7 +56,8 @@ import org.projectnessie.model.Validation;
               The hash of the last commit to merge.
 
               This commit must be present in the history on 'fromRefName' before the first common parent with respect \
-              to the target branch."""),
+              to the target branch.\
+              """),
       @SchemaProperty(name = "fromRefName", description = FROM_REF_NAME_DESCRIPTION),
       @SchemaProperty(name = "keyMergeModes", description = KEY_MERGE_MODES_DESCRIPTION),
       @SchemaProperty(

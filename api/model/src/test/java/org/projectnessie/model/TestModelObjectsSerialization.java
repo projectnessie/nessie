@@ -62,10 +62,8 @@ public class TestModelObjectsSerialization {
   @ParameterizedTest
   @MethodSource("negativeCases")
   void testNegativeSerDeCases(Case invalidCase) {
-    Assertions.assertThatThrownBy(
-            () ->
-                MAPPER.readValue(
-                    invalidCase.deserializedJson.toString(), invalidCase.deserializeAs))
+    Assertions.assertThatThrownBy(() ->
+            MAPPER.readValue(invalidCase.deserializedJson.toString(), invalidCase.deserializeAs))
         .isInstanceOf(JsonProcessingException.class);
   }
 
@@ -76,24 +74,22 @@ public class TestModelObjectsSerialization {
     return Arrays.asList(
         new Case(IcebergTable.class)
             .obj(IcebergTable.of("meta-mine", 1, 2, 3, 4, "cid"))
-            .jsonNode(
-                o ->
-                    o.put("type", "ICEBERG_TABLE")
-                        .put("id", "cid")
-                        .put("metadataLocation", "meta-mine")
-                        .put("snapshotId", 1)
-                        .put("schemaId", 2)
-                        .put("specId", 3)
-                        .put("sortOrderId", 4)),
+            .jsonNode(o ->
+                o.put("type", "ICEBERG_TABLE")
+                    .put("id", "cid")
+                    .put("metadataLocation", "meta-mine")
+                    .put("snapshotId", 1)
+                    .put("schemaId", 2)
+                    .put("specId", 3)
+                    .put("sortOrderId", 4)),
         new Case(IcebergView.class)
             .obj(IcebergView.of("cid", "meta-mine", 1, 2))
-            .jsonNode(
-                o ->
-                    o.put("type", "ICEBERG_VIEW")
-                        .put("id", "cid")
-                        .put("metadataLocation", "meta-mine")
-                        .put("versionId", 1)
-                        .put("schemaId", 2)),
+            .jsonNode(o ->
+                o.put("type", "ICEBERG_VIEW")
+                    .put("id", "cid")
+                    .put("metadataLocation", "meta-mine")
+                    .put("versionId", 1)
+                    .put("schemaId", 2)),
         new Case(UDF.class)
             .obj(
                 UDF.builder()
@@ -102,33 +98,29 @@ public class TestModelObjectsSerialization {
                     .versionId("ver")
                     .signatureId("sig")
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("type", "UDF")
-                        .put("id", "cid")
-                        .put("metadataLocation", "meta-mine")
-                        .put("versionId", "ver")
-                        .put("signatureId", "sig")),
+            .jsonNode(o ->
+                o.put("type", "UDF")
+                    .put("id", "cid")
+                    .put("metadataLocation", "meta-mine")
+                    .put("versionId", "ver")
+                    .put("signatureId", "sig")),
         new Case(ReferenceConflicts.class)
             .obj(
                 ReferenceConflicts.referenceConflicts(
                     conflict(UNEXPECTED_HASH, ContentKey.of("foo", "bar"), "some message")))
-            .jsonNode(
-                o ->
-                    o.put("type", "REFERENCE_CONFLICTS")
-                        .set(
-                            "conflicts",
-                            arrayNode()
-                                .add(
-                                    objectNode()
-                                        .put("conflictType", "UNEXPECTED_HASH")
-                                        .put("message", "some message")
-                                        .set(
-                                            "key",
-                                            objectNode()
-                                                .set(
-                                                    "elements",
-                                                    arrayNode().add("foo").add("bar"))))))
+            .jsonNode(o ->
+                o.put("type", "REFERENCE_CONFLICTS")
+                    .set(
+                        "conflicts",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("conflictType", "UNEXPECTED_HASH")
+                                    .put("message", "some message")
+                                    .set(
+                                        "key",
+                                        objectNode()
+                                            .set("elements", arrayNode().add("foo").add("bar"))))))
             .skipFinalCompare(),
         new Case(NessieConfiguration.class)
             .view(Views.V1.class)
@@ -152,13 +144,12 @@ public class TestModelObjectsSerialization {
                     .actualApiVersion(42)
                     .specVersion("42.1.2")
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("defaultBranch", "default-branch")
-                        .put("minSupportedApiVersion", 11)
-                        .put("maxSupportedApiVersion", 42)
-                        .put("actualApiVersion", 42)
-                        .put("specVersion", "42.1.2")),
+            .jsonNode(o ->
+                o.put("defaultBranch", "default-branch")
+                    .put("minSupportedApiVersion", 11)
+                    .put("maxSupportedApiVersion", 42)
+                    .put("actualApiVersion", 42)
+                    .put("specVersion", "42.1.2")),
         new Case(Branch.class)
             .obj(Branch.of(branchName, HASH))
             .jsonNode(o -> o.put("type", "BRANCH").put("name", "testBranch").put("hash", HASH)),
@@ -179,21 +170,19 @@ public class TestModelObjectsSerialization {
                     .token(HASH)
                     .isHasMore(true)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("token", HASH)
-                        .put("hasMore", true)
-                        .putNull("effectiveReference")
-                        .putArray("entries")
-                        .add(
-                            objectNode()
-                                .put("type", "ICEBERG_TABLE")
-                                .putNull("contentId")
-                                .putNull("content")
-                                .set(
-                                    "name",
-                                    objectNode()
-                                        .set("elements", arrayNode().add("/tmp/testpath"))))),
+            .jsonNode(o ->
+                o.put("token", HASH)
+                    .put("hasMore", true)
+                    .putNull("effectiveReference")
+                    .putArray("entries")
+                    .add(
+                        objectNode()
+                            .put("type", "ICEBERG_TABLE")
+                            .putNull("contentId")
+                            .putNull("content")
+                            .set(
+                                "name",
+                                objectNode().set("elements", arrayNode().add("/tmp/testpath"))))),
         new Case(CommitMeta.class)
             .obj(
                 CommitMeta.builder()
@@ -212,21 +201,20 @@ public class TestModelObjectsSerialization {
                     .commitTime(Instant.ofEpochSecond(2))
                     .build())
             .view(Views.V2.class)
-            .jsonNode(
-                o -> {
-                  o.put("hash", HASH)
-                      .put("committer", "c1")
-                      .set("authors", arrayNode().add("a1").add("a2"));
-                  o.set("allSignedOffBy", arrayNode().add("s1").add("s2"));
-                  o.put("message", "msg")
-                      .put("commitTime", "1970-01-01T00:00:02Z")
-                      .put("authorTime", "1970-01-01T00:00:01Z")
-                      .set(
-                          "allProperties",
-                          ((ObjectNode) objectNode().set("p1", arrayNode().add("v1a").add("v1b")))
-                              .set("p2", arrayNode().add("v2")));
-                  o.set("parentCommitHashes", arrayNode().add("p1").add("p2"));
-                }),
+            .jsonNode(o -> {
+              o.put("hash", HASH)
+                  .put("committer", "c1")
+                  .set("authors", arrayNode().add("a1").add("a2"));
+              o.set("allSignedOffBy", arrayNode().add("s1").add("s2"));
+              o.put("message", "msg")
+                  .put("commitTime", "1970-01-01T00:00:02Z")
+                  .put("authorTime", "1970-01-01T00:00:01Z")
+                  .set(
+                      "allProperties",
+                      ((ObjectNode) objectNode().set("p1", arrayNode().add("v1a").add("v1b")))
+                          .set("p2", arrayNode().add("v2")));
+              o.set("parentCommitHashes", arrayNode().add("p1").add("p2"));
+            }),
         new Case(LogResponse.class)
             .obj(
                 LogResponse.builder()
@@ -247,33 +235,32 @@ public class TestModelObjectsSerialization {
                             .build())
                     .isHasMore(true)
                     .build())
-            .jsonNode(
-                o -> {
-                  ObjectNode meta =
-                      objectNode()
-                          .put("hash", HASH)
-                          .put("committer", "committer@example.com")
-                          .put("author", "author@example.com")
-                          .set("authors", arrayNode().add("author@example.com"));
-                  meta.put("signedOffBy", "signer@example.com")
-                      .set("allSignedOffBy", arrayNode().add("signer@example.com"));
-                  meta.put("message", "test commit")
-                      .put("commitTime", now.toString())
-                      .put("authorTime", now.toString())
-                      .set("properties", objectNode().put("prop1", "val1"));
-                  meta.set("allProperties", objectNode().set("prop1", arrayNode().add("val1")));
+            .jsonNode(o -> {
+              ObjectNode meta =
+                  objectNode()
+                      .put("hash", HASH)
+                      .put("committer", "committer@example.com")
+                      .put("author", "author@example.com")
+                      .set("authors", arrayNode().add("author@example.com"));
+              meta.put("signedOffBy", "signer@example.com")
+                  .set("allSignedOffBy", arrayNode().add("signer@example.com"));
+              meta.put("message", "test commit")
+                  .put("commitTime", now.toString())
+                  .put("authorTime", now.toString())
+                  .set("properties", objectNode().put("prop1", "val1"));
+              meta.set("allProperties", objectNode().set("prop1", arrayNode().add("val1")));
 
-                  o.put("token", HASH)
-                      .put("hasMore", true)
-                      .set(
-                          "logEntries",
-                          arrayNode()
-                              .add(
-                                  objectNode()
-                                      .putNull("parentCommitHash")
-                                      .putNull("operations")
-                                      .set("commitMeta", meta)));
-                }));
+              o.put("token", HASH)
+                  .put("hasMore", true)
+                  .set(
+                      "logEntries",
+                      arrayNode()
+                          .add(
+                              objectNode()
+                                  .putNull("parentCommitHash")
+                                  .putNull("operations")
+                                  .set("commitMeta", meta)));
+            }));
   }
 
   static List<Case> negativeCases() {

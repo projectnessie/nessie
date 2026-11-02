@@ -74,10 +74,9 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .addHashesToTransplant(HASH)
                     .fromRefName(branchName)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .set("hashesToTransplant", arrayNode().add(HASH))),
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .set("hashesToTransplant", arrayNode().add(HASH))),
         new Case(Transplant.class)
             .obj(
                 ImmutableTransplant.builder()
@@ -87,13 +86,12 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .isFetchAdditionalInfo(true)
                     .isReturnConflictAsResult(true)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", branchName)
-                        .put("dryRun", true)
-                        .put("fetchAdditionalInfo", true)
-                        .put("returnConflictAsResult", true)
-                        .set("hashesToTransplant", arrayNode().add(HASH))),
+            .jsonNode(o ->
+                o.put("fromRefName", branchName)
+                    .put("dryRun", true)
+                    .put("fetchAdditionalInfo", true)
+                    .put("returnConflictAsResult", true)
+                    .set("hashesToTransplant", arrayNode().add(HASH))),
         new Case(Transplant.class)
             .obj(
                 ImmutableTransplant.builder()
@@ -101,11 +99,10 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromRefName(branchName)
                     .keepIndividualCommits(true)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .put("keepIndividualCommits", true)
-                        .set("hashesToTransplant", arrayNode().add(HASH))),
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .put("keepIndividualCommits", true)
+                    .set("hashesToTransplant", arrayNode().add(HASH))),
         new Case(Merge.class)
             .obj(ImmutableMerge.builder().fromHash(HASH).fromRefName(branchName).build())
             .jsonNode(o -> o.put("fromRefName", "testBranch").put("fromHash", HASH)),
@@ -116,11 +113,10 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromRefName(branchName)
                     .isReturnConflictAsResult(true)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", branchName)
-                        .put("fromHash", HASH)
-                        .put("returnConflictAsResult", true)),
+            .jsonNode(o ->
+                o.put("fromRefName", branchName)
+                    .put("fromHash", HASH)
+                    .put("returnConflictAsResult", true)),
         new Case(Merge.class)
             .obj(
                 ImmutableMerge.builder()
@@ -128,11 +124,10 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                     .fromRefName(branchName)
                     .keepIndividualCommits(true)
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .put("keepIndividualCommits", true)
-                        .put("fromHash", HASH)),
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .put("keepIndividualCommits", true)
+                    .put("fromHash", HASH)),
         new Case(Merge.class)
             .obj(
                 ImmutableMerge.builder()
@@ -144,33 +139,30 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .put("defaultKeyMergeMode", "FORCE")
-                        .put("fromHash", HASH)
-                        .put("fetchAdditionalInfo", true)
-                        .set(
-                            "keyMergeModes",
-                            arrayNode()
-                                .add(
-                                    objectNode()
-                                        .put("mergeBehavior", "NORMAL")
-                                        .set(
-                                            "key",
-                                            objectNode()
-                                                .set(
-                                                    "elements",
-                                                    arrayNode().add("merge").add("me"))))
-                                .add(
-                                    objectNode()
-                                        .put("mergeBehavior", "DROP")
-                                        .set(
-                                            "key",
-                                            objectNode()
-                                                .set(
-                                                    "elements",
-                                                    arrayNode().add("ignore").add("this")))))),
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .put("defaultKeyMergeMode", "FORCE")
+                    .put("fromHash", HASH)
+                    .put("fetchAdditionalInfo", true)
+                    .set(
+                        "keyMergeModes",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("mergeBehavior", "NORMAL")
+                                    .set(
+                                        "key",
+                                        objectNode()
+                                            .set("elements", arrayNode().add("merge").add("me"))))
+                            .add(
+                                objectNode()
+                                    .put("mergeBehavior", "DROP")
+                                    .set(
+                                        "key",
+                                        objectNode()
+                                            .set(
+                                                "elements",
+                                                arrayNode().add("ignore").add("this")))))),
         new Case(Merge.class)
             .obj(
                 ImmutableMerge.builder()
@@ -182,49 +174,43 @@ public class TestParamObjectsSerialization extends TestModelObjectsSerialization
                         MergeKeyBehavior.of(ContentKey.of("merge", "me"), MergeBehavior.NORMAL),
                         MergeKeyBehavior.of(ContentKey.of("ignore", "this"), MergeBehavior.DROP))
                     .build())
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .put("keepIndividualCommits", true)
-                        .put("fromHash", HASH)
-                        .put("dryRun", false)
-                        .set(
-                            "keyMergeModes",
-                            arrayNode()
-                                .add(
-                                    objectNode()
-                                        .put("mergeBehavior", "NORMAL")
-                                        .set(
-                                            "key",
-                                            objectNode()
-                                                .set(
-                                                    "elements",
-                                                    arrayNode().add("merge").add("me"))))
-                                .add(
-                                    objectNode()
-                                        .put("mergeBehavior", "DROP")
-                                        .set(
-                                            "key",
-                                            objectNode()
-                                                .set(
-                                                    "elements",
-                                                    arrayNode().add("ignore").add("this")))))));
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .put("keepIndividualCommits", true)
+                    .put("fromHash", HASH)
+                    .put("dryRun", false)
+                    .set(
+                        "keyMergeModes",
+                        arrayNode()
+                            .add(
+                                objectNode()
+                                    .put("mergeBehavior", "NORMAL")
+                                    .set(
+                                        "key",
+                                        objectNode()
+                                            .set("elements", arrayNode().add("merge").add("me"))))
+                            .add(
+                                objectNode()
+                                    .put("mergeBehavior", "DROP")
+                                    .set(
+                                        "key",
+                                        objectNode()
+                                            .set(
+                                                "elements",
+                                                arrayNode().add("ignore").add("this")))))));
   }
 
   @SuppressWarnings("unused") // called by JUnit framework based on annotations in superclass
   static List<Case> negativeCases() {
     return Arrays.asList(
         new Case(Transplant.class)
-            .jsonNode(
-                o ->
-                    o.putNull("fromRefName")
-                        .set("hashesToTransplant", arrayNode().add("invalidhash"))),
+            .jsonNode(o ->
+                o.putNull("fromRefName").set("hashesToTransplant", arrayNode().add("invalidhash"))),
 
         // Invalid hash
         new Case(Transplant.class)
-            .jsonNode(
-                o ->
-                    o.put("fromRefName", "testBranch")
-                        .set("hashesToTransplant", arrayNode().add("invalidhash"))));
+            .jsonNode(o ->
+                o.put("fromRefName", "testBranch")
+                    .set("hashesToTransplant", arrayNode().add("invalidhash"))));
   }
 }

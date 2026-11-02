@@ -218,17 +218,16 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
       Map<List<String>, Namespace> implicitNamespaces = new HashMap<>();
       try (Stream<KeyEntry> stream =
           getNamespacesKeyStream(namespace, refWithHash.getHash(), k -> true)) {
-        stream.forEach(
-            namespaceKeyWithType -> {
-              if (Content.Type.NAMESPACE.equals(namespaceKeyWithType.getKey().type())) {
-                explicitNamespaceKeys.add(namespaceKeyWithType.getKey().contentKey());
-              } else {
-                Namespace implicitNamespace = namespaceFromType(namespaceKeyWithType);
-                if (!implicitNamespace.isEmpty()) {
-                  implicitNamespaces.put(implicitNamespace.getElements(), implicitNamespace);
-                }
-              }
-            });
+        stream.forEach(namespaceKeyWithType -> {
+          if (Content.Type.NAMESPACE.equals(namespaceKeyWithType.getKey().type())) {
+            explicitNamespaceKeys.add(namespaceKeyWithType.getKey().contentKey());
+          } else {
+            Namespace implicitNamespace = namespaceFromType(namespaceKeyWithType);
+            if (!implicitNamespace.isEmpty()) {
+              implicitNamespaces.put(implicitNamespace.getElements(), implicitNamespace);
+            }
+          }
+        });
       }
 
       ImmutableGetNamespacesResponse.Builder response =
@@ -381,19 +380,17 @@ public class NamespaceApiImpl extends BaseApiImpl implements NamespaceService {
               BatchAccessChecker check = startAccessCheck().canCommitChangeAgainstReference(branch);
               validation
                   .operations()
-                  .forEach(
-                      op -> {
-                        Set<String> actions =
-                            requestMeta.keyActions(op.identifiedKey().contentKey());
-                        switch (op.operationType()) {
-                          case CREATE -> check.canCreateEntity(branch, op.identifiedKey(), actions);
-                          case UPDATE -> check.canUpdateEntity(branch, op.identifiedKey(), actions);
-                          case DELETE -> check.canDeleteEntity(branch, op.identifiedKey(), actions);
-                          default ->
-                              throw new UnsupportedOperationException(
-                                  "Unknown operation type " + op.operationType());
-                        }
-                      });
+                  .forEach(op -> {
+                    Set<String> actions = requestMeta.keyActions(op.identifiedKey().contentKey());
+                    switch (op.operationType()) {
+                      case CREATE -> check.canCreateEntity(branch, op.identifiedKey(), actions);
+                      case UPDATE -> check.canUpdateEntity(branch, op.identifiedKey(), actions);
+                      case DELETE -> check.canDeleteEntity(branch, op.identifiedKey(), actions);
+                      default ->
+                          throw new UnsupportedOperationException(
+                              "Unknown operation type " + op.operationType());
+                    }
+                  });
               check.checkAndThrow();
             },
             (k, c) -> {})

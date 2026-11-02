@@ -178,26 +178,23 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
         commitLog(branch.getName(), null, "commit.author in ['author-1', 'author-3', 'author-4']");
     soft.assertThat(log)
         .hasSize(commitsPerAuthor * 3)
-        .allSatisfy(
-            commit ->
-                assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+        .allSatisfy(commit ->
+            assertThat(ImmutableList.of("author-1", "author-3", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
 
     log = commitLog(branch.getName(), null, "!(commit.author in ['author-1', 'author-0'])");
     soft.assertThat(log)
         .hasSize(commitsPerAuthor * 3)
-        .allSatisfy(
-            commit ->
-                assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+        .allSatisfy(commit ->
+            assertThat(ImmutableList.of("author-2", "author-3", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
 
     log = commitLog(branch.getName(), null, "commit.author.matches('au.*-(2|4)')");
     soft.assertThat(log)
         .hasSize(commitsPerAuthor * 2)
-        .allSatisfy(
-            commit ->
-                assertThat(ImmutableList.of("author-2", "author-4"))
-                    .contains(commit.getCommitMeta().getAuthor()));
+        .allSatisfy(commit ->
+            assertThat(ImmutableList.of("author-2", "author-4"))
+                .contains(commit.getCommitMeta().getAuthor()));
   }
 
   @Test
@@ -227,9 +224,8 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
             format("timestamp(commit.commitTime) > timestamp('%s')", initialCommitTime));
     soft.assertThat(log)
         .hasSize(expectedTotalSize - 1)
-        .allSatisfy(
-            commit ->
-                assertThat(commit.getCommitMeta().getCommitTime()).isAfter(initialCommitTime));
+        .allSatisfy(commit ->
+            assertThat(commit.getCommitMeta().getCommitTime()).isAfter(initialCommitTime));
 
     log =
         commitLog(
@@ -250,11 +246,10 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
                 initialCommitTime, lastCommitTime));
     soft.assertThat(log)
         .hasSize(expectedTotalSize - 2)
-        .allSatisfy(
-            commit ->
-                assertThat(commit.getCommitMeta().getCommitTime())
-                    .isAfter(initialCommitTime)
-                    .isBefore(lastCommitTime));
+        .allSatisfy(commit ->
+            assertThat(commit.getCommitMeta().getCommitTime())
+                .isAfter(initialCommitTime)
+                .isBefore(lastCommitTime));
 
     log =
         commitLog(
@@ -279,9 +274,8 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
     log = commitLog(branch.getName(), null, "commit.properties['prop1'] == 'val1'");
     soft.assertThat(log)
         .hasSize(numAuthors * commitsPerAuthor)
-        .allSatisfy(
-            commit ->
-                assertThat(commit.getCommitMeta().getProperties().get("prop1")).isEqualTo("val1"));
+        .allSatisfy(commit ->
+            assertThat(commit.getCommitMeta().getProperties().get("prop1")).isEqualTo("val1"));
 
     log = commitLog(branch.getName(), null, "commit.properties['prop1'] == 'val3'");
     soft.assertThat(log).isEmpty();
@@ -488,15 +482,12 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
     Operation[] operations =
         IntStream.rangeClosed(1, numCommits)
             .boxed()
-            .flatMap(
-                i ->
-                    Stream.of(
-                        Put.of(
-                            ContentKey.of("delete" + i),
-                            IcebergTable.of("delete-" + i, i, i, i, i)),
-                        Put.of(
-                            ContentKey.of("unchanged" + i),
-                            IcebergTable.of("unchanged-" + i, i, i, i, i))))
+            .flatMap(i ->
+                Stream.of(
+                    Put.of(ContentKey.of("delete" + i), IcebergTable.of("delete-" + i, i, i, i, i)),
+                    Put.of(
+                        ContentKey.of("unchanged" + i),
+                        IcebergTable.of("unchanged-" + i, i, i, i, i))))
             .toArray(Operation[]::new);
     String initialHash =
         commit(branchInitial, fromMessage("Initial commit"), operations)
@@ -505,24 +496,22 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
 
     List<String> hashes =
         IntStream.rangeClosed(1, numCommits)
-            .mapToObj(
-                i -> {
-                  try {
-                    Branch currentBranch = (Branch) getReference(branch);
-                    return commit(
-                            currentBranch,
-                            fromMessage("Commit #" + i),
-                            Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)),
-                            Put.of(
-                                ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i)),
-                            Delete.of(ContentKey.of("delete" + i)),
-                            Unchanged.of(ContentKey.of("unchanged" + i)))
-                        .getTargetBranch()
-                        .getHash();
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .mapToObj(i -> {
+              try {
+                Branch currentBranch = (Branch) getReference(branch);
+                return commit(
+                        currentBranch,
+                        fromMessage("Commit #" + i),
+                        Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)),
+                        Put.of(ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i)),
+                        Delete.of(ContentKey.of("delete" + i)),
+                        Unchanged.of(ContentKey.of("unchanged" + i)))
+                    .getTargetBranch()
+                    .getHash();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            })
             .collect(Collectors.toList());
     List<String> parentHashes =
         Stream.concat(Stream.of(initialHash), hashes.subList(0, 9).stream())
@@ -531,38 +520,35 @@ public abstract class AbstractTestCommitLog extends BaseTestServiceImpl {
     Reference branchRef = getReference(branch);
 
     soft.assertThat(reverse(commitLog(branchRef.getName(), MINIMAL, hashes.get(0), null, null)))
-        .allSatisfy(
-            c -> {
-              assertThat(c.getOperations()).isNull();
-              assertThat(c.getParentCommitHash()).isNotNull();
-              assertThat(c.getAdditionalParents()).isEmpty();
-              assertThat(c.getCommitMeta().getProperties()).isEmpty();
-            })
+        .allSatisfy(c -> {
+          assertThat(c.getOperations()).isNull();
+          assertThat(c.getParentCommitHash()).isNotNull();
+          assertThat(c.getAdditionalParents()).isEmpty();
+          assertThat(c.getCommitMeta().getProperties()).isEmpty();
+        })
         .extracting(e -> e.getCommitMeta().getHash())
         .containsExactlyElementsOf(hashes);
 
     List<LogEntry> commits =
         reverse(commitLog(branchRef.getName(), ALL, hashes.get(0), null, null));
     soft.assertThat(IntStream.rangeClosed(1, numCommits))
-        .allSatisfy(
-            i -> {
-              LogEntry c = commits.get(i - 1);
-              assertThat(c)
-                  .extracting(
-                      e -> e.getCommitMeta().getMessage(),
-                      e -> e.getCommitMeta().getHash(),
-                      LogEntry::getParentCommitHash,
-                      e -> operationsWithoutContentId(e.getOperations()))
-                  .containsExactly(
-                      "Commit #" + i,
-                      hashes.get(i - 1),
-                      parentHashes.get(i - 1),
-                      Arrays.asList(
-                          Delete.of(ContentKey.of("delete" + i)),
-                          Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)),
-                          Put.of(
-                              ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i))));
-            });
+        .allSatisfy(i -> {
+          LogEntry c = commits.get(i - 1);
+          assertThat(c)
+              .extracting(
+                  e -> e.getCommitMeta().getMessage(),
+                  e -> e.getCommitMeta().getHash(),
+                  LogEntry::getParentCommitHash,
+                  e -> operationsWithoutContentId(e.getOperations()))
+              .containsExactly(
+                  "Commit #" + i,
+                  hashes.get(i - 1),
+                  parentHashes.get(i - 1),
+                  Arrays.asList(
+                      Delete.of(ContentKey.of("delete" + i)),
+                      Put.of(ContentKey.of("k" + i), IcebergTable.of("m" + i, i, i, i, i)),
+                      Put.of(ContentKey.of("key" + i), IcebergTable.of("meta" + i, i, i, i, i))));
+        });
   }
 
   @Test

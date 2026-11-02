@@ -301,12 +301,10 @@ public class TestIcebergConfigurer {
     soft.assertThat(tableConfig.config()).containsEntry("legacy-key", "legacy-value");
     soft.assertThat(tableConfig.storageCredentials())
         .singleElement()
-        .satisfies(
-            credential -> {
-              soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
-              soft.assertThat(credential.config())
-                  .containsEntry("credential-key", "credential-value");
-            });
+        .satisfies(credential -> {
+          soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
+          soft.assertThat(credential.config()).containsEntry("credential-key", "credential-value");
+        });
   }
 
   /** Verify compatibility with Iceberg < 1.5.0 S3 signer properties. */

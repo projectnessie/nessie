@@ -63,31 +63,30 @@ public class TestIdentifyLiveContents {
   @Test
   public void invalidParallelism() throws Exception {
     try (RepositoryConnector nessie = NessieRepositoryConnector.nessie(nessieApi)) {
-      assertThatThrownBy(
-              () ->
-                  IdentifyLiveContents.builder()
-                      .parallelism(0)
-                      .contentTypeFilter(
-                          new ContentTypeFilter() {
-                            @Override
-                            public boolean test(Content.Type type) {
-                              return true;
-                            }
+      assertThatThrownBy(() ->
+              IdentifyLiveContents.builder()
+                  .parallelism(0)
+                  .contentTypeFilter(
+                      new ContentTypeFilter() {
+                        @Override
+                        public boolean test(Content.Type type) {
+                          return true;
+                        }
 
-                            @Override
-                            public Set<Content.Type> validTypes() {
-                              throw new UnsupportedOperationException();
-                            }
-                          })
-                      .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
-                      .contentToContentReference(
-                          (content, commitId, key) -> icebergContent(commitId, key, content))
-                      .liveContentSetsRepository(
-                          LiveContentSetsRepository.builder()
-                              .persistenceSpi(new InMemoryPersistenceSpi())
-                              .build())
-                      .repositoryConnector(nessie)
-                      .build())
+                        @Override
+                        public Set<Content.Type> validTypes() {
+                          throw new UnsupportedOperationException();
+                        }
+                      })
+                  .cutOffPolicySupplier(r -> CutoffPolicy.atTimestamp(Instant.now()))
+                  .contentToContentReference(
+                      (content, commitId, key) -> icebergContent(commitId, key, content))
+                  .liveContentSetsRepository(
+                      LiveContentSetsRepository.builder()
+                          .persistenceSpi(new InMemoryPersistenceSpi())
+                          .build())
+                  .repositoryConnector(nessie)
+                  .build())
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("Parallelism must be greater than 0");
     }

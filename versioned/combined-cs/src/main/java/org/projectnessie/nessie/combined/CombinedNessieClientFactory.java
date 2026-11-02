@@ -82,12 +82,11 @@ public class CombinedNessieClientFactory
     List<NessieClientCustomizer> customizers =
         extensionContext
             .getTestInstances()
-            .map(
-                i ->
-                    i.getAllInstances().stream()
-                        .filter(ti -> ti instanceof NessieClientCustomizer)
-                        .map(ti -> (NessieClientCustomizer) ti)
-                        .collect(Collectors.toList()))
+            .map(i ->
+                i.getAllInstances().stream()
+                    .filter(ti -> ti instanceof NessieClientCustomizer)
+                    .map(ti -> (NessieClientCustomizer) ti)
+                    .collect(Collectors.toList()))
             .orElse(Collections.emptyList());
 
     Persist persist = persist(extensionContext);
@@ -105,9 +104,8 @@ public class CombinedNessieClientFactory
         @Override // Note: this object is not serializable
         @Nonnull
         public NessieApiV1 make(NessieClientCustomizer customizer) {
-          return super.make(
-              (builder, version) ->
-                  customizer.configure(testCustomizer.configure(builder, version), version));
+          return super.make((builder, version) ->
+              customizer.configure(testCustomizer.configure(builder, version), version));
         }
       };
     }

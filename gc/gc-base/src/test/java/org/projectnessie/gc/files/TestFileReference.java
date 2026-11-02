@@ -50,10 +50,9 @@ public class TestFileReference {
   @Test
   public void relativeBaseRejected() {
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                FileReference.of(
-                    StorageUri.of("data/file-1.parquet"), StorageUri.of("warehouse/table/"), -1L))
+        .isThrownBy(() ->
+            FileReference.of(
+                StorageUri.of("data/file-1.parquet"), StorageUri.of("warehouse/table/"), -1L))
         .withMessageStartingWith("Base location must be absolute");
   }
 }

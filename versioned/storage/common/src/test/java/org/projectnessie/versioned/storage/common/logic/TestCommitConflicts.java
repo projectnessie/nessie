@@ -106,13 +106,10 @@ public class TestCommitConflicts {
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
     assertThat(tip).isNotNull();
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, 0, addObjId, null, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b -> b.parentCommitId(tip.id()).addAdds(commitAdd(key, 0, addObjId, null, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_EXISTS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -121,13 +118,10 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, KEY_EXISTS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, 0, otherObjId, null, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b -> b.parentCommitId(tip.id()).addAdds(commitAdd(key, 0, otherObjId, null, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_EXISTS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -174,13 +168,12 @@ public class TestCommitConflicts {
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
     assertThat(tip).isNotNull();
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -189,14 +182,13 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, VALUE_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.message("hello")
-                            .parentCommitId(tip.id())
-                            .addRemoves(commitRemove(key, 0, wrongObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.message("hello")
+                        .parentCommitId(tip.id())
+                        .addRemoves(commitRemove(key, 0, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -205,13 +197,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, VALUE_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addUnchanged(commitUnchanged(key, 0, wrongObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addUnchanged(commitUnchanged(key, 0, wrongObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -220,13 +211,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, VALUE_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, randomUUID()))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addAdds(commitAdd(key, 0, replaceObjId, wrongObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -235,13 +225,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, CONTENT_ID_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addUnchanged(commitUnchanged(key, 0, replaceObjId, randomUUID()))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addUnchanged(commitUnchanged(key, 0, replaceObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -250,13 +239,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, CONTENT_ID_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addRemoves(commitRemove(key, 0, wrongObjId, randomUUID()))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addRemoves(commitRemove(key, 0, wrongObjId, randomUUID()))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: CONTENT_ID_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -282,13 +270,12 @@ public class TestCommitConflicts {
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
     assertThat(tip).isNotNull();
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, 1, replaceObjId, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addAdds(commitAdd(key, 1, replaceObjId, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -297,13 +284,10 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, PAYLOAD_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addRemoves(commitRemove(key, 1, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b -> b.parentCommitId(tip.id()).addRemoves(commitRemove(key, 1, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -312,13 +296,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, PAYLOAD_DIFFERS));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addUnchanged(commitUnchanged(key, 1, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addUnchanged(commitUnchanged(key, 1, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: PAYLOAD_DIFFERS:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -345,13 +328,12 @@ public class TestCommitConflicts {
             stdCommit().addAdds(commitAdd(key, 0, addObjId, null, null)).build(), emptyList());
     assertThat(tip).isNotNull();
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(nonExistingKey, 1, replaceObjId, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addAdds(commitAdd(nonExistingKey, 1, replaceObjId, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:non-existing")
         .asInstanceOf(type(CommitConflictException.class))
@@ -360,13 +342,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(nonExistingKey, KEY_DOES_NOT_EXIST));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addRemoves(commitRemove(nonExistingKey, 0, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addRemoves(commitRemove(nonExistingKey, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:non-existing")
         .asInstanceOf(type(CommitConflictException.class))
@@ -381,13 +362,10 @@ public class TestCommitConflicts {
     // remove added, try remove again
     CommitObj tip2 = removeAndTryAgain(commitLogic, key, addObjId, tip.id());
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip2.id())
-                            .addRemoves(commitRemove(key, 0, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b -> b.parentCommitId(tip2.id()).addRemoves(commitRemove(key, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -396,13 +374,12 @@ public class TestCommitConflicts {
         .extracting(CommitConflict::key, CommitConflict::conflictType)
         .containsExactly(tuple(key, KEY_DOES_NOT_EXIST));
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip2.id())
-                            .addUnchanged(commitUnchanged(key, 0, addObjId, null))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip2.id())
+                        .addUnchanged(commitUnchanged(key, 0, addObjId, null))))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: KEY_DOES_NOT_EXIST:hello")
         .asInstanceOf(type(CommitConflictException.class))
@@ -547,20 +524,19 @@ public class TestCommitConflicts {
 
     CreateCommit.Add fooAddConflict = commitAdd(fooKey, 0, fooAddId, randomObjId(), null);
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.buildCommitObj(
-                    stdCommit()
-                        .addAdds(fooAddConflict)
-                        .addAdds(commitAdd(barKey, 0, barAddId, null, null))
-                        .build(),
-                    c -> {
-                      conflicts.add(c);
-                      return CONFLICT;
-                    },
-                    callbacks::put,
-                    NO_VALUE_REPLACEMENT,
-                    NO_VALUE_REPLACEMENT))
+    soft.assertThatThrownBy(() ->
+            commitLogic.buildCommitObj(
+                stdCommit()
+                    .addAdds(fooAddConflict)
+                    .addAdds(commitAdd(barKey, 0, barAddId, null, null))
+                    .build(),
+                c -> {
+                  conflicts.add(c);
+                  return CONFLICT;
+                },
+                callbacks::put,
+                NO_VALUE_REPLACEMENT,
+                NO_VALUE_REPLACEMENT))
         .isInstanceOf(CommitConflictException.class)
         .asInstanceOf(type(CommitConflictException.class))
         .extracting(CommitConflictException::conflicts, list(CommitConflict.class))
@@ -661,13 +637,12 @@ public class TestCommitConflicts {
             e -> e.content().contentId())
         .containsExactly(payload1, addObjId, ADD, contentId1);
 
-    soft.assertThatThrownBy(
-            () ->
-                buildCommit(
-                    commitLogic,
-                    b ->
-                        b.parentCommitId(tip.id())
-                            .addAdds(commitAdd(key, payload2, replaceObjId, null, contentId2))))
+    soft.assertThatThrownBy(() ->
+            buildCommit(
+                commitLogic,
+                b ->
+                    b.parentCommitId(tip.id())
+                        .addAdds(commitAdd(key, payload2, replaceObjId, null, contentId2))))
         .isInstanceOf(CommitConflictException.class);
 
     CommitObj tip2 =
@@ -720,32 +695,30 @@ public class TestCommitConflicts {
         .containsExactly(payload1, addObjId, ADD, contentId);
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                commitLogic.doCommit(
-                    stdCommit()
-                        .parentCommitId(tip.id())
-                        .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
-                        // rename
-                        .addAdds(commitAdd(key2, payload1, addObjId, null, contentId))
-                        // re-add
-                        .addAdds(commitAdd(key1, payload2, readdObjId, null, contentId))
-                        .build(),
-                    emptyList()))
+        .isThrownBy(() ->
+            commitLogic.doCommit(
+                stdCommit()
+                    .parentCommitId(tip.id())
+                    .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
+                    // rename
+                    .addAdds(commitAdd(key2, payload1, addObjId, null, contentId))
+                    // re-add
+                    .addAdds(commitAdd(key1, payload2, readdObjId, null, contentId))
+                    .build(),
+                emptyList()))
         .withMessageStartingWith("Duplicate content ID");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                commitLogic.doCommit(
-                    stdCommit()
-                        .parentCommitId(tip.id())
-                        .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
-                        // rename
-                        .addAdds(commitAdd(key2, payload1, addObjId, addObjId, contentId))
-                        // re-add
-                        .addAdds(commitAdd(key1, payload2, readdObjId, addObjId, contentId))
-                        .build(),
-                    emptyList()))
+        .isThrownBy(() ->
+            commitLogic.doCommit(
+                stdCommit()
+                    .parentCommitId(tip.id())
+                    .addRemoves(commitRemove(key1, payload1, addObjId, contentId))
+                    // rename
+                    .addAdds(commitAdd(key2, payload1, addObjId, addObjId, contentId))
+                    // re-add
+                    .addAdds(commitAdd(key1, payload2, readdObjId, addObjId, contentId))
+                    .build(),
+                emptyList()))
         .withMessageStartingWith("Duplicate content ID");
   }
 
@@ -853,15 +826,14 @@ public class TestCommitConflicts {
             e -> e.content().contentId())
         .containsExactly(payload, addObjId, ADD, contentId);
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.doCommit(
-                    stdCommit()
-                        .parentCommitId(tip.id())
-                        .addRemoves(commitRemove(key1, payload, addObjId, contentId))
-                        .addAdds(commitAdd(key2, payload, addObjId, expectedValue, contentId))
-                        .build(),
-                    emptyList()))
+    soft.assertThatThrownBy(() ->
+            commitLogic.doCommit(
+                stdCommit()
+                    .parentCommitId(tip.id())
+                    .addRemoves(commitRemove(key1, payload, addObjId, contentId))
+                    .addAdds(commitAdd(key2, payload, addObjId, expectedValue, contentId))
+                    .build(),
+                emptyList()))
         .isInstanceOf(CommitConflictException.class)
         .asInstanceOf(type(CommitConflictException.class))
         .extracting(CommitConflictException::conflicts)
@@ -914,14 +886,13 @@ public class TestCommitConflicts {
     CommitLogic commitLogic = commitLogic(persist);
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () -> {
-              CreateCommit.Builder b = stdCommit().message("hello");
-              adds.forEach(b::addAdds);
-              removes.forEach(b::addRemoves);
-              unchanged.forEach(b::addUnchanged);
-              commitLogic.doCommit(b.build(), emptyList());
-            })
+        .isThrownBy(() -> {
+          CreateCommit.Builder b = stdCommit().message("hello");
+          adds.forEach(b::addAdds);
+          removes.forEach(b::addRemoves);
+          unchanged.forEach(b::addUnchanged);
+          commitLogic.doCommit(b.build(), emptyList());
+        })
         .withMessage("Duplicate key: " + key);
   }
 }

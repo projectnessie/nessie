@@ -96,13 +96,12 @@ public class ITAuthAndIcebergREST extends WithNessie {
 
     List<ClientScopeRepresentation> scopes =
         clientScopes.stream()
-            .map(
-                scopeName -> {
-                  ClientScopeRepresentation scope = new ClientScopeRepresentation();
-                  scope.setName(scopeName);
-                  scope.setProtocol("openid-connect");
-                  return scope;
-                })
+            .map(scopeName -> {
+              ClientScopeRepresentation scope = new ClientScopeRepresentation();
+              scope.setName(scopeName);
+              scope.setProtocol("openid-connect");
+              return scope;
+            })
             .collect(Collectors.toList());
     realm.setClientScopes(scopes);
   }
@@ -124,13 +123,12 @@ public class ITAuthAndIcebergREST extends WithNessie {
               () -> cli.execute(ImmutableConnectCommandSpec.builder().uri(nessieApiUri).build()))
           .isInstanceOf(NessieNotAuthorizedException.class);
 
-      soft.assertThatCode(
-              () ->
-                  cli.execute(
-                      ImmutableConnectCommandSpec.builder()
-                          .uri(icebergUri)
-                          .putParameter("token", bearerToken)
-                          .build()))
+      soft.assertThatCode(() ->
+              cli.execute(
+                  ImmutableConnectCommandSpec.builder()
+                      .uri(icebergUri)
+                      .putParameter("token", bearerToken)
+                      .build()))
           .doesNotThrowAnyException();
       soft.assertThat(cli.capturedOutput())
           .containsExactly(
@@ -141,13 +139,12 @@ public class ITAuthAndIcebergREST extends WithNessie {
                   "Successfully connected to Nessie REST at %s/ - Nessie API version 2, spec version 2.2.0",
                   nessieApiUri));
 
-      soft.assertThatCode(
-              () ->
-                  cli.execute(
-                      ImmutableConnectCommandSpec.builder()
-                          .uri(icebergUri)
-                          .putParameter(CONF_NESSIE_AUTH_TOKEN, bearerToken)
-                          .build()))
+      soft.assertThatCode(() ->
+              cli.execute(
+                  ImmutableConnectCommandSpec.builder()
+                      .uri(icebergUri)
+                      .putParameter(CONF_NESSIE_AUTH_TOKEN, bearerToken)
+                      .build()))
           .doesNotThrowAnyException();
       soft.assertThat(cli.capturedOutput())
           .containsExactly(

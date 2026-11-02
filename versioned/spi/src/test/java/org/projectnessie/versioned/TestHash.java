@@ -191,10 +191,8 @@ public class TestHash {
   static Stream<Arguments> bytesToLong() {
     return stringToLong()
         .map(Arguments::get)
-        .map(
-            args ->
-                Arguments.of(
-                    ByteString.fromHex((String) args[0]), ((Integer) args[1]) / 2, args[2]));
+        .map(args ->
+            Arguments.of(ByteString.fromHex((String) args[0]), ((Integer) args[1]) / 2, args[2]));
   }
 
   static Stream<Arguments> stringToLong() {

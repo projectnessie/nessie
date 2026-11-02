@@ -103,12 +103,11 @@ public class ITOpenApiValidation {
       await()
           .timeout(30, SECONDS)
           .pollInterval(100, MICROSECONDS)
-          .until(
-              () -> {
-                InspectContainerResponse.ContainerState state =
-                    dockerClient.inspectContainerCmd(exec.getId()).exec().getState();
-                return FALSE.equals(state.getRunning());
-              });
+          .until(() -> {
+            InspectContainerResponse.ContainerState state =
+                dockerClient.inspectContainerCmd(exec.getId()).exec().getState();
+            return FALSE.equals(state.getRunning());
+          });
 
       InspectContainerResponse.ContainerState state =
           dockerClient.inspectContainerCmd(exec.getId()).exec().getState();

@@ -137,10 +137,9 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
             .durationSeconds(1234)
             .externalId("external-id")
             .serialNumber("42")
-            .overrideConfiguration(
-                builder ->
-                    builder.credentialsProvider(
-                        () -> AwsBasicCredentials.create("accessKeyId", "secretAccessKey")))
+            .overrideConfiguration(builder ->
+                builder.credentialsProvider(
+                    () -> AwsBasicCredentials.create("accessKeyId", "secretAccessKey")))
             .build();
 
     AssumeRoleResponse response = stsClient.assumeRole(request);
@@ -155,10 +154,9 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   @SuppressWarnings("resource")
   @Test
   public void listBuckets() {
-    createServer(
-        b ->
-            b.putBuckets("secret", Bucket.builder().build())
-                .putBuckets(BUCKET, Bucket.builder().build()));
+    createServer(b ->
+        b.putBuckets("secret", Bucket.builder().build())
+            .putBuckets(BUCKET, Bucket.builder().build()));
 
     soft.assertThat(s3.listBuckets())
         .extracting(ListBucketsResponse::buckets)
@@ -187,19 +185,18 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     Bucket.Lister lister =
         (String prefix, String offset) ->
             IntStream.range(0, 400_000)
-                .mapToObj(
-                    i ->
-                        new ListElement() {
-                          @Override
-                          public String key() {
-                            return intToKey.apply(i);
-                          }
+                .mapToObj(i ->
+                    new ListElement() {
+                      @Override
+                      public String key() {
+                        return intToKey.apply(i);
+                      }
 
-                          @Override
-                          public MockObject object() {
-                            return MockObject.builder().etag(Integer.toString(i)).build();
-                          }
-                        });
+                      @Override
+                      public MockObject object() {
+                        return MockObject.builder().etag(Integer.toString(i)).build();
+                      }
+                    });
 
     createServer(b -> b.putBuckets(BUCKET, Bucket.builder().lister(lister).build()));
 
@@ -275,14 +272,10 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   public void deleteObject() {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .object(objects::get)
-                    .deleter(o -> objects.remove(o) != null)
-                    .build()));
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder().object(objects::get).deleter(o -> objects.remove(o) != null).build()));
 
     MockObject obj = ImmutableMockObject.builder().build();
     objects.put(MY_OBJECT_KEY, obj);
@@ -303,24 +296,17 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   public void batchDeleteObject() {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .object(objects::get)
-                    .deleter(o -> objects.remove(o) != null)
-                    .build()));
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder().object(objects::get).deleter(o -> objects.remove(o) != null).build()));
 
     MockObject obj = ImmutableMockObject.builder().build();
     objects.put(MY_OBJECT_KEY, obj);
 
-    soft.assertThatThrownBy(
-            () ->
-                s3.deleteObjects(
-                    b ->
-                        b.bucket(NOT_A_BUCKET)
-                            .delete(d -> d.objects(oi -> oi.key(DOES_NOT_EXIST)))))
+    soft.assertThatThrownBy(() ->
+            s3.deleteObjects(
+                b -> b.bucket(NOT_A_BUCKET).delete(d -> d.objects(oi -> oi.key(DOES_NOT_EXIST)))))
         .isInstanceOf(NoSuchBucketException.class);
     soft.assertThat(
             s3.deleteObjects(
@@ -345,14 +331,10 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   public void batchDeleteNestedObjects() {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .object(objects::get)
-                    .deleter(o -> objects.remove(o) != null)
-                    .build()));
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder().object(objects::get).deleter(o -> objects.remove(o) != null).build()));
 
     MockObject obj = ImmutableMockObject.builder().build();
     String key1 = "foo/bar/baz/mytable/metadata/00000.metadata.json";
@@ -361,14 +343,12 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     objects.put(key2, obj);
 
     soft.assertThat(
-            s3.deleteObjects(
-                b ->
-                    b.bucket(BUCKET)
-                        .delete(
-                            d ->
-                                d.objects(
-                                    ObjectIdentifier.builder().key(key1).build(),
-                                    ObjectIdentifier.builder().key(key2).build()))))
+            s3.deleteObjects(b ->
+                b.bucket(BUCKET)
+                    .delete(d ->
+                        d.objects(
+                            ObjectIdentifier.builder().key(key1).build(),
+                            ObjectIdentifier.builder().key(key2).build()))))
         .isNotNull();
     soft.assertThat(objects).isEmpty();
   }
@@ -378,10 +358,8 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
   public void getObject() {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
+    createServer(b ->
+        b.putBuckets(BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
 
     byte[] content = "Hello World\nHello Nessie!".getBytes(StandardCharsets.UTF_8);
 
@@ -432,42 +410,40 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     AtomicReference<String> writtenType = new AtomicReference<>();
     AtomicReference<byte[]> writtenData = new AtomicReference<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .updater(
-                        (key, mode) ->
-                            new Bucket.ObjectUpdater() {
-                              @Override
-                              public Bucket.ObjectUpdater append(long position, InputStream data) {
-                                try {
-                                  writtenData.set(IoUtils.toByteArray(data));
-                                } catch (IOException e) {
-                                  throw new RuntimeException(e);
-                                }
-                                return this;
-                              }
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder()
+                .updater((key, mode) ->
+                    new Bucket.ObjectUpdater() {
+                      @Override
+                      public Bucket.ObjectUpdater append(long position, InputStream data) {
+                        try {
+                          writtenData.set(IoUtils.toByteArray(data));
+                        } catch (IOException e) {
+                          throw new RuntimeException(e);
+                        }
+                        return this;
+                      }
 
-                              @Override
-                              public Bucket.ObjectUpdater flush() {
-                                return this;
-                              }
+                      @Override
+                      public Bucket.ObjectUpdater flush() {
+                        return this;
+                      }
 
-                              @Override
-                              public Bucket.ObjectUpdater setContentType(String contentType) {
-                                writtenType.set(contentType);
-                                return this;
-                              }
+                      @Override
+                      public Bucket.ObjectUpdater setContentType(String contentType) {
+                        writtenType.set(contentType);
+                        return this;
+                      }
 
-                              @Override
-                              public MockObject commit() {
-                                writtenKey.set(key);
-                                return MockObject.builder().contentType(writtenType.get()).build();
-                              }
-                            })
-                    .build()));
+                      @Override
+                      public MockObject commit() {
+                        writtenKey.set(key);
+                        return MockObject.builder().contentType(writtenType.get()).build();
+                      }
+                    })
+                .build()));
 
     s3.putObject(
         PutObjectRequest.builder()
@@ -489,42 +465,40 @@ public class TestWithS3Client extends AbstractObjectStorageMockServer {
     AtomicReference<String> writtenType = new AtomicReference<>();
     AtomicReference<byte[]> writtenData = new AtomicReference<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .updater(
-                        (key, mode) ->
-                            new Bucket.ObjectUpdater() {
-                              @Override
-                              public Bucket.ObjectUpdater append(long position, InputStream data) {
-                                try {
-                                  writtenData.set(IoUtils.toByteArray(data));
-                                } catch (IOException e) {
-                                  throw new RuntimeException(e);
-                                }
-                                return this;
-                              }
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder()
+                .updater((key, mode) ->
+                    new Bucket.ObjectUpdater() {
+                      @Override
+                      public Bucket.ObjectUpdater append(long position, InputStream data) {
+                        try {
+                          writtenData.set(IoUtils.toByteArray(data));
+                        } catch (IOException e) {
+                          throw new RuntimeException(e);
+                        }
+                        return this;
+                      }
 
-                              @Override
-                              public Bucket.ObjectUpdater flush() {
-                                return this;
-                              }
+                      @Override
+                      public Bucket.ObjectUpdater flush() {
+                        return this;
+                      }
 
-                              @Override
-                              public Bucket.ObjectUpdater setContentType(String contentType) {
-                                writtenType.set(contentType);
-                                return this;
-                              }
+                      @Override
+                      public Bucket.ObjectUpdater setContentType(String contentType) {
+                        writtenType.set(contentType);
+                        return this;
+                      }
 
-                              @Override
-                              public MockObject commit() {
-                                writtenKey.set(key);
-                                return MockObject.builder().contentType(writtenType.get()).build();
-                              }
-                            })
-                    .build()));
+                      @Override
+                      public MockObject commit() {
+                        writtenKey.set(key);
+                        return MockObject.builder().contentType(writtenType.get()).build();
+                      }
+                    })
+                .build()));
 
     s3.putObject(
         PutObjectRequest.builder().bucket(BUCKET).key("my-object").build(),

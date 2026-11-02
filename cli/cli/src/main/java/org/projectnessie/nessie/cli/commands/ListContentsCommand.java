@@ -55,12 +55,11 @@ public class ListContentsCommand extends NessieListingCommand<ListContentsComman
     }
 
     return entries.stream()
-        .map(
-            e ->
-                new AttributedStringBuilder()
-                    .append(format("%15s ", e.getType()), STYLE_FAINT)
-                    .append(e.getName().toString())
-                    .toAnsi(cli.terminal()));
+        .map(e ->
+            new AttributedStringBuilder()
+                .append(format("%15s ", e.getType()), STYLE_FAINT)
+                .append(e.getName().toString())
+                .toAnsi(cli.terminal()));
   }
 
   @Override

@@ -116,40 +116,37 @@ public class ShowContentCommand extends NessieListingCommand<ShowContentCommandS
       // Iceberg
 
       cli.icebergClient()
-          .ifPresent(
-              iceberg -> {
-                Object metadata;
-                switch (spec.getContentKind()) {
-                  case "TABLE" ->
-                      metadata =
-                          ((BaseTable)
-                                  iceberg.loadTable(TableIdentifier.of(key.getElementsArray())))
-                              .operations()
-                              .current();
-                  case "VIEW" ->
-                      metadata =
-                          ((BaseView) iceberg.loadView(TableIdentifier.of(key.getElementsArray())))
-                              .operations()
-                              .current();
-                  case "NAMESPACE" ->
-                      metadata =
-                          iceberg.loadNamespaceMetadata(Namespace.of(key.getElementsArray()));
-                  default -> {
-                    return;
-                  }
-                }
+          .ifPresent(iceberg -> {
+            Object metadata;
+            switch (spec.getContentKind()) {
+              case "TABLE" ->
+                  metadata =
+                      ((BaseTable) iceberg.loadTable(TableIdentifier.of(key.getElementsArray())))
+                          .operations()
+                          .current();
+              case "VIEW" ->
+                  metadata =
+                      ((BaseView) iceberg.loadView(TableIdentifier.of(key.getElementsArray())))
+                          .operations()
+                          .current();
+              case "NAMESPACE" ->
+                  metadata = iceberg.loadNamespaceMetadata(Namespace.of(key.getElementsArray()));
+              default -> {
+                return;
+              }
+            }
 
-                writer.println();
-                writer.println(
-                    new AttributedString("Iceberg metadata:", AttributedStyle.BOLD.underline())
-                        .toAnsi(terminal));
+            writer.println();
+            writer.println(
+                new AttributedString("Iceberg metadata:", AttributedStyle.BOLD.underline())
+                    .toAnsi(terminal));
 
-                try {
-                  jsonPretty.prettyPrint(IcebergMetadataJson.toPrettyJson(metadata));
-                } catch (JsonProcessingException e) {
-                  throw new RuntimeException(e);
-                }
-              });
+            try {
+              jsonPretty.prettyPrint(IcebergMetadataJson.toPrettyJson(metadata));
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+          });
     } finally {
       writer.flush();
     }

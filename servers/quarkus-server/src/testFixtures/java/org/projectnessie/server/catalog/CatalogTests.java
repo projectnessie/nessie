@@ -930,13 +930,12 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     Table table = catalog.loadTable(TABLE);
     FileIO io = table.io();
     try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
-      tasks.forEach(
-          task -> {
-            InputFile file = io.newInputFile(task.file().location());
-            assertThat(file.exists())
-                .as("Table %s should remain unaffected by dropping %s", TABLE, RENAMED_TABLE)
-                .isTrue();
-          });
+      tasks.forEach(task -> {
+        InputFile file = io.newInputFile(task.file().location());
+        assertThat(file.exists())
+            .as("Table %s should remain unaffected by dropping %s", TABLE, RENAMED_TABLE)
+            .isTrue();
+      });
     }
   }
 
@@ -3038,9 +3037,8 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
   public void tableCreationWithoutNamespace() {
     assumeTrue(requiresNamespaceCreate());
 
-    assertThatThrownBy(
-            () ->
-                catalog().buildTable(TableIdentifier.of("non-existing", "table"), SCHEMA).create())
+    assertThatThrownBy(() ->
+            catalog().buildTable(TableIdentifier.of("non-existing", "table"), SCHEMA).create())
         .isInstanceOf(NoSuchNamespaceException.class)
         .hasMessageContaining("Namespace does not exist: non-existing");
   }
@@ -3276,11 +3274,10 @@ public abstract class CatalogTests<C extends Catalog & SupportsNamespaces> {
     try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
       Streams.stream(tasks)
           .map(FileScanTask::file)
-          .forEach(
-              file ->
-                  assertThat(file.specId())
-                      .as("Spec ID should match")
-                      .isEqualTo(table.spec().specId()));
+          .forEach(file ->
+              assertThat(file.specId())
+                  .as("Spec ID should match")
+                  .isEqualTo(table.spec().specId()));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

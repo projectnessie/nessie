@@ -240,11 +240,10 @@ public class TestStripedIndexImpl {
             StoreIndex<CommitOp> stripe = stripes.get(i);
             int index = i;
             lazyStripes.add(
-                StoreIndexes.lazyStoreIndex(
-                    () -> {
-                      individualLoads[index] = true;
-                      return stripe;
-                    }));
+                StoreIndexes.lazyStoreIndex(() -> {
+                  individualLoads[index] = true;
+                  return stripe;
+                }));
           }
 
           return indexFromSplits(

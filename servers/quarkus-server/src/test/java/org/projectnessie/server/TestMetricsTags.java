@@ -32,13 +32,12 @@ public class TestMetricsTags extends AbstractQuarkusRestWithMetrics {
   void smokeTestMetricsWithTags() {
     String[] lines = getMetrics().split("\n");
     assertThat(lines)
-        .anySatisfy(
-            line ->
-                assertThat(line)
-                    .contains("nessie_versionstore_request_seconds_max")
-                    .contains("application=\"NessieDev\"")
-                    .contains("service=\"nessie\"")
-                    .contains("environment=\"dev\""));
+        .anySatisfy(line ->
+            assertThat(line)
+                .contains("nessie_versionstore_request_seconds_max")
+                .contains("application=\"NessieDev\"")
+                .contains("service=\"nessie\"")
+                .contains("environment=\"dev\""));
   }
 
   @Override

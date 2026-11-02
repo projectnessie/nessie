@@ -60,18 +60,17 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
   public Map<Check, String> check() {
     Map<Check, String> failed = new LinkedHashMap<>();
     getChecks()
-        .forEach(
-            check -> {
-              if (check.type().isRepositoryConfigType()) {
-                canPerformRepositoryConfig(check, failed);
-              } else if (check.type().isContent()) {
-                canPerformOpOnPath(check, failed);
-              } else if (check.type().isRef()) {
-                canPerformOpOnReference(check, failed);
-              } else {
-                canPerformOp(check, failed);
-              }
-            });
+        .forEach(check -> {
+          if (check.type().isRepositoryConfigType()) {
+            canPerformRepositoryConfig(check, failed);
+          } else if (check.type().isContent()) {
+            canPerformOpOnPath(check, failed);
+          } else if (check.type().isRef()) {
+            canPerformOpOnReference(check, failed);
+          } else {
+            canPerformOp(check, failed);
+          }
+        });
     return failed;
   }
 
@@ -182,18 +181,17 @@ final class CelBatchAccessChecker extends AbstractBatchAccessChecker {
       Map<Check, String> failed) {
     boolean allowed =
         compiledRules.getRules().entrySet().stream()
-            .anyMatch(
-                entry -> {
-                  try {
-                    return entry.getValue().execute(Boolean.class, arguments);
-                  } catch (ScriptException e) {
-                    throw new RuntimeException(
-                        String.format(
-                            "Failed to execute authorization rule with id '%s' due to: %s",
-                            entry.getKey(), e.getMessage()),
-                        e);
-                  }
-                });
+            .anyMatch(entry -> {
+              try {
+                return entry.getValue().execute(Boolean.class, arguments);
+              } catch (ScriptException e) {
+                throw new RuntimeException(
+                    String.format(
+                        "Failed to execute authorization rule with id '%s' due to: %s",
+                        entry.getKey(), e.getMessage()),
+                    e);
+              }
+            });
     if (!allowed) {
       failed.put(check, errorMessageSupplier.get());
     }

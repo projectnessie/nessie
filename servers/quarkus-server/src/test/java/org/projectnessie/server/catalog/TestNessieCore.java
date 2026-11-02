@@ -274,18 +274,12 @@ public class TestNessieCore {
             uri.getHost(),
             uri.getRawPath() + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : ""))
         .compose(HttpClientRequest::send)
-        .map(
-            r -> {
-              if (r.statusCode() != 200) {
-                throw new RuntimeException(
-                    "Failed request to "
-                        + uri
-                        + " : HTTP/"
-                        + r.statusCode()
-                        + " "
-                        + r.statusMessage());
-              }
-              return r;
-            });
+        .map(r -> {
+          if (r.statusCode() != 200) {
+            throw new RuntimeException(
+                "Failed request to " + uri + " : HTTP/" + r.statusCode() + " " + r.statusMessage());
+          }
+          return r;
+        });
   }
 }

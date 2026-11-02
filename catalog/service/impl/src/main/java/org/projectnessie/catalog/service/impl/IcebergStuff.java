@@ -80,18 +80,17 @@ public class IcebergStuff {
     return tasksService
         .forPersist(persist)
         .submit(snapshotTaskRequest)
-        .thenCompose(
-            snapshotObj -> {
-              NessieEntitySnapshot<?> entitySnapshot = snapshotObj.snapshot();
-              if (entitySnapshot instanceof NessieTableSnapshot) {
-                return completedStage((S) mapToTableSnapshot(snapshotObj));
-              }
-              if (entitySnapshot instanceof NessieViewSnapshot) {
-                return completedStage((S) mapToViewSnapshot(snapshotObj));
-              }
-              throw new IllegalArgumentException(
-                  "Unsupported snapshot type: " + snapshotObj.getClass().getSimpleName());
-            });
+        .thenCompose(snapshotObj -> {
+          NessieEntitySnapshot<?> entitySnapshot = snapshotObj.snapshot();
+          if (entitySnapshot instanceof NessieTableSnapshot) {
+            return completedStage((S) mapToTableSnapshot(snapshotObj));
+          }
+          if (entitySnapshot instanceof NessieViewSnapshot) {
+            return completedStage((S) mapToViewSnapshot(snapshotObj));
+          }
+          throw new IllegalArgumentException(
+              "Unsupported snapshot type: " + snapshotObj.getClass().getSimpleName());
+        });
   }
 
   @Nonnull

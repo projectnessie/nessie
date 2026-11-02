@@ -83,18 +83,17 @@ public abstract class AbstractQuarkusSmoke {
           .assignTo(Branch.of(defaultBranch.getName(), EMPTY))
           .assign();
       api().getAllReferences().stream()
-          .forEach(
-              ref -> {
-                try {
-                  if (ref instanceof Branch b && !ref.getName().equals(defaultBranch.getName())) {
-                    api().deleteBranch().branch(b).delete();
-                  } else if (ref instanceof Tag t) {
-                    api().deleteTag().tag(t).delete();
-                  }
-                } catch (NessieConflictException | NessieNotFoundException e) {
-                  throw new RuntimeException(e);
-                }
-              });
+          .forEach(ref -> {
+            try {
+              if (ref instanceof Branch b && !ref.getName().equals(defaultBranch.getName())) {
+                api().deleteBranch().branch(b).delete();
+              } else if (ref instanceof Tag t) {
+                api().deleteTag().tag(t).delete();
+              }
+            } catch (NessieConflictException | NessieNotFoundException e) {
+              throw new RuntimeException(e);
+            }
+          });
       api().close();
       api = null;
     }

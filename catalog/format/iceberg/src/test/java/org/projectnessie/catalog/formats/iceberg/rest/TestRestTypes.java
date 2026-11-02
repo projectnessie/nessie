@@ -101,32 +101,31 @@ public class TestRestTypes {
       lines = input.collect(Collectors.toList());
     }
     return lines.stream()
-        .map(
-            ln -> {
-              int i = ln.indexOf(": ");
-              String clazzSimpleName = ln.substring(0, i);
-              String json = ln.substring(i + 2);
-              String nessieSimpleName;
-              if (clazzSimpleName.equals("ReportMetricsRequest")) {
-                nessieSimpleName = "MetricsReport";
-              } else {
-                nessieSimpleName = clazzSimpleName;
-              }
-              Class<?> nessieType =
-                  findClass(
-                      nessieSimpleName,
-                      "Iceberg",
-                      "org.projectnessie.catalog.formats.iceberg.rest",
-                      "org.projectnessie.catalog.formats.iceberg.meta",
-                      "org.projectnessie.catalog.formats.iceberg.metrics");
-              Class<?> icebergType =
-                  findClass(
-                      clazzSimpleName,
-                      "",
-                      "org.apache.iceberg.rest.requests",
-                      "org.apache.iceberg.rest.responses");
-              return arguments(clazzSimpleName, json, nessieType, icebergType);
-            });
+        .map(ln -> {
+          int i = ln.indexOf(": ");
+          String clazzSimpleName = ln.substring(0, i);
+          String json = ln.substring(i + 2);
+          String nessieSimpleName;
+          if (clazzSimpleName.equals("ReportMetricsRequest")) {
+            nessieSimpleName = "MetricsReport";
+          } else {
+            nessieSimpleName = clazzSimpleName;
+          }
+          Class<?> nessieType =
+              findClass(
+                  nessieSimpleName,
+                  "Iceberg",
+                  "org.projectnessie.catalog.formats.iceberg.rest",
+                  "org.projectnessie.catalog.formats.iceberg.meta",
+                  "org.projectnessie.catalog.formats.iceberg.metrics");
+          Class<?> icebergType =
+              findClass(
+                  clazzSimpleName,
+                  "",
+                  "org.apache.iceberg.rest.requests",
+                  "org.apache.iceberg.rest.responses");
+          return arguments(clazzSimpleName, json, nessieType, icebergType);
+        });
   }
 
   static Class<?> findClass(String simpleName, String prefix, String... packageNames) {

@@ -176,13 +176,12 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         requestMeta.addKeyAction(key, META_SET_LOCATION.name());
         catalogService
             .validateStorageLocation(location)
-            .ifPresent(
-                msg -> {
-                  throw new IllegalArgumentException(
-                      format(
-                          "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
-                          key, msg));
-                });
+            .ifPresent(msg -> {
+              throw new IllegalArgumentException(
+                  format(
+                      "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
+                      key, msg));
+            });
       }
     }
 
@@ -425,13 +424,12 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         requestMeta.addKeyAction(key, CatalogOps.META_SET_LOCATION.name());
         catalogService
             .validateStorageLocation(location)
-            .ifPresent(
-                msg -> {
-                  throw new IllegalArgumentException(
-                      format(
-                          "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
-                          key, msg));
-                });
+            .ifPresent(msg -> {
+              throw new IllegalArgumentException(
+                  format(
+                      "Location for namespace '%s' cannot be associated with any configured object storage location: %s",
+                      key, msg));
+            });
       }
     }
     treeService.commitMultipleOperations(ref.getName(), ref.getHash(), ops, requestMeta.build());
@@ -450,11 +448,10 @@ public class IcebergApiV1NamespaceResource extends IcebergApiV1ResourceBase {
         .forEach(response::addMissing);
 
     newProperties.entrySet().stream()
-        .filter(
-            e -> {
-              String newValue = oldNamespace.getProperties().get(e.getKey());
-              return !e.getValue().equals(newValue);
-            })
+        .filter(e -> {
+          String newValue = oldNamespace.getProperties().get(e.getKey());
+          return !e.getValue().equals(newValue);
+        })
         .map(Map.Entry::getKey)
         .forEach(response::addUpdated);
 

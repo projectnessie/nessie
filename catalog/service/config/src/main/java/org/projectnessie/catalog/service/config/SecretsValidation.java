@@ -100,9 +100,8 @@ public abstract class SecretsValidation {
         .map(fs -> validateAdlsFileSystem(fs, "<default>"))
         .ifPresent(failures::addAll);
     adls.fileSystems()
-        .forEach(
-            (key, value) ->
-                failures.addAll(validateAdlsFileSystem(value, value.name().orElse(key))));
+        .forEach((key, value) ->
+            failures.addAll(validateAdlsFileSystem(value, value.name().orElse(key))));
     return failures;
   }
 

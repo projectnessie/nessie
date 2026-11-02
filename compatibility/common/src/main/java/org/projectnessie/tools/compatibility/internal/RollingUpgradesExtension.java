@@ -68,10 +68,9 @@ public class RollingUpgradesExtension extends AbstractMultiVersionExtension {
                 Arrays.stream(c.getClass().getMethods())
                     .filter(m -> m.getName().equals("client"))
                     .findFirst()
-                    .orElseThrow(
-                        () ->
-                            new IllegalStateException(
-                                "No such method client(MongoClient) on " + c.getClass().getName()));
+                    .orElseThrow(() ->
+                        new IllegalStateException(
+                            "No such method client(MongoClient) on " + c.getClass().getName()));
 
             c.getClass()
                 .getMethod("databaseName", String.class)

@@ -117,9 +117,8 @@ class TestNessieError {
             () -> client.newRequest().path("blankParameterQueryGet").queryParam("hash", "").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessage("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank");
-    soft.assertThatThrownBy(
-            () ->
-                client.newRequest().path("blankParameterQueryGet").queryParam("hash", "   ").get())
+    soft.assertThatThrownBy(() ->
+            client.newRequest().path("blankParameterQueryGet").queryParam("hash", "   ").get())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessage("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank");
   }

@@ -181,35 +181,31 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
   void updateSecrets(Map<String, Secret> secrets, Map<String, SecretType> secretTypes) {
     CompletableFuture<?>[] futures =
         secrets.entrySet().stream()
-            .map(
-                e -> {
-                  Secret secret = e.getValue();
+            .map(e -> {
+              Secret secret = e.getValue();
 
-                  Map<String, Object> value;
-                  if (secret instanceof KeySecret key) {
-                    value = Map.of("key", key.key());
-                  } else if (secret instanceof BasicCredentials basic) {
-                    value = Map.of("name", basic.name(), "secret", basic.secret());
-                  } else if (secret instanceof TokenSecret token) {
-                    value =
-                        token.expiresAt().isPresent()
-                            ? Map.of(
-                                "token",
-                                token.token(),
-                                "expiresAt",
-                                token.expiresAt().get().toString())
-                            : Map.of("token", token.token());
-                  } else {
-                    throw new RuntimeException("Unsupported secret type: " + secret);
-                  }
+              Map<String, Object> value;
+              if (secret instanceof KeySecret key) {
+                value = Map.of("key", key.key());
+              } else if (secret instanceof BasicCredentials basic) {
+                value = Map.of("name", basic.name(), "secret", basic.secret());
+              } else if (secret instanceof TokenSecret token) {
+                value =
+                    token.expiresAt().isPresent()
+                        ? Map.of(
+                            "token", token.token(), "expiresAt", token.expiresAt().get().toString())
+                        : Map.of("token", token.token());
+              } else {
+                throw new RuntimeException("Unsupported secret type: " + secret);
+              }
 
-                  return secretsAccessor
-                      .kv2(VAULT_MOUNT)
-                      .updateSecret(
-                          NESSIE_SECRETS_PATH + "/" + e.getKey().replace('.', '/'),
-                          new VaultSecretsKV2UpdateSecretOptions(),
-                          value);
-                })
+              return secretsAccessor
+                  .kv2(VAULT_MOUNT)
+                  .updateSecret(
+                      NESSIE_SECRETS_PATH + "/" + e.getKey().replace('.', '/'),
+                      new VaultSecretsKV2UpdateSecretOptions(),
+                      value);
+            })
             .map(CompletionStage::toCompletableFuture)
             .toArray(CompletableFuture[]::new);
     try {

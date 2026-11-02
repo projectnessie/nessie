@@ -38,37 +38,34 @@ public class TestKeyRanges {
   @Test
   public void entriesWrongParameters() {
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keyRanges(
-                    null,
-                    KeyRestrictions.builder()
-                        .minKey(ContentKey.of("foo"))
-                        .maxKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keyRanges(
+                null,
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("foo"))
+                    .maxKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keyRanges(
-                    null,
-                    KeyRestrictions.builder()
-                        .maxKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keyRanges(
+                null,
+                KeyRestrictions.builder()
+                    .maxKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keyRanges(
-                    null,
-                    KeyRestrictions.builder()
-                        .minKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keyRanges(
+                null,
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
   }

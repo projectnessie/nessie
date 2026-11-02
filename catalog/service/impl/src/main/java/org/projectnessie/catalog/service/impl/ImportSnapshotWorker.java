@@ -181,10 +181,9 @@ final class ImportSnapshotWorker {
                     viewMetadata.versions().stream()
                         .filter(v -> v.versionId() == viewMetadata.currentVersionId())
                         .findFirst()
-                        .orElseThrow(
-                            () ->
-                                new IllegalStateException(
-                                    "Iceberg view has no version element with the id for the current-version-ID"))
+                        .orElseThrow(() ->
+                            new IllegalStateException(
+                                "Iceberg view has no version element with the id for the current-version-ID"))
                         .timestampMs());
       } catch (Exception e) {
         throw new RuntimeException(

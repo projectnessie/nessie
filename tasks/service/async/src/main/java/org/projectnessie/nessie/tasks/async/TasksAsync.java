@@ -24,11 +24,10 @@ public interface TasksAsync {
   Clock clock();
 
   default CompletionStage<Void> call(Runnable runnable) {
-    return supply(
-        () -> {
-          runnable.run();
-          return null;
-        });
+    return supply(() -> {
+      runnable.run();
+      return null;
+    });
   }
 
   <R> CompletionStage<R> supply(Supplier<R> runnable);

@@ -134,22 +134,20 @@ public abstract class AbstractFiles {
         .putBuckets(
             bucket(),
             Bucket.builder()
-                .lister(
-                    (String prefix, String offset) ->
-                        keys.stream()
-                            .map(
-                                key ->
-                                    new Bucket.ListElement() {
-                                      @Override
-                                      public String key() {
-                                        return key;
-                                      }
+                .lister((String prefix, String offset) ->
+                    keys.stream()
+                        .map(key ->
+                            new Bucket.ListElement() {
+                              @Override
+                              public String key() {
+                                return key;
+                              }
 
-                                      @Override
-                                      public MockObject object() {
-                                        return MockObject.builder().build();
-                                      }
-                                    }))
+                              @Override
+                              public MockObject object() {
+                                return MockObject.builder().build();
+                              }
+                            }))
                 .object(key -> keys.contains(key) ? MockObject.builder().build() : null)
                 .deleter(keys::remove)
                 .build())

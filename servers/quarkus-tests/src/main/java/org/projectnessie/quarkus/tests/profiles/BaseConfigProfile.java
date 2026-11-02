@@ -37,11 +37,10 @@ public class BaseConfigProfile implements QuarkusTestProfile {
     // Pass relevant system properties to Quarkus integration tests, which are run "externally"
     // in a Docker container. This code is rather a "no op" for Quarkus unit tests.
     System.getProperties().entrySet().stream()
-        .filter(
-            e -> {
-              String key = e.getKey().toString();
-              return key.startsWith("user.") || key.startsWith("file.") || key.startsWith("path.");
-            })
+        .filter(e -> {
+          String key = e.getKey().toString();
+          return key.startsWith("user.") || key.startsWith("file.") || key.startsWith("path.");
+        })
         .forEach(e -> config.put(e.getKey().toString(), e.getValue().toString()));
 
     VERSION_STORE_CONFIG = config.build();

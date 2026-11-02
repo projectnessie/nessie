@@ -69,24 +69,22 @@ public class CreateMissingNamespaces extends CommittingCommand {
           branchesStream(api, n -> (branchNames.isEmpty() || branchesNotFound.remove(n)))
               .map(r -> processReference(api, r))
               .sorted(Comparator.comparing(r -> r.branch().getName()))
-              .peek(
-                  r ->
-                      r.error()
-                          .ifPresent(
-                              err -> {
-                                if (r.error().isPresent()) {
-                                  spec.commandLine()
-                                      .getErr()
-                                      .println(
+              .peek(r ->
+                  r.error()
+                      .ifPresent(err -> {
+                        if (r.error().isPresent()) {
+                          spec.commandLine()
+                              .getErr()
+                              .println(
+                                  format(
+                                      "%s%n%s",
+                                      colorScheme.errorText(
                                           format(
-                                              "%s%n%s",
-                                              colorScheme.errorText(
-                                                  format(
-                                                      "Failed to handle missing namespaces for branch %s",
-                                                      r.branch())),
-                                              colorScheme.stackTraceText(err)));
-                                }
-                              }))
+                                              "Failed to handle missing namespaces for branch %s",
+                                              r.branch())),
+                                      colorScheme.stackTraceText(err)));
+                        }
+                      }))
               .map(AggregateResult::fromReferenceResult)
               .reduce(AggregateResult.zero(), AggregateResult::add);
 
@@ -213,18 +211,17 @@ public class CreateMissingNamespaces extends CommittingCommand {
       throws NessieNotFoundException {
     Set<ContentKey> existing = new HashSet<>();
     return api.getEntries().refName(branch.getName()).stream()
-        .flatMap(
-            e -> {
-              ContentKey key = e.getName();
-              if (NAMESPACE.equals(e.getType())) {
-                existing.add(key);
-              }
-              if (key.getElementCount() == 1) {
-                return Stream.empty();
-              }
-              return IntStream.range(1, key.getElementCount())
-                  .mapToObj(i -> ContentKey.of(key.getElements().subList(0, i)));
-            })
+        .flatMap(e -> {
+          ContentKey key = e.getName();
+          if (NAMESPACE.equals(e.getType())) {
+            existing.add(key);
+          }
+          if (key.getElementCount() == 1) {
+            return Stream.empty();
+          }
+          return IntStream.range(1, key.getElementCount())
+              .mapToObj(i -> ContentKey.of(key.getElements().subList(0, i)));
+        })
         .sorted()
         .distinct()
         // The following 'filter' using the 'existing' collection is fine, because the previous

@@ -134,31 +134,28 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
   private Future<List<String>> updateServiceNames() {
     Set<String> previous = new HashSet<>(resolvedAddresses);
     return resolveServiceNames(serviceNames)
-        .map(
-            all ->
-                all.stream().filter(adr -> !AddressResolver.LOCAL_ADDRESSES.contains(adr)).toList())
-        .onSuccess(
-            all -> {
-              // refresh addresses regularly
-              scheduleServiceNameResolution();
+        .map(all ->
+            all.stream().filter(adr -> !AddressResolver.LOCAL_ADDRESSES.contains(adr)).toList())
+        .onSuccess(all -> {
+          // refresh addresses regularly
+          scheduleServiceNameResolution();
 
-              Set<String> resolved = new HashSet<>(all);
-              if (!resolved.equals(previous)) {
-                LOGGER.info(
-                    "Service names for remote cache invalidations {} now resolve to {}",
-                    serviceNames,
-                    all);
-              }
+          Set<String> resolved = new HashSet<>(all);
+          if (!resolved.equals(previous)) {
+            LOGGER.info(
+                "Service names for remote cache invalidations {} now resolve to {}",
+                serviceNames,
+                all);
+          }
 
-              updateResolvedAddresses(all);
-            })
-        .onFailure(
-            t -> {
-              // refresh addresses regularly
-              scheduleServiceNameResolution();
+          updateResolvedAddresses(all);
+        })
+        .onFailure(t -> {
+          // refresh addresses regularly
+          scheduleServiceNameResolution();
 
-              LOGGER.warn("Failed to resolve service names: {}", t.toString());
-            });
+          LOGGER.warn("Failed to resolve service names: {}", t.toString());
+        });
   }
 
   @VisibleForTesting
@@ -259,11 +256,10 @@ public class CacheInvalidationSender implements DistributedCacheInvalidation {
       futures.add(
           httpClient
               .request(HttpMethod.POST, httpPort, address, invalidationUri)
-              .compose(
-                  req ->
-                      req.putHeader("Content-Type", APPLICATION_JSON)
-                          .putHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER, token)
-                          .send(json))
+              .compose(req ->
+                  req.putHeader("Content-Type", APPLICATION_JSON)
+                      .putHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER, token)
+                      .send(json))
               .compose(resp -> resp.body().map(b -> Map.entry(resp, b)))
               .timeout(requestTimeout, TimeUnit.MILLISECONDS)
               .onComplete(

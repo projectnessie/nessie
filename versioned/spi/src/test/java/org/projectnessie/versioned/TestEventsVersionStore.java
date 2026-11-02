@@ -113,15 +113,13 @@ class TestEventsVersionStore {
   void testCommitFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.commit(
             branch1, Optional.of(hash1), commitMeta, operations, validator, addedContents))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    assertThatThrownBy(
-            () ->
-                versionStore.commit(
-                    branch1, Optional.of(hash1), commitMeta, operations, validator, addedContents))
+    assertThatThrownBy(() ->
+            versionStore.commit(
+                branch1, Optional.of(hash1), commitMeta, operations, validator, addedContents))
         .isInstanceOf(e);
     verify(delegate)
         .commit(
@@ -240,21 +238,19 @@ class TestEventsVersionStore {
                 .addSequenceToTransplant(hash1, hash2)
                 .updateCommitMetadata(metadataRewriter)
                 .build()))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    assertThatThrownBy(
-            () ->
-                versionStore.transplant(
-                    TransplantOp.builder()
-                        .fromRef(branch1)
-                        .toBranch(branch2)
-                        .expectedHash(Optional.of(hash1))
-                        .addSequenceToTransplant(hash1, hash2)
-                        .updateCommitMetadata(metadataRewriter)
-                        .build()))
+    assertThatThrownBy(() ->
+            versionStore.transplant(
+                TransplantOp.builder()
+                    .fromRef(branch1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash1))
+                    .addSequenceToTransplant(hash1, hash2)
+                    .updateCommitMetadata(metadataRewriter)
+                    .build()))
         .isInstanceOf(e);
     verify(delegate)
         .transplant(
@@ -370,20 +366,18 @@ class TestEventsVersionStore {
                 .toBranch(branch2)
                 .expectedHash(Optional.of(hash2))
                 .build()))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
-    assertThatThrownBy(
-            () ->
-                versionStore.merge(
-                    MergeOp.builder()
-                        .fromRef(branch1)
-                        .fromHash(hash1)
-                        .toBranch(branch2)
-                        .expectedHash(Optional.of(hash2))
-                        .build()))
+    assertThatThrownBy(() ->
+            versionStore.merge(
+                MergeOp.builder()
+                    .fromRef(branch1)
+                    .fromHash(hash1)
+                    .toBranch(branch2)
+                    .expectedHash(Optional.of(hash2))
+                    .build()))
         .isInstanceOf(e);
     verify(delegate)
         .merge(
@@ -418,10 +412,9 @@ class TestEventsVersionStore {
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testAssignFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.assign(branch1, hash1, hash2))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     assertThatThrownBy(() -> versionStore.assign(branch1, hash1, hash2)).isInstanceOf(e);
     verify(delegate).assign(branch1, hash1, hash2);
@@ -445,10 +438,9 @@ class TestEventsVersionStore {
   @ValueSource(classes = {ReferenceAlreadyExistsException.class, ReferenceConflictException.class})
   void testCreateFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.create(branch1, Optional.of(hash1)))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     assertThatThrownBy(() -> versionStore.create(branch1, Optional.of(hash1))).isInstanceOf(e);
     verify(delegate).create(branch1, Optional.of(hash1));
@@ -472,10 +464,9 @@ class TestEventsVersionStore {
   @ValueSource(classes = {ReferenceNotFoundException.class, ReferenceConflictException.class})
   void testDeleteFailure(Class<? extends VersionStoreException> e) throws Exception {
     when(delegate.delete(branch1, hash1))
-        .thenAnswer(
-            invocation -> {
-              throw e.getConstructor(String.class).newInstance("irrelevant");
-            });
+        .thenAnswer(invocation -> {
+          throw e.getConstructor(String.class).newInstance("irrelevant");
+        });
     EventsVersionStore versionStore = new EventsVersionStore(delegate, sink);
     assertThatThrownBy(() -> versionStore.delete(branch1, hash1)).isInstanceOf(e);
     verify(delegate).delete(branch1, hash1);

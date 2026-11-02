@@ -136,14 +136,13 @@ public abstract class MockManifestFile implements IndexedRecord {
     StructType partitionType = partitionSpec.partitionType();
 
     return IntStream.range(0, numEntries())
-        .mapToObj(
-            i ->
-                ImmutableMockManifestEntry.builder()
-                    .sequenceNumber(0L)
-                    .snapshotId(0L)
-                    .filePath(dataFilePath(baseDataFilePath(), i))
-                    .partitionType(partitionType)
-                    .build())
+        .mapToObj(i ->
+            ImmutableMockManifestEntry.builder()
+                .sequenceNumber(0L)
+                .snapshotId(0L)
+                .filePath(dataFilePath(baseDataFilePath(), i))
+                .partitionType(partitionType)
+                .build())
         .collect(Collectors.toList());
   }
 

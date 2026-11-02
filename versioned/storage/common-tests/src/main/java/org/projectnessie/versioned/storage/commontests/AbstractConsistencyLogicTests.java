@@ -272,15 +272,13 @@ public class AbstractConsistencyLogicTests {
         .isInstanceOf(NoSuchElementException.class)
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.findCommonAncestor(branch1commit1, objIdFromString("1111111111111111")))
+    soft.assertThatThrownBy(() ->
+            commitLogic.findCommonAncestor(branch1commit1, objIdFromString("1111111111111111")))
         .isInstanceOf(NoSuchElementException.class)
         .hasMessage("Commit '1111111111111111' not found");
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), branch2commit1))
+    soft.assertThatThrownBy(() ->
+            commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), branch2commit1))
         .isInstanceOf(NoSuchElementException.class)
         .hasMessage("Commit '1111111111111111' not found");
 
@@ -729,17 +727,16 @@ public class AbstractConsistencyLogicTests {
 
     // Put the correct expected value into the Commit-ADD operation, but "break" it in the callback
     // by adding a wrong expected value-ID.
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.buildCommitObj(
-                    stdCommit()
-                        .parentCommitId(tip)
-                        .addAdds(commitAdd(key, 0, updateValue, correctValue, null))
-                        .build(),
-                    c -> CONFLICT,
-                    (k, v) -> {},
-                    (action, storeKey, currentId) -> otherExpectedValue,
-                    NO_VALUE_REPLACEMENT))
+    soft.assertThatThrownBy(() ->
+            commitLogic.buildCommitObj(
+                stdCommit()
+                    .parentCommitId(tip)
+                    .addAdds(commitAdd(key, 0, updateValue, correctValue, null))
+                    .build(),
+                c -> CONFLICT,
+                (k, v) -> {},
+                (action, storeKey, currentId) -> otherExpectedValue,
+                NO_VALUE_REPLACEMENT))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:a")
         .asInstanceOf(type(CommitConflictException.class))
@@ -925,13 +922,12 @@ public class AbstractConsistencyLogicTests {
     List<ConsistencyLogic.CommitStatus> commitStatuses = new ArrayList<>();
     consistencyLogic.checkReference(branch, commitStatuses::add);
     soft.assertThat(commitStatuses)
-        .map(
-            cs ->
-                tuple(
-                    cs.id(),
-                    cs.commit() != null,
-                    cs.indexObjectsAvailable(),
-                    cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(
+                cs.id(),
+                cs.commit() != null,
+                cs.indexObjectsAvailable(),
+                cs.contentObjectsAvailable()))
         .containsExactlyElementsOf(expected);
 
     // Delete a content object of latest commit --> contents inconsistent
@@ -944,13 +940,12 @@ public class AbstractConsistencyLogicTests {
     commitStatuses = new ArrayList<>();
     consistencyLogic.checkReference(branch, commitStatuses::add);
     soft.assertThat(commitStatuses)
-        .map(
-            cs ->
-                tuple(
-                    cs.id(),
-                    cs.commit() != null,
-                    cs.indexObjectsAvailable(),
-                    cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(
+                cs.id(),
+                cs.commit() != null,
+                cs.indexObjectsAvailable(),
+                cs.contentObjectsAvailable()))
         .containsExactlyElementsOf(expected);
 
     // Delete reference index object of latest commit --> no more index and no more content objects
@@ -965,13 +960,12 @@ public class AbstractConsistencyLogicTests {
     commitStatuses = new ArrayList<>();
     consistencyLogic.checkReference(branch, commitStatuses::add);
     soft.assertThat(commitStatuses)
-        .map(
-            cs ->
-                tuple(
-                    cs.id(),
-                    cs.commit() != null,
-                    cs.indexObjectsAvailable(),
-                    cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(
+                cs.id(),
+                cs.commit() != null,
+                cs.indexObjectsAvailable(),
+                cs.contentObjectsAvailable()))
         .containsExactlyElementsOf(expected);
 
     // Delete commit object of latest commit --> commit no longer available
@@ -983,13 +977,12 @@ public class AbstractConsistencyLogicTests {
     commitStatuses = new ArrayList<>();
     consistencyLogic.checkReference(branch, commitStatuses::add);
     soft.assertThat(commitStatuses)
-        .map(
-            cs ->
-                tuple(
-                    cs.id(),
-                    cs.commit() != null,
-                    cs.indexObjectsAvailable(),
-                    cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(
+                cs.id(),
+                cs.commit() != null,
+                cs.indexObjectsAvailable(),
+                cs.contentObjectsAvailable()))
         .containsExactlyElementsOf(expected);
   }
 
@@ -1067,10 +1060,8 @@ public class AbstractConsistencyLogicTests {
     List<ConsistencyLogic.CommitStatus> consistency = new ArrayList<>();
     consistencyLogic.checkReference(refRefs, consistency::add);
     soft.assertThat(consistency)
-        .map(
-            cs ->
-                tuple(
-                    cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
         .allMatch(t -> t.equals(tuple(true, true, true)));
 
     soft.assertThat(Lists.newArrayList(referenceLogic.queryReferences(referencesQuery("refs/"))))
@@ -1080,9 +1071,8 @@ public class AbstractConsistencyLogicTests {
     persist.deleteObj(requireNonNull(refRefsHead.referenceIndex()));
 
     soft.assertThatIllegalStateException()
-        .isThrownBy(
-            () ->
-                referenceLogic.queryReferences(referencesQuery("refs/")).forEachRemaining(x -> {}))
+        .isThrownBy(() ->
+            referenceLogic.queryReferences(referencesQuery("refs/")).forEachRemaining(x -> {}))
         .withMessageContaining("references a reference index, which does not exist");
 
     consistency = new ArrayList<>();
@@ -1094,19 +1084,16 @@ public class AbstractConsistencyLogicTests {
             ConsistencyLogic.CommitStatus::contentObjectsAvailable)
         .containsExactly(true, false, false);
     soft.assertThat(consistency.subList(1, consistency.size()))
-        .map(
-            cs ->
-                tuple(
-                    cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
         .allMatch(t -> t.equals(tuple(true, true, true)));
 
     // Delete the references HEAD commit
     persist.deleteObj(refRefsHead.id());
 
     soft.assertThatRuntimeException()
-        .isThrownBy(
-            () ->
-                referenceLogic.queryReferences(referencesQuery("refs/")).forEachRemaining(x -> {}))
+        .isThrownBy(() ->
+            referenceLogic.queryReferences(referencesQuery("refs/")).forEachRemaining(x -> {}))
         .withMessageEndingWith("Object with ID %s not found", refRefsHead.id());
 
     consistency = new ArrayList<>();
@@ -1118,10 +1105,8 @@ public class AbstractConsistencyLogicTests {
             ConsistencyLogic.CommitStatus::contentObjectsAvailable)
         .containsExactly(false, false, false);
     soft.assertThat(consistency.subList(1, consistency.size()))
-        .map(
-            cs ->
-                tuple(
-                    cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
+        .map(cs ->
+            tuple(cs.commit() != null, cs.indexObjectsAvailable(), cs.contentObjectsAvailable()))
         .allMatch(t -> t.equals(tuple(true, true, true)));
 
     // re-assign internal int/refs reference
@@ -1133,10 +1118,8 @@ public class AbstractConsistencyLogicTests {
     for (Reference lostReference : lostReferences) {
       // The existing "references recovery logic" detects that the `Reference` already exists in the
       // 'refs' table, so it "only" adds the missing index entry and commits it to 'int/refs'.
-      soft.assertThatThrownBy(
-              () ->
-                  referenceLogic.createReference(
-                      lostReference.name(), lostReference.pointer(), null))
+      soft.assertThatThrownBy(() ->
+              referenceLogic.createReference(lostReference.name(), lostReference.pointer(), null))
           .isInstanceOf(RefAlreadyExistsException.class);
     }
 

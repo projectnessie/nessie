@@ -63,14 +63,13 @@ public class MockedAuthorizer implements Authorizer {
 
   public List<AuthzCheck> checksWithoutIdentifiedKey() {
     return checks().stream()
-        .map(
-            ac ->
-                authzCheck(
-                    ac.apiContext(),
-                    ac.checks().stream()
-                        .map(c -> check(c.type(), c.ref(), c.key(), c.actions()))
-                        .toList(),
-                    ac.response()))
+        .map(ac ->
+            authzCheck(
+                ac.apiContext(),
+                ac.checks().stream()
+                    .map(c -> check(c.type(), c.ref(), c.key(), c.actions()))
+                    .toList(),
+                ac.response()))
         .toList();
   }
 

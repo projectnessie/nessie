@@ -63,12 +63,10 @@ class StsCredentialsFetcherImpl implements StsCredentialsFetcher {
     iam.externalId().ifPresent(request::externalId);
     iam.sessionDuration()
         .ifPresent(duration -> request.durationSeconds((int) duration.toSeconds()));
-    request.overrideConfiguration(
-        builder -> {
-          S3AuthType authType = bucketOptions.effectiveAuthType();
-          builder.credentialsProvider(
-              newCredentialsProvider(authType, bucketOptions, secretsProvider));
-        });
+    request.overrideConfiguration(builder -> {
+      S3AuthType authType = bucketOptions.effectiveAuthType();
+      builder.credentialsProvider(newCredentialsProvider(authType, bucketOptions, secretsProvider));
+    });
 
     AssumeRoleRequest req = request.build();
 

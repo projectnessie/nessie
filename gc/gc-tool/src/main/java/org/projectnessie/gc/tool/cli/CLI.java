@@ -80,20 +80,19 @@ public class CLI {
     @SuppressWarnings("InstantiationOfUtilityClass")
     CommandLine commandLine =
         new CommandLine(new CLI())
-            .setExecutionExceptionHandler(
-                (ex, cmd, parseResult) -> {
-                  if (ex instanceof BaseNessieClientServerException
-                      || ex instanceof HttpClientException) {
-                    // Just print the exception w/o the stack trace for Nessie related exceptions
-                    cmd.getErr().println(cmd.getColorScheme().errorText(ex.toString()));
-                  } else {
-                    // Print the full stack trace in all other cases.
-                    cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
-                  }
-                  return cmd.getExitCodeExceptionMapper() != null
-                      ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
-                      : cmd.getCommandSpec().exitCodeOnExecutionException();
-                });
+            .setExecutionExceptionHandler((ex, cmd, parseResult) -> {
+              if (ex instanceof BaseNessieClientServerException
+                  || ex instanceof HttpClientException) {
+                // Just print the exception w/o the stack trace for Nessie related exceptions
+                cmd.getErr().println(cmd.getColorScheme().errorText(ex.toString()));
+              } else {
+                // Print the full stack trace in all other cases.
+                cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
+              }
+              return cmd.getExitCodeExceptionMapper() != null
+                  ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+                  : cmd.getCommandSpec().exitCodeOnExecutionException();
+            });
     if (null != out) {
       commandLine = commandLine.setOut(out);
     }

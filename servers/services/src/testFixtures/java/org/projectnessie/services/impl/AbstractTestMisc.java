@@ -86,16 +86,15 @@ public abstract class AbstractTestMisc extends BaseTestServiceImpl {
         .isInstanceOf(NessieReferenceAlreadyExistsException.class)
         .hasMessageContaining("already exists");
 
-    soft.assertThatThrownBy(
-            () ->
-                commit(
-                    branch,
-                    CommitMeta.builder()
-                        .author("author")
-                        .message("committed-by-test")
-                        .committer("disallowed-client-side-committer")
-                        .build(),
-                    Unchanged.of(ContentKey.of("table"))))
+    soft.assertThatThrownBy(() ->
+            commit(
+                branch,
+                CommitMeta.builder()
+                    .author("author")
+                    .message("committed-by-test")
+                    .committer("disallowed-client-side-committer")
+                    .build(),
+                Unchanged.of(ContentKey.of("table"))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Cannot set the committer on the client side.");
   }

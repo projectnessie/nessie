@@ -39,20 +39,18 @@ class TestBasicAuthProvider {
   void testNullParams() {
     assertAll(
         () ->
-            assertThatThrownBy(
-                    () ->
-                        new BasicAuthenticationProvider()
-                            .build(
-                                ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_PASSWORD, "pass")
-                                    ::get))
+            assertThatThrownBy(() ->
+                    new BasicAuthenticationProvider()
+                        .build(
+                            ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_PASSWORD, "pass")
+                                ::get))
                 .isInstanceOf(NullPointerException.class),
         () ->
-            assertThatThrownBy(
-                    () ->
-                        new BasicAuthenticationProvider()
-                            .build(
-                                ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_USERNAME, "user")
-                                    ::get))
+            assertThatThrownBy(() ->
+                    new BasicAuthenticationProvider()
+                        .build(
+                            ImmutableMap.of(NessieConfigConstants.CONF_NESSIE_USERNAME, "user")
+                                ::get))
                 .isInstanceOf(NullPointerException.class),
         () ->
             assertThatThrownBy(() -> new BasicAuthenticationProvider().build(s -> null))

@@ -278,9 +278,8 @@ final class ReferencedObjectsResolverImpl implements ReferencedObjectsResolver {
 
     commit
         .referenceIndexStripes()
-        .forEach(
-            indexStripe ->
-                referencedObjectsContext.referencedObjects().markReferenced(indexStripe.segment()));
+        .forEach(indexStripe ->
+            referencedObjectsContext.referencedObjects().markReferenced(indexStripe.segment()));
 
     if (commit.referenceIndex() != null) {
       pendingObj(commit.referenceIndex());
