@@ -21,13 +21,19 @@ import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.aws.AwsClientProperties;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.intellij.lang.annotations.Language;
+import org.junit.jupiter.api.Test;
+import org.projectnessie.catalog.formats.iceberg.meta.IcebergJson;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergLoadCredentialsResponse;
 import org.projectnessie.server.catalog.AbstractIcebergCatalogIntTests;
 import org.projectnessie.server.catalog.FlociS3TestResourceLifecycleManager;
@@ -84,6 +90,33 @@ public class ITS3AssumeRoleIcebergCatalog extends AbstractIcebergCatalogIntTests
                       "s3.session-token",
                       "s3.session-token-expires-at-ms");
             });
+  }
+
+  /**
+   * The table configuration contains the refresh endpoint that Iceberg clients use to fetch new S3
+   * credentials, and the endpoint returns them.
+   */
+  @Test
+  public void refreshCredentialsEndpoint() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    var tableIdentifier = TableIdentifier.of(Namespace.of("refresh_ns"), "table");
+    catalog.createNamespace(tableIdentifier.namespace());
+    catalog.buildTable(tableIdentifier, SCHEMA).create();
+    Table table = catalog.loadTable(tableIdentifier);
+
+    String refreshEndpoint =
+        table.io().properties().get(AwsClientProperties.REFRESH_CREDENTIALS_ENDPOINT);
+    soft.assertThat(refreshEndpoint).isNotNull();
+
+    URI baseUri = URI.create(catalog.properties().get(CatalogProperties.URI));
+    IcebergLoadCredentialsResponse response =
+        readValue(
+            IcebergJson.objectMapper(),
+            baseUri.resolve(refreshEndpoint).toURL(),
+            IcebergLoadCredentialsResponse.class);
+    verifyLoadCredentialsResponse(table, response);
   }
 
   public static class Profile implements QuarkusTestProfile {

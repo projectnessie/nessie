@@ -24,6 +24,11 @@ as necessary. Empty sections will not end in the release notes.
   Iceberg clients can refresh vended GCS tokens before the tokens expire. A refresh returns
   credentials for the head of the branch or tag that the client loaded the table from. When the
   client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
+- Catalog/S3, Catalog/ADLS: The table configuration now contains
+  `client.refresh-credentials-endpoint` for vended S3 credentials and
+  `adls.refresh-credentials-endpoint` for vended ADLS SAS tokens, so Iceberg clients can refresh
+  them before they expire. Iceberg Java clients up to and including 1.12 reject Nessie's refresh
+  responses and can fail within five minutes of the credentials expiring; see the Iceberg REST guide.
 
 ### Commits
 

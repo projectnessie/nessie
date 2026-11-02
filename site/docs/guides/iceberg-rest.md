@@ -209,6 +209,27 @@ any additional round trips and is overall the faster and less resource intensive
 
 S3 request signing might be the only option, if your S3 implementation does not provide an STS service.
 
+### Refreshing vended credentials
+
+Vended credentials expire. For S3, GCS and ADLS, the table configuration that Nessie sends contains the
+table's `loadCredentials` endpoint (`client.refresh-credentials-endpoint`,
+`gcs.oauth2.refresh-credentials-endpoint` and `adls.refresh-credentials-endpoint`). Iceberg clients
+use it to fetch new credentials before the current ones expire, so long-running jobs keep working.
+Clients can turn this off with the Iceberg client properties `client.refresh-credentials-enabled`,
+`gcs.oauth2.refresh-credentials-enabled` and `adls.refresh-credentials-enabled`.
+
+A refresh checks authorization again, the same as a table load.
+
+A refresh response contains a credential for each of the table's locations, the same as a table
+load. Iceberg Java clients up to and including 1.12 accept only one credential per storage type in a
+refresh response (one per storage account for ADLS), so they cannot refresh vended credentials from
+Nessie yet. With the refresh endpoint in the table configuration, these clients use Iceberg's
+refreshing credential providers instead of static credentials. Once the credentials are within five
+minutes of expiring, the providers fetch new ones and reject Nessie's response, so an operation can
+fail while the original credentials are still valid. To keep the previous behavior, set
+`client.refresh-credentials-enabled=false` (S3) and `adls.refresh-credentials-enabled=false` (ADLS)
+on these clients.
+
 ## Seamless migration from "Nessie" to "Nessie with Iceberg REST"
 
 You can safely use your current Nessie applications, those that use `type=nessie` when using Iceberg,
