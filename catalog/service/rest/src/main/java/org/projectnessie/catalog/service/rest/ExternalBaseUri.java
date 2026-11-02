@@ -109,10 +109,19 @@ public interface ExternalBaseUri {
   default String icebergTableCredentialsPath(String prefix, ContentKey contentKey) {
     String namespace =
         contentKey.getNamespace().getElements().stream()
-            .map(level -> encode(level, UTF_8))
+            .map(ExternalBaseUri::encodePathSegment)
             .collect(joining("%1F"));
     return format(
         "v1/%s/namespaces/%s/tables/%s/credentials",
-        encode(prefix, UTF_8), namespace, encode(contentKey.getName(), UTF_8));
+        encodePathSegment(prefix), namespace, encodePathSegment(contentKey.getName()));
+  }
+
+  /**
+   * {@link java.net.URLEncoder} produces form encoding, which turns a space into {@code +}. In a
+   * path, the server decodes {@code +} as a literal plus, so spaces must be {@code %20}. {@code
+   * URLEncoder} encodes a literal plus as {@code %2B}, so every {@code +} in its output is a space.
+   */
+  private static String encodePathSegment(String segment) {
+    return encode(segment, UTF_8).replace("+", "%20");
   }
 }

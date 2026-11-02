@@ -27,6 +27,7 @@ import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUS
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import io.quarkus.vertx.http.HttpServer;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -172,6 +173,9 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
       hash = api.getReference().refName("main").get().getHash();
       api.createReference().reference(Branch.of("feature/x", hash)).sourceRefName("main").create();
     }
+    // From here on, the table exists only on 'feature/x' and at 'hash', so each prefix below
+    // succeeds only if the server honors its reference and hash.
+    catalog.dropTable(tableIdentifier, false);
 
     Map<String, String> props = catalog.properties();
     URI baseUri = URI.create(props.get("uri"));
@@ -180,7 +184,8 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
     String warehouse = warehouseIndex >= 0 ? configuredPrefix.substring(warehouseIndex) : "";
 
     // The same prefixes as IcebergApiV1TableResource.credentialsPrefix() returns.
-    for (String ref : List.of("main@" + hash, "feature\u001fx@", "feature\u001fx@" + hash)) {
+    for (String ref :
+        List.of("main@" + hash, "DETACHED@" + hash, "feature/x", "feature/x@" + hash, "main")) {
       String prefix = URLEncoder.encode(ref + warehouse, UTF_8);
       String path =
           format(
@@ -188,10 +193,47 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
               prefix, namespace, tableIdentifier.name());
       URL credentials = baseUri.resolve(path).toURL();
 
+      if (ref.equals("main")) {
+        soft.assertThatThrownBy(
+                () ->
+                    readValue(
+                        IcebergJson.objectMapper(),
+                        credentials,
+                        IcebergLoadCredentialsResponse.class))
+            .describedAs("dropped on main")
+            .isInstanceOf(FileNotFoundException.class);
+        continue;
+      }
       IcebergLoadCredentialsResponse response =
           readValue(IcebergJson.objectMapper(), credentials, IcebergLoadCredentialsResponse.class);
       verifyLoadCredentialsResponse(table, response);
     }
+  }
+
+  @Test
+  public void loadCredentialsEndpointWithSpacesAndPlusSigns() throws Exception {
+    @SuppressWarnings("resource")
+    RESTCatalog catalog = catalog();
+
+    var namespace = Namespace.of("credentials ns", "a+b");
+    var tableIdentifier = TableIdentifier.of(namespace, "table name+1");
+
+    catalog.createNamespace(Namespace.of("credentials ns"));
+    catalog.createNamespace(namespace);
+    Table table = catalog.buildTable(tableIdentifier, SCHEMA).create();
+
+    Map<String, String> props = catalog.properties();
+    URI baseUri = URI.create(props.get("uri"));
+    // The same path as ExternalBaseUri.icebergTableCredentialsPath() returns.
+    String path =
+        format(
+            "v1/%s/namespaces/%s/tables/%s/credentials",
+            props.get("prefix"), "credentials%20ns%1Fa%2Bb", "table%20name%2B1");
+    URL credentials = baseUri.resolve(path).toURL();
+
+    IcebergLoadCredentialsResponse response =
+        readValue(IcebergJson.objectMapper(), credentials, IcebergLoadCredentialsResponse.class);
+    verifyLoadCredentialsResponse(table, response);
   }
 
   protected void verifyLoadCredentialsResponse(

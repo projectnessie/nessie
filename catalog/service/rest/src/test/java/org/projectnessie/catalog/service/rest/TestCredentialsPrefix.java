@@ -18,7 +18,6 @@ package org.projectnessie.catalog.service.rest;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.api.v2.params.ParsedReference.parsedReference;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
-import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.SEPARATOR;
 import static org.projectnessie.catalog.service.rest.IcebergApiV1TableResource.credentialsPrefix;
 import static org.projectnessie.catalog.service.rest.TableRef.tableRef;
 import static org.projectnessie.model.Reference.ReferenceType.BRANCH;
@@ -56,7 +55,7 @@ public class TestCredentialsPrefix {
 
     soft.assertThat(prefix).isEqualTo(expectedPrefix);
 
-    String refPart = prefix.replace(SEPARATOR, '/').split("\\|", 2)[0];
+    String refPart = prefix.split("\\|", 2)[0];
     ParsedReference decoded = resolveReferencePathElement(refPart, BRANCH, () -> "main");
     soft.assertThat(decoded.name()).isEqualTo(expectedName);
     soft.assertThat(decoded.hashWithRelativeSpec()).isEqualTo(expectedHash);
@@ -67,11 +66,7 @@ public class TestCredentialsPrefix {
         arguments(parsedReference("main", null, BRANCH), "wh", "main|wh", "main", null),
         arguments(parsedReference("main", null, BRANCH), null, "main", "main", null),
         arguments(
-            parsedReference("feature/x", null, BRANCH),
-            "wh",
-            "feature" + SEPARATOR + "x@|wh",
-            "feature/x",
-            null),
+            parsedReference("feature/x", null, BRANCH), "wh", "feature/x|wh", "feature/x", null),
         arguments(
             parsedReference("main", "12345678", BRANCH),
             "wh",
@@ -85,9 +80,15 @@ public class TestCredentialsPrefix {
             "main",
             HEAD),
         arguments(
+            parsedReference(null, "12345678", null),
+            "wh",
+            "DETACHED@" + HEAD + "|wh",
+            "DETACHED",
+            HEAD),
+        arguments(
             parsedReference("feature/x", "12345678", BRANCH),
             "wh",
-            "feature" + SEPARATOR + "x@" + HEAD + "|wh",
+            "feature/x@" + HEAD + "|wh",
             "feature/x",
             HEAD));
   }
