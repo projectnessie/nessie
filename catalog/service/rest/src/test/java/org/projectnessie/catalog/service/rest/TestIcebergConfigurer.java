@@ -28,6 +28,7 @@ import static org.projectnessie.catalog.service.rest.IcebergConfigurer.GCS_OAUTH
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_ENDPOINT;
 import static org.projectnessie.catalog.service.rest.IcebergConfigurer.S3_SIGNER_URI;
 
+import com.google.common.base.Splitter;
 import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
@@ -314,10 +315,26 @@ public class TestIcebergConfigurer {
 
   @Test
   public void icebergTableCredentialsPath() {
-    soft.assertThat(
-            icebergConfigurer.uriInfo.icebergTableCredentialsPath(
-                "main|warehouse", ContentKey.of("ns1", "ns 2", "table")))
-        .isEqualTo("v1/main%7Cwarehouse/namespaces/ns1%1Fns+2/tables/table/credentials");
+    String prefix = "feature/x@1234abcd|wh 1";
+    ContentKey key = ContentKey.of("ns1", "ns 2", "a+b", "table name+1");
+
+    String path = icebergConfigurer.uriInfo.icebergTableCredentialsPath(prefix, key);
+
+    soft.assertThat(path)
+        .isEqualTo(
+            "v1/feature%2Fx%401234abcd%7Cwh%201/namespaces/ns1%1Fns%202%1Fa%2Bb"
+                + "/tables/table%20name%2B1/credentials");
+
+    List<String> segments = Splitter.on('/').splitToList(path);
+    soft.assertThat(decodePathSegment(segments.get(1))).isEqualTo(prefix);
+    soft.assertThat(IcebergApiV1ResourceBase.decodeNamespace(decodePathSegment(segments.get(3))))
+        .isEqualTo(key.getNamespace());
+    soft.assertThat(decodePathSegment(segments.get(5))).isEqualTo(key.getName());
+  }
+
+  /** Decodes like the server does: unlike {@link java.net.URLDecoder}, {@code +} stays a plus. */
+  private static String decodePathSegment(String segment) {
+    return URI.create("x:/" + segment).getPath().substring(1);
   }
 
   @SuppressWarnings("UnnecessaryAssignment")

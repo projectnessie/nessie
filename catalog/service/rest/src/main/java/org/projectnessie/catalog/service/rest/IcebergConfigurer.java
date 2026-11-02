@@ -24,6 +24,7 @@ import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.REMOTE_SIGNING;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.VENDED_CREDENTIALS;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDelegationPredicate;
+import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.encodePrefix;
 
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
@@ -203,13 +204,12 @@ public class IcebergConfigurer {
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
-    if (!hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()) {
-      configDefault.accept(ICEBERG_PREFIX, encode(branch, UTF_8));
-    } else {
-      configDefault.accept(
-          ICEBERG_PREFIX,
-          encode(branch + "|" + lakehouseConfig.catalog().resolveWarehouseName(warehouse), UTF_8));
-    }
+    String prefixWarehouse =
+        !hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()
+            ? null
+            : lakehouseConfig.catalog().resolveWarehouseName(warehouse);
+    configDefault.accept(
+        ICEBERG_PREFIX, encode(encodePrefix(branch, null, prefixWarehouse), UTF_8));
 
     // overrides
     uriInfo.icebergConfigOverrides(configOverride);
