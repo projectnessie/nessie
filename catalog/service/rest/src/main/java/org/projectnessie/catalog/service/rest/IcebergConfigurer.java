@@ -24,7 +24,9 @@ import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.REMOTE_SIGNING;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.VENDED_CREDENTIALS;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDelegationPredicate;
+import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.encodePrefix;
 
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
@@ -81,6 +83,16 @@ public class IcebergConfigurer {
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
   static final String SIGNER_ENDPOINT = "signer.endpoint";
+
+  static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+  static final String GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT =
+      "gcs.oauth2.refresh-credentials-endpoint";
+
+  static final String S3_ACCESS_KEY_ID = "s3.access-key-id";
+  static final String S3_REFRESH_CREDENTIALS_ENDPOINT = "client.refresh-credentials-endpoint";
+
+  static final String ADLS_SAS_TOKEN_PREFIX = "adls.sas-token.";
+  static final String ADLS_REFRESH_CREDENTIALS_ENDPOINT = "adls.refresh-credentials-endpoint";
 
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
@@ -198,13 +210,12 @@ public class IcebergConfigurer {
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
-    if (!hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()) {
-      configDefault.accept(ICEBERG_PREFIX, encode(branch, UTF_8));
-    } else {
-      configDefault.accept(
-          ICEBERG_PREFIX,
-          encode(branch + "|" + lakehouseConfig.catalog().resolveWarehouseName(warehouse), UTF_8));
-    }
+    String prefixWarehouse =
+        !hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()
+            ? null
+            : lakehouseConfig.catalog().resolveWarehouseName(warehouse);
+    configDefault.accept(
+        ICEBERG_PREFIX, encode(encodePrefix(branch, null, prefixWarehouse), UTF_8));
 
     // overrides
     uriInfo.icebergConfigOverrides(configOverride);
@@ -225,6 +236,7 @@ public class IcebergConfigurer {
       IcebergTableMetadata tableMetadata,
       String prefix,
       ContentKey contentKey,
+      @Nullable String credentialsEndpoint,
       String dataAccess,
       boolean writeAccessGranted) {
     ImmutableIcebergTableConfig.Builder tableConfig = ImmutableIcebergTableConfig.builder();
@@ -289,7 +301,34 @@ public class IcebergConfigurer {
                 config::put),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
 
+    if (credentialsEndpoint != null) {
+      refreshCredentialsEndpoints(storageCredentials, credentialsEndpoint, config::put);
+    }
+
     return tableConfig.config(config).storageCredentials(storageCredentials).build();
+  }
+
+  /**
+   * Iceberg clients refresh vended credentials only when the table configuration contains the
+   * refresh endpoint property for the storage type. Each property is sent only when a vended
+   * credential of that storage type exists.
+   */
+  static void refreshCredentialsEndpoints(
+      List<IcebergStorageCredential> storageCredentials,
+      String credentialsEndpoint,
+      BiConsumer<String, String> config) {
+    for (IcebergStorageCredential credential : storageCredentials) {
+      Set<String> keys = credential.config().keySet();
+      if (keys.contains(S3_ACCESS_KEY_ID)) {
+        config.accept(S3_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+      if (keys.contains(GCS_OAUTH2_TOKEN)) {
+        config.accept(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+      if (keys.stream().anyMatch(key -> key.startsWith(ADLS_SAS_TOKEN_PREFIX))) {
+        config.accept(ADLS_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+      }
+    }
   }
 
   /**

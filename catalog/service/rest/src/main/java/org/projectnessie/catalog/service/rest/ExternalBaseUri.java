@@ -18,6 +18,7 @@ package org.projectnessie.catalog.service.rest;
 import static java.lang.String.format;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.projectnessie.api.v2.params.ReferenceResolver.resolveReferencePathElement;
 import static org.projectnessie.model.Validation.REF_NAME_PATH_ELEMENT_REGEX;
 
@@ -103,5 +104,24 @@ public interface ExternalBaseUri {
    */
   default String icebergS3SignerPathWithPath(String prefix, String signerParam) {
     return format("v1/%s/s3sign/%s", encode(prefix, UTF_8), signerParam);
+  }
+
+  default String icebergTableCredentialsPath(String prefix, ContentKey contentKey) {
+    String namespace =
+        contentKey.getNamespace().getElements().stream()
+            .map(ExternalBaseUri::encodePathSegment)
+            .collect(joining("%1F"));
+    return format(
+        "v1/%s/namespaces/%s/tables/%s/credentials",
+        encodePathSegment(prefix), namespace, encodePathSegment(contentKey.getName()));
+  }
+
+  /**
+   * {@link java.net.URLEncoder} produces form encoding, which turns a space into {@code +}. In a
+   * path, the server decodes {@code +} as a literal plus, so spaces must be {@code %20}. {@code
+   * URLEncoder} encodes a literal plus as {@code %2B}, so every {@code +} in its output is a space.
+   */
+  private static String encodePathSegment(String segment) {
+    return encode(segment, UTF_8).replace("+", "%20");
   }
 }
