@@ -49,10 +49,9 @@ final class ServerKey {
         context,
         c ->
             c.getTestClass()
-                .ifPresent(
-                    instance ->
-                        findRepeatableAnnotations(instance, NessieServerProperty.class)
-                            .forEach(prop -> config.put(prop.name(), prop.value()))));
+                .ifPresent(instance ->
+                    findRepeatableAnnotations(instance, NessieServerProperty.class)
+                        .forEach(prop -> config.put(prop.name(), prop.value()))));
 
     return new ServerKey(version, storageName, config);
   }

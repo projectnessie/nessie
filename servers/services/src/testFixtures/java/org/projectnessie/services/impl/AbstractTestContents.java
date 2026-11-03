@@ -214,16 +214,15 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
             .toArray(ContentKey[]::new);
     Map<ContentKey, Content> expected =
         contentAndOps.stream()
-            .map(
-                c -> {
-                  if (c.operation instanceof Put put) {
-                    return Maps.immutableEntry(c.operation.getKey(), put.getContent());
-                  }
-                  if (c.operation instanceof Unchanged) {
-                    return Maps.immutableEntry(c.operation.getKey(), c.prepare.getContent());
-                  }
-                  return null;
-                })
+            .map(c -> {
+              if (c.operation instanceof Put put) {
+                return Maps.immutableEntry(c.operation.getKey(), put.getContent());
+              }
+              if (c.operation instanceof Unchanged) {
+                return Maps.immutableEntry(c.operation.getKey(), c.prepare.getContent());
+              }
+              return null;
+            })
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     soft.assertThat(contents(committed, allKeys))
@@ -315,15 +314,10 @@ public abstract class AbstractTestContents extends BaseTestServiceImpl {
       soft.assertThat(diff(committed, branch)).filteredOn(e -> e.getFrom() != null).isEmpty();
 
       // Compare content on HEAD commit with the committed content
-      soft.assertThatThrownBy(
-              () ->
-                  contentApi()
-                      .getContent(
-                          fixedContentKey,
-                          committed.getName(),
-                          committed.getHash(),
-                          false,
-                          API_READ))
+      soft.assertThatThrownBy(() ->
+              contentApi()
+                  .getContent(
+                      fixedContentKey, committed.getName(), committed.getHash(), false, API_READ))
           .isInstanceOf(NessieNotFoundException.class);
 
       // Compare operation on HEAD commit with the committed operation

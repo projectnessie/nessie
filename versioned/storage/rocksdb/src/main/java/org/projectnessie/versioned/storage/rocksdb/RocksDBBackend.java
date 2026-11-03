@@ -112,10 +112,9 @@ public final class RocksDBBackend implements Backend {
 
       List<ColumnFamilyDescriptor> columnFamilyDescriptors =
           columnFamilies.stream()
-              .map(
-                  c ->
-                      new ColumnFamilyDescriptor(
-                          c, new ColumnFamilyOptions().optimizeUniversalStyleCompaction()))
+              .map(c ->
+                  new ColumnFamilyDescriptor(
+                      c, new ColumnFamilyOptions().optimizeUniversalStyleCompaction()))
               .collect(Collectors.toList());
 
       try (final DBOptions dbOptions =
@@ -177,26 +176,24 @@ public final class RocksDBBackend implements Backend {
         repositoryIds.stream().map(RocksDBBackend::keyPrefix).collect(Collectors.toList());
 
     all()
-        .forEach(
-            cf -> {
-              try (RocksIterator iter = db.newIterator(cf)) {
-                List<ByteString> deletes = new ArrayList<>();
-                for (iter.seekToFirst(); iter.isValid(); iter.next()) {
-                  ByteString key = ByteString.copyFrom(iter.key());
-                  if (prefixed.stream().anyMatch(key::startsWith)) {
-                    deletes.add(key);
-                  }
-                }
-                deletes.forEach(
-                    key -> {
-                      try {
-                        db.delete(cf, key.toByteArray());
-                      } catch (RocksDBException e) {
-                        throw rocksDbException(e);
-                      }
-                    });
+        .forEach(cf -> {
+          try (RocksIterator iter = db.newIterator(cf)) {
+            List<ByteString> deletes = new ArrayList<>();
+            for (iter.seekToFirst(); iter.isValid(); iter.next()) {
+              ByteString key = ByteString.copyFrom(iter.key());
+              if (prefixed.stream().anyMatch(key::startsWith)) {
+                deletes.add(key);
+              }
+            }
+            deletes.forEach(key -> {
+              try {
+                db.delete(cf, key.toByteArray());
+              } catch (RocksDBException e) {
+                throw rocksDbException(e);
               }
             });
+          }
+        });
   }
 
   static RuntimeException rocksDbException(RocksDBException e) {

@@ -60,21 +60,19 @@ class TestNessieCompatibilityExtensions {
 
     Events failedEvents = result.testEvents().failed();
     soft.assertThat(failedEvents.count())
-        .withFailMessage(
-            () ->
-                "The following test events have failed:\n:"
-                    + failedEvents.stream().map(Event::toString).collect(Collectors.joining()))
+        .withFailMessage(() ->
+            "The following test events have failed:\n:"
+                + failedEvents.stream().map(Event::toString).collect(Collectors.joining()))
         .isEqualTo(0);
   }
 
   @Test
   @Disabled("Fails with Gradle 9.6, see project's build.gradle.kts")
   void noVersions() {
-    soft.assertThatThrownBy(
-            () ->
-                EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                    .selectors(selectClass(OldClientsSample.class))
-                    .execute())
+    soft.assertThatThrownBy(() ->
+            EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+                .selectors(selectClass(OldClientsSample.class))
+                .execute())
         .hasMessageContaining("TestEngine with ID 'nessie-multi-env' failed to discover tests")
         .cause()
         .hasMessageContaining(
@@ -93,29 +91,27 @@ class TestNessieCompatibilityExtensions {
                 TooManyExtensions2.class,
                 TooManyExtensions3.class,
                 TooManyExtensions4.class))
-        .allSatisfy(
-            c -> {
-              EngineExecutionResults result =
-                  EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
-                      .configurationParameter(
-                          "nessie.versions",
-                          NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",0.59.0")
-                      .selectors(selectClass(c))
-                      .filters(new MultiEnvTestFilter())
-                      .execute();
-              soft.assertThat(
-                      result.allEvents().executions().failed().stream()
-                          .map(e -> e.getTerminationInfo().getExecutionResult().getThrowable())
-                          .filter(Optional::isPresent)
-                          .map(Optional::get))
-                  .isNotEmpty()
-                  .allSatisfy(
-                      e ->
-                          soft.assertThat(e)
-                              .isInstanceOf(IllegalStateException.class)
-                              .hasMessageEndingWith(
-                                  " contains more than one Nessie multi-version extension"));
-            });
+        .allSatisfy(c -> {
+          EngineExecutionResults result =
+              EngineTestKit.engine(MultiEnvTestEngine.ENGINE_ID)
+                  .configurationParameter(
+                      "nessie.versions",
+                      NEW_STORAGE_MODEL_WITH_COMPAT_TESTING.toString() + ",0.59.0")
+                  .selectors(selectClass(c))
+                  .filters(new MultiEnvTestFilter())
+                  .execute();
+          soft.assertThat(
+                  result.allEvents().executions().failed().stream()
+                      .map(e -> e.getTerminationInfo().getExecutionResult().getThrowable())
+                      .filter(Optional::isPresent)
+                      .map(Optional::get))
+              .isNotEmpty()
+              .allSatisfy(e ->
+                  soft.assertThat(e)
+                      .isInstanceOf(IllegalStateException.class)
+                      .hasMessageEndingWith(
+                          " contains more than one Nessie multi-version extension"));
+        });
   }
 
   @Test

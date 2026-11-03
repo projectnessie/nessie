@@ -34,11 +34,10 @@ public class TestSupplyOnce {
   public void nullValue() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> nullValue =
-        memoize(
-            () -> {
-              counter.incrementAndGet();
-              return null;
-            });
+        memoize(() -> {
+          counter.incrementAndGet();
+          return null;
+        });
 
     soft.assertThat(counter).hasValue(0);
 
@@ -54,11 +53,10 @@ public class TestSupplyOnce {
   public void someValue() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> nullValue =
-        memoize(
-            () -> {
-              counter.incrementAndGet();
-              return "foo";
-            });
+        memoize(() -> {
+          counter.incrementAndGet();
+          return "foo";
+        });
 
     soft.assertThat(counter).hasValue(0);
 
@@ -74,11 +72,10 @@ public class TestSupplyOnce {
   public void failure() {
     AtomicInteger counter = new AtomicInteger();
     Supplier<String> failure =
-        memoize(
-            () -> {
-              counter.incrementAndGet();
-              throw new RuntimeException("foo");
-            });
+        memoize(() -> {
+          counter.incrementAndGet();
+          throw new RuntimeException("foo");
+        });
 
     soft.assertThat(counter).hasValue(0);
 
@@ -86,11 +83,10 @@ public class TestSupplyOnce {
 
     soft.assertThatRuntimeException()
         .isThrownBy(failure::get)
-        .extracting(
-            re -> {
-              exceptionInstance.set(re);
-              return re.getMessage();
-            })
+        .extracting(re -> {
+          exceptionInstance.set(re);
+          return re.getMessage();
+        })
         .isEqualTo("foo");
     soft.assertThat(counter).hasValue(1);
     soft.assertThatRuntimeException().isThrownBy(failure::get).isSameAs(exceptionInstance.get());

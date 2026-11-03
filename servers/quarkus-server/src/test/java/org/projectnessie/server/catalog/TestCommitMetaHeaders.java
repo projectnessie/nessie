@@ -130,16 +130,15 @@ public class TestCommitMetaHeaders {
       List<LogResponse.LogEntry> commits = api.getCommitLog().refName("main").stream().toList();
       soft.assertThat(commits)
           .extracting(LogResponse.LogEntry::getCommitMeta)
-          .allSatisfy(
-              meta -> {
-                soft.assertThat(meta.getAllAuthors()).containsExactlyElementsOf(List.of(author));
-                soft.assertThat(meta.getAllSignedOffBy())
-                    .containsExactlyElementsOf(List.of(signedOffBy));
-                soft.assertThat(meta.getMessage()).isEqualTo(message);
-                soft.assertThat(meta.getAllProperties())
-                    .containsExactlyInAnyOrderEntriesOf(
-                        Map.of("foo", List.of("bar"), "dog", List.of("Elani")));
-              });
+          .allSatisfy(meta -> {
+            soft.assertThat(meta.getAllAuthors()).containsExactlyElementsOf(List.of(author));
+            soft.assertThat(meta.getAllSignedOffBy())
+                .containsExactlyElementsOf(List.of(signedOffBy));
+            soft.assertThat(meta.getMessage()).isEqualTo(message);
+            soft.assertThat(meta.getAllProperties())
+                .containsExactlyInAnyOrderEntriesOf(
+                    Map.of("foo", List.of("bar"), "dog", List.of("Elani")));
+          });
     }
   }
 }

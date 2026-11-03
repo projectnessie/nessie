@@ -100,20 +100,19 @@ public class BigTableBackendProcessTestFactory extends AbstractBigTableBackendTe
         Process p = process;
         AtomicBoolean gotHostPort = new AtomicBoolean();
         Thread watch =
-            new Thread(
-                () -> {
-                  try {
-                    Thread.sleep(15_000);
-                  } catch (InterruptedException e) {
-                    destroyProcess(p);
-                    throw new RuntimeException(e);
-                  }
-                  if (!gotHostPort.get()) {
-                    System.err.println(
-                        "Did not see 'Cloud Bigtable emulator running on ...' message after 15 seconds, stopping BT emulator process...");
-                    destroyProcess(p);
-                  }
-                });
+            new Thread(() -> {
+              try {
+                Thread.sleep(15_000);
+              } catch (InterruptedException e) {
+                destroyProcess(p);
+                throw new RuntimeException(e);
+              }
+              if (!gotHostPort.get()) {
+                System.err.println(
+                    "Did not see 'Cloud Bigtable emulator running on ...' message after 15 seconds, stopping BT emulator process...");
+                destroyProcess(p);
+              }
+            });
         watch.setDaemon(true);
         watch.start();
 

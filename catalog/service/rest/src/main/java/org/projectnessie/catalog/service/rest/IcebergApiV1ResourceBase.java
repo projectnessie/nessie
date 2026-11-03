@@ -336,12 +336,11 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
   static Map<String, String> createEntityProperties(Map<String, String> providedProperties) {
     Map<String, String> properties = new HashMap<>();
     properties.put("created-at", OffsetDateTime.now(ZoneOffset.UTC).toString());
-    providedProperties.forEach(
-        (k, v) -> {
-          if (!DERIVED_PROPERTIES.contains(k)) {
-            properties.put(k, v);
-          }
-        });
+    providedProperties.forEach((k, v) -> {
+      if (!DERIVED_PROPERTIES.contains(k)) {
+        properties.put(k, v);
+      }
+    });
     return properties;
   }
 
@@ -439,9 +438,7 @@ abstract class IcebergApiV1ResourceBase extends AbstractCatalogResource {
                 apiOperation.name(),
                 ICEBERG_V1))
         .map(Stream::findFirst)
-        .map(
-            o ->
-                o.orElseThrow(
-                    () -> new IllegalStateException("Catalog commit returned no response")));
+        .map(o ->
+            o.orElseThrow(() -> new IllegalStateException("Catalog commit returned no response")));
   }
 }

@@ -35,23 +35,19 @@ public class TestCatalogConfig {
 
   @Test
   public void defaultWarehouseDefined() {
-    soft.assertThatCode(
-            () ->
-                ImmutableCatalogConfig.builder()
-                    .putWarehouse(
-                        "w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
-                    .build()
-                    .validate())
+    soft.assertThatCode(() ->
+            ImmutableCatalogConfig.builder()
+                .putWarehouse("w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
+                .build()
+                .validate())
         .doesNotThrowAnyException();
 
-    soft.assertThatCode(
-            () ->
-                ImmutableCatalogConfig.builder()
-                    .putWarehouse(
-                        "w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
-                    .defaultWarehouse("w1")
-                    .build()
-                    .validate())
+    soft.assertThatCode(() ->
+            ImmutableCatalogConfig.builder()
+                .putWarehouse("w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
+                .defaultWarehouse("w1")
+                .build()
+                .validate())
         .doesNotThrowAnyException();
 
     soft.assertThatIllegalStateException()
@@ -60,14 +56,12 @@ public class TestCatalogConfig {
         .withMessage("Default warehouse 'w1' is not defined.");
 
     soft.assertThatIllegalStateException()
-        .isThrownBy(
-            () ->
-                ImmutableCatalogConfig.builder()
-                    .putWarehouse(
-                        "w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
-                    .defaultWarehouse("w2")
-                    .build()
-                    .validate())
+        .isThrownBy(() ->
+            ImmutableCatalogConfig.builder()
+                .putWarehouse("w1", ImmutableWarehouseConfig.builder().location("s3://foo").build())
+                .defaultWarehouse("w2")
+                .build()
+                .validate())
         .withMessage("Default warehouse 'w2' is not defined.");
   }
 

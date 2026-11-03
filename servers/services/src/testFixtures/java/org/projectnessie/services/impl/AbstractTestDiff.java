@@ -48,10 +48,9 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
 
   public static Stream<Object[]> diffRefModes() {
     return Arrays.stream(ReferenceMode.values())
-        .flatMap(
-            refModeFrom ->
-                Arrays.stream(ReferenceMode.values())
-                    .map(refModeTo -> new Object[] {refModeFrom, refModeTo}));
+        .flatMap(refModeFrom ->
+            Arrays.stream(ReferenceMode.values())
+                .map(refModeTo -> new Object[] {refModeFrom, refModeTo}));
   }
 
   @ParameterizedTest
@@ -82,10 +81,9 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
     Set<ContentKey> contents =
         pagedDiff(branch, defaultBranch, pageSize, numKeys, effectiveFrom::set, effectiveTo::set)
             .stream()
-            .filter(
-                e ->
-                    !Content.Type.NAMESPACE.equals(
-                        (e.getTo() == null ? e.getFrom() : e.getTo()).getType()))
+            .filter(e ->
+                !Content.Type.NAMESPACE.equals(
+                    (e.getTo() == null ? e.getFrom() : e.getTo()).getType()))
             .map(DiffEntry::getKey)
             .collect(toSet());
 
@@ -115,12 +113,11 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
     // we only committed to toRef, the "from" diff should be null
     soft.assertThat(diffOnRefHeadResponse)
         .hasSize(commitsPerBranch)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNull();
-              assertThat(diff.getTo()).isNotNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNull();
+          assertThat(diff.getTo()).isNotNull();
+        });
 
     // Some combinations with explicit fromHashOnRef/toHashOnRef
     soft.assertThat(diff(fromRef, toRef)).isEqualTo(diffOnRefHeadResponse);
@@ -140,27 +137,25 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
 
     soft.assertThat(diff(refModeFrom.transform(fromRef), refModeTo.transform(toRef)))
         .hasSize(commitsPerBranch)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNotNull();
-              assertThat(diff.getTo()).isNotNull();
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNotNull();
+          assertThat(diff.getTo()).isNotNull();
 
-              // we only have a diff on the ID
-              assertThat(diff.getFrom().getId()).isNotEqualTo(diff.getTo().getId());
-              Optional<IcebergTable> fromTable = diff.getFrom().unwrap(IcebergTable.class);
-              assertThat(fromTable).isPresent();
-              Optional<IcebergTable> toTable = diff.getTo().unwrap(IcebergTable.class);
-              assertThat(toTable).isPresent();
+          // we only have a diff on the ID
+          assertThat(diff.getFrom().getId()).isNotEqualTo(diff.getTo().getId());
+          Optional<IcebergTable> fromTable = diff.getFrom().unwrap(IcebergTable.class);
+          assertThat(fromTable).isPresent();
+          Optional<IcebergTable> toTable = diff.getTo().unwrap(IcebergTable.class);
+          assertThat(toTable).isPresent();
 
-              assertThat(fromTable.get().getMetadataLocation())
-                  .isEqualTo(toTable.get().getMetadataLocation());
-              assertThat(fromTable.get().getSchemaId()).isEqualTo(toTable.get().getSchemaId());
-              assertThat(fromTable.get().getSnapshotId()).isEqualTo(toTable.get().getSnapshotId());
-              assertThat(fromTable.get().getSortOrderId())
-                  .isEqualTo(toTable.get().getSortOrderId());
-              assertThat(fromTable.get().getSpecId()).isEqualTo(toTable.get().getSpecId());
-            });
+          assertThat(fromTable.get().getMetadataLocation())
+              .isEqualTo(toTable.get().getMetadataLocation());
+          assertThat(fromTable.get().getSchemaId()).isEqualTo(toTable.get().getSchemaId());
+          assertThat(fromTable.get().getSnapshotId()).isEqualTo(toTable.get().getSnapshotId());
+          assertThat(fromTable.get().getSortOrderId()).isEqualTo(toTable.get().getSortOrderId());
+          assertThat(fromTable.get().getSpecId()).isEqualTo(toTable.get().getSpecId());
+        });
 
     // request all keys and delete the tables for them on toRef
     Map<ContentKey, Content> map =
@@ -178,12 +173,11 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
     // now that we deleted all tables on toRef, the diff for "to" should be null
     soft.assertThat(diff(refModeFrom.transform(fromRef), refModeTo.transform(toRef)))
         .hasSize(commitsPerBranch)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNotNull();
-              assertThat(diff.getTo()).isNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNotNull();
+          assertThat(diff.getTo()).isNull();
+        });
   }
 
   @Test
@@ -194,32 +188,29 @@ public abstract class AbstractTestDiff extends BaseTestServiceImpl {
 
     soft.assertThat(diff(fromRef.getName(), toRef.getHash(), Detached.REF_NAME, toRefHash))
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNull();
-              assertThat(diff.getTo()).isNotNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNull();
+          assertThat(diff.getTo()).isNotNull();
+        });
 
     // both nameless references
     soft.assertThat(diff(Detached.REF_NAME, fromRef.getHash(), Detached.REF_NAME, toRefHash))
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNull();
-              assertThat(diff.getTo()).isNotNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNull();
+          assertThat(diff.getTo()).isNotNull();
+        });
 
     // reverse to/from
     soft.assertThat(diff(Detached.REF_NAME, toRefHash, fromRef.getName(), fromRef.getHash()))
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNotNull();
-              assertThat(diff.getTo()).isNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNotNull();
+          assertThat(diff.getTo()).isNull();
+        });
   }
 
   @Test

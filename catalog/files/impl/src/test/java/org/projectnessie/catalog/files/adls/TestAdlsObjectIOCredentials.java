@@ -82,18 +82,16 @@ class TestAdlsObjectIOCredentials {
             "abfss://container@account.dfs.core.windows.net/warehouse/table",
             "abfss://container@account.dfs.core.windows.net/warehouse/read");
     assertThat(storageCredentials.values())
-        .allSatisfy(
-            credential ->
-                assertThat(credential)
-                    .containsEntry(
-                        "adls.connection-string.account.dfs.core.windows.net",
-                        "https://account.dfs.core.windows.net")
-                    .containsEntry(
-                        "adls.connection-string.account", "https://account.dfs.core.windows.net")
-                    .containsEntry("adls.sas-token.account.dfs.core.windows.net", "sas-token")
-                    .containsEntry("adls.sas-token.account", "sas-token")
-                    .containsEntry(
-                        "adls.sas-token-expires-at-ms.account.dfs.core.windows.net", "12345")
-                    .containsEntry("adls.sas-token-expires-at-ms.account", "12345"));
+        .allSatisfy(credential ->
+            assertThat(credential)
+                .containsEntry(
+                    "adls.connection-string.account.dfs.core.windows.net",
+                    "https://account.dfs.core.windows.net")
+                .containsEntry(
+                    "adls.connection-string.account", "https://account.dfs.core.windows.net")
+                .containsEntry("adls.sas-token.account.dfs.core.windows.net", "sas-token")
+                .containsEntry("adls.sas-token.account", "sas-token")
+                .containsEntry("adls.sas-token-expires-at-ms.account.dfs.core.windows.net", "12345")
+                .containsEntry("adls.sas-token-expires-at-ms.account", "12345"));
   }
 }

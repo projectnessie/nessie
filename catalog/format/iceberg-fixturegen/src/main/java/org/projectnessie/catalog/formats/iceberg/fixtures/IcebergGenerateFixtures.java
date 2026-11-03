@@ -221,11 +221,10 @@ public class IcebergGenerateFixtures {
         IcebergManifestFileGenerator.builder()
             .addDataFiles(3)
             .basePath(basePath)
-            .output(
-                f -> {
-                  manifestFiles.add(f);
-                  return outputFunction.apply(f);
-                })
+            .output(f -> {
+              manifestFiles.add(f);
+              return outputFunction.apply(f);
+            })
             .addedSnapshotId(snapshotId)
             .fileSequenceNumber(sequenceNumber)
             .sequenceNumber(sequenceNumber)

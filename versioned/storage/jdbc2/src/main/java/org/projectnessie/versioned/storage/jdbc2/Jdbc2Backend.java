@@ -341,32 +341,29 @@ public final class Jdbc2Backend implements Backend {
 
   private String withSqlTypesNames(Map<String, Integer> primaryKey) {
     StringBuilder sb = new StringBuilder().append('[');
-    primaryKey.forEach(
-        (col, type) -> {
-          String typeName = sqlTypeName(type);
-          if (sb.length() > 1) {
-            sb.append(", ");
-          }
-          sb.append(col).append(" ").append(typeName).append("(JDBC id:").append(type).append(')');
-        });
+    primaryKey.forEach((col, type) -> {
+      String typeName = sqlTypeName(type);
+      if (sb.length() > 1) {
+        sb.append(", ");
+      }
+      sb.append(col).append(" ").append(typeName).append("(JDBC id:").append(type).append(')');
+    });
     return sb.append(']').toString();
   }
 
   private String sqlTypeName(int type) {
     return Arrays.stream(Types.class.getDeclaredFields())
-        .filter(
-            f ->
-                Modifier.isPublic(f.getModifiers())
-                    && Modifier.isStatic(f.getModifiers())
-                    && f.getType() == int.class)
-        .filter(
-            f -> {
-              try {
-                return f.getInt(null) == type;
-              } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-              }
-            })
+        .filter(f ->
+            Modifier.isPublic(f.getModifiers())
+                && Modifier.isStatic(f.getModifiers())
+                && f.getType() == int.class)
+        .filter(f -> {
+          try {
+            return f.getInt(null) == type;
+          } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+          }
+        })
         .map(Field::getName)
         .findFirst()
         .orElseThrow();

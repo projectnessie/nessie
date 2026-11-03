@@ -206,14 +206,13 @@ public class TestAvroSerialization {
       return icebergManifestFiles;
     }
     return icebergManifestFiles.stream()
-        .map(
-            mf ->
-                IcebergManifestFile.builder()
-                    .from(mf)
-                    .content(null)
-                    .sequenceNumber(null)
-                    .minSequenceNumber(null)
-                    .build())
+        .map(mf ->
+            IcebergManifestFile.builder()
+                .from(mf)
+                .content(null)
+                .sequenceNumber(null)
+                .minSequenceNumber(null)
+                .build())
         .collect(Collectors.toList());
   }
 
@@ -490,59 +489,56 @@ public class TestAvroSerialization {
 
       List<IcebergDataFile> refDataFiles =
           StreamSupport.stream(reader.spliterator(), false)
-              .map(
-                  dataFile -> {
-                    StructLike part = dataFile.partition();
+              .map(dataFile -> {
+                StructLike part = dataFile.partition();
 
-                    GenericData.Record partition = new GenericData.Record(partSchema);
-                    for (Schema.Field partField : partSchema.getFields()) {
-                      partition.put(partField.pos(), part.get(partField.pos(), String.class));
-                    }
+                GenericData.Record partition = new GenericData.Record(partSchema);
+                for (Schema.Field partField : partSchema.getFields()) {
+                  partition.put(partField.pos(), part.get(partField.pos(), String.class));
+                }
 
-                    IcebergDataFile.Builder dataFileBuilder =
-                        IcebergDataFile.builder()
-                            .partition(partition)
-                            .recordCount(dataFile.recordCount());
-                    if (spec.version() >= 2) {
-                      dataFileBuilder.equalityIds(dataFile.equalityFieldIds());
-                    }
-                    if (dataFile.splitOffsets() != null) {
-                      dataFileBuilder.splitOffsets(dataFile.splitOffsets());
-                    }
-                    if (dataFile.columnSizes() != null) {
-                      dataFileBuilder.columnSizes(dataFile.columnSizes());
-                    }
-                    if (dataFile.lowerBounds() != null) {
-                      dataFileBuilder.lowerBounds(
-                          dataFile.lowerBounds().entrySet().stream()
-                              .collect(
-                                  Collectors.toMap(
-                                      Map.Entry::getKey, e -> toByteArray(e.getValue()))));
-                    }
-                    if (dataFile.upperBounds() != null) {
-                      dataFileBuilder.upperBounds(
-                          dataFile.upperBounds().entrySet().stream()
-                              .collect(
-                                  Collectors.toMap(
-                                      Map.Entry::getKey, e -> toByteArray(e.getValue()))));
-                    }
-                    if (dataFile.nanValueCounts() != null) {
-                      dataFileBuilder.nanValueCounts(dataFile.nanValueCounts());
-                    }
-                    if (dataFile.nullValueCounts() != null) {
-                      dataFileBuilder.nullValueCounts(dataFile.nullValueCounts());
-                    }
-                    return dataFileBuilder
-                        .content(IcebergDataContent.valueOf(dataFile.content().name()))
-                        .fileFormat(IcebergFileFormat.valueOf(dataFile.format().name()))
-                        .filePath(dataFile.location())
-                        .fileSizeInBytes(dataFile.fileSizeInBytes())
-                        // .blockSizeInBytes(dataFile.)
-                        .keyMetadata(toByteArray(dataFile.keyMetadata()))
-                        .sortOrderId(dataFile.sortOrderId())
-                        // .specId(dataFile.specId())
-                        .build();
-                  })
+                IcebergDataFile.Builder dataFileBuilder =
+                    IcebergDataFile.builder()
+                        .partition(partition)
+                        .recordCount(dataFile.recordCount());
+                if (spec.version() >= 2) {
+                  dataFileBuilder.equalityIds(dataFile.equalityFieldIds());
+                }
+                if (dataFile.splitOffsets() != null) {
+                  dataFileBuilder.splitOffsets(dataFile.splitOffsets());
+                }
+                if (dataFile.columnSizes() != null) {
+                  dataFileBuilder.columnSizes(dataFile.columnSizes());
+                }
+                if (dataFile.lowerBounds() != null) {
+                  dataFileBuilder.lowerBounds(
+                      dataFile.lowerBounds().entrySet().stream()
+                          .collect(
+                              Collectors.toMap(Map.Entry::getKey, e -> toByteArray(e.getValue()))));
+                }
+                if (dataFile.upperBounds() != null) {
+                  dataFileBuilder.upperBounds(
+                      dataFile.upperBounds().entrySet().stream()
+                          .collect(
+                              Collectors.toMap(Map.Entry::getKey, e -> toByteArray(e.getValue()))));
+                }
+                if (dataFile.nanValueCounts() != null) {
+                  dataFileBuilder.nanValueCounts(dataFile.nanValueCounts());
+                }
+                if (dataFile.nullValueCounts() != null) {
+                  dataFileBuilder.nullValueCounts(dataFile.nullValueCounts());
+                }
+                return dataFileBuilder
+                    .content(IcebergDataContent.valueOf(dataFile.content().name()))
+                    .fileFormat(IcebergFileFormat.valueOf(dataFile.format().name()))
+                    .filePath(dataFile.location())
+                    .fileSizeInBytes(dataFile.fileSizeInBytes())
+                    // .blockSizeInBytes(dataFile.)
+                    .keyMetadata(toByteArray(dataFile.keyMetadata()))
+                    .sortOrderId(dataFile.sortOrderId())
+                    // .specId(dataFile.specId())
+                    .build();
+              })
               .collect(Collectors.toList());
       soft.assertThat(refDataFiles).containsExactlyElementsOf(dataFiles);
     }
@@ -565,10 +561,9 @@ public class TestAvroSerialization {
       soft.assertThat(allEntries)
           .containsExactlyElementsOf(
               dataFiles.stream()
-                  .map(
-                      df ->
-                          dataFileToIcebergManifestEntry(
-                              df, spec, snapshotId, fileSequenceNumber, sequenceNumber))
+                  .map(df ->
+                      dataFileToIcebergManifestEntry(
+                          df, spec, snapshotId, fileSequenceNumber, sequenceNumber))
                   .collect(Collectors.toList()));
     }
 
@@ -591,10 +586,9 @@ public class TestAvroSerialization {
       soft.assertThat(allEntries)
           .containsExactlyElementsOf(
               dataFiles.stream()
-                  .map(
-                      df ->
-                          dataFileToIcebergManifestEntry(
-                              df, spec, snapshotId, fileSequenceNumber, sequenceNumber))
+                  .map(df ->
+                      dataFileToIcebergManifestEntry(
+                          df, spec, snapshotId, fileSequenceNumber, sequenceNumber))
                   .collect(Collectors.toList()));
     }
   }

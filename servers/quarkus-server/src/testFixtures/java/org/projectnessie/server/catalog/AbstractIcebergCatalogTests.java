@@ -387,13 +387,8 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
       soft.assertThatThrownBy(
               () -> catalog.loadTable(TABLE).updateProperties().set("foo", "bar").commit())
           .isInstanceOf(NoSuchTableException.class);
-      soft.assertThatCode(
-              () ->
-                  catalog
-                      .loadTable(onDifferentBranch)
-                      .updateProperties()
-                      .set("foo", "bar")
-                      .commit())
+      soft.assertThatCode(() ->
+              catalog.loadTable(onDifferentBranch).updateProperties().set("foo", "bar").commit())
           .doesNotThrowAnyException();
 
       soft.assertThat(catalog.dropTable(TABLE)).isFalse();
@@ -491,18 +486,17 @@ public abstract class AbstractIcebergCatalogTests extends CatalogTests<RESTCatal
 
       List<IcebergTable> contents =
           commitLog.stream()
-              .map(
-                  m -> {
-                    try {
-                      return api.getContent()
-                          .refName("main")
-                          .hashOnRef(m.getHash())
-                          .getSingle(key)
-                          .getContent();
-                    } catch (NessieNotFoundException e) {
-                      throw new RuntimeException(e);
-                    }
-                  })
+              .map(m -> {
+                try {
+                  return api.getContent()
+                      .refName("main")
+                      .hashOnRef(m.getHash())
+                      .getSingle(key)
+                      .getContent();
+                } catch (NessieNotFoundException e) {
+                  throw new RuntimeException(e);
+                }
+              })
               .map(IcebergTable.class::cast)
               .collect(Collectors.toList());
 

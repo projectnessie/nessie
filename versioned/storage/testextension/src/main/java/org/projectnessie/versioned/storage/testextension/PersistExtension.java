@@ -104,21 +104,18 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
     context
         .getRequiredTestInstances()
         .getAllInstances() //
-        .forEach(
-            instance ->
-                findAnnotatedFields(
-                        instance.getClass(), NessiePersist.class, ReflectionUtils::isNotStatic)
-                    .forEach(
-                        field ->
-                            injectField(
-                                context,
-                                instance,
-                                field,
-                                persist -> {
-                                  NessiePersist annotation =
-                                      field.getAnnotation(NessiePersist.class);
-                                  reinit(persist, annotation.initializeRepo());
-                                })));
+        .forEach(instance ->
+            findAnnotatedFields(
+                    instance.getClass(), NessiePersist.class, ReflectionUtils::isNotStatic)
+                .forEach(field ->
+                    injectField(
+                        context,
+                        instance,
+                        field,
+                        persist -> {
+                          NessiePersist annotation = field.getAnnotation(NessiePersist.class);
+                          reinit(persist, annotation.initializeRepo());
+                        })));
   }
 
   @Override
@@ -205,12 +202,11 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
     context.getTestMethod().ifPresent(collector);
     context
         .getTestClass()
-        .ifPresent(
-            cls -> {
-              for (; cls != Object.class; cls = cls.getSuperclass()) {
-                collector.accept(cls);
-              }
-            });
+        .ifPresent(cls -> {
+          for (; cls != Object.class; cls = cls.getSuperclass()) {
+            collector.accept(cls);
+          }
+        });
 
     return configs.stream()
         .collect(Collectors.toMap(NessieStoreConfig::name, NessieStoreConfig::value));
@@ -249,14 +245,13 @@ public class PersistExtension implements BeforeAllCallback, BeforeEachCallback, 
                   context.getRequiredTestClass(),
                   persistAnnotation.configMethod(),
                   StoreConfig.Adjustable.class)
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          String.format(
-                              "%s.configMethod='%s' does not exist in %s",
-                              NessiePersist.class.getSimpleName(),
-                              persistAnnotation.configMethod(),
-                              context.getRequiredTestClass().getName())));
+              .orElseThrow(() ->
+                  new IllegalArgumentException(
+                      String.format(
+                          "%s.configMethod='%s' does not exist in %s",
+                          NessiePersist.class.getSimpleName(),
+                          persistAnnotation.configMethod(),
+                          context.getRequiredTestClass().getName())));
 
       makeAccessible(configMethod);
 

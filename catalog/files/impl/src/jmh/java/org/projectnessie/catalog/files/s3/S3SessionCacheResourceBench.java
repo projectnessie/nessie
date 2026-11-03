@@ -108,27 +108,26 @@ public class S3SessionCacheResourceBench {
       URI stsEndpoint = server.getStsEndpointURI();
       bucketOptions =
           IntStream.range(0, numBucketOptions)
-              .mapToObj(
-                  i ->
-                      ImmutableS3NamedBucketOptions.builder()
-                          .accessKey(URI.create("access-key-" + 1))
-                          .region(regions.get(i % regions.size()))
-                          .stsEndpoint(stsEndpoint)
-                          .clientIam(
-                              ImmutableS3ClientIam.builder()
-                                  .externalId("externalId" + i)
-                                  .roleSessionName("roleSessionName" + i)
-                                  .assumeRole("roleArn" + i)
-                                  .enabled(true)
-                                  .build())
-                          .serverIam(
-                              ImmutableS3ServerIam.builder()
-                                  .externalId("externalId" + i)
-                                  .roleSessionName("roleSessionName" + i)
-                                  .assumeRole("roleArn" + i)
-                                  .enabled(true)
-                                  .build())
-                          .build())
+              .mapToObj(i ->
+                  ImmutableS3NamedBucketOptions.builder()
+                      .accessKey(URI.create("access-key-" + 1))
+                      .region(regions.get(i % regions.size()))
+                      .stsEndpoint(stsEndpoint)
+                      .clientIam(
+                          ImmutableS3ClientIam.builder()
+                              .externalId("externalId" + i)
+                              .roleSessionName("roleSessionName" + i)
+                              .assumeRole("roleArn" + i)
+                              .enabled(true)
+                              .build())
+                      .serverIam(
+                          ImmutableS3ServerIam.builder()
+                              .externalId("externalId" + i)
+                              .roleSessionName("roleSessionName" + i)
+                              .assumeRole("roleArn" + i)
+                              .enabled(true)
+                              .build())
+                      .build())
               .toArray(ImmutableS3NamedBucketOptions[]::new);
     }
 

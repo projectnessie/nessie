@@ -132,10 +132,9 @@ public class ITAzureSecretsProvider {
             + "-keyvault";
     return new SecretClientBuilder()
         .vaultUrl(vaultUrl)
-        .credential(
-            request ->
-                Mono.just(
-                    new AccessToken("fake-token", OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))))
+        .credential(request ->
+            Mono.just(
+                new AccessToken("fake-token", OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))))
         .addPolicy(new ForceHttpPolicy())
         .disableChallengeResourceVerification()
         .buildAsyncClient();

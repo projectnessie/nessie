@@ -97,9 +97,8 @@ public class TestNegativeCaching {
 
     ObjId id = randomObjId();
 
-    soft.assertThatThrownBy(
-            () ->
-                cachedPersist.fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+    soft.assertThatThrownBy(() ->
+            cachedPersist.fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class))
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist).fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class);
     verify(backing).fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class);
@@ -111,9 +110,8 @@ public class TestNegativeCaching {
 
   private void negativeCacheFetchRepeat(Persist cachedPersist, Persist backing, ObjId id)
       throws Exception {
-    soft.assertThatThrownBy(
-            () ->
-                cachedPersist.fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+    soft.assertThatThrownBy(() ->
+            cachedPersist.fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class))
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist).fetchTypedObj(id, NegativeCachingObj.TYPE, NegativeCachingObj.class);
     // backing.fetch*() must not be invoked
@@ -140,10 +138,9 @@ public class TestNegativeCaching {
     verifyNoMoreInteractions(backing, cachedPersist);
     reset(backing, cachedPersist);
 
-    soft.assertThatThrownBy(
-            () ->
-                cachedPersist.fetchTypedObjs(
-                    new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+    soft.assertThatThrownBy(() ->
+            cachedPersist.fetchTypedObjs(
+                new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist)
         .fetchTypedObjs(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);
@@ -189,10 +186,9 @@ public class TestNegativeCaching {
 
     ObjId id = randomObjId();
 
-    soft.assertThatThrownBy(
-            () ->
-                cachedPersist.fetchTypedObjs(
-                    new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
+    soft.assertThatThrownBy(() ->
+            cachedPersist.fetchTypedObjs(
+                new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class))
         .isInstanceOf(ObjNotFoundException.class);
     verify(cachedPersist)
         .fetchTypedObjs(new ObjId[] {id}, NegativeCachingObj.TYPE, NegativeCachingObj.class);

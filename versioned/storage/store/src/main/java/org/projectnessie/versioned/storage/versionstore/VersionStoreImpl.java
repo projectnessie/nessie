@@ -683,23 +683,22 @@ public class VersionStoreImpl implements VersionStore {
     StoreIndex<CommitOp> index = indexesLogic.buildCompleteIndex(head, Optional.empty());
 
     return keys.stream()
-        .map(
-            key -> {
-              StoreKey storeKey = keyToStoreKey(key);
-              StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
-              if (indexElement == null) {
-                return null;
-              }
-              CommitOp content = indexElement.content();
-              UUID contentId = content.contentId();
+        .map(key -> {
+          StoreKey storeKey = keyToStoreKey(key);
+          StoreIndexElement<CommitOp> indexElement = index.get(storeKey);
+          if (indexElement == null) {
+            return null;
+          }
+          CommitOp content = indexElement.content();
+          UUID contentId = content.contentId();
 
-              return buildIdentifiedKey(
-                  key,
-                  index,
-                  contentTypeForPayload(content.payload()),
-                  contentId != null ? contentId.toString() : null,
-                  x -> null);
-            })
+          return buildIdentifiedKey(
+              key,
+              index,
+              contentTypeForPayload(content.payload()),
+              contentId != null ? contentId.toString() : null,
+              x -> null);
+        })
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }

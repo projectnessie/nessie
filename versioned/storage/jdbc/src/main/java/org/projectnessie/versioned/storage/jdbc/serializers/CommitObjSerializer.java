@@ -109,12 +109,11 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
 
     Stripes.Builder b = Stripes.newBuilder();
     obj.referenceIndexStripes().stream()
-        .map(
-            s ->
-                Stripe.newBuilder()
-                    .setFirstKey(s.firstKey().rawString())
-                    .setLastKey(s.lastKey().rawString())
-                    .setSegment(s.segment().asBytes()))
+        .map(s ->
+            Stripe.newBuilder()
+                .setFirstKey(s.firstKey().rawString())
+                .setLastKey(s.lastKey().rawString())
+                .setSegment(s.segment().asBytes()))
         .forEach(b::addStripes);
     serializeBytes(
         ps,
@@ -173,12 +172,11 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
     try {
       Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_COMMIT_REFERENCE_INDEX_STRIPES));
       stripes.getStripesList().stream()
-          .map(
-              s ->
-                  indexStripe(
-                      keyFromString(s.getFirstKey()),
-                      keyFromString(s.getLastKey()),
-                      objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
+          .map(s ->
+              indexStripe(
+                  keyFromString(s.getFirstKey()),
+                  keyFromString(s.getLastKey()),
+                  objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
           .forEach(b::addReferenceIndexStripes);
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -81,12 +81,11 @@ public class EventService implements AutoCloseable {
   /** Starts event delivery by activating the subscribers. */
   public synchronized void start() {
     if (!started) {
-      subscribers.start(
-          eventSubscriber ->
-              ImmutableEventSubscription.builder()
-                  .id(config.getIdGenerator().get())
-                  .systemConfiguration(config.getSystemConfiguration())
-                  .build());
+      subscribers.start(eventSubscriber ->
+          ImmutableEventSubscription.builder()
+              .id(config.getIdGenerator().get())
+              .systemConfiguration(config.getSystemConfiguration())
+              .build());
       hasContentSubscribers =
           subscribers.hasSubscribersFor(EventType.CONTENT_STORED)
               || subscribers.hasSubscribersFor(EventType.CONTENT_REMOVED);

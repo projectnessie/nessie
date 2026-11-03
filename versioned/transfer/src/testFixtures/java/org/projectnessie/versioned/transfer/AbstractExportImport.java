@@ -166,14 +166,13 @@ public abstract class AbstractExportImport {
         new PagedResult<>() {
           final Iterator<Reference> base =
               IntStream.rangeClosed(1, numNamedRefs)
-                  .mapToObj(
-                      i ->
-                          reference(
-                              "refs/heads/branch-" + i,
-                              intToObjId(i),
-                              false,
-                              TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
-                              null))
+                  .mapToObj(i ->
+                      reference(
+                          "refs/heads/branch-" + i,
+                          intToObjId(i),
+                          false,
+                          TimeUnit.NANOSECONDS.toMicros(System.nanoTime()),
+                          null))
                   .iterator();
 
           @Nonnull

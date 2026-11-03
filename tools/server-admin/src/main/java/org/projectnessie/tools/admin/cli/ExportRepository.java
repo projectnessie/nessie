@@ -156,11 +156,10 @@ public class ExportRepository extends BaseCommand {
       return EXIT_CODE_REPO_DOES_NOT_EXIST;
     }
 
-    return export(
-        b -> {
-          b.persist(persist);
-          b.versionStore(new VersionStoreImpl(persist));
-        });
+    return export(b -> {
+      b.persist(persist);
+      b.versionStore(new VersionStoreImpl(persist));
+    });
   }
 
   Integer export(Consumer<NessieExporter.Builder> builderConsumer) throws Exception {

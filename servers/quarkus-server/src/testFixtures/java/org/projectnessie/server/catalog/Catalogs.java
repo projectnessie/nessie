@@ -40,17 +40,14 @@ public class Catalogs implements AutoCloseable {
         options,
         opts -> {
           RESTCatalog c =
-              new RESTCatalog(
-                  config -> {
-                    var builder = HTTPClient.builder(config).uri(config.get(CatalogProperties.URI));
-                    config.entrySet().stream()
-                        .filter(e -> e.getKey().startsWith("header."))
-                        .forEach(
-                            e ->
-                                builder.withHeader(
-                                    e.getKey().substring("header.".length()), e.getValue()));
-                    return builder.build();
-                  });
+              new RESTCatalog(config -> {
+                var builder = HTTPClient.builder(config).uri(config.get(CatalogProperties.URI));
+                config.entrySet().stream()
+                    .filter(e -> e.getKey().startsWith("header."))
+                    .forEach(e ->
+                        builder.withHeader(e.getKey().substring("header.".length()), e.getValue()));
+                return builder.build();
+              });
           c.setConf(new Configuration());
           Map<String, String> catalogOptions = new HashMap<>();
           catalogOptions.put(CatalogProperties.URI, serverBaseUri.resolve("/iceberg/").toString());

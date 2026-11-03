@@ -31,9 +31,8 @@ public class NessieQuarkusBuildProcessor {
     // that)
     DotName javaxCryptoSpec = DotName.createSimple("javax.crypto.spec");
 
-    return new ReflectiveHierarchyIgnoreWarningBuildItem(
-        name ->
-            name.packagePrefixName().equals(protobufRelocated)
-                || name.packagePrefixName().equals(javaxCryptoSpec));
+    return new ReflectiveHierarchyIgnoreWarningBuildItem(name ->
+        name.packagePrefixName().equals(protobufRelocated)
+            || name.packagePrefixName().equals(javaxCryptoSpec));
   }
 }

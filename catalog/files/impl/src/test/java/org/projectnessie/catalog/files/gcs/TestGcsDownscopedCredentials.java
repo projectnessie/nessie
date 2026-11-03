@@ -58,21 +58,19 @@ public class TestGcsDownscopedCredentials {
         GcsStorageSupplier.generateAccessBoundaryRules(storageLocations);
     assertThat(
             actual.getAccessBoundaryRules().stream()
-                .map(
-                    rule ->
-                        tuple(
-                            rule.getAvailabilityCondition().getExpression(),
-                            rule.getAvailableResource(),
-                            rule.getAvailablePermissions()))
+                .map(rule ->
+                    tuple(
+                        rule.getAvailabilityCondition().getExpression(),
+                        rule.getAvailableResource(),
+                        rule.getAvailablePermissions()))
                 .collect(Collectors.toList()))
         .containsExactlyInAnyOrderElementsOf(
             expected.getAccessBoundaryRules().stream()
-                .map(
-                    rule ->
-                        tuple(
-                            rule.getAvailabilityCondition().getExpression(),
-                            rule.getAvailableResource(),
-                            rule.getAvailablePermissions()))
+                .map(rule ->
+                    tuple(
+                        rule.getAvailabilityCondition().getExpression(),
+                        rule.getAvailableResource(),
+                        rule.getAvailablePermissions()))
                 .collect(Collectors.toList()));
   }
 

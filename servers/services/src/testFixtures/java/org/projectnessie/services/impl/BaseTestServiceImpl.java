@@ -446,10 +446,9 @@ public abstract class BaseTestServiceImpl {
     Put[] nsToCreate =
         Arrays.stream(keysToCheck)
             .filter(k -> k.getElementCount() > 1)
-            .flatMap(
-                key ->
-                    IntStream.rangeClosed(1, key.getElementCount() - 1)
-                        .mapToObj(l -> ContentKey.of(key.getElements().subList(0, l))))
+            .flatMap(key ->
+                IntStream.rangeClosed(1, key.getElementCount() - 1)
+                    .mapToObj(l -> ContentKey.of(key.getElements().subList(0, l))))
             .distinct()
             .filter(nsKey -> !existingKeys.contains(nsKey))
             .map(nsKey -> Put.of(nsKey, Namespace.of(nsKey.getElements())))

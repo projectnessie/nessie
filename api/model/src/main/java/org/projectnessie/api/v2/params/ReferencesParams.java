@@ -52,7 +52,8 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
           The returned Tag instances will only contain the 'commitMetaOfHEAD' and 'numTotalCommits' fields.
 
           Note that computing & fetching additional metadata might be computationally expensive on the \
-          server-side, so this flag should be used with care.""")
+          server-side, so this flag should be used with care.\
+          """)
   @QueryParam("fetch")
   @jakarta.ws.rs.QueryParam("fetch")
   @Nullable
@@ -73,7 +74,8 @@ public class ReferencesParams extends AbstractParams<ReferencesParams> {
 
           - refType (String) - the reference type, either BRANCH or TAG
 
-          Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.""",
+          Note that the expression can only test attributes metadata and commit, if 'fetchOption' is set to 'ALL'.\
+          """,
       examples = {
         @ExampleObject(ref = "expr_by_refType"),
         @ExampleObject(ref = "expr_by_ref_name"),

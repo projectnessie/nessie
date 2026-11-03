@@ -104,12 +104,11 @@ class ITCutHistory extends AbstractContentTests<CheckContentEntry> {
     Set<String> collectedLocations = new HashSet<>();
     store
         .getKeys(getMainHead(), null, true, VersionStore.KeyRestrictions.NO_KEY_RESTRICTIONS)
-        .forEachRemaining(
-            e -> {
-              if (e.getContent() instanceof IcebergTable) {
-                collectedLocations.add(((IcebergTable) e.getContent()).getMetadataLocation());
-              }
-            });
+        .forEachRemaining(e -> {
+          if (e.getContent() instanceof IcebergTable) {
+            collectedLocations.add(((IcebergTable) e.getContent()).getMetadataLocation());
+          }
+        });
     soft.assertThat(collectedLocations).isEqualTo(locations);
   }
 

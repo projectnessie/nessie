@@ -60,11 +60,10 @@ public class TestCacheInvalidationReceiver {
     CacheInvalidations invalidations = cacheInvalidations(allInvalidationTypes());
 
     RoutingContext rc =
-        expectResponse(
-            r -> {
-              when(r.getParam("sender")).thenReturn(senderId);
-              when(r.getHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER)).thenReturn(token);
-            });
+        expectResponse(r -> {
+          when(r.getParam("sender")).thenReturn(senderId);
+          when(r.getHeader(NESSIE_CACHE_INVALIDATION_TOKEN_HEADER)).thenReturn(token);
+        });
     RequestBody reqBody = mock(RequestBody.class);
     when(reqBody.asString()).thenReturn(JsonMapper.shared().writeValueAsString(invalidations));
     when(rc.body()).thenReturn(reqBody);

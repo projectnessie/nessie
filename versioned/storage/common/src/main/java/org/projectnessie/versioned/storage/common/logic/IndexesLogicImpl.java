@@ -85,19 +85,18 @@ final class IndexesLogicImpl implements IndexesLogic {
   @Nonnull
   public Supplier<SuppliedCommitIndex> createIndexSupplier(
       @Nonnull Supplier<ObjId> commitIdSupplier) {
-    return memoize(
-        () -> {
-          try {
-            ObjId commitId = commitIdSupplier.get();
-            CommitObj c =
-                EMPTY_OBJ_ID.equals(commitId)
-                    ? null
-                    : persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
-            return suppliedCommitIndex(commitId, buildCompleteIndexOrEmpty(c));
-          } catch (ObjNotFoundException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    return memoize(() -> {
+      try {
+        ObjId commitId = commitIdSupplier.get();
+        CommitObj c =
+            EMPTY_OBJ_ID.equals(commitId)
+                ? null
+                : persist.fetchTypedObj(commitId, COMMIT, CommitObj.class);
+        return suppliedCommitIndex(commitId, buildCompleteIndexOrEmpty(c));
+      } catch (ObjNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 
   @Override
@@ -110,29 +109,28 @@ final class IndexesLogicImpl implements IndexesLogic {
 
     StoreIndex<CommitOp> i =
         loadedIncrementalIndex.orElseGet(() -> incrementalIndexFromCommit(commit));
-    i.updateAll(
-        el -> {
-          CommitOp c = el.content();
-          switch (c.action()) {
-            case ADD -> c = commitOp(INCREMENTAL_ADD, c.payload(), c.value(), c.contentId());
-            case REMOVE -> {
-              if (hasReferenceIndex) {
-                c = commitOp(INCREMENTAL_REMOVE, c.payload(), c.value(), c.contentId());
-              } else {
-                // purge old removes, if there is no reference-index that might contain those
-                c = null;
-              }
-            }
-            case INCREMENTAL_REMOVE -> {
-              if (!hasReferenceIndex) {
-                // purge old removes, if there is no reference-index that might contain those
-                c = null;
-              }
-            }
-            default -> {}
+    i.updateAll(el -> {
+      CommitOp c = el.content();
+      switch (c.action()) {
+        case ADD -> c = commitOp(INCREMENTAL_ADD, c.payload(), c.value(), c.contentId());
+        case REMOVE -> {
+          if (hasReferenceIndex) {
+            c = commitOp(INCREMENTAL_REMOVE, c.payload(), c.value(), c.contentId());
+          } else {
+            // purge old removes, if there is no reference-index that might contain those
+            c = null;
           }
-          return c;
-        });
+        }
+        case INCREMENTAL_REMOVE -> {
+          if (!hasReferenceIndex) {
+            // purge old removes, if there is no reference-index that might contain those
+            c = null;
+          }
+        }
+        default -> {}
+      }
+      return c;
+    });
     return i;
   }
 

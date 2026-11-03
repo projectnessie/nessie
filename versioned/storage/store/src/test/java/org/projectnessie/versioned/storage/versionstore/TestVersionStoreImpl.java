@@ -107,15 +107,13 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
         };
 
     VersionStore storeTested = new VersionStoreImpl(tested);
-    assertThatThrownBy(
-            () ->
-                storeTested.commit(
-                    branch,
-                    Optional.of(branch1),
-                    fromMessage("commit foo"),
-                    singletonList(
-                        Put.of(
-                            ContentKey.of("some-key"), IcebergTable.of("meta", 42, 43, 44, 45)))))
+    assertThatThrownBy(() ->
+            storeTested.commit(
+                branch,
+                Optional.of(branch1),
+                fromMessage("commit foo"),
+                singletonList(
+                    Put.of(ContentKey.of("some-key"), IcebergTable.of("meta", 42, 43, 44, 45)))))
         .isInstanceOf(ReferenceRetryFailureException.class)
         .hasMessageStartingWith(
             "The commit operation could not be performed after 3 retries within the configured commit timeout after ");

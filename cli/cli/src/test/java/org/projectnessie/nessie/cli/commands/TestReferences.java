@@ -165,10 +165,9 @@ public class TestReferences extends BaseTestCommand {
 
       // Must not drop current reference
       soft.assertThatIllegalArgumentException()
-          .isThrownBy(
-              () ->
-                  cli.execute(
-                      ImmutableDropReferenceCommandSpec.of(null, null, "BRANCH", "branch2", false)))
+          .isThrownBy(() ->
+              cli.execute(
+                  ImmutableDropReferenceCommandSpec.of(null, null, "BRANCH", "branch2", false)))
           .withMessage("Must not delete the current reference.");
       cli.execute(ImmutableUseReferenceCommandSpec.of(null, null, null, "main", null));
       cli.execute(ImmutableDropReferenceCommandSpec.of(null, null, "BRANCH", "branch2", false));

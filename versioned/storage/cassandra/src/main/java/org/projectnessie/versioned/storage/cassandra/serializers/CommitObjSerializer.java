@@ -108,12 +108,11 @@ public class CommitObjSerializer extends ObjSerializer<CommitObj> {
 
     Stripes.Builder b = Stripes.newBuilder();
     obj.referenceIndexStripes().stream()
-        .map(
-            s ->
-                Stripe.newBuilder()
-                    .setFirstKey(s.firstKey().rawString())
-                    .setLastKey(s.lastKey().rawString())
-                    .setSegment(s.segment().asBytes()))
+        .map(s ->
+            Stripe.newBuilder()
+                .setFirstKey(s.firstKey().rawString())
+                .setLastKey(s.lastKey().rawString())
+                .setSegment(s.segment().asBytes()))
         .forEach(b::addStripes);
     stmt.setByteBuffer(
         COL_COMMIT_REFERENCE_INDEX_STRIPES.name(), b.build().toByteString().asReadOnlyByteBuffer());
@@ -170,12 +169,11 @@ public class CommitObjSerializer extends ObjSerializer<CommitObj> {
     try {
       Stripes stripes = Stripes.parseFrom(row.getByteBuffer("c_reference_index_stripes"));
       stripes.getStripesList().stream()
-          .map(
-              s ->
-                  indexStripe(
-                      keyFromString(s.getFirstKey()),
-                      keyFromString(s.getLastKey()),
-                      objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
+          .map(s ->
+              indexStripe(
+                  keyFromString(s.getFirstKey()),
+                  keyFromString(s.getLastKey()),
+                  objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
           .forEach(b::addReferenceIndexStripes);
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -68,24 +68,22 @@ public class VertxTasksAsync implements TasksAsync {
             realDelay,
             id ->
                 // scheduling the runnable as a blocking task, a timer handlers must not block
-                vertx.executeBlocking(
-                    () -> {
-                      try {
-                        runnable.run();
-                        completableFuture.complete(null);
-                        return null;
-                      } catch (Throwable t) {
-                        completableFuture.completeExceptionally(new CompletionException(t));
-                        return null;
-                      }
-                    }));
+                vertx.executeBlocking(() -> {
+                  try {
+                    runnable.run();
+                    completableFuture.complete(null);
+                    return null;
+                  } catch (Throwable t) {
+                    completableFuture.completeExceptionally(new CompletionException(t));
+                    return null;
+                  }
+                }));
 
-    completableFuture.whenComplete(
-        (v, t) -> {
-          if (t instanceof CancellationException) {
-            vertx.cancelTimer(timerId); // won't interrupt blocking tasks!
-          }
-        });
+    completableFuture.whenComplete((v, t) -> {
+      if (t instanceof CancellationException) {
+        vertx.cancelTimer(timerId); // won't interrupt blocking tasks!
+      }
+    });
 
     return completableFuture;
   }

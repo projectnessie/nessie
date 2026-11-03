@@ -240,12 +240,11 @@ public class TestMarkAndSweep {
                             .collect(Collectors.toList());
                     soft.assertThat(keys).hasSize(markAndSweep.numKeysAtCutOff);
                     return keys.stream()
-                        .map(
-                            ck ->
-                                Maps.immutableEntry(
-                                    ck,
-                                    markAndSweep.numToContent(
-                                        Long.parseLong(ck.getElements().get(1)))));
+                        .map(ck ->
+                            Maps.immutableEntry(
+                                ck,
+                                markAndSweep.numToContent(
+                                    Long.parseLong(ck.getElements().get(1)))));
                   }
 
                   @Override
@@ -300,16 +299,14 @@ public class TestMarkAndSweep {
                     .filesLister(lister)
                     .fileDeleter(deleter)
                     .expectedFileCount(100)
-                    .contentToFiles(
-                        contentReference -> {
-                          StorageUri baseLocation =
-                              markAndSweep.numToBaseLocation(
-                                  markAndSweep.contentIdToNum(contentReference.contentId()));
-                          StorageUri location = StorageUri.of(contentReference.metadataLocation());
-                          return Stream.of(
-                              FileReference.of(
-                                  baseLocation.relativize(location), baseLocation, -1L));
-                        })
+                    .contentToFiles(contentReference -> {
+                      StorageUri baseLocation =
+                          markAndSweep.numToBaseLocation(
+                              markAndSweep.contentIdToNum(contentReference.contentId()));
+                      StorageUri location = StorageUri.of(contentReference.metadataLocation());
+                      return Stream.of(
+                          FileReference.of(baseLocation.relativize(location), baseLocation, -1L));
+                    })
                     .maxFileModificationTime(markAndSweep.maxFileModificationTime)
                     .build())
             .build();

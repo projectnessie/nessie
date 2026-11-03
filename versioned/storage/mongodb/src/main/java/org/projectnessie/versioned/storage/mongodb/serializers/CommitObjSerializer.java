@@ -127,12 +127,11 @@ public class CommitObjSerializer implements ObjSerializer<CommitObj> {
     CommitHeaders.Builder headers = newCommitHeaders();
     Document headerDoc = doc.get(COL_COMMIT_HEADERS, Document.class);
     if (headerDoc != null) {
-      headerDoc.forEach(
-          (k, o) -> {
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            List<String> l = (List) o;
-            l.forEach(hv -> headers.add(k, hv));
-          });
+      headerDoc.forEach((k, o) -> {
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        List<String> l = (List) o;
+        l.forEach(hv -> headers.add(k, hv));
+      });
     }
     b.headers(headers.build());
 

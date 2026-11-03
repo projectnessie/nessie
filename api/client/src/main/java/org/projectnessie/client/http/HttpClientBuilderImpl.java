@@ -312,10 +312,9 @@ final class HttpClientBuilderImpl implements HttpClient.Builder {
     }
 
     if (!customHeaders.isEmpty()) {
-      requestFilters.add(
-          context ->
-              customHeaders.forEach(
-                  (header, values) -> values.forEach(v -> context.putHeader(header, v))));
+      requestFilters.add(context ->
+          customHeaders.forEach(
+              (header, values) -> values.forEach(v -> context.putHeader(header, v))));
     }
 
     HttpRuntimeConfig config =

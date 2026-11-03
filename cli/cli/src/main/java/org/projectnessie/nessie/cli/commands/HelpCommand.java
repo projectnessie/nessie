@@ -57,11 +57,10 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
 
     List<CommandType> matches =
         Arrays.stream(CommandType.values())
-            .filter(
-                t -> {
-                  NessieCommand<CommandSpec> c = CommandsFactory.buildCommandInstance(t);
-                  return args.isEmpty() || c.matchesNodeTypes().contains(argTypes);
-                })
+            .filter(t -> {
+              NessieCommand<CommandSpec> c = CommandsFactory.buildCommandInstance(t);
+              return args.isEmpty() || c.matchesNodeTypes().contains(argTypes);
+            })
             .collect(Collectors.toList());
 
     Stream<String> output;
@@ -96,12 +95,11 @@ public class HelpCommand extends NessieListingCommand<HelpCommandSpec> {
     output =
         matches.stream()
             .map(CommandsFactory::buildCommandInstance)
-            .flatMap(
-                c ->
-                    Stream.of(
-                        new AttributedString(c.name(), STYLE_COMMAND_NAME).toAnsi(cli.terminal()),
-                        c.description(),
-                        ""));
+            .flatMap(c ->
+                Stream.of(
+                    new AttributedString(c.name(), STYLE_COMMAND_NAME).toAnsi(cli.terminal()),
+                    c.description(),
+                    ""));
 
     Stream<String> heading = Stream.of("", "Nessie CLI - Help", "");
     output = Stream.concat(heading, output);

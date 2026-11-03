@@ -125,7 +125,8 @@ class TestS3IamPolicies {
                 "Action" : "s3:*",
                 "Resource" : "arn:aws:s3:::*/blocked\\"Namespace/*"
               } ]
-            }""");
+            }\
+            """);
   }
 
   @ParameterizedTest

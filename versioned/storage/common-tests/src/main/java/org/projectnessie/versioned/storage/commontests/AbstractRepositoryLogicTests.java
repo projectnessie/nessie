@@ -167,22 +167,20 @@ public class AbstractRepositoryLogicTests {
     ReferenceLogic referenceLogic = referenceLogic(persist);
 
     soft.assertThat(allInternalRefs())
-        .allSatisfy(
-            intRef ->
-                assertThat(intRef)
-                    .extracting(InternalRef::name, type(String.class))
-                    .extracting(persist::fetchReference)
-                    .isNull());
+        .allSatisfy(intRef ->
+            assertThat(intRef)
+                .extracting(InternalRef::name, type(String.class))
+                .extracting(persist::fetchReference)
+                .isNull());
 
     String refsHeadsMain = "refs/heads/" + defaultBranchName;
 
     soft.assertThat(refsHeadsMain)
-        .satisfies(
-            intRef ->
-                assertThat(intRef)
-                    .asInstanceOf(type(String.class))
-                    .extracting(persist::fetchReference)
-                    .isNull());
+        .satisfies(intRef ->
+            assertThat(intRef)
+                .asInstanceOf(type(String.class))
+                .extracting(persist::fetchReference)
+                .isNull());
 
     soft.assertThat(referenceLogic.queryReferences(referencesQuery())).isExhausted();
 
@@ -195,31 +193,28 @@ public class AbstractRepositoryLogicTests {
     Set<Reference> refQuery = newHashSet(referenceLogic.queryReferences(referencesQuery()));
 
     soft.assertThat(allInternalRefs())
-        .allSatisfy(
-            intRef ->
-                assertThat(intRef)
-                    .extracting(InternalRef::name, type(String.class))
-                    .extracting(persist::fetchReference)
-                    .isNotNull()
-                    .extracting(Reference::pointer)
-                    .isNotEqualTo(EMPTY_OBJ_ID)
-                    .satisfies(
-                        id -> {
-                          CommitObj commitObj = persist.fetchTypedObj(id, COMMIT, CommitObj.class);
-                          assertThat(commitObj)
-                              .extracting(CommitObj::commitType)
-                              .isSameAs(CommitType.INTERNAL);
-                        }));
+        .allSatisfy(intRef ->
+            assertThat(intRef)
+                .extracting(InternalRef::name, type(String.class))
+                .extracting(persist::fetchReference)
+                .isNotNull()
+                .extracting(Reference::pointer)
+                .isNotEqualTo(EMPTY_OBJ_ID)
+                .satisfies(id -> {
+                  CommitObj commitObj = persist.fetchTypedObj(id, COMMIT, CommitObj.class);
+                  assertThat(commitObj)
+                      .extracting(CommitObj::commitType)
+                      .isSameAs(CommitType.INTERNAL);
+                }));
 
     soft.assertThat(refsHeadsMain)
-        .satisfies(
-            intRef ->
-                assertThat(intRef)
-                    .asInstanceOf(type(String.class))
-                    .extracting(persist::fetchReference)
-                    .isNotNull()
-                    .extracting(Reference::pointer)
-                    .isEqualTo(EMPTY_OBJ_ID));
+        .satisfies(intRef ->
+            assertThat(intRef)
+                .asInstanceOf(type(String.class))
+                .extracting(persist::fetchReference)
+                .isNotNull()
+                .extracting(Reference::pointer)
+                .isEqualTo(EMPTY_OBJ_ID));
 
     // repeat initialization (no-op)
 

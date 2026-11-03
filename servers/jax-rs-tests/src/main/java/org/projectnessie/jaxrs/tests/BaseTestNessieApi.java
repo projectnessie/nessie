@@ -179,19 +179,17 @@ public abstract class BaseTestNessieApi {
           .assignTo(Branch.of(defaultBranch.getName(), EMPTY))
           .assign();
       api.getAllReferences().stream()
-          .forEach(
-              ref -> {
-                try {
-                  if (ref instanceof Branch branch
-                      && !ref.getName().equals(defaultBranch.getName())) {
-                    api.deleteBranch().branch(branch).delete();
-                  } else if (ref instanceof Tag tag) {
-                    api.deleteTag().tag(tag).delete();
-                  }
-                } catch (NessieConflictException | NessieNotFoundException e) {
-                  throw new RuntimeException(e);
-                }
-              });
+          .forEach(ref -> {
+            try {
+              if (ref instanceof Branch branch && !ref.getName().equals(defaultBranch.getName())) {
+                api.deleteBranch().branch(branch).delete();
+              } else if (ref instanceof Tag tag) {
+                api.deleteTag().tag(tag).delete();
+              }
+            } catch (NessieConflictException | NessieNotFoundException e) {
+              throw new RuntimeException(e);
+            }
+          });
       api.close();
     }
   }
@@ -400,13 +398,8 @@ public abstract class BaseTestNessieApi {
     String refName = "does-not-exist";
     soft.assertThatThrownBy(() -> api().getReference().refName(refName).get())
         .isInstanceOf(NessieNotFoundException.class);
-    soft.assertThatThrownBy(
-            () ->
-                api()
-                    .assignBranch()
-                    .branch(Branch.of(refName, main.getHash()))
-                    .assignTo(main)
-                    .assign())
+    soft.assertThatThrownBy(() ->
+            api().assignBranch().branch(Branch.of(refName, main.getHash())).assignTo(main).assign())
         .isInstanceOf(NessieNotFoundException.class);
     soft.assertThatThrownBy(
             () -> api().assignTag().tag(Tag.of(refName, main.getHash())).assignTo(main).assign())
@@ -417,21 +410,15 @@ public abstract class BaseTestNessieApi {
     soft.assertThatThrownBy(() -> api().deleteTag().tag(Tag.of(refName, main.getHash())).delete())
         .isInstanceOf(NessieNotFoundException.class);
     if (isV2()) {
-      soft.assertThatThrownBy(
-              () ->
-                  api()
-                      .assignBranch()
-                      .branch(Branch.of(refName, main.getHash()))
-                      .assignTo(main)
-                      .assignAndGet())
+      soft.assertThatThrownBy(() ->
+              api()
+                  .assignBranch()
+                  .branch(Branch.of(refName, main.getHash()))
+                  .assignTo(main)
+                  .assignAndGet())
           .isInstanceOf(NessieNotFoundException.class);
-      soft.assertThatThrownBy(
-              () ->
-                  api()
-                      .assignTag()
-                      .tag(Tag.of(refName, main.getHash()))
-                      .assignTo(main)
-                      .assignAndGet())
+      soft.assertThatThrownBy(() ->
+              api().assignTag().tag(Tag.of(refName, main.getHash())).assignTo(main).assignAndGet())
           .isInstanceOf(NessieNotFoundException.class);
       soft.assertThatThrownBy(
               () -> api().deleteBranch().branch(Branch.of(refName, main.getHash())).getAndDelete())
@@ -481,14 +468,13 @@ public abstract class BaseTestNessieApi {
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageContaining("Expected hash must be provided");
 
-    soft.assertThatThrownBy(
-            () ->
-                api.assignReference()
-                    .refName(ref0.getName())
-                    .hash(ref0.getHash())
-                    .refType(anotherType)
-                    .assignTo(main1)
-                    .assign())
+    soft.assertThatThrownBy(() ->
+            api.assignReference()
+                .refName(ref0.getName())
+                .hash(ref0.getHash())
+                .refType(anotherType)
+                .assignTo(main1)
+                .assign())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
 
@@ -540,13 +526,12 @@ public abstract class BaseTestNessieApi {
     soft.assertThat(deleted).isEqualTo(ref);
 
     ref = createReference(ref0, main.getName());
-    soft.assertThatThrownBy(
-            () ->
-                api.deleteReference()
-                    .refName(ref0.getName())
-                    .hash(ref0.getHash())
-                    .refType(anotherType)
-                    .delete())
+    soft.assertThatThrownBy(() ->
+            api.deleteReference()
+                .refName(ref0.getName())
+                .hash(ref0.getHash())
+                .refType(anotherType)
+                .delete())
         .isInstanceOf(NessieBadRequestException.class)
         .hasMessageMatching(".*Expected reference type .+ does not match existing reference.*");
 
@@ -1684,12 +1669,11 @@ public abstract class BaseTestNessieApi {
 
     soft.assertThat(api().getDiff().fromRef(fromRef).toHashOnRef(toRef.getHash()).get().getDiffs())
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNull();
-              assertThat(diff.getTo()).isNotNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNull();
+          assertThat(diff.getTo()).isNotNull();
+        });
 
     // both nameless references
     soft.assertThat(
@@ -1700,22 +1684,20 @@ public abstract class BaseTestNessieApi {
                 .get()
                 .getDiffs())
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNull();
-              assertThat(diff.getTo()).isNotNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNull();
+          assertThat(diff.getTo()).isNotNull();
+        });
 
     // reverse to/from
     soft.assertThat(api().getDiff().fromHashOnRef(toRef.getHash()).toRef(fromRef).get().getDiffs())
         .hasSize(1)
-        .allSatisfy(
-            diff -> {
-              assertThat(diff.getKey()).isNotNull();
-              assertThat(diff.getFrom()).isNotNull();
-              assertThat(diff.getTo()).isNull();
-            });
+        .allSatisfy(diff -> {
+          assertThat(diff.getKey()).isNotNull();
+          assertThat(diff.getFrom()).isNotNull();
+          assertThat(diff.getTo()).isNull();
+        });
   }
 
   @Test
@@ -1803,36 +1785,34 @@ public abstract class BaseTestNessieApi {
       for (String relativeCommitSpec : relativeCommitSpecs) {
 
         // Check commit-log
-        soft.assertThatCode(
-                () ->
-                    assertThat(
-                            api()
-                                .getCommitLog()
-                                .refName(branchName)
-                                .hashOnRef(relativeCommitSpec)
-                                .maxRecords(1)
-                                .stream()
-                                .findFirst())
-                        .map(LogEntry::getCommitMeta)
-                        .map(CommitMeta::getHash)
-                        .get()
-                        .isEqualTo(hashes.get(i2)))
+        soft.assertThatCode(() ->
+                assertThat(
+                        api()
+                            .getCommitLog()
+                            .refName(branchName)
+                            .hashOnRef(relativeCommitSpec)
+                            .maxRecords(1)
+                            .stream()
+                            .findFirst())
+                    .map(LogEntry::getCommitMeta)
+                    .map(CommitMeta::getHash)
+                    .get()
+                    .isEqualTo(hashes.get(i2)))
             .describedAs(
                 "commit-log - %s - relative-commit-spec %s - ref-commit: %s %s",
                 i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())
             .doesNotThrowAnyException();
 
         // Check get-entries
-        soft.assertThatCode(
-                () ->
-                    assertThat(
-                            api()
-                                .getEntries()
-                                .refName(branchName)
-                                .hashOnRef(relativeCommitSpec)
-                                .stream()
-                                .count())
-                        .isEqualTo(1 + numCommits - i2))
+        soft.assertThatCode(() ->
+                assertThat(
+                        api()
+                            .getEntries()
+                            .refName(branchName)
+                            .hashOnRef(relativeCommitSpec)
+                            .stream()
+                            .count())
+                    .isEqualTo(1 + numCommits - i2))
             .describedAs(
                 "get-entries - %s - relative-commit-spec %s - ref-commit: %s %s",
                 i, relativeCommitSpec, refCommit.getHash(), refCommit.getCommitTime())
@@ -1946,16 +1926,15 @@ public abstract class BaseTestNessieApi {
 
     api().getConfig();
 
-    soft.assertThatThrownBy(
-            () ->
-                api.updateRepositoryConfig()
-                    .repositoryConfig(
-                        GarbageCollectorConfig.builder()
-                            .defaultCutoffPolicy("foo")
-                            .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
-                            .build())
-                    .update()
-                    .getPrevious())
+    soft.assertThatThrownBy(() ->
+            api.updateRepositoryConfig()
+                .repositoryConfig(
+                    GarbageCollectorConfig.builder()
+                        .defaultCutoffPolicy("foo")
+                        .newFilesGracePeriod(Duration.of(3, ChronoUnit.HOURS))
+                        .build())
+                .update()
+                .getPrevious())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Failed to parse default-cutoff-value");
   }
@@ -2058,14 +2037,13 @@ public abstract class BaseTestNessieApi {
                 .sourceRefName(main.getName())
                 .create();
 
-    soft.assertThatThrownBy(
-            () ->
-                api()
-                    .commitMultipleOperations()
-                    .commitMeta(fromMessage("commit"))
-                    .operation(Put.of(key, table))
-                    .branch(branch)
-                    .commit())
+    soft.assertThatThrownBy(() ->
+            api()
+                .commitMultipleOperations()
+                .commitMeta(fromMessage("commit"))
+                .operation(Put.of(key, table))
+                .branch(branch)
+                .commit())
         .isInstanceOf(NessieReferenceConflictException.class)
         .asInstanceOf(type(NessieReferenceConflictException.class))
         .matches(e -> e.getErrorCode().equals(ErrorCode.REFERENCE_CONFLICT))

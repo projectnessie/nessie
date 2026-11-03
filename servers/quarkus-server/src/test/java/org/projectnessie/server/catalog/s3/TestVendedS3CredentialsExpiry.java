@@ -98,21 +98,19 @@ public class TestVendedS3CredentialsExpiry {
 
     try (RESTCatalog catalog = new RESTCatalog()) {
       catalog.setConf(new Configuration());
-      soft.assertThatCode(
-              () ->
-                  catalog.initialize(
-                      "nessie-s3-iceberg-api",
-                      Map.of(
-                          CatalogProperties.URI,
-                          httpServer.getLocalBaseUri().resolve("/iceberg/").toString())))
+      soft.assertThatCode(() ->
+              catalog.initialize(
+                  "nessie-s3-iceberg-api",
+                  Map.of(
+                      CatalogProperties.URI,
+                      httpServer.getLocalBaseUri().resolve("/iceberg/").toString())))
           .doesNotThrowAnyException();
       soft.assertThatCode(() -> catalog.createNamespace(Namespace.of("foo")))
           .doesNotThrowAnyException();
-      soft.assertThatThrownBy(
-              () ->
-                  catalog.createTable(
-                      TableIdentifier.of("foo", "bar"),
-                      new Schema(required(1, "id", Types.IntegerType.get()))))
+      soft.assertThatThrownBy(() ->
+              catalog.createTable(
+                  TableIdentifier.of("foo", "bar"),
+                  new Schema(required(1, "id", Types.IntegerType.get()))))
           .hasMessageMatching(
               "Provided credentials expire \\(1970-01-01T00:00:10Z\\) before the expected session end "
                   + "\\(now: .+, duration: PT5H\\)");

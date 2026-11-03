@@ -239,21 +239,19 @@ public abstract class AbstractReferenceLogicTests {
       AtomicBoolean stop = new AtomicBoolean();
       List<Future<?>> tasks =
           IntStream.range(0, readerThreads)
-              .mapToObj(
-                  x ->
-                      exec.submit(
-                          () -> {
-                            while (!currentThread().isInterrupted() && !stop.get()) {
-                              refLogic
-                                  .queryReferences(referencesQuery("refs/heads/"))
-                                  .forEachRemaining(ref -> {});
-                              try {
-                                sleep(1);
-                              } catch (InterruptedException e) {
-                                break;
-                              }
-                            }
-                          }))
+              .mapToObj(x ->
+                  exec.submit(() -> {
+                    while (!currentThread().isInterrupted() && !stop.get()) {
+                      refLogic
+                          .queryReferences(referencesQuery("refs/heads/"))
+                          .forEachRemaining(ref -> {});
+                      try {
+                        sleep(1);
+                      } catch (InterruptedException e) {
+                        break;
+                      }
+                    }
+                  }))
               .collect(Collectors.toList());
       try {
         // Following could be in the for-loop below, but want to have different stack traces for the
@@ -537,14 +535,13 @@ public abstract class AbstractReferenceLogicTests {
     List<Reference> created =
         IntStream.range(0, numRefs)
             .mapToObj(i -> String.format("ref-%10d", i))
-            .map(
-                n -> {
-                  try {
-                    return refLogic.createReference(n, randomObjId(), randomObjId());
-                  } catch (RefAlreadyExistsException | RetryTimeoutException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .map(n -> {
+              try {
+                return refLogic.createReference(n, randomObjId(), randomObjId());
+              } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+                throw new RuntimeException(e);
+              }
+            })
             .collect(Collectors.toList());
 
     soft.assertThat(created)
@@ -663,14 +660,13 @@ public abstract class AbstractReferenceLogicTests {
         rangeClosed('A', 'E')
             .mapToObj(c -> ((char) c) + "/")
             .flatMap(pre -> rangeClosed('A', 'E').mapToObj(c -> pre + (char) c))
-            .map(
-                n -> {
-                  try {
-                    return refLogic.createReference(n, randomObjId(), randomObjId());
-                  } catch (RefAlreadyExistsException | RetryTimeoutException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .map(n -> {
+              try {
+                return refLogic.createReference(n, randomObjId(), randomObjId());
+              } catch (RefAlreadyExistsException | RetryTimeoutException e) {
+                throw new RuntimeException(e);
+              }
+            })
             .collect(Collectors.toList());
 
     soft.assertThat(created).hasSize(5 * 5);
@@ -678,47 +674,43 @@ public abstract class AbstractReferenceLogicTests {
     // Just prefix
     rangeClosed('A', 'E')
         .mapToObj(c -> "" + ((char) c))
-        .forEach(
-            pre -> {
-              List<Reference> result =
-                  newArrayList(refLogic.queryReferences(referencesQuery(null, pre, false)));
-              soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
-            });
+        .forEach(pre -> {
+          List<Reference> result =
+              newArrayList(refLogic.queryReferences(referencesQuery(null, pre, false)));
+          soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
+        });
 
     // Begin == page-token
     rangeClosed('A', 'E')
         .mapToObj(c -> "" + ((char) c))
-        .forEach(
-            pre -> {
-              List<Reference> result =
-                  newArrayList(
-                      refLogic.queryReferences(
-                          referencesQuery(pagingToken(copyFromUtf8(pre)), pre, false)));
-              soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
-            });
+        .forEach(pre -> {
+          List<Reference> result =
+              newArrayList(
+                  refLogic.queryReferences(
+                      referencesQuery(pagingToken(copyFromUtf8(pre)), pre, false)));
+          soft.assertThat(result).hasSize(5).allMatch(r -> r.name().startsWith(pre + "/"));
+        });
 
     // Begin < page-token
     rangeClosed('A', 'E')
         .mapToObj(c -> "" + ((char) c))
-        .forEach(
-            pre -> {
-              List<Reference> result =
-                  newArrayList(
-                      refLogic.queryReferences(
-                          referencesQuery(pagingToken(copyFromUtf8(pre + "/C")), pre, false)));
-              soft.assertThat(result).hasSize(3).allMatch(r -> r.name().startsWith(pre + "/"));
-            });
+        .forEach(pre -> {
+          List<Reference> result =
+              newArrayList(
+                  refLogic.queryReferences(
+                      referencesQuery(pagingToken(copyFromUtf8(pre + "/C")), pre, false)));
+          soft.assertThat(result).hasSize(3).allMatch(r -> r.name().startsWith(pre + "/"));
+        });
 
     // dumb page-token (outside prefix)
     rangeClosed('A', 'E')
         .mapToObj(c -> "" + ((char) c))
-        .forEach(
-            pre -> {
-              List<Reference> result =
-                  newArrayList(
-                      refLogic.queryReferences(
-                          referencesQuery(pagingToken(copyFromUtf8("Z")), pre, false)));
-              soft.assertThat(result).isEmpty();
-            });
+        .forEach(pre -> {
+          List<Reference> result =
+              newArrayList(
+                  refLogic.queryReferences(
+                      referencesQuery(pagingToken(copyFromUtf8("Z")), pre, false)));
+          soft.assertThat(result).isEmpty();
+        });
   }
 }

@@ -113,14 +113,13 @@ public class NessieJaxRsExtension extends NessieClientResolver
             key -> {
               try {
                 Extension versionStoreExtension =
-                    VersionStoreImplExtension.forPersist(
-                        () -> {
-                          Persist persist = persistSupplier.get();
-                          persist.erase();
-                          RepositoryLogic repositoryLogic = repositoryLogic(persist);
-                          repositoryLogic.initialize("main");
-                          return persist;
-                        });
+                    VersionStoreImplExtension.forPersist(() -> {
+                      Persist persist = persistSupplier.get();
+                      persist.erase();
+                      RepositoryLogic repositoryLogic = repositoryLogic(persist);
+                      repositoryLogic.initialize("main");
+                      return persist;
+                    });
 
                 return new EnvHolder(versionStoreExtension);
               } catch (Exception e) {

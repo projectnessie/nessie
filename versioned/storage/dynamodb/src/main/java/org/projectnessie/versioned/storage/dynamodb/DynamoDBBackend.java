@@ -105,20 +105,16 @@ public final class DynamoDBBackend implements Backend {
   }
 
   private void createTable(String name) {
-    client.createTable(
-        b ->
-            b.tableName(name)
-                .attributeDefinitions(
-                    AttributeDefinition.builder()
-                        .attributeName(KEY_NAME)
-                        .attributeType(ScalarAttributeType.S)
-                        .build())
-                .billingMode(BillingMode.PAY_PER_REQUEST)
-                .keySchema(
-                    KeySchemaElement.builder()
-                        .attributeName(KEY_NAME)
-                        .keyType(KeyType.HASH)
-                        .build()));
+    client.createTable(b ->
+        b.tableName(name)
+            .attributeDefinitions(
+                AttributeDefinition.builder()
+                    .attributeName(KEY_NAME)
+                    .attributeType(ScalarAttributeType.S)
+                    .build())
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .keySchema(
+                KeySchemaElement.builder().attributeName(KEY_NAME).keyType(KeyType.HASH).build()));
   }
 
   private static void verifyKeySchema(TableDescription description) {
@@ -152,18 +148,16 @@ public final class DynamoDBBackend implements Backend {
     DynamoDbClient c = client();
 
     Stream.of(tableRefs, tableObjs)
-        .forEach(
-            table -> {
-              try (BatchWrite batchWrite = new BatchWrite(this, table)) {
-                c.scanPaginator(b -> b.tableName(table))
-                    .forEach(
-                        r ->
-                            r.items().stream()
-                                .map(attrs -> attrs.get(KEY_NAME))
-                                .filter(key -> prefixed.stream().anyMatch(key.s()::startsWith))
-                                .forEach(batchWrite::addDelete));
-              }
-            });
+        .forEach(table -> {
+          try (BatchWrite batchWrite = new BatchWrite(this, table)) {
+            c.scanPaginator(b -> b.tableName(table))
+                .forEach(r ->
+                    r.items().stream()
+                        .map(attrs -> attrs.get(KEY_NAME))
+                        .filter(key -> prefixed.stream().anyMatch(key.s()::startsWith))
+                        .forEach(batchWrite::addDelete));
+          }
+        });
   }
 
   static String keyPrefix(String repositoryId) {

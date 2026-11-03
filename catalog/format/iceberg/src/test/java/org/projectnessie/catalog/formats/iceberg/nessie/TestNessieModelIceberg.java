@@ -480,11 +480,10 @@ public class TestNessieModelIceberg {
             tableMetadataSimple(),
             // statistics
             tableMetadataWithStatistics())
-        .flatMap(
-            builder ->
-                Stream.of(
-                    builder.formatVersion(IcebergSpec.V1.version()).build(),
-                    builder.formatVersion(IcebergSpec.V2.version()).build()));
+        .flatMap(builder ->
+            Stream.of(
+                builder.formatVersion(IcebergSpec.V1.version()).build(),
+                builder.formatVersion(IcebergSpec.V2.version()).build()));
   }
 
   @Test
@@ -928,12 +927,11 @@ public class TestNessieModelIceberg {
             .addFields(partitionField("p_value", "identity", 242, 1052))
             .build();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
-                    .applyUpdates(
-                        List.of(addPartitionSpec(nonExistingField), setDefaultPartitionSpec(-1)))
-                    .snapshot())
+        .isThrownBy(() ->
+            new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+                .applyUpdates(
+                    List.of(addPartitionSpec(nonExistingField), setDefaultPartitionSpec(-1)))
+                .snapshot())
         .withMessage(
             "Source field with ID 242 not found for partition spec with ID 3 and transform 'identity'");
   }
@@ -1037,11 +1035,10 @@ public class TestNessieModelIceberg {
             .addFields(sortField("identity", 42, ASC, NULLS_LAST))
             .build();
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
-                    .applyUpdates(List.of(addSortOrder(nonExistingField), setDefaultSortOrder(-1)))
-                    .snapshot())
+        .isThrownBy(() ->
+            new IcebergTableMetadataUpdateState(snapshot4, ContentKey.of("foo"), true)
+                .applyUpdates(List.of(addSortOrder(nonExistingField), setDefaultSortOrder(-1)))
+                .snapshot())
         .withMessage(
             "Iceberg field with ID 42 for sort order with ID 4 and transform 'identity' does not exist");
   }

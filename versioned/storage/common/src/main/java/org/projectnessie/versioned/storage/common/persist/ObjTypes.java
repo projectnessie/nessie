@@ -75,26 +75,24 @@ public final class ObjTypes {
       Map<String, ObjType> byName = new TreeMap<>();
       Map<String, ObjType> byShortName = new HashMap<>();
       for (ObjTypeBundle bundle : ServiceLoader.load(ObjTypeBundle.class)) {
-        bundle.register(
-            objType -> {
-              if (byName.put(objType.name(), objType) != null) {
-                throw new IllegalStateException("Duplicate object type name: " + objType.name());
-              }
-              if (byShortName.put(objType.shortName(), objType) != null) {
-                throw new IllegalStateException(
-                    "Duplicate object type short name: " + objType.shortName());
-              }
-              if (byAnyName.containsKey(objType.name())
-                  || byAnyName.containsKey(objType.shortName())) {
-                throw new IllegalStateException(
-                    "Duplicate object type name/short name: "
-                        + objType.name()
-                        + "/"
-                        + objType.shortName());
-              }
-              byAnyName.put(objType.name(), objType);
-              byAnyName.put(objType.shortName(), objType);
-            });
+        bundle.register(objType -> {
+          if (byName.put(objType.name(), objType) != null) {
+            throw new IllegalStateException("Duplicate object type name: " + objType.name());
+          }
+          if (byShortName.put(objType.shortName(), objType) != null) {
+            throw new IllegalStateException(
+                "Duplicate object type short name: " + objType.shortName());
+          }
+          if (byAnyName.containsKey(objType.name()) || byAnyName.containsKey(objType.shortName())) {
+            throw new IllegalStateException(
+                "Duplicate object type name/short name: "
+                    + objType.name()
+                    + "/"
+                    + objType.shortName());
+          }
+          byAnyName.put(objType.name(), objType);
+          byAnyName.put(objType.shortName(), objType);
+        });
       }
       BY_ANY_NAME = Collections.unmodifiableMap(byAnyName);
       OBJ_TYPES = Set.copyOf(byName.values());

@@ -64,25 +64,24 @@ public class ReadEntries extends AbstractCommand {
       long count =
           api.getEntries().refName(ref).hashOnRef(hash).withContent(withContent).stream()
               .limit(limit > 0 ? limit : Long.MAX_VALUE)
-              .peek(
-                  entry -> {
-                    out.printf("Key: %s%n", entry.getName());
-                    if (isVerbose()) {
-                      List<String> key = entry.getName().getElements();
-                      for (int i = 0; i < key.size(); i++) {
-                        out.printf("  key[%d]: %s%n", i, key.get(i));
-                      }
-                    }
+              .peek(entry -> {
+                out.printf("Key: %s%n", entry.getName());
+                if (isVerbose()) {
+                  List<String> key = entry.getName().getElements();
+                  for (int i = 0; i < key.size(); i++) {
+                    out.printf("  key[%d]: %s%n", i, key.get(i));
+                  }
+                }
 
-                    out.printf("Type: %s%n", entry.getType());
-                    out.printf("Content ID: %s%n", entry.getContentId());
+                out.printf("Type: %s%n", entry.getType());
+                out.printf("Content ID: %s%n", entry.getContentId());
 
-                    if (entry.getContent() != null) {
-                      out.printf("Value: %s%n", entry.getContent());
-                    }
+                if (entry.getContent() != null) {
+                  out.printf("Value: %s%n", entry.getContent());
+                }
 
-                    out.println();
-                  })
+                out.println();
+              })
               .count();
       out.printf(
           "%nDone listing %,d entries for reference '%s' @ %s.%n%n",

@@ -101,30 +101,28 @@ final class JavaRequest extends BaseHttpRequest {
 
   private BodyPublisher bodyPublisher(RequestContext context) {
     ClassLoader cl = getClass().getClassLoader();
-    return BodyPublishers.ofInputStream(
-        () -> {
+    return BodyPublishers.ofInputStream(() -> {
+      try {
+        Pipe pipe = Pipe.open();
+
+        writerPool.execute(() -> {
+          ClassLoader restore = currentThread().getContextClassLoader();
           try {
-            Pipe pipe = Pipe.open();
+            // Okay - this is weird - but it is necessary when running tests with Quarkus
+            // via `./gradlew :nessie-quarkus:test`.
+            currentThread().setContextClassLoader(cl);
 
-            writerPool.execute(
-                () -> {
-                  ClassLoader restore = currentThread().getContextClassLoader();
-                  try {
-                    // Okay - this is weird - but it is necessary when running tests with Quarkus
-                    // via `./gradlew :nessie-quarkus:test`.
-                    currentThread().setContextClassLoader(cl);
-
-                    writeToOutputStream(context, Channels.newOutputStream(pipe.sink()));
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  } finally {
-                    currentThread().setContextClassLoader(restore);
-                  }
-                });
-            return Channels.newInputStream(pipe.source());
-          } catch (IOException e) {
+            writeToOutputStream(context, Channels.newOutputStream(pipe.sink()));
+          } catch (Exception e) {
             throw new RuntimeException(e);
+          } finally {
+            currentThread().setContextClassLoader(restore);
           }
         });
+        return Channels.newInputStream(pipe.source());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
   }
 }

@@ -63,12 +63,11 @@ public interface IcebergPartitionField {
         .filter(f -> f.id() == sourceId())
         .findFirst()
         .map(f -> transformInstance().transformedType(f.type()))
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Partition field source ID "
-                        + sourceId()
-                        + " is not contained in the given schema"));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                "Partition field source ID "
+                    + sourceId()
+                    + " is not contained in the given schema"));
   }
 
   String transform();

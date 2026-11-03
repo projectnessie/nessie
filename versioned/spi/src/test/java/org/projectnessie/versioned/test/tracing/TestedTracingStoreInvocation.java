@@ -76,14 +76,13 @@ public class TestedTracingStoreInvocation<S> {
   public static <S> Stream<Arguments> toArguments(
       Stream<TestedTracingStoreInvocation<S>> versionStoreFunctions) {
     // flatten all "normal executions" + "throws XYZ"
-    return versionStoreFunctions.flatMap(
-        invocation -> {
-          // Construct a stream of arguments, both "normal" results and exceptional results.
-          Stream<Arguments> normalExecs = Stream.of(Arguments.of(invocation, null));
-          Stream<Arguments> exceptionalExecs =
-              invocation.getFailures().stream().map(ex -> Arguments.of(invocation, ex));
-          return Stream.concat(normalExecs, exceptionalExecs);
-        });
+    return versionStoreFunctions.flatMap(invocation -> {
+      // Construct a stream of arguments, both "normal" results and exceptional results.
+      Stream<Arguments> normalExecs = Stream.of(Arguments.of(invocation, null));
+      Stream<Arguments> exceptionalExecs =
+          invocation.getFailures().stream().map(ex -> Arguments.of(invocation, ex));
+      return Stream.concat(normalExecs, exceptionalExecs);
+    });
   }
 
   public String getOpName() {

@@ -319,25 +319,22 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     String invalidHash = "abc";
     String unknownHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
     String invalidBranch = "invalidBranch";
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN BRANCH %s TO %s AT %s IN nessie",
-                    additionalRefName, defaultBranch(), invalidHash))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN BRANCH %s TO %s AT %s IN nessie",
+                additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + invalidHash);
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN BRANCH %s TO %s AT %s IN nessie",
-                    additionalRefName, defaultBranch(), unknownHash))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN BRANCH %s TO %s AT %s IN nessie",
+                additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Commit '%s' not found", unknownHash));
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN BRANCH %s TO %s AT %s IN nessie",
-                    additionalRefName, invalidBranch, defaultHash()))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN BRANCH %s TO %s AT %s IN nessie",
+                additionalRefName, invalidBranch, defaultHash()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidBranch));
   }
@@ -367,25 +364,22 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
     String invalidHash = "abc";
     String unknownHash = "dd8d46a3dd5478ce69749a5455dba29d74f6d1171188f4c21d0e15ff4a0a9a9c";
     String invalidTag = "invalidTag";
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN TAG %s TO %s AT %s IN nessie",
-                    additionalRefName, defaultBranch(), invalidHash))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN TAG %s TO %s AT %s IN nessie",
+                additionalRefName, defaultBranch(), invalidHash))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(Validation.HASH_OR_RELATIVE_COMMIT_SPEC_MESSAGE + " - but was: " + invalidHash);
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN TAG %s TO %s AT %s IN nessie",
-                    additionalRefName, defaultBranch(), unknownHash))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN TAG %s TO %s AT %s IN nessie",
+                additionalRefName, defaultBranch(), unknownHash))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Commit '%s' not found", unknownHash));
-    assertThatThrownBy(
-            () ->
-                sql(
-                    "ASSIGN TAG %s TO %s AT %s IN nessie",
-                    additionalRefName, invalidTag, defaultHash()))
+    assertThatThrownBy(() ->
+            sql(
+                "ASSIGN TAG %s TO %s AT %s IN nessie",
+                additionalRefName, invalidTag, defaultHash()))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessage(String.format("Named reference '%s' not found", invalidTag));
   }
@@ -814,7 +808,8 @@ public abstract class AbstractNessieSparkSqlExtensionTest extends SparkSqlTestBa
          'write.delete.mode'='merge-on-read',
          'write.update.mode'='merge-on-read',
          'write.merge.mode'='merge-on-read'
-        ) PARTITIONED BY (id)""");
+        ) PARTITIONED BY (id)\
+        """);
     sql(
         "INSERT INTO nessie.db.tbl (id, val) VALUES (23, 2301), (23, 2302), (23, 2303), (24, 2401), (24, 2402), (24, 2403)");
     sql("UPDATE nessie.db.tbl SET val = 2311 WHERE id = 23 AND val = 2301");

@@ -66,12 +66,11 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
       throws SQLException {
     Stripes.Builder b = Stripes.newBuilder();
     obj.stripes().stream()
-        .map(
-            s ->
-                Stripe.newBuilder()
-                    .setFirstKey(s.firstKey().rawString())
-                    .setLastKey(s.lastKey().rawString())
-                    .setSegment(s.segment().asBytes()))
+        .map(s ->
+            Stripe.newBuilder()
+                .setFirstKey(s.firstKey().rawString())
+                .setLastKey(s.lastKey().rawString())
+                .setSegment(s.segment().asBytes()))
         .forEach(b::addStripes);
     serializeBytes(
         ps, nameToIdx.apply(COL_SEGMENTS_STRIPES), b.build().toByteString(), databaseSpecific);
@@ -85,12 +84,11 @@ public class IndexSegmentsObjSerializer implements ObjSerializer<IndexSegmentsOb
       Stripes stripes = Stripes.parseFrom(rs.getBytes(COL_SEGMENTS_STRIPES));
       List<IndexStripe> stripeList =
           stripes.getStripesList().stream()
-              .map(
-                  s ->
-                      indexStripe(
-                          keyFromString(s.getFirstKey()),
-                          keyFromString(s.getLastKey()),
-                          objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
+              .map(s ->
+                  indexStripe(
+                      keyFromString(s.getFirstKey()),
+                      keyFromString(s.getLastKey()),
+                      objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
               .collect(Collectors.toList());
       return indexSegments(id, referenced, stripeList);
     } catch (IOException e) {

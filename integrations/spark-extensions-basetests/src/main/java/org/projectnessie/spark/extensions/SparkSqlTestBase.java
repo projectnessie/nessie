@@ -156,11 +156,10 @@ public abstract class SparkSqlTestBase {
     sparkHadoop().forEach((k, v) -> conf.set(format("spark.hadoop.%s", k), v));
 
     nessieParams()
-        .forEach(
-            (k, v) -> {
-              conf.set(format("spark.sql.catalog.nessie.%s", k), v);
-              conf.set(format("spark.sql.catalog.spark_catalog.%s", k), v);
-            });
+        .forEach((k, v) -> {
+          conf.set(format("spark.sql.catalog.nessie.%s", k), v);
+          conf.set(format("spark.sql.catalog.spark_catalog.%s", k), v);
+        });
 
     conf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic")
         .set("spark.ui.enabled", "false")
@@ -251,23 +250,22 @@ public abstract class SparkSqlTestBase {
 
   protected static Object[] toJava(Row row) {
     return IntStream.range(0, row.size())
-        .mapToObj(
-            pos -> {
-              if (row.isNullAt(pos)) {
-                return null;
-              }
+        .mapToObj(pos -> {
+          if (row.isNullAt(pos)) {
+            return null;
+          }
 
-              Object value = row.get(pos);
-              if (value instanceof Row r) {
-                return toJava(r);
-              } else if (value instanceof scala.collection.Seq) {
-                return row.getList(pos);
-              } else if (value instanceof scala.collection.Map) {
-                return row.getJavaMap(pos);
-              } else {
-                return value;
-              }
-            })
+          Object value = row.get(pos);
+          if (value instanceof Row r) {
+            return toJava(r);
+          } else if (value instanceof scala.collection.Seq) {
+            return row.getList(pos);
+          } else if (value instanceof scala.collection.Map) {
+            return row.getJavaMap(pos);
+          } else {
+            return value;
+          }
+        })
         .toArray(Object[]::new);
   }
 

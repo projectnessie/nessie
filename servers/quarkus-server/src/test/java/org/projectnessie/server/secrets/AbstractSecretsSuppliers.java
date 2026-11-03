@@ -99,19 +99,17 @@ public abstract class AbstractSecretsSuppliers {
                             .orElseThrow()));
 
     soft.assertThat(resolvedAll).hasSize(secrets.size()).hasSize(secretTypes.size());
-    secrets.forEach(
-        (name, secret) ->
-            soft.assertThat(resolvedAll)
-                .describedAs(name)
-                .extracting(name, type(Secret.class))
-                .satisfies(conditionFor.apply(name)));
+    secrets.forEach((name, secret) ->
+        soft.assertThat(resolvedAll)
+            .describedAs(name)
+            .extracting(name, type(Secret.class))
+            .satisfies(conditionFor.apply(name)));
 
-    secrets.forEach(
-        (k, v) ->
-            soft.assertThat(
-                    secretsProvider.getSecret(buildSecretURN(k), secretTypes.get(k), Secret.class))
-                .get()
-                .satisfies(conditionFor.apply(k)));
+    secrets.forEach((k, v) ->
+        soft.assertThat(
+                secretsProvider.getSecret(buildSecretURN(k), secretTypes.get(k), Secret.class))
+            .get()
+            .satisfies(conditionFor.apply(k)));
   }
 
   static Stream<Arguments> writeAndRead() {

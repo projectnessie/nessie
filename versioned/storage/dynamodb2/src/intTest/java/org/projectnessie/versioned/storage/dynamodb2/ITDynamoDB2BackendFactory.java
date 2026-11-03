@@ -136,28 +136,24 @@ public class ITDynamoDB2BackendFactory {
     testFactory.start();
     try {
       try (DynamoDbClient client = testFactory.buildNewClient()) {
-        client.createTable(
-            b ->
-                b.tableName(TABLE_REFS)
-                    .attributeDefinitions(
-                        AttributeDefinition.builder()
-                            .attributeName(KEY_NAME)
-                            .attributeType(ScalarAttributeType.S)
-                            .build(),
-                        AttributeDefinition.builder()
-                            .attributeName("l")
-                            .attributeType(ScalarAttributeType.S)
-                            .build())
-                    .billingMode(BillingMode.PAY_PER_REQUEST)
-                    .keySchema(
-                        KeySchemaElement.builder()
-                            .attributeName(KEY_NAME)
-                            .keyType(KeyType.HASH)
-                            .build(),
-                        KeySchemaElement.builder()
-                            .attributeName("l")
-                            .keyType(KeyType.RANGE)
-                            .build()));
+        client.createTable(b ->
+            b.tableName(TABLE_REFS)
+                .attributeDefinitions(
+                    AttributeDefinition.builder()
+                        .attributeName(KEY_NAME)
+                        .attributeType(ScalarAttributeType.S)
+                        .build(),
+                    AttributeDefinition.builder()
+                        .attributeName("l")
+                        .attributeType(ScalarAttributeType.S)
+                        .build())
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .keySchema(
+                    KeySchemaElement.builder()
+                        .attributeName(KEY_NAME)
+                        .keyType(KeyType.HASH)
+                        .build(),
+                    KeySchemaElement.builder().attributeName("l").keyType(KeyType.RANGE).build()));
 
         try (DynamoDB2Backend backend = testFactory.createNewBackend()) {
           soft.assertThatIllegalStateException()
@@ -171,20 +167,19 @@ public class ITDynamoDB2BackendFactory {
         client.deleteTable(b -> b.tableName(TABLE_REFS));
 
         String otherCol = "something";
-        client.createTable(
-            b ->
-                b.tableName(TABLE_REFS)
-                    .attributeDefinitions(
-                        AttributeDefinition.builder()
-                            .attributeName(otherCol)
-                            .attributeType(ScalarAttributeType.S)
-                            .build())
-                    .billingMode(BillingMode.PAY_PER_REQUEST)
-                    .keySchema(
-                        KeySchemaElement.builder()
-                            .attributeName(otherCol)
-                            .keyType(KeyType.HASH)
-                            .build()));
+        client.createTable(b ->
+            b.tableName(TABLE_REFS)
+                .attributeDefinitions(
+                    AttributeDefinition.builder()
+                        .attributeName(otherCol)
+                        .attributeType(ScalarAttributeType.S)
+                        .build())
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .keySchema(
+                    KeySchemaElement.builder()
+                        .attributeName(otherCol)
+                        .keyType(KeyType.HASH)
+                        .build()));
 
         try (DynamoDB2Backend backend = testFactory.createNewBackend()) {
           soft.assertThatIllegalStateException()

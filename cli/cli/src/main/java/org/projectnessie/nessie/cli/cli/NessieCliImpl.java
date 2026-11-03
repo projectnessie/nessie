@@ -177,10 +177,10 @@ public class NessieCliImpl extends BaseNessieCli implements Callable<Integer> {
       heading =
           """
 
-    Connect options
-    ===============
+          Connect options
+          ===============
 
-    """)
+          """)
   private ConnectOptions connectOptions;
 
   public NessieCliImpl() {

@@ -115,14 +115,13 @@ public class AwsAuthenticationProvider implements NessieAuthenticationProvider {
       String signingName = "execute-api";
       SdkHttpRequest modReq =
           AwsV4HttpSigner.create()
-              .sign(
-                  b -> {
-                    b.request(request)
-                        .identity(identity)
-                        .putProperty(AwsV4HttpSigner.REGION_NAME, region.id())
-                        .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, signingName);
-                    request.contentStreamProvider().ifPresent(b::payload);
-                  })
+              .sign(b -> {
+                b.request(request)
+                    .identity(identity)
+                    .putProperty(AwsV4HttpSigner.REGION_NAME, region.id())
+                    .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, signingName);
+                request.contentStreamProvider().ifPresent(b::payload);
+              })
               .request();
       for (Map.Entry<String, List<String>> entry : modReq.headers().entrySet()) {
         if (context.containsHeader(entry.getKey())) {

@@ -87,13 +87,10 @@ class ITDeleteCatalogTasks extends AbstractContentTests<String> {
     assertThat(result.exitCode()).isEqualTo(0);
 
     assertThat(ids)
-        .allSatisfy(
-            id ->
-                assertThatThrownBy(
-                        () ->
-                            persist.fetchTypedObj(
-                                id, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
-                    .isInstanceOf(ObjNotFoundException.class));
+        .allSatisfy(id ->
+            assertThatThrownBy(() ->
+                    persist.fetchTypedObj(id, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class))
+                .isInstanceOf(ObjNotFoundException.class));
   }
 
   @Test

@@ -172,10 +172,9 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     MAPPER.writeValue(
         file,
         Arrays.stream(keys)
-            .map(
-                k ->
-                    ImmutableMap.of(
-                        "reference", ref, "key", ImmutableMap.of("elements", k.getElements())))
+            .map(k ->
+                ImmutableMap.of(
+                    "reference", ref, "key", ImmutableMap.of("elements", k.getElements())))
             .collect(Collectors.toList()));
   }
 
@@ -210,14 +209,12 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     int numRefreshCommits = (3 / batchSize) + (3 % batchSize > 0 ? 1 : 0);
 
     assertThat(log(numRefreshCommits))
-        .allSatisfy(
-            logEntry ->
-                assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
-        .flatExtracting(
-            logEntry ->
-                Objects.requireNonNull(logEntry.getOperations()).stream()
-                    .map(Operation::getKey)
-                    .collect(Collectors.toList()))
+        .allSatisfy(logEntry ->
+            assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
+        .flatExtracting(logEntry ->
+            Objects.requireNonNull(logEntry.getOperations()).stream()
+                .map(Operation::getKey)
+                .collect(Collectors.toList()))
         .containsExactlyInAnyOrder(key1, key2, key3);
   }
 
@@ -246,14 +243,12 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     assertThat(api.getDefaultBranch()).isEqualTo(main);
 
     assertThat(log(1, api.getReference().refName(ref.getName()).get()))
-        .allSatisfy(
-            logEntry ->
-                assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
-        .flatExtracting(
-            logEntry ->
-                Objects.requireNonNull(logEntry.getOperations()).stream()
-                    .map(Operation::getKey)
-                    .collect(Collectors.toList()))
+        .allSatisfy(logEntry ->
+            assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
+        .flatExtracting(logEntry ->
+            Objects.requireNonNull(logEntry.getOperations()).stream()
+                .map(Operation::getKey)
+                .collect(Collectors.toList()))
         .containsExactly(key1); // Note: key2 is not present
 
     assertThat(get(ref.getName(), key1)).isEqualTo(stored1);
@@ -283,14 +278,12 @@ public class ITRefreshContent extends AbstractContentGeneratorTest {
     int numRefreshCommits = (numEntries / batchSize) + (numEntries % batchSize > 0 ? 1 : 0);
 
     assertThat(log(numRefreshCommits))
-        .allSatisfy(
-            logEntry ->
-                assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
-        .flatExtracting(
-            logEntry ->
-                Objects.requireNonNull(logEntry.getOperations()).stream()
-                    .map(Operation::getKey)
-                    .collect(Collectors.toList()))
+        .allSatisfy(logEntry ->
+            assertThat(logEntry.getCommitMeta().getMessage()).isEqualTo("Test refresh message"))
+        .flatExtracting(logEntry ->
+            Objects.requireNonNull(logEntry.getOperations()).stream()
+                .map(Operation::getKey)
+                .collect(Collectors.toList()))
         .containsExactlyInAnyOrder(
             key1,
             key2,

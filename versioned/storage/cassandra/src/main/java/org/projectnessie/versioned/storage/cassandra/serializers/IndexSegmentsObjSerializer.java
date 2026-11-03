@@ -60,12 +60,11 @@ public class IndexSegmentsObjSerializer extends ObjSerializer<IndexSegmentsObj> 
       throws ObjTooLargeException {
     Stripes.Builder b = Stripes.newBuilder();
     obj.stripes().stream()
-        .map(
-            s ->
-                Stripe.newBuilder()
-                    .setFirstKey(s.firstKey().rawString())
-                    .setLastKey(s.lastKey().rawString())
-                    .setSegment(s.segment().asBytes()))
+        .map(s ->
+            Stripe.newBuilder()
+                .setFirstKey(s.firstKey().rawString())
+                .setLastKey(s.lastKey().rawString())
+                .setSegment(s.segment().asBytes()))
         .forEach(b::addStripes);
     stmt.setByteBuffer(
         COL_SEGMENTS_STRIPES.name(), b.build().toByteString().asReadOnlyByteBuffer());
@@ -78,12 +77,11 @@ public class IndexSegmentsObjSerializer extends ObjSerializer<IndexSegmentsObj> 
       Stripes stripes = Stripes.parseFrom(row.getByteBuffer(COL_SEGMENTS_STRIPES.name()));
       List<IndexStripe> stripeList =
           stripes.getStripesList().stream()
-              .map(
-                  s ->
-                      indexStripe(
-                          keyFromString(s.getFirstKey()),
-                          keyFromString(s.getLastKey()),
-                          objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
+              .map(s ->
+                  indexStripe(
+                      keyFromString(s.getFirstKey()),
+                      keyFromString(s.getLastKey()),
+                      objIdFromByteBuffer(s.getSegment().asReadOnlyByteBuffer())))
               .collect(Collectors.toList());
       return indexSegments(id, referenced, stripeList);
     } catch (IOException e) {

@@ -144,10 +144,8 @@ public class TestReferenceIndexes {
     IntFunction<List<Obj>> contents =
         num ->
             rangeClosed(0, num & 3)
-                .mapToObj(
-                    i ->
-                        contentValue(
-                            "cid-" + num + "-" + i, 0, copyFromUtf8("val-" + num + "-" + i)))
+                .mapToObj(i ->
+                    contentValue("cid-" + num + "-" + i, 0, copyFromUtf8("val-" + num + "-" + i)))
                 .collect(toList());
 
     int num = 0;
@@ -379,10 +377,9 @@ public class TestReferenceIndexes {
   private void refIndexVerifyIncrIndexWIthRef(CommitObj commit, IndexesLogic indexesLogic) {
     StoreIndex<CommitOp> incr = indexesLogic.incrementalIndexFromCommit(commit);
     soft.assertThat(newArrayList(incr))
-        .allSatisfy(
-            el ->
-                assertThat(el.content().action())
-                    .isIn(ADD, INCREMENTAL_ADD, REMOVE, INCREMENTAL_REMOVE));
+        .allSatisfy(el ->
+            assertThat(el.content().action())
+                .isIn(ADD, INCREMENTAL_ADD, REMOVE, INCREMENTAL_REMOVE));
   }
 
   private void refIndexValidateSegments(Persist persist, CommitObj commit)
@@ -471,12 +468,11 @@ public class TestReferenceIndexes {
               k -> assertThat(commitIndex.contains(k)).describedAs("num keys: %d", n).isTrue())
           .allSatisfy(
               k -> assertThat(commitIndex.get(k)).describedAs("num keys: %d", n).isNotNull())
-          .allSatisfy(
-              k ->
-                  assertThat(requireNonNull(commitIndex.get(k)).content().value())
-                      .describedAs("num keys: %d", n)
-                      .isNotNull()
-                      .isEqualTo(knownKeys.get(k)));
+          .allSatisfy(k ->
+              assertThat(requireNonNull(commitIndex.get(k)).content().value())
+                  .describedAs("num keys: %d", n)
+                  .isNotNull()
+                  .isEqualTo(knownKeys.get(k)));
 
       Map<StoreKey, ObjId> inIndex =
           stream(spliteratorUnknownSize(commitIndex.iterator(), 0), false)

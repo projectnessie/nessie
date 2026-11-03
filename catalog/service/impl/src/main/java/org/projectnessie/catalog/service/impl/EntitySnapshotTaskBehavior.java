@@ -76,15 +76,13 @@ final class EntitySnapshotTaskBehavior
   public TaskState asErrorTaskState(Clock clock, EntitySnapshotObj base, Throwable t) {
     return exceptionMapper
         .analyze(t)
-        .map(
-            status -> {
-              if (status.statusCode().isRetryable()) {
-                return retryableErrorState(
-                    retryAfter(clock), t.toString(), status.statusCode().name());
-              } else {
-                return failureState(t.toString(), status.statusCode().name());
-              }
-            })
+        .map(status -> {
+          if (status.statusCode().isRetryable()) {
+            return retryableErrorState(retryAfter(clock), t.toString(), status.statusCode().name());
+          } else {
+            return failureState(t.toString(), status.statusCode().name());
+          }
+        })
         .orElseGet(() -> failureState(t.toString(), null));
   }
 }
