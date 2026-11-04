@@ -29,7 +29,7 @@ dependencies {
   testImplementation(platform(libs.junit.bom))
   testImplementation("org.junit.jupiter:junit-jupiter")
   testImplementation(libs.assertj.core)
-  testImplementation("org.bouncycastle:bcpg-jdk18on:1.85")
+  testImplementation("org.bouncycastle:bcpg-jdk18on:1.86")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
