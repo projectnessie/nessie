@@ -70,7 +70,17 @@ public abstract class AbstractAuthEnabledTests extends AbstractIcebergCatalogInt
   @Override
   @Test
   @Disabled("We'd have to get the actual token to invoke the /credentials endpoint")
-  public void loadCredentialsEndpoint() throws Exception {}
+  public void loadCredentialsEndpoint() {}
+
+  @Override
+  @Test
+  @Disabled("We'd have to get the actual token to invoke the /credentials endpoint")
+  public void loadCredentialsEndpointWithReferenceInPrefix() {}
+
+  @Override
+  @Test
+  @Disabled("We'd have to get the actual token to invoke the /credentials endpoint")
+  public void loadCredentialsEndpointWithSpacesAndPlusSigns() {}
 
   public abstract static class Profiles implements QuarkusTestProfile {
 
