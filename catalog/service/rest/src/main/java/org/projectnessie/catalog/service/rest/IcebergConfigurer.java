@@ -24,7 +24,9 @@ import static org.projectnessie.catalog.files.s3.S3Utils.normalizeS3Scheme;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.REMOTE_SIGNING;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.VENDED_CREDENTIALS;
 import static org.projectnessie.catalog.service.rest.AccessDelegation.accessDelegationPredicate;
+import static org.projectnessie.catalog.service.rest.IcebergApiV1ResourceBase.encodePrefix;
 
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Context;
@@ -54,6 +56,7 @@ import org.projectnessie.catalog.files.config.S3BucketOptions;
 import org.projectnessie.catalog.files.s3.S3Utils;
 import org.projectnessie.catalog.formats.iceberg.meta.IcebergTableMetadata;
 import org.projectnessie.catalog.formats.iceberg.rest.IcebergStorageCredential;
+import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergRemoteSigningConfig;
 import org.projectnessie.catalog.formats.iceberg.rest.ImmutableIcebergStorageCredential;
 import org.projectnessie.catalog.model.snapshot.NessieEntitySnapshot;
 import org.projectnessie.catalog.service.api.SignerKeysService;
@@ -80,7 +83,11 @@ public class IcebergConfigurer {
   /** Path of the signer endpoint. */
   static final String S3_SIGNER_ENDPOINT = "s3.signer.endpoint";
 
-  static final String SIGNER_ENDPOINT = "signer.endpoint";
+  static final String SIGNER_TOKEN = "nessie.signer-token";
+
+  static final String GCS_OAUTH2_TOKEN = "gcs.oauth2.token";
+  static final String GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT =
+      "gcs.oauth2.refresh-credentials-endpoint";
 
   @Inject ServerConfig serverConfig;
   @Inject LakehouseConfig lakehouseConfig;
@@ -198,13 +205,12 @@ public class IcebergConfigurer {
     lakehouseConfig.catalog().icebergConfigDefaults().forEach(configDefault);
     warehouseConfig.icebergConfigDefaults().forEach(configDefault);
     // Set the "default" prefix
-    if (!hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()) {
-      configDefault.accept(ICEBERG_PREFIX, encode(branch, UTF_8));
-    } else {
-      configDefault.accept(
-          ICEBERG_PREFIX,
-          encode(branch + "|" + lakehouseConfig.catalog().resolveWarehouseName(warehouse), UTF_8));
-    }
+    String prefixWarehouse =
+        !hasWarehouse && lakehouseConfig.catalog().defaultWarehouse().isPresent()
+            ? null
+            : lakehouseConfig.catalog().resolveWarehouseName(warehouse);
+    configDefault.accept(
+        ICEBERG_PREFIX, encode(encodePrefix(branch, null, prefixWarehouse), UTF_8));
 
     // overrides
     uriInfo.icebergConfigOverrides(configOverride);
@@ -225,6 +231,7 @@ public class IcebergConfigurer {
       IcebergTableMetadata tableMetadata,
       String prefix,
       ContentKey contentKey,
+      @Nullable String credentialsEndpoint,
       String dataAccess,
       boolean writeAccessGranted) {
     ImmutableIcebergTableConfig.Builder tableConfig = ImmutableIcebergTableConfig.builder();
@@ -286,8 +293,14 @@ public class IcebergConfigurer {
                 accessDelegationPredicate,
                 prefix,
                 contentKey,
-                config::put),
+                config::put,
+                tableConfig),
         accessDelegationPredicate.test(VENDED_CREDENTIALS));
+
+    if (credentialsEndpoint != null
+        && storageCredentials.stream().anyMatch(c -> c.config().containsKey(GCS_OAUTH2_TOKEN))) {
+      config.put(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT, credentialsEndpoint);
+    }
 
     return tableConfig.config(config).storageCredentials(storageCredentials).build();
   }
@@ -308,7 +321,8 @@ public class IcebergConfigurer {
       Predicate<AccessDelegation> accessDelegationPredicate,
       String prefix,
       ContentKey contentKey,
-      BiConsumer<String, String> config) {
+      BiConsumer<String, String> config,
+      ImmutableIcebergTableConfig.Builder tableConfig) {
     if (!accessDelegationPredicate.test(REMOTE_SIGNING)) {
       return false;
     }
@@ -364,7 +378,11 @@ public class IcebergConfigurer {
 
     var signerEndpoint = uriInfo.icebergS3SignerPathWithPath(prefix, pathParam);
     config.accept(S3_SIGNER_ENDPOINT, signerEndpoint);
-    config.accept(SIGNER_ENDPOINT, signerEndpoint);
+    // Iceberg 1.12+ computes the standard table signing path and forwards the opaque token
+    // in the request body. Do not emit signer.endpoint, which would override that path.
+    // Keep the legacy endpoint above for clients without remote-signing-config support.
+    tableConfig.remoteSigningConfig(
+        ImmutableIcebergRemoteSigningConfig.builder().putProperty(SIGNER_TOKEN, pathParam).build());
 
     return true;
   }

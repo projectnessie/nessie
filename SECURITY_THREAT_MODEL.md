@@ -224,6 +224,17 @@ a missing-table or future-location fallback. Missing content may be handled as a
 case where the signer endpoint was already minted for that location; authorization and unexpected
 lookup failures are fail-closed conditions. `(documented)`
 
+For clients supporting Iceberg's `remote-signing-config`, the opaque signed signer token is
+forwarded in the signing request's `nessie.signer-token` property instead of the URL path. The
+legacy token-bearing path remains available for older clients. Both transports verify the same
+signature and expiration and apply the same catalog authorization and location restrictions. The
+standard table-scoped endpoint also checks that its resolved warehouse, table identity, and
+effective reference match the signed context. Tokens bind the request's effective table reference,
+including reference overrides in table names, rather than internal metadata-lookup commit pins or
+only the catalog prefix. Clients using this endpoint rely on Iceberg's computed signing path;
+Nessie retains the legacy `s3.signer.*` properties but does not emit `signer.endpoint`.
+The token contains scoped signing context, not the server's secret signing key.
+
 S3 request signing recognizes virtual-hosted requests for custom endpoints when the bucket
 configures a custom endpoint. An unset `path-style-access` defaults to virtual-hosted style
 (`false`), matching the AWS SDK v2 default; `path-style-access=true` selects path style. That

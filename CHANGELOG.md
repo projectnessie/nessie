@@ -20,6 +20,10 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- Catalog/GCS: The table configuration now contains `gcs.oauth2.refresh-credentials-endpoint`, so
+  Iceberg clients can refresh vended GCS tokens before the tokens expire. A refresh returns
+  credentials for the head of the branch or tag that the client loaded the table from. When the
+  client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
 - GC: `--cutoff` reference name patterns containing a top-level alternation now match whole
   reference names. Previously `dev|qa` also matched references starting with `dev` or ending with
   `qa`, for example `devops`, which then got that cutoff policy instead of the default one. Review

@@ -134,6 +134,7 @@ public abstract class AbstractIcebergCatalogUnitTests extends AbstractIcebergCat
             icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/register"),
             icebergEndpoint(
                 "GET", "/v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"),
+            icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/tables/{table}/sign"),
             icebergEndpoint("POST", "/v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics"),
             icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/views"),
             icebergEndpoint("GET", "/v1/{prefix}/namespaces/{namespace}/views/{view}"),

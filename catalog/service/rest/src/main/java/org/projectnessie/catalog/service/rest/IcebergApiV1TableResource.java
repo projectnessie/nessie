@@ -114,6 +114,7 @@ import org.projectnessie.model.ImmutableOperations;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
+import org.projectnessie.model.Reference;
 import org.projectnessie.services.authz.AccessContext;
 import org.projectnessie.services.authz.Authorizer;
 import org.projectnessie.services.config.ServerConfig;
@@ -166,7 +167,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     TableRef tableRef = decodeTableRef(prefix, namespace, table);
 
-    return this.loadTable(tableRef, prefix, dataAccess, false);
+    return this.loadTable(tableRef, tableRef.reference(), dataAccess, false);
   }
 
   @Operation(operationId = "iceberg.v1.loadCredentials")
@@ -189,8 +190,16 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             });
   }
 
+  /**
+   * Registration pins the metadata lookup in {@code tableRef} to its new commit. The signing and
+   * credentials prefixes use the client's {@code requestedReference}, so that this internal lookup
+   * hash constrains neither the signer token nor credential refreshes.
+   */
   private Uni<IcebergLoadTableResponse> loadTable(
-      TableRef tableRef, String prefix, String dataAccess, boolean writeAccessValidated)
+      TableRef tableRef,
+      ParsedReference requestedReference,
+      String dataAccess,
+      boolean writeAccessValidated)
       throws NessieNotFoundException {
     ContentKey key = tableRef.contentKey();
 
@@ -207,10 +216,28 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergLoadTableResponse.builder(),
                     warehouse.location(),
-                    prefix,
-                    key,
+                    tableRef(key, requestedReference, tableRef.warehouse()),
                     dataAccess,
                     writeAccessValidated));
+  }
+
+  private static String signingPrefix(TableRef tableRef) {
+    var reference = tableRef.reference();
+    // A table-name suffix can select a different reference than the catalog prefix. Bind the
+    // signer token (and the legacy endpoint) to that effective reference, including staged creates.
+    return Reference.toPathString(reference.name(), reference.hashWithRelativeSpec())
+        + "|"
+        + tableRef.warehouse();
+  }
+
+  /**
+   * A request for a branch or tag name gets credentials for the head of that reference on each
+   * refresh. A request for a hash or a timestamp gets credentials for the same commit.
+   */
+  static String credentialsPrefix(TableRef tableRef, Reference effectiveReference) {
+    ParsedReference requested = requireNonNull(tableRef.reference());
+    String hash = requested.hashWithRelativeSpec() != null ? effectiveReference.getHash() : null;
+    return encodePrefix(requested.name(), hash, tableRef.warehouse());
   }
 
   @SuppressWarnings("EmptyCatch")
@@ -219,10 +246,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           SnapshotResponse snap,
           B builder,
           String warehouseLocation,
-          String prefix,
-          ContentKey contentKey,
+          TableRef tableRef,
           String dataAccess,
           boolean writeAccessValidated) {
+    ContentKey contentKey = tableRef.contentKey();
     IcebergTableMetadata tableMetadata =
         (IcebergTableMetadata)
             snap.entityObject()
@@ -251,14 +278,17 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       }
     }
 
+    String credentialsPrefix = credentialsPrefix(tableRef, snap.effectiveReference());
+
     return loadTableResult(
         content.getMetadataLocation(),
         snap.nessieSnapshot(),
         warehouseLocation,
         tableMetadata,
         builder,
-        prefix,
+        signingPrefix(tableRef),
         contentKey,
+        uriInfo.icebergTableCredentialsPath(credentialsPrefix, contentKey),
         dataAccess,
         writeAccessValidated);
   }
@@ -272,6 +302,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
           B builder,
           String prefix,
           ContentKey contentKey,
+          String credentialsEndpoint,
           String dataAccess,
           boolean writeAccessGranted) {
 
@@ -282,6 +313,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             tableMetadata,
             prefix,
             contentKey,
+            credentialsEndpoint,
             dataAccess,
             writeAccessGranted);
 
@@ -299,6 +331,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
         .metadataLocation(metadataLocation)
         .putAllConfig(config.config())
         .addAllStorageCredentials(config.storageCredentials())
+        .remoteSigningConfig(config.remoteSigningConfig().orElse(null))
         .build();
   }
 
@@ -368,8 +401,10 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   warehouse.location(),
                   stagedTableMetadata,
                   IcebergCreateTableResponse.builder(),
-                  prefix,
+                  signingPrefix(tableRef),
                   tableRef.contentKey(),
+                  // A staged table does not exist before the commit.
+                  null,
                   dataAccess,
                   true));
     }
@@ -388,8 +423,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                     snap,
                     IcebergCreateTableResponse.builder(),
                     warehouse.location(),
-                    prefix,
-                    tableRef.contentKey(),
+                    tableRef,
                     dataAccess,
                     true));
   }
@@ -457,7 +491,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                   committed.getTargetBranch().getHash(),
                   BRANCH),
               tableRef.warehouse()),
-          prefix,
+          reference,
           dataAccess,
           true);
     } else if (nessieCatalogUri) {
@@ -515,7 +549,7 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
                 committed.getTargetBranch().getHash(),
                 committed.getTargetBranch().getType()),
             tableRef.warehouse()),
-        prefix,
+        reference,
         dataAccess,
         true);
   }
