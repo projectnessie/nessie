@@ -23,11 +23,13 @@ group = "org.projectnessie.build"
 
 dependencies {
   implementation(libs.licensee)
-  implementation(localGroovy())
+  implementation(libs.cyclonedx.plugin)
+  implementation(libs.cyclonedx.core)
   testImplementation(gradleTestKit())
   testImplementation(platform(libs.junit.bom))
   testImplementation("org.junit.jupiter:junit-jupiter")
   testImplementation(libs.assertj.core)
+  testImplementation("org.bouncycastle:bcpg-jdk18on:1.85")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

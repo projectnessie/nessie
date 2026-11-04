@@ -131,7 +131,7 @@ jobs:
           # 2 Retries - due to Gradle's old and unfixed CME bug
           ./gradlew --no-scan compileAll jar || ./gradlew --no-scan compileAll jar || ./gradlew --no-scan compileAll jar
 
-      - name: Check Licenses
+      - name: Check distribution licenses
         run: ./gradlew --no-scan :checkDistributionLicenses -Prelease -Puber-jar
 
       # Deploys Maven artifacts. Build and test steps were already ran in previous steps.
@@ -146,20 +146,32 @@ jobs:
         # Ref: Maven Central Publisher API:
         #    https://central.sonatype.org/publish/publish-portal-api/#uploading-a-deployment-bundle
         run: |
-          # 2 Retries - to mitigate "HTTP/502 Bad Gateway" issues
-          ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace || \
-            ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace
+          ./gradlew publishAggregationToCentralPortal -Prelease -Puber-jar --no-scan --stacktrace
 
       - name: Generate changelog
         run: ./gradlew --no-scan --quiet --console=plain getChangelog --no-header --no-links > "${ARTIFACTS}/nessie-changelog-${RELEASE_VERSION}.md"
 
       - name: Collect artifacts
         run: |
-          mv servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
-          mv cli/cli/build/libs/nessie-cli-${RELEASE_VERSION}.jar "${ARTIFACTS}"
-          mv tools/server-admin/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
-          mv gc/gc-tool/build/executable/nessie-gc.jar "${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar"
+          cp servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+          cp cli/cli/build/libs/nessie-cli-${RELEASE_VERSION}.jar "${ARTIFACTS}"
+          cp tools/server-admin/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar "${ARTIFACTS}"
+          cp gc/gc-tool/build/executable/nessie-gc.jar "${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar"
+
+          cp servers/quarkus-server/build/nessie-quarkus-${RELEASE_VERSION}-runner.jar.asc "${ARTIFACTS}"
+          cp cli/cli/build/libs/nessie-cli-${RELEASE_VERSION}.jar.asc "${ARTIFACTS}"
+          cp tools/server-admin/build/nessie-server-admin-tool-${RELEASE_VERSION}-runner.jar.asc "${ARTIFACTS}"
+          cp gc/gc-tool/build/libs/nessie-gc-tool-${RELEASE_VERSION}.jar.asc "${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar.asc"
+          for output in servers/quarkus-server/build tools/server-admin/build gc/gc-tool/build cli/cli/build tools/content-generator/build integrations/spark-extensions/*/build/*; do
+            for sbom in "$output"/reports/sbom/*-"${RELEASE_VERSION}".jar.cdx.json \
+              "$output"/reports/sbom/*-"${RELEASE_VERSION}"-runner.jar.cdx.json; do
+              [[ -f "$sbom" ]] || continue
+              cp "$sbom" "$sbom.asc" "${ARTIFACTS}/"
+            done
+          done
+          for suffix in "" .asc; do
+            mv "${ARTIFACTS}/nessie-gc-tool-${RELEASE_VERSION}.jar.cdx.json${suffix}" "${ARTIFACTS}/nessie-gc-${RELEASE_VERSION}.jar.cdx.json${suffix}"
+          done
 
       - name: Archive release artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -431,6 +443,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: current-release-artifacts
+          pattern: nessie-release-*
           merge-multiple: true
 
       - name: Create release notes file for GitHub release
