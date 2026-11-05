@@ -17,6 +17,8 @@ package org.projectnessie.server.catalog.s3;
 
 import static io.restassured.RestAssured.given;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.iceberg.rest.RESTCatalogProperties.REMOTE_SIGNING_CONFIG;
+import static org.apache.iceberg.rest.RESTCatalogProperties.REMOTE_SIGNING_ENDPOINT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.projectnessie.server.catalog.IcebergCatalogTestCommon.WAREHOUSE_NAME;
 import static org.projectnessie.server.catalog.ObjectStorageMockTestResourceLifecycleManager.BUCKET;
@@ -40,6 +42,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Stream;
 import org.apache.iceberg.aws.s3.S3FileIO;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.rest.ResourcePaths;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -76,16 +81,20 @@ public class TestDefaultTableLocations {
                 Stream.of(false, true)
                     .flatMap(
                         staged ->
-                            Stream.of("remote-signing", "vended-credentials")
-                                .map(
-                                    delegation ->
-                                        Arguments.of(element[0], element[1], staged, delegation))));
+                            Stream.of(Mode.values())
+                                // Vert.x removes the '..' table-name segment from modern signer
+                                // URLs.
+                                .filter(
+                                    mode -> mode != Mode.MODERN_SIGNING || !element[0].equals(".."))
+                                .map(mode -> Arguments.of(element[0], element[1], staged, mode))));
   }
 
   @ParameterizedTest
   @MethodSource("tableLocations")
-  void defaultTableLocation(String element, String encoded, boolean staged, String delegation)
+  void defaultTableLocation(String element, String encoded, boolean staged, Mode mode)
       throws Exception {
+    boolean remoteSigning = mode != Mode.VENDED_CREDENTIALS;
+    String delegation = remoteSigning ? "remote-signing" : "vended-credentials";
     ConcurrentLinkedQueue<String> policies = new ConcurrentLinkedQueue<>();
     assumeRoleHandler.set(
         (action, version, roleArn, roleSessionName, policy, duration, externalId, serialNumber) -> {
@@ -172,9 +181,27 @@ public class TestDefaultTableLocations {
 
     // Exercise the returned client configuration, including its literal object-key spelling.
     String dataLocation = location + "/data/file.txt";
+    Map<String, String> clientConfig = new HashMap<>(response.config());
+    clientConfig.put("uri", httpServer.getLocalBaseUri().resolve("/iceberg/").toString());
+    String signerEndpoint = null;
+    Map<String, String> signerProperties = Map.of();
+    if (mode == Mode.LEGACY_SIGNING) {
+      signerEndpoint = response.config().get("s3.signer.endpoint");
+      clientConfig.put("signer.endpoint", signerEndpoint);
+    } else if (mode == Mode.MODERN_SIGNING) {
+      // Reproduce RESTCatalog's table-scoped setup using the existing creation response.
+      signerEndpoint =
+          ResourcePaths.forCatalogProperties(Map.of("prefix", "main"))
+              .remoteSign(TableIdentifier.of(Namespace.of(group, element), element));
+      var remoteSigningConfig = response.remoteSigningConfig();
+      assertThat(remoteSigningConfig).isNotNull();
+      signerProperties = remoteSigningConfig.properties();
+      clientConfig.put(REMOTE_SIGNING_ENDPOINT, signerEndpoint);
+      clientConfig.put(
+          REMOTE_SIGNING_CONFIG,
+          IcebergJson.objectMapper().writeValueAsString(remoteSigningConfig));
+    }
     try (S3FileIO fileIO = new S3FileIO()) {
-      Map<String, String> clientConfig = new HashMap<>(response.config());
-      clientConfig.put("uri", httpServer.getLocalBaseUri().resolve("/iceberg/").toString());
       fileIO.initialize(clientConfig);
       try (OutputStream output = fileIO.newOutputFile(dataLocation).createOrOverwrite()) {
         output.write(data);
@@ -187,14 +214,11 @@ public class TestDefaultTableLocations {
       assertThat(input.readAllBytes()).isEqualTo(data);
     }
 
-    if (delegation.equals("remote-signing")) {
+    if (remoteSigning) {
       assertThat(policies).isEmpty();
+      assertThat(signerEndpoint).isNotNull();
       String endpoint =
-          httpServer
-              .getLocalBaseUri()
-              .resolve("/iceberg/")
-              .resolve(response.config().get("s3.signer.endpoint"))
-              .toString();
+          httpServer.getLocalBaseUri().resolve("/iceberg/").resolve(signerEndpoint).toString();
       String unrelatedHttpUri =
           URI.create(response.config().get("s3.endpoint"))
               .resolve("/" + BUCKET + "/unrelated/" + group + "/data.txt")
@@ -214,7 +238,8 @@ public class TestDefaultTableLocations {
                           "headers",
                           Map.of(),
                           "properties",
-                          Map.of())))
+                          signerProperties)))
+          .urlEncodingEnabled(false) // The endpoint is already URL-encoded.
           .post(endpoint)
           .then()
           .statusCode(403);
@@ -231,6 +256,12 @@ public class TestDefaultTableLocations {
       assertThat(response.storageCredentials())
           .anySatisfy(credential -> assertThat(credential.prefix()).isEqualTo(location));
     }
+  }
+
+  enum Mode {
+    LEGACY_SIGNING,
+    MODERN_SIGNING,
+    VENDED_CREDENTIALS
   }
 
   public static class Profile extends S3UnitTestProfiles.S3UnitTestProfile {
