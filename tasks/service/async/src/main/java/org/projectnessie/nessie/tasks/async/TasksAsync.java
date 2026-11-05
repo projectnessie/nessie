@@ -23,6 +23,16 @@ import java.util.function.Supplier;
 public interface TasksAsync {
   Clock clock();
 
+  /**
+   * Return a stage that propagates the caller's context to dependent actions, if supported.
+   *
+   * <p>Invoke this separately for each caller, even when callers share the same underlying stage.
+   * The default implementation returns the stage unchanged.
+   */
+  default <T> CompletionStage<T> contextualize(CompletionStage<T> stage) {
+    return stage;
+  }
+
   default CompletionStage<Void> call(Runnable runnable) {
     return supply(
         () -> {

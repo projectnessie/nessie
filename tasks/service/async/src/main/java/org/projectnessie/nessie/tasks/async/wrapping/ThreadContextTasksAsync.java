@@ -15,6 +15,7 @@
  */
 package org.projectnessie.nessie.tasks.async.wrapping;
 
+import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.eclipse.microprofile.context.ThreadContext;
 import org.projectnessie.nessie.tasks.async.TasksAsync;
@@ -26,6 +27,11 @@ public class ThreadContextTasksAsync extends WrappingTasksAsync {
   public ThreadContextTasksAsync(TasksAsync tasksAsync, ThreadContext threadContext) {
     super(tasksAsync);
     this.threadContext = threadContext;
+  }
+
+  @Override
+  public <T> CompletionStage<T> contextualize(CompletionStage<T> stage) {
+    return threadContext.withContextCapture(super.contextualize(stage));
   }
 
   @Override
