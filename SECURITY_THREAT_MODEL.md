@@ -249,6 +249,7 @@ locations; any other request, including a match on more
 than one bucket, is rejected rather than reinterpreted as path-style. Bucket names can contain dots,
 so a request to `foo.bar.<endpoint host>` is resolved to bucket `foo.bar` and never to a signed
 bucket `foo`, which would otherwise sign a request for one bucket with another bucket's credentials.
+With `path-style-access=true`, the request host must likewise be exactly the bucket's endpoint host.
 This does not widen the table paths permitted by current-location, historical-location,
 metadata-file, or object-storage-layout checks. Tokens without the setting, which includes AWS
 endpoints and tokens minted by earlier versions, keep the previous bucket resolution and signature.

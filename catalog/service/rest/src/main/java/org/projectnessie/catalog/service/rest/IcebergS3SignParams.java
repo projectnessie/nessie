@@ -127,7 +127,8 @@ abstract class IcebergS3SignParams {
    * <p>Tokens without {@link #pathStyleAccess()} (AWS, and tokens minted before it existed) keep
    * the heuristic of {@link S3Utils#asS3Location(String)}.
    *
-   * <p>With path-style access, the bucket is the first path element.
+   * <p>With path-style access, the bucket is the first path element and the request host must be
+   * exactly the bucket's endpoint host.
    *
    * <p>With virtual-hosted style, the bucket is the leading subdomain of the host, in front of the
    * bucket's endpoint host. Bucket names can contain dots, so the host is matched exactly against
@@ -145,7 +146,11 @@ abstract class IcebergS3SignParams {
       return RequestedLocation.of(S3Utils.asS3Location(uri));
     }
     if (pathStyleAccess().get()) {
-      return RequestedLocation.of(S3Utils.asS3PathStyleLocation(uri));
+      RequestedLocation requested = RequestedLocation.of(S3Utils.asS3PathStyleLocation(uri));
+      if (!isEndpointHost(uri, requested.uri())) {
+        throw notAllowed("Signing request is not addressed to the endpoint of the bucket");
+      }
+      return requested;
     }
 
     List<RequestedLocation> matches =
@@ -187,15 +192,41 @@ abstract class IcebergS3SignParams {
   /**
    * Whether the request host is exactly {@code <bucket>.<endpoint host>} for the endpoint that
    * clients (external endpoint) or the Nessie server (endpoint) use for that bucket.
+   *
+   * @param uri the HTTP(S) URI of the signing request, as sent by the client, e.g. {@code
+   *     https://foo.obs.example.com/warehouse/data/file}; only its host is used here
+   * @param location the S3 location derived from {@code uri}, e.g. {@code
+   *     s3://foo/warehouse/data/file}; only used to look up the bucket options (and thus the
+   *     endpoints) of its bucket
+   * @param bucket the name of the bucket that the request host is expected to address, e.g. {@code
+   *     foo}
    */
   private boolean isVirtualHostOf(String uri, String location, String bucket) {
     String host = URI.create(uri).getHost();
+    return endpointHosts(location)
+        .anyMatch(endpointHost -> host.equalsIgnoreCase(bucket + "." + endpointHost));
+  }
+
+  /**
+   * Whether the request host is exactly the endpoint host for the bucket of {@code location}.
+   *
+   * @param uri the HTTP(S) URI of the signing request, as sent by the client, e.g. {@code
+   *     https://obs.example.com/foo/warehouse/data/file}; only its host is used here
+   * @param location the S3 location derived from {@code uri}, e.g. {@code
+   *     s3://foo/warehouse/data/file}; only used to look up the bucket options (and thus the
+   *     endpoints) of its bucket
+   */
+  private boolean isEndpointHost(String uri, String location) {
+    String host = URI.create(uri).getHost();
+    return endpointHosts(location).anyMatch(host::equalsIgnoreCase);
+  }
+
+  private Stream<String> endpointHosts(String location) {
     S3BucketOptions bucketOptions = s3Options().resolveOptionsForUri(StorageUri.of(location));
     return Stream.of(bucketOptions.externalEndpoint(), bucketOptions.endpoint())
         .flatMap(Optional::stream)
         .map(URI::getHost)
-        .filter(Objects::nonNull)
-        .anyMatch(endpointHost -> host.equalsIgnoreCase(bucket + "." + endpointHost));
+        .filter(Objects::nonNull);
   }
 
   record RequestedLocation(String uri, String bucket) {
