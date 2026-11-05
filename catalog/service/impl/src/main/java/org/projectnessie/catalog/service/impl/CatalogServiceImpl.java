@@ -45,6 +45,8 @@ import static org.projectnessie.model.Content.Type.NAMESPACE;
 import static org.projectnessie.versioned.RequestMeta.API_READ;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.escape.Escaper;
+import com.google.common.net.PercentEscaper;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -128,6 +130,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("CdiInjectionPointsInspection")
 @RequestScoped
 public class CatalogServiceImpl implements CatalogService {
+  private static final Escaper LOCATION_ELEMENT_ESCAPER = new PercentEscaper("-._~", false);
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CatalogServiceImpl.class);
 
@@ -220,6 +223,7 @@ public class CatalogServiceImpl implements CatalogService {
         if (parentLocation != null) {
           location = StorageUri.of(parentLocation).withTrailingSeparator();
           remainingElements = keyElements.subList(n + 1, keyElementCount);
+          break;
         }
       }
     }
@@ -231,7 +235,12 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     for (String element : remainingElements) {
-      location = location.withTrailingSeparator().resolve(element);
+      String pathElement = LOCATION_ELEMENT_ESCAPER.escape(element);
+      // Keep each identifier element a literal path segment, including leading dots.
+      if (pathElement.startsWith(".")) {
+        pathElement = "%2E" + pathElement.substring(1);
+      }
+      location = location.withTrailingSeparator().resolve(pathElement);
     }
 
     return location;
