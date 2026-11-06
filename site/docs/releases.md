@@ -2,6 +2,35 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.110.0 Release (November 06, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.110.0).
+
+### Fixes
+
+- Catalog/GCS: The table configuration now contains `gcs.oauth2.refresh-credentials-endpoint`, so
+  Iceberg clients can refresh vended GCS tokens before the tokens expire. A refresh returns
+  credentials for the head of the branch or tag that the client loaded the table from. When the
+  client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
+
+### Commits
+* Test default table locations with both S3 signing transports
+* Refine request host handling in S3 signing (#13289)
+* Catalog: encode identifier elements in default storage locations (#13233)
+* Preserve each caller's context when completing shared catalog tasks (#13275)
+* Publish CycloneDX SBOMs for distribution JARs (#13237)
+* Catalog/GCS: send the refresh credentials endpoint in the table config (#13128)
+* Use Iceberg remote signing config to keep signer tokens out of URLs (#13232)
+* Fix objects cache payload retention on replacement (#13262)
+* Fix sbom expectation (#13243)
+* Replace JK1 license reports with Licensee checks (#13223)
+* Iceberg 1.12 (#13222)
+* Fix validation of content-generator count options (#12978)
+* fix: preserve documented merge request flags (#13129)
+* Prepare for Keycloak 26.8.1 (#13183)
+* Catalog/S3 signing: compare locations per path element (#13198)
+* Docs: CEL filters for commit log, entries, and references #5325 (#12946)
+
 ## 0.109.0 Release (October 08, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.109.0).
