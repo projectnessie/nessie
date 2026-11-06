@@ -41,6 +41,7 @@ import org.projectnessie.gc.contents.LiveContentSet.Status;
 import org.projectnessie.gc.contents.LiveContentSetNotFoundException;
 import org.projectnessie.gc.contents.spi.PersistenceSpi;
 import org.projectnessie.gc.files.FileReference;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.storage.uri.StorageUri;
 
 /**
@@ -51,10 +52,24 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
 
   private final Map<UUID, InMemoryLiveContentSet> liveContentSets = new ConcurrentHashMap<>();
 
+  /**
+   * A content-reference together with its content key.
+   *
+   * <p>{@link ContentReference#equals(Object)} ignores the content key and the commit ID, so
+   * references to the same metadata are equal, whatever they are named. Retaining only one of them
+   * would keep an arbitrary content key, for example the old one of a renamed table. Wrapping the
+   * reference keeps one reference per distinct content key, like the JDBC implementation does.
+   */
+  record KeyedContentReference(ContentReference reference, ContentKey key) {
+    KeyedContentReference(ContentReference reference) {
+      this(reference, reference.contentKey());
+    }
+  }
+
   static final class InMemoryLiveContentSet {
 
     /** Map of content-ID to set of content-references. */
-    final Map<String, Set<ContentReference>> contents = new ConcurrentHashMap<>();
+    final Map<String, Set<KeyedContentReference>> contents = new ConcurrentHashMap<>();
 
     final Map<String, Collection<StorageUri>> baseLocations = new ConcurrentHashMap<>();
 
@@ -77,7 +92,7 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
                         .contents
                         .computeIfAbsent(
                             ref.contentId(), x -> Collections.synchronizedSet(new HashSet<>()))
-                        .add(ref)
+                        .add(new KeyedContentReference(ref))
                     ? 1L
                     : 0L)
         .sum();
@@ -180,7 +195,10 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   public Stream<ContentReference> fetchContentReferences(
       @NotNull UUID liveSetId, @NotNull String contentId) {
     return getOptional(liveSetId)
-        .map(lcs -> lcs.contents.getOrDefault(contentId, emptySet()).stream())
+        .map(
+            lcs ->
+                lcs.contents.getOrDefault(contentId, emptySet()).stream()
+                    .map(KeyedContentReference::reference))
         .orElse(Stream.empty());
   }
 

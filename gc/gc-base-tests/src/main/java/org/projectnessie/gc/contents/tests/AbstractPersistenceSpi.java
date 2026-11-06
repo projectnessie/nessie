@@ -408,6 +408,46 @@ public abstract class AbstractPersistenceSpi {
         .isEqualTo(0L);
   }
 
+  /**
+   * A renamed or moved table has references under its old and its new key. They point to the same
+   * metadata, but all keys must be retained: the keys are what a sweep restricted to some
+   * namespaces selects tables by.
+   */
+  @Test
+  void identifyKeepsAllKeysOfRenamedContent() throws Exception {
+    LiveSetVals vals = new LiveSetVals(0);
+    vals.startIdentify();
+
+    ContentReference oldName =
+        icebergContent(
+            ICEBERG_TABLE,
+            "cid-renamed",
+            "1234567801",
+            ContentKey.of("team_a", "customers"),
+            "meta-renamed",
+            42L);
+    ContentReference newName =
+        icebergContent(
+            ICEBERG_TABLE,
+            "cid-renamed",
+            "1234567802",
+            ContentKey.of("team_b", "customers"),
+            "meta-renamed",
+            42L);
+
+    persistenceSpi.addIdentifiedLiveContent(vals.id, Stream.of(oldName, newName));
+    // Adding a reference again must not add anything, nor drop one of the keys.
+    persistenceSpi.addIdentifiedLiveContent(vals.id, Stream.of(newName));
+
+    try (Stream<ContentReference> refs =
+        persistenceSpi.fetchContentReferences(vals.id, "cid-renamed")) {
+      soft.assertThat(refs.map(ContentReference::contentKey))
+          .containsExactlyInAnyOrder(
+              ContentKey.of("team_a", "customers"), ContentKey.of("team_b", "customers"));
+    }
+    soft.assertThat(persistenceSpi.fetchDistinctContentIdCount(vals.id)).isEqualTo(1L);
+  }
+
   @Test
   void identifiedContents() throws Exception {
     LiveSetVals vals1 = new LiveSetVals();
