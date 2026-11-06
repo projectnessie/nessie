@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Shows available commands or detailed information about a specific command.
 
 `HELP` shows all available command.

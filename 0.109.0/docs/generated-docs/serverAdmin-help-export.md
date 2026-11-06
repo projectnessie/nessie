@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar export [-hV] [--full-scan]
        [-C=<expectedCommitCount>] [--commit-batch-size=<commitBatchSize>]

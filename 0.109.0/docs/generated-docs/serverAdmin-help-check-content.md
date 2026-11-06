@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 ```
 Usage: nessie-server-admin-tool-runner.jar check-content [-cEhsV]
        [-B=<batchSize>] [-H=<hash>] [-o=<outputSpec>] [-r=<ref>]
