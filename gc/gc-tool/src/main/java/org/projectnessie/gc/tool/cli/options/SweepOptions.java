@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import org.projectnessie.gc.expire.StoragePrefixes;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.storage.uri.StorageUri;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -107,12 +110,35 @@ public class SweepOptions {
       })
   List<String> storagePrefixes = new ArrayList<>();
 
+  @CommandLine.Option(
+      names = "--target-namespace",
+      split = ",",
+      description = {
+        "Optional regular expression for the namespaces (dot-separated, like 'db.schema') of the "
+            + "tables/views to sweep. Can be repeated or given as a comma separated list, so an "
+            + "expression cannot contain a comma.",
+        "Each expression must match the whole namespace, not just a part of it. To match a "
+            + "namespace and everything nested below it, use a pattern like 'db\\.schema(\\..*)?'.",
+        "A table/view is selected if at least one of its keys in the live-content-set is in a "
+            + "matching namespace. Selection is by the table/view itself, which keeps its ID when "
+            + "it is renamed or moved to another namespace: it is selected by every namespace "
+            + "it has been in, as far as the mark phase retained it, and all of its live files "
+            + "stay live.",
+        "Tables/views that are not selected are not processed at all, no file is listed or "
+            + "deleted. The mark phase is not affected and still covers the whole catalog."
+      })
+  List<String> targetNamespaces = new ArrayList<>();
+
   public boolean isDeferDeletes() {
     return deferDeletes;
   }
 
   public List<String> getStoragePrefixes() {
     return storagePrefixes;
+  }
+
+  public List<String> getTargetNamespaces() {
+    return targetNamespaces;
   }
 
   /**
@@ -131,11 +157,48 @@ public class SweepOptions {
   }
 
   /**
+   * Creates the filter for the contents to sweep from the {@code --target-namespace} options. The
+   * filter accepts a content key if its namespace matches one of the expressions as a whole.
+   *
+   * @return the filter, or empty if no namespace is configured, which means no restriction
+   * @throws ParameterException if an expression is blank or not a valid regular expression
+   */
+  public Optional<Predicate<ContentKey>> createContentKeyFilter() {
+    if (targetNamespaces.isEmpty()) {
+      return Optional.empty();
+    }
+    List<Predicate<String>> namespacePredicates =
+        targetNamespaces.stream().map(this::parseNamespacePattern).collect(Collectors.toList());
+    return Optional.of(
+        key -> {
+          String namespace = key.getNamespace().toString();
+          return namespacePredicates.stream().anyMatch(p -> p.test(namespace));
+        });
+  }
+
+  /**
    * Fails for invalid option values. Meant to be called before long-running work starts, for
    * example before the mark phase of the {@code gc} command.
    */
   public void validate() {
     createBaseLocationFilter();
+    createContentKeyFilter();
+  }
+
+  private Predicate<String> parseNamespacePattern(String pattern) {
+    String trimmed = pattern.trim();
+    if (trimmed.isEmpty()) {
+      throw new ParameterException(
+          commandSpec.commandLine(), "Option --target-namespace must not be empty");
+    }
+    try {
+      return Pattern.compile(trimmed).asMatchPredicate();
+    } catch (PatternSyntaxException e) {
+      throw new ParameterException(
+          commandSpec.commandLine(),
+          "Invalid --target-namespace '" + pattern + "': " + e.getDescription(),
+          e);
+    }
   }
 
   private StorageUri parseStoragePrefix(String prefix) {

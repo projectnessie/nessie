@@ -20,14 +20,15 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -61,7 +62,7 @@ public class TestExpireFilters {
   static final String CUSTOMERS_ID = "cid-customers";
   static final String EVENTS_ID = "cid-events";
 
-  /** What a {@link #sweep(Map, Predicate) sweep} did. */
+  /** What a sweep did. */
   record SweepResult(
       LiveContentSet liveContentSet,
       DeleteSummary summary,
@@ -189,57 +190,238 @@ public class TestExpireFilters {
     soft.assertThat(r.deleted()).doesNotContain(ORDERS.resolve("metadata"));
   }
 
+  // --- content-key filter (--target-namespace) ---------------------------------------------------
+
   /**
-   * Runs the sweep phase over contents with the given base locations.
+   * Only contents with a key in the namespace are processed, the others are left alone entirely.
+   */
+  @Test
+  public void contentKeyFilterSelectsContentsByNamespace() throws Exception {
+    SweepResult r =
+        sweep(
+            List.of(
+                Table.of(ORDERS_ID, ContentKey.of("team_a", "orders"), ORDERS),
+                Table.of(CUSTOMERS_ID, ContentKey.of("team_a", "customers"), CUSTOMERS),
+                Table.of(EVENTS_ID, ContentKey.of("team_b", "events"), EVENTS)),
+            inNamespace("team_a"),
+            null);
+
+    soft.assertThat(r.listed()).containsExactlyInAnyOrder(ORDERS, CUSTOMERS);
+    soft.assertThat(r.deleted())
+        .containsExactlyInAnyOrder(ORDERS.resolve("unused"), CUSTOMERS.resolve("unused"));
+    // The content that is not selected is not touched at all, not even its base locations are
+    // recorded.
+    soft.assertThat(baseLocations(r.liveContentSet(), EVENTS_ID)).isEmpty();
+    soft.assertThat(baseLocations(r.liveContentSet(), ORDERS_ID)).containsExactly(ORDERS);
+  }
+
+  /**
+   * A table that was renamed into another namespace is selected by the namespace it is in now and
+   * by the one it has been in, and it is swept as a whole either way: its files are in the folder
+   * of the old namespace.
+   */
+  @Test
+  public void renamedContentIsSelectedByEveryNamespaceItHasBeenIn() throws Exception {
+    List<Table> tables =
+        List.of(
+            Table.of(
+                CUSTOMERS_ID,
+                List.of(
+                    new Version(ContentKey.of("team_a", "customers"), "metadata"),
+                    new Version(ContentKey.of("team_b", "customers"), "metadata")),
+                CUSTOMERS));
+
+    for (String namespace : List.of("team_a", "team_b")) {
+      SweepResult r = sweep(tables, inNamespace(namespace), null);
+      soft.assertThat(r.listed())
+          .describedAs("listed for %s", namespace)
+          .containsExactly(CUSTOMERS);
+      soft.assertThat(r.deleted())
+          .describedAs("deleted for %s", namespace)
+          .containsExactly(CUSTOMERS.resolve("unused"));
+    }
+
+    SweepResult other = sweep(tables, inNamespace("team_c"), null);
+    soft.assertThat(other.listed()).isEmpty();
+    soft.assertThat(other.deleted()).isEmpty();
+  }
+
+  /**
+   * Selection is by content, not by reference: of a selected content, the live files of all
+   * versions are kept, also those of versions that were committed under a key that the filter does
+   * not accept. Filtering the individual references instead would delete files that are in use.
+   */
+  @Test
+  public void liveFilesOfAllVersionsOfSelectedContentSurvive() throws Exception {
+    List<Table> tables =
+        List.of(
+            Table.of(
+                CUSTOMERS_ID,
+                List.of(
+                    // an older version, committed before the table was moved to team_b
+                    new Version(ContentKey.of("team_a", "customers"), "metadata-old"),
+                    new Version(ContentKey.of("team_b", "customers"), "metadata-new")),
+                CUSTOMERS));
+
+    SweepResult r = sweep(tables, inNamespace("team_b"), null);
+
+    soft.assertThat(r.listed()).containsExactly(CUSTOMERS);
+    soft.assertThat(r.deleted()).containsExactly(CUSTOMERS.resolve("unused"));
+    soft.assertThat(r.deleted())
+        .doesNotContain(CUSTOMERS.resolve("metadata-old"), CUSTOMERS.resolve("metadata-new"));
+  }
+
+  /**
+   * Both filters must accept: the table is selected via its namespace and its base location is
+   * below the prefix.
+   */
+  @Test
+  public void contentKeyFilterAndBaseLocationFilterCombine() throws Exception {
+    SweepResult r =
+        sweep(
+            List.of(
+                Table.of(ORDERS_ID, ContentKey.of("team_a", "orders"), ORDERS),
+                // renamed from team_a to team_b, files are still in the folder of team_a
+                Table.of(
+                    CUSTOMERS_ID,
+                    List.of(
+                        new Version(ContentKey.of("team_a", "customers"), "metadata"),
+                        new Version(ContentKey.of("team_b", "customers"), "metadata")),
+                    CUSTOMERS),
+                Table.of(EVENTS_ID, ContentKey.of("team_b", "events"), EVENTS)),
+            inNamespace("team_b"),
+            StoragePrefixes.atOrBelowAnyOf(List.of(StorageUri.of("mock://bucket/team_a/"))));
+
+    // orders: not in team_b. events: in team_b, but its folder is not below the prefix.
+    soft.assertThat(r.listed()).containsExactly(CUSTOMERS);
+    soft.assertThat(r.deleted()).containsExactly(CUSTOMERS.resolve("unused"));
+  }
+
+  /** A content-key filter that accepts nothing processes nothing. */
+  @Test
+  public void contentKeyFilterAcceptingNothingSweepsNothing() throws Exception {
+    SweepResult r =
+        sweep(
+            List.of(Table.of(ORDERS_ID, ContentKey.of("team_a", "orders"), ORDERS)),
+            key -> false,
+            null);
+
+    soft.assertThat(r.listed()).isEmpty();
+    soft.assertThat(r.deleted()).isEmpty();
+    soft.assertThat(r.summary()).isEqualTo(DeleteSummary.EMPTY);
+  }
+
+  /** Matches the namespace of a key as a whole, like {@code --target-namespace} does. */
+  static Predicate<ContentKey> inNamespace(String namespaceRegex) {
+    Predicate<String> matches = Pattern.compile(namespaceRegex).asMatchPredicate();
+    return key -> matches.test(key.getNamespace().toString());
+  }
+
+  // --- test fixture ---------------------------------------------------------------------------
+
+  /** A version of a table: the key it was committed under and the name of its metadata file. */
+  record Version(ContentKey key, String metadataFile) {}
+
+  /** A table/view with the versions in the live-set and its base locations. */
+  record Table(String contentId, List<Version> versions, List<StorageUri> bases) {
+    static Table of(String contentId, ContentKey key, StorageUri... bases) {
+      return new Table(contentId, List.of(new Version(key, "metadata")), List.of(bases));
+    }
+
+    static Table of(String contentId, List<Version> versions, StorageUri... bases) {
+      return new Table(contentId, versions, List.of(bases));
+    }
+  }
+
+  /** Convenience for tests that only use base locations and a base-location filter. */
+  SweepResult sweep(
+      Map<String, List<StorageUri>> basesPerContent, Predicate<StorageUri> baseLocationFilter)
+      throws Exception {
+    List<Table> tables =
+        basesPerContent.entrySet().stream()
+            .map(
+                e ->
+                    new Table(
+                        e.getKey(),
+                        List.of(new Version(ContentKey.of("ns", e.getKey()), "metadata")),
+                        e.getValue()))
+            .collect(Collectors.toList());
+    return sweep(tables, null, baseLocationFilter);
+  }
+
+  /**
+   * Runs the sweep phase over the given tables.
    *
-   * <p>Each content is live with one metadata file per base location, and each base location holds
-   * that live {@code metadata} file, an old {@code unused} file (to be deleted), and a {@code
-   * too-new} file (never deleted).
+   * <p>Each version of a table is live, with one metadata file per base location of the table. Each
+   * base location holds the metadata files of its tables, an old {@code unused} file (to be
+   * deleted), and a {@code too-new} file (never deleted).
    *
-   * @param basesPerContent base locations per content-ID
+   * @param contentKeyFilter filter to apply, {@code null} for none
    * @param baseLocationFilter filter to apply, {@code null} for none
    */
   SweepResult sweep(
-      Map<String, List<StorageUri>> basesPerContent, Predicate<StorageUri> baseLocationFilter)
+      List<Table> tables,
+      Predicate<ContentKey> contentKeyFilter,
+      Predicate<StorageUri> baseLocationFilter)
       throws Exception {
     Instant now = Instant.now();
     Instant maxFileModificationTime = now.minus(1, ChronoUnit.SECONDS);
     long oldMillis = maxFileModificationTime.toEpochMilli() - 10_000L;
 
+    Map<String, Table> tablesById =
+        tables.stream().collect(Collectors.toMap(Table::contentId, t -> t));
+
     InMemoryPersistenceSpi storage = new InMemoryPersistenceSpi();
     UUID id = UUID.randomUUID();
     storage.startIdentifyLiveContents(id, now);
-    Map<String, ContentKey> keys = new LinkedHashMap<>();
-    basesPerContent.keySet().forEach(cid -> keys.put(cid, ContentKey.of("ns", cid)));
     storage.addIdentifiedLiveContent(
         id,
-        basesPerContent.keySet().stream()
-            .map(
-                cid ->
-                    icebergContent(
-                        ICEBERG_TABLE,
-                        cid,
-                        "commit-" + cid,
-                        keys.get(cid),
-                        basesPerContent.get(cid).get(0).resolve("metadata").toString(),
-                        42L)));
+        tables.stream()
+            .flatMap(
+                table ->
+                    IntStream.range(0, table.versions().size())
+                        .mapToObj(
+                            i ->
+                                icebergContent(
+                                    ICEBERG_TABLE,
+                                    table.contentId(),
+                                    "commit-" + table.contentId() + "-" + i,
+                                    table.versions().get(i).key(),
+                                    table
+                                        .bases()
+                                        .get(0)
+                                        .resolve(table.versions().get(i).metadataFile())
+                                        .toString(),
+                                    42L))));
     storage.finishedIdentifyLiveContents(id, now, null);
     LiveContentSet liveContentSet = storage.getLiveContentSet(id);
 
+    // The live files of a version: its metadata file in each base location of the table.
     ContentToFiles contentToFiles =
-        ref ->
-            basesPerContent.get(ref.contentId()).stream()
-                .map(base -> FileReference.of(StorageUri.of("metadata"), base, -1L));
+        ref -> {
+          String metadataFile =
+              ref.metadataLocation().substring(ref.metadataLocation().lastIndexOf('/') + 1);
+          return tablesById.get(ref.contentId()).bases().stream()
+              .map(base -> FileReference.of(StorageUri.of(metadataFile), base, -1L));
+        };
 
     Set<StorageUri> listed = ConcurrentHashMap.newKeySet();
     FilesLister lister =
         base -> {
           listed.add(base);
-          return Stream.of(
-              FileReference.of(StorageUri.of("metadata"), base, oldMillis),
-              FileReference.of(StorageUri.of("unused"), base, oldMillis),
-              FileReference.of(
-                  StorageUri.of("too-new"), base, maxFileModificationTime.toEpochMilli() + 1));
+          Stream<FileReference> metadataFiles =
+              tables.stream()
+                  .filter(t -> t.bases().contains(base))
+                  .flatMap(t -> t.versions().stream())
+                  .map(Version::metadataFile)
+                  .distinct()
+                  .map(name -> FileReference.of(StorageUri.of(name), base, oldMillis));
+          return Stream.concat(
+              metadataFiles,
+              Stream.of(
+                  FileReference.of(StorageUri.of("unused"), base, oldMillis),
+                  FileReference.of(
+                      StorageUri.of("too-new"), base, maxFileModificationTime.toEpochMilli() + 1)));
         };
 
     Set<StorageUri> deleted = ConcurrentHashMap.newKeySet();
@@ -257,6 +439,9 @@ public class TestExpireFilters {
             .expectedFileCount(100)
             .contentToFiles(contentToFiles)
             .maxFileModificationTime(maxFileModificationTime);
+    if (contentKeyFilter != null) {
+      parameters.contentKeyFilter(contentKeyFilter);
+    }
     if (baseLocationFilter != null) {
       parameters.baseLocationFilter(baseLocationFilter);
     }

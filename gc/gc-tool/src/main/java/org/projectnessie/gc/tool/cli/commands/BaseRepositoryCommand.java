@@ -241,19 +241,28 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
               .expectedFileCount(sweepOptions.getExpectedFileCount())
               .allowedFalsePositiveProbability(sweepOptions.getAllowedFalsePositiveProbability());
 
+      PrintWriter commandOut = commandSpec.commandLine().getOut();
       sweepOptions
           .createBaseLocationFilter()
           .ifPresent(
               filter -> {
                 expireParametersBuilder.baseLocationFilter(filter);
-                commandSpec
-                    .commandLine()
-                    .getOut()
-                    .println(
-                        Ansi.AUTO.text(
-                            "@|bold Restricting the sweep phase to base locations below the storage prefixes "
-                                + sweepOptions.getStoragePrefixes()
-                                + "|@"));
+                commandOut.println(
+                    Ansi.AUTO.text(
+                        "@|bold Restricting the sweep phase to base locations below the storage prefixes "
+                            + sweepOptions.getStoragePrefixes()
+                            + "|@"));
+              });
+      sweepOptions
+          .createContentKeyFilter()
+          .ifPresent(
+              filter -> {
+                expireParametersBuilder.contentKeyFilter(filter);
+                commandOut.println(
+                    Ansi.AUTO.text(
+                        "@|bold Restricting the sweep phase to tables/views in the namespaces "
+                            + sweepOptions.getTargetNamespaces()
+                            + "|@"));
               });
       ExpireParameters expireParameters = expireParametersBuilder.build();
 

@@ -27,6 +27,7 @@ import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.gc.tool.cli.options.SweepOptions;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.storage.uri.StorageUri;
 import picocli.CommandLine.ParameterException;
 
@@ -112,6 +113,130 @@ public class TestSweepOptions {
   public void validateAcceptsGoodAndMissingPrefixes() {
     sweep().sweepOptions.validate();
     sweep("--storage-prefix", "s3://bucket/team_a/").sweepOptions.validate();
+  }
+
+  // --- --target-namespace ------------------------------------------------------------------
+
+  @Test
+  public void noTargetNamespaceMeansNoRestriction() {
+    SweepOptions options = sweep().sweepOptions;
+
+    soft.assertThat(options.getTargetNamespaces()).isEmpty();
+    soft.assertThat(options.createContentKeyFilter()).isEmpty();
+  }
+
+  @Test
+  public void singleTargetNamespace() {
+    SweepOptions options = sweep("--target-namespace", "team_a").sweepOptions;
+
+    Predicate<ContentKey> filter = options.createContentKeyFilter().orElseThrow();
+    assertThat(filter)
+        .accepts(ContentKey.of("team_a", "orders"), ContentKey.of("team_a", "customers"))
+        .rejects(
+            ContentKey.of("team_b", "orders"),
+            ContentKey.of("team_a", "sales", "orders"),
+            ContentKey.of("team_ab", "orders"),
+            ContentKey.of("orders"));
+  }
+
+  @Test
+  public void targetNamespaceMustMatchTheWholeNamespace() {
+    SweepOptions options = sweep("--target-namespace", "team").sweepOptions;
+
+    assertThat(options.createContentKeyFilter().orElseThrow())
+        .describedAs("a part of the namespace is not enough")
+        .rejects(ContentKey.of("team_a", "orders"), ContentKey.of("my_team", "orders"))
+        .accepts(ContentKey.of("team", "orders"));
+  }
+
+  @Test
+  public void targetNamespaceIsDotSeparated() {
+    SweepOptions options = sweep("--target-namespace", "team_a\\.sales").sweepOptions;
+
+    assertThat(options.createContentKeyFilter().orElseThrow())
+        .accepts(ContentKey.of("team_a", "sales", "orders"))
+        .rejects(
+            ContentKey.of("team_a", "orders"),
+            ContentKey.of("team_a", "sales", "emea", "orders"),
+            ContentKey.of("team_aXsales", "orders"));
+  }
+
+  @Test
+  public void targetNamespaceWithNestedNamespaces() {
+    SweepOptions options = sweep("--target-namespace", "team_a(\\..*)?").sweepOptions;
+
+    assertThat(options.createContentKeyFilter().orElseThrow())
+        .accepts(
+            ContentKey.of("team_a", "orders"),
+            ContentKey.of("team_a", "sales", "orders"),
+            ContentKey.of("team_a", "sales", "emea", "orders"))
+        .rejects(ContentKey.of("team_ab", "orders"), ContentKey.of("team_b", "orders"));
+  }
+
+  @Test
+  public void repeatedAndCommaSeparatedTargetNamespaces() {
+    SweepOptions options =
+        sweep("--target-namespace", "team_a", "--target-namespace", "team_c\\.logs,team_d")
+            .sweepOptions;
+
+    soft.assertThat(options.getTargetNamespaces())
+        .containsExactly("team_a", "team_c\\.logs", "team_d");
+    soft.assertThat(options.createContentKeyFilter().orElseThrow())
+        .accepts(
+            ContentKey.of("team_a", "orders"),
+            ContentKey.of("team_c", "logs", "access"),
+            ContentKey.of("team_d", "events"))
+        .rejects(ContentKey.of("team_b", "orders"), ContentKey.of("team_c", "orders"));
+  }
+
+  @Test
+  public void invalidTargetNamespaceRegularExpressionIsRejected() {
+    SweepOptions options = sweep("--target-namespace", "team_a(").sweepOptions;
+
+    assertThatThrownBy(options::createContentKeyFilter)
+        .isInstanceOf(ParameterException.class)
+        .hasMessageContaining("--target-namespace")
+        .hasMessageContaining("team_a(");
+  }
+
+  @Test
+  public void emptyTargetNamespaceIsRejected() {
+    SweepOptions options = sweep("--target-namespace", "  ").sweepOptions;
+
+    assertThatThrownBy(options::validate)
+        .isInstanceOf(ParameterException.class)
+        .hasMessageContaining("must not be empty");
+  }
+
+  @Test
+  public void validateRejectsInvalidTargetNamespaceBeforeAnyWorkStarts() {
+    SweepOptions gcOptions =
+        ((MarkAndSweep)
+                parseCommand("gc", "--jdbc-url", "jdbc:foo:", "--target-namespace", "(unclosed"))
+            .sweepOptions;
+
+    assertThatThrownBy(gcOptions::validate).isInstanceOf(ParameterException.class);
+  }
+
+  @Test
+  public void targetNamespaceAndStoragePrefixCanBeCombined() {
+    SweepOptions options =
+        sweep("--target-namespace", "team_b", "--storage-prefix", "s3://bucket/team_a/")
+            .sweepOptions;
+
+    soft.assertThat(options.createContentKeyFilter()).isPresent();
+    soft.assertThat(options.createBaseLocationFilter()).isPresent();
+    options.validate();
+  }
+
+  @Test
+  public void gcCommandAcceptsTargetNamespace() {
+    MarkAndSweep gc = parseCommand("gc", "--jdbc-url", "jdbc:foo:", "--target-namespace", "team_a");
+
+    assertThat(gc.sweepOptions.getTargetNamespaces()).containsExactly("team_a");
+    assertThat(gc.sweepOptions.createContentKeyFilter().orElseThrow())
+        .accepts(ContentKey.of("team_a", "orders"))
+        .rejects(ContentKey.of("team_b", "orders"));
   }
 
   @Test

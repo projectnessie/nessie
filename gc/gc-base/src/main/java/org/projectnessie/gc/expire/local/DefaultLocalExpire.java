@@ -21,14 +21,19 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.immutables.value.Value;
+import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.expire.Expire;
 import org.projectnessie.gc.expire.ExpireParameters;
 import org.projectnessie.gc.expire.PerContentDeleteExpired;
 import org.projectnessie.gc.files.DeleteSummary;
+import org.projectnessie.model.ContentKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +94,56 @@ public abstract class DefaultLocalExpire implements Expire {
   }
 
   private DeleteSummary expireInForkJoinPool() {
+    Optional<Predicate<ContentKey>> contentKeyFilter = expireParameters().contentKeyFilter();
+    AtomicLong numContents = new AtomicLong();
+    AtomicLong numSelected = new AtomicLong();
+
     try (Stream<String> contentIds = expireParameters().liveContentSet().fetchContentIds()) {
-      return contentIds
-          .parallel()
-          .map(this::expireSingleContent)
-          .reduce(DeleteSummary.EMPTY, DeleteSummary::add);
+      DeleteSummary deleteSummary =
+          contentIds
+              .parallel()
+              .filter(
+                  contentId -> {
+                    numContents.incrementAndGet();
+                    boolean selected = isSelected(contentKeyFilter, contentId);
+                    if (selected) {
+                      numSelected.incrementAndGet();
+                    }
+                    return selected;
+                  })
+              .map(this::expireSingleContent)
+              .reduce(DeleteSummary.EMPTY, DeleteSummary::add);
+
+      if (contentKeyFilter.isPresent()) {
+        LOGGER.info(
+            "live-set#{}: The content-key filter selected {} of {} contents.",
+            expireParameters().liveContentSet().id(),
+            numSelected.get(),
+            numContents.get());
+      }
+      return deleteSummary;
+    }
+  }
+
+  /**
+   * Whether the content is selected by the content-key filter, which is the case if at least one of
+   * the content's references has a key accepted by the filter.
+   */
+  private boolean isSelected(Optional<Predicate<ContentKey>> contentKeyFilter, String contentId) {
+    if (contentKeyFilter.isEmpty()) {
+      return true;
+    }
+    Predicate<ContentKey> filter = contentKeyFilter.get();
+    try (Stream<ContentReference> references =
+        expireParameters().liveContentSet().fetchContentReferences(contentId)) {
+      boolean selected = references.anyMatch(ref -> filter.test(ref.contentKey()));
+      if (!selected) {
+        LOGGER.debug(
+            "live-set#{}: Skipping content ID {}, none of its keys is accepted by the content-key filter.",
+            expireParameters().liveContentSet().id(),
+            contentId);
+      }
+      return selected;
     }
   }
 

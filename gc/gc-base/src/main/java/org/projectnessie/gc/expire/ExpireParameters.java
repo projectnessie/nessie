@@ -17,12 +17,14 @@ package org.projectnessie.gc.expire;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Predicate;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
+import org.projectnessie.model.ContentKey;
 import org.projectnessie.storage.uri.StorageUri;
 
 @Value.Immutable
@@ -82,6 +84,24 @@ public interface ExpireParameters {
     Builder fileDeleter(FileDeleter fileDeleter);
 
     /**
+     * Optional filter to restrict the sweep to some of the contents, selected by their {@link
+     * ContentKey}s, for example all contents in a namespace.
+     *
+     * <p>A content is <em>selected</em> if at least one of its references in the {@link
+     * #liveContentSet(LiveContentSet) live-content-set} has a key accepted by the filter. A table
+     * that has been renamed or moved to another namespace therefore stays selected by the
+     * namespaces it has been in, as long as its references with these keys are in the
+     * live-content-set. Selection is by content, not by key: a selected content is swept as a
+     * whole, including its base locations, and its live files are never reduced to the references
+     * with an accepted key.
+     *
+     * <p>Contents that are not selected are not processed at all: their metadata is not read, their
+     * base locations are not listed, and nothing is deleted. By default, all contents are selected.
+     */
+    @CanIgnoreReturnValue
+    Builder contentKeyFilter(Predicate<ContentKey> contentKeyFilter);
+
+    /**
      * Optional filter to restrict the sweep to some of the content's base locations, for example
      * those below certain storage prefixes, see {@link StoragePrefixes}.
      *
@@ -109,6 +129,8 @@ public interface ExpireParameters {
   default double allowedFalsePositiveProbability() {
     return DEFAULT_ALLOWED_FALSE_POSITIVE_PROBABILITY;
   }
+
+  Optional<Predicate<ContentKey>> contentKeyFilter();
 
   @Value.Default
   default Predicate<StorageUri> baseLocationFilter() {
