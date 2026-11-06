@@ -42,6 +42,8 @@ public class MarkAndSweep extends BaseRepositoryCommand {
 
   @Override
   protected void preValidate() {
+    // Fail early, before the (long-running) mark phase.
+    sweepOptions.validate();
     if (sweepOptions.isDeferDeletes()) {
       liveContentSetsStorageOptions.assertNotInMemory(commandSpec, "--defer-deletes");
     }

@@ -20,9 +20,22 @@ import static org.projectnessie.gc.expire.ExpireParameters.DEFAULT_EXPECTED_FILE
 import static org.projectnessie.gc.expire.ExpireParameters.DEFAULT_FALSE_POSITIVE_PROBABILITY;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.projectnessie.gc.expire.StoragePrefixes;
+import org.projectnessie.storage.uri.StorageUri;
 import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.ParameterException;
 
 public class SweepOptions {
+
+  /** The command that this set of options is mixed into. */
+  @CommandLine.Spec(CommandLine.Spec.Target.MIXEE)
+  CommandSpec commandSpec;
 
   @CommandLine.Option(
       names = "--max-file-modification",
@@ -76,8 +89,70 @@ public class SweepOptions {
               + "This option is incompatible with --inmemory.")
   boolean deferDeletes;
 
+  @CommandLine.Option(
+      names = "--storage-prefix",
+      split = ",",
+      description = {
+        "Optional storage prefix, an absolute URI like 's3://bucket/team_a/'. Can be repeated or "
+            + "given as a comma separated list.",
+        "If set, the sweep phase only lists and deletes files in table/view base locations at or "
+            + "below one of the prefixes. Whole path segments are matched, 's3://bucket/team_a' "
+            + "does not match 's3://bucket/team_ab/'.",
+        "The scheme and authority must be the same as in the table/view metadata, for example "
+            + "'s3a://' does not match 's3://'.",
+        "The live files of all contents are still collected, because the base locations are only "
+            + "known after that. Base locations above the prefix are skipped.",
+        "A base location that is shared with, or contains, the base location of another table can "
+            + "delete files of that table, with or without this option."
+      })
+  List<String> storagePrefixes = new ArrayList<>();
+
   public boolean isDeferDeletes() {
     return deferDeletes;
+  }
+
+  public List<String> getStoragePrefixes() {
+    return storagePrefixes;
+  }
+
+  /**
+   * Creates the filter for the base locations to sweep from the {@code --storage-prefix} options.
+   *
+   * @return the filter, or empty if no storage prefix is configured, which means no restriction
+   * @throws ParameterException if a storage prefix is not an absolute URI
+   */
+  public Optional<Predicate<StorageUri>> createBaseLocationFilter() {
+    if (storagePrefixes.isEmpty()) {
+      return Optional.empty();
+    }
+    List<StorageUri> prefixes =
+        storagePrefixes.stream().map(this::parseStoragePrefix).collect(Collectors.toList());
+    return Optional.of(StoragePrefixes.atOrBelowAnyOf(prefixes));
+  }
+
+  /**
+   * Fails for invalid option values. Meant to be called before long-running work starts, for
+   * example before the mark phase of the {@code gc} command.
+   */
+  public void validate() {
+    createBaseLocationFilter();
+  }
+
+  private StorageUri parseStoragePrefix(String prefix) {
+    String trimmed = prefix.trim();
+    if (trimmed.isEmpty()) {
+      throw new ParameterException(
+          commandSpec.commandLine(), "Option --storage-prefix must not be empty");
+    }
+    StorageUri uri = StorageUri.of(trimmed);
+    if (!uri.isAbsolute()) {
+      throw new ParameterException(
+          commandSpec.commandLine(),
+          "Invalid --storage-prefix '"
+              + prefix
+              + "', must be an absolute URI including the scheme, for example 's3://bucket/team_a/'");
+    }
+    return uri;
   }
 
   public long getExpectedFileCount() {

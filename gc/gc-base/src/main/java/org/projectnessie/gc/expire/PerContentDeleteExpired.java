@@ -22,6 +22,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.immutables.value.Value;
 import org.projectnessie.gc.files.DeleteSummary;
@@ -99,9 +100,24 @@ public abstract class PerContentDeleteExpired {
       return DeleteSummary.EMPTY;
     }
 
+    // All base locations are associated with the live-set, even those that are not swept below.
     expireParameters().liveContentSet().associateBaseLocations(contentId(), baseLocations);
 
+    Predicate<StorageUri> baseLocationFilter = expireParameters().baseLocationFilter();
     return baseLocations.stream()
+        .filter(
+            baseLocation -> {
+              if (baseLocationFilter.test(baseLocation)) {
+                return true;
+              }
+              LOGGER.debug(
+                  "live-set#{} content#{}: Skipping base location {}, not accepted by the "
+                      + "base-location filter.",
+                  expireParameters().liveContentSet().id(),
+                  contentId(),
+                  baseLocation);
+              return false;
+            })
         .map(
             baseLocation -> {
               try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {

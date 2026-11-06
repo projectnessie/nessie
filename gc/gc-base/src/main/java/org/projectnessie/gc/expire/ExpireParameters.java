@@ -17,11 +17,13 @@ package org.projectnessie.gc.expire;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Instant;
+import java.util.function.Predicate;
 import org.immutables.value.Value;
 import org.projectnessie.gc.contents.LiveContentSet;
 import org.projectnessie.gc.files.FileDeleter;
 import org.projectnessie.gc.files.FilesLister;
 import org.projectnessie.gc.identify.IdentifyLiveContents;
+import org.projectnessie.storage.uri.StorageUri;
 
 @Value.Immutable
 public interface ExpireParameters {
@@ -79,6 +81,17 @@ public interface ExpireParameters {
     @CanIgnoreReturnValue
     Builder fileDeleter(FileDeleter fileDeleter);
 
+    /**
+     * Optional filter to restrict the sweep to some of the content's base locations, for example
+     * those below certain storage prefixes, see {@link StoragePrefixes}.
+     *
+     * <p>Only base locations accepted by the filter are listed and have files deleted. All other
+     * base locations are left alone. The content's live files are still collected, because the base
+     * locations are only known after that. By default, all base locations are accepted.
+     */
+    @CanIgnoreReturnValue
+    Builder baseLocationFilter(Predicate<StorageUri> baseLocationFilter);
+
     ExpireParameters build();
   }
 
@@ -95,6 +108,11 @@ public interface ExpireParameters {
   @Value.Default
   default double allowedFalsePositiveProbability() {
     return DEFAULT_ALLOWED_FALSE_POSITIVE_PROBABILITY;
+  }
+
+  @Value.Default
+  default Predicate<StorageUri> baseLocationFilter() {
+    return baseLocation -> true;
   }
 
   FilesLister filesLister();

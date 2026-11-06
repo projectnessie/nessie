@@ -229,7 +229,7 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
       FileDeleter fileDeleter =
           sweepOptions.isDeferDeletes() ? liveContentSet.fileDeleter() : icebergFiles;
 
-      ExpireParameters expireParameters =
+      ExpireParameters.Builder expireParametersBuilder =
           ExpireParameters.builder()
               .fileDeleter(fileDeleter)
               .filesLister(icebergFiles)
@@ -239,8 +239,23 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
               .maxFileModificationTime(maxFileModificationTime)
               .falsePositiveProbability(sweepOptions.getFalsePositiveProbability())
               .expectedFileCount(sweepOptions.getExpectedFileCount())
-              .allowedFalsePositiveProbability(sweepOptions.getAllowedFalsePositiveProbability())
-              .build();
+              .allowedFalsePositiveProbability(sweepOptions.getAllowedFalsePositiveProbability());
+
+      sweepOptions
+          .createBaseLocationFilter()
+          .ifPresent(
+              filter -> {
+                expireParametersBuilder.baseLocationFilter(filter);
+                commandSpec
+                    .commandLine()
+                    .getOut()
+                    .println(
+                        Ansi.AUTO.text(
+                            "@|bold Restricting the sweep phase to base locations below the storage prefixes "
+                                + sweepOptions.getStoragePrefixes()
+                                + "|@"));
+              });
+      ExpireParameters expireParameters = expireParametersBuilder.build();
 
       Expire expire =
           DefaultLocalExpire.builder()

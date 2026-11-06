@@ -38,6 +38,12 @@ public class Sweep extends BaseLiveSetCommand {
   @CommandLine.Mixin IcebergOptions icebergOptions;
 
   @Override
+  protected void preValidate() {
+    super.preValidate();
+    sweepOptions.validate();
+  }
+
+  @Override
   protected Integer call(
       LiveContentSet liveContentSet, LiveContentSetsRepository liveContentSetsRepository) {
     return expire(
