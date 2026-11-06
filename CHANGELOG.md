@@ -14,6 +14,15 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- GC: The `sweep` and `gc` commands of the Nessie GC tool have two new options to run GC for a part of
+  the catalog only, for example for the tables of one team that shares the catalog with others.
+  `--target-namespace` restricts the sweep phase to the tables and views in the namespaces matching
+  the given regular expressions, `--storage-prefix` to the base locations below the given storage
+  prefixes. The mark phase is not restricted and still covers the whole catalog, so a table that was
+  renamed or moved to another namespace keeps all of its live files. See the
+  [GC documentation](https://projectnessie.org/nessie-latest/gc/) for details and for the
+  requirement that base locations of tables do not overlap.
+
 ### Changes
 
 ### Deprecations

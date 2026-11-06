@@ -373,6 +373,14 @@ the native Nessie API, Nessie cannot infer an external warehouse boundary from a
 Object-store permissions on the credentials used for destructive GC phases are therefore the primary
 deletion boundary for those deployments. `(documented)`
 
+The GC sweep options `--target-namespace` and `--storage-prefix` narrow the tables and base locations
+that the sweep phase lists and deletes in. They are operational scoping aids, not security boundaries:
+they do not restrict the credentials GC uses, the mark phase still reads the whole repository, and
+sweeping a table still deletes every file below its base locations that none of its live versions
+references, including files of other tables stored below those base locations. The options can only
+reduce the deletion scope of a run, they never extend it, so GC's deletion authority does not change.
+Object-store permissions remain the primary deletion boundary. `(documented)`
+
 Because these tools can have destructive effects, their safe use depends on operator identity, command
 configuration, object-store permissions, database configuration, and review of deferred-deletion outputs
 where applicable. Deferred deletion review is especially important when less-trusted users can commit

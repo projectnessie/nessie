@@ -161,6 +161,79 @@ spec:
 EOF
 ```
 
+## Restricting Nessie GC to namespaces or storage prefixes
+
+By default, Nessie GC sweeps all tables and views of the catalog. When several teams share a catalog,
+each team can restrict the _sweep_ phase of its own runs to its tables, using the options
+`--target-namespace` and `--storage-prefix` of the `sweep` and `gc` commands. Both options are
+optional and can be combined, in which case both must accept.
+
+The _mark_ phase is not restricted. It always covers all references and all namespaces, and records the
+live contents of the whole catalog. This is what makes the options safe for tables that were renamed or
+moved to another namespace: a table is identified by an ID that does not change when the table is
+renamed or moved, and all of its live files are known, whatever the table is called today.
+
+### `--target-namespace`
+
+A comma separated list of regular expressions, which can also be given multiple times. Each expression
+must match the _whole_ dot-separated namespace:
+
+```shell
+# Only tables/views in the namespace team_a.sales, but not in namespaces below it
+java -jar nessie-gc.jar gc --target-namespace 'team_a\.sales' ...
+
+# Everything in team_a, including all namespaces below it, plus the namespace team_c.logs
+java -jar nessie-gc.jar gc --target-namespace 'team_a(\..*)?,team_c\.logs' ...
+```
+
+A table or view is selected if at least one of its names in the live-content-set is in a matching
+namespace. A table that was renamed from `team_a.customers` to `team_b.customers` is therefore selected
+by `team_b`, and also by `team_a` as long as the live-content-set has a reference to it under the old
+name, which depends on the retention configured via `--default-cutoff` and `--cutoff`.
+
+A selected table or view is always swept as a whole, with the live files of all of its versions,
+including those committed under a name that does not match. Tables and views that are not selected are
+not processed at all: their metadata is not read, their base locations are not listed and no file is
+deleted.
+
+### `--storage-prefix`
+
+A comma separated list of absolute storage URIs, which can also be given multiple times. Only the base
+locations of tables and views (the `location` in the table metadata) at or below one of the prefixes are
+listed and have files deleted:
+
+```shell
+java -jar nessie-gc.jar gc --storage-prefix 's3://lake/team_a/' ...
+```
+
+* Whole path segments are matched: `s3://lake/team_a` matches `s3://lake/team_a/orders/`, but not
+  `s3://lake/team_ab/`.
+* Scheme and authority must be the same as in the table metadata. `s3a://lake/team_a/` does not match
+  `s3://lake/team_a/`.
+* A base location _above_ the prefix, for example a table located at the root of the warehouse, is
+  skipped, so that nothing outside the prefix is listed or deleted.
+* The metadata of all tables is still read, because base locations are only known after that. The
+  option saves the listing of the object store, which is usually the expensive part. Use
+  `--target-namespace` to skip the metadata of tables as well.
+
+### Running GC per team
+
+A live-content-set can be swept only once, so every restricted run needs its own _mark_ phase: use the
+`gc` command, or run `mark-live` followed by `sweep` for each team.
+
+!!! note
+    The options only reduce the work of the _sweep_ phase. The _mark_ phase still reads the commit logs
+    of all references.
+
+!!! warning
+    A restricted run only cleans up the selected tables. The files of all other tables stay as they are,
+    until a run that selects them.
+
+    As always, the _sweep_ phase deletes all files below the base locations of a processed table that are
+    not referenced by a live version of that table, including files of other tables that are stored
+    below those base locations. Neither option changes that. Make sure that base locations of tables do
+    not overlap.
+
 ## Nessie GC Tool commands
 
 {% include './generated-docs/gc-help.md' %}
