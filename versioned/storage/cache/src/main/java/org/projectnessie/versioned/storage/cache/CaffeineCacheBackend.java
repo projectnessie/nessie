@@ -37,6 +37,8 @@ import jakarta.annotation.Nonnull;
 import java.lang.ref.SoftReference;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntConsumer;
 import java.util.function.LongSupplier;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
@@ -64,10 +66,12 @@ class CaffeineCacheBackend implements CacheBackend {
   private final long refCacheTtlNanos;
   private final long refCacheNegativeTtlNanos;
   private final boolean enableSoftReferences;
+  private final long capacityBytes;
   private final long admitWeight;
   private final AtomicLong rejections = new AtomicLong();
   private final IntConsumer rejectionsWeight;
   private final LongSupplier weightSupplier;
+  private final Lock aboveCapacityLock;
 
   CaffeineCacheBackend(CacheConfig config) {
     this.config = config;
@@ -76,15 +80,15 @@ class CaffeineCacheBackend implements CacheBackend {
     refCacheNegativeTtlNanos = config.referenceNegativeTtl().orElse(Duration.ZERO).toNanos();
     enableSoftReferences = config.enableSoftReferences().orElse(false);
 
-    var maxWeight = config.capacityMb() * ONE_MB;
-    admitWeight = maxWeight + (long) (maxWeight * config.cacheCapacityOvershoot());
+    capacityBytes = config.capacityMb() * ONE_MB;
+    admitWeight = capacityBytes + (long) (capacityBytes * config.cacheCapacityOvershoot());
 
     Caffeine<CacheKey, CacheValue> cacheBuilder =
         Caffeine.newBuilder()
             .executor(config.executor())
-            .scheduler(Scheduler.systemScheduler())
+            .scheduler(Scheduler.disabledScheduler())
             .ticker(config.clockNanos()::getAsLong)
-            .maximumWeight(maxWeight)
+            .maximumWeight(capacityBytes)
             .weigher(this::weigher)
             .expireAfter(
                 new Expiry<>() {
@@ -136,7 +140,7 @@ class CaffeineCacheBackend implements CacheBackend {
                       .register(reg);
 
                   // new gauges (providing base unit)
-                  Gauge.builder(METER_CACHE_CAPACITY, "", x -> maxWeight)
+                  Gauge.builder(METER_CACHE_CAPACITY, "", x -> capacityBytes)
                       .description("Total capacity of the objects cache in bytes.")
                       .tag("cache", CACHE_NAME)
                       .baseUnit(BaseUnits.BYTES)
@@ -165,6 +169,8 @@ class CaffeineCacheBackend implements CacheBackend {
 
     var eviction = cache.policy().eviction().orElseThrow();
     weightSupplier = () -> eviction.weightedSize().orElse(0L);
+
+    aboveCapacityLock = new ReentrantLock();
   }
 
   @VisibleForTesting
@@ -215,11 +221,24 @@ class CaffeineCacheBackend implements CacheBackend {
   @VisibleForTesting
   void cachePut(CacheKey key, CacheValue value) {
     var w = weigher(key, value);
-    if (weightSupplier.getAsLong() + w < admitWeight) {
+    var currentWeight = weightSupplier.getAsLong();
+    if (currentWeight < capacityBytes) {
       cache.put(key, value);
-    } else {
-      rejections.incrementAndGet();
-      rejectionsWeight.accept(w);
+      return;
+    }
+
+    aboveCapacityLock.lock();
+    try {
+      cache.cleanUp();
+      currentWeight = weightSupplier.getAsLong();
+      if (currentWeight + w < admitWeight) {
+        cache.put(key, value);
+      } else {
+        rejections.incrementAndGet();
+        rejectionsWeight.accept(w);
+      }
+    } finally {
+      aboveCapacityLock.unlock();
     }
   }
 
