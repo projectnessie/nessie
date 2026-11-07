@@ -61,7 +61,7 @@ public class MarkOptions {
       split = ",",
       description = {
         "Cutoff policies per reference names. Supplied as a ref-name-pattern=policy tuple.",
-        "Reference name patterns are regular expressions.",
+        "Reference name patterns are regular expressions that must match the whole reference name.",
         "Policies can be one of:",
         "- number of commits as an integer value",
         "- a duration (see java.time.Duration)",
@@ -104,8 +104,7 @@ public class MarkOptions {
         cutoffPolicies.entrySet().stream()
             .map(
                 e -> {
-                  String pattern = "^" + e.getKey() + "$";
-                  Predicate<String> predicate = Pattern.compile(pattern).asPredicate();
+                  Predicate<String> predicate = Pattern.compile(e.getKey()).asMatchPredicate();
 
                   CutoffPolicy cutoffPolicy =
                       parseCutoffPolicy(
