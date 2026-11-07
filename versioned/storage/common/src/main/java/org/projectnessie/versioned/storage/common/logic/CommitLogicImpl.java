@@ -841,19 +841,17 @@ final class CommitLogicImpl implements CommitLogic {
 
   private ObjId identifyMergeBase(ObjId targetId, ObjId sourceId, boolean respectMergeParents) {
     return MergeBase.builder()
-        .loadCommit(
-            commitId -> {
-              try {
-                return fetchCommit(commitId);
-              } catch (ObjNotFoundException e) {
-                return null;
-              }
-            })
+        .loadCommits(this::fetchCommitsIfExist)
         .targetCommitId(targetId)
         .fromCommitId(sourceId)
         .respectMergeParents(respectMergeParents)
         .build()
         .identifyMergeBase();
+  }
+
+  private List<CommitObj> fetchCommitsIfExist(List<ObjId> ids) {
+    return Arrays.asList(
+        persist.fetchTypedObjsIfExist(ids.toArray(new ObjId[0]), COMMIT, CommitObj.class));
   }
 
   @Nullable

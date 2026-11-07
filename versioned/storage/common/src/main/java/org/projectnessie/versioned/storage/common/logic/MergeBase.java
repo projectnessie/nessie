@@ -19,6 +19,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
+import static org.projectnessie.versioned.storage.common.config.StoreConfig.DEFAULT_PARENTS_PER_COMMIT;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogicImpl.NO_COMMON_ANCESTOR_IN_PARENTS_OF;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.BOTH_COMMITS;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.CANDIDATE;
@@ -26,10 +27,15 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.agrona.collections.Object2ObjectHashMap;
@@ -46,7 +52,12 @@ import org.projectnessie.versioned.storage.common.persist.ObjId;
  */
 @Value.Immutable
 public abstract class MergeBase {
-  public abstract Function<ObjId, CommitObj> loadCommit();
+  /**
+   * Loads the given commits, returning one element per requested {@link ObjId}, in the same order,
+   * {@code null} for commits that do not exist. Commits are requested in batches, so a
+   * storage-backed implementation should use a bulk fetch.
+   */
+  public abstract Function<List<ObjId>, List<CommitObj>> loadCommits();
 
   public abstract ObjId targetCommitId();
 
@@ -307,28 +318,108 @@ public abstract class MergeBase {
     if (EMPTY_OBJ_ID.equals(objId)) {
       return null;
     }
-    return commits.computeIfAbsent(
-        objId,
-        id -> {
-          CommitObj commit = loadCommit().apply(id);
-          if (commit == null) {
-            throw new NoSuchElementException("Commit '" + id + "' not found");
-          }
-          ObjId[] parents;
-          if (respectMergeParents()) {
-            List<ObjId> secondary = commit.secondaryParents();
-            parents = new ObjId[1 + secondary.size()];
-            int end = parents.length - 1;
-            for (int i = 0; i < end; i++) {
-              parents[i] = secondary.get(i);
-            }
-            parents[end] = commit.directParent();
-          } else {
-            parents = new ObjId[] {commit.directParent()};
-          }
-          return new ShallowCommit(commit.id(), parents, commit.seq());
-        });
+    ShallowCommit shallow = commits.get(objId);
+    if (shallow != null) {
+      return shallow;
+    }
+
+    CommitObj commit = fetch(objId);
+    if (commit == null) {
+      throw new NoSuchElementException("Commit '" + objId + "' not found");
+    }
+
+    ObjId[] parents;
+    if (respectMergeParents()) {
+      List<ObjId> secondary = commit.secondaryParents();
+      parents = new ObjId[1 + secondary.size()];
+      int end = parents.length - 1;
+      for (int i = 0; i < end; i++) {
+        parents[i] = secondary.get(i);
+      }
+      parents[end] = commit.directParent();
+    } else {
+      parents = new ObjId[] {commit.directParent()};
+    }
+
+    shallow = new ShallowCommit(commit.id(), parents, commit.seq());
+    commits.put(objId, shallow);
+    return shallow;
   }
 
+  private CommitObj fetch(ObjId objId) {
+    CommitObj commit = prefetched.remove(objId);
+    if (commit == null) {
+      commit = loadBatch(objId);
+    }
+    if (commit != null) {
+      rememberChainAhead(commit);
+    }
+    return commit;
+  }
+
+  /**
+   * Loads {@code required} together with the commits that the walk is known to need next, in one
+   * batch.
+   */
+  private CommitObj loadBatch(ObjId required) {
+    List<ObjId> ids = new ArrayList<>();
+    ids.add(required);
+    // Take no more look-ahead than can be held, so that loaded commits never have to be evicted:
+    // the nearest, and therefore next needed, commit would be the first to go.
+    int capacity = PREFETCH_LIMIT - prefetched.size();
+    for (Iterator<ObjId> iter = chainAhead.iterator(); iter.hasNext() && ids.size() <= capacity; ) {
+      ObjId id = iter.next();
+      iter.remove();
+      if (!id.equals(required) && !commits.containsKey(id) && !prefetched.containsKey(id)) {
+        ids.add(id);
+      }
+    }
+
+    List<CommitObj> loaded = loadCommits().apply(ids);
+
+    CommitObj result = null;
+    for (int i = 0; i < ids.size(); i++) {
+      CommitObj commit = loaded.get(i);
+      if (commit == null) {
+        continue;
+      }
+      if (i == 0) {
+        result = commit;
+      } else {
+        prefetched.put(ids.get(i), commit);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Remembers {@link CommitObj#tail()}, the first-parent chain ahead of the given commit, so that
+   * the next batch continues along the chain that is currently being walked. Merge parents are not
+   * added here: those are only needed once the commit carrying them is processed.
+   */
+  private void rememberChainAhead(CommitObj commit) {
+    for (ObjId id : commit.tail()) {
+      if (EMPTY_OBJ_ID.equals(id) || chainAhead.size() >= PREFETCH_LIMIT) {
+        break;
+      }
+      if (!commits.containsKey(id) && !prefetched.containsKey(id)) {
+        chainAhead.add(id);
+      }
+    }
+  }
+
+  /**
+   * Upper bound for the number of loaded, not yet processed commits held in memory, and with that
+   * for the size of a batch. Enough for the two branches being merged to contribute one {@link
+   * CommitObj#tail()} each.
+   */
+  private static final int PREFETCH_LIMIT = 2 * DEFAULT_PARENTS_PER_COMMIT;
+
   private final Object2ObjectHashMap<ObjId, ShallowCommit> commits = new Object2ObjectHashMap<>();
+
+  /** Loaded commits that have not been turned into a {@link ShallowCommit} yet. */
+  private final Map<ObjId, CommitObj> prefetched = new LinkedHashMap<>();
+
+  /** Ids of commits ahead of the current position, used as the next batch. */
+  private final Set<ObjId> chainAhead = new LinkedHashSet<>();
 }
