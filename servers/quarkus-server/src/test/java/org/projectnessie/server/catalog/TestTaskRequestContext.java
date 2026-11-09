@@ -62,12 +62,11 @@ public class TestTaskRequestContext {
     when(behavior.objType()).thenReturn(EntitySnapshotObj.OBJ_TYPE);
     when(behavior.newObjBuilder()).thenAnswer(invocation -> EntitySnapshotObj.builder());
     when(behavior.runningTaskState(any(), any()))
-        .thenAnswer(
-            invocation -> {
-              Clock clock = invocation.getArgument(0);
-              return TaskState.runningState(
-                  clock.instant().plusSeconds(60), clock.instant().plusSeconds(120));
-            });
+        .thenAnswer(invocation -> {
+          Clock clock = invocation.getArgument(0);
+          return TaskState.runningState(
+              clock.instant().plusSeconds(60), clock.instant().plusSeconds(120));
+        });
     when(behavior.performRunningStateUpdateAt(any(), any()))
         .thenAnswer(invocation -> invocation.<Clock>getArgument(0).instant().plusSeconds(30));
     when(behavior.asErrorTaskState(any(), any(), any()))
@@ -84,11 +83,10 @@ public class TestTaskRequestContext {
     when(request.applyRequestToObjBuilder(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(request.submitExecution())
-        .thenAnswer(
-            invocation -> {
-              started.countDown();
-              return execution;
-            });
+        .thenAnswer(invocation -> {
+          started.countDown();
+          return execution;
+        });
 
     Tasks tasks = tasksService.forPersist(persist);
     ManagedContext context = Arc.container().requestContext();
@@ -113,12 +111,11 @@ public class TestTaskRequestContext {
       CompletionStage<ObjectIO> secondResult =
           tasks
               .submit(request)
-              .handle(
-                  (result, failure) -> {
-                    assertThat(failure != null).isEqualTo(fail);
-                    assertThat(ClientProxy.unwrap(objectIO)).isSameAs(secondIO);
-                    return result;
-                  })
+              .handle((result, failure) -> {
+                assertThat(failure != null).isEqualTo(fail);
+                assertThat(ClientProxy.unwrap(objectIO)).isSameAs(secondIO);
+                return result;
+              })
               .thenCompose(result -> continueSecond)
               .thenApply(ignored -> ClientProxy.unwrap(objectIO));
       context.deactivate();

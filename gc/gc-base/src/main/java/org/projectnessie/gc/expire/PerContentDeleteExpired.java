@@ -102,16 +102,15 @@ public abstract class PerContentDeleteExpired {
     expireParameters().liveContentSet().associateBaseLocations(contentId(), baseLocations);
 
     return baseLocations.stream()
-        .map(
-            baseLocation -> {
-              try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
-                return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
-              } catch (Exception e) {
-                String msg = "Failed to expire objects in base location " + baseLocation;
-                LOGGER.error("{}", msg, e);
-                throw new RuntimeException(msg, e);
-              }
-            })
+        .map(baseLocation -> {
+          try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
+            return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
+          } catch (Exception e) {
+            String msg = "Failed to expire objects in base location " + baseLocation;
+            LOGGER.error("{}", msg, e);
+            throw new RuntimeException(msg, e);
+          }
+        })
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
   }
 
@@ -133,23 +132,21 @@ public abstract class PerContentDeleteExpired {
         expireParameters()
             .liveContentSet()
             .fetchContentReferences(contentId())
-            .flatMap(
-                c -> {
-                  @SuppressWarnings("MustBeClosedChecker")
-                  Stream<FileReference> r = expireParameters().contentToFiles().extractFiles(c);
-                  return r;
-                })) {
+            .flatMap(c -> {
+              @SuppressWarnings("MustBeClosedChecker")
+              Stream<FileReference> r = expireParameters().contentToFiles().extractFiles(c);
+              return r;
+            })) {
       contents
           .peek(f -> addBaseLocation.accept(f.base()))
           .map(FileReference::path)
-          .forEach(
-              path -> {
-                filter.put(path);
-                liveFilesStats.liveFiles++;
-                if (path.isAbsolute()) {
-                  liveFilesStats.absolutePaths++;
-                }
-              });
+          .forEach(path -> {
+            filter.put(path);
+            liveFilesStats.liveFiles++;
+            if (path.isAbsolute()) {
+              liveFilesStats.absolutePaths++;
+            }
+          });
     }
 
     LOGGER.debug(
@@ -203,20 +200,19 @@ public abstract class PerContentDeleteExpired {
               expireStats.expiredFiles++;
               return true;
             })
-        .onClose(
-            () ->
-                LOGGER.info(
-                    "live-set#{} content#{}: Found {} total files in base location {}, "
-                        + "{} files considered expired, "
-                        + "{} files considered live, "
-                        + "{} files are newer than max-file-modification-time.",
-                    expireParameters().liveContentSet().id(),
-                    contentId(),
-                    expireStats.totalFiles,
-                    baseLocation,
-                    expireStats.expiredFiles,
-                    expireStats.liveFiles,
-                    expireStats.newFiles));
+        .onClose(() ->
+            LOGGER.info(
+                "live-set#{} content#{}: Found {} total files in base location {}, "
+                    + "{} files considered expired, "
+                    + "{} files considered live, "
+                    + "{} files are newer than max-file-modification-time.",
+                expireParameters().liveContentSet().id(),
+                contentId(),
+                expireStats.totalFiles,
+                baseLocation,
+                expireStats.expiredFiles,
+                expireStats.liveFiles,
+                expireStats.newFiles));
   }
 
   private static final class ExpireStats {

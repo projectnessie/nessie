@@ -220,12 +220,11 @@ public class AdlsObjectIO implements ObjectIO {
     Optional<String> endpoint = fileSystemOptions.endpoint();
     fileSystemOptions
         .endpoint()
-        .ifPresent(
-            e -> {
-              config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e);
-              storageAccountShort.ifPresent(
-                  account -> config.accept(ADLS_CONNECTION_STRING_PREFIX + account, e));
-            });
+        .ifPresent(e -> {
+          config.accept(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e);
+          storageAccountShort.ifPresent(
+              account -> config.accept(ADLS_CONNECTION_STRING_PREFIX + account, e));
+        });
     adlsOptions
         .readBlockSize()
         .ifPresent(r -> config.accept(ADLS_READ_BLOCK_SIZE_BYTES, Integer.toString(r)));
@@ -235,36 +234,28 @@ public class AdlsObjectIO implements ObjectIO {
 
     clientSupplier
         .generateUserDelegationSas(storageLocations, fileSystemOptions)
-        .ifPresent(
-            sasToken -> {
-              putConfigAndCredential(
-                  ADLS_SAS_TOKEN_PREFIX + storageAccount,
-                  sasToken.token(),
-                  config,
-                  credentialConfig);
-              putConfigAndCredential(
-                  ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + storageAccount,
-                  Long.toString(sasToken.expiresAt().toEpochMilli()),
-                  config,
-                  credentialConfig);
-              endpoint.ifPresent(
-                  e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));
-              storageAccountShort.ifPresent(
-                  account -> {
-                    putConfigAndCredential(
-                        ADLS_SAS_TOKEN_PREFIX + account,
-                        sasToken.token(),
-                        config,
-                        credentialConfig);
-                    putConfigAndCredential(
-                        ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + account,
-                        Long.toString(sasToken.expiresAt().toEpochMilli()),
-                        config,
-                        credentialConfig);
-                    endpoint.ifPresent(
-                        e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + account, e));
-                  });
-            });
+        .ifPresent(sasToken -> {
+          putConfigAndCredential(
+              ADLS_SAS_TOKEN_PREFIX + storageAccount, sasToken.token(), config, credentialConfig);
+          putConfigAndCredential(
+              ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + storageAccount,
+              Long.toString(sasToken.expiresAt().toEpochMilli()),
+              config,
+              credentialConfig);
+          endpoint.ifPresent(
+              e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + storageAccount, e));
+          storageAccountShort.ifPresent(account -> {
+            putConfigAndCredential(
+                ADLS_SAS_TOKEN_PREFIX + account, sasToken.token(), config, credentialConfig);
+            putConfigAndCredential(
+                ADLS_SAS_TOKEN_EXPIRES_AT_MS_PREFIX + account,
+                Long.toString(sasToken.expiresAt().toEpochMilli()),
+                config,
+                credentialConfig);
+            endpoint.ifPresent(
+                e -> credentialConfig.put(ADLS_CONNECTION_STRING_PREFIX + account, e));
+          });
+        });
 
     fileSystemOptions.tableConfigOverrides().forEach(config);
     return credentialConfig;

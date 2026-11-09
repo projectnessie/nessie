@@ -77,13 +77,12 @@ public abstract class AbstractTestBasicOperations {
     Stream<Entry> tables = api.getEntries().refName("testx").stream();
     assertThat(tables).isEmpty();
     ContentKey key = ContentKey.of("xx");
-    tryEndpointPass(
-        () ->
-            api.commitMultipleOperations()
-                .branch(branch)
-                .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
-                .commitMeta(CommitMeta.fromMessage("empty message"))
-                .commit());
+    tryEndpointPass(() ->
+        api.commitMultipleOperations()
+            .branch(branch)
+            .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+            .commitMeta(CommitMeta.fromMessage("empty message"))
+            .commit());
 
     Assertions.assertTrue(
         api.getContent()
@@ -100,26 +99,24 @@ public abstract class AbstractTestBasicOperations {
         () -> api.createReference().sourceRefName(master.getName()).reference(test).create());
     Branch test2 = (Branch) api.getReference().refName("testy").get();
     tryEndpointPass(() -> api.deleteBranch().branch(test2).delete());
-    tryEndpointPass(
-        () ->
-            api.commitMultipleOperations()
-                .branch(master)
-                .operation(Delete.of(key))
-                .commitMeta(CommitMeta.fromMessage(""))
-                .commit());
+    tryEndpointPass(() ->
+        api.commitMultipleOperations()
+            .branch(master)
+            .operation(Delete.of(key))
+            .commitMeta(CommitMeta.fromMessage(""))
+            .commit());
     assertThat(api.getContent().refName("testx").key(key).get()).isEmpty();
-    tryEndpointPass(
-        () -> {
-          Branch b = (Branch) api.getReference().refName(branch.getName()).get();
-          // Note: the initial version-store implementations just committed this operation, but it
-          // should actually fail, because the operations of the 1st commit above and this commit
-          // have conflicts.
-          api.commitMultipleOperations()
-              .branch(b)
-              .operation(Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42)))
-              .commitMeta(CommitMeta.fromMessage(""))
-              .commit();
-        });
+    tryEndpointPass(() -> {
+      Branch b = (Branch) api.getReference().refName(branch.getName()).get();
+      // Note: the initial version-store implementations just committed this operation, but it
+      // should actually fail, because the operations of the 1st commit above and this commit
+      // have conflicts.
+      api.commitMultipleOperations()
+          .branch(b)
+          .operation(Put.of(key, IcebergTable.of("bar", 42, 42, 42, 42)))
+          .commitMeta(CommitMeta.fromMessage(""))
+          .commit();
+    });
   }
 
   @Test

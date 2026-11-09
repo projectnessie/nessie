@@ -44,13 +44,12 @@ public abstract class AbstractTestCommits extends BaseTestServiceImpl {
     soft.assertThat(contents(commit.getTargetBranch(), oldName, newName))
         .containsExactly(entry(oldName, table));
 
-    soft.assertThatCode(
-            () ->
-                commit(
-                    commit.getTargetBranch(),
-                    fromMessage("setup"),
-                    Delete.of(oldName),
-                    Put.of(newName, table)))
+    soft.assertThatCode(() ->
+            commit(
+                commit.getTargetBranch(),
+                fromMessage("setup"),
+                Delete.of(oldName),
+                Put.of(newName, table)))
         .doesNotThrowAnyException();
 
     soft.assertThat(contents(main.getName(), null, oldName, newName))

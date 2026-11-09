@@ -68,28 +68,26 @@ public class DefaultStoreWorker implements StoreWorker {
       List<ContentSerializer<?>> byPayload = new ArrayList<>();
 
       for (ContentSerializerBundle bundle : ServiceLoader.load(ContentSerializerBundle.class)) {
-        bundle.register(
-            contentTypeSerializer -> {
-              Content.Type contentType = contentTypeSerializer.contentType();
-              if (byName.put(contentType.name(), contentTypeSerializer) != null) {
-                throw new IllegalStateException(
-                    "Found more than one ContentTypeSerializer for name " + contentType.name());
-              }
-              if (contentTypeSerializer.payload() != 0
-                  && byType.put(contentType, contentTypeSerializer) != null) {
-                throw new IllegalStateException(
-                    "Found more than one ContentTypeSerializer for content type "
-                        + contentType.type());
-              }
-              while (byPayload.size() <= contentTypeSerializer.payload()) {
-                byPayload.add(null);
-              }
-              if (byPayload.set(contentTypeSerializer.payload(), contentTypeSerializer) != null) {
-                throw new IllegalStateException(
-                    "Found more than one ContentTypeSerializer for content payload "
-                        + contentTypeSerializer.payload());
-              }
-            });
+        bundle.register(contentTypeSerializer -> {
+          Content.Type contentType = contentTypeSerializer.contentType();
+          if (byName.put(contentType.name(), contentTypeSerializer) != null) {
+            throw new IllegalStateException(
+                "Found more than one ContentTypeSerializer for name " + contentType.name());
+          }
+          if (contentTypeSerializer.payload() != 0
+              && byType.put(contentType, contentTypeSerializer) != null) {
+            throw new IllegalStateException(
+                "Found more than one ContentTypeSerializer for content type " + contentType.type());
+          }
+          while (byPayload.size() <= contentTypeSerializer.payload()) {
+            byPayload.add(null);
+          }
+          if (byPayload.set(contentTypeSerializer.payload(), contentTypeSerializer) != null) {
+            throw new IllegalStateException(
+                "Found more than one ContentTypeSerializer for content payload "
+                    + contentTypeSerializer.payload());
+          }
+        });
       }
 
       BY_PAYLOAD = byPayload.toArray(new ContentSerializer[0]);

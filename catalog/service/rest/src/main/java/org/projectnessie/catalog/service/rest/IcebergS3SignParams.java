@@ -371,50 +371,49 @@ abstract class IcebergS3SignParams {
       NessieEntitySnapshot<?> snapshot = snapshotResponse.nessieSnapshot();
       // table exists: collect all locations, current and historical
       return Multi.createFrom()
-          .emitter(
-              e -> {
-                // check the base location sent with the request matches the current
-                // iceberg location (see IcebergConfigurer: they must match)
-                List<String> expectedBaseLocations = new ArrayList<>();
-                String location = normalizeS3Scheme(requireNonNull(snapshot.icebergLocation()));
-                expectedBaseLocations.add(location);
+          .emitter(e -> {
+            // check the base location sent with the request matches the current
+            // iceberg location (see IcebergConfigurer: they must match)
+            List<String> expectedBaseLocations = new ArrayList<>();
+            String location = normalizeS3Scheme(requireNonNull(snapshot.icebergLocation()));
+            expectedBaseLocations.add(location);
 
-                String writeLocation = icebergWriteLocation(snapshot.properties());
-                if (writeLocation != null) {
-                  writeLocation = normalizeS3Scheme(writeLocation);
-                  if (!writeLocation.startsWith(location)) {
-                    expectedBaseLocations.add(writeLocation);
-                  }
+            String writeLocation = icebergWriteLocation(snapshot.properties());
+            if (writeLocation != null) {
+              writeLocation = normalizeS3Scheme(writeLocation);
+              if (!writeLocation.startsWith(location)) {
+                expectedBaseLocations.add(writeLocation);
+              }
+            }
+
+            if (write()) {
+              for (String baseLocation : writeLocations()) {
+                if (expectedBaseLocations.contains(baseLocation)) {
+                  e.emit(baseLocation);
+                  e.complete();
+                  return;
                 }
-
-                if (write()) {
-                  for (String baseLocation : writeLocations()) {
-                    if (expectedBaseLocations.contains(baseLocation)) {
-                      e.emit(baseLocation);
-                      e.complete();
-                      return;
-                    }
+              }
+            } else {
+              Iterator<String> locations =
+                  Stream.concat(writeLocations().stream(), readLocations().stream()).iterator();
+              while (locations.hasNext()) {
+                String baseLocation = locations.next();
+                if (expectedBaseLocations.contains(baseLocation)) {
+                  e.emit(baseLocation);
+                  // Allow reading from ancient locations, but only allow writes to the current
+                  // location
+                  for (String s : snapshot.additionalKnownLocations()) {
+                    e.emit(normalizeS3Scheme(s));
                   }
-                } else {
-                  Iterator<String> locations =
-                      Stream.concat(writeLocations().stream(), readLocations().stream()).iterator();
-                  while (locations.hasNext()) {
-                    String baseLocation = locations.next();
-                    if (expectedBaseLocations.contains(baseLocation)) {
-                      e.emit(baseLocation);
-                      // Allow reading from ancient locations, but only allow writes to the current
-                      // location
-                      for (String s : snapshot.additionalKnownLocations()) {
-                        e.emit(normalizeS3Scheme(s));
-                      }
-                      e.complete();
-                      return;
-                    }
-                  }
+                  e.complete();
+                  return;
                 }
+              }
+            }
 
-                e.fail(unauthorized());
-              });
+            e.fail(unauthorized());
+          });
     }
   }
 

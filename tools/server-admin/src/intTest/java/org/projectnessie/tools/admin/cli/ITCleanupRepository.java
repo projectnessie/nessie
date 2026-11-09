@@ -44,18 +44,15 @@ class ITCleanupRepository extends AbstractContentTests<Object> {
     soft.assertThat(launchResult.getOutputStream())
         .contains(
             "Identifying referenced objects, processing unlimited commits per second, processing unlimited objects per second, expecting max 1000000 objects, estimated context heap pressure: 18.396 M")
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Finished identifying referenced objects after PT.*. Processed 3 references, 3 commits, 2 objects, 0 contents."))
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Purging unreferenced objects, referenced before .*, scanning unlimited objects per second, deleting unlimited objects per second, estimated context heap pressure: 5.713 M"))
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Finished purging unreferenced objects after PT.*. Scanned 5 objects, 0 were deleted."));
+        .anyMatch(s ->
+            s.matches(
+                "Finished identifying referenced objects after PT.*. Processed 3 references, 3 commits, 2 objects, 0 contents."))
+        .anyMatch(s ->
+            s.matches(
+                "Purging unreferenced objects, referenced before .*, scanning unlimited objects per second, deleting unlimited objects per second, estimated context heap pressure: 5.713 M"))
+        .anyMatch(s ->
+            s.matches(
+                "Finished purging unreferenced objects after PT.*. Scanned 5 objects, 0 were deleted."));
   }
 
   @Test
@@ -80,17 +77,14 @@ class ITCleanupRepository extends AbstractContentTests<Object> {
     soft.assertThat(launchResult.getOutputStream())
         .contains(
             "Identifying referenced objects, processing 11 commits per second, processing 12 objects per second, expecting max 1000 objects, estimated context heap pressure: 12.688 M")
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Finished identifying referenced objects after PT.*. Processed 3 references, 3 commits, 2 objects, 0 contents."))
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Dry-run cleanup unreferenced objects, referenced before .*, scanning 13 objects per second, deleting 14 objects per second, estimated context heap pressure: 0.006 M"))
-        .anyMatch(
-            s ->
-                s.matches(
-                    "Finished purging unreferenced objects after PT.*. Scanned 5 objects, 0 were deleted."));
+        .anyMatch(s ->
+            s.matches(
+                "Finished identifying referenced objects after PT.*. Processed 3 references, 3 commits, 2 objects, 0 contents."))
+        .anyMatch(s ->
+            s.matches(
+                "Dry-run cleanup unreferenced objects, referenced before .*, scanning 13 objects per second, deleting 14 objects per second, estimated context heap pressure: 0.006 M"))
+        .anyMatch(s ->
+            s.matches(
+                "Finished purging unreferenced objects after PT.*. Scanned 5 objects, 0 were deleted."));
   }
 }

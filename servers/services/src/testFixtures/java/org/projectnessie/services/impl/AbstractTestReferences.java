@@ -84,9 +84,8 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   public void defaultBranchProtection() throws BaseNessieClientServerException {
     Branch defaultBranch = treeApi().getDefaultBranch();
 
-    soft.assertThatThrownBy(
-            () ->
-                treeApi().deleteReference(BRANCH, defaultBranch.getName(), defaultBranch.getHash()))
+    soft.assertThatThrownBy(() ->
+            treeApi().deleteReference(BRANCH, defaultBranch.getName(), defaultBranch.getHash()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("cannot be deleted");
 
@@ -98,10 +97,8 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
   @Test
   public void getAllReferences() {
     assertThat(allReferences())
-        .anySatisfy(
-            r ->
-                assertThat(r.getName())
-                    .isEqualTo(configApi().getServerConfig().getDefaultBranch()));
+        .anySatisfy(r ->
+            assertThat(r.getName()).isEqualTo(configApi().getServerConfig().getDefaultBranch()));
   }
 
   @Test
@@ -132,18 +129,16 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
                 Tag.of(refName, null),
                 Branch.of(refName, main.getHash()),
                 Tag.of(refName, main.getHash())))
-        .allSatisfy(
-            ref ->
-                assertThatThrownBy(
-                        () ->
-                            treeApi()
-                                .createReference(
-                                    ref.getName(),
-                                    ref instanceof Branch ? BRANCH : TAG,
-                                    ref.getHash(),
-                                    main.getName()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining(Validation.FORBIDDEN_REF_NAME_MESSAGE));
+        .allSatisfy(ref ->
+            assertThatThrownBy(() ->
+                    treeApi()
+                        .createReference(
+                            ref.getName(),
+                            ref instanceof Branch ? BRANCH : TAG,
+                            ref.getHash(),
+                            main.getName()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(Validation.FORBIDDEN_REF_NAME_MESSAGE));
   }
 
   @Test
@@ -309,12 +304,11 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
 
     soft.assertThat(allReferences(MINIMAL, "ref.name == 'other-development'"))
         .hasSize(1)
-        .allSatisfy(
-            ref ->
-                assertThat(ref)
-                    .isInstanceOf(Branch.class)
-                    .extracting(Reference::getName, Reference::getHash)
-                    .containsExactly(b2.getName(), b2.getHash()));
+        .allSatisfy(ref ->
+            assertThat(ref)
+                .isInstanceOf(Branch.class)
+                .extracting(Reference::getName, Reference::getHash)
+                .containsExactly(b2.getName(), b2.getHash()));
     soft.assertThat(allReferences(MINIMAL, "refType == 'TAG'"))
         .allSatisfy(ref -> assertThat(ref).isInstanceOf(Tag.class));
     soft.assertThat(allReferences(MINIMAL, "refType == 'BRANCH'"))
@@ -368,9 +362,8 @@ public abstract class AbstractTestReferences extends BaseTestServiceImpl {
                 .filter(r -> r.getName().startsWith(branchPrefix))
                 .map(r -> (Branch) r))
         .hasSize(numBranches)
-        .allSatisfy(
-            branch ->
-                verifyMetadataProperties(commitsPerBranch, 0, branch, main, commitsPerBranch));
+        .allSatisfy(branch ->
+            verifyMetadataProperties(commitsPerBranch, 0, branch, main, commitsPerBranch));
 
     soft.assertThat(
             references.stream().filter(r -> r.getName().startsWith(tagPrefix)).map(r -> (Tag) r))

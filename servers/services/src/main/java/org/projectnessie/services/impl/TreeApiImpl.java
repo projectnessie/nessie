@@ -567,17 +567,16 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       if (commit.getOperations() != null) {
         commit
             .getOperations()
-            .forEach(
-                op -> {
-                  ContentKey key = op.getKey();
-                  if (op instanceof Put put) {
-                    Content content = put.getContent();
-                    logEntry.addOperations(Put.of(key, content));
-                  }
-                  if (op instanceof Delete) {
-                    logEntry.addOperations(Delete.of(key));
-                  }
-                });
+            .forEach(op -> {
+              ContentKey key = op.getKey();
+              if (op instanceof Put put) {
+                Content content = put.getContent();
+                logEntry.addOperations(Put.of(key, content));
+              }
+              if (op instanceof Delete) {
+                logEntry.addOperations(Delete.of(key));
+              }
+            });
       }
     }
     return logEntry.build();
@@ -823,20 +822,19 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
 
     result
         .getDetails()
-        .forEach(
-            (key, details) -> {
-              ImmutableContentKeyDetails.Builder keyDetails =
-                  ImmutableContentKeyDetails.builder()
-                      .key(ContentKey.of(key.getElements()))
-                      .conflictType(
-                          details.getConflict() != null
-                              ? ContentKeyConflict.UNRESOLVABLE
-                              : ContentKeyConflict.NONE)
-                      .mergeBehavior(MergeBehavior.valueOf(details.getMergeBehavior().name()))
-                      .conflict(details.getConflict());
+        .forEach((key, details) -> {
+          ImmutableContentKeyDetails.Builder keyDetails =
+              ImmutableContentKeyDetails.builder()
+                  .key(ContentKey.of(key.getElements()))
+                  .conflictType(
+                      details.getConflict() != null
+                          ? ContentKeyConflict.UNRESOLVABLE
+                          : ContentKeyConflict.NONE)
+                  .mergeBehavior(MergeBehavior.valueOf(details.getMergeBehavior().name()))
+                  .conflict(details.getConflict());
 
-              response.addDetails(keyDetails.build());
-            });
+          response.addDetails(keyDetails.build());
+        });
 
     return response.build();
   }
@@ -1074,18 +1072,17 @@ public class TreeApiImpl extends BaseApiImpl implements TreeService {
       check.canCommitChangeAgainstReference(branchName);
       validation
           .operations()
-          .forEach(
-              op -> {
-                Set<String> keyActions = requestMeta.keyActions(op.identifiedKey().contentKey());
-                switch (op.operationType()) {
-                  case CREATE -> check.canCreateEntity(branchName, op.identifiedKey(), keyActions);
-                  case UPDATE -> check.canUpdateEntity(branchName, op.identifiedKey(), keyActions);
-                  case DELETE -> check.canDeleteEntity(branchName, op.identifiedKey(), keyActions);
-                  default ->
-                      throw new UnsupportedOperationException(
-                          "Unknown operation type " + op.operationType());
-                }
-              });
+          .forEach(op -> {
+            Set<String> keyActions = requestMeta.keyActions(op.identifiedKey().contentKey());
+            switch (op.operationType()) {
+              case CREATE -> check.canCreateEntity(branchName, op.identifiedKey(), keyActions);
+              case UPDATE -> check.canUpdateEntity(branchName, op.identifiedKey(), keyActions);
+              case DELETE -> check.canDeleteEntity(branchName, op.identifiedKey(), keyActions);
+              default ->
+                  throw new UnsupportedOperationException(
+                      "Unknown operation type " + op.operationType());
+            }
+          });
       check.checkAndThrow();
     };
   }

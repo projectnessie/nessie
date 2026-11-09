@@ -249,14 +249,13 @@ public class IcebergApiV1GenericResource extends IcebergApiV1ResourceBase {
 
     CatalogCommit.Builder commit = CatalogCommit.builder();
     commitTransactionRequest.tableChanges().stream()
-        .map(
-            tableChange ->
-                IcebergCatalogOperation.builder()
-                    .updates(tableChange.updates())
-                    .requirements(tableChange.requirements())
-                    .key(requireNonNull(tableChange.identifier()).toNessieContentKey())
-                    .type(ICEBERG_TABLE)
-                    .build())
+        .map(tableChange ->
+            IcebergCatalogOperation.builder()
+                .updates(tableChange.updates())
+                .requirements(tableChange.requirements())
+                .key(requireNonNull(tableChange.identifier()).toNessieContentKey())
+                .type(ICEBERG_TABLE)
+                .build())
         .forEach(commit::addOperations);
 
     SnapshotReqParams reqParams = SnapshotReqParams.forSnapshotHttpReq(ref, "iceberg", null);

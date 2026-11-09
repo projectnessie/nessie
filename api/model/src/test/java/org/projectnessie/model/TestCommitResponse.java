@@ -33,12 +33,11 @@ public class TestCommitResponse {
     IcebergTable table = IcebergTable.of("x", 1, 2, 3, 4);
 
     // REST API v1
-    soft.assertThatThrownBy(
-            () ->
-                CommitResponse.builder()
-                    .targetBranch(branch)
-                    .build()
-                    .contentWithAssignedId(ContentKey.of("foo"), table))
+    soft.assertThatThrownBy(() ->
+            CommitResponse.builder()
+                .targetBranch(branch)
+                .build()
+                .contentWithAssignedId(ContentKey.of("foo"), table))
         .isInstanceOf(UnsupportedOperationException.class);
 
     // REST API v2 cases

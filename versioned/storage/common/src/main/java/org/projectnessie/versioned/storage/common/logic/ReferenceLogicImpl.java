@@ -891,11 +891,10 @@ final class ReferenceLogicImpl implements ReferenceLogic {
   @VisibleForTesting
   Supplier<SuppliedCommitIndex> createRefsIndexSupplier() {
     return indexesLogic(persist)
-        .createIndexSupplier(
-            () -> {
-              Reference ref = persist.fetchReference(REF_REFS.name());
-              return ref != null ? ref.pointer() : EMPTY_OBJ_ID;
-            });
+        .createIndexSupplier(() -> {
+          Reference ref = persist.fetchReference(REF_REFS.name());
+          return ref != null ? ref.pointer() : EMPTY_OBJ_ID;
+        });
   }
 
   @VisibleForTesting

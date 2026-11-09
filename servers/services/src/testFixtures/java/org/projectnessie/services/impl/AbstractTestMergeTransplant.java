@@ -264,12 +264,11 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     soft.assertThat(response.getDetails())
         .asInstanceOf(list(ContentKeyDetails.class))
         .singleElement()
-        .satisfies(
-            details -> {
-              assertThat(details.getKey()).isEqualTo(key1);
-              assertThat(details.getConflict()).isNull();
-              assertThat(details.getMergeBehavior()).isEqualTo(NORMAL);
-            });
+        .satisfies(details -> {
+          assertThat(details.getKey()).isEqualTo(key1);
+          assertThat(details.getConflict()).isNull();
+          assertThat(details.getMergeBehavior()).isEqualTo(NORMAL);
+        });
     return newHead;
   }
 
@@ -672,20 +671,19 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
             .getTargetBranch();
     soft.assertThat(root).isNotEqualTo(setup.root);
 
-    assertThatThrownBy(
-            () ->
-                treeApi()
-                    .mergeRefIntoBranch(
-                        root.getName(),
-                        root.getHash(),
-                        setup.work.getName(),
-                        setup.work.getHash(),
-                        fromMessage("merge-recreate-conflict"),
-                        emptyList(),
-                        NORMAL,
-                        Boolean.FALSE,
-                        Boolean.FALSE,
-                        Boolean.FALSE))
+    assertThatThrownBy(() ->
+            treeApi()
+                .mergeRefIntoBranch(
+                    root.getName(),
+                    root.getHash(),
+                    setup.work.getName(),
+                    setup.work.getHash(),
+                    fromMessage("merge-recreate-conflict"),
+                    emptyList(),
+                    NORMAL,
+                    Boolean.FALSE,
+                    Boolean.FALSE,
+                    Boolean.FALSE))
         .isInstanceOf(NessieReferenceConflictException.class)
         .hasMessage("The following keys have been changed in conflict: '%s'", setup.key);
   }
@@ -788,20 +786,19 @@ public abstract class AbstractTestMergeTransplant extends BaseTestServiceImpl {
     Branch lastRoot = root;
     Branch lastWork = work;
 
-    assertThatThrownBy(
-            () ->
-                treeApi()
-                    .mergeRefIntoBranch(
-                        lastRoot.getName(),
-                        lastRoot.getHash(),
-                        lastWork.getName(),
-                        lastWork.getHash(),
-                        fromMessage("merge-conflicting-keys"),
-                        emptyList(),
-                        NORMAL,
-                        Boolean.FALSE,
-                        Boolean.FALSE,
-                        Boolean.FALSE))
+    assertThatThrownBy(() ->
+            treeApi()
+                .mergeRefIntoBranch(
+                    lastRoot.getName(),
+                    lastRoot.getHash(),
+                    lastWork.getName(),
+                    lastWork.getHash(),
+                    fromMessage("merge-conflicting-keys"),
+                    emptyList(),
+                    NORMAL,
+                    Boolean.FALSE,
+                    Boolean.FALSE,
+                    Boolean.FALSE))
         .isInstanceOf(NessieReferenceConflictException.class)
         .hasMessage("The following keys have been changed in conflict: 'conflicting'");
   }

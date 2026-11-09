@@ -67,7 +67,8 @@ public class CommitLogParams extends AbstractParams<CommitLogParams> {
 
           Note that the expression can only test against 'operations', if 'fetch' is set to 'ALL'.
 
-          Hint: when filtering commits, you can determine whether commits are "missing" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.""",
+          Hint: when filtering commits, you can determine whether commits are "missing" (filtered) by checking whether 'LogEntry.parentCommitHash' is different from the hash of the previous commit in the log response.\
+          """,
       examples = {
         @ExampleObject(ref = "expr_by_commit_author"),
         @ExampleObject(ref = "expr_by_commit_committer"),

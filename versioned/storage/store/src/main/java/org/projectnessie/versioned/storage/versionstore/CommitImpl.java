@@ -113,19 +113,17 @@ class CommitImpl extends BaseCommitHelper {
     commitLogic = commitLogic(persist);
     contentMapping = new ContentMapping(persist);
     this.headIndex =
-        lazyStoreIndex(
-            () -> {
-              IndexesLogic indexesLogic = indexesLogic(persist);
-              return indexesLogic.buildCompleteIndexOrEmpty(head);
-            });
+        lazyStoreIndex(() -> {
+          IndexesLogic indexesLogic = indexesLogic(persist);
+          return indexesLogic.buildCompleteIndexOrEmpty(head);
+        });
     this.expectedIndex =
         expected == head
             ? headIndex
-            : lazyStoreIndex(
-                () -> {
-                  IndexesLogic indexesLogic = indexesLogic(persist);
-                  return indexesLogic.buildCompleteIndexOrEmpty(expected);
-                });
+            : lazyStoreIndex(() -> {
+              IndexesLogic indexesLogic = indexesLogic(persist);
+              return indexesLogic.buildCompleteIndexOrEmpty(expected);
+            });
   }
 
   StoreIndex<CommitOp> headIndex() {

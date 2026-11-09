@@ -76,21 +76,20 @@ public class HeapStorageBucket {
       }
     }
     return keys.stream()
-        .map(
-            key ->
-                new Bucket.ListElement() {
-                  @Override
-                  public String key() {
-                    return key;
-                  }
+        .map(key ->
+            new Bucket.ListElement() {
+              @Override
+              public String key() {
+                return key;
+              }
 
-                  @Override
-                  public MockObject object() {
-                    synchronized (objects) {
-                      return objects.get(key);
-                    }
-                  }
-                });
+              @Override
+              public MockObject object() {
+                synchronized (objects) {
+                  return objects.get(key);
+                }
+              }
+            });
   }
 
   private Bucket.ObjectUpdater updater(String key, Bucket.UpdaterMode mode) {
@@ -176,16 +175,15 @@ public class HeapStorageBucket {
           .contentLength(newData.length)
           // .etag("etag")
           // .storageClass(StorageClass.STANDARD)
-          .writer(
-              (range, output) -> {
-                if (range == null || range.everything()) {
-                  output.write(newData);
-                } else {
-                  int offset = (int) range.start();
-                  long len = Math.min(newData.length - offset, range.length());
-                  output.write(newData, offset, (int) len);
-                }
-              });
+          .writer((range, output) -> {
+            if (range == null || range.everything()) {
+              output.write(newData);
+            } else {
+              int offset = (int) range.start();
+              long len = Math.min(newData.length - offset, range.length());
+              output.write(newData, offset, (int) len);
+            }
+          });
 
       return this;
     }

@@ -78,12 +78,11 @@ public class TagObjSerializer implements ObjSerializer<TagObj> {
     Document headerDoc = doc.get(COL_TAG_HEADERS, Document.class);
     if (headerDoc != null) {
       CommitHeaders.Builder headers = newCommitHeaders();
-      headerDoc.forEach(
-          (k, o) -> {
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            List<String> l = (List) o;
-            l.forEach(hv -> headers.add(k, hv));
-          });
+      headerDoc.forEach((k, o) -> {
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        List<String> l = (List) o;
+        l.forEach(hv -> headers.add(k, hv));
+      });
       tagHeaders = headers.build();
     }
 

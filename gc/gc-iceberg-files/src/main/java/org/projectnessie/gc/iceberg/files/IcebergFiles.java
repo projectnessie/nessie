@@ -132,15 +132,13 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
         throw new NessieFileIOException("Failed to list prefix of " + path, e);
       }
       return StreamSupport.stream(fileInfos.spliterator(), false)
-          .map(
-              f -> {
-                StorageUri location = StorageUri.of(f.location());
-                if (!location.isAbsolute()) {
-                  location = basePath.resolve("/").resolve(location);
-                }
-                return FileReference.of(
-                    basePath.relativize(location), basePath, f.createdAtMillis());
-              });
+          .map(f -> {
+            StorageUri location = StorageUri.of(f.location());
+            if (!location.isAbsolute()) {
+              location = basePath.resolve("/").resolve(location);
+            }
+            return FileReference.of(basePath.relativize(location), basePath, f.createdAtMillis());
+          });
     }
 
     return listHadoop(basePath);
@@ -233,16 +231,15 @@ public abstract class IcebergFiles implements FilesLister, FileDeleter, AutoClos
     FileIO fileIo = resolvingFileIO();
 
     return filesAsStrings
-        .map(
-            f -> {
-              try {
-                fileIo.deleteFile(f);
-                return DeleteResult.SUCCESS;
-              } catch (Exception e) {
-                LOGGER.debug("Failed to delete {}", f, e);
-                return DeleteResult.FAILURE;
-              }
-            })
+        .map(f -> {
+          try {
+            fileIo.deleteFile(f);
+            return DeleteResult.SUCCESS;
+          } catch (Exception e) {
+            LOGGER.debug("Failed to delete {}", f, e);
+            return DeleteResult.FAILURE;
+          }
+        })
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
   }
 }

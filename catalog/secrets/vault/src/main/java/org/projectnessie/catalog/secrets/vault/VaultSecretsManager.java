@@ -38,13 +38,12 @@ public class VaultSecretsManager extends AbstractMapBasedSecretsManager {
   public Map<String, String> resolveSecret(@Nonnull String name) {
     return secretEngine
         .readSecret(path(name))
-        .onFailure(
-            e -> {
-              if (!(e instanceof VaultClientException ex)) {
-                return false;
-              }
-              return 404 == ex.getStatus();
-            })
+        .onFailure(e -> {
+          if (!(e instanceof VaultClientException ex)) {
+            return false;
+          }
+          return 404 == ex.getStatus();
+        })
         .recoverWithNull()
         .await()
         .atMost(getSecretTimeout);

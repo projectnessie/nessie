@@ -71,15 +71,14 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
   public long addIdentifiedLiveContent(
       @NotNull UUID liveSetId, @NotNull Stream<ContentReference> contentReference) {
     return contentReference
-        .mapToLong(
-            ref ->
-                get(liveSetId)
-                        .contents
-                        .computeIfAbsent(
-                            ref.contentId(), x -> Collections.synchronizedSet(new HashSet<>()))
-                        .add(ref)
-                    ? 1L
-                    : 0L)
+        .mapToLong(ref ->
+            get(liveSetId)
+                    .contents
+                    .computeIfAbsent(
+                        ref.contentId(), x -> Collections.synchronizedSet(new HashSet<>()))
+                    .add(ref)
+                ? 1L
+                : 0L)
         .sum();
   }
 
@@ -105,32 +104,30 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
       @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure) {
     get(liveSetId)
         .liveContentSet
-        .getAndUpdate(
-            current -> {
-              ImmutableLiveContentSet.Builder b =
-                  assertStatus(current, Status.IDENTIFY_IN_PROGRESS)
-                      .unbuild()
-                      .identifyCompleted(finished);
-              if (failure != null) {
-                b.status(Status.IDENTIFY_FAILED).errorMessage(failure.toString());
-              } else {
-                b.status(Status.IDENTIFY_SUCCESS);
-              }
-              return b.build();
-            });
+        .getAndUpdate(current -> {
+          ImmutableLiveContentSet.Builder b =
+              assertStatus(current, Status.IDENTIFY_IN_PROGRESS)
+                  .unbuild()
+                  .identifyCompleted(finished);
+          if (failure != null) {
+            b.status(Status.IDENTIFY_FAILED).errorMessage(failure.toString());
+          } else {
+            b.status(Status.IDENTIFY_SUCCESS);
+          }
+          return b.build();
+        });
   }
 
   @Override
   public LiveContentSet startExpireContents(@NotNull UUID liveSetId, @NotNull Instant started) {
     return get(liveSetId)
         .liveContentSet
-        .getAndUpdate(
-            current ->
-                assertStatus(current, Status.IDENTIFY_SUCCESS)
-                    .unbuild()
-                    .expiryStarted(started)
-                    .status(Status.EXPIRY_IN_PROGRESS)
-                    .build());
+        .getAndUpdate(current ->
+            assertStatus(current, Status.IDENTIFY_SUCCESS)
+                .unbuild()
+                .expiryStarted(started)
+                .status(Status.EXPIRY_IN_PROGRESS)
+                .build());
   }
 
   @Override
@@ -138,19 +135,16 @@ public class InMemoryPersistenceSpi implements PersistenceSpi {
       @NotNull UUID liveSetId, @NotNull Instant finished, @Nullable Throwable failure) {
     return get(liveSetId)
         .liveContentSet
-        .getAndUpdate(
-            current -> {
-              ImmutableLiveContentSet.Builder b =
-                  assertStatus(current, Status.EXPIRY_IN_PROGRESS)
-                      .unbuild()
-                      .expiryCompleted(finished);
-              if (failure != null) {
-                b.status(Status.EXPIRY_FAILED).errorMessage(getStackTraceAsString(failure));
-              } else {
-                b.status(Status.EXPIRY_SUCCESS);
-              }
-              return b.build();
-            });
+        .getAndUpdate(current -> {
+          ImmutableLiveContentSet.Builder b =
+              assertStatus(current, Status.EXPIRY_IN_PROGRESS).unbuild().expiryCompleted(finished);
+          if (failure != null) {
+            b.status(Status.EXPIRY_FAILED).errorMessage(getStackTraceAsString(failure));
+          } else {
+            b.status(Status.EXPIRY_SUCCESS);
+          }
+          return b.build();
+        });
   }
 
   @Override

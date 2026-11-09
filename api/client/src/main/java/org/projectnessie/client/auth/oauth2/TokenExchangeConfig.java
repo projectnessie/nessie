@@ -61,28 +61,24 @@ public interface TokenExchangeConfig {
             .map(URI::create);
 
     if (subjectToken == null || subjectToken.equalsIgnoreCase(CURRENT_ACCESS_TOKEN)) {
-      builder.subjectTokenProvider(
-          (accessToken, refreshToken) ->
-              TypedToken.of(accessToken, subjectTokenType.orElse(URN_ACCESS_TOKEN)));
+      builder.subjectTokenProvider((accessToken, refreshToken) ->
+          TypedToken.of(accessToken, subjectTokenType.orElse(URN_ACCESS_TOKEN)));
     } else if (subjectToken.equalsIgnoreCase(CURRENT_REFRESH_TOKEN)) {
-      builder.subjectTokenProvider(
-          (accessToken, refreshToken) ->
-              TypedToken.of(refreshToken, subjectTokenType.orElse(URN_REFRESH_TOKEN)));
+      builder.subjectTokenProvider((accessToken, refreshToken) ->
+          TypedToken.of(refreshToken, subjectTokenType.orElse(URN_REFRESH_TOKEN)));
     } else {
       builder.subjectToken(TypedToken.of(subjectToken, subjectTokenType.orElse(URN_ACCESS_TOKEN)));
     }
 
     if (actorToken != null && !actorToken.equalsIgnoreCase(NO_TOKEN)) {
       if (actorToken.equalsIgnoreCase(CURRENT_ACCESS_TOKEN)) {
-        builder.actorTokenProvider(
-            (accessToken, refreshToken) ->
-                TypedToken.of(accessToken, actorTokenType.orElse(URN_ACCESS_TOKEN)));
+        builder.actorTokenProvider((accessToken, refreshToken) ->
+            TypedToken.of(accessToken, actorTokenType.orElse(URN_ACCESS_TOKEN)));
       } else if (actorToken.equalsIgnoreCase(CURRENT_REFRESH_TOKEN)) {
-        builder.actorTokenProvider(
-            (accessToken, refreshToken) ->
-                refreshToken == null
-                    ? null
-                    : TypedToken.of(refreshToken, actorTokenType.orElse(URN_REFRESH_TOKEN)));
+        builder.actorTokenProvider((accessToken, refreshToken) ->
+            refreshToken == null
+                ? null
+                : TypedToken.of(refreshToken, actorTokenType.orElse(URN_REFRESH_TOKEN)));
       } else {
         builder.actorToken(TypedToken.of(actorToken, actorTokenType.orElse(URN_ACCESS_TOKEN)));
       }

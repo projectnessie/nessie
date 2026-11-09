@@ -61,23 +61,21 @@ public class LocalFiles implements FilesLister, FileDeleter {
       Path start = toLocalPath(basePath);
       return Files.walk(start)
           .filter(p -> !p.equals(start))
-          .map(
-              p -> {
-                try {
-                  return new AbstractMap.SimpleEntry<>(
-                      p.toUri(),
-                      Files.getFileAttributeView(p, BasicFileAttributeView.class).readAttributes());
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-              })
+          .map(p -> {
+            try {
+              return new AbstractMap.SimpleEntry<>(
+                  p.toUri(),
+                  Files.getFileAttributeView(p, BasicFileAttributeView.class).readAttributes());
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          })
           .filter(e -> e.getValue().isRegularFile())
-          .map(
-              e ->
-                  FileReference.of(
-                      basePath.relativize(StorageUri.of(e.getKey())),
-                      basePath,
-                      e.getValue().lastModifiedTime().toMillis()));
+          .map(e ->
+              FileReference.of(
+                  basePath.relativize(StorageUri.of(e.getKey())),
+                  basePath,
+                  e.getValue().lastModifiedTime().toMillis()));
     } catch (IOException e) {
       throw new NessieFileIOException("Failed to list files in " + path, e);
     }

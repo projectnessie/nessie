@@ -38,15 +38,14 @@ public class TestNoApacheHttp {
   @ParameterizedTest
   @ValueSource(strings = {"apachehttp", "ApacheHttp"})
   public void apacheHttpNotAvailable(String clientName) {
-    assertThatThrownBy(
-            () ->
-                HttpClient.builder()
-                    .setBaseUri(URI.create("http://localhost:8080"))
-                    .setObjectMapper(new ObjectMapper())
-                    .setConnectionTimeoutMillis(15000)
-                    .setReadTimeoutMillis(15000)
-                    .setHttpClientName(clientName)
-                    .build())
+    assertThatThrownBy(() ->
+            HttpClient.builder()
+                .setBaseUri(URI.create("http://localhost:8080"))
+                .setObjectMapper(new ObjectMapper())
+                .setConnectionTimeoutMillis(15000)
+                .setReadTimeoutMillis(15000)
+                .setHttpClientName(clientName)
+                .build())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("No HTTP client factory for name '" + clientName + "' found");
   }
@@ -54,16 +53,15 @@ public class TestNoApacheHttp {
   @ParameterizedTest
   @ValueSource(strings = {"", "JavaHttp", "URLConnection", "HTTP"})
   public void defaultClientWorks(String clientName) {
-    assertThatCode(
-            () ->
-                HttpClient.builder()
-                    .setBaseUri(URI.create("http://localhost:8080"))
-                    .setObjectMapper(new ObjectMapper())
-                    .setConnectionTimeoutMillis(15000)
-                    .setReadTimeoutMillis(15000)
-                    .setHttpClientName(clientName.isEmpty() ? null : clientName)
-                    .build()
-                    .close())
+    assertThatCode(() ->
+            HttpClient.builder()
+                .setBaseUri(URI.create("http://localhost:8080"))
+                .setObjectMapper(new ObjectMapper())
+                .setConnectionTimeoutMillis(15000)
+                .setReadTimeoutMillis(15000)
+                .setHttpClientName(clientName.isEmpty() ? null : clientName)
+                .build()
+                .close())
         .doesNotThrowAnyException();
   }
 }

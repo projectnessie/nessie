@@ -50,74 +50,62 @@ public class S3Clients {
     ApacheHttpClient.Builder httpClient = ApacheHttpClient.builder();
     s3Config
         .http()
-        .ifPresent(
-            http -> {
-              http.maxHttpConnections().ifPresent(httpClient::maxConnections);
-              http.readTimeout().ifPresent(httpClient::socketTimeout);
-              http.connectTimeout().ifPresent(httpClient::connectionTimeout);
-              http.connectionAcquisitionTimeout()
-                  .ifPresent(httpClient::connectionAcquisitionTimeout);
-              http.connectionMaxIdleTime().ifPresent(httpClient::connectionMaxIdleTime);
-              http.connectionTimeToLive().ifPresent(httpClient::connectionTimeToLive);
-              http.expectContinueEnabled().ifPresent(httpClient::expectContinueEnabled);
-            });
+        .ifPresent(http -> {
+          http.maxHttpConnections().ifPresent(httpClient::maxConnections);
+          http.readTimeout().ifPresent(httpClient::socketTimeout);
+          http.connectTimeout().ifPresent(httpClient::connectionTimeout);
+          http.connectionAcquisitionTimeout().ifPresent(httpClient::connectionAcquisitionTimeout);
+          http.connectionMaxIdleTime().ifPresent(httpClient::connectionMaxIdleTime);
+          http.connectionTimeToLive().ifPresent(httpClient::connectionTimeToLive);
+          http.expectContinueEnabled().ifPresent(httpClient::expectContinueEnabled);
+        });
     s3Config
         .trustStore()
-        .ifPresent(
-            trustStore ->
-                trustStore
-                    .path()
-                    .ifPresent(
-                        p -> {
-                          char[] password =
-                              trustStore
-                                  .password()
-                                  .flatMap(
-                                      secretName ->
-                                          secretsProvider.getSecret(
-                                              secretName, KEY, KeySecret.class))
-                                  .map(KeySecret::key)
-                                  .map(String::toCharArray)
-                                  .orElse(null);
+        .ifPresent(trustStore ->
+            trustStore
+                .path()
+                .ifPresent(p -> {
+                  char[] password =
+                      trustStore
+                          .password()
+                          .flatMap(secretName ->
+                              secretsProvider.getSecret(secretName, KEY, KeySecret.class))
+                          .map(KeySecret::key)
+                          .map(String::toCharArray)
+                          .orElse(null);
 
-                          httpClient.tlsTrustManagersProvider(
-                              new FileStoreTlsTrustManagersProvider(
-                                  p,
-                                  trustStore
-                                      .type()
-                                      .orElseThrow(
-                                          () ->
-                                              new IllegalArgumentException("No trust store type")),
-                                  password));
-                        }));
+                  httpClient.tlsTrustManagersProvider(
+                      new FileStoreTlsTrustManagersProvider(
+                          p,
+                          trustStore
+                              .type()
+                              .orElseThrow(
+                                  () -> new IllegalArgumentException("No trust store type")),
+                          password));
+                }));
     s3Config
         .keyStore()
-        .ifPresent(
-            keyStore ->
-                keyStore
-                    .path()
-                    .ifPresent(
-                        p -> {
-                          char[] password =
-                              keyStore
-                                  .password()
-                                  .flatMap(
-                                      secretName ->
-                                          secretsProvider.getSecret(
-                                              secretName, KEY, KeySecret.class))
-                                  .map(KeySecret::key)
-                                  .map(String::toCharArray)
-                                  .orElse(null);
+        .ifPresent(keyStore ->
+            keyStore
+                .path()
+                .ifPresent(p -> {
+                  char[] password =
+                      keyStore
+                          .password()
+                          .flatMap(secretName ->
+                              secretsProvider.getSecret(secretName, KEY, KeySecret.class))
+                          .map(KeySecret::key)
+                          .map(String::toCharArray)
+                          .orElse(null);
 
-                          httpClient.tlsKeyManagersProvider(
-                              new FileStoreTlsKeyManagersProvider(
-                                  p,
-                                  keyStore
-                                      .type()
-                                      .orElseThrow(
-                                          () -> new IllegalArgumentException("No key store type")),
-                                  password));
-                        }));
+                  httpClient.tlsKeyManagersProvider(
+                      new FileStoreTlsKeyManagersProvider(
+                          p,
+                          keyStore
+                              .type()
+                              .orElseThrow(() -> new IllegalArgumentException("No key store type")),
+                          password));
+                }));
     AttributeMap.Builder options = AttributeMap.builder();
     s3Config.trustAllCertificates().ifPresent(v -> options.put(TRUST_ALL_CERTIFICATES, v));
     return httpClient.buildWithDefaults(options.build());

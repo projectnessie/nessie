@@ -82,9 +82,8 @@ class TestIcebergApiV1S3SignResource {
     var catalog = mock(CatalogConfig.class);
     when(resource.lakehouseConfig.catalog()).thenReturn(catalog);
     when(catalog.resolveWarehouseName(any()))
-        .thenAnswer(
-            invocation ->
-                invocation.getArgument(0) == null ? "warehouse" : invocation.getArgument(0));
+        .thenAnswer(invocation ->
+            invocation.getArgument(0) == null ? "warehouse" : invocation.getArgument(0));
   }
 
   private SignerSignature signature(long expiration) {
@@ -186,12 +185,11 @@ class TestIcebergApiV1S3SignResource {
         .isEqualTo(uri);
     verify(resource.catalogService)
         .retrieveSnapshot(
-            argThat(
-                params ->
-                    Objects.equals(params.ref().name(), tableRef.reference().name())
-                        && Objects.equals(
-                            params.ref().hashWithRelativeSpec(),
-                            tableRef.reference().hashWithRelativeSpec())),
+            argThat(params ->
+                Objects.equals(params.ref().name(), tableRef.reference().name())
+                    && Objects.equals(
+                        params.ref().hashWithRelativeSpec(),
+                        tableRef.reference().hashWithRelativeSpec())),
             eq(tableRef.contentKey()),
             any(),
             any(),
@@ -203,13 +201,12 @@ class TestIcebergApiV1S3SignResource {
   @CsvSource({"other,table", "ns,other", "ns,table@other", "ns,table#12345678"})
   void rejectsMismatchedTableIdentity(String namespace, String table) {
     String token = signature(now.plusSeconds(60).getEpochSecond()).toPathParam(key);
-    assertThatThrownBy(
-            () ->
-                resource.s3signWithProperties(
-                    request(token, "https://bucket.s3.amazonaws.com/table/data.parquet"),
-                    "main",
-                    namespace,
-                    table))
+    assertThatThrownBy(() ->
+            resource.s3signWithProperties(
+                request(token, "https://bucket.s3.amazonaws.com/table/data.parquet"),
+                "main",
+                namespace,
+                table))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid signer table");
     verifyNoInteractions(resource.catalogService, resource.signer);
@@ -220,16 +217,15 @@ class TestIcebergApiV1S3SignResource {
     String token = signature(now.plusSeconds(60).getEpochSecond()).toPathParam(key);
     when(resource.catalogService.retrieveSnapshot(any(), any(), any(), any(), any()))
         .thenReturn(CompletableFuture.completedFuture(null));
-    assertThatThrownBy(
-            () ->
-                resource
-                    .s3signWithProperties(
-                        request(token, "https://bucket.s3.amazonaws.com/other/data.parquet"),
-                        "main",
-                        "ns",
-                        "table")
-                    .await()
-                    .indefinitely())
+    assertThatThrownBy(() ->
+            resource
+                .s3signWithProperties(
+                    request(token, "https://bucket.s3.amazonaws.com/other/data.parquet"),
+                    "main",
+                    "ns",
+                    "table")
+                .await()
+                .indefinitely())
         .isInstanceOf(IcebergException.class)
         .hasMessageContaining("URI not allowed for signing");
     verifyNoInteractions(resource.signer);
@@ -238,17 +234,15 @@ class TestIcebergApiV1S3SignResource {
   @SuppressWarnings("ReactiveStreamsUnusedPublisher")
   @Test
   void missingTokenAndWrongPrefix() {
-    assertThatThrownBy(
-            () ->
-                resource.s3signWithProperties(
-                    request(null, "https://bucket/key"), "main", "ns", "table"))
+    assertThatThrownBy(() ->
+            resource.s3signWithProperties(
+                request(null, "https://bucket/key"), "main", "ns", "table"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Missing signer token");
     String token = signature(now.plusSeconds(60).getEpochSecond()).toPathParam(key);
-    assertThatThrownBy(
-            () ->
-                resource.s3signWithProperties(
-                    request(token, "https://bucket/key"), "main|other-warehouse", "ns", "table"))
+    assertThatThrownBy(() ->
+            resource.s3signWithProperties(
+                request(token, "https://bucket/key"), "main|other-warehouse", "ns", "table"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid signer prefix");
     verifyNoInteractions(resource.catalogService, resource.signer);
@@ -266,10 +260,9 @@ class TestIcebergApiV1S3SignResource {
             .signature(expired ? signature.sign(key) : "tampered")
             .build()
             .toPathParam();
-    assertThatThrownBy(
-            () ->
-                resource.s3signWithProperties(
-                    request(token, "https://bucket/key"), "main", "ns", "table"))
+    assertThatThrownBy(() ->
+            resource.s3signWithProperties(
+                request(token, "https://bucket/key"), "main", "ns", "table"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid signature");
     verifyNoInteractions(resource.catalogService, resource.signer);

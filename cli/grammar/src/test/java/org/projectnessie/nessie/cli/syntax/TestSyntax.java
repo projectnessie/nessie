@@ -85,7 +85,8 @@ public class TestSyntax {
                 {PRE:(} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}
                 {SEP:|} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit}
                 {POST:)}\s
-                {PRE:[} {TERMINAL:ALLOW} {TERMINAL:DELETES} {POST:]}""",
+                {PRE:[} {TERMINAL:ALLOW} {TERMINAL:DELETES} {POST:]}\
+            """,
             """
             REVERT CONTENT\s
                 [ DRY ]\s
@@ -96,17 +97,20 @@ public class TestSyntax {
                 ( ON [ ReferenceType ] ExistingReference [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]
                 | AT [ TIMESTAMP | COMMIT ] TimestampOrCommit
                 )\s
-                [ ALLOW DELETES ]"""),
+                [ ALLOW DELETES ]\
+            """),
         arguments(
             "ShowReferenceStatement",
             """
             {TERMINAL:REFERENCE}\s
                 {PRE:[} {NON_TERMINAL:ExistingReference} {POST:]}\s
-                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}""",
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}\
+            """,
             """
             SHOW REFERENCE\s
                 [ ExistingReference ]\s
-                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]\
+            """),
         arguments(
             "MergeBehaviorKind",
             "{TERMINAL:NORMAL} {SEP:|} {TERMINAL:FORCE} {SEP:|} {TERMINAL:DROP}",
@@ -129,7 +133,8 @@ public class TestSyntax {
                 {SEP:|} {TERMINAL:HELP}
                 {SEP:|} {TERMINAL:EXIT}
                 {SEP:|} {TERMINAL:LICENSE}
-                {POST:]}""",
+                {POST:]}\
+            """,
             """
             HELP\s
                 [ USE
@@ -145,17 +150,20 @@ public class TestSyntax {
                 | HELP
                 | EXIT
                 | LICENSE
-                ]"""),
+                ]\
+            """),
         arguments(
             "CreateNamespaceStatement",
             """
             {TERMINAL:NAMESPACE} {NON_TERMINAL:ContentKey}\s
                 {PRE:[} {TERMINAL:ON} {PRE:[} {NON_TERMINAL:ReferenceType} {POST:]} {NON_TERMINAL:ExistingReference} {POST:]}\s
-                {PRE:[} {TERMINAL:SET} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {POST:}} {POST:]}""",
+                {PRE:[} {TERMINAL:SET} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ParamKey} {TERMINAL:=} {NON_TERMINAL:Value} {POST:}} {POST:]}\
+            """,
             """
             CREATE NAMESPACE ContentKey\s
                 [ ON [ ReferenceType ] ExistingReference ]\s
-                [ SET ParamKey = Value { AND ParamKey = Value } ]"""),
+                [ SET ParamKey = Value { AND ParamKey = Value } ]\
+            """),
         arguments(
             "CreateReferenceStatement",
             """
@@ -163,13 +171,15 @@ public class TestSyntax {
                 {PRE:[} {TERMINAL:IF} {TERMINAL:NOT} {TERMINAL:EXISTS} {POST:]}\s
                 {NON_TERMINAL:ReferenceName}\s
                 {PRE:[} {TERMINAL:FROM} {NON_TERMINAL:ExistingReference} {POST:]}\s
-                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}""",
+                {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}\
+            """,
             """
             CREATE ReferenceType\s
                 [ IF NOT EXISTS ]\s
                 ReferenceName\s
                 [ FROM ExistingReference ]\s
-                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]"""),
+                [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]\
+            """),
         arguments(
             "MergeBranchStatement",
             """
@@ -180,7 +190,8 @@ public class TestSyntax {
                 {PRE:[} {TERMINAL:AT} {PRE:[} {TERMINAL:TIMESTAMP} {SEP:|} {TERMINAL:COMMIT} {POST:]} {NON_TERMINAL:TimestampOrCommit} {POST:]}\s
                 {PRE:[} {TERMINAL:INTO} {NON_TERMINAL:ExistingReference} {POST:]}\s
                 {PRE:[} {TERMINAL:BEHAVIOR} {NON_TERMINAL:MergeBehaviorKind} {POST:]}\s
-                {PRE:[} {TERMINAL:BEHAVIORS} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {POST:}} {POST:]}""",
+                {PRE:[} {TERMINAL:BEHAVIORS} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {PRE:{} {TERMINAL:AND} {NON_TERMINAL:ContentKey} {TERMINAL:=} {NON_TERMINAL:MergeBehaviorKind} {POST:}} {POST:]}\
+            """,
             """
             MERGE\s
                 [ DRY ]\s
@@ -189,6 +200,7 @@ public class TestSyntax {
                 [ AT [ TIMESTAMP | COMMIT ] TimestampOrCommit ]\s
                 [ INTO ExistingReference ]\s
                 [ BEHAVIOR MergeBehaviorKind ]\s
-                [ BEHAVIORS ContentKey = MergeBehaviorKind { AND ContentKey = MergeBehaviorKind } ]"""));
+                [ BEHAVIORS ContentKey = MergeBehaviorKind { AND ContentKey = MergeBehaviorKind } ]\
+            """));
   }
 }

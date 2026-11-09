@@ -52,14 +52,13 @@ public class TestMergeBase {
 
   @Test
   void noCommits() {
-    soft.assertThatThrownBy(
-            () ->
-                MergeBase.builder()
-                    .targetCommitId(EMPTY_OBJ_ID)
-                    .fromCommitId(EMPTY_OBJ_ID)
-                    .loadCommit(x -> null)
-                    .build()
-                    .identifyMergeBase())
+    soft.assertThatThrownBy(() ->
+            MergeBase.builder()
+                .targetCommitId(EMPTY_OBJ_ID)
+                .fromCommitId(EMPTY_OBJ_ID)
+                .loadCommit(x -> null)
+                .build()
+                .identifyMergeBase())
         .isInstanceOf(NoSuchElementException.class)
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
   }
@@ -92,15 +91,14 @@ public class TestMergeBase {
     CommitObj c = repo.add(repo.buildCommit("c", a));
     CommitObj d = repo.add(repo.buildCommit("d", b));
 
-    soft.assertThatThrownBy(
-            () ->
-                MergeBase.builder()
-                    .loadCommit(repo::loadCommit)
-                    .respectMergeParents(respectMergeParents)
-                    .targetCommitId(c.id())
-                    .fromCommitId(d.id())
-                    .build()
-                    .identifyMergeBase())
+    soft.assertThatThrownBy(() ->
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .respectMergeParents(respectMergeParents)
+                .targetCommitId(c.id())
+                .fromCommitId(d.id())
+                .build()
+                .identifyMergeBase())
         .isInstanceOf(NoSuchElementException.class)
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
 

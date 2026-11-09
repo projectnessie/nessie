@@ -168,9 +168,8 @@ class TestS3Utils {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid S3 URI: 'https://s3.us-east-1.amazonaws.com'");
 
-    assertThatThrownBy(
-            () ->
-                S3Utils.asS3Location("ftp://example-bucket.obs.example.com/key", "example-bucket"))
+    assertThatThrownBy(() ->
+            S3Utils.asS3Location("ftp://example-bucket.obs.example.com/key", "example-bucket"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Unsupported URI scheme: 'ftp'");
     assertThatThrownBy(() -> S3Utils.asS3Location("http:///key", "example-bucket"))
@@ -183,10 +182,9 @@ class TestS3Utils {
             () -> S3Utils.asS3PathStyleLocation("https://example-bucket.obs.example.com/"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid S3 URI: 'https://example-bucket.obs.example.com/'");
-    assertThatThrownBy(
-            () ->
-                S3Utils.asS3VirtualHostedLocation(
-                    "ftp://example-bucket.obs.example.com/key", "example-bucket"))
+    assertThatThrownBy(() ->
+            S3Utils.asS3VirtualHostedLocation(
+                "ftp://example-bucket.obs.example.com/key", "example-bucket"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Unsupported URI scheme: 'ftp'");
   }

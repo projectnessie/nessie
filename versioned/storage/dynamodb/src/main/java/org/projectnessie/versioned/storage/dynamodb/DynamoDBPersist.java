@@ -136,11 +136,10 @@ public class DynamoDBPersist implements Persist {
     try {
       backend
           .client()
-          .putItem(
-              b ->
-                  b.tableName(backend.tableRefs)
-                      .conditionExpression(CONDITION_STORE_REF)
-                      .item(referenceAttributeValues(reference)));
+          .putItem(b ->
+              b.tableName(backend.tableRefs)
+                  .conditionExpression(CONDITION_STORE_REF)
+                  .item(referenceAttributeValues(reference)));
       return reference;
     } catch (ConditionalCheckFailedException e) {
       throw new RefAlreadyExistsException(fetchReference(reference.name()));
@@ -196,12 +195,11 @@ public class DynamoDBPersist implements Persist {
     try {
       backend
           .client()
-          .deleteItem(
-              b ->
-                  b.tableName(backend.tableRefs)
-                      .key(referenceKeyMap(refName))
-                      .expressionAttributeValues(values)
-                      .conditionExpression(condition));
+          .deleteItem(b ->
+              b.tableName(backend.tableRefs)
+                  .key(referenceKeyMap(refName))
+                  .expressionAttributeValues(values)
+                  .conditionExpression(condition));
     } catch (ConditionalCheckFailedException e) {
       Reference r = fetchReference(refName);
       if (r == null) {
@@ -283,24 +281,23 @@ public class DynamoDBPersist implements Persist {
       response
           .responses()
           .get(backend.tableRefs)
-          .forEach(
-              item -> {
-                String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
-                String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
-                long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
-                Reference reference =
-                    reference(
-                        name,
-                        DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_POINTER),
-                        DynamoDBSerde.attributeToBool(item, COL_REFERENCES_DELETED),
-                        createdAt,
-                        DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO),
-                        attributeToPreviousPointers(item));
-                int idx = nameToIndex.getValue(name);
-                if (idx >= 0) {
-                  r[idx] = reference;
-                }
-              });
+          .forEach(item -> {
+            String name = item.get(KEY_NAME).s().substring(keyPrefix.length());
+            String createdAtStr = attributeToString(item, COL_REFERENCES_CREATED_AT);
+            long createdAt = createdAtStr != null ? Long.parseLong(createdAtStr) : 0L;
+            Reference reference =
+                reference(
+                    name,
+                    DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_POINTER),
+                    DynamoDBSerde.attributeToBool(item, COL_REFERENCES_DELETED),
+                    createdAt,
+                    DynamoDBSerde.attributeToObjId(item, COL_REFERENCES_EXTENDED_INFO),
+                    attributeToPreviousPointers(item));
+            int idx = nameToIndex.getValue(name);
+            if (idx >= 0) {
+              r[idx] = reference;
+            }
+          });
     } catch (RuntimeException e) {
       throw unhandledException(e);
     }
@@ -344,11 +341,8 @@ public class DynamoDBPersist implements Persist {
       item =
           backend
               .client()
-              .getItem(
-                  b ->
-                      b.tableName(backend.tableObjs)
-                          .key(objKeyMap(id))
-                          .attributesToGet(COL_OBJ_TYPE));
+              .getItem(b ->
+                  b.tableName(backend.tableObjs).key(objKeyMap(id)).attributesToGet(COL_OBJ_TYPE));
     } catch (RuntimeException e) {
       throw unhandledException(e);
     }
@@ -406,16 +400,15 @@ public class DynamoDBPersist implements Persist {
       response
           .responses()
           .get(backend.tableObjs)
-          .forEach(
-              item -> {
-                T obj = itemToObj(item, type, typeClass);
-                if (obj != null) {
-                  int idx = idToIndex.getValue(obj.id());
-                  if (idx != -1) {
-                    r[idx] = obj;
-                  }
-                }
-              });
+          .forEach(item -> {
+            T obj = itemToObj(item, type, typeClass);
+            if (obj != null) {
+              int idx = idToIndex.getValue(obj.id());
+              if (idx != -1) {
+                r[idx] = obj;
+              }
+            }
+          });
     } catch (RuntimeException e) {
       throw unhandledException(e);
     }
@@ -449,25 +442,21 @@ public class DynamoDBPersist implements Persist {
       try {
         backend
             .client()
-            .putItem(
-                b ->
-                    b.tableName(backend.tableObjs)
-                        .conditionExpression(CONDITION_STORE_OBJ)
-                        .item(item));
+            .putItem(b ->
+                b.tableName(backend.tableObjs).conditionExpression(CONDITION_STORE_OBJ).item(item));
       } catch (ConditionalCheckFailedException e) {
         backend
             .client()
-            .updateItem(
-                b ->
-                    b.tableName(backend.tableObjs)
-                        .key(objKeyMap(id))
-                        .attributeUpdates(
-                            Map.of(
-                                COL_OBJ_REFERENCED,
-                                AttributeValueUpdate.builder()
-                                    .action(AttributeAction.PUT)
-                                    .value(fromS(Long.toString(referenced)))
-                                    .build())));
+            .updateItem(b ->
+                b.tableName(backend.tableObjs)
+                    .key(objKeyMap(id))
+                    .attributeUpdates(
+                        Map.of(
+                            COL_OBJ_REFERENCED,
+                            AttributeValueUpdate.builder()
+                                .action(AttributeAction.PUT)
+                                .value(fromS(Long.toString(referenced)))
+                                .build())));
         return false;
       }
     } catch (DynamoDbException e) {
@@ -626,12 +615,11 @@ public class DynamoDBPersist implements Persist {
       // 'updateConditional()'.
       backend
           .client()
-          .updateItem(
-              b ->
-                  b.tableName(backend.tableObjs)
-                      .key(objKeyMap(id))
-                      .attributeUpdates(updates)
-                      .expected(expectedValues));
+          .updateItem(b ->
+              b.tableName(backend.tableObjs)
+                  .key(objKeyMap(id))
+                  .attributeUpdates(updates)
+                  .expected(expectedValues));
       return true;
     } catch (ConditionalCheckFailedException checkFailedException) {
       return false;
@@ -736,12 +724,11 @@ public class DynamoDBPersist implements Persist {
     try {
       backend
           .client()
-          .putItem(
-              b ->
-                  b.tableName(backend.tableRefs)
-                      .conditionExpression(condition)
-                      .expressionAttributeValues(values)
-                      .item(referenceAttributeValues(reference)));
+          .putItem(b ->
+              b.tableName(backend.tableRefs)
+                  .conditionExpression(condition)
+                  .expressionAttributeValues(values)
+                  .item(referenceAttributeValues(reference)));
     } catch (RuntimeException e) {
       throw unhandledException(e);
     }

@@ -372,12 +372,10 @@ public class ITExportImport {
         .containsExactly(tuple(key, value));
 
     UniqueIdObj uniqueId = uniqueId("content-id", contentId);
-    soft.assertThatCode(
-            () ->
-                soft.assertThat(
-                        persist.fetchTypedObj(
-                            requireNonNull(uniqueId.id()), UNIQUE, UniqueIdObj.class))
-                    .isEqualTo(uniqueId))
+    soft.assertThatCode(() ->
+            soft.assertThat(
+                    persist.fetchTypedObj(requireNonNull(uniqueId.id()), UNIQUE, UniqueIdObj.class))
+                .isEqualTo(uniqueId))
         .doesNotThrowAnyException();
   }
 

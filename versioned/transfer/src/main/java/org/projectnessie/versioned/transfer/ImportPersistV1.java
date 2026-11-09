@@ -109,11 +109,10 @@ final class ImportPersistV1 extends ImportPersistCommon {
     StoreIndex<CommitOp> index = newStoreIndex(CommitOp.COMMIT_OP_SERIALIZER);
     commit
         .getOperationsList()
-        .forEach(
-            op -> {
-              StoreKey storeKey = keyToStoreKey(ContentKey.of(op.getContentKeyList()));
-              processCommitOp(index, op, storeKey);
-            });
+        .forEach(op -> {
+          StoreKey storeKey = keyToStoreKey(ContentKey.of(op.getContentKeyList()));
+          processCommitOp(index, op, storeKey);
+        });
 
     c.incrementalIndex(index.serialize());
 

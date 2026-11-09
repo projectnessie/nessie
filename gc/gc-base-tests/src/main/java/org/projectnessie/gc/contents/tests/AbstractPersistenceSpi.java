@@ -80,15 +80,14 @@ public abstract class AbstractPersistenceSpi {
     LiveSetVals(int numRefs) {
       refs =
           IntStream.range(0, numRefs)
-              .mapToObj(
-                  i ->
-                      icebergContent(
-                          (i & 1) == 1 ? ICEBERG_VIEW : ICEBERG_TABLE,
-                          "cid-" + i,
-                          "123456780" + i,
-                          ContentKey.of("a", "b-" + id, "c-" + i),
-                          "meta-" + id + i,
-                          i))
+              .mapToObj(i ->
+                  icebergContent(
+                      (i & 1) == 1 ? ICEBERG_VIEW : ICEBERG_TABLE,
+                      "cid-" + i,
+                      "123456780" + i,
+                      ContentKey.of("a", "b-" + id, "c-" + i),
+                      "meta-" + id + i,
+                      i))
               .collect(Collectors.toList());
     }
 

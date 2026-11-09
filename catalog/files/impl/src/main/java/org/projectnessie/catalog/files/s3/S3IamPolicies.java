@@ -130,9 +130,8 @@ final class S3IamPolicies {
     // Add custom statements
     clientIam
         .statements()
-        .ifPresent(
-            stmts ->
-                stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
+        .ifPresent(stmts ->
+            stmts.stream().map(ParsedIamStatements.STATEMENTS::get).forEach(statements::add));
 
     return policy.toString();
   }

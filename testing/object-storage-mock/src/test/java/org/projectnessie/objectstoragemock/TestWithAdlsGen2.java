@@ -128,19 +128,18 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
     Bucket.Lister lister =
         (String prefix, String offset) ->
             IntStream.range(0, 400_000)
-                .mapToObj(
-                    i ->
-                        new ListElement() {
-                          @Override
-                          public String key() {
-                            return intToKey.apply(i);
-                          }
+                .mapToObj(i ->
+                    new ListElement() {
+                      @Override
+                      public String key() {
+                        return intToKey.apply(i);
+                      }
 
-                          @Override
-                          public MockObject object() {
-                            return MockObject.builder().etag(Integer.toString(i)).build();
-                          }
-                        });
+                      @Override
+                      public MockObject object() {
+                        return MockObject.builder().etag(Integer.toString(i)).build();
+                      }
+                    });
 
     createServer(b -> b.putBuckets(BUCKET, Bucket.builder().lister(lister).build()));
 
@@ -220,14 +219,10 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
   public void deleteObject() {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET,
-                Bucket.builder()
-                    .object(objects::get)
-                    .deleter(o -> objects.remove(o) != null)
-                    .build()));
+    createServer(b ->
+        b.putBuckets(
+            BUCKET,
+            Bucket.builder().object(objects::get).deleter(o -> objects.remove(o) != null).build()));
 
     MockObject obj = ImmutableMockObject.builder().build();
     objects.put(MY_OBJECT_KEY, obj);
@@ -251,10 +246,8 @@ public class TestWithAdlsGen2 extends AbstractObjectStorageMockServer {
   public void getObject(@TempDir Path dir) {
     Map<String, MockObject> objects = new HashMap<>();
 
-    createServer(
-        b ->
-            b.putBuckets(
-                BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
+    createServer(b ->
+        b.putBuckets(BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
 
     byte[] content = "Hello World\nHello Nessie!".getBytes(UTF_8);
 

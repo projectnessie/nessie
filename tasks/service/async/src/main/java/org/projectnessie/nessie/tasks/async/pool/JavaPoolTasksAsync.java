@@ -65,12 +65,11 @@ public class JavaPoolTasksAsync implements TasksAsync {
             realDelay,
             MILLISECONDS);
 
-    completable.whenComplete(
-        (v, t) -> {
-          if (t instanceof CancellationException) {
-            future.cancel(true); // allow interruption of blocking tasks
-          }
-        });
+    completable.whenComplete((v, t) -> {
+      if (t instanceof CancellationException) {
+        future.cancel(true); // allow interruption of blocking tasks
+      }
+    });
 
     return completable;
   }

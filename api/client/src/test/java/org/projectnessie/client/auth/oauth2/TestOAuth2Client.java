@@ -569,11 +569,10 @@ class TestOAuth2Client {
         soft.assertThatThrownBy(client::fetchNewTokens)
             .isInstanceOf(OAuth2Exception.class)
             .extracting(OAuth2Exception.class::cast)
-            .satisfies(
-                r -> {
-                  soft.assertThat(r.getErrorCode()).isEqualTo("invalid_request");
-                  soft.assertThat(r.getMessage()).contains("Unknown scope: invalid-scope");
-                });
+            .satisfies(r -> {
+              soft.assertThat(r.getErrorCode()).isEqualTo("invalid_request");
+              soft.assertThat(r.getMessage()).contains("Unknown scope: invalid-scope");
+            });
       }
     }
   }
@@ -981,15 +980,14 @@ class TestOAuth2Client {
       ScheduledExecutorService executor, boolean rejectSchedule) {
     AtomicReference<Runnable> task = new AtomicReference<>();
     when(executor.schedule(any(Runnable.class), anyLong(), any()))
-        .thenAnswer(
-            invocation -> {
-              if (rejectSchedule) {
-                throw new RejectedExecutionException("test");
-              }
-              Runnable runnable = invocation.getArgument(0);
-              task.set(runnable);
-              return mock(ScheduledFuture.class);
-            });
+        .thenAnswer(invocation -> {
+          if (rejectSchedule) {
+            throw new RejectedExecutionException("test");
+          }
+          Runnable runnable = invocation.getArgument(0);
+          task.set(runnable);
+          return mock(ScheduledFuture.class);
+        });
     return task;
   }
 

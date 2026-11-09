@@ -149,14 +149,13 @@ public class TestRefMapping {
     // Commit in creation-order
     List<CommitObj> commits =
         generateCommits("foo").stream()
-            .map(
-                id -> {
-                  try {
-                    return persist.fetchTypedObj(id, COMMIT, CommitObj.class);
-                  } catch (ObjNotFoundException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .map(id -> {
+              try {
+                return persist.fetchTypedObj(id, COMMIT, CommitObj.class);
+              } catch (ObjNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            })
             .collect(Collectors.toList());
 
     // Commit by distance from HEAD
@@ -312,15 +311,13 @@ public class TestRefMapping {
 
   @Test
   public void verifyExpectedHash() {
-    soft.assertThatCode(
-            () ->
-                RefMapping.verifyExpectedHash(
-                    Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("1234")))
+    soft.assertThatCode(() ->
+            RefMapping.verifyExpectedHash(
+                Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("1234")))
         .doesNotThrowAnyException();
-    soft.assertThatThrownBy(
-            () ->
-                RefMapping.verifyExpectedHash(
-                    Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("5678")))
+    soft.assertThatThrownBy(() ->
+            RefMapping.verifyExpectedHash(
+                Hash.of("1234"), BranchName.of("foo-branch"), Hash.of("5678")))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Named-reference 'foo-branch' is not at expected hash '5678', but at '1234'.");
   }

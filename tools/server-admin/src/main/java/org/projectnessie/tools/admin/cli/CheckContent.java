@@ -164,21 +164,19 @@ public class CheckContent extends BaseCommand {
       return;
     }
 
-    keys.forEach(
-        k -> {
-          if (values.get(k) == null) {
-            report(k, new IllegalArgumentException("Missing content"), null);
-          }
-        });
+    keys.forEach(k -> {
+      if (values.get(k) == null) {
+        report(k, new IllegalArgumentException("Missing content"), null);
+      }
+    });
 
-    values.forEach(
-        (k, value) -> {
-          try {
-            report(k, null, value);
-          } catch (Exception e) {
-            report(k, e, null);
-          }
-        });
+    values.forEach((k, value) -> {
+      try {
+        report(k, null, value);
+      } catch (Exception e) {
+        report(k, e, null);
+      }
+    });
   }
 
   private void report(ContentKey key, Throwable error, Object content) {
@@ -232,17 +230,16 @@ public class CheckContent extends BaseCommand {
     List<ContentKey> batch = new ArrayList<>(batchSize);
     index(hash)
         .iterator(null, null, true)
-        .forEachRemaining(
-            indexElement -> {
-              if (indexElement.content().action().exists()) {
-                ContentKey key = storeKeyToKey(indexElement.key());
-                batch.add(key);
-                if (batch.size() >= batchSize) {
-                  check(hash, batch);
-                  batch.clear();
-                }
-              }
-            });
+        .forEachRemaining(indexElement -> {
+          if (indexElement.content().action().exists()) {
+            ContentKey key = storeKeyToKey(indexElement.key());
+            batch.add(key);
+            if (batch.size() >= batchSize) {
+              check(hash, batch);
+              batch.clear();
+            }
+          }
+        });
     check(hash, batch); // check remaining keys
   }
 

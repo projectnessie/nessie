@@ -329,26 +329,24 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
         .hasMessage("Cannot create view without specifying schema");
 
     // default namespace is required
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(identifier)
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withSchema(SCHEMA)
-                    .create())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(identifier)
+                .withQuery(trino.dialect(), trino.sql())
+                .withSchema(SCHEMA)
+                .create())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot create view without specifying a default namespace");
 
     // cannot define multiple SQLs for same dialect
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(identifier)
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .create())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(identifier)
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .withQuery(trino.dialect(), trino.sql())
+                .withQuery(trino.dialect(), trino.sql())
+                .create())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             "Invalid view version: Cannot add multiple queries for dialect trino");
@@ -375,14 +373,13 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(view).isNotNull();
     assertThat(catalog().viewExists(identifier)).as("View should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(identifier)
-                    .withSchema(OTHER_SCHEMA)
-                    .withQuery("spark", "select * from ns.tbl")
-                    .withDefaultNamespace(identifier.namespace())
-                    .create())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(identifier)
+                .withSchema(OTHER_SCHEMA)
+                .withQuery("spark", "select * from ns.tbl")
+                .withDefaultNamespace(identifier.namespace())
+                .create())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageStartingWith("View already exists: ns.view");
   }
@@ -403,14 +400,13 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
 
     assertThat(tableCatalog().tableExists(tableIdentifier)).as("Table should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(tableIdentifier)
-                    .withSchema(OTHER_SCHEMA)
-                    .withDefaultNamespace(tableIdentifier.namespace())
-                    .withQuery("spark", "select * from ns.tbl")
-                    .create())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(tableIdentifier)
+                .withSchema(OTHER_SCHEMA)
+                .withDefaultNamespace(tableIdentifier.namespace())
+                .withQuery("spark", "select * from ns.tbl")
+                .create())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageStartingWith("Table with same name already exists: ns.table");
   }
@@ -490,12 +486,11 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
 
     assertThat(catalog().viewExists(viewIdentifier)).as("View should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                tableCatalog()
-                    .buildTable(viewIdentifier, SCHEMA)
-                    .replaceTransaction()
-                    .commitTransaction())
+    assertThatThrownBy(() ->
+            tableCatalog()
+                .buildTable(viewIdentifier, SCHEMA)
+                .replaceTransaction()
+                .commitTransaction())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageStartingWith("View with same name already exists: ns.view");
   }
@@ -521,12 +516,11 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
 
     assertThat(catalog().viewExists(viewIdentifier)).as("View should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                tableCatalog()
-                    .buildTable(viewIdentifier, SCHEMA)
-                    .createOrReplaceTransaction()
-                    .commitTransaction())
+    assertThatThrownBy(() ->
+            tableCatalog()
+                .buildTable(viewIdentifier, SCHEMA)
+                .createOrReplaceTransaction()
+                .commitTransaction())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageStartingWith("View with same name already exists: ns.view");
   }
@@ -547,14 +541,13 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
 
     assertThat(tableCatalog().tableExists(tableIdentifier)).as("Table should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(tableIdentifier)
-                    .withSchema(OTHER_SCHEMA)
-                    .withDefaultNamespace(tableIdentifier.namespace())
-                    .withQuery("spark", "select * from ns.tbl")
-                    .replace())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(tableIdentifier)
+                .withSchema(OTHER_SCHEMA)
+                .withDefaultNamespace(tableIdentifier.namespace())
+                .withQuery("spark", "select * from ns.tbl")
+                .replace())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageContaining("Table with same name already exists: ns.table");
   }
@@ -575,14 +568,13 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
 
     assertThat(tableCatalog().tableExists(tableIdentifier)).as("Table should exist").isTrue();
 
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(tableIdentifier)
-                    .withSchema(OTHER_SCHEMA)
-                    .withDefaultNamespace(tableIdentifier.namespace())
-                    .withQuery("spark", "select * from ns.tbl")
-                    .createOrReplace())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(tableIdentifier)
+                .withSchema(OTHER_SCHEMA)
+                .withDefaultNamespace(tableIdentifier.namespace())
+                .withQuery("spark", "select * from ns.tbl")
+                .createOrReplace())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageStartingWith("Table with same name already exists: ns.table");
   }
@@ -1085,38 +1077,35 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
         .hasMessage("Cannot replace view without specifying schema");
 
     // default namespace is required
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(identifier)
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withSchema(SCHEMA)
-                    .replace())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(identifier)
+                .withQuery(trino.dialect(), trino.sql())
+                .withSchema(SCHEMA)
+                .replace())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot replace view without specifying a default namespace");
 
     // cannot replace non-existing view
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(TableIdentifier.of("ns", "non_existing"))
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .replace())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(TableIdentifier.of("ns", "non_existing"))
+                .withQuery(trino.dialect(), trino.sql())
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .replace())
         .isInstanceOf(NoSuchViewException.class)
         .hasMessageStartingWith("View does not exist: ns.non_existing");
 
     // cannot define multiple SQLs for same dialect
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .buildView(identifier)
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .replace())
+    assertThatThrownBy(() ->
+            catalog()
+                .buildView(identifier)
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .withQuery(trino.dialect(), trino.sql())
+                .withQuery(trino.dialect(), trino.sql())
+                .replace())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid view version: Cannot add multiple queries for dialect trino");
   }
@@ -1190,16 +1179,15 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid key: null");
 
-    assertThatThrownBy(
-            () ->
-                catalog()
-                    .loadView(identifier)
-                    .updateProperties()
-                    .set("key1", "x")
-                    .set("key3", "y")
-                    .remove("key2")
-                    .set("key2", "z")
-                    .commit())
+    assertThatThrownBy(() ->
+            catalog()
+                .loadView(identifier)
+                .updateProperties()
+                .set("key1", "x")
+                .set("key3", "y")
+                .remove("key2")
+                .set("key2", "z")
+                .commit())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Cannot remove and update the same key: key2");
   }
@@ -1395,35 +1383,32 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
         .hasMessage("Cannot replace view without specifying a query");
 
     // schema is required
-    assertThatThrownBy(
-            () ->
-                view.replaceVersion()
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withDefaultNamespace(identifier.namespace())
-                    .commit())
+    assertThatThrownBy(() ->
+            view.replaceVersion()
+                .withQuery(trino.dialect(), trino.sql())
+                .withDefaultNamespace(identifier.namespace())
+                .commit())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot replace view without specifying schema");
 
     // default namespace is required
-    assertThatThrownBy(
-            () ->
-                view.replaceVersion()
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withSchema(SCHEMA)
-                    .commit())
+    assertThatThrownBy(() ->
+            view.replaceVersion()
+                .withQuery(trino.dialect(), trino.sql())
+                .withSchema(SCHEMA)
+                .commit())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Cannot replace view without specifying a default namespace");
 
     // cannot define multiple SQLs for same dialect
-    assertThatThrownBy(
-            () ->
-                view.replaceVersion()
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .withQuery(trino.dialect(), trino.sql())
-                    .commit())
+    assertThatThrownBy(() ->
+            view.replaceVersion()
+                .withQuery(trino.dialect(), trino.sql())
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .withQuery(trino.dialect(), trino.sql())
+                .withQuery(trino.dialect(), trino.sql())
+                .commit())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Invalid view version: Cannot add multiple queries for dialect trino");
   }
@@ -1483,13 +1468,12 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     catalog().dropView(identifier);
     assertThat(catalog().viewExists(identifier)).as("View should not exist").isFalse();
 
-    assertThatThrownBy(
-            () ->
-                replaceViewVersion
-                    .withQuery("trino", "select * from ns.tbl")
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .commit())
+    assertThatThrownBy(() ->
+            replaceViewVersion
+                .withQuery("trino", "select * from ns.tbl")
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .commit())
         .isInstanceOf(NoSuchViewException.class)
         .hasMessageContaining("View does not exist: ns.view");
   }
@@ -1515,13 +1499,12 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(catalog().viewExists(identifier)).as("View should exist").isTrue();
 
     // the view was already created concurrently
-    assertThatThrownBy(
-            () ->
-                viewBuilder
-                    .withQuery("trino", "select * from ns.tbl")
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .create())
+    assertThatThrownBy(() ->
+            viewBuilder
+                .withQuery("trino", "select * from ns.tbl")
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .create())
         .isInstanceOf(AlreadyExistsException.class)
         .hasMessageContaining("View already exists: ns.view");
   }
@@ -1550,13 +1533,12 @@ public abstract class ViewCatalogTests<C extends ViewCatalog & SupportsNamespace
     assertThat(catalog().viewExists(identifier)).as("View should not exist").isFalse();
 
     // the view was already dropped concurrently
-    assertThatThrownBy(
-            () ->
-                viewBuilder
-                    .withQuery("trino", "select * from ns.tbl")
-                    .withSchema(SCHEMA)
-                    .withDefaultNamespace(identifier.namespace())
-                    .replace())
+    assertThatThrownBy(() ->
+            viewBuilder
+                .withQuery("trino", "select * from ns.tbl")
+                .withSchema(SCHEMA)
+                .withDefaultNamespace(identifier.namespace())
+                .replace())
         .isInstanceOf(NoSuchViewException.class)
         .hasMessageStartingWith("View does not exist: ns.view");
   }

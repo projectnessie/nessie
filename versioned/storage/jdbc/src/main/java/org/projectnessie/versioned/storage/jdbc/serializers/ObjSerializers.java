@@ -38,14 +38,13 @@ public final class ObjSerializers {
 
   static {
     Set<String> columnNames = new HashSet<>();
-    ALL_SERIALIZERS.forEach(
-        serializer -> {
-          for (String col : serializer.columns().keySet()) {
-            if (!columnNames.add(col)) {
-              throw new IllegalStateException("Duplicate column name: " + col);
-            }
-          }
-        });
+    ALL_SERIALIZERS.forEach(serializer -> {
+      for (String col : serializer.columns().keySet()) {
+        if (!columnNames.add(col)) {
+          throw new IllegalStateException("Duplicate column name: " + col);
+        }
+      }
+    });
   }
 
   @Nonnull

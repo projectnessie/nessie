@@ -54,30 +54,29 @@ class TestRefUtil {
     assertThatThrownBy(() -> RefUtil.toNamedRef(null))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("reference must not be null");
-    assertThatThrownBy(
-            () ->
-                RefUtil.toNamedRef(
-                    new Reference() {
-                      @Override
-                      public String getName() {
-                        return null;
-                      }
+    assertThatThrownBy(() ->
+            RefUtil.toNamedRef(
+                new Reference() {
+                  @Override
+                  public String getName() {
+                    return null;
+                  }
 
-                      @Override
-                      public String getHash() {
-                        return null;
-                      }
+                  @Override
+                  public String getHash() {
+                    return null;
+                  }
 
-                      @Override
-                      public ReferenceMetadata getMetadata() {
-                        return null;
-                      }
+                  @Override
+                  public ReferenceMetadata getMetadata() {
+                    return null;
+                  }
 
-                      @Override
-                      public ReferenceType getType() {
-                        return null;
-                      }
-                    }))
+                  @Override
+                  public ReferenceType getType() {
+                    return null;
+                  }
+                }))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported reference 'org.projectnessie.services.impl.TestRefUtil");
@@ -133,17 +132,16 @@ class TestRefUtil {
     assertThatThrownBy(() -> toReference(null, HASH_VALUE))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("namedRef must not be null");
-    assertThatThrownBy(
-            () ->
-                toReference(
-                    new NamedRef() {
-                      @Override
-                      @Nonnull
-                      public String getName() {
-                        return REF_NAME;
-                      }
-                    },
-                    HASH_VALUE))
+    assertThatThrownBy(() ->
+            toReference(
+                new NamedRef() {
+                  @Override
+                  @Nonnull
+                  public String getName() {
+                    return REF_NAME;
+                  }
+                },
+                HASH_VALUE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");
@@ -164,17 +162,16 @@ class TestRefUtil {
     assertThatThrownBy(() -> toReference(null, Hash.of(HASH_VALUE)))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("namedRef must not be null");
-    assertThatThrownBy(
-            () ->
-                toReference(
-                    new NamedRef() {
-                      @Override
-                      @Nonnull
-                      public String getName() {
-                        return REF_NAME;
-                      }
-                    },
-                    Hash.of(HASH_VALUE)))
+    assertThatThrownBy(() ->
+            toReference(
+                new NamedRef() {
+                  @Override
+                  @Nonnull
+                  public String getName() {
+                    return REF_NAME;
+                  }
+                },
+                Hash.of(HASH_VALUE)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith(
             "Unsupported named reference 'org.projectnessie.services.impl.TestRefUtil");

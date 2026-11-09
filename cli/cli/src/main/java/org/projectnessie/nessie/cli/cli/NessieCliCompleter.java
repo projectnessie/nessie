@@ -36,14 +36,13 @@ class NessieCliCompleter extends SystemCompleter {
   private static final List<String> NESSIE_CONFIG_KEYS =
       Arrays.stream(NessieConfigConstants.class.getDeclaredFields())
           .filter(f -> f.getName().startsWith("CONF_"))
-          .map(
-              f -> {
-                try {
-                  return f.get(null);
-                } catch (IllegalAccessException e) {
-                  throw new RuntimeException(e);
-                }
-              })
+          .map(f -> {
+            try {
+              return f.get(null);
+            } catch (IllegalAccessException e) {
+              throw new RuntimeException(e);
+            }
+          })
           .map(String.class::cast)
           .filter(k -> k.startsWith("nessie."))
           .sorted()
@@ -78,16 +77,15 @@ class NessieCliCompleter extends SystemCompleter {
             //  the statement parsed up to here :( )
             nessieCli
                 .nessieApi()
-                .ifPresent(
-                    api -> {
-                      try {
-                        api.getAllReferences().stream()
-                            .map(Reference::getName)
-                            .forEach(refName -> candidate(refName, counter.getAndIncrement()));
-                      } catch (NessieNotFoundException e) {
-                        throw new RuntimeException(e);
-                      }
-                    });
+                .ifPresent(api -> {
+                  try {
+                    api.getAllReferences().stream()
+                        .map(Reference::getName)
+                        .forEach(refName -> candidate(refName, counter.getAndIncrement()));
+                  } catch (NessieNotFoundException e) {
+                    throw new RuntimeException(e);
+                  }
+                });
           }
           case CONNECT_OPTIONS -> {
             for (int i = 0; i < NESSIE_CONFIG_KEYS.size(); i++) {

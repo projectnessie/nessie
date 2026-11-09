@@ -94,10 +94,9 @@ class TestContentKey {
   @ParameterizedTest
   @ValueSource(ints = {21, 55, 100})
   void keyTooManyElements(int elements) {
-    assertThatThrownBy(
-            () ->
-                ContentKey.of(
-                    IntStream.range(0, elements).mapToObj(i -> "foo").collect(Collectors.toList())))
+    assertThatThrownBy(() ->
+            ContentKey.of(
+                IntStream.range(0, elements).mapToObj(i -> "foo").collect(Collectors.toList())))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Content key too long, max allowed number of elements: " + ContentKey.MAX_ELEMENTS);

@@ -66,10 +66,9 @@ class TestGcsObjectIOCredentials {
         .containsKeys(
             "gs://bucket/warehouse", "gs://bucket/warehouse/table", "gs://bucket/warehouse/read");
     assertThat(storageCredentials.values())
-        .allSatisfy(
-            credential ->
-                assertThat(credential)
-                    .containsEntry("gcs.oauth2.token", "oauth-token")
-                    .containsEntry("gcs.oauth2.token-expires-at", "12345"));
+        .allSatisfy(credential ->
+            assertThat(credential)
+                .containsEntry("gcs.oauth2.token", "oauth-token")
+                .containsEntry("gcs.oauth2.token-expires-at", "12345"));
   }
 }

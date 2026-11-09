@@ -75,10 +75,9 @@ public class TestResponseFilter {
   @ParameterizedTest
   @MethodSource("testReferenceConflicts")
   void testReferenceConflicts(JsonNode nessieError, ReferenceConflicts referenceConflicts) {
-    soft.assertThatThrownBy(
-            () ->
-                ResponseCheckFilter.checkResponse(
-                    new TestResponseContext(Status.CONFLICT, nessieError)))
+    soft.assertThatThrownBy(() ->
+            ResponseCheckFilter.checkResponse(
+                new TestResponseContext(Status.CONFLICT, nessieError)))
         .asInstanceOf(type(NessieReferenceConflictException.class))
         .extracting(NessieReferenceConflictException::getErrorDetails)
         .isEqualTo(referenceConflicts);
@@ -111,76 +110,66 @@ public class TestResponseFilter {
             referenceConflicts(emptyList())),
         // 3 - unknown property in ReferenceConflicts
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) ->
-                    refConflicts
-                        .put("someNewPropertyInReferenceConflicts", "bar")
-                        .set("conflicts", arrayNode())),
+            nessieErrorBuilder.apply((nessieError, refConflicts) ->
+                refConflicts
+                    .put("someNewPropertyInReferenceConflicts", "bar")
+                    .set("conflicts", arrayNode())),
             referenceConflicts(emptyList())),
         // 4 - single conflict
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) ->
-                    refConflicts.set(
-                        "conflicts",
-                        arrayNode()
-                            .add(
-                                objectNode()
-                                    .put("conflictType", "NAMESPACE_ABSENT")
-                                    .put("message", "not there")
-                                    .set(
-                                        "key",
-                                        objectNode().set("elements", arrayNode().add("ck")))))),
+            nessieErrorBuilder.apply((nessieError, refConflicts) ->
+                refConflicts.set(
+                    "conflicts",
+                    arrayNode()
+                        .add(
+                            objectNode()
+                                .put("conflictType", "NAMESPACE_ABSENT")
+                                .put("message", "not there")
+                                .set("key", objectNode().set("elements", arrayNode().add("ck")))))),
             referenceConflicts(
                 singletonList(
                     Conflict.conflict(
                         ConflictType.NAMESPACE_ABSENT, ContentKey.of("ck"), "not there")))),
         // 5 - unknown conflict type
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) ->
-                    refConflicts.set(
-                        "conflicts",
-                        arrayNode()
-                            .add(
-                                objectNode()
-                                    .put("conflictType", "SOME_NEW_TYPE_WAS_ADDED")
-                                    .put("message", "not there")
-                                    .set(
-                                        "key",
-                                        objectNode().set("elements", arrayNode().add("ck")))))),
+            nessieErrorBuilder.apply((nessieError, refConflicts) ->
+                refConflicts.set(
+                    "conflicts",
+                    arrayNode()
+                        .add(
+                            objectNode()
+                                .put("conflictType", "SOME_NEW_TYPE_WAS_ADDED")
+                                .put("message", "not there")
+                                .set("key", objectNode().set("elements", arrayNode().add("ck")))))),
             referenceConflicts(
                 singletonList(
                     Conflict.conflict(ConflictType.UNKNOWN, ContentKey.of("ck"), "not there")))),
         // 6 - new property in Conflict
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) ->
-                    refConflicts.set(
-                        "conflicts",
-                        arrayNode()
-                            .add(
-                                objectNode()
-                                    .put("conflictType", "KEY_EXISTS")
-                                    .put("message", "not there")
-                                    .put("someNewPropertyInConflict", 42)))),
+            nessieErrorBuilder.apply((nessieError, refConflicts) ->
+                refConflicts.set(
+                    "conflicts",
+                    arrayNode()
+                        .add(
+                            objectNode()
+                                .put("conflictType", "KEY_EXISTS")
+                                .put("message", "not there")
+                                .put("someNewPropertyInConflict", 42)))),
             referenceConflicts(
                 singletonList(Conflict.conflict(ConflictType.KEY_EXISTS, null, "not there")))),
         // 7 - new property in NessieError
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) -> {
-                  nessieError.put("someNewPropertyInNessieError", 42);
-                  return null;
-                }),
+            nessieErrorBuilder.apply((nessieError, refConflicts) -> {
+              nessieError.put("someNewPropertyInNessieError", 42);
+              return null;
+            }),
             null),
         // 8 - simulate a new NessieErrorDetails type
         arguments(
-            nessieErrorBuilder.apply(
-                (nessieError, refConflicts) -> {
-                  refConflicts.put("type", "SOME_NEW_ERROR_DETAILS_SUBTYPE").put("foo", "bar");
-                  return refConflicts;
-                }),
+            nessieErrorBuilder.apply((nessieError, refConflicts) -> {
+              refConflicts.put("type", "SOME_NEW_ERROR_DETAILS_SUBTYPE").put("foo", "bar");
+              return refConflicts;
+            }),
             null));
   }
 
@@ -217,45 +206,43 @@ public class TestResponseFilter {
   void testBadReturn() {
     NessieError error =
         ImmutableNessieError.builder().message("unknown").status(415).reason("xxx").build();
-    assertThatThrownBy(
-            () ->
-                ResponseCheckFilter.checkResponse(
-                    new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error)))
+    assertThatThrownBy(() ->
+            ResponseCheckFilter.checkResponse(
+                new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error)))
         .isInstanceOf(RuntimeException.class)
         .hasMessage("xxx (HTTP/415): unknown");
   }
 
   @Test
   void testBadReturnNoError() {
-    assertThatThrownBy(
-            () ->
-                ResponseCheckFilter.checkResponse(
-                    new ResponseContext() {
-                      @Override
-                      public Status getStatus() {
-                        return Status.UNAUTHORIZED;
-                      }
+    assertThatThrownBy(() ->
+            ResponseCheckFilter.checkResponse(
+                new ResponseContext() {
+                  @Override
+                  public Status getStatus() {
+                    return Status.UNAUTHORIZED;
+                  }
 
-                      @Override
-                      public InputStream getInputStream() {
-                        return new StringInputStream("this will fail");
-                      }
+                  @Override
+                  public InputStream getInputStream() {
+                    return new StringInputStream("this will fail");
+                  }
 
-                      @Override
-                      public boolean isJsonCompatibleResponse() {
-                        return true;
-                      }
+                  @Override
+                  public boolean isJsonCompatibleResponse() {
+                    return true;
+                  }
 
-                      @Override
-                      public String getContentType() {
-                        return null;
-                      }
+                  @Override
+                  public String getContentType() {
+                    return null;
+                  }
 
-                      @Override
-                      public URI getRequestedUri() {
-                        return null;
-                      }
-                    }))
+                  @Override
+                  public URI getRequestedUri() {
+                    return null;
+                  }
+                }))
         .isInstanceOf(NessieNotAuthorizedException.class)
         .hasMessageContaining("" + Status.UNAUTHORIZED.getCode())
         .hasMessageContaining(Status.UNAUTHORIZED.getReason())
@@ -264,37 +251,36 @@ public class TestResponseFilter {
 
   @Test
   void testUnexpectedError() {
-    assertThatThrownBy(
-            () ->
-                ResponseCheckFilter.checkResponse(
-                    new ResponseContext() {
-                      @Override
-                      public Status getStatus() {
-                        return Status.NOT_IMPLEMENTED;
-                      }
+    assertThatThrownBy(() ->
+            ResponseCheckFilter.checkResponse(
+                new ResponseContext() {
+                  @Override
+                  public Status getStatus() {
+                    return Status.NOT_IMPLEMENTED;
+                  }
 
-                      @Override
-                      public InputStream getInputStream() {
-                        // Quarkus may sometimes produce JSON error responses like this
-                        return new StringInputStream(
-                            "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
-                      }
+                  @Override
+                  public InputStream getInputStream() {
+                    // Quarkus may sometimes produce JSON error responses like this
+                    return new StringInputStream(
+                        "{\"details\":\"Error id ee7f7293-67ad-42bd-8973-179801e7120e-1\",\"stack\":\"\"}");
+                  }
 
-                      @Override
-                      public boolean isJsonCompatibleResponse() {
-                        return true;
-                      }
+                  @Override
+                  public boolean isJsonCompatibleResponse() {
+                    return true;
+                  }
 
-                      @Override
-                      public String getContentType() {
-                        return null;
-                      }
+                  @Override
+                  public String getContentType() {
+                    return null;
+                  }
 
-                      @Override
-                      public URI getRequestedUri() {
-                        return null;
-                      }
-                    }))
+                  @Override
+                  public URI getRequestedUri() {
+                    return null;
+                  }
+                }))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("" + Status.NOT_IMPLEMENTED.getCode())
         .hasMessageContaining(Status.NOT_IMPLEMENTED.getReason())

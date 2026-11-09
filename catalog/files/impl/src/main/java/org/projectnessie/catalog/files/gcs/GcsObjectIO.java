@@ -83,11 +83,10 @@ public class GcsObjectIO implements ObjectIO {
     List<BlobSourceOption> sourceOptions = new ArrayList<>();
     bucketOptions
         .decryptionKey()
-        .map(
-            secretName ->
-                storageSupplier
-                    .secretsProvider()
-                    .getSecret(secretName, SecretType.KEY, KeySecret.class))
+        .map(secretName ->
+            storageSupplier
+                .secretsProvider()
+                .getSecret(secretName, SecretType.KEY, KeySecret.class))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(KeySecret::key)
@@ -111,11 +110,10 @@ public class GcsObjectIO implements ObjectIO {
 
     bucketOptions
         .encryptionKey()
-        .map(
-            secretName ->
-                storageSupplier
-                    .secretsProvider()
-                    .getSecret(secretName, SecretType.KEY, KeySecret.class))
+        .map(secretName ->
+            storageSupplier
+                .secretsProvider()
+                .getSecret(secretName, SecretType.KEY, KeySecret.class))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(KeySecret::key)
@@ -145,10 +143,9 @@ public class GcsObjectIO implements ObjectIO {
 
       List<BlobId> blobIds =
           locations.stream()
-              .map(
-                  location ->
-                      BlobId.of(
-                          location.requiredAuthority(), location.pathWithoutLeadingTrailingSlash()))
+              .map(location ->
+                  BlobId.of(
+                      location.requiredAuthority(), location.pathWithoutLeadingTrailingSlash()))
               .collect(Collectors.toList());
 
       // This is rather a hack to make the `AbstractClients` test pass, because our object storage
@@ -202,20 +199,18 @@ public class GcsObjectIO implements ObjectIO {
     if (bucketOptions.effectiveAuthType() != GcsBucketOptions.GcsAuthType.NONE) {
       storageSupplier
           .generateDelegationToken(storageLocations, bucketOptions)
-          .ifPresent(
-              t -> {
-                Map<String, String> credentialConfig = new HashMap<>();
-                credentialConfig.put(GCS_OAUTH2_TOKEN, t.token());
-                t.expiresAt()
-                    .ifPresent(
-                        i ->
-                            credentialConfig.put(
-                                GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
+          .ifPresent(t -> {
+            Map<String, String> credentialConfig = new HashMap<>();
+            credentialConfig.put(GCS_OAUTH2_TOKEN, t.token());
+            t.expiresAt()
+                .ifPresent(i ->
+                    credentialConfig.put(
+                        GCS_OAUTH2_TOKEN_EXPIRES_AT, Long.toString(i.toEpochMilli())));
 
-                credentialConfig.forEach(config);
-                credentialPrefixes(storageLocations)
-                    .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
-              });
+            credentialConfig.forEach(config);
+            credentialPrefixes(storageLocations)
+                .forEach(prefix -> storageCredential.accept(prefix, credentialConfig));
+          });
     }
 
     bucketOptions.tableConfigOverrides().forEach(config);

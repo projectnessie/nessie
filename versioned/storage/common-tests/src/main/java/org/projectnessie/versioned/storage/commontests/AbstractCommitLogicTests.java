@@ -255,15 +255,13 @@ public class AbstractCommitLogicTests {
         .isInstanceOf(NoSuchElementException.class)
         .hasMessageStartingWith(NO_COMMON_ANCESTOR_IN_PARENTS_OF);
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.findCommonAncestor(branch1commit1, objIdFromString("1111111111111111")))
+    soft.assertThatThrownBy(() ->
+            commitLogic.findCommonAncestor(branch1commit1, objIdFromString("1111111111111111")))
         .isInstanceOf(NoSuchElementException.class)
         .hasMessage("Commit '1111111111111111' not found");
 
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), branch2commit1))
+    soft.assertThatThrownBy(() ->
+            commitLogic.findCommonAncestor(objIdFromString("1111111111111111"), branch2commit1))
         .isInstanceOf(NoSuchElementException.class)
         .hasMessage("Commit '1111111111111111' not found");
 
@@ -712,17 +710,16 @@ public class AbstractCommitLogicTests {
 
     // Put the correct expected value into the Commit-ADD operation, but "break" it in the callback
     // by adding a wrong expected value-ID.
-    soft.assertThatThrownBy(
-            () ->
-                commitLogic.buildCommitObj(
-                    stdCommit()
-                        .parentCommitId(tip)
-                        .addAdds(commitAdd(key, 0, updateValue, correctValue, null))
-                        .build(),
-                    c -> CONFLICT,
-                    (k, v) -> {},
-                    (action, storeKey, currentId) -> otherExpectedValue,
-                    NO_VALUE_REPLACEMENT))
+    soft.assertThatThrownBy(() ->
+            commitLogic.buildCommitObj(
+                stdCommit()
+                    .parentCommitId(tip)
+                    .addAdds(commitAdd(key, 0, updateValue, correctValue, null))
+                    .build(),
+                c -> CONFLICT,
+                (k, v) -> {},
+                (action, storeKey, currentId) -> otherExpectedValue,
+                NO_VALUE_REPLACEMENT))
         .isInstanceOf(CommitConflictException.class)
         .hasMessage("Commit conflict: VALUE_DIFFERS:a")
         .asInstanceOf(type(CommitConflictException.class))

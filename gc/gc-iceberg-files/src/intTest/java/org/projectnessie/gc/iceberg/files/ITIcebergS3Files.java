@@ -76,15 +76,14 @@ public class ITIcebergS3Files extends AbstractFiles {
     ForkJoinPool forkJoinPool = new ForkJoinPool(4);
     try {
       return forkJoinPool.invoke(
-          ForkJoinTask.adapt(
-              () ->
-                  IntStream.range(0, numFiles)
-                      .mapToObj(AbstractFiles::dirAndFilename)
-                      .parallel()
-                      .peek(p -> flociS3.s3put(BUCKET_URI_PREFIX + p, RequestBody.empty()))
-                      .map(p -> baseUri.resolve(p))
-                      .map(p -> FileReference.of(baseUri.relativize(p), baseUri, -1L))
-                      .collect(Collectors.toList())));
+          ForkJoinTask.adapt(() ->
+              IntStream.range(0, numFiles)
+                  .mapToObj(AbstractFiles::dirAndFilename)
+                  .parallel()
+                  .peek(p -> flociS3.s3put(BUCKET_URI_PREFIX + p, RequestBody.empty()))
+                  .map(p -> baseUri.resolve(p))
+                  .map(p -> FileReference.of(baseUri.relativize(p), baseUri, -1L))
+                  .collect(Collectors.toList())));
     } finally {
       forkJoinPool.shutdown();
     }

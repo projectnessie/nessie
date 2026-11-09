@@ -65,27 +65,25 @@ public class ITDynamoDB2Persist extends AbstractPersistTests {
           });
 
       // DynamoDB's hard 400k limit
-      soft.assertThatThrownBy(
-              () ->
-                  persist.storeObj(
-                      contentValue(
-                          ObjId.randomObjId(),
-                          4200L,
-                          "foo",
-                          42,
-                          ByteString.copyFrom(new byte[400 * 1024]))))
+      soft.assertThatThrownBy(() ->
+              persist.storeObj(
+                  contentValue(
+                      ObjId.randomObjId(),
+                      4200L,
+                      "foo",
+                      42,
+                      ByteString.copyFrom(new byte[400 * 1024]))))
           .isInstanceOf(ObjTooLargeException.class);
-      soft.assertThatThrownBy(
-              () ->
-                  persist.storeObjs(
-                      new Obj[] {
-                        contentValue(
-                            ObjId.randomObjId(),
-                            4200L,
-                            "foo",
-                            42,
-                            ByteString.copyFrom(new byte[400 * 1024]))
-                      }))
+      soft.assertThatThrownBy(() ->
+              persist.storeObjs(
+                  new Obj[] {
+                    contentValue(
+                        ObjId.randomObjId(),
+                        4200L,
+                        "foo",
+                        42,
+                        ByteString.copyFrom(new byte[400 * 1024]))
+                  }))
           .isInstanceOf(ObjTooLargeException.class);
     }
   }

@@ -48,7 +48,7 @@ class TestStsClientsPool {
     StsClientsPool pool =
         new StsClientsPool(
             2,
-            (p) -> {
+            p -> {
               counter.incrementAndGet();
               return client.get();
             },
@@ -79,7 +79,7 @@ class TestStsClientsPool {
   void testMetrics() {
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
-    new StsClientsPool(10, (p) -> null, Optional.of(meterRegistry));
+    new StsClientsPool(10, p -> null, Optional.of(meterRegistry));
 
     Function<Meter, AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>>> extractor =
         meter ->

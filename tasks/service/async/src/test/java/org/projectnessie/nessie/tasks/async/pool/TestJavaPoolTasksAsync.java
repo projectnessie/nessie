@@ -85,19 +85,18 @@ public class TestJavaPoolTasksAsync extends BaseTasksAsync {
     CountDownLatch finished = new CountDownLatch(1);
 
     CompletionStage<String> handle =
-        async.supply(
-            () -> {
-              try {
-                started.countDown();
-                new Semaphore(0).acquire();
-                return "foo";
-              } catch (InterruptedException ignored) {
-                finished.countDown();
-                throw new RuntimeException();
-              } catch (Throwable e) {
-                throw new RuntimeException(e);
-              }
-            });
+        async.supply(() -> {
+          try {
+            started.countDown();
+            new Semaphore(0).acquire();
+            return "foo";
+          } catch (InterruptedException ignored) {
+            finished.countDown();
+            throw new RuntimeException();
+          } catch (Throwable e) {
+            throw new RuntimeException(e);
+          }
+        });
     soft.assertThat(handle).isNotNull();
 
     soft.assertThat(started.await(10, TimeUnit.SECONDS)).isTrue();

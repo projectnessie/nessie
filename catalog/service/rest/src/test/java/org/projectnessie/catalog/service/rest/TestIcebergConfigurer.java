@@ -286,12 +286,10 @@ public class TestIcebergConfigurer {
         .doesNotContainKey(GCS_OAUTH2_REFRESH_CREDENTIALS_ENDPOINT);
     soft.assertThat(tableConfig.storageCredentials())
         .singleElement()
-        .satisfies(
-            credential -> {
-              soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
-              soft.assertThat(credential.config())
-                  .containsEntry("credential-key", "credential-value");
-            });
+        .satisfies(credential -> {
+          soft.assertThat(credential.prefix()).isEqualTo("s3://bucket/path");
+          soft.assertThat(credential.config()).containsEntry("credential-key", "credential-value");
+        });
   }
 
   @Test

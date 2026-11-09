@@ -250,10 +250,9 @@ public class AvroSerializeBench {
                 .deletedRowsCount(0L)
                 .partitions(
                     IntStream.range(1, partitionSpecFields)
-                        .mapToObj(
-                            x ->
-                                IcebergPartitionFieldSummary.icebergPartitionFieldSummary(
-                                    true, fieldValueSupplier.get(), fieldValueSupplier.get(), null))
+                        .mapToObj(x ->
+                            IcebergPartitionFieldSummary.icebergPartitionFieldSummary(
+                                true, fieldValueSupplier.get(), fieldValueSupplier.get(), null))
                         .collect(Collectors.toList()))
                 .build());
       }

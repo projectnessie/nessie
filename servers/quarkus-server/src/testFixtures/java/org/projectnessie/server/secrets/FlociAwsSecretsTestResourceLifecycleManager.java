@@ -138,30 +138,29 @@ public class FlociAwsSecretsTestResourceLifecycleManager
   }
 
   void updateSecrets(Map<String, Secret> secrets, Map<String, SecretType> secretTypes) {
-    secrets.forEach(
-        (sec, secret) -> {
-          String string;
-          if (secret instanceof KeySecret key) {
-            string = key.key();
-          } else if (secret instanceof BasicCredentials basic) {
-            string = format("{\"name\": \"%s\", \"secret\": \"%s\"}", basic.name(), basic.secret());
-          } else if (secret instanceof TokenSecret token) {
-            string =
-                token.expiresAt().isPresent()
-                    ? format(
-                        "{\"token\": \"%s\", \"expiresAt\": \"%s\"}",
-                        token.token(), token.expiresAt().get())
-                    : format("{\"token\": \"%s\"}", token.token());
-          } else {
-            throw new RuntimeException("Unsupported secret type: " + secret);
-          }
+    secrets.forEach((sec, secret) -> {
+      String string;
+      if (secret instanceof KeySecret key) {
+        string = key.key();
+      } else if (secret instanceof BasicCredentials basic) {
+        string = format("{\"name\": \"%s\", \"secret\": \"%s\"}", basic.name(), basic.secret());
+      } else if (secret instanceof TokenSecret token) {
+        string =
+            token.expiresAt().isPresent()
+                ? format(
+                    "{\"token\": \"%s\", \"expiresAt\": \"%s\"}",
+                    token.token(), token.expiresAt().get())
+                : format("{\"token\": \"%s\"}", token.token());
+      } else {
+        throw new RuntimeException("Unsupported secret type: " + secret);
+      }
 
-          secretsManagerClient.createSecret(
-              CreateSecretRequest.builder()
-                  .name(NESSIE_SECRETS_PATH + '.' + sec)
-                  .secretString(string)
-                  .build());
-        });
+      secretsManagerClient.createSecret(
+          CreateSecretRequest.builder()
+              .name(NESSIE_SECRETS_PATH + '.' + sec)
+              .secretString(string)
+              .build());
+    });
   }
 
   @Override

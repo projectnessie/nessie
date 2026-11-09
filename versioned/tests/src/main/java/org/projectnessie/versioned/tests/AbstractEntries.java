@@ -55,37 +55,34 @@ public abstract class AbstractEntries extends AbstractNestedVersionStore {
   @Test
   public void entriesWrongParameters() {
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keysAsList(
-                    store().noAncestorHash(),
-                    KeyRestrictions.builder()
-                        .minKey(ContentKey.of("foo"))
-                        .maxKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keysAsList(
+                store().noAncestorHash(),
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("foo"))
+                    .maxKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keysAsList(
-                    store().noAncestorHash(),
-                    KeyRestrictions.builder()
-                        .maxKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keysAsList(
+                store().noAncestorHash(),
+                KeyRestrictions.builder()
+                    .maxKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                keysAsList(
-                    store().noAncestorHash(),
-                    KeyRestrictions.builder()
-                        .minKey(ContentKey.of("foo"))
-                        .prefixKey(ContentKey.of("foo"))
-                        .build()))
+        .isThrownBy(() ->
+            keysAsList(
+                store().noAncestorHash(),
+                KeyRestrictions.builder()
+                    .minKey(ContentKey.of("foo"))
+                    .prefixKey(ContentKey.of("foo"))
+                    .build()))
         .withMessageContaining(
             "Combining prefixKey with either minKey or maxKey is not supported.");
   }

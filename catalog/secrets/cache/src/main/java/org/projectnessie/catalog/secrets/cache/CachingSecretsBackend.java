@@ -58,20 +58,19 @@ public class CachingSecretsBackend {
             .maximumSize(config.maxElements());
     config
         .meterRegistry()
-        .ifPresent(
-            meterRegistry -> {
-              cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
-              meterRegistry.gauge(
-                  "cache_max_size",
-                  singletonList(Tag.of("cache", CACHE_NAME)),
-                  "",
-                  x -> config.maxElements());
-              meterRegistry.gauge(
-                  "cache_element_ttl",
-                  singletonList(Tag.of("cache", CACHE_NAME)),
-                  "",
-                  x -> config.ttlMillis().orElse(0));
-            });
+        .ifPresent(meterRegistry -> {
+          cacheBuilder.recordStats(() -> new CaffeineStatsCounter(meterRegistry, CACHE_NAME));
+          meterRegistry.gauge(
+              "cache_max_size",
+              singletonList(Tag.of("cache", CACHE_NAME)),
+              "",
+              x -> config.maxElements());
+          meterRegistry.gauge(
+              "cache_element_ttl",
+              singletonList(Tag.of("cache", CACHE_NAME)),
+              "",
+              x -> config.ttlMillis().orElse(0));
+        });
 
     this.cache = cacheBuilder.build();
   }
