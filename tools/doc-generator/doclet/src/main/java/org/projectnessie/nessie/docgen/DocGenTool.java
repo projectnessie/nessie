@@ -124,14 +124,13 @@ public class DocGenTool implements Callable<Integer> {
     DocGenTool tool = new DocGenTool();
     CommandLine commandLine =
         new CommandLine(tool)
-            .setExecutionExceptionHandler(
-                (ex, cmd, parseResult) -> {
-                  // Print the full stack trace in all other cases.
-                  cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
-                  return cmd.getExitCodeExceptionMapper() != null
-                      ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
-                      : cmd.getCommandSpec().exitCodeOnExecutionException();
-                });
+            .setExecutionExceptionHandler((ex, cmd, parseResult) -> {
+              // Print the full stack trace in all other cases.
+              cmd.getErr().println(cmd.getColorScheme().richStackTraceString(ex));
+              return cmd.getExitCodeExceptionMapper() != null
+                  ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
+                  : cmd.getCommandSpec().exitCodeOnExecutionException();
+            });
     System.exit(commandLine.execute(args));
   }
 }

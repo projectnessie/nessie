@@ -137,10 +137,9 @@ public abstract class AbstractNestedVersionStore {
       SoftAssertions soft, List<Commit> current, List<Commit> expected) {
     soft.assertThat(current)
         .map(Commit::getCommitMeta)
-        .map(
-            m ->
-                (CommitMeta)
-                    CommitMeta.builder().from(m).hash(null).parentCommitHashes(emptyList()).build())
+        .map(m ->
+            (CommitMeta)
+                CommitMeta.builder().from(m).hash(null).parentCommitHashes(emptyList()).build())
         .containsExactlyElementsOf(
             expected.stream()
                 .map(Commit::getCommitMeta)
@@ -168,13 +167,12 @@ public abstract class AbstractNestedVersionStore {
 
   protected static List<Diff> diffsWithoutContentId(List<Diff> diffs) {
     return diffs.stream()
-        .map(
-            d ->
-                Diff.of(
-                    d.getFromKey(),
-                    d.getToKey(),
-                    contentWithoutId(d.getFromValue()),
-                    contentWithoutId(d.getToValue())))
+        .map(d ->
+            Diff.of(
+                d.getFromKey(),
+                d.getToKey(),
+                contentWithoutId(d.getFromValue()),
+                contentWithoutId(d.getToValue())))
         .collect(Collectors.toList());
   }
 
@@ -183,14 +181,13 @@ public abstract class AbstractNestedVersionStore {
       return null;
     }
     return operations.stream()
-        .map(
-            op -> {
-              if (op instanceof Put put) {
-                Content content = put.getContent();
-                return Put.of(put.getKey(), contentWithoutId(content));
-              }
-              return op;
-            })
+        .map(op -> {
+          if (op instanceof Put put) {
+            Content content = put.getContent();
+            return Put.of(put.getKey(), contentWithoutId(content));
+          }
+          return op;
+        })
         .collect(Collectors.toList());
   }
 }

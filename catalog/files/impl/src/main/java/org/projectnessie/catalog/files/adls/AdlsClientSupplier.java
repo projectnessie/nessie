@@ -207,12 +207,11 @@ public final class AdlsClientSupplier {
       StorageUri uri, AdlsFileSystemOptions fileSystemOptions) {
     return fileSystemOptions
         .endpoint()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        "Mandatory ADLS endpoint is not configured for storage account %s.",
-                        uri.requiredAuthority())));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    "Mandatory ADLS endpoint is not configured for storage account %s.",
+                    uri.requiredAuthority())));
   }
 
   private Configuration buildClientConfiguration() {
@@ -233,10 +232,8 @@ public final class AdlsClientSupplier {
         BasicCredentials account =
             fileSystemOptions
                 .account()
-                .map(
-                    secretName ->
-                        secretsProvider.getSecret(
-                            secretName, SecretType.BASIC, BasicCredentials.class))
+                .map(secretName ->
+                    secretsProvider.getSecret(secretName, SecretType.BASIC, BasicCredentials.class))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .orElseThrow(() -> new IllegalStateException("storage shared key missing"));
@@ -249,9 +246,8 @@ public final class AdlsClientSupplier {
         sasTokenConsumer.accept(
             fileSystemOptions
                 .sasToken()
-                .map(
-                    secretName ->
-                        secretsProvider.getSecret(secretName, SecretType.KEY, KeySecret.class))
+                .map(secretName ->
+                    secretsProvider.getSecret(secretName, SecretType.KEY, KeySecret.class))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .orElseThrow(() -> new IllegalStateException("SAS token missing"))
@@ -275,30 +271,28 @@ public final class AdlsClientSupplier {
       AdlsFileSystemOptions fileSystemOptions) {
     return fileSystemOptions
         .retryPolicy()
-        .flatMap(
-            strategy ->
-                switch (strategy) {
-                  case NONE -> Optional.empty();
-                  case EXPONENTIAL_BACKOFF ->
-                      Optional.of(
-                          new RequestRetryOptions(
-                              RetryPolicyType.EXPONENTIAL,
-                              fileSystemOptions.maxRetries().orElse(null),
-                              fileSystemOptions.tryTimeout().orElse(null),
-                              fileSystemOptions.retryDelay().orElse(null),
-                              fileSystemOptions.maxRetryDelay().orElse(null),
-                              null));
-                  case FIXED_DELAY ->
-                      Optional.of(
-                          new RequestRetryOptions(
-                              RetryPolicyType.FIXED,
-                              fileSystemOptions.maxRetries().orElse(null),
-                              fileSystemOptions.tryTimeout().orElse(null),
-                              fileSystemOptions.retryDelay().orElse(null),
-                              fileSystemOptions.maxRetryDelay().orElse(null),
-                              null));
-                  default ->
-                      throw new IllegalArgumentException("Invalid retry strategy: " + strategy);
-                });
+        .flatMap(strategy ->
+            switch (strategy) {
+              case NONE -> Optional.empty();
+              case EXPONENTIAL_BACKOFF ->
+                  Optional.of(
+                      new RequestRetryOptions(
+                          RetryPolicyType.EXPONENTIAL,
+                          fileSystemOptions.maxRetries().orElse(null),
+                          fileSystemOptions.tryTimeout().orElse(null),
+                          fileSystemOptions.retryDelay().orElse(null),
+                          fileSystemOptions.maxRetryDelay().orElse(null),
+                          null));
+              case FIXED_DELAY ->
+                  Optional.of(
+                      new RequestRetryOptions(
+                          RetryPolicyType.FIXED,
+                          fileSystemOptions.maxRetries().orElse(null),
+                          fileSystemOptions.tryTimeout().orElse(null),
+                          fileSystemOptions.retryDelay().orElse(null),
+                          fileSystemOptions.maxRetryDelay().orElse(null),
+                          null));
+              default -> throw new IllegalArgumentException("Invalid retry strategy: " + strategy);
+            });
   }
 }

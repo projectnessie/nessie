@@ -96,7 +96,8 @@ public class DiffParams extends KeyRangeParams<DiffParams> {
 
           Usable variables within the expression are:
 
-          - 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the "simple" table name)""")
+          - 'key' (string, namespace + table name), 'keyElements' (list of strings), 'namespace' (string), 'namespaceElements' (list of strings) and 'name' (string, the "simple" table name)\
+          """)
   @QueryParam("filter")
   @jakarta.ws.rs.QueryParam("filter")
   private String filter;

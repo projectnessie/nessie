@@ -127,12 +127,11 @@ public interface CatalogConfig {
 
   default CatalogConfig validate() {
     defaultWarehouse()
-        .ifPresent(
-            name -> {
-              if (!warehouses().containsKey(name)) {
-                throw new IllegalStateException("Default warehouse '" + name + "' is not defined.");
-              }
-            });
+        .ifPresent(name -> {
+          if (!warehouses().containsKey(name)) {
+            throw new IllegalStateException("Default warehouse '" + name + "' is not defined.");
+          }
+        });
     return this;
   }
 

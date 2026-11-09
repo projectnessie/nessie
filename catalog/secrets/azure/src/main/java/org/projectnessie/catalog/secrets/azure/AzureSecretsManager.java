@@ -46,16 +46,15 @@ public class AzureSecretsManager extends AbstractStringBasedSecretsManager {
         client
             .getSecret(secretId)
             .toFuture()
-            .exceptionally(
-                t -> {
-                  if (t instanceof ResourceNotFoundException) {
-                    return null;
-                  }
-                  if (t instanceof RuntimeException re) {
-                    throw re;
-                  }
-                  throw new RuntimeException(t);
-                });
+            .exceptionally(t -> {
+              if (t instanceof ResourceNotFoundException) {
+                return null;
+              }
+              if (t instanceof RuntimeException re) {
+                throw re;
+              }
+              throw new RuntimeException(t);
+            });
 
     try {
       return Optional.ofNullable(future.get(timeout, MILLISECONDS))

@@ -44,10 +44,9 @@ public class TestIcebergContentToContentReference {
   @MethodSource("nonIcebergTable")
   public void nonIcebergTable(Content content) {
     assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                IcebergContentToContentReference.INSTANCE.contentToReference(
-                    content, "12345678", ContentKey.of("foo", "bar")))
+        .isThrownBy(() ->
+            IcebergContentToContentReference.INSTANCE.contentToReference(
+                content, "12345678", ContentKey.of("foo", "bar")))
         .withMessageStartingWith("Expect ICEBERG_TABLE/ICEBERG_VIEW, but got " + content.getType());
   }
 

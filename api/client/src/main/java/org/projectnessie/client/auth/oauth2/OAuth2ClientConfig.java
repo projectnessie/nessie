@@ -198,17 +198,15 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Optional<URI> getResolvedImpersonationTokenEndpoint() {
     return getImpersonationConfig()
         .getTokenEndpoint()
-        .or(
-            () ->
-                getImpersonationOpenIdProviderMetadata()
-                    .map(
-                        json -> {
-                          if (json.has("token_endpoint")) {
-                            return URI.create(json.get("token_endpoint").asText());
-                          }
-                          throw new IllegalStateException(
-                              "OpenID provider metadata does not contain a token endpoint");
-                        }));
+        .or(() ->
+            getImpersonationOpenIdProviderMetadata()
+                .map(json -> {
+                  if (json.has("token_endpoint")) {
+                    return URI.create(json.get("token_endpoint").asText());
+                  }
+                  throw new IllegalStateException(
+                      "OpenID provider metadata does not contain a token endpoint");
+                }));
   }
 
   /**
@@ -219,10 +217,9 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Optional<HttpAuthentication> getBasicAuthentication() {
     return getClientSecret()
         .map(s -> BasicAuthenticationProvider.create(getClientId(), s.getString()))
-        .or(
-            () ->
-                getClientSecretSupplier()
-                    .map(s -> BasicAuthenticationProvider.create(getClientId(), s)));
+        .or(() ->
+            getClientSecretSupplier()
+                .map(s -> BasicAuthenticationProvider.create(getClientId(), s)));
   }
 
   /**
@@ -233,14 +230,12 @@ abstract class OAuth2ClientConfig implements OAuth2AuthenticatorConfig {
   Optional<HttpAuthentication> getImpersonationBasicAuthentication() {
     return getImpersonationConfig()
         .getClientId()
-        .flatMap(
-            clientId ->
-                getClientSecret()
-                    .map(s -> BasicAuthenticationProvider.create(clientId, s.getString()))
-                    .or(
-                        () ->
-                            getClientSecretSupplier()
-                                .map(s -> BasicAuthenticationProvider.create(clientId, s))));
+        .flatMap(clientId ->
+            getClientSecret()
+                .map(s -> BasicAuthenticationProvider.create(clientId, s.getString()))
+                .or(() ->
+                    getClientSecretSupplier()
+                        .map(s -> BasicAuthenticationProvider.create(clientId, s))));
   }
 
   /**

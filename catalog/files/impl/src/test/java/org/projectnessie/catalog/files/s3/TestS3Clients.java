@@ -150,62 +150,58 @@ public class TestS3Clients extends AbstractClients {
             .build();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .trustStore(ImmutableSecretStore.builder().path(file).build())
-                            .build(),
-                        ResolvingSecretsProvider.builder()
-                            .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
-                            .build())
-                    .close())
+        .isThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .trustStore(ImmutableSecretStore.builder().path(file).build())
+                        .build(),
+                    ResolvingSecretsProvider.builder()
+                        .putSecretsManager("plain", unsafePlainTextSecretsProvider(Map.of()))
+                        .build())
+                .close())
         .withMessage("No trust store type");
-    soft.assertThatThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .trustStore(
-                                ImmutableSecretStore.builder()
-                                    .path(tempDir.resolve("not.there"))
-                                    .type("jks")
-                                    .password(correctUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .trustStore(
+                            ImmutableSecretStore.builder()
+                                .path(tempDir.resolve("not.there"))
+                                .type("jks")
+                                .password(correctUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
         .isInstanceOf(NoSuchFileException.class);
-    soft.assertThatThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .trustStore(
-                                ImmutableSecretStore.builder()
-                                    .path(file)
-                                    .type("jks")
-                                    .password(wrongUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .trustStore(
+                            ImmutableSecretStore.builder()
+                                .path(file)
+                                .type("jks")
+                                .password(wrongUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
         .isInstanceOf(IOException.class);
-    soft.assertThatCode(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .trustStore(
-                                ImmutableSecretStore.builder()
-                                    .path(file)
-                                    .type("jks")
-                                    .password(correctUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatCode(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .trustStore(
+                            ImmutableSecretStore.builder()
+                                .path(file)
+                                .type("jks")
+                                .password(correctUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .doesNotThrowAnyException();
   }
 
@@ -237,60 +233,56 @@ public class TestS3Clients extends AbstractClients {
             .build();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .keyStore(ImmutableSecretStore.builder().path(file).build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+        .isThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .keyStore(ImmutableSecretStore.builder().path(file).build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .withMessage("No key store type");
-    soft.assertThatThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .keyStore(
-                                ImmutableSecretStore.builder()
-                                    .path(tempDir.resolve("not.there"))
-                                    .type("jks")
-                                    .password(correctUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .keyStore(
+                            ImmutableSecretStore.builder()
+                                .path(tempDir.resolve("not.there"))
+                                .type("jks")
+                                .password(correctUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
         .isInstanceOf(NoSuchFileException.class);
-    soft.assertThatThrownBy(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .keyStore(
-                                ImmutableSecretStore.builder()
-                                    .path(file)
-                                    .type("jks")
-                                    .password(wrongUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatThrownBy(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .keyStore(
+                            ImmutableSecretStore.builder()
+                                .path(file)
+                                .type("jks")
+                                .password(wrongUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .isInstanceOf(RuntimeException.class)
         .cause()
         .isInstanceOf(IOException.class);
-    soft.assertThatCode(
-            () ->
-                S3Clients.apacheHttpClient(
-                        S3Config.builder()
-                            .keyStore(
-                                ImmutableSecretStore.builder()
-                                    .path(file)
-                                    .type("jks")
-                                    .password(correctUri)
-                                    .build())
-                            .build(),
-                        secretsProvider)
-                    .close())
+    soft.assertThatCode(() ->
+            S3Clients.apacheHttpClient(
+                    S3Config.builder()
+                        .keyStore(
+                            ImmutableSecretStore.builder()
+                                .path(file)
+                                .type("jks")
+                                .password(correctUri)
+                                .build())
+                        .build(),
+                    secretsProvider)
+                .close())
         .doesNotThrowAnyException();
   }
 }

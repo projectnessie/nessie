@@ -95,67 +95,64 @@ public class MultiEnvTestEngine implements TestEngine {
       List<String> extensions = new ArrayList<>();
       AtomicBoolean multiEnvDiscovered = new AtomicBoolean();
       registry.stream()
-          .forEach(
-              ext -> {
-                extensions.add(ext.getClass().getSimpleName());
-                for (String envId : ext.allEnvironmentIds(configurationParameters)) {
-                  multiEnvDiscovered.set(true);
-                  UniqueId segment = uniqueId.append(ext.segmentType(), envId);
+          .forEach(ext -> {
+            extensions.add(ext.getClass().getSimpleName());
+            for (String envId : ext.allEnvironmentIds(configurationParameters)) {
+              multiEnvDiscovered.set(true);
+              UniqueId segment = uniqueId.append(ext.segmentType(), envId);
 
-                  MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
-                  multiEnvRootDescriptor.addChild(envRoot);
+              MultiEnvTestDescriptor envRoot = new MultiEnvTestDescriptor(segment, envId);
+              multiEnvRootDescriptor.addChild(envRoot);
 
-                  JupiterConfiguration envRootConfiguration =
-                      new CachingJupiterConfiguration(
-                          new MultiEnvJupiterConfiguration(discoveryRequest, envId, uniqueId));
-                  JupiterEngineDescriptor discoverResult =
-                      new JupiterEngineDescriptor(segment, envRootConfiguration);
-                  JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
+              JupiterConfiguration envRootConfiguration =
+                  new CachingJupiterConfiguration(
+                      new MultiEnvJupiterConfiguration(discoveryRequest, envId, uniqueId));
+              JupiterEngineDescriptor discoverResult =
+                  new JupiterEngineDescriptor(segment, envRootConfiguration);
+              JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
 
-                  List<? extends TestDescriptor> children =
-                      new ArrayList<>(discoverResult.getChildren());
-                  for (TestDescriptor child : children) {
-                    // Note: this also removes the reference to parent from the child
-                    discoverResult.removeChild(child);
+              List<? extends TestDescriptor> children =
+                  new ArrayList<>(discoverResult.getChildren());
+              for (TestDescriptor child : children) {
+                // Note: this also removes the reference to parent from the child
+                discoverResult.removeChild(child);
 
-                    // Must check whether the test class is a multi-env test, because discovery
-                    // returns all test classes.
-                    ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
-                    boolean multi = isMultiEnvClass(classBased);
-                    if (multi) {
-                      envRoot.addChild(child);
-                    }
-                  }
+                // Must check whether the test class is a multi-env test, because discovery
+                // returns all test classes.
+                ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
+                boolean multi = isMultiEnvClass(classBased);
+                if (multi) {
+                  envRoot.addChild(child);
                 }
-              });
+              }
+            }
+          });
 
       // Also execute all other tests via the MultiEnv test engine to get the "thread per
       // test-class" behavior.
       registry()
           .probablyNotMultiEnv()
-          .forEach(
-              td -> {
-                JupiterConfiguration jupiterConfiguration =
-                    new CachingJupiterConfiguration(
-                        newDefaultJupiterConfiguration(discoveryRequest, uniqueId));
+          .forEach(td -> {
+            JupiterConfiguration jupiterConfiguration =
+                new CachingJupiterConfiguration(
+                    newDefaultJupiterConfiguration(discoveryRequest, uniqueId));
 
-                JupiterEngineDescriptor discoverResult =
-                    new JupiterEngineDescriptor(uniqueId, jupiterConfiguration);
-                JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
+            JupiterEngineDescriptor discoverResult =
+                new JupiterEngineDescriptor(uniqueId, jupiterConfiguration);
+            JUnitCompat.resolveSelectors(discoveryRequest, discoverResult, uniqueId);
 
-                List<? extends TestDescriptor> children =
-                    new ArrayList<>(discoverResult.getChildren());
-                for (TestDescriptor child : children) {
-                  // Must check whether the test class is not a multi-env test here, as the
-                  // `multiEnvNotDetected` contains some actual multi-env tests.
-                  ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
-                  boolean multi = isMultiEnvClass(classBased);
-                  if (!multi) {
-                    discoverResult.removeChild(child);
-                    multiEnvRootDescriptor.addChild(child);
-                  }
-                }
-              });
+            List<? extends TestDescriptor> children = new ArrayList<>(discoverResult.getChildren());
+            for (TestDescriptor child : children) {
+              // Must check whether the test class is not a multi-env test here, as the
+              // `multiEnvNotDetected` contains some actual multi-env tests.
+              ClassBasedTestDescriptor classBased = (ClassBasedTestDescriptor) child;
+              boolean multi = isMultiEnvClass(classBased);
+              if (!multi) {
+                discoverResult.removeChild(child);
+                multiEnvRootDescriptor.addChild(child);
+              }
+            }
+          });
 
       if (!extensions.isEmpty() && !multiEnvDiscovered.get() && FAIL_ON_MISSING_ENVIRONMENTS) {
         throw new IllegalStateException(

@@ -59,25 +59,24 @@ public class CompiledAuthorizationRules {
       rules.put(ALLOW_VIEWING_ALL_REFS_ID, ALLOW_VIEWING_ALL_REFS);
     }
     Map<String, Script> scripts = new HashMap<>();
-    rules.forEach(
-        (key, value) ->
-            scripts.computeIfAbsent(
-                key,
-                (k) -> {
-                  try {
-                    return CELUtil.SCRIPT_HOST
-                        .buildScript(value)
-                        .withContainer(CELUtil.CONTAINER)
-                        .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
-                        .build();
-                  } catch (ScriptException e) {
-                    throw new RuntimeException(
-                        String.format(
-                            "Failed to compile authorization rule with id '%s' and expression '%s' due to: %s",
-                            key, value, e.getMessage()),
-                        e);
-                  }
-                }));
+    rules.forEach((key, value) ->
+        scripts.computeIfAbsent(
+            key,
+            k -> {
+              try {
+                return CELUtil.SCRIPT_HOST
+                    .buildScript(value)
+                    .withContainer(CELUtil.CONTAINER)
+                    .withDeclarations(CELUtil.AUTHORIZATION_RULE_DECLARATIONS)
+                    .build();
+              } catch (ScriptException e) {
+                throw new RuntimeException(
+                    String.format(
+                        "Failed to compile authorization rule with id '%s' and expression '%s' due to: %s",
+                        key, value, e.getMessage()),
+                    e);
+              }
+            }));
     return ImmutableMap.copyOf(scripts);
   }
 

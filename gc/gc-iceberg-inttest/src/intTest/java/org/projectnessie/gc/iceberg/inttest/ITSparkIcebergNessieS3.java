@@ -77,20 +77,18 @@ public class ITSparkIcebergNessieS3 extends AbstractITSparkIcebergNessieObjectSt
     flociS3.s3Client().listObjectsV2Paginator(request).stream()
         .map(ListObjectsV2Response::contents)
         .filter(contents -> !contents.isEmpty())
-        .map(
-            contents ->
-                contents.stream()
-                    .map(o -> ObjectIdentifier.builder().key(o.key()).build())
-                    .collect(Collectors.toList()))
-        .forEach(
-            keys ->
-                flociS3
-                    .s3Client()
-                    .deleteObjects(
-                        DeleteObjectsRequest.builder()
-                            .bucket(flociS3.bucket())
-                            .delete(Delete.builder().objects(keys).build())
-                            .build()));
+        .map(contents ->
+            contents.stream()
+                .map(o -> ObjectIdentifier.builder().key(o.key()).build())
+                .collect(Collectors.toList()))
+        .forEach(keys ->
+            flociS3
+                .s3Client()
+                .deleteObjects(
+                    DeleteObjectsRequest.builder()
+                        .bucket(flociS3.bucket())
+                        .delete(Delete.builder().objects(keys).build())
+                        .build()));
   }
 
   @Override

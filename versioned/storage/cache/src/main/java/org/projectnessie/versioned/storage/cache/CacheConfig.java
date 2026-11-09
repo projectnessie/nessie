@@ -68,11 +68,10 @@ public interface CacheConfig {
     referenceTtl()
         .ifPresent(ttl -> checkState(ttl.compareTo(Duration.ZERO) > 0, INVALID_REFERENCE_TTL));
     referenceNegativeTtl()
-        .ifPresent(
-            ttl ->
-                checkState(
-                    referenceTtl().isPresent() && ttl.compareTo(Duration.ZERO) > 0,
-                    INVALID_REFERENCE_NEGATIVE_TTL));
+        .ifPresent(ttl ->
+            checkState(
+                referenceTtl().isPresent() && ttl.compareTo(Duration.ZERO) > 0,
+                INVALID_REFERENCE_NEGATIVE_TTL));
   }
 
   interface Builder {

@@ -40,13 +40,12 @@ public final class ObjSerializers {
 
   static {
     Set<String> attributeNames = new HashSet<>();
-    ALL_SERIALIZERS.forEach(
-        serializer -> {
-          String fieldName = requireNonNull(serializer.attributeName());
-          if (!attributeNames.add(fieldName)) {
-            throw new IllegalStateException("Duplicate attribute name: " + fieldName);
-          }
-        });
+    ALL_SERIALIZERS.forEach(serializer -> {
+      String fieldName = requireNonNull(serializer.attributeName());
+      if (!attributeNames.add(fieldName)) {
+        throw new IllegalStateException("Duplicate attribute name: " + fieldName);
+      }
+    });
   }
 
   @Nonnull

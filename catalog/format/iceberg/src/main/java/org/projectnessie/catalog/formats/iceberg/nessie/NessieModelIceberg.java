@@ -142,20 +142,19 @@ public class NessieModelIceberg {
       NessieSortDefinition sortDefinition, Function<UUID, NessieField> fieldById) {
     List<IcebergSortField> fields =
         sortDefinition.columns().stream()
-            .map(
-                f -> {
-                  var nessieField = fieldById.apply(f.sourceFieldId());
-                  checkState(
-                      nessieField != null,
-                      "Nessie field with ID %s not found for sort transform spec %s",
-                      f.sourceFieldId(),
-                      f.transformSpec());
-                  return IcebergSortField.sortField(
-                      nessieTransformToIceberg(f.transformSpec()).toString(),
-                      nessieField.icebergId(),
-                      f.direction(),
-                      f.nullOrder());
-                })
+            .map(f -> {
+              var nessieField = fieldById.apply(f.sourceFieldId());
+              checkState(
+                  nessieField != null,
+                  "Nessie field with ID %s not found for sort transform spec %s",
+                  f.sourceFieldId(),
+                  f.transformSpec());
+              return IcebergSortField.sortField(
+                  nessieTransformToIceberg(f.transformSpec()).toString(),
+                  nessieField.icebergId(),
+                  f.direction(),
+                  f.nullOrder());
+            })
             .collect(Collectors.toList());
     return IcebergSortOrder.sortOrder(sortDefinition.icebergSortOrderId(), fields);
   }
@@ -164,25 +163,24 @@ public class NessieModelIceberg {
       IcebergSortOrder sortOrder, Map<Integer, NessieField> icebergFields) {
     List<NessieSortField> fields =
         sortOrder.fields().stream()
-            .map(
-                f -> {
-                  NessieFieldTransform transform =
-                      icebergTransformToNessie(IcebergTransform.fromString(f.transform()));
-                  NessieField sourceField = icebergFields.get(f.sourceId());
-                  checkArgument(
-                      sourceField != null,
-                      "Iceberg field with ID %s for sort order with ID %s and transform '%s' does not exist",
-                      f.sourceId(),
-                      sortOrder.orderId(),
-                      f.transform());
-                  return NessieSortField.builder()
-                      .sourceFieldId(sourceField.id())
-                      .nullOrder(f.nullOrder())
-                      .direction(f.direction())
-                      .transformSpec(transform)
-                      .type(transform.transformedType(sourceField.type()))
-                      .build();
-                })
+            .map(f -> {
+              NessieFieldTransform transform =
+                  icebergTransformToNessie(IcebergTransform.fromString(f.transform()));
+              NessieField sourceField = icebergFields.get(f.sourceId());
+              checkArgument(
+                  sourceField != null,
+                  "Iceberg field with ID %s for sort order with ID %s and transform '%s' does not exist",
+                  f.sourceId(),
+                  sortOrder.orderId(),
+                  f.transform());
+              return NessieSortField.builder()
+                  .sourceFieldId(sourceField.id())
+                  .nullOrder(f.nullOrder())
+                  .direction(f.direction())
+                  .transformSpec(transform)
+                  .type(transform.transformedType(sourceField.type()))
+                  .build();
+            })
             .collect(Collectors.toList());
 
     return NessieSortDefinition.nessieSortDefinition(fields, sortOrder.orderId());
@@ -192,23 +190,22 @@ public class NessieModelIceberg {
       NessiePartitionDefinition partitionDefinition, Function<UUID, NessieField> fieldById) {
     List<IcebergPartitionField> fields =
         partitionDefinition.fields().stream()
-            .map(
-                f -> {
-                  var nessieField = fieldById.apply(f.sourceFieldId());
-                  checkState(
-                      nessieField != null,
-                      "Nessie field with ID %s not found for partition field with ID %s (%s, '%s') with transform '%s'",
-                      f.sourceFieldId(),
-                      f.id(),
-                      f.icebergId(),
-                      f.name(),
-                      f.transformSpec());
-                  return partitionField(
-                      f.name(),
-                      nessieTransformToIceberg(f.transformSpec()).toString(),
-                      nessieField.icebergId(),
-                      f.icebergId());
-                })
+            .map(f -> {
+              var nessieField = fieldById.apply(f.sourceFieldId());
+              checkState(
+                  nessieField != null,
+                  "Nessie field with ID %s not found for partition field with ID %s (%s, '%s') with transform '%s'",
+                  f.sourceFieldId(),
+                  f.id(),
+                  f.icebergId(),
+                  f.name(),
+                  f.transformSpec());
+              return partitionField(
+                  f.name(),
+                  nessieTransformToIceberg(f.transformSpec()).toString(),
+                  nessieField.icebergId(),
+                  f.icebergId());
+            })
             .collect(Collectors.toList());
     return IcebergPartitionSpec.partitionSpec(partitionDefinition.icebergId(), fields);
   }
@@ -229,30 +226,29 @@ public class NessieModelIceberg {
       Map<Integer, NessieField> icebergFields) {
     List<NessiePartitionField> fields =
         partitionSpec.fields().stream()
-            .map(
-                p -> {
-                  NessieFieldTransform transform =
-                      icebergTransformToNessie(IcebergTransform.fromString(p.transform()));
-                  NessieField sourceField = icebergFields.get(p.sourceId());
-                  checkArgument(
-                      sourceField != null,
-                      "Source field with ID %s not found for partition spec with ID %s and transform '%s'",
-                      p.sourceId(),
-                      partitionSpec.specId(),
-                      p.transform());
-                  NessiePartitionField existing = icebergPartitionFields.get(p.fieldId());
-                  UUID id = existing != null ? existing.id() : UUID.randomUUID();
-                  NessiePartitionField partitionField =
-                      NessiePartitionField.nessiePartitionField(
-                          id,
-                          sourceField.id(),
-                          p.name(),
-                          transform.transformedType(sourceField.type()),
-                          transform,
-                          p.fieldId());
-                  icebergPartitionFields.put(p.fieldId(), partitionField);
-                  return partitionField;
-                })
+            .map(p -> {
+              NessieFieldTransform transform =
+                  icebergTransformToNessie(IcebergTransform.fromString(p.transform()));
+              NessieField sourceField = icebergFields.get(p.sourceId());
+              checkArgument(
+                  sourceField != null,
+                  "Source field with ID %s not found for partition spec with ID %s and transform '%s'",
+                  p.sourceId(),
+                  partitionSpec.specId(),
+                  p.transform());
+              NessiePartitionField existing = icebergPartitionFields.get(p.fieldId());
+              UUID id = existing != null ? existing.id() : UUID.randomUUID();
+              NessiePartitionField partitionField =
+                  NessiePartitionField.nessiePartitionField(
+                      id,
+                      sourceField.id(),
+                      p.name(),
+                      transform.transformedType(sourceField.type()),
+                      transform,
+                      p.fieldId());
+              icebergPartitionFields.put(p.fieldId(), partitionField);
+              return partitionField;
+            })
             .collect(Collectors.toList());
 
     return NessiePartitionDefinition.nessiePartitionDefinition(fields, partitionSpec.specId());
@@ -264,15 +260,14 @@ public class NessieModelIceberg {
 
     List<IcebergNestedField> fields =
         schema.struct().fields().stream()
-            .map(
-                f -> {
-                  return IcebergNestedField.nestedField(
-                      f.icebergId(),
-                      f.name(),
-                      !f.nullable(),
-                      nessieTypeToIcebergType(f.type()),
-                      f.doc());
-                })
+            .map(f -> {
+              return IcebergNestedField.nestedField(
+                  f.icebergId(),
+                  f.name(),
+                  !f.nullable(),
+                  nessieTypeToIcebergType(f.type()),
+                  f.doc());
+            })
             .collect(Collectors.toList());
 
     List<Integer> identifierFieldIds =
@@ -461,26 +456,25 @@ public class NessieModelIceberg {
       List<IcebergNestedField> fields, String recordName, Map<Integer, NessieField> icebergFields) {
     return NessieStruct.nessieStruct(
         fields.stream()
-            .map(
-                f -> {
-                  NessieTypeSpec nessieType = icebergTypeToNessieType(f.type(), icebergFields);
+            .map(f -> {
+              NessieTypeSpec nessieType = icebergTypeToNessieType(f.type(), icebergFields);
 
-                  NessieField existing = icebergFields.get(f.id());
-                  UUID id = existing != null ? existing.id() : UUID.randomUUID();
-                  // TODO should we check whether the type is convertible, if different?
+              NessieField existing = icebergFields.get(f.id());
+              UUID id = existing != null ? existing.id() : UUID.randomUUID();
+              // TODO should we check whether the type is convertible, if different?
 
-                  NessieField field =
-                      NessieField.builder()
-                          .id(id)
-                          .name(f.name())
-                          .type(nessieType)
-                          .nullable(!f.required())
-                          .icebergId(f.id())
-                          .doc(f.doc())
-                          .build();
-                  icebergFields.put(f.id(), field);
-                  return field;
-                })
+              NessieField field =
+                  NessieField.builder()
+                      .id(id)
+                      .name(f.name())
+                      .type(nessieType)
+                      .nullable(!f.required())
+                      .icebergId(f.id())
+                      .doc(f.doc())
+                      .build();
+              icebergFields.put(f.id(), field);
+              return field;
+            })
             .collect(Collectors.toList()),
         recordName);
   }
@@ -512,10 +506,9 @@ public class NessieModelIceberg {
         iceberg.versions().stream()
             .filter(v -> v.versionId() == iceberg.currentVersionId())
             .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "IcebergViewMetadata has no current version view-version"));
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                    "IcebergViewMetadata has no current version view-version"));
     int currentSchemaId = currentVersion.schemaId();
 
     Map<Integer, NessieField> icebergFields;
@@ -579,12 +572,11 @@ public class NessieModelIceberg {
     snapshot.properties(emptyMap());
     iceberg
         .properties()
-        .forEach(
-            (k, v) -> {
-              if (!DERIVED_PROPERTIES.contains(k)) {
-                snapshot.putProperty(k, v);
-              }
-            });
+        .forEach((k, v) -> {
+          if (!DERIVED_PROPERTIES.contains(k)) {
+            snapshot.putProperty(k, v);
+          }
+        });
 
     int currentSchemaId =
         extractCurrentId(iceberg.currentSchemaId(), iceberg.schema(), IcebergSchema::schemaId);
@@ -605,17 +597,16 @@ public class NessieModelIceberg {
     }
 
     partsWithV1DefaultPart(iceberg.schemas(), iceberg.schema(), IcebergSchema::schemaId)
-        .forEach(
-            schema -> {
-              boolean isCurrent = schema.schemaId() == currentSchemaId;
+        .forEach(schema -> {
+          boolean isCurrent = schema.schemaId() == currentSchemaId;
 
-              NessieSchema nessieSchema = icebergSchemaToNessieSchema(schema, icebergFields);
+          NessieSchema nessieSchema = icebergSchemaToNessieSchema(schema, icebergFields);
 
-              snapshot.addSchemas(nessieSchema);
-              if (isCurrent) {
-                snapshot.currentSchemaId(nessieSchema.id());
-              }
-            });
+          snapshot.addSchemas(nessieSchema);
+          if (isCurrent) {
+            snapshot.currentSchemaId(nessieSchema.id());
+          }
+        });
 
     IcebergPartitionSpec partitionSpecV1;
     if (formatVersion == 1 && defaultSpecId != -1 && !iceberg.partitionSpec().isEmpty()) {
@@ -630,66 +621,61 @@ public class NessieModelIceberg {
     }
 
     partsWithV1DefaultPart(iceberg.partitionSpecs(), partitionSpecV1, IcebergPartitionSpec::specId)
-        .forEach(
-            partitionSpec -> {
-              // TODO add test(s) for this case
-              boolean isCurrent = partitionSpec.specId() == defaultSpecId;
+        .forEach(partitionSpec -> {
+          // TODO add test(s) for this case
+          boolean isCurrent = partitionSpec.specId() == defaultSpecId;
 
-              NessiePartitionDefinition partitionDefinition =
-                  icebergPartitionSpecToNessie(
-                      partitionSpec, icebergPartitionFields, icebergFields);
+          NessiePartitionDefinition partitionDefinition =
+              icebergPartitionSpecToNessie(partitionSpec, icebergPartitionFields, icebergFields);
 
-              snapshot.addPartitionDefinitions(partitionDefinition);
-              if (isCurrent) {
-                snapshot.currentPartitionDefinitionId(partitionDefinition.id());
-              }
-            });
+          snapshot.addPartitionDefinitions(partitionDefinition);
+          if (isCurrent) {
+            snapshot.currentPartitionDefinitionId(partitionDefinition.id());
+          }
+        });
 
     partsWithV1DefaultPart(iceberg.sortOrders(), null, IcebergSortOrder::orderId)
-        .forEach(
-            sortOrder -> {
-              // TODO add test(s) for this case
-              boolean isCurrent = sortOrder.orderId() == defaultSortOrderId;
+        .forEach(sortOrder -> {
+          // TODO add test(s) for this case
+          boolean isCurrent = sortOrder.orderId() == defaultSortOrderId;
 
-              NessieSortDefinition sortDefinition =
-                  icebergSortOrderToNessie(sortOrder, icebergFields);
+          NessieSortDefinition sortDefinition = icebergSortOrderToNessie(sortOrder, icebergFields);
 
-              snapshot.addSortDefinitions(sortDefinition);
-              if (isCurrent) {
-                snapshot.currentSortDefinitionId(sortDefinition.id());
-              }
-            });
+          snapshot.addSortDefinitions(sortDefinition);
+          if (isCurrent) {
+            snapshot.currentSortDefinitionId(sortDefinition.id());
+          }
+        });
 
     iceberg
         .currentSnapshot()
-        .ifPresent(
-            currentSnapshot -> {
-              snapshot.icebergSnapshotId(currentSnapshot.snapshotId());
-              currentSnapshot
-                  .parentSnapshotId(); // TODO Can we leave this unset, as we do not return previous
-              // Iceberg
-              // snapshots??
-              Integer schemaId = currentSnapshot.schemaId();
-              if (schemaId != null) {
-                snapshot.icebergSnapshotSchemaId(schemaId);
-              }
+        .ifPresent(currentSnapshot -> {
+          snapshot.icebergSnapshotId(currentSnapshot.snapshotId());
+          currentSnapshot
+              .parentSnapshotId(); // TODO Can we leave this unset, as we do not return previous
+          // Iceberg
+          // snapshots??
+          Integer schemaId = currentSnapshot.schemaId();
+          if (schemaId != null) {
+            snapshot.icebergSnapshotSchemaId(schemaId);
+          }
 
-              String listLocation = manifestListLocation.apply(currentSnapshot);
+          String listLocation = manifestListLocation.apply(currentSnapshot);
 
-              snapshot
-                  .icebergSnapshotSequenceNumber(currentSnapshot.sequenceNumber())
-                  .snapshotCreatedTimestamp(Instant.ofEpochMilli(currentSnapshot.timestampMs()))
-                  .icebergSnapshotSummary(currentSnapshot.summary())
-                  .icebergManifestListLocation(listLocation)
-                  .icebergManifestFileLocations(currentSnapshot.manifests());
+          snapshot
+              .icebergSnapshotSequenceNumber(currentSnapshot.sequenceNumber())
+              .snapshotCreatedTimestamp(Instant.ofEpochMilli(currentSnapshot.timestampMs()))
+              .icebergSnapshotSummary(currentSnapshot.summary())
+              .icebergManifestListLocation(listLocation)
+              .icebergManifestFileLocations(currentSnapshot.manifests());
 
-              if (listLocation == null) {
-                // Empty manifest-group if there are no manifest files.
-              }
+          if (listLocation == null) {
+            // Empty manifest-group if there are no manifest files.
+          }
 
-              currentSnapshot.manifestList(); // TODO
-              currentSnapshot.manifests(); // TODO
-            });
+          currentSnapshot.manifestList(); // TODO
+          currentSnapshot.manifests(); // TODO
+        });
 
     for (IcebergSnapshotLogEntry logEntry : iceberg.snapshotLog()) {
       // TODO ??
@@ -729,13 +715,12 @@ public class NessieModelIceberg {
         icebergStatisticsFile.fileSizeInBytes(),
         icebergStatisticsFile.fileFooterSizeInBytes(),
         icebergStatisticsFile.blobMetadata().stream()
-            .map(
-                blobMetadata ->
-                    NessieIcebergBlobMetadata.blobMetadata(
-                        blobMetadata.type(),
-                        blobMetadata.sequenceNumber(),
-                        blobMetadata.fields(),
-                        blobMetadata.properties()))
+            .map(blobMetadata ->
+                NessieIcebergBlobMetadata.blobMetadata(
+                    blobMetadata.type(),
+                    blobMetadata.sequenceNumber(),
+                    blobMetadata.fields(),
+                    blobMetadata.properties()))
             .collect(Collectors.toList()));
   }
 
@@ -1137,14 +1122,13 @@ public class NessieModelIceberg {
               statisticsFile.fileSizeInBytes(),
               statisticsFile.fileFooterSizeInBytes(),
               statisticsFile.blobMetadata().stream()
-                  .map(
-                      blobMetadata ->
-                          IcebergBlobMetadata.blobMetadata(
-                              blobMetadata.type(),
-                              snapshotId,
-                              blobMetadata.sequenceNumber(),
-                              blobMetadata.fields(),
-                              blobMetadata.properties()))
+                  .map(blobMetadata ->
+                      IcebergBlobMetadata.blobMetadata(
+                          blobMetadata.type(),
+                          snapshotId,
+                          blobMetadata.sequenceNumber(),
+                          blobMetadata.fields(),
+                          blobMetadata.properties()))
                   .collect(Collectors.toList())));
     }
 
@@ -1181,12 +1165,11 @@ public class NessieModelIceberg {
       SetProperties u, NessieEntitySnapshot<?> snapshot, NessieEntitySnapshot.Builder<?> builder) {
     Map<String, String> properties = new HashMap<>(snapshot.properties());
     u.updates()
-        .forEach(
-            (k, v) -> {
-              if (!RESERVED_PROPERTIES.contains(k)) {
-                properties.put(k, v);
-              }
-            });
+        .forEach((k, v) -> {
+          if (!RESERVED_PROPERTIES.contains(k)) {
+            properties.put(k, v);
+          }
+        });
     builder.properties(properties);
   }
 
@@ -1529,9 +1512,8 @@ public class NessieModelIceberg {
     snapshot.schemas().forEach(schema -> collectFieldsByNessieId(schema, allFields));
     Iterator<IcebergPartitionSpec> specs =
         snapshot.partitionDefinitions().stream()
-            .map(
-                partDef ->
-                    NessieModelIceberg.nessiePartitionDefinitionToIceberg(partDef, allFields::get))
+            .map(partDef ->
+                NessieModelIceberg.nessiePartitionDefinitionToIceberg(partDef, allFields::get))
             .iterator();
 
     // if the spec already exists, use the same ID. otherwise, use 1 more than the highest ID.
@@ -1616,9 +1598,8 @@ public class NessieModelIceberg {
     snapshot.schemas().forEach(schema -> collectFieldsByNessieId(schema, allFields));
     Iterator<IcebergSortOrder> orders =
         snapshot.sortDefinitions().stream()
-            .map(
-                sortDef ->
-                    NessieModelIceberg.nessieSortDefinitionToIceberg(sortDef, allFields::get))
+            .map(sortDef ->
+                NessieModelIceberg.nessieSortDefinitionToIceberg(sortDef, allFields::get))
             .iterator();
 
     if (newOrder.isUnsorted()) {

@@ -62,10 +62,9 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
   public void listBuckets() throws Exception {
     @SuppressWarnings("resource")
     MockServer server =
-        createServer(
-            b ->
-                b.putBuckets("secret", Bucket.builder().build())
-                    .putBuckets(BUCKET, Bucket.builder().build()));
+        createServer(b ->
+            b.putBuckets("secret", Bucket.builder().build())
+                .putBuckets(BUCKET, Bucket.builder().build()));
 
     ListAllMyBucketsResult result = doGet(server.getS3BaseUri(), ListAllMyBucketsResult.class);
     soft.assertThat(result)
@@ -100,10 +99,9 @@ public class TestMockServer extends AbstractObjectStorageMockServer {
 
     @SuppressWarnings("resource")
     MockServer server =
-        createServer(
-            b ->
-                b.putBuckets(
-                    BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
+        createServer(b ->
+            b.putBuckets(
+                BUCKET, Bucket.builder().object(objects::get).deleter(o -> false).build()));
 
     String content = "Hello World\nHello Nessie!";
 

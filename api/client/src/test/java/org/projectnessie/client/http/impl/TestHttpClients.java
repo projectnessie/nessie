@@ -50,15 +50,14 @@ public class TestHttpClients {
   @SuppressWarnings("resource")
   @Test
   public void unknownClient() {
-    assertThatThrownBy(
-            () ->
-                HttpClient.builder()
-                    .setBaseUri(URI.create("http://localhost:8080"))
-                    .setObjectMapper(new ObjectMapper())
-                    .setConnectionTimeoutMillis(15000)
-                    .setReadTimeoutMillis(15000)
-                    .setHttpClientName("blahblah")
-                    .build())
+    assertThatThrownBy(() ->
+            HttpClient.builder()
+                .setBaseUri(URI.create("http://localhost:8080"))
+                .setObjectMapper(new ObjectMapper())
+                .setConnectionTimeoutMillis(15000)
+                .setReadTimeoutMillis(15000)
+                .setHttpClientName("blahblah")
+                .build())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("No HTTP client factory for name 'blahblah' found");
   }

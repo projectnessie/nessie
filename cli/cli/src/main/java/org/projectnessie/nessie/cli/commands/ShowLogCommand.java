@@ -64,45 +64,42 @@ public class ShowLogCommand extends NessieListingCommand<ShowLogCommandSpec> {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.LONG)
             .withZone(ZoneId.systemDefault());
 
-    return logStream.flatMap(
-        e -> {
-          CommitMeta meta = e.getCommitMeta();
+    return logStream.flatMap(e -> {
+      CommitMeta meta = e.getCommitMeta();
 
-          ZonedDateTime authorTimestamp = meta.getAuthorTime().atZone(ZoneOffset.UTC);
-          ZonedDateTime commitTimestamp = meta.getCommitTime().atZone(ZoneOffset.UTC);
+      ZonedDateTime authorTimestamp = meta.getAuthorTime().atZone(ZoneOffset.UTC);
+      ZonedDateTime commitTimestamp = meta.getCommitTime().atZone(ZoneOffset.UTC);
 
-          Stream<String> header =
-              Stream.of(
-                  new AttributedString("commit " + meta.getHash(), STYLE_YELLOW)
-                      .toAnsi(cli.terminal()),
-                  new AttributedStringBuilder()
-                      .append("Author:  ", STYLE_FAINT)
-                      .append(
-                          meta.getAuthor() == null || meta.getAuthor().isEmpty()
-                              ? "<no author>"
-                              : meta.getAuthor(),
-                          meta.getAuthor() == null || meta.getAuthor().isEmpty()
-                              ? STYLE_FAINT
-                              : AttributedStyle.DEFAULT)
-                      .toAnsi(cli.terminal()),
-                  new AttributedStringBuilder()
-                      .append("Date:    ", STYLE_FAINT)
-                      .append(dateTimeFormatter.format(authorTimestamp))
-                      .append(" (committed: ", STYLE_FAINT)
-                      .append(DateTimeFormatter.ISO_DATE_TIME.format(commitTimestamp), STYLE_FAINT)
-                      .append(")", STYLE_FAINT)
-                      .toAnsi(cli.terminal()),
-                  new AttributedStringBuilder()
-                      .append("Parents: ", STYLE_FAINT)
-                      .append(String.join(", ", meta.getParentCommitHashes()))
-                      .toAnsi(cli.terminal()),
-                  "");
+      Stream<String> header =
+          Stream.of(
+              new AttributedString("commit " + meta.getHash(), STYLE_YELLOW).toAnsi(cli.terminal()),
+              new AttributedStringBuilder()
+                  .append("Author:  ", STYLE_FAINT)
+                  .append(
+                      meta.getAuthor() == null || meta.getAuthor().isEmpty()
+                          ? "<no author>"
+                          : meta.getAuthor(),
+                      meta.getAuthor() == null || meta.getAuthor().isEmpty()
+                          ? STYLE_FAINT
+                          : AttributedStyle.DEFAULT)
+                  .toAnsi(cli.terminal()),
+              new AttributedStringBuilder()
+                  .append("Date:    ", STYLE_FAINT)
+                  .append(dateTimeFormatter.format(authorTimestamp))
+                  .append(" (committed: ", STYLE_FAINT)
+                  .append(DateTimeFormatter.ISO_DATE_TIME.format(commitTimestamp), STYLE_FAINT)
+                  .append(")", STYLE_FAINT)
+                  .toAnsi(cli.terminal()),
+              new AttributedStringBuilder()
+                  .append("Parents: ", STYLE_FAINT)
+                  .append(String.join(", ", meta.getParentCommitHashes()))
+                  .toAnsi(cli.terminal()),
+              "");
 
-          Stream<String> message =
-              Arrays.stream(meta.getMessage().split("\n")).map(s -> "    " + s);
+      Stream<String> message = Arrays.stream(meta.getMessage().split("\n")).map(s -> "    " + s);
 
-          return Stream.concat(header, Stream.concat(message, Stream.of("")));
-        });
+      return Stream.concat(header, Stream.concat(message, Stream.of("")));
+    });
   }
 
   @Override

@@ -99,48 +99,44 @@ public class ShowLiveSet extends BaseLiveSetCommand {
 
       String contentRefFormat = "    %-15s %-64s %-50s %-20s %s";
       try (Stream<String> contentids = liveContentSet.fetchContentIds()) {
-        contentids.forEach(
-            contentId -> {
-              out.println(Ansi.AUTO.text("@|bold   Content ID " + contentId + "|@"));
+        contentids.forEach(contentId -> {
+          out.println(Ansi.AUTO.text("@|bold   Content ID " + contentId + "|@"));
 
-              if (showBaseLocations) {
-                try (Stream<StorageUri> baseLocations =
-                    liveContentSet.fetchBaseLocations(contentId)) {
-                  baseLocations.forEach(l -> out.printf("    Base location: %s%n", l));
-                }
-              }
-              if (showContentReferences) {
-                try (Stream<ContentReference> contentReferences =
-                    liveContentSet.fetchContentReferences(contentId)) {
-                  AtomicBoolean first = new AtomicBoolean(true);
-                  contentReferences
-                      .peek(
-                          x -> {
-                            if (first.compareAndSet(true, false)) {
-                              out.println(
-                                  Ansi.AUTO.text(
-                                      format(
-                                          "@|underline " + contentRefFormat + "|@",
-                                          "Content Type",
-                                          "Commit ID",
-                                          "Content Key",
-                                          "Snapshot ID",
-                                          "Metadata Location")));
-                            }
-                          })
-                      .forEach(
-                          r ->
-                              out.println(
-                                  format(
-                                      contentRefFormat,
-                                      r.contentType(),
-                                      r.commitId(),
-                                      r.contentKey(),
-                                      r.snapshotId(),
-                                      r.metadataLocation())));
-                }
-              }
-            });
+          if (showBaseLocations) {
+            try (Stream<StorageUri> baseLocations = liveContentSet.fetchBaseLocations(contentId)) {
+              baseLocations.forEach(l -> out.printf("    Base location: %s%n", l));
+            }
+          }
+          if (showContentReferences) {
+            try (Stream<ContentReference> contentReferences =
+                liveContentSet.fetchContentReferences(contentId)) {
+              AtomicBoolean first = new AtomicBoolean(true);
+              contentReferences
+                  .peek(x -> {
+                    if (first.compareAndSet(true, false)) {
+                      out.println(
+                          Ansi.AUTO.text(
+                              format(
+                                  "@|underline " + contentRefFormat + "|@",
+                                  "Content Type",
+                                  "Commit ID",
+                                  "Content Key",
+                                  "Snapshot ID",
+                                  "Metadata Location")));
+                    }
+                  })
+                  .forEach(r ->
+                      out.println(
+                          format(
+                              contentRefFormat,
+                              r.contentType(),
+                              r.commitId(),
+                              r.contentKey(),
+                              r.snapshotId(),
+                              r.metadataLocation())));
+            }
+          }
+        });
       }
       out.println("End of listing.");
     }
@@ -153,14 +149,13 @@ public class ShowLiveSet extends BaseLiveSetCommand {
           Ansi.AUTO.text(
               format("@|underline " + format + "|@", "Modified", "Base URI", "File path")));
       try (Stream<FileReference> deferredDeletions = liveContentSet.fetchFileDeletions()) {
-        deferredDeletions.forEach(
-            f ->
-                out.println(
-                    format(
-                        format,
-                        Instant.ofEpochMilli(f.modificationTimeMillisEpoch()),
-                        f.base(),
-                        f.path())));
+        deferredDeletions.forEach(f ->
+            out.println(
+                format(
+                    format,
+                    Instant.ofEpochMilli(f.modificationTimeMillisEpoch()),
+                    f.base(),
+                    f.path())));
       }
       out.println("End of listing.");
     }

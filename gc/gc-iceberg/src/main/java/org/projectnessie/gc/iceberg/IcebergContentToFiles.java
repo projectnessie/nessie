@@ -172,29 +172,28 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
               allFiles,
               Stream.of("")
                   // .flatMap() for lazy loading
-                  .flatMap(
-                      x -> {
-                        try {
-                          @SuppressWarnings("MustBeClosedChecker")
-                          Stream<StorageUri> r =
-                              allManifestsAndDataFiles(io, snapshot, specsById, contentReference);
-                          return r;
-                        } catch (Exception e) {
-                          String msg =
-                              "Failed to get manifest files for "
-                                  + contentReference.contentType()
-                                  + " "
-                                  + contentReference.contentKey()
-                                  + ", content-ID "
-                                  + contentReference.contentId()
-                                  + " at commit "
-                                  + contentReference.commitId()
-                                  + " via "
-                                  + contentReference.metadataLocation();
-                          LOGGER.error("{}", msg, e);
-                          throw new RuntimeException(msg, e);
-                        }
-                      }));
+                  .flatMap(x -> {
+                    try {
+                      @SuppressWarnings("MustBeClosedChecker")
+                      Stream<StorageUri> r =
+                          allManifestsAndDataFiles(io, snapshot, specsById, contentReference);
+                      return r;
+                    } catch (Exception e) {
+                      String msg =
+                          "Failed to get manifest files for "
+                              + contentReference.contentType()
+                              + " "
+                              + contentReference.contentKey()
+                              + ", content-ID "
+                              + contentReference.contentId()
+                              + " at commit "
+                              + contentReference.commitId()
+                              + " via "
+                              + contentReference.metadataLocation();
+                      LOGGER.error("{}", msg, e);
+                      throw new RuntimeException(msg, e);
+                    }
+                  }));
     }
 
     StorageUri baseUri = baseUri(tableMetadata, contentReference);
@@ -276,14 +275,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
       Map<Integer, PartitionSpec> specsById,
       ContentReference contentReference) {
     return allManifests(io, specsById, snapshot)
-        .flatMap(
-            mf -> {
-              StorageUri manifestFileLoc = manifestFileUri(mf, contentReference);
-              @SuppressWarnings("MustBeClosedChecker")
-              Stream<StorageUri> allDataAndDeleteFiles =
-                  allDataAndDeleteFiles(io, specsById, mf, contentReference);
-              return Stream.concat(Stream.of(manifestFileLoc), allDataAndDeleteFiles);
-            });
+        .flatMap(mf -> {
+          StorageUri manifestFileLoc = manifestFileUri(mf, contentReference);
+          @SuppressWarnings("MustBeClosedChecker")
+          Stream<StorageUri> allDataAndDeleteFiles =
+              allDataAndDeleteFiles(io, specsById, mf, contentReference);
+          return Stream.concat(Stream.of(manifestFileLoc), allDataAndDeleteFiles);
+        });
   }
 
   /** Provide all {@link ManifestFile}s for the given {@link Snapshot}. */
@@ -312,14 +310,13 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     }
     return StreamSupport.stream(iter.spliterator(), false)
         .map(dataFilePath -> dataFileUri(dataFilePath, contentReference))
-        .onClose(
-            () -> {
-              try {
-                iter.close();
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-            });
+        .onClose(() -> {
+          try {
+            iter.close();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   /**

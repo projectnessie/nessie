@@ -62,33 +62,32 @@ final class LimitedConcurrentRequests implements AutoCloseable {
       throw new RuntimeException(e);
     }
 
-    cs.whenComplete(
-        (resultSet, throwable) -> {
-          try {
-            // Release the acquired permit
-            permits.release();
+    cs.whenComplete((resultSet, throwable) -> {
+      try {
+        // Release the acquired permit
+        permits.release();
 
-            // Record the failure (if the query failed)
-            if (throwable != null) {
-              synchronized (failureHolder) {
-                Throwable ex = failureHolder[0];
-                if (ex == null) {
-                  failureHolder[0] = throwable;
-                } else {
-                  ex.addSuppressed(throwable);
-                }
-              }
-            }
-
-          } finally {
-            synchronized (this) {
-              // Increment the number of finished queries.
-              finished++;
-              // Notify potential waiter (`close()`).
-              notify();
+        // Record the failure (if the query failed)
+        if (throwable != null) {
+          synchronized (failureHolder) {
+            Throwable ex = failureHolder[0];
+            if (ex == null) {
+              failureHolder[0] = throwable;
+            } else {
+              ex.addSuppressed(throwable);
             }
           }
-        });
+        }
+
+      } finally {
+        synchronized (this) {
+          // Increment the number of finished queries.
+          finished++;
+          // Notify potential waiter (`close()`).
+          notify();
+        }
+      }
+    });
   }
 
   @Override

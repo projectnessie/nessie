@@ -49,15 +49,14 @@ public abstract class AbstractNoNamespaceValidation {
   void commit() throws Exception {
     BranchName branch = BranchName.of("noNamespaceValidation");
     store().create(branch, Optional.empty());
-    soft.assertThatCode(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("commit"),
-                        singletonList(
-                            Put.of(ContentKey.of("name", "spaced", "table"), newOnRef("foo")))))
+    soft.assertThatCode(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    CommitMeta.fromMessage("commit"),
+                    singletonList(
+                        Put.of(ContentKey.of("name", "spaced", "table"), newOnRef("foo")))))
         .doesNotThrowAnyException();
   }
 
@@ -78,27 +77,25 @@ public abstract class AbstractNoNamespaceValidation {
 
     store().create(branch, Optional.of(rootHead.getCommitHash()));
 
-    soft.assertThatCode(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("commit"),
-                        singletonList(
-                            Put.of(ContentKey.of("name", "spaced", "table"), newOnRef("foo")))))
+    soft.assertThatCode(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    CommitMeta.fromMessage("commit"),
+                    singletonList(
+                        Put.of(ContentKey.of("name", "spaced", "table"), newOnRef("foo")))))
         .doesNotThrowAnyException();
 
     Hash commit1 = store().hashOnReference(branch, Optional.empty(), emptyList());
 
-    soft.assertThatCode(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        CommitMeta.fromMessage("commit"),
-                        singletonList(Put.of(ContentKey.of("another", "table"), newOnRef("bar")))))
+    soft.assertThatCode(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    CommitMeta.fromMessage("commit"),
+                    singletonList(Put.of(ContentKey.of("another", "table"), newOnRef("bar")))))
         .doesNotThrowAnyException();
 
     Hash commit2 = store().hashOnReference(branch, Optional.empty(), emptyList());

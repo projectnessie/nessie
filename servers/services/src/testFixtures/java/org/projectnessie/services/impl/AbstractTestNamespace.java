@@ -228,20 +228,19 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
             .getTargetBranch();
     Branch finalBase = base;
     Branch finalBranch = branch;
-    soft.assertThatThrownBy(
-            () ->
-                treeApi()
-                    .mergeRefIntoBranch(
-                        finalBase.getName(),
-                        finalBase.getHash(),
-                        finalBranch.getName(),
-                        finalBranch.getHash(),
-                        CommitMeta.fromMessage("foo"),
-                        emptyList(),
-                        NORMAL,
-                        false,
-                        false,
-                        false))
+    soft.assertThatThrownBy(() ->
+            treeApi()
+                .mergeRefIntoBranch(
+                    finalBase.getName(),
+                    finalBase.getHash(),
+                    finalBranch.getName(),
+                    finalBranch.getHash(),
+                    CommitMeta.fromMessage("foo"),
+                    emptyList(),
+                    NORMAL,
+                    false,
+                    false,
+                    false))
         .isInstanceOf(NessieReferenceConflictException.class)
         .hasMessage("The following keys have been changed in conflict: 'a.b.c'")
         .asInstanceOf(type(NessieReferenceConflictException.class))
@@ -419,29 +418,27 @@ public abstract class AbstractTestNamespace extends BaseTestServiceImpl {
     soft.assertThat(ns.getId()).isNotNull();
     String nsId = ns.getId();
 
-    soft.assertThatThrownBy(
-            () ->
-                namespaceApi()
-                    .updateProperties(
-                        branch.getName(),
-                        Namespace.of("non-existing"),
-                        properties,
-                        emptySet(),
-                        API_WRITE))
+    soft.assertThatThrownBy(() ->
+            namespaceApi()
+                .updateProperties(
+                    branch.getName(),
+                    Namespace.of("non-existing"),
+                    properties,
+                    emptySet(),
+                    API_WRITE))
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage("Namespace 'non-existing' does not exist");
 
     // Re-run with invalid name, but different parameters to ensure that missing parameters do not
     // fail the request before the name is validated.
-    soft.assertThatThrownBy(
-            () ->
-                namespaceApi()
-                    .updateProperties(
-                        branch.getName(),
-                        Namespace.of("non-existing"),
-                        emptyMap(),
-                        properties.keySet(),
-                        API_WRITE))
+    soft.assertThatThrownBy(() ->
+            namespaceApi()
+                .updateProperties(
+                    branch.getName(),
+                    Namespace.of("non-existing"),
+                    emptyMap(),
+                    properties.keySet(),
+                    API_WRITE))
         .isInstanceOf(NessieNamespaceNotFoundException.class)
         .hasMessage("Namespace 'non-existing' does not exist");
 

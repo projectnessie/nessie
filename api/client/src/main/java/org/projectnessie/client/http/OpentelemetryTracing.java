@@ -41,34 +41,32 @@ final class OpentelemetryTracing {
     OpenTelemetry otel = GlobalOpenTelemetry.get();
     Tracer tracer = otel.getTracer("Nessie");
     if (tracer != null) {
-      httpClient.addRequestFilter(
-          context -> {
-            Span span =
-                tracer
-                    .spanBuilder("Nessie-HTTP")
-                    .setSpanKind(SpanKind.CLIENT)
-                    .startSpan()
-                    .setAttribute(HTTP_URL, context.getUri().toString())
-                    .setAttribute(HTTP_METHOD, context.getMethod().name())
-                    .setAttribute(NESSIE_VERSION, NessieVersion.NESSIE_VERSION);
+      httpClient.addRequestFilter(context -> {
+        Span span =
+            tracer
+                .spanBuilder("Nessie-HTTP")
+                .setSpanKind(SpanKind.CLIENT)
+                .startSpan()
+                .setAttribute(HTTP_URL, context.getUri().toString())
+                .setAttribute(HTTP_METHOD, context.getMethod().name())
+                .setAttribute(NESSIE_VERSION, NessieVersion.NESSIE_VERSION);
 
-            //noinspection DataFlowIssue
-            W3CTraceContextPropagator.getInstance()
-                .inject(Context.current().with(span), context, RequestContext::putHeader);
+        //noinspection DataFlowIssue
+        W3CTraceContextPropagator.getInstance()
+            .inject(Context.current().with(span), context, RequestContext::putHeader);
 
-            context.addResponseCallback(
-                (responseContext, exception) -> {
-                  if (responseContext != null) {
-                    span.setAttribute(HTTP_STATUS_CODE, responseContext.getStatus().getCode());
-                  }
-                  if (exception != null) {
-                    span.setStatus(StatusCode.ERROR).recordException(exception);
-                  } else {
-                    span.setStatus(StatusCode.OK);
-                  }
-                  span.end();
-                });
-          });
+        context.addResponseCallback((responseContext, exception) -> {
+          if (responseContext != null) {
+            span.setAttribute(HTTP_STATUS_CODE, responseContext.getStatus().getCode());
+          }
+          if (exception != null) {
+            span.setStatus(StatusCode.ERROR).recordException(exception);
+          } else {
+            span.setStatus(StatusCode.OK);
+          }
+          span.end();
+        });
+      });
     }
   }
 }

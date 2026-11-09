@@ -264,17 +264,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     commit("Another commit").put(T_1, V_1_4).toBranch(newBranch);
 
     StorageAssertions checkpoint = storageCheckpoint();
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .transplant(
-                        TransplantOp.builder()
-                            .fromRef(sourceBranch)
-                            .toBranch(newBranch)
-                            .expectedHash(Optional.of(initialHash))
-                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .dryRun(dryRun)
-                            .build()))
+    soft.assertThatThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(newBranch)
+                        .expectedHash(Optional.of(initialHash))
+                        .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                        .dryRun(dryRun)
+                        .build()))
         .isInstanceOf(ReferenceConflictException.class);
     if (dryRun) {
       checkpoint.assertNoWrites();
@@ -319,17 +318,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
   protected void checkTransplantOnNonExistingBranch(boolean dryRun) {
     final BranchName newBranch = BranchName.of("bar_5");
     StorageAssertions checkpoint = storageCheckpoint();
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .transplant(
-                        TransplantOp.builder()
-                            .fromRef(sourceBranch)
-                            .toBranch(newBranch)
-                            .expectedHash(Optional.of(initialHash))
-                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .dryRun(dryRun)
-                            .build()))
+    soft.assertThatThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(newBranch)
+                        .expectedHash(Optional.of(initialHash))
+                        .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                        .dryRun(dryRun)
+                        .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }
@@ -340,17 +338,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     final BranchName newBranch = BranchName.of("bar_6");
     store().create(newBranch, Optional.empty());
     StorageAssertions checkpoint = storageCheckpoint();
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .transplant(
-                        TransplantOp.builder()
-                            .fromRef(sourceBranch)
-                            .toBranch(newBranch)
-                            .expectedHash(Optional.of(initialHash))
-                            .addSequenceToTransplant(Hash.of("1234567890abcdef"))
-                            .dryRun(dryRun)
-                            .build()))
+    soft.assertThatThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(newBranch)
+                        .expectedHash(Optional.of(initialHash))
+                        .addSequenceToTransplant(Hash.of("1234567890abcdef"))
+                        .dryRun(dryRun)
+                        .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }
@@ -398,16 +395,15 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                store()
-                    .transplant(
-                        TransplantOp.builder()
-                            .fromRef(sourceBranch)
-                            .toBranch(newBranch)
-                            .addSequenceToTransplant(secondCommit, firstCommit, thirdCommit)
-                            .dryRun(dryRun)
-                            .build()));
+        .isThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(newBranch)
+                        .addSequenceToTransplant(secondCommit, firstCommit, thirdCommit)
+                        .dryRun(dryRun)
+                        .build()));
   }
 
   @ParameterizedTest
@@ -426,17 +422,16 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     store().create(newBranch, Optional.empty());
 
     StorageAssertions checkpoint = storageCheckpoint();
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .transplant(
-                        TransplantOp.builder()
-                            .fromRef(sourceBranch)
-                            .toBranch(newBranch)
-                            .expectedHash(Optional.of(unrelatedCommit))
-                            .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
-                            .dryRun(dryRun)
-                            .build()))
+    soft.assertThatThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(newBranch)
+                        .expectedHash(Optional.of(unrelatedCommit))
+                        .addSequenceToTransplant(firstCommit, secondCommit, thirdCommit)
+                        .dryRun(dryRun)
+                        .build()))
         .isInstanceOf(ReferenceNotFoundException.class);
     checkpoint.assertNoWrites();
   }

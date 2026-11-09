@@ -56,13 +56,12 @@ public abstract class BaseClientAuthTest {
     }
 
     api =
-        apiProvider.make(
-            (builder, version) -> {
-              if (customizer != null) {
-                customizer.accept(builder);
-              }
-              return builder;
-            });
+        apiProvider.make((builder, version) -> {
+          if (customizer != null) {
+            customizer.accept(builder);
+          }
+          return builder;
+        });
 
     return api;
   }

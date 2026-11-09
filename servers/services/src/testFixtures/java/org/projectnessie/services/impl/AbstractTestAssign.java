@@ -73,10 +73,8 @@ public abstract class AbstractTestAssign extends BaseTestServiceImpl {
     // Assign the test branch to main
     Reference transformed = refMode.transform(main);
     if (refMode == ReferenceMode.NAME_ONLY) {
-      soft.assertThatThrownBy(
-              () ->
-                  treeApi()
-                      .assignReference(BRANCH, branch.getName(), branch.getHash(), transformed))
+      soft.assertThatThrownBy(() ->
+              treeApi().assignReference(BRANCH, branch.getName(), branch.getHash(), transformed))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("Target hash must be provided");
     } else {

@@ -283,11 +283,10 @@ class TestIcebergS3SignParams {
 
   static Stream<Arguments> siblingMethodsAndUris() {
     return Stream.concat(readMethodsAndUris(), writeMethodsAndUris())
-        .map(
-            args -> {
-              String uri = (String) args.get()[1];
-              return arguments(args.get()[0], uri.replace(locationPart, locationPart + "e"));
-            });
+        .map(args -> {
+          String uri = (String) args.get()[1];
+          return arguments(args.get()[0], uri.replace(locationPart, locationPart + "e"));
+        });
   }
 
   /**

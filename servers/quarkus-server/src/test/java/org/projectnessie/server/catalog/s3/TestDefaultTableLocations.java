@@ -76,17 +76,14 @@ public class TestDefaultTableLocations {
             new String[] {"part/../name", "part%2F..%2Fname"},
             new String[] {"..", "%2E."},
             new String[] {"part%2Fname", "part%252Fname"})
-        .flatMap(
-            element ->
-                Stream.of(false, true)
-                    .flatMap(
-                        staged ->
-                            Stream.of(Mode.values())
-                                // Vert.x removes the '..' table-name segment from modern signer
-                                // URLs.
-                                .filter(
-                                    mode -> mode != Mode.MODERN_SIGNING || !element[0].equals(".."))
-                                .map(mode -> Arguments.of(element[0], element[1], staged, mode))));
+        .flatMap(element ->
+            Stream.of(false, true)
+                .flatMap(staged ->
+                    Stream.of(Mode.values())
+                        // Vert.x removes the '..' table-name segment from modern signer
+                        // URLs.
+                        .filter(mode -> mode != Mode.MODERN_SIGNING || !element[0].equals(".."))
+                        .map(mode -> Arguments.of(element[0], element[1], staged, mode))));
   }
 
   @ParameterizedTest
@@ -248,11 +245,10 @@ public class TestDefaultTableLocations {
       String key = StorageUri.of(location).pathWithoutLeadingTrailingSlash();
       assertThat(policies)
           .isNotEmpty()
-          .allSatisfy(
-              policy ->
-                  assertThat(policy)
-                      .contains("arn:aws:s3:::" + BUCKET + "/" + key + "/*")
-                      .doesNotContain("/unrelated/"));
+          .allSatisfy(policy ->
+              assertThat(policy)
+                  .contains("arn:aws:s3:::" + BUCKET + "/" + key + "/*")
+                  .doesNotContain("/unrelated/"));
       assertThat(response.storageCredentials())
           .anySatisfy(credential -> assertThat(credential.prefix()).isEqualTo(location));
     }

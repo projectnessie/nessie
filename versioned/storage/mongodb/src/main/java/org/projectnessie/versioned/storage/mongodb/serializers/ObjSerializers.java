@@ -40,13 +40,12 @@ public final class ObjSerializers {
 
   static {
     Set<String> payloadFieldNames = new HashSet<>();
-    ALL_SERIALIZERS.forEach(
-        serializer -> {
-          String fieldName = requireNonNull(serializer.fieldName());
-          if (!payloadFieldNames.add(fieldName)) {
-            throw new IllegalStateException("Duplicate field name: " + fieldName);
-          }
-        });
+    ALL_SERIALIZERS.forEach(serializer -> {
+      String fieldName = requireNonNull(serializer.fieldName());
+      if (!payloadFieldNames.add(fieldName)) {
+        throw new IllegalStateException("Duplicate field name: " + fieldName);
+      }
+    });
   }
 
   @Nonnull

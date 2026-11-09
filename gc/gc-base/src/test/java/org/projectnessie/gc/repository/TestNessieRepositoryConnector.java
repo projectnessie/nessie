@@ -125,13 +125,12 @@ public class TestNessieRepositoryConnector {
     Function<List<Operation>, List<Operation>> operationsMapper =
         ops ->
             ops.stream()
-                .map(
-                    op -> {
-                      if (op instanceof Operation.Put put) {
-                        return Operation.Put.of(op.getKey(), put.getContent().withId(null));
-                      }
-                      return op;
-                    })
+                .map(op -> {
+                  if (op instanceof Operation.Put put) {
+                    return Operation.Put.of(op.getKey(), put.getContent().withId(null));
+                  }
+                  return op;
+                })
                 .collect(Collectors.toList());
 
     Function<LogEntry, Entry<String, Entry<String, List<Operation>>>> entryMapper =

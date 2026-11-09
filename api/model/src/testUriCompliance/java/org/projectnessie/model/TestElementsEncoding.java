@@ -544,18 +544,17 @@ public class TestElementsEncoding {
   static Stream<String> allCharacters() {
     int split = 32;
     return IntStream.rangeClosed(32 / split, 0xffff / split)
-        .mapToObj(
-            i -> {
-              char c = (char) (i * split);
-              StringBuilder sb = new StringBuilder(split);
-              for (int i1 = 0; i1 < split; i1++) {
-                if (c != 0x7f) {
-                  sb.append(c);
-                }
-                c++;
-              }
-              return sb.toString();
-            });
+        .mapToObj(i -> {
+          char c = (char) (i * split);
+          StringBuilder sb = new StringBuilder(split);
+          for (int i1 = 0; i1 < split; i1++) {
+            if (c != 0x7f) {
+              sb.append(c);
+            }
+            c++;
+          }
+          return sb.toString();
+        });
   }
 
   @Test

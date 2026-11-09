@@ -81,17 +81,15 @@ class TestEventSubscribers {
   @Test
   void hasSubscribersForEventType() {
     when(subscriber1.accepts(any(EventType.class)))
-        .thenAnswer(
-            invocation -> {
-              EventType eventType = invocation.getArgument(0);
-              return eventType == EventType.COMMIT;
-            });
+        .thenAnswer(invocation -> {
+          EventType eventType = invocation.getArgument(0);
+          return eventType == EventType.COMMIT;
+        });
     when(subscriber2.accepts(any(EventType.class)))
-        .thenAnswer(
-            invocation -> {
-              EventType eventType = invocation.getArgument(0);
-              return eventType == EventType.MERGE;
-            });
+        .thenAnswer(invocation -> {
+          EventType eventType = invocation.getArgument(0);
+          return eventType == EventType.MERGE;
+        });
     @SuppressWarnings("resource")
     EventSubscribers subscribers = new EventSubscribers(Collections.emptyList());
     for (EventType eventType : EventType.values()) {
@@ -111,17 +109,15 @@ class TestEventSubscribers {
   @Test
   void hasSubscribersForResultType() {
     when(subscriber1.accepts(any(EventType.class)))
-        .thenAnswer(
-            invocation -> {
-              EventType eventType = invocation.getArgument(0);
-              return eventType == EventType.MERGE;
-            });
+        .thenAnswer(invocation -> {
+          EventType eventType = invocation.getArgument(0);
+          return eventType == EventType.MERGE;
+        });
     when(subscriber2.accepts(any(EventType.class)))
-        .thenAnswer(
-            invocation -> {
-              EventType eventType = invocation.getArgument(0);
-              return eventType == EventType.CONTENT_STORED;
-            });
+        .thenAnswer(invocation -> {
+          EventType eventType = invocation.getArgument(0);
+          return eventType == EventType.CONTENT_STORED;
+        });
     @SuppressWarnings("resource")
     EventSubscribers subscribers = new EventSubscribers(Collections.emptyList());
     for (ResultType resultType : ResultType.values()) {

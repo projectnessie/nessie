@@ -38,12 +38,11 @@ public class TestCacheConfig {
   public void referenceCaching() {
     soft.assertThatCode(() -> defaultBuilder().referenceTtl(Duration.ofMinutes(1)).build())
         .doesNotThrowAnyException();
-    soft.assertThatCode(
-            () ->
-                defaultBuilder()
-                    .referenceTtl(Duration.ofMinutes(1))
-                    .referenceNegativeTtl(Duration.ofMinutes(1))
-                    .build())
+    soft.assertThatCode(() ->
+            defaultBuilder()
+                .referenceTtl(Duration.ofMinutes(1))
+                .referenceNegativeTtl(Duration.ofMinutes(1))
+                .build())
         .doesNotThrowAnyException();
     soft.assertThatIllegalStateException()
         .isThrownBy(() -> defaultBuilder().referenceTtl(Duration.ofMinutes(0)).build())
@@ -55,20 +54,18 @@ public class TestCacheConfig {
         .isThrownBy(() -> defaultBuilder().referenceNegativeTtl(Duration.ofMinutes(1)).build())
         .withMessage(INVALID_REFERENCE_NEGATIVE_TTL);
     soft.assertThatIllegalStateException()
-        .isThrownBy(
-            () ->
-                defaultBuilder()
-                    .referenceTtl(Duration.ofMinutes(1))
-                    .referenceNegativeTtl(Duration.ofMinutes(-1))
-                    .build())
+        .isThrownBy(() ->
+            defaultBuilder()
+                .referenceTtl(Duration.ofMinutes(1))
+                .referenceNegativeTtl(Duration.ofMinutes(-1))
+                .build())
         .withMessage(INVALID_REFERENCE_NEGATIVE_TTL);
     soft.assertThatIllegalStateException()
-        .isThrownBy(
-            () ->
-                defaultBuilder()
-                    .referenceTtl(Duration.ofMinutes(1))
-                    .referenceNegativeTtl(Duration.ofMinutes(0))
-                    .build())
+        .isThrownBy(() ->
+            defaultBuilder()
+                .referenceTtl(Duration.ofMinutes(1))
+                .referenceNegativeTtl(Duration.ofMinutes(0))
+                .build())
         .withMessage(INVALID_REFERENCE_NEGATIVE_TTL);
   }
 

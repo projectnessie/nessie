@@ -120,18 +120,17 @@ public abstract class BaseRepositoryCommand extends BaseCommand {
                 "Expiry finished",
                 "Error")));
 
-    liveContentSetStream.forEach(
-        liveContentSet ->
-            out.println(
-                format(
-                    pattern,
-                    liveContentSet.id(),
-                    liveContentSet.status(),
-                    instantAsString(liveContentSet.created()),
-                    instantAsString(liveContentSet.identifyCompleted()),
-                    instantAsString(liveContentSet.expiryStarted()),
-                    instantAsString(liveContentSet.expiryCompleted()),
-                    asString(liveContentSet.errorMessage()))));
+    liveContentSetStream.forEach(liveContentSet ->
+        out.println(
+            format(
+                pattern,
+                liveContentSet.id(),
+                liveContentSet.status(),
+                instantAsString(liveContentSet.created()),
+                instantAsString(liveContentSet.identifyCompleted()),
+                instantAsString(liveContentSet.expiryStarted()),
+                instantAsString(liveContentSet.expiryCompleted()),
+                asString(liveContentSet.errorMessage()))));
   }
 
   protected LiveContentSet identify(

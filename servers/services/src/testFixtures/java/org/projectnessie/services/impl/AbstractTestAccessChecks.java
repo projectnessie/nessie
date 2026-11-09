@@ -95,15 +95,14 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
   protected Set<Check> recordAccessChecks() {
     Set<Check> checks = new HashSet<>();
-    setBatchAccessChecker(
-        c ->
-            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
-              @Override
-              public Map<Check, String> check() {
-                checks.addAll(getChecks());
-                return emptyMap();
-              }
-            });
+    setBatchAccessChecker(c ->
+        new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
+          @Override
+          public Map<Check, String> check() {
+            checks.addAll(getChecks());
+            return emptyMap();
+          }
+        });
     return checks;
   }
 
@@ -416,23 +415,21 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
 
     assertKeys.accept(asList(keyAllowed1, keyAllowed2, keyForbidden1, keyForbidden2));
 
-    setBatchAccessChecker(
-        x ->
-            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
-              @Override
-              public Map<Check, String> check() {
-                return getChecks().stream()
-                    .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
-                    .filter(
-                        c ->
-                            // forbid all content-keys starting with "forbidden"
-                            requireNonNull(c.key()).getName().startsWith("forbidden"))
-                    .collect(
-                        Collectors.toMap(
-                            Function.identity(),
-                            c -> "Forbidden key " + requireNonNull(c.key()).getName()));
-              }
-            });
+    setBatchAccessChecker(x ->
+        new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
+          @Override
+          public Map<Check, String> check() {
+            return getChecks().stream()
+                .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
+                .filter(c ->
+                    // forbid all content-keys starting with "forbidden"
+                    requireNonNull(c.key()).getName().startsWith("forbidden"))
+                .collect(
+                    Collectors.toMap(
+                        Function.identity(),
+                        c -> "Forbidden key " + requireNonNull(c.key()).getName()));
+          }
+        });
 
     assertKeys.accept(asList(keyAllowed1, keyAllowed2));
   }
@@ -450,21 +447,19 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
                 Put.of(someTableKey, IcebergTable.of(someTableKey.getName(), 42, 42, 42, 42)))
             .getTargetBranch();
 
-    setBatchAccessChecker(
-        x ->
-            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
-              @Override
-              public Map<Check, String> check() {
-                getChecks()
-                    .forEach(
-                        check -> {
-                          if (Content.Type.ICEBERG_TABLE.equals(check.contentType())) {
-                            throw new IllegalArgumentException("ALWAYS FAIL FOR TABLE ENTRY");
-                          }
-                        });
-                return Collections.emptyMap();
-              }
-            });
+    setBatchAccessChecker(x ->
+        new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
+          @Override
+          public Map<Check, String> check() {
+            getChecks()
+                .forEach(check -> {
+                  if (Content.Type.ICEBERG_TABLE.equals(check.contentType())) {
+                    throw new IllegalArgumentException("ALWAYS FAIL FOR TABLE ENTRY");
+                  }
+                });
+            return Collections.emptyMap();
+          }
+        });
 
     assertThat(entries(commit, null, "entry.contentType!='ICEBERG_TABLE'")).isEmpty();
 
@@ -490,17 +485,16 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
         commit(right, CommitMeta.fromMessage("right"), Put.of(key, rightValue)).getTargetBranch();
 
     String rightName = right.getName();
-    setBatchAccessChecker(
-        x ->
-            new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
-              @Override
-              public Map<Check, String> check() {
-                return getChecks().stream()
-                    .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
-                    .filter(c -> c.ref() != null && rightName.equals(c.ref().getName()))
-                    .collect(Collectors.toMap(Function.identity(), c -> "Not available"));
-              }
-            });
+    setBatchAccessChecker(x ->
+        new AbstractBatchAccessChecker(apiContext("Nessie", 1)) {
+          @Override
+          public Map<Check, String> check() {
+            return getChecks().stream()
+                .filter(c -> c.type() == CheckType.READ_CONTENT_KEY)
+                .filter(c -> c.ref() != null && rightName.equals(c.ref().getName()))
+                .collect(Collectors.toMap(Function.identity(), c -> "Not available"));
+          }
+        });
 
     assertThat(diff(left, right)).isEmpty();
   }
@@ -514,17 +508,16 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           public Map<Check, String> check() {
             Map<Check, String> failed = new LinkedHashMap<>();
             getChecks()
-                .forEach(
-                    check -> {
-                      String msg = CHECK_TYPE_MSG.get(check.type());
-                      if (msg != null) {
-                        if (check.ref() instanceof DetachedRef) {
-                          failed.put(check, msg);
-                        } else {
-                          assertThat(check.ref().getName()).isNotEqualTo(DetachedRef.REF_NAME);
-                        }
-                      }
-                    });
+                .forEach(check -> {
+                  String msg = CHECK_TYPE_MSG.get(check.type());
+                  if (msg != null) {
+                    if (check.ref() instanceof DetachedRef) {
+                      failed.put(check, msg);
+                    } else {
+                      assertThat(check.ref().getName()).isNotEqualTo(DetachedRef.REF_NAME);
+                    }
+                  }
+                });
             return failed;
           }
         };
@@ -553,37 +546,35 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
           .describedAs("ref='%s', getCommitLog", ref)
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(COMMITS_MSG);
-      soft.assertThatThrownBy(
-              () ->
-                  treeApi()
-                      .mergeRefIntoBranch(
-                          merge.getName(),
-                          merge.getHash(),
-                          ref.getName(),
-                          ref.getHash(),
-                          null,
-                          emptyList(),
-                          NORMAL,
-                          false,
-                          false,
-                          false))
+      soft.assertThatThrownBy(() ->
+              treeApi()
+                  .mergeRefIntoBranch(
+                      merge.getName(),
+                      merge.getHash(),
+                      ref.getName(),
+                      ref.getHash(),
+                      null,
+                      emptyList(),
+                      NORMAL,
+                      false,
+                      false,
+                      false))
           .describedAs("ref='%s', mergeRefIntoBranch", ref)
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
-      soft.assertThatThrownBy(
-              () ->
-                  treeApi()
-                      .transplantCommitsIntoBranch(
-                          transplant.getName(),
-                          transplant.getHash(),
-                          null,
-                          singletonList(ref.getHash()),
-                          ref.getName(),
-                          emptyList(),
-                          NORMAL,
-                          false,
-                          false,
-                          false))
+      soft.assertThatThrownBy(() ->
+              treeApi()
+                  .transplantCommitsIntoBranch(
+                      transplant.getName(),
+                      transplant.getHash(),
+                      null,
+                      singletonList(ref.getHash()),
+                      ref.getName(),
+                      emptyList(),
+                      NORMAL,
+                      false,
+                      false,
+                      false))
           .describedAs("ref='%s', transplantCommitsIntoBranch", ref)
           .isInstanceOf(AccessCheckException.class)
           .hasMessageContaining(VIEW_MSG);
@@ -626,12 +617,11 @@ public abstract class AbstractTestAccessChecks extends BaseTestServiceImpl {
     commitLog(main.getName(), ALL, null);
 
     assertThat(checks)
-        .satisfiesOnlyOnce(
-            check -> {
-              assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
-              assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
-              assertThat(check.identifiedKey()).isNotNull();
-              assertThat(check.contentId()).isNotNull();
-            });
+        .satisfiesOnlyOnce(check -> {
+          assertThat(check.type()).isEqualTo(CheckType.READ_CONTENT_KEY);
+          assertThat(check.key()).isEqualTo(ContentKey.of("t1"));
+          assertThat(check.identifiedKey()).isNotNull();
+          assertThat(check.contentId()).isNotNull();
+        });
   }
 }

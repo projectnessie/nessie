@@ -74,14 +74,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
   @Test
   @TestSecurity(user = "test_user")
   void testCreateBranchUserDisallowed() {
-    assertThatThrownBy(
-            () ->
-                api()
-                    .createReference()
-                    .reference(
-                        Branch.of(
-                            "disallowedBranchForTestUser", api().getDefaultBranch().getHash()))
-                    .create())
+    assertThatThrownBy(() ->
+            api()
+                .createReference()
+                .reference(
+                    Branch.of("disallowedBranchForTestUser", api().getDefaultBranch().getHash()))
+                .create())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -109,13 +107,12 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         .reference(Branch.of("testDeleteBranchDisallowed", main.getHash()))
         .sourceRefName(main.getName())
         .create();
-    assertThatThrownBy(
-            () ->
-                api()
-                    .deleteBranch()
-                    .branchName("testDeleteBranchDisallowed")
-                    .hash("11223344556677")
-                    .delete())
+    assertThatThrownBy(() ->
+            api()
+                .deleteBranch()
+                .branchName("testDeleteBranchDisallowed")
+                .hash("11223344556677")
+                .delete())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -279,14 +276,13 @@ class TestAuthorizationRules extends BaseClientAuthTest {
             .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
             .commit();
 
-    assertThatThrownBy(
-            () ->
-                api()
-                    .commitMultipleOperations()
-                    .branch(b)
-                    .commitMeta(CommitMeta.fromMessage("delete stuff"))
-                    .operation(Delete.of(key))
-                    .commit())
+    assertThatThrownBy(() ->
+            api()
+                .commitMultipleOperations()
+                .branch(b)
+                .commitMeta(CommitMeta.fromMessage("delete stuff"))
+                .operation(Delete.of(key))
+                .commit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -303,14 +299,13 @@ class TestAuthorizationRules extends BaseClientAuthTest {
     Branch branch =
         createBranch(Branch.of("allowedBranchForTestUser4", api().getDefaultBranch().getHash()));
 
-    assertThatThrownBy(
-            () ->
-                api()
-                    .commitMultipleOperations()
-                    .branch(branch)
-                    .commitMeta(CommitMeta.fromMessage("add stuff"))
-                    .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
-                    .commit())
+    assertThatThrownBy(() ->
+            api()
+                .commitMultipleOperations()
+                .branch(branch)
+                .commitMeta(CommitMeta.fromMessage("add stuff"))
+                .operation(Put.of(key, IcebergTable.of("foo", 42, 42, 42, 42)))
+                .commit())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(
             String.format(
@@ -404,34 +399,31 @@ class TestAuthorizationRules extends BaseClientAuthTest {
         String.format(
             "'VIEW_REFERENCE' is not allowed for role '%s' on reference '%s'",
             role, disallowedBranch);
-    assertThatThrownBy(
-            () ->
-                api()
-                    .assignBranch()
-                    .branch(branch)
-                    .assignTo(Branch.of(disallowedBranch, branch.getHash()))
-                    .assign())
+    assertThatThrownBy(() ->
+            api()
+                .assignBranch()
+                .branch(branch)
+                .assignTo(Branch.of(disallowedBranch, branch.getHash()))
+                .assign())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(errorMessage);
 
-    assertThatThrownBy(
-            () ->
-                api()
-                    .mergeRefIntoBranch()
-                    .fromRef(branch)
-                    .branch(Branch.of(disallowedBranch, branch.getHash()))
-                    .merge())
+    assertThatThrownBy(() ->
+            api()
+                .mergeRefIntoBranch()
+                .fromRef(branch)
+                .branch(Branch.of(disallowedBranch, branch.getHash()))
+                .merge())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(errorMessage);
 
-    assertThatThrownBy(
-            () ->
-                api()
-                    .transplantCommitsIntoBranch()
-                    .hashesToTransplant(Collections.singletonList(branch.getHash()))
-                    .fromRefName(branch.getName())
-                    .branch(Branch.of(disallowedBranch, branch.getHash()))
-                    .transplant())
+    assertThatThrownBy(() ->
+            api()
+                .transplantCommitsIntoBranch()
+                .hashesToTransplant(Collections.singletonList(branch.getHash()))
+                .fromRefName(branch.getName())
+                .branch(Branch.of(disallowedBranch, branch.getHash()))
+                .transplant())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining(errorMessage);
   }

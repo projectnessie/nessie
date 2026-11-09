@@ -77,10 +77,9 @@ public abstract class IcebergCatalogOperation implements CatalogOperation {
   public <T, U extends IcebergMetadataUpdate> T getSingleUpdateValue(
       Class<U> update, Function<U, T> mapper) {
     return getSingleUpdate(update, mapper)
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Could not find any updates of type " + update.getSimpleName()));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                "Could not find any updates of type " + update.getSimpleName()));
   }
 
   @JsonIgnore
@@ -91,11 +90,10 @@ public abstract class IcebergCatalogOperation implements CatalogOperation {
         .filter(update::isInstance)
         .map(update::cast)
         .map(mapper)
-        .reduce(
-            (e1, e2) -> {
-              throw new IllegalArgumentException(
-                  "Found multiple updates of type " + update.getSimpleName());
-            });
+        .reduce((e1, e2) -> {
+          throw new IllegalArgumentException(
+              "Found multiple updates of type " + update.getSimpleName());
+        });
   }
 
   @Value.Check

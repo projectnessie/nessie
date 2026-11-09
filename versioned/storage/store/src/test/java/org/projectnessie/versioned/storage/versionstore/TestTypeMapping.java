@@ -289,38 +289,33 @@ public class TestTypeMapping {
 
   static Stream<Arguments> commitMeta() {
     return headers()
-        .map(
-            args -> {
-              CommitMeta commitMeta = (CommitMeta) args.get()[0];
-              CommitHeaders headers = (CommitHeaders) args.get()[1];
+        .map(args -> {
+          CommitMeta commitMeta = (CommitMeta) args.get()[0];
+          CommitHeaders headers = (CommitHeaders) args.get()[1];
 
-              String msg = "message-" + commitMeta.hashCode();
-              commitMeta =
-                  commitMeta.toBuilder()
-                      .hash(EMPTY_OBJ_ID.toString())
-                      .addParentCommitHashes(EMPTY_OBJ_ID.toString())
-                      .message(msg)
-                      .build();
+          String msg = "message-" + commitMeta.hashCode();
+          commitMeta =
+              commitMeta.toBuilder()
+                  .hash(EMPTY_OBJ_ID.toString())
+                  .addParentCommitHashes(EMPTY_OBJ_ID.toString())
+                  .message(msg)
+                  .build();
 
-              CreateCommit createCommit =
-                  newCommitBuilder()
-                      .parentCommitId(EMPTY_OBJ_ID)
-                      .message(msg)
-                      .headers(headers)
-                      .build();
+          CreateCommit createCommit =
+              newCommitBuilder().parentCommitId(EMPTY_OBJ_ID).message(msg).headers(headers).build();
 
-              CommitObj commitObj =
-                  CommitObj.commitBuilder()
-                      .headers(headers)
-                      .message(msg)
-                      .id(EMPTY_OBJ_ID)
-                      .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
-                      .created(0L)
-                      .seq(1L)
-                      .build();
+          CommitObj commitObj =
+              CommitObj.commitBuilder()
+                  .headers(headers)
+                  .message(msg)
+                  .id(EMPTY_OBJ_ID)
+                  .incrementalIndex(emptyImmutableIndex(COMMIT_OP_SERIALIZER).serialize())
+                  .created(0L)
+                  .seq(1L)
+                  .build();
 
-              return arguments(commitMeta, createCommit, commitObj);
-            });
+          return arguments(commitMeta, createCommit, commitObj);
+        });
   }
 
   @ParameterizedTest

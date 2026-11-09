@@ -283,10 +283,9 @@ public class AbstractBasePersistTests {
     soft.assertThatThrownBy(
             () -> persist.markReferenceAsDeleted(create.forNewPointer(otherId, persist.config())))
         .isInstanceOf(RefConditionFailedException.class);
-    soft.assertThatThrownBy(
-            () ->
-                persist.markReferenceAsDeleted(
-                    create.forNewPointer(otherId, persist.config()).withDeleted(true)))
+    soft.assertThatThrownBy(() ->
+            persist.markReferenceAsDeleted(
+                create.forNewPointer(otherId, persist.config()).withDeleted(true)))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThatThrownBy(() -> persist.markReferenceAsDeleted(deleted))
         .isInstanceOf(RefConditionFailedException.class);
@@ -328,30 +327,28 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
     // Wrong created timestamp
-    soft.assertThatThrownBy(
-            () ->
-                persist.updateReferencePointer(
-                    reference(
-                        create.name(),
-                        create.pointer(),
-                        create.deleted(),
-                        create.createdAtMicros() + 1,
-                        create.extendedInfoObj()),
-                    pointer1))
+    soft.assertThatThrownBy(() ->
+            persist.updateReferencePointer(
+                reference(
+                    create.name(),
+                    create.pointer(),
+                    create.deleted(),
+                    create.createdAtMicros() + 1,
+                    create.extendedInfoObj()),
+                pointer1))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
     // Wrong created extended info obj
-    soft.assertThatThrownBy(
-            () ->
-                persist.updateReferencePointer(
-                    reference(
-                        create.name(),
-                        create.pointer(),
-                        create.deleted(),
-                        create.createdAtMicros(),
-                        randomObjId()),
-                    pointer1))
+    soft.assertThatThrownBy(() ->
+            persist.updateReferencePointer(
+                reference(
+                    create.name(),
+                    create.pointer(),
+                    create.deleted(),
+                    create.createdAtMicros(),
+                    randomObjId()),
+                pointer1))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(create);
 
@@ -374,32 +371,30 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Wrong created timestamp
-    soft.assertThatThrownBy(
-            () ->
-                persist.updateReferencePointer(
-                    reference(
-                        updated1.name(),
-                        updated1.pointer(),
-                        updated1.deleted(),
-                        updated1.createdAtMicros() + 1,
-                        updated1.extendedInfoObj(),
-                        updated1.previousPointers()),
-                    pointer2))
+    soft.assertThatThrownBy(() ->
+            persist.updateReferencePointer(
+                reference(
+                    updated1.name(),
+                    updated1.pointer(),
+                    updated1.deleted(),
+                    updated1.createdAtMicros() + 1,
+                    updated1.extendedInfoObj(),
+                    updated1.previousPointers()),
+                pointer2))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
     // Wrong created extended info obj
-    soft.assertThatThrownBy(
-            () ->
-                persist.updateReferencePointer(
-                    reference(
-                        updated1.name(),
-                        updated1.pointer(),
-                        updated1.deleted(),
-                        updated1.createdAtMicros(),
-                        randomObjId(),
-                        updated1.previousPointers()),
-                    pointer2))
+    soft.assertThatThrownBy(() ->
+            persist.updateReferencePointer(
+                reference(
+                    updated1.name(),
+                    updated1.pointer(),
+                    updated1.deleted(),
+                    updated1.createdAtMicros(),
+                    randomObjId(),
+                    updated1.previousPointers()),
+                pointer2))
         .isInstanceOf(RefConditionFailedException.class);
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(updated1);
 
@@ -437,11 +432,10 @@ public class AbstractBasePersistTests {
     soft.assertThat(persist.fetchReference("some-reference-name")).isEqualTo(deletedRef);
 
     // Some other name - must not create a reference for it
-    soft.assertThatThrownBy(
-            () ->
-                persist.updateReferencePointer(
-                    reference("other-reference-name", initialPointer, false, created, extended),
-                    pointer1))
+    soft.assertThatThrownBy(() ->
+            persist.updateReferencePointer(
+                reference("other-reference-name", initialPointer, false, created, extended),
+                pointer1))
         .isInstanceOf(RefNotFoundException.class);
     soft.assertThat(persist.fetchReference("other-reference-name")).isNull();
   }
@@ -450,14 +444,13 @@ public class AbstractBasePersistTests {
   public void fetchManyReferences() throws Exception {
     List<Reference> references =
         IntStream.range(0, 305)
-            .mapToObj(
-                i ->
-                    reference(
-                        "ref-" + i,
-                        randomObjId(),
-                        false,
-                        ThreadLocalRandom.current().nextLong(1L, Long.MAX_VALUE),
-                        randomObjId()))
+            .mapToObj(i ->
+                reference(
+                    "ref-" + i,
+                    randomObjId(),
+                    false,
+                    ThreadLocalRandom.current().nextLong(1L, Long.MAX_VALUE),
+                    randomObjId()))
             .collect(Collectors.toList());
     for (Reference reference : references) {
       persist.addReference(reference);
@@ -1146,31 +1139,29 @@ public class AbstractBasePersistTests {
   private void verifyObjSizeLimit(Persist persist, StoreIndex<CommitOp> index) {
     soft.assertThatThrownBy(() -> persist.storeObj(index(randomObjId(), 42L, index.serialize())))
         .isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObj(
-                    commitBuilder()
-                        .id(randomObjId())
-                        .created(123L)
-                        .seq(123)
-                        .message("msg")
-                        .incrementalIndex(index.serialize())
-                        .headers(EMPTY_COMMIT_HEADERS)
-                        .build()))
+    soft.assertThatThrownBy(() ->
+            persist.storeObj(
+                commitBuilder()
+                    .id(randomObjId())
+                    .created(123L)
+                    .seq(123)
+                    .message("msg")
+                    .incrementalIndex(index.serialize())
+                    .headers(EMPTY_COMMIT_HEADERS)
+                    .build()))
         .isInstanceOf(ObjTooLargeException.class);
-    soft.assertThatThrownBy(
-            () ->
-                persist.storeObjs(
-                    new Obj[] {
-                      commitBuilder()
-                          .id(randomObjId())
-                          .created(123L)
-                          .seq(123)
-                          .message("msg")
-                          .incrementalIndex(index.serialize())
-                          .headers(EMPTY_COMMIT_HEADERS)
-                          .build()
-                    }))
+    soft.assertThatThrownBy(() ->
+            persist.storeObjs(
+                new Obj[] {
+                  commitBuilder()
+                      .id(randomObjId())
+                      .created(123L)
+                      .seq(123)
+                      .message("msg")
+                      .incrementalIndex(index.serialize())
+                      .headers(EMPTY_COMMIT_HEADERS)
+                      .build()
+                }))
         .isInstanceOf(ObjTooLargeException.class);
   }
 
@@ -1617,21 +1608,19 @@ public class AbstractBasePersistTests {
     soft.assertThatIllegalArgumentException().isThrownBy(() -> persist.updateConditional(v1, v1));
     // different IDs - must throw IAE
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                persist.updateConditional(
-                    v1, VersionedTestObj.builder().from(v1).id(randomObjId()).build()));
+        .isThrownBy(() ->
+            persist.updateConditional(
+                v1, VersionedTestObj.builder().from(v1).id(randomObjId()).build()));
     // different types - must throw IAE
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                persist.updateConditional(
-                    v1,
-                    VersionedTestObj2.builder()
-                        .id(v1.id())
-                        .versionToken("x")
-                        .otherValue("blah")
-                        .build()));
+        .isThrownBy(() ->
+            persist.updateConditional(
+                v1,
+                VersionedTestObj2.builder()
+                    .id(v1.id())
+                    .versionToken("x")
+                    .otherValue("blah")
+                    .build()));
 
     soft.assertThat(persist.storeObj(v1)).isTrue();
     soft.assertThat(persist.fetchObj(v1.id())).isEqualTo(v1);

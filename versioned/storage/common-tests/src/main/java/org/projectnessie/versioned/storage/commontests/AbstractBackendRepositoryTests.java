@@ -69,24 +69,21 @@ public class AbstractBackendRepositoryTests {
     soft.assertThat(
             repo1.storeObjs(
                 IntStream.range(0, objs)
-                    .mapToObj(
-                        x ->
-                            stringData(
-                                "content-type",
-                                Compression.NONE,
-                                "file-" + x,
-                                Collections.emptyList(),
-                                ByteString.copyFromUtf8("text-" + x)))
+                    .mapToObj(x ->
+                        stringData(
+                            "content-type",
+                            Compression.NONE,
+                            "file-" + x,
+                            Collections.emptyList(),
+                            ByteString.copyFromUtf8("text-" + x)))
                     .toArray(Obj[]::new)))
         .hasSize(objs)
         .doesNotContain(false);
     try (CloseableIterator<Obj> scan = repo1.scanAllObjects(Set.of())) {
       soft.assertThat(scan)
           .toIterable()
-          .filteredOn(
-              o ->
-                  o instanceof StringObj stringObj
-                      && stringObj.contentType().equals("content-type"))
+          .filteredOn(o ->
+              o instanceof StringObj stringObj && stringObj.contentType().equals("content-type"))
           .hasSize(objs);
     }
 
@@ -109,12 +106,11 @@ public class AbstractBackendRepositoryTests {
         repos.stream().map(r -> r.config().repositoryId()).collect(Collectors.toSet()));
     soft.assertThat(repos).noneMatch(r -> repositoryLogic(r).repositoryExists());
     soft.assertThat(repos)
-        .noneMatch(
-            r -> {
-              try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
-                return scan.hasNext();
-              }
-            });
+        .noneMatch(r -> {
+          try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
+            return scan.hasNext();
+          }
+        });
   }
 
   /** Check that erasing a few repos does not affect other repos. */
@@ -152,12 +148,11 @@ public class AbstractBackendRepositoryTests {
         toDelete.stream().map(r -> r.config().repositoryId()).collect(Collectors.toSet()));
     soft.assertThat(toDelete).noneMatch(r -> repositoryLogic(r).repositoryExists());
     soft.assertThat(toDelete)
-        .noneMatch(
-            r -> {
-              try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
-                return scan.hasNext();
-              }
-            });
+        .noneMatch(r -> {
+          try (CloseableIterator<Obj> scan = r.scanAllObjects(Set.of())) {
+            return scan.hasNext();
+          }
+        });
     for (Persist repo : toKeep) {
       soft.assertThat(repositoryLogic(repo).repositoryExists()).isTrue();
       soft.assertThat(repo.fetchReference(REFS_HEADS + "main")).isNotNull();
@@ -167,10 +162,8 @@ public class AbstractBackendRepositoryTests {
       try (CloseableIterator<Obj> scan = repo.scanAllObjects(Set.of())) {
         soft.assertThat(scan)
             .toIterable()
-            .filteredOn(
-                o ->
-                    o instanceof StringObj stringObj
-                        && stringObj.contentType().equals("content-type"))
+            .filteredOn(o ->
+                o instanceof StringObj stringObj && stringObj.contentType().equals("content-type"))
             .hasSize(objs);
       }
     }

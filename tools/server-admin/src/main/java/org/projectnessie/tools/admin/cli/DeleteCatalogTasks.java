@@ -95,32 +95,31 @@ public class DeleteCatalogTasks extends BaseCommand {
     StoreIndex<CommitOp> index = index(hash(hash, ref));
     try (Stream<ContentKey> keys = iterateKeys(index)) {
       Iterators.partition(keys.iterator(), batchSize)
-          .forEachRemaining(
-              objects -> {
-                Map<ContentKey, Content> values = fetchValues(index, objects);
-                ObjId[] ids =
-                    values.values().stream()
-                        .filter(c -> c instanceof IcebergTable || c instanceof IcebergView)
-                        .map(EntitySnapshotObj::snapshotObjIdForContent)
-                        .toArray(ObjId[]::new);
+          .forEachRemaining(objects -> {
+            Map<ContentKey, Content> values = fetchValues(index, objects);
+            ObjId[] ids =
+                values.values().stream()
+                    .filter(c -> c instanceof IcebergTable || c instanceof IcebergView)
+                    .map(EntitySnapshotObj::snapshotObjIdForContent)
+                    .toArray(ObjId[]::new);
 
-                EntitySnapshotObj[] objs =
-                    persist.fetchTypedObjsIfExist(
-                        ids, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class);
+            EntitySnapshotObj[] objs =
+                persist.fetchTypedObjsIfExist(
+                    ids, EntitySnapshotObj.OBJ_TYPE, EntitySnapshotObj.class);
 
-                ObjId[] idsToDelete =
-                    Arrays.stream(objs)
-                        .filter(Objects::nonNull)
-                        .filter(o -> statuses.contains(o.taskState().status()))
-                        .map(Obj::id)
-                        .toArray(ObjId[]::new);
+            ObjId[] idsToDelete =
+                Arrays.stream(objs)
+                    .filter(Objects::nonNull)
+                    .filter(o -> statuses.contains(o.taskState().status()))
+                    .map(Obj::id)
+                    .toArray(ObjId[]::new);
 
-                persist.deleteObjs(idsToDelete);
-                idsProcessed.addAndGet(idsToDelete.length);
-                spec.commandLine()
-                    .getOut()
-                    .printf("Deleted %d snapshot task object(s)...%n", idsToDelete.length);
-              });
+            persist.deleteObjs(idsToDelete);
+            idsProcessed.addAndGet(idsToDelete.length);
+            spec.commandLine()
+                .getOut()
+                .printf("Deleted %d snapshot task object(s)...%n", idsToDelete.length);
+          });
     }
 
     spec.commandLine()
@@ -148,14 +147,13 @@ public class DeleteCatalogTasks extends BaseCommand {
 
     return StreamSupport.stream(
             Spliterators.spliterator(index.iterator(null, null, true), 0, 0), false)
-        .map(
-            indexElement -> {
-              if (indexElement.content().action().exists()) {
-                return storeKeyToKey(indexElement.key());
-              } else {
-                return null;
-              }
-            })
+        .map(indexElement -> {
+          if (indexElement.content().action().exists()) {
+            return storeKeyToKey(indexElement.key());
+          } else {
+            return null;
+          }
+        })
         .filter(Objects::nonNull);
   }
 

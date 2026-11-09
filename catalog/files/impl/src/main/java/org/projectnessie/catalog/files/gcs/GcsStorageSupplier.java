@@ -155,48 +155,45 @@ public final class GcsStorageSupplier {
             storageLocations.readonlyLocations().stream(),
             storageLocations.writeableLocations().stream())
         .distinct()
-        .forEach(
-            location -> {
-              String bucket = location.requiredAuthority();
-              readBuckets.add(bucket);
-              boolean writeable = storageLocations.writeableLocations().contains(location);
-              if (writeable) {
-                writeBuckets.add(bucket);
-              }
+        .forEach(location -> {
+          String bucket = location.requiredAuthority();
+          readBuckets.add(bucket);
+          boolean writeable = storageLocations.writeableLocations().contains(location);
+          if (writeable) {
+            writeBuckets.add(bucket);
+          }
 
-              String path = location.pathWithoutLeadingTrailingSlash();
-              List<String> resourceExpressions =
-                  readConditionsMap.computeIfAbsent(bucket, key -> new ArrayList<>());
-              resourceExpressions.add(resourceNameBucketPathExpression(bucket, path));
-              resourceExpressions.add(objectListPrefixExpression(path));
+          String path = location.pathWithoutLeadingTrailingSlash();
+          List<String> resourceExpressions =
+              readConditionsMap.computeIfAbsent(bucket, key -> new ArrayList<>());
+          resourceExpressions.add(resourceNameBucketPathExpression(bucket, path));
+          resourceExpressions.add(objectListPrefixExpression(path));
 
-              if (writeable) {
-                writeConditionsMap
-                    .computeIfAbsent(bucket, key -> new ArrayList<>())
-                    .add(resourceNameBucketPathExpression(bucket, path));
-              }
-            });
+          if (writeable) {
+            writeConditionsMap
+                .computeIfAbsent(bucket, key -> new ArrayList<>())
+                .add(resourceNameBucketPathExpression(bucket, path));
+          }
+        });
 
     CredentialAccessBoundary.Builder accessBoundaryBuilder = CredentialAccessBoundary.newBuilder();
     readBuckets.stream()
         .map(b -> accessBoundaryRuleForBucket(readConditionsMap, b))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(
-            builder ->
-                builder
-                    .setAvailablePermissions(List.of("inRole:roles/storage.legacyObjectReader"))
-                    // list
-                    .addAvailablePermission("inRole:roles/storage.objectViewer"))
+        .map(builder ->
+            builder
+                .setAvailablePermissions(List.of("inRole:roles/storage.legacyObjectReader"))
+                // list
+                .addAvailablePermission("inRole:roles/storage.objectViewer"))
         .map(CredentialAccessBoundary.AccessBoundaryRule.Builder::build)
         .forEach(accessBoundaryBuilder::addRule);
     writeBuckets.stream()
         .map(b -> accessBoundaryRuleForBucket(writeConditionsMap, b))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(
-            builder ->
-                builder.setAvailablePermissions(List.of("inRole:roles/storage.legacyBucketWriter")))
+        .map(builder ->
+            builder.setAvailablePermissions(List.of("inRole:roles/storage.legacyBucketWriter")))
         .map(CredentialAccessBoundary.AccessBoundaryRule.Builder::build)
         .forEach(accessBoundaryBuilder::addRule);
     return accessBoundaryBuilder.build();

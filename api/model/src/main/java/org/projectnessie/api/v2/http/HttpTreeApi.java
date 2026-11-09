@@ -126,7 +126,8 @@ public interface HttpTreeApi extends TreeApi {
            valid reference, including a detached commit.\
 
           If the payload reference object does not define a commit hash, the HEAD of that reference \
-          will be used.""",
+          will be used.\
+          """,
       operationId = "createReferenceV2")
   @APIResponses({
     @APIResponse(
@@ -219,7 +220,8 @@ public interface HttpTreeApi extends TreeApi {
           setups. If the "primary write target" fails and cannot be recovered, replicas might not \
           have all written records (data loss scenario). This function helps identifying whether \
           the commits of a reference that were written within the configured "replication lag" are \
-          present and consistent. A reference might then be deleted or re-assigned to a consistent commit.""")
+          present and consistent. A reference might then be deleted or re-assigned to a consistent commit.\
+          """)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -639,7 +641,8 @@ public interface HttpTreeApi extends TreeApi {
 
           This is a convenience method for fetching a small number of content objects. It is mostly intended \
           for human use. For automated use cases or when the number of keys is large the \
-          'POST /trees/{ref}/content' method is preferred.""")
+          'POST /trees/{ref}/content' method is preferred.\
+          """)
   @APIResponses({
     @APIResponse(
         responseCode = "200",
@@ -722,7 +725,8 @@ public interface HttpTreeApi extends TreeApi {
 
           Note that if some keys from the request do not have an associated content object at the point in \
           history defined by the 'ref' parameter, the response will be successful, but no data will be \
-          returned for the missing keys.""",
+          returned for the missing keys.\
+          """,
       operationId = "getMultipleContentsV2")
   @APIResponses({
     @APIResponse(
@@ -799,7 +803,8 @@ public interface HttpTreeApi extends TreeApi {
           contiguous and in order.
 
           The state of contents specified by the 'branch' reference will be used for detecting conflicts with \
-          the commits being transplanted.""",
+          the commits being transplanted.\
+          """,
       operationId = "transplantV2")
   @APIResponses({
     @APIResponse(
@@ -868,7 +873,8 @@ public interface HttpTreeApi extends TreeApi {
           The merge is committed if it is free from conflicts. The set of commits merged into the target branch \
           will be all of those starting at 'fromHash' on 'mergeRefName' until we arrive at the common ancestor. \
           Depending on the underlying implementation, the number of commits allowed as part of this operation \
-          may be limited.""",
+          may be limited.\
+          """,
       operationId = "mergeV2")
   @APIResponses({
     @APIResponse(
@@ -935,7 +941,8 @@ public interface HttpTreeApi extends TreeApi {
           the operation being committed.
 
           The hash in the successful response will be the hash of the commit that contains the requested \
-          operations, whose immediate parent commit will be the current HEAD of the specified branch.""",
+          operations, whose immediate parent commit will be the current HEAD of the specified branch.\
+          """,
       operationId = "commitV2")
   @APIResponses({
     @APIResponse(

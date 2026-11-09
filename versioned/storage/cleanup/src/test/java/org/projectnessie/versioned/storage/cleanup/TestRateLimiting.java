@@ -177,12 +177,11 @@ public class TestRateLimiting {
                 .resolveObjRatePerSecond(2)
                 .purgeScanObjRatePerSecond(3)
                 .purgeDeleteObjRatePerSecond(4)
-                .rateLimitFactory(
-                    i -> {
-                      var a = new AtomicLong();
-                      acquires[i - 1] = a;
-                      return a::incrementAndGet;
-                    })
+                .rateLimitFactory(i -> {
+                  var a = new AtomicLong();
+                  acquires[i - 1] = a;
+                  return a::incrementAndGet;
+                })
                 .build());
     var referencedObjectsContext = cleanup.buildReferencedObjectsContext(persist, maxObjReferenced);
     var referencedObjectsResolver =

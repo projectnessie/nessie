@@ -42,13 +42,12 @@ final class StreamUtil {
         if (found) {
           return false;
         }
-        return src.tryAdvance(
-            elem -> {
-              consumer.accept(elem);
-              if (predicate.test(elem)) {
-                found = true;
-              }
-            });
+        return src.tryAdvance(elem -> {
+          consumer.accept(elem);
+          if (predicate.test(elem)) {
+            found = true;
+          }
+        });
       }
     };
   }

@@ -28,14 +28,15 @@ final class SqlDmlDdl {
   @Language("SQL")
   static final String CREATE_LIVE_SETS =
       """
-    CREATE TABLE gc_live_sets (
-        live_set_id VARCHAR(40),\s
-        set_status VARCHAR(40),\s
-        identify_started TIMESTAMP,\s
-        identify_finished TIMESTAMP,\s
-        expire_started TIMESTAMP,\s
-        expire_finished TIMESTAMP,\s
-        error_message VARCHAR("""
+      CREATE TABLE gc_live_sets (
+          live_set_id VARCHAR(40),\s
+          set_status VARCHAR(40),\s
+          identify_started TIMESTAMP,\s
+          identify_finished TIMESTAMP,\s
+          expire_started TIMESTAMP,\s
+          expire_finished TIMESTAMP,\s
+          error_message VARCHAR(\
+      """
           + ERROR_LENGTH
           + "), \n"
           + "    PRIMARY KEY (live_set_id))";
@@ -51,7 +52,8 @@ final class SqlDmlDdl {
           content_type VARCHAR(40),\s
           metadata_location VARCHAR(1000),\s
           snapshot_id BIGINT,\s
-          PRIMARY KEY(live_set_id, content_id, commit_id))""";
+          PRIMARY KEY(live_set_id, content_id, commit_id))\
+      """;
 
   @Language("SQL")
   static final String CREATE_LIVE_SET_LOCATIONS =
@@ -60,7 +62,8 @@ final class SqlDmlDdl {
           live_set_id VARCHAR(40),\s
           content_id VARCHAR(200),\s
           base_location VARCHAR(500),\s
-          PRIMARY KEY (live_set_id, content_id, base_location))""";
+          PRIMARY KEY (live_set_id, content_id, base_location))\
+      """;
 
   @Language("SQL")
   static final String CREATE_FILE_DELETIONS =
@@ -70,7 +73,8 @@ final class SqlDmlDdl {
           base_uri VARCHAR(250),\s
           path_uri VARCHAR(250),\s
           modification_timestamp BIGINT,\s
-          PRIMARY KEY (live_set_id, base_uri, path_uri))""";
+          PRIMARY KEY (live_set_id, base_uri, path_uri))\
+      """;
 
   @Language("SQL")
   static final String INSERT_FILE_DELETIONS =
@@ -83,7 +87,8 @@ final class SqlDmlDdl {
       SELECT base_uri, path_uri, modification_timestamp\s
           FROM gc_file_deletions\s
           WHERE live_set_id = ?\s
-          ORDER BY base_uri""";
+          ORDER BY base_uri\
+      """;
 
   @Language("SQL")
   static final String DELETE_FILE_DELETIONS = "DELETE FROM gc_file_deletions WHERE live_set_id = ?";
@@ -93,7 +98,8 @@ final class SqlDmlDdl {
       """
       SELECT live_set_id, set_status, identify_started, identify_finished, expire_started, expire_finished, error_message\s
           FROM gc_live_sets\s
-          WHERE live_set_id = ?""";
+          WHERE live_set_id = ?\
+      """;
 
   @Language("SQL")
   static final String SELECT_ALL_LIVE_CONTENT_SETS =
@@ -121,70 +127,80 @@ final class SqlDmlDdl {
       """
       SELECT base_location\s
       FROM gc_live_set_content_locations\s
-          WHERE live_set_id = ? AND content_id = ?""";
+          WHERE live_set_id = ? AND content_id = ?\
+      """;
 
   @Language("SQL")
   static final String SELECT_CONTENT_LOCATION_ALL =
       """
       SELECT base_location\s
       FROM gc_live_set_content_locations\s
-          WHERE live_set_id = ?""";
+          WHERE live_set_id = ?\
+      """;
 
   @Language("SQL")
   static final String SELECT_CONTENT_IDS =
       """
       SELECT DISTINCT content_id\s
       FROM gc_live_set_contents\s
-          WHERE live_set_id = ?""";
+          WHERE live_set_id = ?\
+      """;
 
   @Language("SQL")
   static final String SELECT_CONTENT_COUNT =
       """
       SELECT COUNT(DISTINCT content_id)\s
           FROM gc_live_set_contents\s
-          WHERE live_set_id = ?""";
+          WHERE live_set_id = ?\
+      """;
 
   @Language("SQL")
   static final String START_IDENTIFY =
       """
       INSERT INTO gc_live_sets\s
           (live_set_id, identify_started, set_status)\s
-          VALUES (?, ?, ?)""";
+          VALUES (?, ?, ?)\
+      """;
 
   @Language("SQL")
   static final String FINISH_IDENTIFY =
       """
       UPDATE gc_live_sets\s
           SET identify_finished = ?, set_status = ?, error_message = ?\s
-          WHERE live_set_id = ? AND set_status = ?""";
+          WHERE live_set_id = ? AND set_status = ?\
+      """;
 
   @Language("SQL")
   static final String START_EXPIRE =
       """
       UPDATE gc_live_sets\s
           SET expire_started = ?, set_status = ?\s
-          WHERE live_set_id = ? AND set_status = ?""";
+          WHERE live_set_id = ? AND set_status = ?\
+      """;
 
   @Language("SQL")
   static final String FINISH_EXPIRE =
       """
       UPDATE gc_live_sets\s
           SET expire_finished = ?, set_status = ?, error_message = ?\s
-          WHERE live_set_id = ? AND set_status = ?""";
+          WHERE live_set_id = ? AND set_status = ?\
+      """;
 
   @Language("SQL")
   static final String ADD_CONTENT =
       """
       INSERT INTO gc_live_set_contents\s
           (live_set_id, content_id, commit_id, content_key, content_type, metadata_location, snapshot_id)\s
-          VALUES (?, ?, ?, ?, ?, ?, ?)""";
+          VALUES (?, ?, ?, ?, ?, ?, ?)\
+      """;
 
   @Language("SQL")
   static final String SELECT_CONTENT_REFERENCES =
       """
       SELECT content_id, commit_id, content_key, content_type, metadata_location, snapshot_id\s
           FROM gc_live_set_contents\s
-          WHERE live_set_id = ? AND content_id = ?""";
+          WHERE live_set_id = ? AND content_id = ?\
+      """;
 
   static final Map<String, String> ALL_CREATES =
       ImmutableMap.of(

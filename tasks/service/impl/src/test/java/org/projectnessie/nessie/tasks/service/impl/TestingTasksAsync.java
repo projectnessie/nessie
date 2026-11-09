@@ -88,12 +88,11 @@ public class TestingTasksAsync implements TasksAsync {
               return null;
             });
     scheduledTasks.add(task);
-    task.completable.whenComplete(
-        (v, t) -> {
-          if (t instanceof CancellationException) {
-            task.cancelled = true;
-          }
-        });
+    task.completable.whenComplete((v, t) -> {
+      if (t instanceof CancellationException) {
+        task.cancelled = true;
+      }
+    });
     return task.completionStage();
   }
 

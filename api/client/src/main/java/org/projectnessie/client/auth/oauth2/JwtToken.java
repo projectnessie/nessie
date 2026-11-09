@@ -161,8 +161,8 @@ class JwtToken {
    * assigned in a manner that ensures that there is a negligible probability that the same value
    * will be accidentally assigned to a different data object; if the application uses multiple
    * issuers, collisions MUST be prevented among values produced by different issuers as well. The
-   * "jti" claim can be used to prevent the JWT from being replayed. The "jti" value is a case-
-   * sensitive string. Use of this claim is OPTIONAL.
+   * "jti" claim can be used to prevent the JWT from being replayed. The "jti" value is a
+   * case-sensitive string. Use of this claim is OPTIONAL.
    */
   @Nullable
   public String getId() {

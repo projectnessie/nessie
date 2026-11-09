@@ -149,11 +149,10 @@ public abstract class AbstractCommitLog extends AbstractNestedVersionStore {
         Stream.concat(Stream.of(firstParent), hashes.stream()).collect(Collectors.toList());
 
     soft.assertThat(Lists.reverse(commitsList(branch, false)))
-        .allSatisfy(
-            c -> {
-              assertThat(c.getOperations()).isNull();
-              assertThat(c.getParentHash()).isNotNull();
-            })
+        .allSatisfy(c -> {
+          assertThat(c.getOperations()).isNull();
+          assertThat(c.getParentHash()).isNotNull();
+        })
         .extracting(Commit::getHash)
         .containsExactlyElementsOf(hashes);
 

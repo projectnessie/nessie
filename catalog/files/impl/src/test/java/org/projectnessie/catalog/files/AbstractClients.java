@@ -97,15 +97,13 @@ public abstract class AbstractClients {
                 .putBuckets(
                     BUCKET_1,
                     Bucket.builder()
-                        .object(
-                            key ->
-                                MockObject.builder()
-                                    .contentLength(answer1.length() + key.length())
-                                    .writer(
-                                        (range, output) ->
-                                            output.write((answer1 + key).getBytes(UTF_8)))
-                                    .contentType("text/plain")
-                                    .build())
+                        .object(key ->
+                            MockObject.builder()
+                                .contentLength(answer1.length() + key.length())
+                                .writer((range, output) ->
+                                    output.write((answer1 + key).getBytes(UTF_8)))
+                                .contentType("text/plain")
+                                .build())
                         .build())
                 .build()
                 .start();
@@ -114,15 +112,13 @@ public abstract class AbstractClients {
                 .putBuckets(
                     BUCKET_2,
                     Bucket.builder()
-                        .object(
-                            key ->
-                                MockObject.builder()
-                                    .contentLength(answer2.length() + key.length())
-                                    .writer(
-                                        (range, output) ->
-                                            output.write((answer2 + key).getBytes(UTF_8)))
-                                    .contentType("text/plain")
-                                    .build())
+                        .object(key ->
+                            MockObject.builder()
+                                .contentLength(answer2.length() + key.length())
+                                .writer((range, output) ->
+                                    output.write((answer2 + key).getBytes(UTF_8)))
+                                .contentType("text/plain")
+                                .build())
                         .build())
                 .build()
                 .start()) {
