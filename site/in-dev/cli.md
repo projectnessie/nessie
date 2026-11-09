@@ -133,6 +133,12 @@ the clauses.
 
 {% include './generated-docs/cli-help-ShowReferenceStatement.md' %}
 
+### **`SHOW DIFF`**
+
+{% include './generated-docs/cli-syntax-ShowDiffStatement.md' %}
+
+{% include './generated-docs/cli-help-ShowDiffStatement.md' %}
+
 ### **`USE`**
 
 {% include './generated-docs/cli-syntax-UseReferenceStatement.md' %}
