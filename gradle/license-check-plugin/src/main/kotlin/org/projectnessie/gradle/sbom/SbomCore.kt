@@ -180,7 +180,16 @@ object SbomCore {
   }
 
   private fun componentJson(component: Component): String =
-    bomToJson(Bom().apply { metadata = Metadata().apply { this.component = component } })
+    bomToJson(
+      Bom().apply {
+        metadata =
+          Metadata().apply {
+            // The temporary wrapper's creation time is not part of the component.
+            timestamp = null
+            this.component = component
+          }
+      },
+    )
 
   private fun copyComponent(component: Component): Component =
     JsonParser().parse(componentJson(component).reader()).metadata.component
