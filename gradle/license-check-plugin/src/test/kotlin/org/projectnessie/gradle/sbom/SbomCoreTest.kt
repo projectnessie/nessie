@@ -256,6 +256,43 @@ class SbomCoreTest {
   }
 
   @Test
+  fun rootCopyComparisonIgnoresSerializationTime() {
+    val original = component("application")
+    val copy =
+      object : Component() {
+          override fun getName(): String {
+            // Cross a second boundary while serializing the first comparison wrapper.
+            Thread.sleep(1100)
+            return super.getName()
+          }
+        }
+        .apply {
+          type = original.type
+          group = original.group
+          name = original.name
+          version = original.version
+          purl = original.purl
+          bomRef = original.bomRef
+        }
+    val timestamp = Instant.parse("2026-10-23T12:00:00Z")
+    val source =
+      producer().apply {
+        metadata.timestamp = Date.from(timestamp)
+        components = components + copy
+      }
+    val result =
+      SbomCore.forDistribution(
+        source,
+        SbomSubject("example", "bundle", "1", PackageKind.QUARKUS_FAST_JAR),
+        null,
+        "b".repeat(64),
+      )
+    assertThat(SbomCore.components(result).map { it.name })
+      .containsExactly("bundle", "first-party", "opaque-runtime", "provided")
+    assertThat(result.metadata.timestamp.toInstant()).isEqualTo(timestamp)
+  }
+
+  @Test
   fun coalescesOnlyAnIdenticalQuarkusRootCopy() {
     fun finalize(copy: Component) =
       SbomCore.forDistribution(
