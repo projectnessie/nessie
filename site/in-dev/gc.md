@@ -257,6 +257,13 @@ versions of a `Content` are scanned to identify the set of live data files. Afte
 base-location(s)  are scanned and all files that are not in the set of live data files are deleted.
 The "sweep phase" is implemented by `DefaultLocalExpire`.
 
+The sweep compares the files in a base location only with the live data files of the current
+content. A base location that multiple contents use, or that contains or is in another base
+location, can contain the live files of other contents. GC skips these base locations, logs a
+warning and keeps their files. This occurs when a new table uses the location of a dropped table,
+with `registerTable` or a re-created table. It also occurs when a table moves into a sub-directory
+of its previous location.
+
 ### Inner workings
 
 To minimize the amount of data needed to match against the set of live data files for a `Content`,

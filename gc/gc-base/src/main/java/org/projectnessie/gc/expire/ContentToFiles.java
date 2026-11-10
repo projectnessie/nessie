@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.projectnessie.gc.contents.ContentReference;
 import org.projectnessie.gc.files.FileReference;
 import org.projectnessie.model.Content;
+import org.projectnessie.storage.uri.StorageUri;
 
 /**
  * Retrieve all files/objects for a specific {@link ContentReference}, specific to table formats.
@@ -40,4 +41,19 @@ public interface ContentToFiles {
    */
   @MustBeClosed
   Stream<FileReference> extractFiles(@NotNull ContentReference contentReference);
+
+  /**
+   * Extracts the base location(s) of the given {@link Content} object, the same as the {@link
+   * FileReference#base() base locations} of the files returned by {@link
+   * #extractFiles(ContentReference)}. Used to identify base locations that are shared by multiple
+   * contents, before any file is deleted.
+   *
+   * <p>The default implementation extracts all files, implementations should provide a cheaper one.
+   */
+  @MustBeClosed
+  default Stream<StorageUri> extractBaseLocations(@NotNull ContentReference contentReference) {
+    @SuppressWarnings("MustBeClosedChecker")
+    Stream<FileReference> files = extractFiles(contentReference);
+    return files.map(FileReference::base).distinct();
+  }
 }
