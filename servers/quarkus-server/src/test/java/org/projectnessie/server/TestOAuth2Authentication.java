@@ -274,17 +274,16 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
     KeycloakAuthorizationCodeResourceOwnerEmulator resourceOwner =
         new KeycloakAuthorizationCodeResourceOwnerEmulator();
     resourceOwner.replaceSystemOut();
-    resourceOwner.setAuthUrlListener(
-        url -> {
-          String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
-          wireMockServer.stubFor(
-              WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
-                  .withQueryParam("response_type", equalTo("code"))
-                  .withQueryParam("client_id", equalTo("quarkus-service-app"))
-                  .withQueryParam("redirect_uri", containing("http"))
-                  .withQueryParam("state", equalTo(state))
-                  .willReturn(authorizationCodeResponse(state)));
-        });
+    resourceOwner.setAuthUrlListener(url -> {
+      String state = HttpUtils.parseQueryString(url.getQuery()).get("state");
+      wireMockServer.stubFor(
+          WireMock.get(urlPathEqualTo(AUTH_ENDPOINT_PATH))
+              .withQueryParam("response_type", equalTo("code"))
+              .withQueryParam("client_id", equalTo("quarkus-service-app"))
+              .withQueryParam("redirect_uri", containing("http"))
+              .withQueryParam("state", equalTo(state))
+              .willReturn(authorizationCodeResponse(state)));
+    });
     return resourceOwner;
   }
 
@@ -292,17 +291,15 @@ public class TestOAuth2Authentication extends AbstractOAuth2Authentication {
     KeycloakDeviceCodeResourceOwnerEmulator resourceOwner =
         new KeycloakDeviceCodeResourceOwnerEmulator();
     resourceOwner.replaceSystemOut();
-    resourceOwner.setCompletionListener(
-        () -> {
-          // Reconfigure token endpoint to send a valid token
-          wireMockServer.stubFor(
-              WireMock.post(TOKEN_ENDPOINT_PATH)
-                  .atPriority(1)
-                  .withHeader(
-                      "Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
-                  .withRequestBody(containing("device_code"))
-                  .willReturn(successfulResponse(VALID_TOKEN)));
-        });
+    resourceOwner.setCompletionListener(() -> {
+      // Reconfigure token endpoint to send a valid token
+      wireMockServer.stubFor(
+          WireMock.post(TOKEN_ENDPOINT_PATH)
+              .atPriority(1)
+              .withHeader("Authorization", equalTo("Basic cXVhcmt1cy1zZXJ2aWNlLWFwcDpzZWNyZXQ="))
+              .withRequestBody(containing("device_code"))
+              .willReturn(successfulResponse(VALID_TOKEN)));
+    });
     return resourceOwner;
   }
 

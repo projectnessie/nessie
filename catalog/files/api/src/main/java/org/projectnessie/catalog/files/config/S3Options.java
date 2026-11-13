@@ -59,16 +59,14 @@ public interface S3Options {
     ImmutableS3ServerIam.Builder serverIam = ImmutableS3ServerIam.builder();
     ImmutableS3ClientIam.Builder clientIam = ImmutableS3ClientIam.builder();
     defaultOptions()
-        .ifPresent(
-            d -> {
-              d.serverIam().ifPresent(serverIam::from);
-              d.clientIam().ifPresent(clientIam::from);
-            });
-    specific.ifPresent(
-        d -> {
+        .ifPresent(d -> {
           d.serverIam().ifPresent(serverIam::from);
           d.clientIam().ifPresent(clientIam::from);
         });
+    specific.ifPresent(d -> {
+      d.serverIam().ifPresent(serverIam::from);
+      d.clientIam().ifPresent(clientIam::from);
+    });
     builder.serverIam(serverIam.build());
     builder.clientIam(clientIam.build());
 

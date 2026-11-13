@@ -38,14 +38,13 @@ public class MergeConflictException extends ReferenceConflictException {
 
   private static List<Conflict> asReferenceConflicts(MergeTransplantResultBase mergeResult) {
     return mergeResult.getDetails().entrySet().stream()
-        .map(
-            e -> {
-              KeyDetails keyDetails = e.getValue();
-              Conflict conflict = keyDetails.getConflict();
-              return conflict != null
-                  ? conflict
-                  : Conflict.conflict(ConflictType.KEY_CONFLICT, e.getKey(), "UNKNOWN");
-            })
+        .map(e -> {
+          KeyDetails keyDetails = e.getValue();
+          Conflict conflict = keyDetails.getConflict();
+          return conflict != null
+              ? conflict
+              : Conflict.conflict(ConflictType.KEY_CONFLICT, e.getKey(), "UNKNOWN");
+        })
         .collect(Collectors.toList());
   }
 

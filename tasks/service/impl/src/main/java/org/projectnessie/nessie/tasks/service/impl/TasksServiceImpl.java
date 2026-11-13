@@ -596,7 +596,9 @@ public class TasksServiceImpl implements TasksService {
     @Override
     public <T extends TaskObj, B extends TaskObj.Builder> CompletionStage<T> submit(
         TaskRequest<T, B> taskRequest) {
-      return TasksServiceImpl.this.submit(persist, taskRequest);
+      // Task execution may be shared by multiple requests, but each caller's continuations must
+      // run with its own context rather than the context of the request completing the task.
+      return async.contextualize(TasksServiceImpl.this.submit(persist, taskRequest));
     }
   }
 

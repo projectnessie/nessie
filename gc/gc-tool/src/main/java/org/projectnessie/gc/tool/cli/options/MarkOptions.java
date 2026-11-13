@@ -102,17 +102,16 @@ public class MarkOptions {
   public PerRefCutoffPolicySupplier createPerRefCutoffPolicySupplier() {
     List<Entry<Predicate<String>, CutoffPolicy>> policies =
         cutoffPolicies.entrySet().stream()
-            .map(
-                e -> {
-                  Predicate<String> predicate = Pattern.compile(e.getKey()).asMatchPredicate();
+            .map(e -> {
+              Predicate<String> predicate = Pattern.compile(e.getKey()).asMatchPredicate();
 
-                  CutoffPolicy cutoffPolicy =
-                      parseCutoffPolicy(
-                          e.getValue(),
-                          () -> "for reference name regexpression predicate '" + e.getKey() + "'");
+              CutoffPolicy cutoffPolicy =
+                  parseCutoffPolicy(
+                      e.getValue(),
+                      () -> "for reference name regexpression predicate '" + e.getKey() + "'");
 
-                  return Maps.immutableEntry(predicate, cutoffPolicy);
-                })
+              return Maps.immutableEntry(predicate, cutoffPolicy);
+            })
             .collect(Collectors.toList());
 
     return namedReference ->

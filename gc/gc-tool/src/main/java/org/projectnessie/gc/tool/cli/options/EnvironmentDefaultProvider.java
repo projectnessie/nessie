@@ -40,11 +40,10 @@ public class EnvironmentDefaultProvider implements IDefaultValueProvider {
       return Arrays.stream(optionSpec.names())
           .filter(name -> name.startsWith("--"))
           .map(name -> "NESSIE_GC_" + name.substring(2).replace('-', '_').toUpperCase(Locale.ROOT))
-          .flatMap(
-              name -> {
-                String envVal = System.getenv(name);
-                return envVal != null ? Stream.of(envVal) : Stream.empty();
-              })
+          .flatMap(name -> {
+            String envVal = System.getenv(name);
+            return envVal != null ? Stream.of(envVal) : Stream.empty();
+          })
           .findFirst()
           .orElse(null);
     }

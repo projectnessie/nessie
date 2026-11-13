@@ -104,6 +104,8 @@ dependencies {
 
   openapiSource(project(":nessie-model")) { isTransitive = false }
 
+  testImplementation(project(":nessie-tasks-api"))
+
   testFixturesApi(platform(libs.junit.bom))
   testFixturesApi(libs.bundles.junit.testing)
 
@@ -251,6 +253,8 @@ tasks.withType(Test::class.java).configureEach {
 }
 
 quarkus {
+  quarkusBuildProperties.put("quarkus.cyclonedx.runtime-only", "true")
+  quarkusBuildProperties.put("quarkus.cyclonedx.schema-version", "1.6")
   // Generate the build-local distribution inventory without exposing or embedding an SBOM.
   quarkusBuildProperties.put("quarkus.cyclonedx.endpoint.enabled", "false")
   quarkusBuildProperties.put("quarkus.cyclonedx.embedded.enabled", "false")

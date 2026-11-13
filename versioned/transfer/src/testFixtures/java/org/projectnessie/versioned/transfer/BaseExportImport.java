@@ -332,25 +332,22 @@ public abstract class BaseExportImport {
     }
 
     try (Stream<Hash> scan = scanAllTargetCommits()) {
-      scan.forEach(
-          c -> {
-            List<KeyEntry> sourceKeyEntries = keys(sourceVersionStore(), c);
-            List<KeyEntry> targetKeyEntries = keys(targetVersionStore(), c);
-            soft.assertThat(targetKeyEntries).containsExactlyInAnyOrderElementsOf(sourceKeyEntries);
-            Set<ContentKey> keys =
-                targetKeyEntries.stream()
-                    .map(e -> e.getKey().contentKey())
-                    .collect(Collectors.toSet());
-            try {
-              Map<ContentKey, ContentResult> targetValues =
-                  targetVersionStore().getValues(c, keys, false);
-              Map<ContentKey, ContentResult> sourceValues =
-                  sourceVersionStore().getValues(c, keys, false);
-              soft.assertThat(targetValues).containsExactlyInAnyOrderEntriesOf(sourceValues);
-            } catch (ReferenceNotFoundException e) {
-              throw new RuntimeException(e);
-            }
-          });
+      scan.forEach(c -> {
+        List<KeyEntry> sourceKeyEntries = keys(sourceVersionStore(), c);
+        List<KeyEntry> targetKeyEntries = keys(targetVersionStore(), c);
+        soft.assertThat(targetKeyEntries).containsExactlyInAnyOrderElementsOf(sourceKeyEntries);
+        Set<ContentKey> keys =
+            targetKeyEntries.stream().map(e -> e.getKey().contentKey()).collect(Collectors.toSet());
+        try {
+          Map<ContentKey, ContentResult> targetValues =
+              targetVersionStore().getValues(c, keys, false);
+          Map<ContentKey, ContentResult> sourceValues =
+              sourceVersionStore().getValues(c, keys, false);
+          soft.assertThat(targetValues).containsExactlyInAnyOrderEntriesOf(sourceValues);
+        } catch (ReferenceNotFoundException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
 
     soft.assertThat(importResult)

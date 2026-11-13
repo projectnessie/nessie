@@ -63,6 +63,7 @@ import org.projectnessie.catalog.service.api.CatalogCommit;
 import org.projectnessie.catalog.service.api.CatalogService;
 import org.projectnessie.catalog.service.api.SnapshotReqParams;
 import org.projectnessie.catalog.service.api.SnapshotResponse;
+import org.projectnessie.catalog.service.config.ImmutableWarehouseConfig;
 import org.projectnessie.error.NessieReferenceConflictException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
@@ -70,6 +71,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.IcebergView;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Reference;
 import org.projectnessie.objectstoragemock.Bucket;
@@ -85,6 +87,68 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class TestCatalogServiceImpl extends AbstractCatalogService {
 
+  static Stream<Arguments> locationElements() {
+    return Stream.of(
+        arguments("table.name-1_2~", "table.name-1_2~"),
+        arguments("part/name", "part%2Fname"),
+        arguments("/name", "%2Fname"),
+        arguments("s3://example/name", "s3%3A%2F%2Fexample%2Fname"),
+        arguments("part/../name", "part%2F..%2Fname"),
+        arguments(".", "%2E"),
+        arguments("..", "%2E."),
+        arguments(".name", "%2Ename"),
+        arguments("part\\name", "part%5Cname"),
+        arguments("part%2Fname", "part%252Fname"),
+        arguments("name with space", "name%20with%20space"),
+        arguments("name?#@", "name%3F%23%40"),
+        arguments("café", "caf%C3%A9"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("locationElements")
+  public void locationForEntity(String element, String encoded) {
+    var warehouse = ImmutableWarehouseConfig.builder().location("s3://bucket/warehouse").build();
+    ContentKey namespace = ContentKey.of("namespace");
+    ContentKey key = ContentKey.of("namespace", element, "table");
+    List<ContentKey> parents = List.of(namespace, key.getParent(), key);
+
+    soft.assertThat(catalogService.locationForEntity(warehouse, key, parents, Map.of()).toString())
+        .isEqualTo("s3://bucket/warehouse/namespace/" + encoded + "/table");
+
+    // The nearest explicit namespace location is used without re-encoding it.
+    ContentKey inner = ContentKey.of("namespace", "inner");
+    ContentKey nestedTable = ContentKey.of("namespace", "inner", element);
+    Map<ContentKey, Content> namespaces =
+        Map.of(
+            namespace,
+            Namespace.builder()
+                .elements(namespace.getElements())
+                .putProperties("location", "s3://bucket/outer")
+                .build(),
+            inner,
+            Namespace.builder()
+                .elements(inner.getElements())
+                .putProperties("location", "s3://bucket/inner%20location")
+                .build());
+    soft.assertThat(
+            catalogService
+                .locationForEntity(
+                    warehouse, nestedTable, List.of(namespace, inner, nestedTable), namespaces)
+                .toString())
+        .isEqualTo("s3://bucket/inner%20location/" + encoded);
+
+    ContentKey table = ContentKey.of("namespace", element);
+    soft.assertThat(
+            catalogService
+                .locationForEntity(
+                    warehouse,
+                    table,
+                    List.of(namespace, table),
+                    Map.of(namespace, namespaces.get(namespace)))
+                .toString())
+        .isEqualTo("s3://bucket/outer/" + encoded);
+  }
+
   /** Check that a non-modifying catalog-commit is a no-op. */
   @Test
   public void cleanupAfterNessieCommitFailure() throws Exception {
@@ -94,13 +158,12 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
 
     AtomicReference<List<String>> storedLocations = new AtomicReference<>(new ArrayList<>());
 
-    interceptingBucket.setUpdater(
-        (k, m) -> {
-          List<String> l = storedLocations.get();
-          l.add(k);
-          storedLocations.set(l);
-          return Optional.empty();
-        });
+    interceptingBucket.setUpdater((k, m) -> {
+      List<String> l = storedLocations.get();
+      l.add(k);
+      storedLocations.set(l);
+      return Optional.empty();
+    });
 
     api.commitMultipleOperations()
         .branch((Branch) main)
@@ -121,54 +184,48 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
   public void setLocationForCreate() throws Exception {
     var main = (Branch) api.getReference().refName("main").get();
     var apiContext = apiContext("Catalog", 0);
-    soft.assertThatCode(
-            () ->
-                catalogService.setLocationForCreate(
-                    main,
-                    IcebergCatalogOperation.builder()
-                        .key(ContentKey.of("my", "table"))
-                        .type(ICEBERG_TABLE)
-                        .build(),
-                    apiContext))
+    soft.assertThatCode(() ->
+            catalogService.setLocationForCreate(
+                main,
+                IcebergCatalogOperation.builder()
+                    .key(ContentKey.of("my", "table"))
+                    .type(ICEBERG_TABLE)
+                    .build(),
+                apiContext))
         .doesNotThrowAnyException();
 
-    soft.assertThatCode(
-            () ->
-                catalogService.setLocationForCreate(
-                    main,
-                    IcebergCatalogOperation.builder()
-                        .key(ContentKey.of("my", "table"))
-                        .type(ICEBERG_TABLE)
-                        .addUpdate(ImmutableSetLocation.of("s3://foo/bar", false))
-                        .build(),
-                    apiContext))
+    soft.assertThatCode(() ->
+            catalogService.setLocationForCreate(
+                main,
+                IcebergCatalogOperation.builder()
+                    .key(ContentKey.of("my", "table"))
+                    .type(ICEBERG_TABLE)
+                    .addUpdate(ImmutableSetLocation.of("s3://foo/bar", false))
+                    .build(),
+                apiContext))
         .doesNotThrowAnyException();
 
-    soft.assertThatCode(
-            () ->
-                catalogService.setLocationForCreate(
-                    main,
-                    IcebergCatalogOperation.builder()
-                        .key(ContentKey.of("my", "table"))
-                        .type(ICEBERG_TABLE)
-                        .addUpdate(
-                            ImmutableSetLocation.of("s3://" + BUCKET + "/foo/bar/baz/", false))
-                        .build(),
-                    apiContext))
+    soft.assertThatCode(() ->
+            catalogService.setLocationForCreate(
+                main,
+                IcebergCatalogOperation.builder()
+                    .key(ContentKey.of("my", "table"))
+                    .type(ICEBERG_TABLE)
+                    .addUpdate(ImmutableSetLocation.of("s3://" + BUCKET + "/foo/bar/baz/", false))
+                    .build(),
+                apiContext))
         .doesNotThrowAnyException();
 
     soft.assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                catalogService.setLocationForCreate(
-                    main,
-                    IcebergCatalogOperation.builder()
-                        .key(ContentKey.of("my", "table"))
-                        .type(ICEBERG_TABLE)
-                        .addUpdate(
-                            ImmutableSetLocation.of("meep://" + BUCKET + "/foo/bar/baz/", false))
-                        .build(),
-                    apiContext))
+        .isThrownBy(() ->
+            catalogService.setLocationForCreate(
+                main,
+                IcebergCatalogOperation.builder()
+                    .key(ContentKey.of("my", "table"))
+                    .type(ICEBERG_TABLE)
+                    .addUpdate(ImmutableSetLocation.of("meep://" + BUCKET + "/foo/bar/baz/", false))
+                    .build(),
+                apiContext))
         .withMessage(
             "Location for ICEBERG_TABLE 'my.table' cannot be associated with any configured object storage location: Not an S3 URI");
   }
@@ -210,40 +267,39 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
     AtomicReference<List<String>> storedLocations = new AtomicReference<>(new ArrayList<>());
     AtomicReference<List<String>> failedLocations = new AtomicReference<>(new ArrayList<>());
 
-    interceptingBucket.setUpdater(
-        (k, m) -> {
-          List<String> l = storedLocations.get();
-          if (l.size() == after) {
-            l = failedLocations.get();
-            l.add(k);
-            failedLocations.set(l);
-            return Optional.of(
-                new Bucket.ObjectUpdater() {
-                  @Override
-                  public Bucket.ObjectUpdater append(long position, InputStream data) {
-                    return this;
-                  }
+    interceptingBucket.setUpdater((k, m) -> {
+      List<String> l = storedLocations.get();
+      if (l.size() == after) {
+        l = failedLocations.get();
+        l.add(k);
+        failedLocations.set(l);
+        return Optional.of(
+            new Bucket.ObjectUpdater() {
+              @Override
+              public Bucket.ObjectUpdater append(long position, InputStream data) {
+                return this;
+              }
 
-                  @Override
-                  public Bucket.ObjectUpdater flush() {
-                    return this;
-                  }
+              @Override
+              public Bucket.ObjectUpdater flush() {
+                return this;
+              }
 
-                  @Override
-                  public Bucket.ObjectUpdater setContentType(String contentType) {
-                    return this;
-                  }
+              @Override
+              public Bucket.ObjectUpdater setContentType(String contentType) {
+                return this;
+              }
 
-                  @Override
-                  public MockObject commit() {
-                    throw new UnsupportedOperationException("Injected Object Storage Failure");
-                  }
-                });
-          }
-          l.add(k);
-          storedLocations.set(l);
-          return Optional.empty();
-        });
+              @Override
+              public MockObject commit() {
+                throw new UnsupportedOperationException("Injected Object Storage Failure");
+              }
+            });
+      }
+      l.add(k);
+      storedLocations.set(l);
+      return Optional.empty();
+    });
 
     soft.assertThatThrownBy(() -> commitMultiple(main, API_WRITE, key1, key2, key3, key4))
         .isInstanceOf(ExecutionException.class)
@@ -392,17 +448,16 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
       failingCheckType.set(checkType);
 
       AbstractThrowableAssert<?, ? extends Throwable> read =
-          soft.assertThatCode(
-                  () ->
-                      catalogService
-                          .retrieveSnapshot(
-                              forSnapshotHttpReq(committed, "ICEBERG", "2"),
-                              key,
-                              ICEBERG_TABLE,
-                              API_READ,
-                              apiContext("Catalog", 0))
-                          .toCompletableFuture()
-                          .get(5, MINUTES))
+          soft.assertThatCode(() ->
+                  catalogService
+                      .retrieveSnapshot(
+                          forSnapshotHttpReq(committed, "ICEBERG", "2"),
+                          key,
+                          ICEBERG_TABLE,
+                          API_READ,
+                          apiContext("Catalog", 0))
+                      .toCompletableFuture()
+                      .get(5, MINUTES))
               .describedAs("forRead with %s", checkType);
       if (readFail) {
         read.isInstanceOf(AccessCheckException.class);
@@ -411,17 +466,16 @@ public class TestCatalogServiceImpl extends AbstractCatalogService {
       }
 
       AbstractThrowableAssert<?, ? extends Throwable> write =
-          soft.assertThatCode(
-                  () ->
-                      catalogService
-                          .retrieveSnapshot(
-                              forSnapshotHttpReq(committed, "ICEBERG", "2"),
-                              key,
-                              ICEBERG_TABLE,
-                              API_WRITE,
-                              apiContext("Catalog", 0))
-                          .toCompletableFuture()
-                          .get(5, MINUTES))
+          soft.assertThatCode(() ->
+                  catalogService
+                      .retrieveSnapshot(
+                          forSnapshotHttpReq(committed, "ICEBERG", "2"),
+                          key,
+                          ICEBERG_TABLE,
+                          API_WRITE,
+                          apiContext("Catalog", 0))
+                      .toCompletableFuture()
+                      .get(5, MINUTES))
               .describedAs("forWrite with %s", checkType);
       if (writeFail) {
         write.isInstanceOf(AccessCheckException.class);

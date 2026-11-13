@@ -182,12 +182,11 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
       throws IOException {
 
     return loadTable(prefix, namespace, table, null, dataAccess)
-        .map(
-            loadTableResponse -> {
-              var creds = loadTableResponse.storageCredentials();
+        .map(loadTableResponse -> {
+          var creds = loadTableResponse.storageCredentials();
 
-              return ImmutableIcebergLoadCredentialsResponse.of(creds != null ? creds : List.of());
-            });
+          return ImmutableIcebergLoadCredentialsResponse.of(creds != null ? creds : List.of());
+        });
   }
 
   /**
@@ -210,15 +209,14 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             SnapshotReqParams.forSnapshotHttpReq(tableRef.reference(), "iceberg", null),
             ICEBERG_TABLE,
             ICEBERG_V1)
-        .map(
-            snap ->
-                loadTableResultFromSnapshotResponse(
-                    snap,
-                    IcebergLoadTableResponse.builder(),
-                    warehouse.location(),
-                    tableRef(key, requestedReference, tableRef.warehouse()),
-                    dataAccess,
-                    writeAccessValidated));
+        .map(snap ->
+            loadTableResultFromSnapshotResponse(
+                snap,
+                IcebergLoadTableResponse.builder(),
+                warehouse.location(),
+                tableRef(key, requestedReference, tableRef.warehouse()),
+                dataAccess,
+                writeAccessValidated));
   }
 
   private static String signingPrefix(TableRef tableRef) {
@@ -321,9 +319,8 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     IcebergTableMetadata resultMetadata =
         config
             .updatedMetadataProperties()
-            .map(
-                newProps ->
-                    IcebergTableMetadata.builder().from(tableMetadata).properties(newProps).build())
+            .map(newProps ->
+                IcebergTableMetadata.builder().from(tableMetadata).properties(newProps).build())
             .orElse(tableMetadata);
 
     return builder
@@ -417,15 +414,14 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
             .build();
 
     return createOrUpdateEntity(tableRef, updateTableReq, ICEBERG_TABLE, CATALOG_CREATE_ENTITY)
-        .map(
-            snap ->
-                this.loadTableResultFromSnapshotResponse(
-                    snap,
-                    IcebergCreateTableResponse.builder(),
-                    warehouse.location(),
-                    tableRef,
-                    dataAccess,
-                    true));
+        .map(snap ->
+            this.loadTableResultFromSnapshotResponse(
+                snap,
+                IcebergCreateTableResponse.builder(),
+                warehouse.location(),
+                tableRef,
+                dataAccess,
+                true));
   }
 
   @Operation(operationId = "iceberg.v1.registerTable")
@@ -511,13 +507,12 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
 
     catalogService
         .validateStorageLocation(tableMetadata.location())
-        .ifPresent(
-            msg -> {
-              throw new IllegalArgumentException(
-                  format(
-                      "Location for table '%s' to be registered cannot be associated with any configured object storage location: %s",
-                      tableRef.contentKey(), msg));
-            });
+        .ifPresent(msg -> {
+          throw new IllegalArgumentException(
+              format(
+                  "Location for table '%s' to be registered cannot be associated with any configured object storage location: %s",
+                  tableRef.contentKey(), msg));
+        });
 
     ToIntFunction<Integer> safeUnbox = i -> i != null ? i : 0;
 
@@ -666,17 +661,16 @@ public class IcebergApiV1TableResource extends IcebergApiV1ResourceBase {
     // TODO verify the "location" can be mapped to a configured object-store
 
     return createOrUpdateEntity(tableRef, commitTableRequest, ICEBERG_TABLE, CATALOG_UPDATE_ENTITY)
-        .map(
-            snap -> {
-              IcebergTableMetadata tableMetadata =
-                  (IcebergTableMetadata)
-                      snap.entityObject()
-                          .orElseThrow(() -> new IllegalStateException("entity object missing"));
-              IcebergTable content = (IcebergTable) snap.content();
-              return IcebergCommitTableResponse.builder()
-                  .metadata(tableMetadata)
-                  .metadataLocation(content.getMetadataLocation())
-                  .build();
-            });
+        .map(snap -> {
+          IcebergTableMetadata tableMetadata =
+              (IcebergTableMetadata)
+                  snap.entityObject()
+                      .orElseThrow(() -> new IllegalStateException("entity object missing"));
+          IcebergTable content = (IcebergTable) snap.content();
+          return IcebergCommitTableResponse.builder()
+              .metadata(tableMetadata)
+              .metadataLocation(content.getMetadataLocation())
+              .build();
+        });
   }
 }

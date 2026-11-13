@@ -16,6 +16,7 @@
 
 import org.projectnessie.gradle.licenses.LicenseChecksExtension
 import org.projectnessie.gradle.licenses.LicenseChecksPlugin
+import org.projectnessie.gradle.sbom.configureDistributionSbom
 
 // Keep Licensee's Maven/Plexus dependencies on the private applied-script classpath.
 // An included build alone does not isolate the runtime classpath from Quarkus.
@@ -32,3 +33,5 @@ apply<LicenseChecksPlugin>()
 extensions.configure<LicenseChecksExtension>("licenseChecks") {
   policyFrom(layout.settingsDirectory.file("gradle/license/license-policy.json"))
 }
+
+configureDistributionSbom()

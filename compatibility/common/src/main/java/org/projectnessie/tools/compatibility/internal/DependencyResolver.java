@@ -64,14 +64,13 @@ final class DependencyResolver {
     return artifacts
         .map(Artifact::getFile)
         .map(File::toURI)
-        .map(
-            u -> {
-              try {
-                return u.toURL();
-              } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-              }
-            });
+        .map(u -> {
+          try {
+            return u.toURL();
+          } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   static ClassLoader asIndependentClassLoader(
@@ -150,19 +149,18 @@ final class DependencyResolver {
     // java.version --> Maven profile activation based on Java version
     // java.version --> pom's resolving a tools.jar :facepalm:
     System.getProperties()
-        .forEach(
-            (k, v) -> {
-              String key = k.toString();
-              if (key.startsWith("java.")
-                  || key.startsWith("file.")
-                  || key.startsWith("os.")
-                  || key.endsWith(".separator")
-                  || key.endsWith(".encoding")
-                  || key.startsWith("sun.")
-                  || key.startsWith("user.")) {
-                session.setSystemProperty(key, v.toString());
-              }
-            });
+        .forEach((k, v) -> {
+          String key = k.toString();
+          if (key.startsWith("java.")
+              || key.startsWith("file.")
+              || key.startsWith("os.")
+              || key.endsWith(".separator")
+              || key.endsWith(".encoding")
+              || key.startsWith("sun.")
+              || key.startsWith("user.")) {
+            session.setSystemProperty(key, v.toString());
+          }
+        });
 
     return session;
   }

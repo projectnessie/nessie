@@ -94,7 +94,7 @@ public abstract class ObjectStorageMock {
 
   @Value.Default
   public AccessCheckHandler accessCheckHandler() {
-    return (key) -> true;
+    return key -> true;
   }
 
   public interface MockServer extends AutoCloseable {
@@ -137,19 +137,22 @@ public abstract class ObjectStorageMock {
      * separators, so {@code /} as {@code %2f}, which are considered to be insecure and is (should
      * be) rejected by containers since <a
      * href="https://github.com/jakartaee/servlet/blob/6.0.0-RELEASE/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization">service
-     * spec v6</a>.
+     * spec v6</a>. Percent signs in literal object keys are encoded as {@code %25} by object-store
+     * clients, which Jetty otherwise rejects as ambiguous path encoding.
      */
     private void customizeUriCompliance() {
       for (Connector connector : server.getConnectors()) {
         connector.getConnectionFactories().stream()
             .filter(factory -> factory instanceof HttpConnectionFactory)
-            .forEach(
-                factory -> {
-                  HttpConfiguration httpConfig =
-                      ((HttpConnectionFactory) factory).getHttpConfiguration();
-                  httpConfig.setUriCompliance(
-                      UriCompliance.from(Set.of(UriCompliance.Violation.AMBIGUOUS_PATH_SEPARATOR)));
-                });
+            .forEach(factory -> {
+              HttpConfiguration httpConfig =
+                  ((HttpConnectionFactory) factory).getHttpConfiguration();
+              httpConfig.setUriCompliance(
+                  UriCompliance.from(
+                      Set.of(
+                          UriCompliance.Violation.AMBIGUOUS_PATH_SEPARATOR,
+                          UriCompliance.Violation.AMBIGUOUS_PATH_ENCODING)));
+            });
       }
     }
 

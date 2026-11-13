@@ -48,11 +48,10 @@ public abstract class AbstractTestInvalidRefs extends BaseTestServiceImpl {
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
 
-    assertThatThrownBy(
-            () ->
-                contentApi()
-                    .getContent(
-                        ContentKey.of("table0"), branch.getName(), invalidHash, false, API_READ))
+    assertThatThrownBy(() ->
+            contentApi()
+                .getContent(
+                    ContentKey.of("table0"), branch.getName(), invalidHash, false, API_READ))
         .isInstanceOf(NessieNotFoundException.class)
         .hasMessageContaining(String.format("Commit '%s' not found", invalidHash));
   }

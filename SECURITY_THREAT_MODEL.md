@@ -215,6 +215,11 @@ Nessie uses table metadata locations and warehouse configuration to determine th
 returned to clients. Warehouses determine default creation locations; existing table locations are used
 to look up matching object-store configuration when tables are loaded. `(documented)`
 
+Default creation locations append namespace and entity-name elements as individually percent-encoded
+path segments to the nearest explicit namespace location, or to the warehouse location. Leading dots
+are encoded as well. Existing stored entity locations and explicit namespace locations retain their
+original spelling. `(documented)`
+
 Nessie supports mechanisms such as S3 request signing and short-lived/down-scoped credentials for
 object-store access. These mechanisms are configuration-dependent and must be tailored to the query
 engine and deployment environment. `(documented)`
@@ -244,6 +249,7 @@ locations; any other request, including a match on more
 than one bucket, is rejected rather than reinterpreted as path-style. Bucket names can contain dots,
 so a request to `foo.bar.<endpoint host>` is resolved to bucket `foo.bar` and never to a signed
 bucket `foo`, which would otherwise sign a request for one bucket with another bucket's credentials.
+With `path-style-access=true`, the request host must likewise be exactly the bucket's endpoint host.
 This does not widen the table paths permitted by current-location, historical-location,
 metadata-file, or object-storage-layout checks. Tokens without the setting, which includes AWS
 endpoints and tokens minted by earlier versions, keep the previous bucket resolution and signature.

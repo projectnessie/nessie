@@ -338,23 +338,21 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
     entries = entries(reference.getName(), reference.getHash(), 4, filterThatFindsTwoTables, false);
     soft.assertThat(entries)
         .hasSize(2)
-        .allSatisfy(
-            entry -> {
-              assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
-              assertThat(entry.getContentId()).isNotNull();
-              assertThat(entry.getContent()).isNull();
-            });
+        .allSatisfy(entry -> {
+          assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
+          assertThat(entry.getContentId()).isNotNull();
+          assertThat(entry.getContent()).isNull();
+        });
 
     // namespaceDepth filter returns content of real entries if requested
     entries = entries(reference.getName(), reference.getHash(), 4, filterThatFindsTwoTables, true);
     soft.assertThat(entries)
         .hasSize(2)
-        .allSatisfy(
-            entry -> {
-              assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
-              assertThat(entry.getContentId()).isNotNull();
-              assertThat(entry.getContent()).isNotNull();
-            });
+        .allSatisfy(entry -> {
+          assertThat(entry.getType()).isEqualTo(Content.Type.ICEBERG_TABLE);
+          assertThat(entry.getContentId()).isNotNull();
+          assertThat(entry.getContent()).isNotNull();
+        });
 
     entries = entries(reference, 5, "entry.namespace.matches('(\\\\.|$)')");
     soft.assertThat(entries).isEmpty();
@@ -424,11 +422,10 @@ public abstract class AbstractTestEntries extends BaseTestServiceImpl {
     List<String> unknownNamespaces =
         knownContentKeys.stream().map(ContentKey::toString).collect(Collectors.toList());
     for (String namespace : unknownNamespaces) {
-      soft.assertThatThrownBy(
-              () ->
-                  namespaceApi()
-                      .getNamespace(
-                          reference.getName(), reference.getHash(), Namespace.parse(namespace)))
+      soft.assertThatThrownBy(() ->
+              namespaceApi()
+                  .getNamespace(
+                      reference.getName(), reference.getHash(), Namespace.parse(namespace)))
           .isInstanceOf(NessieNamespaceNotFoundException.class)
           .hasMessage(String.format("Namespace '%s' does not exist", namespace));
     }

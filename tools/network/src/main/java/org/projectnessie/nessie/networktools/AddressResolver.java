@@ -51,24 +51,22 @@ public final class AddressResolver {
     try {
       LOCAL_ADDRESSES =
           networkInterfaces()
-              .flatMap(
-                  ni ->
-                      ni.getInterfaceAddresses().stream()
-                          // Need to do this InetAddress->byte[]->InetAddress dance to get rid of
-                          // host-address suffixes as in `0:0:0:0:0:0:0:1%lo'
-                          .map(InterfaceAddress::getAddress)
-                          .map(InetAddress::getAddress)
-                          .map(
-                              a -> {
-                                try {
-                                  return InetAddress.getByAddress(a);
-                                } catch (UnknownHostException e) {
-                                  // Should never happen when calling getByAddress() with an IPv4 or
-                                  // IPv6 address
-                                  throw new RuntimeException(e);
-                                }
-                              })
-                          .map(InetAddress::getHostAddress))
+              .flatMap(ni ->
+                  ni.getInterfaceAddresses().stream()
+                      // Need to do this InetAddress->byte[]->InetAddress dance to get rid of
+                      // host-address suffixes as in `0:0:0:0:0:0:0:1%lo'
+                      .map(InterfaceAddress::getAddress)
+                      .map(InetAddress::getAddress)
+                      .map(a -> {
+                        try {
+                          return InetAddress.getByAddress(a);
+                        } catch (UnknownHostException e) {
+                          // Should never happen when calling getByAddress() with an IPv4 or
+                          // IPv6 address
+                          throw new RuntimeException(e);
+                        }
+                      })
+                      .map(InetAddress::getHostAddress))
               .collect(toUnmodifiableSet());
 
       IP_V4_ONLY = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack", "false"));
@@ -120,11 +118,10 @@ public final class AddressResolver {
     if (IP_V4_ONLY) {
       return resultA;
     }
-    return resultA.compose(
-        a ->
-            dnsClient
-                .resolveAAAA(name)
-                .map(aaaa -> Stream.concat(aaaa.stream(), a.stream()).collect(toList())));
+    return resultA.compose(a ->
+        dnsClient
+            .resolveAAAA(name)
+            .map(aaaa -> Stream.concat(aaaa.stream(), a.stream()).collect(toList())));
   }
 
   public Future<List<String>> resolve(String name) {
@@ -148,18 +145,16 @@ public final class AddressResolver {
 
   public Future<List<String>> resolveAll(List<String> names) {
     CompositeFuture composite = Future.all(names.stream().map(this::resolve).collect(toList()));
-    return composite.map(
-        c ->
-            IntStream.range(0, c.size())
-                .mapToObj(c::resultAt)
-                .map(
-                    e -> {
-                      @SuppressWarnings("unchecked")
-                      List<String> casted = (List<String>) e;
-                      return casted.stream();
-                    })
-                .reduce(Stream::concat)
-                .map(s -> s.collect(toList()))
-                .orElse(List.of()));
+    return composite.map(c ->
+        IntStream.range(0, c.size())
+            .mapToObj(c::resultAt)
+            .map(e -> {
+              @SuppressWarnings("unchecked")
+              List<String> casted = (List<String>) e;
+              return casted.stream();
+            })
+            .reduce(Stream::concat)
+            .map(s -> s.collect(toList()))
+            .orElse(List.of()));
   }
 }

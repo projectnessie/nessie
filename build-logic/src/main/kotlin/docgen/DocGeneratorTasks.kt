@@ -90,11 +90,16 @@ abstract class GenerateJavaJarHelpMarkdown : DefaultTask() {
   @TaskAction
   fun generate() {
     val output = ByteArrayOutputStream()
-    execOperations.exec {
+    val execResult = execOperations.exec {
       executable = javaLauncher.get().executablePath.asFile.absolutePath
       args("-jar", executableJar.get().asFile.absolutePath)
       args(this@GenerateJavaJarHelpMarkdown.arguments.get())
       standardOutput = output
+      errorOutput = output
+      isIgnoreExitValue = true
+    }
+    if (execResult.exitValue != 0) {
+      throw GradleException("Failed to generate help markdown: ${output.toString(Charsets.UTF_8)}")
     }
 
     val file = outputFile.get().asFile
@@ -138,10 +143,17 @@ abstract class GenerateMarkdownDocs : DefaultTask() {
         destination.absolutePath,
       ) + if (verbose.get()) listOf("--verbose") else emptyList()
 
-    execOperations.javaexec {
+    val output = ByteArrayOutputStream()
+    val execResult = execOperations.javaexec {
       classpath = toolClasspath
       mainClass.set(this@GenerateMarkdownDocs.mainClass)
       args(args)
+      standardOutput = output
+      errorOutput = output
+      isIgnoreExitValue = true
+    }
+    if (execResult.exitValue != 0) {
+      throw GradleException("Failed to generate markdown docs: ${output.toString(Charsets.UTF_8)}")
     }
   }
 }

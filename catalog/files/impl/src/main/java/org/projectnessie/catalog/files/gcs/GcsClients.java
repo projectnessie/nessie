@@ -193,12 +193,11 @@ public final class GcsClients {
                 oauth2token.token(),
                 oauth2token
                     .expiresAt()
-                    .map(
-                        i -> {
-                          @SuppressWarnings("JavaUtilDate")
-                          Date d = new Date(i.toEpochMilli());
-                          return d;
-                        })
+                    .map(i -> {
+                      @SuppressWarnings("JavaUtilDate")
+                      Date d = new Date(i.toEpochMilli());
+                      return d;
+                    })
                     .orElse(null));
         return OAuth2Credentials.create(accessToken);
       }

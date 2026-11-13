@@ -98,14 +98,10 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
       msg.append(" using default merge behavior ").append(spec.getDefaultMergeBehavior());
     }
 
-    keyMergeBehaviors.forEach(
-        (k, b) -> {
-          merge.mergeMode(ContentKey.fromPathString(k), MergeBehavior.valueOf(b));
-          msg.append(", key ")
-              .append(k)
-              .append(" behavior ")
-              .append(spec.getDefaultMergeBehavior());
-        });
+    keyMergeBehaviors.forEach((k, b) -> {
+      merge.mergeMode(ContentKey.fromPathString(k), MergeBehavior.valueOf(b));
+      msg.append(", key ").append(k).append(" behavior ").append(spec.getDefaultMergeBehavior());
+    });
 
     MergeResponse response = merge.merge();
 
@@ -148,28 +144,26 @@ public class MergeBranchCommand extends NessieCommand<MergeBranchCommandSpec> {
 
       response.getDetails().stream()
           .sorted(conflictsFirstComparator.thenComparing(keyComparator))
-          .forEach(
-              detail -> {
-                AttributedStringBuilder keyInfo =
-                    new AttributedStringBuilder()
-                        .append(
-                            format("%-70s ", detail.getKey().toString()), BaseNessieCli.STYLE_KEY)
-                        .append(
-                            format("%-7s", detail.getMergeBehavior().name()),
-                            BaseNessieCli.STYLE_FAINT);
-                Conflict conflict = detail.getConflict();
-                if (conflict != null) {
-                  keyInfo
-                      .append(" ")
-                      .append(conflict.message(), BaseNessieCli.STYLE_FAIL)
-                      .append(" (", BaseNessieCli.STYLE_FAINT)
-                      .append(conflict.conflictType().name(), BaseNessieCli.STYLE_ERROR)
-                      .append(")", BaseNessieCli.STYLE_FAINT);
-                } else {
-                  keyInfo.append(" ").append("OK", BaseNessieCli.STYLE_SUCCESS);
-                }
-                writer.println(keyInfo.toAnsi(terminal));
-              });
+          .forEach(detail -> {
+            AttributedStringBuilder keyInfo =
+                new AttributedStringBuilder()
+                    .append(format("%-70s ", detail.getKey().toString()), BaseNessieCli.STYLE_KEY)
+                    .append(
+                        format("%-7s", detail.getMergeBehavior().name()),
+                        BaseNessieCli.STYLE_FAINT);
+            Conflict conflict = detail.getConflict();
+            if (conflict != null) {
+              keyInfo
+                  .append(" ")
+                  .append(conflict.message(), BaseNessieCli.STYLE_FAIL)
+                  .append(" (", BaseNessieCli.STYLE_FAINT)
+                  .append(conflict.conflictType().name(), BaseNessieCli.STYLE_ERROR)
+                  .append(")", BaseNessieCli.STYLE_FAINT);
+            } else {
+              keyInfo.append(" ").append("OK", BaseNessieCli.STYLE_SUCCESS);
+            }
+            writer.println(keyInfo.toAnsi(terminal));
+          });
     }
 
     if (response.wasApplied()) {

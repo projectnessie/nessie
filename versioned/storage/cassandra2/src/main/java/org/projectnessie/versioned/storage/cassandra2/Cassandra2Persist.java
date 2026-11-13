@@ -454,24 +454,23 @@ public class Cassandra2Persist implements Persist {
           int idx = i;
           CompletionStage<?> cs =
               writeSingleObj(o, referenced, upsert, false, backend::executeAsync)
-                  .handle(
-                      (resultSet, e) -> {
-                        if (e != null) {
-                          if (e instanceof DriverException driverException) {
-                            throw unhandledException(driverException);
-                          }
-                          if (e instanceof RuntimeException re) {
-                            throw re;
-                          }
-                          throw new RuntimeException(e);
-                        }
-                        if (resultSet.wasApplied()) {
-                          results.set(idx, 1);
-                        } else {
-                          results.set(idx, 2);
-                        }
-                        return null;
-                      });
+                  .handle((resultSet, e) -> {
+                    if (e != null) {
+                      if (e instanceof DriverException driverException) {
+                        throw unhandledException(driverException);
+                      }
+                      if (e instanceof RuntimeException re) {
+                        throw re;
+                      }
+                      throw new RuntimeException(e);
+                    }
+                    if (resultSet.wasApplied()) {
+                      results.set(idx, 1);
+                    } else {
+                      results.set(idx, 2);
+                    }
+                    return null;
+                  });
           requests.submitted(cs);
         }
       }
@@ -486,19 +485,18 @@ public class Cassandra2Persist implements Persist {
       for (ObjId id : updateReferenced) {
         CompletionStage<?> cs =
             updateSingleReferenced(id, referenced, backend::executeAsync)
-                .handle(
-                    (resultSet, e) -> {
-                      if (e != null) {
-                        if (e instanceof DriverException driverException) {
-                          throw unhandledException(driverException);
-                        }
-                        if (e instanceof RuntimeException re) {
-                          throw re;
-                        }
-                        throw new RuntimeException(e);
-                      }
-                      return null;
-                    });
+                .handle((resultSet, e) -> {
+                  if (e != null) {
+                    if (e instanceof DriverException driverException) {
+                      throw unhandledException(driverException);
+                    }
+                    if (e instanceof RuntimeException re) {
+                      throw re;
+                    }
+                    throw new RuntimeException(e);
+                  }
+                  return null;
+                });
         requests.submitted(cs);
       }
     } catch (DriverException e) {

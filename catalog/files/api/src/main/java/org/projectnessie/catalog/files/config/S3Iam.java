@@ -107,16 +107,13 @@ public interface S3Iam {
   default void validate(String bucketName) {
     validateIam(this, bucketName);
     sessionDuration()
-        .ifPresent(
-            duration -> {
-              checkArgument(
-                  !duration.isNegative(), "Requested session duration is negative: %s", duration);
-              long seconds = duration.toSeconds();
-              checkArgument(seconds > 0, "Requested session duration is too short: %s", duration);
-              checkArgument(
-                  seconds < Integer.MAX_VALUE,
-                  "Requested session duration is too long: %s",
-                  duration);
-            });
+        .ifPresent(duration -> {
+          checkArgument(
+              !duration.isNegative(), "Requested session duration is negative: %s", duration);
+          long seconds = duration.toSeconds();
+          checkArgument(seconds > 0, "Requested session duration is too short: %s", duration);
+          checkArgument(
+              seconds < Integer.MAX_VALUE, "Requested session duration is too long: %s", duration);
+        });
   }
 }

@@ -77,15 +77,14 @@ public class TestNessieSchema {
                 NessieType.timestampType(3, true),
                 NessieType.timestampType(9, false),
                 NessieType.timestampType(9, true)))
-        .flatMap(
-            primitiveType ->
-                nullNotNull.apply(
-                    NessieField.builder()
-                        .id(UUID.randomUUID())
-                        .name(primitiveType.asString())
-                        .type(primitiveType)
-                        .doc("doc for " + primitiveType.asString())
-                        .icebergId(columnId.incrementAndGet())))
+        .flatMap(primitiveType ->
+            nullNotNull.apply(
+                NessieField.builder()
+                    .id(UUID.randomUUID())
+                    .name(primitiveType.asString())
+                    .type(primitiveType)
+                    .doc("doc for " + primitiveType.asString())
+                    .icebergId(columnId.incrementAndGet())))
         .forEach(struct::addField);
 
     NessieId schemaId = NessieId.randomNessieId();
@@ -125,7 +124,8 @@ public class TestNessieSchema {
               "transformSpec" : "bucket[42]",
               "nullOrder" : "nulls-first",
               "direction" : "asc"
-            }""",
+            }\
+            """,
             NessieSortField.builder()
                 .direction(NessieSortDirection.ASC)
                 .nullOrder(NessieNullOrder.NULLS_FIRST)
@@ -145,7 +145,8 @@ public class TestNessieSchema {
               "transformSpec" : "bucket[42]",
               "nullOrder" : "nulls-last",
               "direction" : "desc"
-            }""",
+            }\
+            """,
             NessieSortField.builder()
                 .direction(NessieSortDirection.DESC)
                 .nullOrder(NessieNullOrder.NULLS_LAST)
@@ -165,7 +166,8 @@ public class TestNessieSchema {
               "transformSpec" : "bucket[42]",
               "nullOrder" : "nulls-random",
               "direction" : "mixed"
-            }""",
+            }\
+            """,
             NessieSortField.builder()
                 // unknown sort-direction + null-order
                 .direction(ImmutableNessieSortDirection.of("mixed", "mixed"))

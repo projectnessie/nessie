@@ -42,6 +42,11 @@ public abstract class WrappingTasksAsync implements TasksAsync {
   }
 
   @Override
+  public <T> CompletionStage<T> contextualize(CompletionStage<T> stage) {
+    return delegate.contextualize(stage);
+  }
+
+  @Override
   public CompletionStage<Void> call(Runnable runnable) {
     return delegate.call(wrapRunnable(runnable));
   }

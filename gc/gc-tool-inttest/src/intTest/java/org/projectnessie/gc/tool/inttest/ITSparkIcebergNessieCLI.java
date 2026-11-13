@@ -140,11 +140,10 @@ public class ITSparkIcebergNessieCLI extends SparkSqlTestBase {
       case "sweep", "expire", "deferred-deletes" ->
           flociS3
               .icebergProperties()
-              .forEach(
-                  (k, v) -> {
-                    args.add("--iceberg");
-                    args.add(k + "=" + v);
-                  });
+              .forEach((k, v) -> {
+                args.add("--iceberg");
+                args.add(k + "=" + v);
+              });
       default -> {}
     }
 

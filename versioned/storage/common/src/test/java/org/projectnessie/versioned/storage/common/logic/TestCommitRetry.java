@@ -74,16 +74,15 @@ public class TestCommitRetry {
 
     AtomicInteger retryCounter = new AtomicInteger();
 
-    soft.assertThatThrownBy(
-            () ->
-                commitRetry(
-                    persist,
-                    (p, retryState) -> {
-                      retryCounter.incrementAndGet();
-                      soft.assertThat(p).isSameAs(persist).isNotNull();
-                      throw new RetryException();
-                    },
-                    tryLoopState))
+    soft.assertThatThrownBy(() ->
+            commitRetry(
+                persist,
+                (p, retryState) -> {
+                  retryCounter.incrementAndGet();
+                  soft.assertThat(p).isSameAs(persist).isNotNull();
+                  throw new RetryException();
+                },
+                tryLoopState))
         .isInstanceOf(RetryTimeoutException.class)
         .asInstanceOf(type(RetryTimeoutException.class))
         .extracting(RetryTimeoutException::getRetry, RetryTimeoutException::getTimeNanos)
@@ -104,17 +103,16 @@ public class TestCommitRetry {
     AtomicInteger retryCounter = new AtomicInteger();
     AtomicReference<String> result = new AtomicReference<>();
 
-    soft.assertThatCode(
-            () ->
-                result.set(
-                    commitRetry(
-                        persist,
-                        (p, retryState) -> {
-                          retryCounter.incrementAndGet();
-                          soft.assertThat(p).isSameAs(persist).isNotNull();
-                          return "foo";
-                        },
-                        tryLoopState)))
+    soft.assertThatCode(() ->
+            result.set(
+                commitRetry(
+                    persist,
+                    (p, retryState) -> {
+                      retryCounter.incrementAndGet();
+                      soft.assertThat(p).isSameAs(persist).isNotNull();
+                      return "foo";
+                    },
+                    tryLoopState)))
         .doesNotThrowAnyException();
 
     soft.assertThat(retryCounter).hasValue(1);
@@ -134,19 +132,18 @@ public class TestCommitRetry {
     AtomicInteger retryCounter = new AtomicInteger();
     AtomicReference<String> result = new AtomicReference<>();
 
-    soft.assertThatCode(
-            () ->
-                result.set(
-                    commitRetry(
-                        persist,
-                        (p, retryState) -> {
-                          if (retryCounter.incrementAndGet() == 1) {
-                            throw new RetryException();
-                          }
-                          soft.assertThat(p).isSameAs(persist).isNotNull();
-                          return "foo";
-                        },
-                        tryLoopState)))
+    soft.assertThatCode(() ->
+            result.set(
+                commitRetry(
+                    persist,
+                    (p, retryState) -> {
+                      if (retryCounter.incrementAndGet() == 1) {
+                        throw new RetryException();
+                      }
+                      soft.assertThat(p).isSameAs(persist).isNotNull();
+                      return "foo";
+                    },
+                    tryLoopState)))
         .doesNotThrowAnyException();
 
     soft.assertThat(retryCounter).hasValue(2);
@@ -162,20 +159,19 @@ public class TestCommitRetry {
     AtomicInteger retryCounter = new AtomicInteger();
     AtomicReference<String> result = new AtomicReference<>();
 
-    soft.assertThatCode(
-            () ->
-                result.set(
-                    commitRetry(
-                        persist,
-                        (p, retryState) -> {
-                          soft.assertThat(p).isSameAs(persist);
+    soft.assertThatCode(() ->
+            result.set(
+                commitRetry(
+                    persist,
+                    (p, retryState) -> {
+                      soft.assertThat(p).isSameAs(persist);
 
-                          if (retryCounter.incrementAndGet() == 1) {
-                            throw new RetryException();
-                          }
+                      if (retryCounter.incrementAndGet() == 1) {
+                        throw new RetryException();
+                      }
 
-                          return "foo";
-                        })))
+                      return "foo";
+                    })))
         .doesNotThrowAnyException();
 
     soft.assertThat(retryCounter).hasValue(2);
@@ -374,12 +370,11 @@ public class TestCommitRetry {
           otel.getSpans().stream().filter(s -> s.getSpanId().equals(spanId)).findFirst();
 
       return spanData
-          .orElseThrow(
-              () ->
-                  assertionFailure()
-                      .actual(otel.getSpans())
-                      .message("Expected Span not found: " + spanId)
-                      .build())
+          .orElseThrow(() ->
+              assertionFailure()
+                  .actual(otel.getSpans())
+                  .message("Expected Span not found: " + spanId)
+                  .build())
           .getEvents();
     }
 
@@ -390,9 +385,8 @@ public class TestCommitRetry {
       soft.assertThat(events).hasSize(1);
       soft.assertThat(events.get(0).getName()).isEqualTo("nessie.commit-retry.sleep");
       soft.assertThat(events)
-          .extracting(
-              e ->
-                  e.getAttributes().asMap().keySet().stream().map(AttributeKey::getKey).findFirst())
+          .extracting(e ->
+              e.getAttributes().asMap().keySet().stream().map(AttributeKey::getKey).findFirst())
           .containsExactly(Optional.of("nessie.commit-retry.sleep.duration-millis"));
     }
   }

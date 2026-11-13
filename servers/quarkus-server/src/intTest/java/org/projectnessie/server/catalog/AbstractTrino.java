@@ -169,9 +169,9 @@ public abstract class AbstractTrino {
     @Language("SQL")
     String selectView =
         """
-          SELECT year, clicks FROM nessie.my_namespace.my_view
-            ORDER BY year
-          """;
+        SELECT year, clicks FROM nessie.my_namespace.my_view
+          ORDER BY year
+        """;
     assertThat(trinoContainer.queryResults(selectView))
         .containsExactly(List.of(2021, 10000), List.of(2022, 20000), List.of(2023, 30000));
   }

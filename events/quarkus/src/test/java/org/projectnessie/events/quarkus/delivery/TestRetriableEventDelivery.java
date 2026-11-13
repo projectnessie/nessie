@@ -134,11 +134,10 @@ abstract class TestRetriableEventDelivery<D extends RetriableEventDelivery> {
 
   void setUpVertxTimer() {
     when(vertx.setTimer(anyLong(), any()))
-        .thenAnswer(
-            invocation -> {
-              Handler<Long> argument = invocation.getArgument(1);
-              argument.handle(1L);
-              return 1L;
-            });
+        .thenAnswer(invocation -> {
+          Handler<Long> argument = invocation.getArgument(1);
+          argument.handle(1L);
+          return 1L;
+        });
   }
 }

@@ -283,11 +283,10 @@ class TestIcebergS3SignParams {
 
   static Stream<Arguments> siblingMethodsAndUris() {
     return Stream.concat(readMethodsAndUris(), writeMethodsAndUris())
-        .map(
-            args -> {
-              String uri = (String) args.get()[1];
-              return arguments(args.get()[0], uri.replace(locationPart, locationPart + "e"));
-            });
+        .map(args -> {
+          String uri = (String) args.get()[1];
+          return arguments(args.get()[0], uri.replace(locationPart, locationPart + "e"));
+        });
   }
 
   /**
@@ -718,11 +717,8 @@ class TestIcebergS3SignParams {
         .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
     when(signer.sign(any())).thenReturn(signingResponse);
 
-    // With path-style access, the host is not considered, even if it starts with the bucket name.
     String requestUri =
-        "https://example-bucket.obs.example.com/example-bucket/warehouse/"
-            + locationPart
-            + "/data/file1.parquet";
+        "https://obs.example.com/example-bucket/warehouse/" + locationPart + "/data/file1.parquet";
     IcebergS3SignParams icebergSigner =
         newBuilder()
             .request(IcebergS3SignRequest.builder().from(writeRequest).uri(requestUri).build())
@@ -738,6 +734,31 @@ class TestIcebergS3SignParams {
     ArgumentCaptor<SigningRequest> signingRequest = ArgumentCaptor.forClass(SigningRequest.class);
     verify(signer).sign(signingRequest.capture());
     soft.assertThat(signingRequest.getValue().bucket()).contains("example-bucket");
+  }
+
+  @Test
+  void verifyAndSignFailurePathStyleUnexpectedHost() throws Exception {
+    when(catalogService.retrieveSnapshot(
+            any(), eq(key), isNull(), eq(expectedApiWrite(key)), eq(ICEBERG_V1)))
+        .thenReturn(CompletableFuture.completedStage(customVirtualHostSnapshotResponse()));
+
+    String requestUri =
+        "https://other-bucket.s3.us-east-1.amazonaws.com/example-bucket/warehouse/"
+            + locationPart
+            + "/data/file1.parquet";
+    IcebergS3SignParams icebergSigner =
+        newBuilder()
+            .request(IcebergS3SignRequest.builder().from(writeRequest).uri(requestUri).build())
+            .warehouseLocation(customWarehouseLocation)
+            .writeLocations(List.of(customBaseLocation))
+            .pathStyleAccess(true)
+            .build();
+
+    soft.assertThatThrownBy(icebergSigner::requestedBucket)
+        .isInstanceOf(IcebergException.class)
+        .hasMessage("URI not allowed for signing: " + requestUri);
+    expectFailure(icebergSigner.verifyAndSign(), "URI not allowed for signing: " + requestUri);
+    verifyNoInteractions(signer);
   }
 
   @Test

@@ -156,11 +156,10 @@ class TestRestV1Client {
   }
 
   private HttpTestServer errorServer(int status) throws Exception {
-    return new HttpTestServer(
-        (req, resp) -> {
-          resp.setStatus(status);
-          resp.getOutputStream().close();
-        });
+    return new HttpTestServer((req, resp) -> {
+      resp.setStatus(status);
+      resp.getOutputStream().close();
+    });
   }
 
   @Test
@@ -295,21 +294,20 @@ class TestRestV1Client {
 
   static HttpTestServer forConfig(int minApiVersion, int maxApiVersion, int actual)
       throws Exception {
-    return new HttpTestServer(
-        (req, resp) -> {
-          req.getInputStream().close();
-          resp.addHeader("Content-Type", "application/json");
-          StringBuilder json =
-              new StringBuilder()
-                  .append("{\"minSupportedApiVersion\":")
-                  .append(minApiVersion)
-                  .append(",\"maxSupportedApiVersion\":")
-                  .append(maxApiVersion);
-          if (actual > 0) {
-            json.append(",\"actualApiVersion\":").append(actual);
-          }
-          json.append("}");
-          HttpTestUtil.writeResponseBody(resp, json.toString());
-        });
+    return new HttpTestServer((req, resp) -> {
+      req.getInputStream().close();
+      resp.addHeader("Content-Type", "application/json");
+      StringBuilder json =
+          new StringBuilder()
+              .append("{\"minSupportedApiVersion\":")
+              .append(minApiVersion)
+              .append(",\"maxSupportedApiVersion\":")
+              .append(maxApiVersion);
+      if (actual > 0) {
+        json.append(",\"actualApiVersion\":").append(actual);
+      }
+      json.append("}");
+      HttpTestUtil.writeResponseBody(resp, json.toString());
+    });
   }
 }

@@ -489,11 +489,10 @@ public class MongoDBPersist implements Persist {
     long referenced = config.currentTimeMicros();
     List<UpdateOneModel<Document>> docs =
         updateReferenced.stream()
-            .map(
-                id ->
-                    new UpdateOneModel<Document>(
-                        eq(ID_PROPERTY_NAME, idObjDoc(id)),
-                        Updates.set(COL_OBJ_REFERENCED, referenced)))
+            .map(id ->
+                new UpdateOneModel<Document>(
+                    eq(ID_PROPERTY_NAME, idObjDoc(id)),
+                    Updates.set(COL_OBJ_REFERENCED, referenced)))
             .collect(toList());
     List<WriteModel<Document>> updates = new ArrayList<>(docs);
     while (!updates.isEmpty()) {

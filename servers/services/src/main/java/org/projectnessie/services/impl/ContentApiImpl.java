@@ -132,30 +132,28 @@ public class ContentApiImpl extends BaseApiImpl implements ContentService {
       Map<ContentKey, ContentResult> values = getStore().getValues(ref.getHash(), keys, forWrite);
       List<ContentWithKey> output =
           values.entrySet().stream()
-              .filter(
-                  e -> {
-                    ContentResult contentResult = e.getValue();
-                    IdentifiedContentKey identifiedKey = contentResult.identifiedKey();
-                    Set<String> actions = requestMeta.keyActions(identifiedKey.contentKey());
-                    check.canReadEntityValue(r, identifiedKey, actions);
-                    if (contentResult.content() != null) {
-                      if (forWrite) {
-                        check.canUpdateEntity(r, identifiedKey, actions);
-                      }
-                      return true;
-                    } else {
-                      if (forWrite) {
-                        check.canCreateEntity(r, identifiedKey, actions);
-                      }
-                      return false;
-                    }
-                  })
-              .map(
-                  e -> {
-                    ContentResult contentResult = e.getValue();
-                    return ContentWithKey.of(
-                        e.getKey(), contentResult.content(), contentResult.documentation());
-                  })
+              .filter(e -> {
+                ContentResult contentResult = e.getValue();
+                IdentifiedContentKey identifiedKey = contentResult.identifiedKey();
+                Set<String> actions = requestMeta.keyActions(identifiedKey.contentKey());
+                check.canReadEntityValue(r, identifiedKey, actions);
+                if (contentResult.content() != null) {
+                  if (forWrite) {
+                    check.canUpdateEntity(r, identifiedKey, actions);
+                  }
+                  return true;
+                } else {
+                  if (forWrite) {
+                    check.canCreateEntity(r, identifiedKey, actions);
+                  }
+                  return false;
+                }
+              })
+              .map(e -> {
+                ContentResult contentResult = e.getValue();
+                return ContentWithKey.of(
+                    e.getKey(), contentResult.content(), contentResult.documentation());
+              })
               .collect(Collectors.toList());
 
       check.checkAndThrow();

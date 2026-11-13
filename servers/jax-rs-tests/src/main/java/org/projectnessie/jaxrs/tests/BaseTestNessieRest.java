@@ -168,20 +168,18 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
       })
   public void testNotFoundUrls(String path) {
     rest()
-        .filter(
-            (req, resp, ctx) -> {
-              req.removeHeader("Content-Type");
-              return ctx.next(req, resp);
-            })
+        .filter((req, resp, ctx) -> {
+          req.removeHeader("Content-Type");
+          return ctx.next(req, resp);
+        })
         .get(path)
         .then()
         .statusCode(404);
     rest()
-        .filter(
-            (req, resp, ctx) -> {
-              req.removeHeader("Content-Type");
-              return ctx.next(req, resp);
-            })
+        .filter((req, resp, ctx) -> {
+          req.removeHeader("Content-Type");
+          return ctx.next(req, resp);
+        })
         .head(path)
         .then()
         .statusCode(404);
@@ -597,17 +595,16 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
     soft.assertThat(commits)
         .extracting(LogResponse.LogEntry::getCommitMeta)
-        .allSatisfy(
-            meta -> {
-              soft.assertThat(meta.getAllAuthors())
-                  .containsExactlyElementsOf(List.of(author1, author2));
-              soft.assertThat(meta.getAllSignedOffBy())
-                  .containsExactlyElementsOf(List.of(signedOffBy1, signedOffBy2));
-              soft.assertThat(meta.getMessage()).isEqualTo(message);
-              soft.assertThat(meta.getAllProperties())
-                  .containsExactlyInAnyOrderEntriesOf(
-                      Map.of("foo", List.of("bar", "baz"), "dog", List.of("Elani")));
-            });
+        .allSatisfy(meta -> {
+          soft.assertThat(meta.getAllAuthors())
+              .containsExactlyElementsOf(List.of(author1, author2));
+          soft.assertThat(meta.getAllSignedOffBy())
+              .containsExactlyElementsOf(List.of(signedOffBy1, signedOffBy2));
+          soft.assertThat(meta.getMessage()).isEqualTo(message);
+          soft.assertThat(meta.getAllProperties())
+              .containsExactlyInAnyOrderEntriesOf(
+                  Map.of("foo", List.of("bar", "baz"), "dog", List.of("Elani")));
+        });
   }
 
   @NessieApiVersions(versions = {NessieApiVersion.V2})
@@ -666,11 +663,9 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
             .as(GetMultipleContentsResponse.class)
             .getContents()
             .stream()
-            .map(
-                content ->
-                    entry(
-                        content.getKey(),
-                        ((IcebergTable) content.getContent()).getMetadataLocation()));
+            .map(content ->
+                entry(
+                    content.getKey(), ((IcebergTable) content.getContent()).getMetadataLocation()));
 
     assertThat(contents).containsExactlyInAnyOrder(entry(key1, "loc1"), entry(key2, "loc2"));
   }
@@ -953,10 +948,9 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
 
     List<Namespace> namespaces =
         contents.keySet().stream()
-            .flatMap(
-                k ->
-                    IntStream.range(1, k.getElementCount())
-                        .mapToObj(l -> Namespace.of(k.getElements().subList(0, l))))
+            .flatMap(k ->
+                IntStream.range(1, k.getElementCount())
+                    .mapToObj(l -> Namespace.of(k.getElements().subList(0, l))))
             .distinct()
             .collect(Collectors.toList());
 
@@ -975,27 +969,23 @@ public abstract class BaseTestNessieRest extends BaseTestNessieApi {
     contents.forEach((key, content) -> commitContent.operation(Put.of(key, content)));
     commitContent.commitWithResponse();
 
-    contents.forEach(
-        (key, expectedContent) -> {
-          for (String keyRepresentation : List.of(key.toPathString(), key.toPathStringEscaped())) {
+    contents.forEach((key, expectedContent) -> {
+      for (String keyRepresentation : List.of(key.toPathString(), key.toPathStringEscaped())) {
 
-            soft.assertThatCode(
-                    () -> {
-                      ContentResponse response =
-                          rest()
-                              .get(
-                                  "trees/{branch}/contents/{key}",
-                                  branch.getName(),
-                                  keyRepresentation)
-                              .then()
-                              .statusCode(200)
-                              .extract()
-                              .as(ContentResponse.class);
-                      assertThat(response.getContent().withId(null)).isEqualTo(expectedContent);
-                    })
-                .describedAs("key %s - using URI path %s", key, keyRepresentation)
-                .doesNotThrowAnyException();
-          }
-        });
+        soft.assertThatCode(
+                () -> {
+                  ContentResponse response =
+                      rest()
+                          .get("trees/{branch}/contents/{key}", branch.getName(), keyRepresentation)
+                          .then()
+                          .statusCode(200)
+                          .extract()
+                          .as(ContentResponse.class);
+                  assertThat(response.getContent().withId(null)).isEqualTo(expectedContent);
+                })
+            .describedAs("key %s - using URI path %s", key, keyRepresentation)
+            .doesNotThrowAnyException();
+      }
+    });
   }
 }

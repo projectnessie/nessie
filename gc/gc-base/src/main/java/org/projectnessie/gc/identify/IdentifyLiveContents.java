@@ -291,24 +291,22 @@ public abstract class IdentifyLiveContents {
               addContents.addLiveContent(
                   operations.stream()
                       .filter(operation -> operation instanceof Operation.Put)
-                      .filter(
-                          operation ->
-                              contentTypeFilter()
-                                  .test(((Operation.Put) operation).getContent().getType()))
-                      .map(
-                          operation -> {
-                            Operation.Put put = (Operation.Put) operation;
-                            Content content = put.getContent();
+                      .filter(operation ->
+                          contentTypeFilter()
+                              .test(((Operation.Put) operation).getContent().getType()))
+                      .map(operation -> {
+                        Operation.Put put = (Operation.Put) operation;
+                        Content content = put.getContent();
 
-                            LOGGER.debug(
-                                "live-set#{}: Adding content reference for {} from commit {}.",
-                                addContents.id(),
-                                put,
-                                commitHash);
+                        LOGGER.debug(
+                            "live-set#{}: Adding content reference for {} from commit {}.",
+                            addContents.id(),
+                            put,
+                            commitHash);
 
-                            return contentToContentReference()
-                                .contentToReference(content, commitHash, put.getKey());
-                          }));
+                        return contentToContentReference()
+                            .contentToReference(content, commitHash, put.getKey());
+                      }));
         } else {
           // 1st non-live commit
           finalCommitId = commitHash;
@@ -347,10 +345,9 @@ public abstract class IdentifyLiveContents {
     return addContents.addLiveContent(
         repositoryConnector()
             .allContents(ref, contentTypeFilter().validTypes())
-            .map(
-                e ->
-                    contentToContentReference()
-                        .contentToReference(e.getValue(), ref.getHash(), e.getKey())));
+            .map(e ->
+                contentToContentReference()
+                    .contentToReference(e.getValue(), ref.getHash(), e.getKey())));
   }
 
   private static final class ReferencesWalkResult {

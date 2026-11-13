@@ -57,14 +57,13 @@ public class ListReferencesCommand extends NessieListingCommand<ListReferencesCo
     }
 
     return refs.stream()
-        .flatMap(
-            ref ->
-                Stream.of(
-                    new AttributedStringBuilder()
-                        .append(format(" %-6s ", ref.getType().name()), STYLE_FAINT)
-                        .append(ref.getName())
-                        .append(format(" @ %s", ref.getHash()), STYLE_FAINT)
-                        .toAnsi(cli.terminal())));
+        .flatMap(ref ->
+            Stream.of(
+                new AttributedStringBuilder()
+                    .append(format(" %-6s ", ref.getType().name()), STYLE_FAINT)
+                    .append(ref.getName())
+                    .append(format(" @ %s", ref.getHash()), STYLE_FAINT)
+                    .toAnsi(cli.terminal())));
   }
 
   @Override

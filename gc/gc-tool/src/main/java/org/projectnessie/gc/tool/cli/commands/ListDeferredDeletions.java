@@ -56,14 +56,13 @@ public class ListDeferredDeletions extends BaseLiveSetCommand {
         Ansi.AUTO.text(
             format("@|bold,underline " + format + "|@", "Modified", "Base URI", "File path")));
     try (Stream<FileReference> deferredDeletions = liveContentSet.fetchFileDeletions()) {
-      deferredDeletions.forEach(
-          f ->
-              out.println(
-                  format(
-                      format,
-                      Instant.ofEpochMilli(f.modificationTimeMillisEpoch()),
-                      f.base(),
-                      f.path())));
+      deferredDeletions.forEach(f ->
+          out.println(
+              format(
+                  format,
+                  Instant.ofEpochMilli(f.modificationTimeMillisEpoch()),
+                  f.base(),
+                  f.path())));
     }
 
     out.println("End of listing.");

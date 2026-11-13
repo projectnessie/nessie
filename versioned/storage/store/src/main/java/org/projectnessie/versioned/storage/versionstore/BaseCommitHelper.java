@@ -277,57 +277,55 @@ class BaseCommitHelper {
 
     int payloadNamespace = payloadForContent(NAMESPACE);
 
-    allKeysToDelete.forEach(
-        (namespaceKey, payload) -> {
-          if (payloadNamespace != payload) {
-            return;
-          }
+    allKeysToDelete.forEach((namespaceKey, payload) -> {
+      if (payloadNamespace != payload) {
+        return;
+      }
 
-          StoreKey storeKey = keyToStoreKey(namespaceKey);
+      StoreKey storeKey = keyToStoreKey(namespaceKey);
 
-          for (Iterator<StoreIndexElement<CommitOp>> iter =
-                  headIndex.iterator(storeKey, null, false);
-              iter.hasNext(); ) {
-            StoreIndexElement<CommitOp> el = iter.next();
-            if (!el.content().action().exists()) {
-              // element does not exist - ignore
-              continue;
-            }
-            ContentKey elContentKey = storeKeyToKey(el.key());
-            if (elContentKey == null) {
-              // not a "content object" - ignore
-              continue;
-            }
-            if (elContentKey.equals(namespaceKey)) {
-              // this is our namespace - ignore
-              continue;
-            }
-            if (allKeysToDelete.containsKey(elContentKey)) {
-              // this key is being deleted as well - ignore
-              continue;
-            }
+      for (Iterator<StoreIndexElement<CommitOp>> iter = headIndex.iterator(storeKey, null, false);
+          iter.hasNext(); ) {
+        StoreIndexElement<CommitOp> el = iter.next();
+        if (!el.content().action().exists()) {
+          // element does not exist - ignore
+          continue;
+        }
+        ContentKey elContentKey = storeKeyToKey(el.key());
+        if (elContentKey == null) {
+          // not a "content object" - ignore
+          continue;
+        }
+        if (elContentKey.equals(namespaceKey)) {
+          // this is our namespace - ignore
+          continue;
+        }
+        if (allKeysToDelete.containsKey(elContentKey)) {
+          // this key is being deleted as well - ignore
+          continue;
+        }
 
-            int elLen = elContentKey.getElementCount();
-            int nsLen = namespaceKey.getElementCount();
+        int elLen = elContentKey.getElementCount();
+        int nsLen = namespaceKey.getElementCount();
 
-            // check if element is in the current namespace, fail it is true - this means,
-            // there is a live content-key in the current namespace - must not delete the
-            // namespace
-            ContentKey truncatedElContentKey = elContentKey.truncateToLength(nsLen);
-            int cmp = truncatedElContentKey.compareTo(namespaceKey);
-            if (!(elLen < nsLen || cmp != 0)) {
-              conflictConsumer.accept(
-                  conflict(
-                      Conflict.ConflictType.NAMESPACE_NOT_EMPTY,
-                      namespaceKey,
-                      format("namespace '%s' is not empty", namespaceKey)));
-            }
-            if (cmp > 0) {
-              // iterated past the namespaceKey - break
-              break;
-            }
-          }
-        });
+        // check if element is in the current namespace, fail it is true - this means,
+        // there is a live content-key in the current namespace - must not delete the
+        // namespace
+        ContentKey truncatedElContentKey = elContentKey.truncateToLength(nsLen);
+        int cmp = truncatedElContentKey.compareTo(namespaceKey);
+        if (!(elLen < nsLen || cmp != 0)) {
+          conflictConsumer.accept(
+              conflict(
+                  Conflict.ConflictType.NAMESPACE_NOT_EMPTY,
+                  namespaceKey,
+                  format("namespace '%s' is not empty", namespaceKey)));
+        }
+        if (cmp > 0) {
+          // iterated past the namespaceKey - break
+          break;
+        }
+      }
+    });
   }
 
   private void validateNamespacesExistForContentKeys(

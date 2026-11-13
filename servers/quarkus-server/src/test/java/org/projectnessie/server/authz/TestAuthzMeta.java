@@ -374,22 +374,20 @@ public class TestAuthzMeta extends BaseClientAuthTest {
     BiFunction<BatchAccessChecker, Collection<Check>, Map<Check, String>> responder =
         (checker, checks) ->
             checks.stream()
-                .filter(
-                    c ->
-                        (c.type() == CREATE_ENTITY || c.type() == UPDATE_ENTITY)
-                            && checker.getApiContext().getApiName().equals("Nessie"))
+                .filter(c ->
+                    (c.type() == CREATE_ENTITY || c.type() == UPDATE_ENTITY)
+                        && checker.getApiContext().getApiName().equals("Nessie"))
                 .collect(Collectors.toMap(Function.identity(), c -> "No no no"));
 
     // Creating a namespace is forbidden for Nessie API
     mockedAuthorizer.reset();
     mockedAuthorizer.setResponder(responder);
-    soft.assertThatThrownBy(
-            () ->
-                api()
-                    .createNamespace()
-                    .refName(branch.getName())
-                    .namespace(org.projectnessie.model.Namespace.of(myNamespaceKey))
-                    .createWithResponse())
+    soft.assertThatThrownBy(() ->
+            api()
+                .createNamespace()
+                .refName(branch.getName())
+                .namespace(org.projectnessie.model.Namespace.of(myNamespaceKey))
+                .createWithResponse())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining("No no no");
 
@@ -403,14 +401,13 @@ public class TestAuthzMeta extends BaseClientAuthTest {
     props.put("foo", "bar");
     mockedAuthorizer.reset();
     mockedAuthorizer.setResponder(responder);
-    soft.assertThatThrownBy(
-            () ->
-                api()
-                    .updateProperties()
-                    .refName(branch.getName())
-                    .namespace(org.projectnessie.model.Namespace.of(myNamespaceKey))
-                    .updateProperties(props)
-                    .updateWithResponse())
+    soft.assertThatThrownBy(() ->
+            api()
+                .updateProperties()
+                .refName(branch.getName())
+                .namespace(org.projectnessie.model.Namespace.of(myNamespaceKey))
+                .updateProperties(props)
+                .updateWithResponse())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining("No no no");
 
@@ -422,15 +419,13 @@ public class TestAuthzMeta extends BaseClientAuthTest {
     // Creating a table is forbidden for Nessie API
     mockedAuthorizer.reset();
     mockedAuthorizer.setResponder(responder);
-    soft.assertThatThrownBy(
-            () ->
-                api()
-                    .commitMultipleOperations()
-                    .branch(api().getDefaultBranch())
-                    .commitMeta(CommitMeta.fromMessage("attempt"))
-                    .operation(
-                        Operation.Put.of(tableKey, IcebergTable.of("ms://location", 1, 2, 3, 4)))
-                    .commitWithResponse())
+    soft.assertThatThrownBy(() ->
+            api()
+                .commitMultipleOperations()
+                .branch(api().getDefaultBranch())
+                .commitMeta(CommitMeta.fromMessage("attempt"))
+                .operation(Operation.Put.of(tableKey, IcebergTable.of("ms://location", 1, 2, 3, 4)))
+                .commitWithResponse())
         .isInstanceOf(NessieForbiddenException.class)
         .hasMessageContaining("No no no");
 

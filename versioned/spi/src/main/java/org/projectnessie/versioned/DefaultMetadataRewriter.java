@@ -125,17 +125,16 @@ public class DefaultMetadataRewriter implements MetadataRewriter<CommitMeta> {
     return buildCommitMeta(
         newMetaBuilder,
         () ->
-            msg.orElseGet(
-                () -> {
-                  StringBuilder newMessage = new StringBuilder();
-                  for (CommitMeta commitMeta : metadata) {
-                    if (newMessage.length() > 0) {
-                      newMessage.append("\n---------------------------------------------\n");
-                    }
-                    newMessage.append(commitMeta.getMessage());
-                  }
-                  return newMessage.toString();
-                }));
+            msg.orElseGet(() -> {
+              StringBuilder newMessage = new StringBuilder();
+              for (CommitMeta commitMeta : metadata) {
+                if (newMessage.length() > 0) {
+                  newMessage.append("\n---------------------------------------------\n");
+                }
+                newMessage.append(commitMeta.getMessage());
+              }
+              return newMessage.toString();
+            }));
   }
 
   private static void copyAuthors(CommitMeta commitMeta, Consumer<String> addAuthor) {

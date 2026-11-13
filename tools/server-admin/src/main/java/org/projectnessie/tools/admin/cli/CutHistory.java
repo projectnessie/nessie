@@ -74,11 +74,8 @@ public class CutHistory extends BaseCommand {
 
     result
         .failures()
-        .forEach(
-            (id, e) ->
-                spec.commandLine()
-                    .getErr()
-                    .printf("Unable to rewrite parents for %s: %s.%n", id, e));
+        .forEach((id, e) ->
+            spec.commandLine().getErr().printf("Unable to rewrite parents for %s: %s.%n", id, e));
 
     if (!result.rewrittenCommitIds().isEmpty()) {
       spec.commandLine()

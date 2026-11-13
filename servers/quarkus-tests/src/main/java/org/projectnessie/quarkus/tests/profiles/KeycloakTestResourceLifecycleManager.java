@@ -221,13 +221,12 @@ public class KeycloakTestResourceLifecycleManager
 
     List<ClientScopeRepresentation> scopes =
         clientScopes.stream()
-            .map(
-                scopeName -> {
-                  ClientScopeRepresentation scope = new ClientScopeRepresentation();
-                  scope.setName(scopeName);
-                  scope.setProtocol("openid-connect");
-                  return scope;
-                })
+            .map(scopeName -> {
+              ClientScopeRepresentation scope = new ClientScopeRepresentation();
+              scope.setName(scopeName);
+              scope.setProtocol("openid-connect");
+              return scope;
+            })
             .collect(Collectors.toList());
     realm.setClientScopes(scopes);
   }

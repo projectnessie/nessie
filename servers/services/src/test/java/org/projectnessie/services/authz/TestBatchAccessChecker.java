@@ -71,9 +71,8 @@ public class TestBatchAccessChecker {
     String msgListTagCommits = "don't look into bar";
 
     BatchAccessChecker checker =
-        newAccessChecker(
-            checks ->
-                ImmutableMap.of(checkViewRef, msgViewRef, checkListTagCommits, msgListTagCommits));
+        newAccessChecker(checks ->
+            ImmutableMap.of(checkViewRef, msgViewRef, checkListTagCommits, msgListTagCommits));
     checker
         .canViewReference(BranchName.of("foo"))
         .canListCommitLog(TagName.of("bar"))
@@ -102,11 +101,10 @@ public class TestBatchAccessChecker {
                     LinkedHashMap::new));
 
     BatchAccessChecker checker =
-        newAccessChecker(
-            checks -> {
-              assertThat(checks).containsAnyElementsOf(allChecks);
-              return expectedErrors;
-            });
+        newAccessChecker(checks -> {
+          assertThat(checks).containsAnyElementsOf(allChecks);
+          return expectedErrors;
+        });
 
     performChecks(checker, allChecks);
 
@@ -147,17 +145,16 @@ public class TestBatchAccessChecker {
 
   private static List<Check> listWithAllCheckTypes() {
     return Arrays.stream(CheckType.values())
-        .map(
-            t -> {
-              ImmutableCheck.Builder b = Check.builder(t);
-              if (t.isRef()) {
-                b.ref(BranchName.of("some-branch"));
-              }
-              if (t.isContent()) {
-                b.key(ContentKey.of("hello", "my", "table")).contentId("cid-foo");
-              }
-              return b.build();
-            })
+        .map(t -> {
+          ImmutableCheck.Builder b = Check.builder(t);
+          if (t.isRef()) {
+            b.ref(BranchName.of("some-branch"));
+          }
+          if (t.isContent()) {
+            b.key(ContentKey.of("hello", "my", "table")).contentId("cid-foo");
+          }
+          return b.build();
+        })
         .collect(Collectors.toList());
   }
 

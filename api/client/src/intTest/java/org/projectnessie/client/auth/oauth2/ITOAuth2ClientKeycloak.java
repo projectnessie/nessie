@@ -670,12 +670,11 @@ public class ITOAuth2ClientKeycloak {
         .setObjectMapper(new ObjectMapper())
         .setDisableCompression(true)
         .setAuthentication(authentication)
-        .addResponseFilter(
-            resp -> {
-              if (resp.getStatus() != Status.OK) {
-                throw new HttpClientResponseException("Failed to validate token", resp.getStatus());
-              }
-            });
+        .addResponseFilter(resp -> {
+          if (resp.getStatus() != Status.OK) {
+            throw new HttpClientResponseException("Failed to validate token", resp.getStatus());
+          }
+        });
   }
 
   private ResourceOwnerEmulator newResourceOwner(GrantType initialGrantType) throws IOException {

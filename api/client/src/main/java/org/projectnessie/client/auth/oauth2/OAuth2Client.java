@@ -76,7 +76,7 @@ class OAuth2Client implements OAuth2Authenticator, Closeable {
             ? CompletableFuture.allOf(started, used)
             : started;
     currentTokensStage =
-        ready.thenApplyAsync((v) -> fetchNewTokens(), executor).thenApply(this::maybeImpersonate);
+        ready.thenApplyAsync(v -> fetchNewTokens(), executor).thenApply(this::maybeImpersonate);
     currentTokensStage
         .whenComplete((tokens, error) -> log(error))
         .whenComplete((tokens, error) -> maybeScheduleTokensRenewal(tokens));

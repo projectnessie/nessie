@@ -94,29 +94,28 @@ final class ExportPersist extends ExportCommon {
         new IdentifyHeadsAndForkPoints(
             exporter.expectedCommitCount(), exporter.persist().config().currentTimeMicros());
 
-    references.forEach(
-        ref -> {
-          Deque<ObjId> commitsToProcess = new ArrayDeque<>();
-          commitsToProcess.offerFirst(ref.pointer());
-          while (!commitsToProcess.isEmpty()) {
-            ObjId id = commitsToProcess.removeFirst();
-            if (identify.isCommitNew(id)) {
-              Iterator<CommitObj> commitIter = exporter.commitLogic().commitLog(commitLogQuery(id));
-              while (commitIter.hasNext()) {
-                CommitObj commit = commitIter.next();
-                if (!identify.handleCommit(commit)) {
-                  break;
-                }
-                commitHandler.accept(commit);
-                for (ObjId parentId : commit.secondaryParents()) {
-                  if (identify.isCommitNew(parentId)) {
-                    commitsToProcess.addLast(parentId);
-                  }
-                }
+    references.forEach(ref -> {
+      Deque<ObjId> commitsToProcess = new ArrayDeque<>();
+      commitsToProcess.offerFirst(ref.pointer());
+      while (!commitsToProcess.isEmpty()) {
+        ObjId id = commitsToProcess.removeFirst();
+        if (identify.isCommitNew(id)) {
+          Iterator<CommitObj> commitIter = exporter.commitLogic().commitLog(commitLogQuery(id));
+          while (commitIter.hasNext()) {
+            CommitObj commit = commitIter.next();
+            if (!identify.handleCommit(commit)) {
+              break;
+            }
+            commitHandler.accept(commit);
+            for (ObjId parentId : commit.secondaryParents()) {
+              if (identify.isCommitNew(parentId)) {
+                commitsToProcess.addLast(parentId);
               }
             }
           }
-        });
+        }
+      }
+    });
 
     return identify.finish();
   }
@@ -161,14 +160,13 @@ final class ExportPersist extends ExportCommon {
     try {
       ObjId[] valueIds =
           commitObjs.stream()
-              .flatMap(
-                  c ->
-                      StreamSupport.stream(
-                              spliteratorUnknownSize(
-                                  exporter.indexesLogic().commitOperations(c).iterator(), 0),
-                              false)
-                          .map(op -> op.content().value())
-                          .filter(Objects::nonNull))
+              .flatMap(c ->
+                  StreamSupport.stream(
+                          spliteratorUnknownSize(
+                              exporter.indexesLogic().commitOperations(c).iterator(), 0),
+                          false)
+                      .map(op -> op.content().value())
+                      .filter(Objects::nonNull))
               .distinct()
               .toArray(ObjId[]::new);
 
@@ -198,36 +196,34 @@ final class ExportPersist extends ExportCommon {
     exporter
         .indexesLogic()
         .commitOperations(c)
-        .forEach(
-            op -> {
-              CommitOp content = op.content();
-              Operation.Builder opBuilder = b.addOperationsBuilder().setPayload(content.payload());
+        .forEach(op -> {
+          CommitOp content = op.content();
+          Operation.Builder opBuilder = b.addOperationsBuilder().setPayload(content.payload());
 
-              opBuilder.addContentKey(op.key().rawString());
+          opBuilder.addContentKey(op.key().rawString());
 
-              ObjId valueId = content.value();
-              if (valueId != null) {
-                try {
-                  ContentValueObj value = (ContentValueObj) objs.get(valueId);
-                  Content modelContent =
-                      exporter.storeWorker().valueFromStore((byte) content.payload(), value.data());
-                  byte[] modelContentBytes =
-                      exporter.objectMapper().writeValueAsBytes(modelContent);
-                  opBuilder
-                      .setContentId(value.contentId())
-                      .setValue(ByteString.copyFrom(modelContentBytes));
+          ObjId valueId = content.value();
+          if (valueId != null) {
+            try {
+              ContentValueObj value = (ContentValueObj) objs.get(valueId);
+              Content modelContent =
+                  exporter.storeWorker().valueFromStore((byte) content.payload(), value.data());
+              byte[] modelContentBytes = exporter.objectMapper().writeValueAsBytes(modelContent);
+              opBuilder
+                  .setContentId(value.contentId())
+                  .setValue(ByteString.copyFrom(modelContentBytes));
 
-                  handleGenericObjs(transferRelatedObjects.contentRelatedObjects(modelContent));
-                } catch (JacksonException e) {
-                  throw new RuntimeException(e);
-                }
-              }
-              if (content.action().exists()) {
-                opBuilder.setOperationType(OperationType.Put);
-              } else {
-                opBuilder.setOperationType(OperationType.Delete);
-              }
-            });
+              handleGenericObjs(transferRelatedObjects.contentRelatedObjects(modelContent));
+            } catch (JacksonException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          if (content.action().exists()) {
+            opBuilder.setOperationType(OperationType.Put);
+          } else {
+            opBuilder.setOperationType(OperationType.Delete);
+          }
+        });
     return b.build();
   }
 }

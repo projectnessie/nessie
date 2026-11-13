@@ -35,42 +35,40 @@ public final class BenchUtils {
                 "bucket",
                 Bucket.builder()
                     .lister((prefix, offset) -> Stream.empty())
-                    .object(
-                        key -> {
-                          int size = key.startsWith("s-") ? Integer.parseInt(key.substring(2)) : 0;
-                          MockObject.Writer writer =
-                              (range, out) -> {
-                                for (int remain = size; remain > 0; ) {
-                                  int sz = Math.min(remain, zeroBytes.length);
-                                  out.write(zeroBytes, 0, sz);
-                                  remain -= sz;
-                                }
-                              };
-                          return MockObject.builder().contentLength(size).writer(writer).build();
+                    .object(key -> {
+                      int size = key.startsWith("s-") ? Integer.parseInt(key.substring(2)) : 0;
+                      MockObject.Writer writer =
+                          (range, out) -> {
+                            for (int remain = size; remain > 0; ) {
+                              int sz = Math.min(remain, zeroBytes.length);
+                              out.write(zeroBytes, 0, sz);
+                              remain -= sz;
+                            }
+                          };
+                      return MockObject.builder().contentLength(size).writer(writer).build();
+                    })
+                    .updater((key, mode) ->
+                        new Bucket.ObjectUpdater() {
+                          @Override
+                          public MockObject commit() {
+                            return MockObject.builder().build();
+                          }
+
+                          @Override
+                          public Bucket.ObjectUpdater setContentType(String contentType) {
+                            return this;
+                          }
+
+                          @Override
+                          public Bucket.ObjectUpdater flush() {
+                            return this;
+                          }
+
+                          @Override
+                          public Bucket.ObjectUpdater append(long position, InputStream data) {
+                            return this;
+                          }
                         })
-                    .updater(
-                        (key, mode) ->
-                            new Bucket.ObjectUpdater() {
-                              @Override
-                              public MockObject commit() {
-                                return MockObject.builder().build();
-                              }
-
-                              @Override
-                              public Bucket.ObjectUpdater setContentType(String contentType) {
-                                return this;
-                              }
-
-                              @Override
-                              public Bucket.ObjectUpdater flush() {
-                                return this;
-                              }
-
-                              @Override
-                              public Bucket.ObjectUpdater append(long position, InputStream data) {
-                                return this;
-                              }
-                            })
                     .build());
     mockCustomizer.accept(mock);
     return mock.build().start();

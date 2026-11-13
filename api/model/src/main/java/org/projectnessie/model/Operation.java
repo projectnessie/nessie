@@ -39,7 +39,8 @@ import org.projectnessie.model.ser.Views;
         """
         Describes an operation to be performed against one content object.
 
-        The Nessie backend will validate the correctness of the operations.""",
+        The Nessie backend will validate the correctness of the operations.\
+        """,
     oneOf = {Operation.Put.class, Operation.Unchanged.class, Operation.Delete.class},
     discriminatorMapping = {
       @DiscriminatorMapping(value = "PUT", schema = Operation.Put.class),

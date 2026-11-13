@@ -195,19 +195,17 @@ public final class S3Utils {
         URI secretName =
             bucketOptions
                 .accessKey()
-                .orElseThrow(
-                    () ->
-                        new IllegalArgumentException(
-                            "Missing access key and secret for STATIC authentication mode"));
+                .orElseThrow(() ->
+                    new IllegalArgumentException(
+                        "Missing access key and secret for STATIC authentication mode"));
 
         yield secretsProvider
             .getSecret(secretName, SecretType.BASIC, BasicCredentials.class)
             .map(key -> AwsBasicCredentials.create(key.name(), key.secret()))
             .map(creds -> (AwsCredentialsProvider) StaticCredentialsProvider.create(creds))
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Missing access key and secret for STATIC authentication mode"));
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                    "Missing access key and secret for STATIC authentication mode"));
       }
       default -> throw new IllegalArgumentException("Unsupported S3 auth type: " + authType);
     };

@@ -83,11 +83,10 @@ class TestMultiEnvTestEngine {
         .allSatisfy(id -> assertThat(id.getEngineId()).hasValue(MultiEnvTestEngine.ENGINE_ID));
     assertThat(
             ids.stream()
-                .flatMap(
-                    id ->
-                        id.getSegments().stream()
-                            .filter(s -> "test-segment".equals(s.getType()))
-                            .map(UniqueId.Segment::getValue)))
+                .flatMap(id ->
+                    id.getSegments().stream()
+                        .filter(s -> "test-segment".equals(s.getType()))
+                        .map(UniqueId.Segment::getValue)))
         .containsExactlyInAnyOrder("TE1", "TE2", "TE1", "TE2");
   }
 

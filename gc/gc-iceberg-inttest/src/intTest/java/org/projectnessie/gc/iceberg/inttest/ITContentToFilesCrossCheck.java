@@ -179,15 +179,14 @@ public class ITContentToFilesCrossCheck extends SparkSqlTestBase {
         .map(Put.class::cast)
         .map(Put::getContent)
         .map(IcebergTable.class::cast)
-        .map(
-            table ->
-                icebergContent(
-                    ICEBERG_TABLE,
-                    table.getId(),
-                    "12345678",
-                    ContentKey.of("foo"),
-                    table.getMetadataLocation(),
-                    table.getSnapshotId()))
+        .map(table ->
+            icebergContent(
+                ICEBERG_TABLE,
+                table.getId(),
+                "12345678",
+                ContentKey.of("foo"),
+                table.getMetadataLocation(),
+                table.getSnapshotId()))
         .collect(Collectors.toList());
   }
 }

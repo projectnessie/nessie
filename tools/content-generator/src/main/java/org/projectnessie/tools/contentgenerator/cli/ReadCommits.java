@@ -59,31 +59,30 @@ public class ReadCommits extends AbstractCommand {
       long count =
           api.getCommitLog().refName(ref).hashOnRef(hash).fetch(fetchOption).stream()
               .limit(limit > 0 ? limit : Long.MAX_VALUE)
-              .peek(
-                  logEntry -> {
-                    CommitMeta commitMeta = logEntry.getCommitMeta();
-                    spec.commandLine()
-                        .getOut()
-                        .printf(
-                            "%s\t%s\t%s [%s]\n",
-                            commitMeta.getHash(),
-                            commitMeta.getAuthorTime(),
-                            commitMeta.getMessage(),
-                            commitMeta.getAuthor());
+              .peek(logEntry -> {
+                CommitMeta commitMeta = logEntry.getCommitMeta();
+                spec.commandLine()
+                    .getOut()
+                    .printf(
+                        "%s\t%s\t%s [%s]\n",
+                        commitMeta.getHash(),
+                        commitMeta.getAuthorTime(),
+                        commitMeta.getMessage(),
+                        commitMeta.getAuthor());
 
-                    List<Operation> operations = logEntry.getOperations();
-                    if (operations != null) {
-                      for (Operation op : operations) {
-                        spec.commandLine().getOut().printf("  %s\n", op);
-                        if (isVerbose()) {
-                          List<String> key = op.getKey().getElements();
-                          for (int i = 0; i < key.size(); i++) {
-                            spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
-                          }
-                        }
+                List<Operation> operations = logEntry.getOperations();
+                if (operations != null) {
+                  for (Operation op : operations) {
+                    spec.commandLine().getOut().printf("  %s\n", op);
+                    if (isVerbose()) {
+                      List<String> key = op.getKey().getElements();
+                      for (int i = 0; i < key.size(); i++) {
+                        spec.commandLine().getOut().printf("    key[%d]: %s\n", i, key.get(i));
                       }
                     }
-                  })
+                  }
+                }
+              })
               .count();
       spec.commandLine()
           .getOut()

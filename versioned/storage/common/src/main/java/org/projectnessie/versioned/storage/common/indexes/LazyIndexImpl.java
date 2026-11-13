@@ -39,14 +39,13 @@ final class LazyIndexImpl<V> implements StoreIndex<V> {
     this.firstKey = firstKey;
     this.lastKey = lastKey;
     this.loader =
-        memoize(
-            () -> {
-              try {
-                return supplier.get();
-              } finally {
-                loaded = true;
-              }
-            });
+        memoize(() -> {
+          try {
+            return supplier.get();
+          } finally {
+            loaded = true;
+          }
+        });
   }
 
   private StoreIndex<V> loaded() {

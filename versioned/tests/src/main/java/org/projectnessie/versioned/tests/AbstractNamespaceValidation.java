@@ -78,14 +78,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
     BranchName branch = BranchName.of("commitWithNonExistingNamespace");
     store().create(branch, Optional.empty());
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(key, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Namespace '%s' must exist.", key.getNamespace())
         .asInstanceOf(type(ReferenceConflictException.class))
@@ -105,14 +104,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("initial commit"),
             singletonList(Put.of(ContentKey.of("unrelated-table"), newOnRef("value"))));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(key, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Namespace '%s' must exist.", key.getNamespace())
         .asInstanceOf(type(ReferenceConflictException.class))
@@ -142,14 +140,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("create ns a"),
             singletonList(Put.of(a, Namespace.of(a))));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(table, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(table, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
             "There are multiple conflicts that prevent committing the provided operations: "
@@ -170,14 +167,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("create content b"),
             singletonList(Put.of(b, newOnRef("value"))));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(table, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(table, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
             "There are multiple conflicts that prevent committing the provided operations: "
@@ -201,14 +197,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
         .commit(
             branch, Optional.empty(), fromMessage("delete content a"), singletonList(Delete.of(a)));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(table, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(table, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
             "There are multiple conflicts that prevent committing the provided operations: "
@@ -250,14 +245,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("not a namespace"),
             singletonList(Put.of(key.getParent(), newOnRef("value"))));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("non-existing-ns"),
-                        singletonList(Put.of(key, newOnRef("value")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("non-existing-ns"),
+                    singletonList(Put.of(key, newOnRef("value")))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage(
             "Expecting the key '%s' to be a namespace, but is not a namespace "
@@ -304,13 +298,12 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
               singletonList(Put.of(child.toContentKey(), child)));
     }
 
-    soft.assertThatThrownBy(
-            () ->
-                store.commit(
-                    branch,
-                    Optional.empty(),
-                    fromMessage("try delete ns"),
-                    singletonList(Delete.of(ns.toContentKey()))))
+    soft.assertThatThrownBy(() ->
+            store.commit(
+                branch,
+                Optional.empty(),
+                fromMessage("try delete ns"),
+                singletonList(Delete.of(ns.toContentKey()))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Namespace 'ns' is not empty.")
         .asInstanceOf(type(ReferenceConflictException.class))
@@ -470,14 +463,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             fromMessage("create table ns.foo"),
             singletonList(Put.of(key, Namespace.of(key))));
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        root,
-                        Optional.empty(),
-                        fromMessage("create table ns.foo"),
-                        singletonList(Put.of(key, newOnRef("foo")))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    root,
+                    Optional.empty(),
+                    fromMessage("create table ns.foo"),
+                    singletonList(Put.of(key, newOnRef("foo")))))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -496,10 +488,8 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
             Namespace.of("x", "y", "z"));
     List<ContentKey> tables =
         namespaces.stream()
-            .flatMap(
-                ns ->
-                    Stream.of(
-                        ContentKey.of(ns, "A"), ContentKey.of(ns, "B"), ContentKey.of(ns, "C")))
+            .flatMap(ns ->
+                Stream.of(ContentKey.of(ns, "A"), ContentKey.of(ns, "B"), ContentKey.of(ns, "C")))
             .collect(Collectors.toList());
 
     store()
@@ -512,17 +502,16 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
                     namespaces.stream().map(ns -> Put.of(ns.toContentKey(), ns)))
                 .collect(Collectors.toList()));
 
-    soft.assertThatCode(
-            () ->
-                store()
-                    .commit(
-                        root,
-                        Optional.empty(),
-                        fromMessage("delete all the things"),
-                        Stream.concat(
-                                namespaces.stream().map(ns -> Delete.of(ns.toContentKey())),
-                                tables.stream().map(Delete::of))
-                            .collect(Collectors.toList())))
+    soft.assertThatCode(() ->
+            store()
+                .commit(
+                    root,
+                    Optional.empty(),
+                    fromMessage("delete all the things"),
+                    Stream.concat(
+                            namespaces.stream().map(ns -> Delete.of(ns.toContentKey())),
+                            tables.stream().map(Delete::of))
+                        .collect(Collectors.toList())))
         .doesNotThrowAnyException();
   }
 
@@ -543,14 +532,13 @@ public abstract class AbstractNamespaceValidation extends AbstractNestedVersionS
 
     Content table = requireNonNull(store().getValue(branch, key1, false).content());
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .commit(
-                        branch,
-                        Optional.empty(),
-                        fromMessage("rename table"),
-                        asList(Delete.of(key1), Put.of(key2, table))))
+    soft.assertThatThrownBy(() ->
+            store()
+                .commit(
+                    branch,
+                    Optional.empty(),
+                    fromMessage("rename table"),
+                    asList(Delete.of(key1), Put.of(key2, table))))
         .isInstanceOf(ReferenceConflictException.class)
         .hasMessage("Namespace 'non_existing' must exist.");
   }

@@ -224,10 +224,9 @@ public class S3ObjectIO implements ObjectIO {
       s3credentials.sessionToken().ifPresent(t -> credentialConfig.put(S3_SESSION_TOKEN, t));
       s3credentials
           .expirationTime()
-          .ifPresent(
-              i ->
-                  credentialConfig.put(
-                      S3_SESSION_TOKEN_EXPIRES_AT_MS, Long.toString(i.toEpochMilli())));
+          .ifPresent(i ->
+              credentialConfig.put(
+                  S3_SESSION_TOKEN_EXPIRES_AT_MS, Long.toString(i.toEpochMilli())));
 
       credentialConfig.forEach(config);
 
@@ -283,10 +282,8 @@ public class S3ObjectIO implements ObjectIO {
     }
     bucketOptions
         .accessPoint()
-        .ifPresent(
-            ap ->
-                config.accept(
-                    S3_ACCESS_POINTS_PREFIX + bucketOptions.authority().orElseThrow(), ap));
+        .ifPresent(ap ->
+            config.accept(S3_ACCESS_POINTS_PREFIX + bucketOptions.authority().orElseThrow(), ap));
     bucketOptions
         .allowCrossRegionAccessPoint()
         .ifPresent(allow -> config.accept(S3_USE_ARN_REGION_ENABLED, allow.toString()));

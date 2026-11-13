@@ -239,15 +239,14 @@ public abstract class AbstractReferences extends AbstractNestedVersionStore {
             () -> store().getNamedRef("1234567890abcdef", GetNamedRefsParams.DEFAULT))
         .isInstanceOf(ReferenceNotFoundException.class);
 
-    soft.assertThatThrownBy(
-            () ->
-                store()
-                    .getNamedRef(
-                        branchName.getName(),
-                        GetNamedRefsParams.builder()
-                            .baseReference(BranchName.of("does-not-exist"))
-                            .branchRetrieveOptions(BASE_REFERENCE_RELATED_AND_COMMIT_META)
-                            .build()))
+    soft.assertThatThrownBy(() ->
+            store()
+                .getNamedRef(
+                    branchName.getName(),
+                    GetNamedRefsParams.builder()
+                        .baseReference(BranchName.of("does-not-exist"))
+                        .branchRetrieveOptions(BASE_REFERENCE_RELATED_AND_COMMIT_META)
+                        .build()))
         .isInstanceOf(ReferenceNotFoundException.class)
         .hasMessageContaining("'does-not-exist");
   }

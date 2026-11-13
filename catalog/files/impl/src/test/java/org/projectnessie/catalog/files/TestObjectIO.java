@@ -188,13 +188,12 @@ class TestObjectIO {
     soft.assertThat(storageCredentials)
         .containsKeys("s3://bucket/warehouse", "s3://bucket/warehouse/table");
     soft.assertThat(storageCredentials.values())
-        .allSatisfy(
-            credential ->
-                soft.assertThat(credential)
-                    .containsEntry("s3.access-key-id", "key")
-                    .containsEntry("s3.secret-access-key", "secret")
-                    .containsEntry("s3.session-token", "token")
-                    .containsEntry("s3.session-token-expires-at-ms", "12345"));
+        .allSatisfy(credential ->
+            soft.assertThat(credential)
+                .containsEntry("s3.access-key-id", "key")
+                .containsEntry("s3.secret-access-key", "secret")
+                .containsEntry("s3.session-token", "token")
+                .containsEntry("s3.session-token-expires-at-ms", "12345"));
   }
 
   static Stream<Arguments> s3VendedCredentials() {
