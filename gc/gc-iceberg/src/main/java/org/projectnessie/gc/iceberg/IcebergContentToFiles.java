@@ -111,6 +111,32 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     }
   }
 
+  /** Reads only the table or view metadata to get its base location. */
+  @Override
+  @MustBeClosed
+  public Stream<StorageUri> extractBaseLocations(ContentReference contentReference) {
+    Content.Type contentType = contentReference.contentType();
+    boolean table = contentType.equals(ICEBERG_TABLE);
+    Preconditions.checkArgument(
+        table || contentType.equals(ICEBERG_VIEW),
+        "Expect ICEBERG_TABLE/ICEBERG_VIEW, but got %s",
+        contentType);
+
+    FileIO io = io();
+    String metadataLocation = contentReference.metadataLocation();
+    String location;
+    try {
+      location =
+          table
+              ? TableMetadataParser.read(io, metadataLocation).location()
+              : ViewMetadataParser.read(io.newInputFile(metadataLocation)).location();
+    } catch (Exception notFoundCandidate) {
+      handleNotFound(contentReference, notFoundCandidate, table ? "Table" : "View");
+      return Stream.empty();
+    }
+    return Stream.of(baseUri(location, contentReference));
+  }
+
   private Stream<FileReference> extractViewFiles(ContentReference contentReference) {
     FileIO io = io();
 
@@ -118,7 +144,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     try {
       viewMetadata = ViewMetadataParser.read(io.newInputFile(contentReference.metadataLocation()));
     } catch (Exception notFoundCandidate) {
-      return handleNotFound(contentReference, notFoundCandidate, "View");
+      handleNotFound(contentReference, notFoundCandidate, "View");
+      return Stream.empty();
     }
 
     Stream<StorageUri> allFiles = Stream.of(metadataStorageUri(contentReference));
@@ -136,7 +163,8 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
     try {
       tableMetadata = TableMetadataParser.read(io, contentReference.metadataLocation());
     } catch (Exception notFoundCandidate) {
-      return handleNotFound(contentReference, notFoundCandidate, "Table");
+      handleNotFound(contentReference, notFoundCandidate, "Table");
+      return Stream.empty();
     }
 
     long snapshotId =
@@ -209,7 +237,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
   }
 
   @SuppressWarnings({"ReferenceEquality", "Slf4jSignOnlyFormat"})
-  private static Stream<FileReference> handleNotFound(
+  private static void handleNotFound(
       ContentReference contentReference, Exception notFoundCandidate, String kind) {
     boolean notFound = false;
     for (Throwable c = notFoundCandidate; c != null; c = c.getCause()) {
@@ -245,7 +273,7 @@ public abstract class IcebergContentToFiles implements ContentToFiles {
           contentReference.snapshotId(),
           contentReference.contentKey(),
           contentReference.commitId());
-      return Stream.empty();
+      return;
     }
 
     String msg =
