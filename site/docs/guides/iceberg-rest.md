@@ -43,6 +43,13 @@ nessie.catalog.service.s3.buckets.sales.region=us-east-1
 See [Server configuration Reference](../nessie-latest/index.md).
 
 !!! note
+    Nessie's S3 support works with any S3-compatible object store. For Amazon S3 the `endpoint`
+    can be left unset so the AWS SDK resolves the regional endpoint automatically. For a compatible
+    object store such as Backblaze B2, Cloudflare R2, or MinIO, set
+    `nessie.catalog.service.s3.default-options.endpoint` to that provider's S3 API endpoint (for
+    example `https://s3.example.com`) and enable `path-style-access` if the store requires it.
+
+!!! note
     Up to Nessie including version 0.91.2 the above property names had to be specified without the
     `default-options.` part.
 
