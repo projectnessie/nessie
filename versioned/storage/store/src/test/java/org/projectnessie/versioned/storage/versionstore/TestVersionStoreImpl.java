@@ -15,7 +15,9 @@
  */
 package org.projectnessie.versioned.storage.versionstore;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.projectnessie.model.CommitMeta.fromMessage;
@@ -36,13 +38,18 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Commit;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.ReferenceRetryFailureException;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
+import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.storage.common.exceptions.ObjTooLargeException;
 import org.projectnessie.versioned.storage.common.exceptions.RefConditionFailedException;
 import org.projectnessie.versioned.storage.common.exceptions.RefNotFoundException;
@@ -288,5 +295,102 @@ public class TestVersionStoreImpl extends AbstractVersionStoreTests {
                     })
         //
         );
+  }
+
+  @Test
+  public void transplantAlreadyAppliedPutThenDelete() throws Exception {
+    VersionStore store = store();
+    BranchName source = BranchName.of("transplant-delete-source");
+    BranchName target = BranchName.of("transplant-delete-target");
+    store.create(source, Optional.empty());
+    store.create(target, Optional.empty());
+
+    ContentKey key = ContentKey.of("x");
+    Hash put =
+        store
+            .commit(
+                source,
+                Optional.empty(),
+                fromMessage("put"),
+                singletonList(Put.of(key, IcebergTable.of("meta", 1, 2, 3, 4))))
+            .getCommitHash();
+    Hash delete =
+        store
+            .commit(source, Optional.of(put), fromMessage("delete"), singletonList(Delete.of(key)))
+            .getCommitHash();
+
+    store.transplant(
+        TransplantOp.builder()
+            .fromRef(source)
+            .toBranch(target)
+            .addSequenceToTransplant(put)
+            .build());
+
+    Hash targetHead = store.hashOnReference(target, Optional.empty(), emptyList());
+    TransplantResult result =
+        store.transplant(
+            TransplantOp.builder()
+                .fromRef(source)
+                .toBranch(target)
+                .addSequenceToTransplant(put, delete)
+                .build());
+
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    try (PaginationIterator<Commit> commits = store.getCommits(target, false)) {
+      soft.assertThat(commits.next().getParentHash()).isEqualTo(targetHead);
+    }
+    soft.assertThat(store.getValue(target, key, false)).isNull();
+  }
+
+  @Test
+  public void transplantAlreadyAppliedPutThenUpdate() throws Exception {
+    VersionStore store = store();
+    BranchName source = BranchName.of("transplant-update-source");
+    BranchName target = BranchName.of("transplant-update-target");
+    store.create(source, Optional.empty());
+    store.create(target, Optional.empty());
+
+    ContentKey key = ContentKey.of("x");
+    Hash put =
+        store
+            .commit(
+                source,
+                Optional.empty(),
+                fromMessage("put"),
+                singletonList(Put.of(key, IcebergTable.of("meta", 1, 2, 3, 4))))
+            .getCommitHash();
+    IcebergTable updated =
+        IcebergTable.of("updated", 9, 2, 3, 4)
+            .withId(requireNonNull(store.getValue(source, key, false).content()).getId());
+    Hash update =
+        store
+            .commit(
+                source,
+                Optional.of(put),
+                fromMessage("update"),
+                singletonList(Put.of(key, updated)))
+            .getCommitHash();
+
+    store.transplant(
+        TransplantOp.builder()
+            .fromRef(source)
+            .toBranch(target)
+            .addSequenceToTransplant(put)
+            .build());
+
+    Hash targetHead = store.hashOnReference(target, Optional.empty(), emptyList());
+    TransplantResult result =
+        store.transplant(
+            TransplantOp.builder()
+                .fromRef(source)
+                .toBranch(target)
+                .addSequenceToTransplant(put, update)
+                .build());
+
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    try (PaginationIterator<Commit> commits = store.getCommits(target, false)) {
+      soft.assertThat(commits.next().getParentHash()).isEqualTo(targetHead);
+    }
+    soft.assertThat(store.getValue(target, key, false).content()).isEqualTo(updated);
   }
 }
