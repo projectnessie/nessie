@@ -73,6 +73,8 @@ identity_providers:
         public: false
         redirect_uris:
           - 'http://localhost:{{ env "NESSIE_CALLBACK_PORT" }}/nessie-client/auth'
+          - 'http://127.0.0.1:{{ env "NESSIE_CALLBACK_PORT" }}/nessie-client/auth'
+          - 'http://[::1]:{{ env "NESSIE_CALLBACK_PORT" }}/nessie-client/auth'
         scopes:
           - 'groups'
           - 'email'
