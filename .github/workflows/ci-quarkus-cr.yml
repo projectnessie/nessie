@@ -439,7 +439,7 @@ jobs:
         uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5
         with:
           # https://helm.sh/docs/topics/version_skew/
-          version: 'v4.3.1'
+          version: 'v4.3.2'
 
       - name: Setup chart-testing
         uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
