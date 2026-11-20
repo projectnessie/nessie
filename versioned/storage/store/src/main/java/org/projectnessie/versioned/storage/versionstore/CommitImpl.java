@@ -462,7 +462,6 @@ class CommitImpl extends BaseCommitHelper {
     if (existing != null) {
       CommitOp content = existing.content();
       if (content.action().exists()) {
-        payload = content.payload();
         existingValue = requireNonNull(content.value());
         existingContentID = content.contentId();
         expectedContentIDString =
