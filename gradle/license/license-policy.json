@@ -93,6 +93,10 @@
       "reason": "Effective POM declares approved UPL-1.0"
     },
     {
+      "url": "https://www.antlr.org/license.html",
+      "reason": "Effective POM declares approved BSD-3-Clause"
+    },
+    {
       "url": "https://asm.ow2.io/license.html",
       "reason": "Effective POM declares approved BSD-3-Clause"
     },
