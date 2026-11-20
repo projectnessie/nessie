@@ -30,7 +30,8 @@ import org.projectnessie.versioned.storage.jdbc2.Jdbc2BackendBaseConfig;
  * the actual database to use. The property {@code nessie.version.store.persist.jdbc.datasource}
  * will be used to select one of the built-in datasources; currently supported values are: {@code
  * postgresql} (which activates the PostgresQL driver), {@code mariadb} (which activates the MariaDB
- * driver), and {@code mysql} (which targets MySQL backends, but using the MariaDB driver).
+ * driver), {@code mysql} (which targets MySQL backends, but using the MariaDB driver), {@code
+ * mssql} (which activates the Microsoft SQL Server driver), and {@code h2}.
  *
  * <p>For example, to configure a PostgresQL connection, the following configuration should be used:
  *

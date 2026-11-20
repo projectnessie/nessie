@@ -180,8 +180,8 @@ mongodb:
 
 # JDBC datasource settings. Only required when using JDBC version store type; ignored otherwise.
 jdbc:
-  # -- The JDBC connection string. If you are using Nessie OSS images, then only
-  # PostgreSQL, MariaDB and MySQL URLs are supported. Check your JDBC driver documentation
+  # -- The JDBC connection string. If you are using Nessie OSS images, then PostgreSQL,
+  # MariaDB, MySQL, and Microsoft SQL Server URLs are supported. Check your JDBC driver documentation
   # for the correct URL format.
   jdbcUrl: jdbc:postgresql://localhost:5432/my_database?currentSchema=nessie
   secret:

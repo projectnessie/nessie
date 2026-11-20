@@ -24,7 +24,7 @@ Scope those credentials to the warehouse or prefixes that GC is expected to clea
 base locations from table metadata stored in Nessie, including metadata committed through the native
 Nessie API, and cannot infer an external warehouse boundary for arbitrary native API content.
 
-Nessie GC has built-in support for PostgreSQL, MariaDB, MySQL (using the MariaDB driver), and H2 
+Nessie GC has built-in support for PostgreSQL, MariaDB, MySQL (using the MariaDB driver), Microsoft SQL Server, and H2
 databases.
 
 !!! note
