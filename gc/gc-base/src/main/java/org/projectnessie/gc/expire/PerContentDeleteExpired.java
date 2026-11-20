@@ -19,6 +19,7 @@ import com.google.common.hash.BloomFilter;
 import com.google.common.hash.PrimitiveSink;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
+import jakarta.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -47,6 +48,10 @@ public abstract class PerContentDeleteExpired {
 
     @CanIgnoreReturnValue
     Builder contentId(String contentId);
+
+    /** If set, base locations that are shared with other contents are not expired. */
+    @CanIgnoreReturnValue
+    Builder sharedBaseLocations(SharedBaseLocations sharedBaseLocations);
 
     PerContentDeleteExpired build();
   }
@@ -102,6 +107,7 @@ public abstract class PerContentDeleteExpired {
     expireParameters().liveContentSet().associateBaseLocations(contentId(), baseLocations);
 
     return baseLocations.stream()
+        .filter(this::notShared)
         .map(baseLocation -> {
           try (Stream<FileReference> fileObjects = identifyExpiredFiles(filter, baseLocation)) {
             return expireParameters().fileDeleter().deleteMultiple(baseLocation, fileObjects);
@@ -112,6 +118,23 @@ public abstract class PerContentDeleteExpired {
           }
         })
         .reduce(DeleteSummary.EMPTY, DeleteSummary::add, DeleteSummary::add);
+  }
+
+  private boolean notShared(StorageUri baseLocation) {
+    SharedBaseLocations shared = sharedBaseLocations();
+    if (shared == null || !shared.isShared(baseLocation)) {
+      return true;
+    }
+    Set<String> contentIds = shared.contentIds(baseLocation);
+    LOGGER.warn(
+        "live-set#{} content#{}: Not expiring files in base location {}, {}.",
+        expireParameters().liveContentSet().id(),
+        contentId(),
+        baseLocation,
+        contentIds.size() > 1
+            ? "it is used by multiple contents: " + contentIds
+            : "it overlaps with another base location");
+    return false;
   }
 
   /**
@@ -257,4 +280,7 @@ public abstract class PerContentDeleteExpired {
   abstract ExpireParameters expireParameters();
 
   abstract String contentId();
+
+  @Nullable
+  abstract SharedBaseLocations sharedBaseLocations();
 }

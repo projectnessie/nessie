@@ -32,6 +32,7 @@ import static org.projectnessie.model.Content.Type.ICEBERG_TABLE;
 import static org.projectnessie.model.Content.Type.ICEBERG_VIEW;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -62,6 +63,7 @@ import org.projectnessie.gc.iceberg.mocks.ImmutableMockSnapshot;
 import org.projectnessie.gc.iceberg.mocks.ImmutableMockTableMetadata;
 import org.projectnessie.gc.iceberg.mocks.MockSnapshot;
 import org.projectnessie.gc.iceberg.mocks.MockTableMetadata;
+import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.storage.uri.StorageUri;
 
@@ -165,6 +167,9 @@ public class TestIcebergContentToFiles {
           .map(FileReference::absolutePath)
           .containsExactlyInAnyOrderElementsOf(expectedFiles);
     }
+    try (Stream<StorageUri> baseLocations = contentToFiles.extractBaseLocations(contentReference)) {
+      assertThat(baseLocations).containsExactlyElementsOf(basePaths);
+    }
   }
 
   /**
@@ -223,11 +228,17 @@ public class TestIcebergContentToFiles {
     when(fileIO.newInputFile(any(String.class))).thenReturn(inputFile);
 
     IcebergContentToFiles contentToFiles = IcebergContentToFiles.builder().io(fileIO).build();
-    try (Stream<FileReference> extractFiles =
-        contentToFiles.extractFiles(
-            icebergContent(
-                ICEBERG_TABLE, "cid", "1234", ContentKey.of("foo"), "/blah.metadata.json", 42L))) {
-      assertThat(extractFiles).isEmpty();
+    for (Content.Type contentType : List.of(ICEBERG_TABLE, ICEBERG_VIEW)) {
+      ContentReference contentReference =
+          icebergContent(
+              contentType, "cid", "1234", ContentKey.of("foo"), "/blah.metadata.json", 42L);
+      try (Stream<FileReference> extractFiles = contentToFiles.extractFiles(contentReference)) {
+        assertThat(extractFiles).isEmpty();
+      }
+      try (Stream<StorageUri> baseLocations =
+          contentToFiles.extractBaseLocations(contentReference)) {
+        assertThat(baseLocations).isEmpty();
+      }
     }
   }
 

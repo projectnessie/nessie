@@ -21,14 +21,20 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.immutables.value.Value;
 import org.projectnessie.gc.expire.Expire;
 import org.projectnessie.gc.expire.ExpireParameters;
 import org.projectnessie.gc.expire.PerContentDeleteExpired;
+import org.projectnessie.gc.expire.SharedBaseLocations;
 import org.projectnessie.gc.files.DeleteSummary;
+import org.projectnessie.storage.uri.StorageUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,15 +95,52 @@ public abstract class DefaultLocalExpire implements Expire {
   }
 
   private DeleteSummary expireInForkJoinPool() {
+    SharedBaseLocations sharedBaseLocations = identifySharedBaseLocations();
+
     try (Stream<String> contentIds = expireParameters().liveContentSet().fetchContentIds()) {
       return contentIds
           .parallel()
-          .map(this::expireSingleContent)
+          .map(contentId -> expireSingleContent(contentId, sharedBaseLocations))
           .reduce(DeleteSummary.EMPTY, DeleteSummary::add);
     }
   }
 
-  private DeleteSummary expireSingleContent(String contentId) {
+  /** Collects the base locations of all contents, before any file is deleted. */
+  private SharedBaseLocations identifySharedBaseLocations() {
+    Map<String, Set<StorageUri>> baseLocations = new ConcurrentHashMap<>();
+    try (Stream<String> contentIds = expireParameters().liveContentSet().fetchContentIds()) {
+      contentIds
+          .parallel()
+          .forEach(contentId -> baseLocations.put(contentId, baseLocations(contentId)));
+    }
+
+    SharedBaseLocations sharedBaseLocations = new SharedBaseLocations(baseLocations);
+    if (sharedBaseLocations.size() > 0) {
+      LOGGER.warn(
+          "live-set#{}: {} base locations are used by multiple contents or overlap with another "
+              + "base location, files in those base locations are not expired.",
+          expireParameters().liveContentSet().id(),
+          sharedBaseLocations.size());
+    }
+    return sharedBaseLocations;
+  }
+
+  private Set<StorageUri> baseLocations(String contentId) {
+    try (Stream<StorageUri> baseLocations =
+        expireParameters()
+            .liveContentSet()
+            .fetchContentReferences(contentId)
+            .flatMap(c -> {
+              @SuppressWarnings("MustBeClosedChecker")
+              Stream<StorageUri> r = expireParameters().contentToFiles().extractBaseLocations(c);
+              return r;
+            })) {
+      return baseLocations.collect(Collectors.toSet());
+    }
+  }
+
+  private DeleteSummary expireSingleContent(
+      String contentId, SharedBaseLocations sharedBaseLocations) {
     LOGGER.debug(
         "live-set#{}: Expiring content ID {}.",
         expireParameters().liveContentSet().id(),
@@ -105,6 +148,7 @@ public abstract class DefaultLocalExpire implements Expire {
     return PerContentDeleteExpired.builder()
         .expireParameters(expireParameters())
         .contentId(contentId)
+        .sharedBaseLocations(sharedBaseLocations)
         .build()
         .expire();
   }
