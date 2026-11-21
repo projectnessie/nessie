@@ -1733,7 +1733,7 @@ public abstract class BaseTestNessieApi {
   public void relativeCommitLocations() throws BaseNessieClientServerException {
     Branch main = api().getDefaultBranch();
 
-    int numCommits = 3;
+    int numCommits = 4;
 
     Branch branch =
         createReference(Branch.of("relativeCommitLocations", main.getHash()), main.getName());
@@ -1769,15 +1769,19 @@ public abstract class BaseTestNessieApi {
     for (int i = 1; i < numCommits; i++) {
       CommitMeta refCommit = commits.get(i - 1).getCommitMeta();
 
-      String[] relativeCommitSpecs =
-          new String[] {
-            // n-th predecessor
-            "~" + i,
-            headCommit + "~" + i,
-            // timestamp
-            "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS),
-            headCommit + "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS)
-          };
+      List<String> relativeCommitSpecs =
+          new ArrayList<>(
+              asList(
+                  // n-th predecessor
+                  "~" + i,
+                  headCommit + "~" + i,
+                  // timestamp
+                  "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS),
+                  headCommit + "*" + refCommit.getCommitTime().minus(1, ChronoUnit.NANOS)));
+      if (i == 3) {
+        relativeCommitSpecs.add(headCommit + "~2~1");
+        relativeCommitSpecs.add(headCommit + "~2^1");
+      }
 
       String branchName = branch.getName();
       int i2 = i;

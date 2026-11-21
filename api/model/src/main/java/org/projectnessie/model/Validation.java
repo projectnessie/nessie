@@ -82,9 +82,9 @@ public final class Validation {
           + REF_NAME_RAW_REGEX
           + ")?(?:@("
           + HASH_RAW_REGEX
-          + ")?)?("
+          + ")?)?((?:"
           + RELATIVE_COMMIT_SPEC_RAW_REGEX
-          + ")*$";
+          + ")+)?$";
   public static final String REF_NAME_PATH_ELEMENT_REGEX = "([^/]+|[^@]+(@|%40)[^@/]*)";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
