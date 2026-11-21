@@ -2,6 +2,21 @@
 
 **See [Nessie Server upgrade notes](server-upgrade.md) for supported upgrade paths.**
 
+## 0.110.1 Release (November 21, 2026)
+
+See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.110.1).
+
+### Fixes
+
+- Catalog/GCS: The table configuration now contains `gcs.oauth2.refresh-credentials-endpoint`, so
+  Iceberg clients can refresh vended GCS tokens before the tokens expire. A refresh returns
+  credentials for the head of the branch or tag that the client loaded the table from. When the
+  client loaded the table at a hash or a timestamp, a refresh returns credentials for that commit.
+
+### Commits
+* Ignore wrapper timestamps when comparing SBOM components (#13318)
+* Build: emit error output when doc-generation fails (#13310)
+
 ## 0.110.0 Release (November 06, 2026)
 
 See [Release information on GitHub](https://github.com/projectnessie/nessie/releases/tag/nessie-0.110.0).
