@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 | Property | Description |
 |----------|-------------|
 | `nessie.authentication.oauth2.token-exchange.resource` | For token exchanges only. A URI that indicates the target service or resource where the client  intends to use the requested security token. Optional.  |

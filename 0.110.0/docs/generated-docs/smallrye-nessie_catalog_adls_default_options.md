@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 Default file-system configuration, default/fallback values for all file-systems are taken from  this one.
 
 | Property | Default Value | Type | Description |

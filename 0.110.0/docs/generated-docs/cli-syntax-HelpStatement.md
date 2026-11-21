@@ -1,3 +1,9 @@
+---
+search:
+  exclude: true
+---
+<!--start-->
+
 > `HELP` <br>
       \[ `USE`<br>
       | `CONNECT`<br>
