@@ -56,6 +56,7 @@ dependencies {
   implementation("io.quarkus:quarkus-agroal")
   implementation("io.quarkus:quarkus-jdbc-postgresql")
   implementation("io.quarkus:quarkus-jdbc-mariadb")
+  implementation("io.quarkus:quarkus-jdbc-mssql")
   implementation("io.quarkus:quarkus-jdbc-h2")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-micrometer")
