@@ -112,6 +112,8 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
           createMergeTransplantCommit(
               mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add);
 
+      // The source history advances even when the target skips this commit.
+      sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
       if (!indexesLogic.commitOperations(newCommit).iterator().hasNext()) {
         // No operations in this commit, skip it.
         continue;
@@ -131,7 +133,6 @@ final class TransplantIndividualImpl extends BaseCommitHelper implements Transpl
         }
       }
 
-      sourceParentIndex = indexesLogic.buildCompleteIndex(sourceCommit, Optional.empty());
       targetParentIndex = indexesLogic.buildCompleteIndex(newCommit, Optional.empty());
     }
 

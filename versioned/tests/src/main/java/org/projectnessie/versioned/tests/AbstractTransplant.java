@@ -25,6 +25,7 @@ import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -39,6 +40,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
@@ -112,6 +114,35 @@ public abstract class AbstractTransplant extends AbstractNestedVersionStore {
     thirdCommit = commit("Third Commit").put(T_2, V_2_2).unchanged(T_4).toBranch(sourceBranch);
 
     commits = commitsList(sourceBranch, false);
+  }
+
+  @Test
+  protected void transplantConflictAfterSkippedNamespaceCreate() throws VersionStoreException {
+    BranchName target = BranchName.of("namespace-target");
+    store().create(target, Optional.of(thirdCommit));
+    Hash created =
+        commit("Create source namespace")
+            .put("ns", Namespace.of(Map.of("owner", "source"), "ns"))
+            .toBranch(sourceBranch);
+    Hash deleted = commit("Delete source namespace").delete("ns").toBranch(sourceBranch);
+    Hash targetHead =
+        commit("Create target namespace")
+            .put("ns", Namespace.of(Map.of("owner", "target"), "ns"))
+            .toBranch(target);
+    ContentKey key = ContentKey.of("ns");
+    Content original = store().getValue(target, key, false).content();
+
+    soft.assertThatThrownBy(() ->
+            store()
+                .transplant(
+                    TransplantOp.builder()
+                        .fromRef(sourceBranch)
+                        .toBranch(target)
+                        .expectedHash(Optional.of(targetHead))
+                        .addSequenceToTransplant(created, deleted)
+                        .build()))
+        .isInstanceOf(ReferenceConflictException.class);
+    soft.assertThat(store().getValue(target, key, false).content()).isEqualTo(original);
   }
 
   @Test
