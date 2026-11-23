@@ -18,18 +18,22 @@ package org.projectnessie.versioned.storage.common.logic;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparingLong;
-import static java.util.Objects.requireNonNull;
 import static org.projectnessie.versioned.storage.common.logic.CommitLogicImpl.NO_COMMON_ANCESTOR_IN_PARENTS_OF;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.BOTH_COMMITS;
 import static org.projectnessie.versioned.storage.common.logic.ShallowCommit.CANDIDATE;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.agrona.collections.Object2ObjectHashMap;
@@ -97,29 +101,13 @@ public abstract class MergeBase {
       return newArrayList(commitA);
     }
 
-    // Theoretically it should be correct to always return `reachableCommits` here. However, it
-    // might be necessary to re-incarnate `removeRedundant`, if there is a situation in which it
-    // would yield the "better" result, so keep the code.
     return flagReachableCommits(commitA, commitB);
-
-    //    List<ShallowCommit> reachableCommits = flagReachableCommits(commitA, commitB);
-    //
-    //    int numReachable = reachableCommits.size();
-    //    if (numReachable < 2) {
-    //      // Short-cut, if there is only one reachable commit that is already the result for both
-    //      // commits. Also if there are no reachable commits at all.
-    //      return reachableCommits;
-    //    }
-    //
-    //    clearFlags(newArrayList(commitA, commitB), ALL_FLAGS);
-    //
-    //    return removeRedundant(reachableCommits);
   }
 
   private List<ShallowCommit> flagReachableCommits(ShallowCommit commitA, ShallowCommit commitB) {
     PriorityQueue<ShallowCommit> queue =
         new PriorityQueue<>(comparingLong(ShallowCommit::seq).reversed());
-    List<ShallowCommit> result = new ArrayList<>();
+    Set<ShallowCommit> result = new LinkedHashSet<>();
 
     commitA.setCommitA();
     queue.add(commitA);
@@ -128,7 +116,7 @@ public abstract class MergeBase {
     queue.add(commitB);
 
     while (queue.stream().anyMatch(ShallowCommit::isNotCandidate)) {
-      ShallowCommit commit = requireNonNull(queue.poll());
+      ShallowCommit commit = queue.remove();
 
       int reachabilityFlags = commit.reachabilityFlags();
       if (reachabilityFlags == BOTH_COMMITS) {
@@ -138,6 +126,8 @@ public abstract class MergeBase {
         }
         // Populate the CANDIDATE flag "down".
         reachabilityFlags |= CANDIDATE;
+      } else if (commit.isCandidate() && commit.clearResult()) {
+        result.remove(commit);
       }
 
       // Propagate the relevant COMMIT_A, COMMIT_B, CANDIDATE flags down to the parent commits,
@@ -148,151 +138,87 @@ public abstract class MergeBase {
           .forEach(queue::add);
     }
 
-    return result;
+    discardRedundantBases(result);
+    return newArrayList(result);
   }
 
-  //  private List<ShallowCommit> removeRedundant(List<ShallowCommit> reachableCommits) {
-  //    // Note: all commits in 'reachableCommits' have the RESULT flag set.
-  //
-  //    // Sort the given commits by 'seq'. This allows us to increase the 'min seq' limit when we
-  //    // discover the commit with the lowest 'seq' that is CANDIDATE.
-  //    reachableCommits.sort(comparing(ShallowCommit::seq));
-  //    // 'commitMinSeq.seq' allows us to "ignore" commits that are _not_ nearer. (Want to find the
-  //    // "nearest" or "closest" merge-base.)
-  //    // The index 'minSeqIndex' points to the current index of 'commitMinSeq' within
-  //    // 'reachableCommits' that is not yet known to be CANDIDATE.
-  //    int minSeqIndex = 0;
-  //    ShallowCommit commitMinSeq = reachableCommits.get(minSeqIndex);
-  //
-  //    // For all reachable commits that were not yet flagged as RESULT, flag all their direct
-  // parents
-  //    // as CANDIDATE and return the new candidates. 'newCandidates' holds the commits, "newest"
-  // ones
-  //    // (by 'seq') first.
-  //    List<ShallowCommit> newCandidates =
-  //        reachableCommits.stream()
-  //            .peek(ShallowCommit::setResult)
-  //            .flatMap(this::parentCommits)
-  //            .filter(ShallowCommit::setCandidate)
-  //            .sorted(comparing(ShallowCommit::seq).reversed())
-  //            .collect(Collectors.toList());
-  //
-  //    // Remove CANDIDATE flag for now to allow walking through parents.
-  //    newCandidates.forEach(ShallowCommit::clearCandidate);
-  //
-  //    // Iterate, start with the highest 'seq'. It should find all other commits during
-  // parents-walk,
-  //    // allowing us to terminate early.
-  //    int reachableCommitCount = reachableCommits.size();
-  //    // Number of commits that are flagged as a RESULT.
-  //    int remainingResults = reachableCommitCount;
-  //    Deque<ShallowCommit> deque = new ArrayDeque<>();
-  //    for (int i = 0; i < newCandidates.size() && remainingResults > 1; i++) {
-  //      // note: 'deque' is always empty here
-  //
-  //      ShallowCommit candidate = newCandidates.get(i);
-  //      candidate.setCandidate();
-  //      deque.add(candidate);
-  //
-  //      while (!deque.isEmpty()) {
-  //        ShallowCommit c = deque.peek();
-  //
-  //        if (c.clearResult()) {
-  //          // 'c' had the RESULT flag set
-  //          if (--remainingResults == 0) {
-  //            // All RESULTs processed - done with all candidates (will exit inner and outer
-  // loop).
-  //            break;
-  //          }
-  //
-  //          // If 'c' is the commit "min-seq commit", push minSeq to the first non-CANDIDATE
-  // commit.
-  //          if (c.id().equals(commitMinSeq.id())) {
-  //            while (minSeqIndex < reachableCommitCount - 1 && commitMinSeq.isCandidate()) {
-  //              minSeqIndex++;
-  //              commitMinSeq = reachableCommits.get(minSeqIndex);
-  //            }
-  //          }
-  //        }
-  //
-  //        // Find the first "new" candidate commit with a higher 'seq', enqueue it and start over.
-  //        if (c.seq() >= commitMinSeq.seq()) {
-  //          // Get the first non-CANDIDATE flagged parent commit (then flagged as CANDIDATE).
-  //          Optional<ShallowCommit> firstNonCandidate =
-  //              parentCommits(c).filter(ShallowCommit::setCandidate).findFirst();
-  //          if (firstNonCandidate.isPresent()) {
-  //            // Found a commit that is "nearer" _and_ was not flagged as CANDIDATE.
-  //            deque.addFirst(firstNonCandidate.get());
-  //            continue;
-  //          }
-  //        }
-  //
-  //        // All candidates have been visited, remove 'c' from the deque.
-  //        deque.remove();
-  //      }
-  //    }
-  //
-  //    // Clear RESULT flag and build the 'result' list ordered by seq. Need to '.collect()' here,
-  //    // because we need the CANDIDATE flag as a filter condition, but have to clear it before
-  //    // returning.
-  //    List<ShallowCommit> result =
-  //        reachableCommits.stream()
-  //            .peek(ShallowCommit::clearResult)
-  //            .filter(ShallowCommit::isNotCandidate)
-  //            .sorted(comparing(ShallowCommit::seq))
-  //            .collect(Collectors.toList());
-  //
-  //    // Clear CANDIDATE flag
-  //    clearFlags(newCandidates, CANDIDATE);
-  //
-  //    return result;
-  //  }
+  private void discardRedundantBases(Set<ShallowCommit> result) {
+    // A secondary parent can have a higher sequence number than its child. Verify reachability
+    // directly before discarding any of the bases found by the sequence-ordered walk.
+    Iterator<ShallowCommit> bases = result.iterator();
+    while (result.size() > 1 && bases.hasNext()) {
+      ShallowCommit base = bases.next();
+      if (reachedByAnotherBase(base, result)) {
+        base.clearResult();
+        bases.remove();
+      }
+    }
+  }
 
-  //  /** Clears the given flags from all given commits recursively. */
-  //  private void clearFlags(List<ShallowCommit> commits, int flags) {
-  //    Deque<ShallowCommit> remainingParents = new ArrayDeque<>();
-  //
-  //    for (ShallowCommit commit : commits) {
-  //      // Note: 'remainingParents' is mutated
-  //      clearFlagsInner(remainingParents, commit, flags);
-  //    }
-  //
-  //    while (!remainingParents.isEmpty()) {
-  //      ShallowCommit commit = remainingParents.removeFirst();
-  //      // Note: 'remainingParents' is mutated
-  //      clearFlagsInner(remainingParents, commit, flags);
-  //    }
-  //  }
+  private boolean reachedByAnotherBase(ShallowCommit base, Set<ShallowCommit> bases) {
+    Set<ObjId> baseHistory = new HashSet<>();
+    Deque<ObjId> baseFrontier = new ArrayDeque<>();
+    includeCachedHistory(base, baseHistory, baseFrontier);
 
-  //  private void clearFlagsInner(
-  //      Deque<ShallowCommit> remainingParents, ShallowCommit commit, int flags) {
-  //    // Clear commit flags of the given commit and its _direct_ parents (predecessors), repeat
-  // until
-  //    // the first "untouched" commit is reached (matching the logic elsewhere in this class).
-  //    while (commit.clearFlagsIfAnySet(flags)) {
-  //
-  //      Iterator<ShallowCommit> parents = parentCommits(commit).iterator();
-  //      if (!parents.hasNext()) {
-  //        // no parents, at "beginning of time", nothing to do anymore
-  //        return;
-  //      }
-  //
-  //      // If 'commit' or any of its parents has any flag to be cleared, add it to
-  // 'remainingParents'
-  //      // so it is handled in the next iteration in 'clearFlags()'.
-  //      // Start with the direct parent of the commit passed into 'clearFlagsInner()'.
-  //      commit = parents.next();
-  //      if (commit.isAnyFlagSet(flags)) {
-  //        remainingParents.addLast(commit);
-  //      }
-  //      while (parents.hasNext()) {
-  //        ShallowCommit parent = parents.next();
-  //        if (parent.isAnyFlagSet(flags)) {
-  //          remainingParents.addLast(parent);
-  //        }
-  //      }
-  //    }
-  //  }
+    Set<ObjId> visited = new HashSet<>();
+    Deque<ObjId> pending = new ArrayDeque<>();
+    for (ShallowCommit other : bases) {
+      if (other != base) {
+        visited.add(other.id());
+        pending.addLast(other.id());
+      }
+    }
+
+    while (!pending.isEmpty()) {
+      ObjId next = pending.removeFirst();
+      if (next.equals(base.id())) {
+        return true;
+      }
+      // Any path through a strict ancestor of the base stays older than the base.
+      if (baseHistory.contains(next)) {
+        continue;
+      }
+
+      ShallowCommit commit = commits.get(next);
+      if (commit == null) {
+        // Advance the base frontier by at most one load before each uncached step on the other
+        // branches. This can prove that a side branch joins the already covered history.
+        if (!baseFrontier.isEmpty()) {
+          includeCachedHistory(
+              shallowCommit(baseFrontier.removeFirst()), baseHistory, baseFrontier);
+          if (baseHistory.contains(next)) {
+            continue;
+          }
+        }
+        commit = shallowCommit(next);
+      }
+      for (ObjId parent : commit.parents()) {
+        if (!EMPTY_OBJ_ID.equals(parent) && visited.add(parent)) {
+          pending.addLast(parent);
+        }
+      }
+    }
+    return false;
+  }
+
+  private void includeCachedHistory(
+      ShallowCommit commit, Set<ObjId> history, Deque<ObjId> frontier) {
+    Deque<ShallowCommit> cached = new ArrayDeque<>();
+    history.add(commit.id());
+    cached.add(commit);
+    while (!cached.isEmpty()) {
+      for (ObjId parent : cached.removeFirst().parents()) {
+        if (!EMPTY_OBJ_ID.equals(parent) && history.add(parent)) {
+          ShallowCommit parentCommit = commits.get(parent);
+          if (parentCommit != null) {
+            cached.addLast(parentCommit);
+          } else {
+            frontier.addLast(parent);
+          }
+        }
+      }
+    }
+  }
 
   private NoSuchElementException noCommonAncestor() {
     return new NoSuchElementException(
