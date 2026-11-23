@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.common.logic;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
+import static com.google.common.collect.Maps.newLinkedHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSetWithExpectedSize;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
@@ -53,9 +54,11 @@ import com.google.common.collect.AbstractIterator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -547,7 +550,8 @@ final class CommitLogicImpl implements CommitLogic {
       @Nonnull ConflictHandler conflictHandler,
       @Nonnull CommitOpHandler commitOpHandler,
       @Nonnull ValueReplacement expectedValueReplacement,
-      @Nonnull ValueReplacement committedValueReplacement)
+      @Nonnull ValueReplacement committedValueReplacement,
+      @Nonnull Predicate<StoreKey> includeOperation)
       throws CommitConflictException, ObjNotFoundException {
     StoreConfig config = persist.config();
 
@@ -601,16 +605,30 @@ final class CommitLogicImpl implements CommitLogic {
         newHashSetWithExpectedSize(createCommit.adds().size() + createCommit.removes().size());
     Set<StoreKey> reAddedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
 
-    preprocessCommitActions(createCommit, keys, reAddedKeys);
+    Map<UUID, StoreKey> addedKeysById =
+        preprocessCommitActions(createCommit, keys, reAddedKeys, includeOperation);
 
     // Results in a bulk-(pre)fetch of the requested index stripes
     fullIndex.loadIfNecessary(keys);
 
-    Map<UUID, CommitOp> removes = newHashMapWithExpectedSize(createCommit.removes().size());
+    // Collect the accepted actions before writing anything so both sides of a rename can be
+    // kept or omitted together.
+    Map<StoreKey, List<StoreKey>> renameSources =
+        newHashMapWithExpectedSize(createCommit.removes().size());
+    Map<StoreKey, CommitOp> removals =
+        newLinkedHashMapWithExpectedSize(createCommit.removes().size());
     for (Remove remove : createCommit.removes()) {
       StoreKey key = remove.key();
       UUID contentId = remove.contentId();
       int payload = remove.payload();
+      StoreKey destination = addedKeysById.get(contentId);
+      boolean rename = destination != null && !destination.equals(key);
+      if (rename) {
+        renameSources.computeIfAbsent(destination, ignored -> new ArrayList<>()).add(key);
+      }
+      if (!includeOperation.test(key)) {
+        continue;
+      }
 
       StoreIndexElement<CommitOp> existing = existingFromIndex(fullIndex, key);
       CommitOp existingContent = existing != null ? existing.content() : null;
@@ -618,28 +636,29 @@ final class CommitLogicImpl implements CommitLogic {
       ObjId expectedValue =
           expectedValueReplacement.maybeReplaceValue(false, key, remove.expectedValue());
       CommitOp op = commitOp(REMOVE, payload, expectedValue, contentId);
-      if (contentId != null) {
-        removes.put(contentId, op);
-      }
-
       CommitConflict conflict =
           checkForConflict(key, contentId, payload, op, existingContent, expectedValue);
 
-      if (conflict != null) {
-        if (handleConflict(conflictHandler, conflicts, conflict)) {
-          continue;
-        }
-      } else {
-        commitOpHandler.nonConflicting(key, null);
+      if (conflict != null && handleConflict(conflictHandler, conflicts, conflict)) {
+        continue;
+      }
+      // A forced deletion of a different or missing table cannot be the source of a rename.
+      if (rename
+          && (existingContent == null || !Objects.equals(contentId, existingContent.contentId()))) {
+        continue;
       }
 
-      // No conflict, add "remove action" to index
-      hasher.hash(2).hash(payload).hash(key.rawString()).hash(contentId);
-      index.add(indexElement(key, op));
+      if (conflict == null) {
+        commitOpHandler.nonConflicting(key, null);
+      }
+      removals.put(key, op);
     }
 
     for (Unchanged unchanged : createCommit.unchanged()) {
       StoreKey key = unchanged.key();
+      if (!includeOperation.test(key)) {
+        continue;
+      }
       UUID contentId = unchanged.contentId();
       int payload = unchanged.payload();
 
@@ -657,8 +676,13 @@ final class CommitLogicImpl implements CommitLogic {
       }
     }
 
+    Map<StoreKey, PlannedAddition> additions =
+        newLinkedHashMapWithExpectedSize(createCommit.adds().size());
     for (Add add : createCommit.adds()) {
       StoreKey key = add.key();
+      if (!includeOperation.test(key)) {
+        continue;
+      }
       UUID contentId = add.contentId();
       int payload = add.payload();
 
@@ -673,16 +697,13 @@ final class CommitLogicImpl implements CommitLogic {
       boolean reAdded = reAddedKeys.contains(key);
       CommitOp existingContent = existingContentForCommit(fullIndex, key, reAdded);
 
-      if (!reAdded) {
-        // Check whether the content-ID has been removed above. If yes, check whether the content-ID
-        // is being reused. If so, then the commit contains a rename-operation.
-        CommitOp removeOp = removes.remove(contentId);
-        if (removeOp != null) {
-          if (existingContent != null) {
-            conflict = commitConflict(key, KEY_EXISTS, op, existingContent);
-          }
-          existingContent = removeOp;
+      List<StoreKey> sources = renameSources.getOrDefault(key, emptyList());
+      boolean sourcesAccepted = sources.stream().allMatch(removals::containsKey);
+      if (!reAdded && sourcesAccepted && !sources.isEmpty()) {
+        if (existingContent != null) {
+          conflict = commitConflict(key, KEY_EXISTS, op, existingContent);
         }
+        existingContent = removals.get(sources.get(sources.size() - 1));
       }
 
       ObjId expectedValue =
@@ -692,34 +713,77 @@ final class CommitLogicImpl implements CommitLogic {
             checkForConflict(
                 key, contentId, payload, op, existingContent, reAdded ? null : expectedValue);
       }
-
-      if (conflict != null) {
-        if (handleConflict(conflictHandler, conflicts, conflict)) {
-          continue;
-        }
-      } else {
-        commitOpHandler.nonConflicting(key, add.value());
+      // Check the actual destination also when one of the source removals was omitted.
+      if (conflict != null && handleConflict(conflictHandler, conflicts, conflict)) {
+        continue;
+      }
+      if (!sourcesAccepted) {
+        continue;
       }
 
-      // No conflict, add "add action" to index
-      hasher
-          .hash(1)
-          .hash(key.rawString())
-          .hash(payload)
-          .hash(add.value().asByteBuffer())
-          .hash(contentId);
-      index.add(indexElement(key, op));
+      if (conflict == null) {
+        commitOpHandler.nonConflicting(key, add.value());
+      }
+      additions.put(key, new PlannedAddition(op, add.value()));
+    }
+
+    Deque<StoreKey> omittedDestinations = new ArrayDeque<>();
+    renameSources.keySet().stream()
+        .filter(key -> !additions.containsKey(key))
+        .forEach(omittedDestinations::addLast);
+    while (!omittedDestinations.isEmpty()) {
+      StoreKey destination = omittedDestinations.removeFirst();
+      for (StoreKey source : renameSources.getOrDefault(destination, emptyList())) {
+        removals.remove(source);
+
+        // A pending addition to the source key may have relied on the source being vacated.
+        StoreIndexElement<CommitOp> existing = existingFromIndex(fullIndex, source);
+        if (existing != null) {
+          PlannedAddition dependent = additions.remove(source);
+          if (dependent != null) {
+            handleConflict(
+                conflictHandler,
+                conflicts,
+                commitConflict(source, KEY_EXISTS, dependent.op(), existing.content()));
+            omittedDestinations.addLast(source);
+          }
+        }
+      }
     }
 
     if (!conflicts.isEmpty()) {
       throw new CommitConflictException(conflicts);
     }
 
+    for (Map.Entry<StoreKey, CommitOp> removal : removals.entrySet()) {
+      StoreKey key = removal.getKey();
+      CommitOp op = removal.getValue();
+      hasher.hash(2).hash(op.payload()).hash(key.rawString()).hash(op.contentId());
+      index.add(indexElement(key, op));
+    }
+    for (Map.Entry<StoreKey, PlannedAddition> addition : additions.entrySet()) {
+      StoreKey key = addition.getKey();
+      PlannedAddition planned = addition.getValue();
+      CommitOp op = planned.op();
+      hasher
+          .hash(1)
+          .hash(key.rawString())
+          .hash(op.payload())
+          .hash(planned.hashValue().asByteBuffer())
+          .hash(op.contentId());
+      index.add(indexElement(key, op));
+    }
+
     return c.incrementalIndex(index.serialize()).id(hasher.generate()).build();
   }
 
-  private static void preprocessCommitActions(
-      CreateCommit createCommit, Set<StoreKey> keys, Set<StoreKey> reAddedKeys) {
+  private record PlannedAddition(CommitOp op, ObjId hashValue) {}
+
+  private static Map<UUID, StoreKey> preprocessCommitActions(
+      CreateCommit createCommit,
+      Set<StoreKey> keys,
+      Set<StoreKey> reAddedKeys,
+      Predicate<StoreKey> includeOperation) {
     Set<StoreKey> removedKeys = newHashSetWithExpectedSize(createCommit.removes().size());
 
     // Collect the removed keys - both for "pure" deletes, renames and re-adds.
@@ -732,7 +796,7 @@ final class CommitLogicImpl implements CommitLogic {
     // Collect the keys that are re-added w/ potentially different payload and content-ID:
     // A "re-add" is the scenario when for example a data lake table is dropped and another one
     // created with the same name.
-    Set<UUID> seenContentIds = newHashSetWithExpectedSize(createCommit.adds().size());
+    Map<UUID, StoreKey> addedKeysById = newHashMapWithExpectedSize(createCommit.adds().size());
     for (Add add : createCommit.adds()) {
       StoreKey key = add.key();
       // Check that the key to be 'added' is either not contained in the set of keys being
@@ -746,8 +810,15 @@ final class CommitLogicImpl implements CommitLogic {
       }
       UUID contentId = add.contentId();
       if (contentId != null) {
-        checkArgument(
-            seenContentIds.add(contentId), "Duplicate content ID: %s for key: %s", contentId, key);
+        StoreKey previous = addedKeysById.putIfAbsent(contentId, key);
+        if (previous != null && includeOperation.test(key)) {
+          checkArgument(
+              !includeOperation.test(previous),
+              "Duplicate content ID: %s for key: %s",
+              contentId,
+              key);
+          addedKeysById.put(contentId, key);
+        }
       }
     }
 
@@ -756,6 +827,7 @@ final class CommitLogicImpl implements CommitLogic {
       StoreKey key = unchanged.key();
       checkArgument(keys.add(key), "Duplicate key: %s", key);
     }
+    return addedKeysById;
   }
 
   private static CommitConflict checkForConflict(
@@ -791,8 +863,7 @@ final class CommitLogicImpl implements CommitLogic {
   private static CommitOp existingContentForCommit(
       StoreIndex<CommitOp> fullIndex, StoreKey key, boolean readded) {
     StoreIndexElement<CommitOp> existing =
-        // Need to "manually" consult 'readdedKeys', because the 'index' updated above in
-        // the "remove-loop" is a _new_ index object.
+        // A key being re-added is checked against the state after its removal.
         readded ? null : existingFromIndex(fullIndex, key);
     return existing != null ? existing.content() : null;
   }

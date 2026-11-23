@@ -27,9 +27,11 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentKey;
@@ -81,23 +83,28 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
 
     MergeBehaviors mergeBehaviors = new MergeBehaviors(mergeTransplantOpBase);
 
+    Set<StoreKey> droppedKeys = new HashSet<>();
     CreateCommit createCommit =
         createSquashCommit(
             mergeBehaviors,
             keyDetailsMap,
             mergeTransplantOpBase.updateCommitMetadata(),
             mergeTransplantContext,
-            mergeFromId);
+            mergeFromId,
+            droppedKeys);
+    Predicate<StoreKey> includeOperation = key -> !droppedKeys.contains(key);
 
     List<Obj> objsToStore = new ArrayList<>();
     CommitObj mergeCommit =
-        createMergeTransplantCommit(mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add);
+        createMergeTransplantCommit(
+            mergeBehaviors, keyDetailsMap, createCommit, objsToStore::add, includeOperation);
 
     // It's okay to do the fetchCommit() here and not complicate the surrounding logic (think:
     // local cache)
     StoreIndex<CommitOp> headIndex = indexesLogic(persist).buildCompleteIndexOrEmpty(head);
 
-    validateMergeTransplantCommit(createCommit, mergeTransplantOpBase.validator(), headIndex);
+    validateMergeTransplantCommit(
+        createCommit, mergeTransplantOpBase.validator(), headIndex, includeOperation);
 
     verifyMergeTransplantCommitPolicies(headIndex, mergeCommit);
 
@@ -134,7 +141,8 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       Map<ContentKey, KeyDetails> keyDetailsMap,
       MetadataRewriter<CommitMeta> updateCommitMetadata,
       MergeTransplantContext mergeTransplantContext,
-      @Nullable ObjId mergeFromId) {
+      @Nullable ObjId mergeFromId,
+      Set<StoreKey> droppedKeys) {
     CreateCommit.Builder commitBuilder = newCommitBuilder().parentCommitId(headId());
 
     fromCommitMeta(
@@ -147,16 +155,16 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
       commitBuilder.addSecondaryParents(mergeFromId);
     }
 
-    Predicate<StoreKey> filter =
+    Predicate<StoreKey> collectDroppedKeys =
         storeKey -> {
           ContentKey key = storeKeyToKey(storeKey);
-          MergeBehavior behavior = mergeBehaviors.mergeBehavior(key);
-          if (behavior != MergeBehavior.DROP) {
-            return true;
+          if (mergeBehaviors.mergeBehavior(key) == MergeBehavior.DROP) {
+            mergeBehaviors.useKey(false, key);
+            keyDetailsMap.put(key, KeyDetails.keyDetails(MergeBehavior.DROP, null));
+            droppedKeys.add(storeKey);
           }
-          mergeBehaviors.useKey(false, key);
-          keyDetailsMap.put(key, KeyDetails.keyDetails(MergeBehavior.DROP, null));
-          return false;
+          // Keep both sides in the diff so the commit logic can pair renames before exclusion.
+          return true;
         };
 
     CommitLogic commitLogic = commitLogic(persist);
@@ -166,7 +174,7 @@ class BaseMergeTransplantSquash extends BaseCommitHelper {
                 mergeTransplantContext.baseCommit(),
                 mergeTransplantContext.headCommit(),
                 true,
-                filter));
+                collectDroppedKeys));
 
     return commitLogic.diffToCreateCommit(diff, commitBuilder).build();
   }

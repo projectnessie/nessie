@@ -32,6 +32,7 @@ import static org.projectnessie.versioned.storage.common.logic.CommitConflict.Co
 import static org.projectnessie.versioned.storage.common.logic.CommitRetry.commitRetry;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
 import static org.projectnessie.versioned.storage.common.logic.Logics.indexesLogic;
+import static org.projectnessie.versioned.storage.common.objtypes.CommitOp.Action.REMOVE;
 import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.commitConflictToConflict;
 import static org.projectnessie.versioned.storage.versionstore.RefMapping.referenceConflictException;
@@ -55,6 +56,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.agrona.collections.Object2IntHashMap;
 import org.projectnessie.error.BaseNessieClientServerException;
@@ -385,14 +387,14 @@ class BaseCommitHelper {
   }
 
   static ObjId idForExpectedContent(StoreKey key, StoreIndex<CommitOp> headIndex) {
-    StoreIndexElement<CommitOp> expected = headIndex.get(key);
-    if (expected != null) {
-      CommitOp expectedContent = expected.content();
-      if (expectedContent.action().exists()) {
-        return expectedContent.value();
-      }
-    }
-    return null;
+    CommitOp expected = expectedContentAt(key, headIndex);
+    return expected != null ? expected.value() : null;
+  }
+
+  @Nullable
+  static CommitOp expectedContentAt(StoreKey key, StoreIndex<CommitOp> index) {
+    StoreIndexElement<CommitOp> expected = index.get(key);
+    return expected != null && expected.content().action().exists() ? expected.content() : null;
   }
 
   void verifyMergeTransplantCommitPolicies(
@@ -443,6 +445,17 @@ class BaseCommitHelper {
       CreateCommit createCommit,
       Consumer<Obj> objsToStore)
       throws ReferenceNotFoundException {
+    return createMergeTransplantCommit(
+        mergeBehaviors, keyDetailsMap, createCommit, objsToStore, key -> true);
+  }
+
+  CommitObj createMergeTransplantCommit(
+      MergeBehaviors mergeBehaviors,
+      Map<ContentKey, KeyDetails> keyDetailsMap,
+      CreateCommit createCommit,
+      Consumer<Obj> objsToStore,
+      Predicate<StoreKey> includeOperation)
+      throws ReferenceNotFoundException {
 
     try {
       CommitLogic commitLogic = commitLogic(persist);
@@ -459,18 +472,25 @@ class BaseCommitHelper {
             // discriminator
             if (key != null) {
               if (conflict.conflictType() == KEY_EXISTS) {
-                // This is rather a hack to ignore conflicts when merging namespaces. If both the
-                // source and target payload is NAMESPACE, let the target content "win" (aka no
-                // change).
                 CommitOp op = conflict.op();
                 CommitOp ex = conflict.existing();
                 if (op != null && ex != null && op.payload() == ex.payload()) {
+                  if (ex.action() == REMOVE) {
+                    // The replay expects the destination to be empty. The commit logic checks the
+                    // addition against the paired removal, whose own conflict check is separate.
+                    MergeBehavior behavior = mergeBehaviors.mergeBehavior(key);
+                    keyDetailsMap.putIfAbsent(key, keyDetails(behavior, null));
+                    return behavior == MergeBehavior.DROP
+                        ? ConflictResolution.DROP
+                        : ConflictResolution.ADD;
+                  }
                   if (Objects.equals(op.value(), ex.value())) {
                     // Got another add for the exact same content that is already on the target, so
                     // drop the conflicting operation on the floor.
                     return ConflictResolution.DROP;
                   }
                   if (NAMESPACE.equals(contentTypeForPayload(op.payload()))) {
+                    // Reconcile namespaces created independently on the source and target.
                     return ConflictResolution.ADD;
                   }
                 }
@@ -557,7 +577,8 @@ class BaseCommitHelper {
                 contentMapping.buildContent(resolvedContent, payloadForContent(resolvedContent));
             objsToStore.accept(resolvedValue);
             return resolvedValue.id();
-          });
+          },
+          includeOperation);
     } catch (CommitConflictException conflict) {
       // Data conflicts are handled, if we get here, it's an internal error OR unimplemented
       // feature or data condition.
@@ -569,8 +590,19 @@ class BaseCommitHelper {
 
   void validateMergeTransplantCommit(
       CreateCommit createCommit, CommitValidator commitValidator, StoreIndex<CommitOp> index) {
+    validateMergeTransplantCommit(createCommit, commitValidator, index, key -> true);
+  }
+
+  void validateMergeTransplantCommit(
+      CreateCommit createCommit,
+      CommitValidator commitValidator,
+      StoreIndex<CommitOp> index,
+      Predicate<StoreKey> includeOperation) {
     ImmutableCommitValidation.Builder commitValidation = CommitValidation.builder();
     for (CreateCommit.Remove remove : createCommit.removes()) {
+      if (!includeOperation.test(remove.key())) {
+        continue;
+      }
       ContentKey key = storeKeyToKey(remove.key());
       if (key == null) {
         continue;
@@ -583,6 +615,9 @@ class BaseCommitHelper {
 
     Map<ContentKey, UUID> seenContentIds = newHashMapWithExpectedSize(createCommit.adds().size());
     for (CreateCommit.Add add : createCommit.adds()) {
+      if (!includeOperation.test(add.key())) {
+        continue;
+      }
       ContentKey key = storeKeyToKey(add.key());
       if (key == null) {
         continue;

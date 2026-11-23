@@ -24,6 +24,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import org.projectnessie.versioned.storage.common.config.StoreConfig;
 import org.projectnessie.versioned.storage.common.exceptions.CommitConflictException;
 import org.projectnessie.versioned.storage.common.exceptions.ObjNotFoundException;
@@ -172,12 +173,31 @@ public interface CommitLogic {
    * @see #storeCommit(CommitObj, List)
    */
   @Nonnull
-  CommitObj buildCommitObj(
+  default CommitObj buildCommitObj(
       @Nonnull CreateCommit createCommit,
       @Nonnull ConflictHandler conflictHandler,
       CommitOpHandler commitOpHandler,
       @Nonnull ValueReplacement expectedValueReplacement,
       @Nonnull ValueReplacement committedValueReplacement)
+      throws CommitConflictException, ObjNotFoundException {
+    return buildCommitObj(
+        createCommit,
+        conflictHandler,
+        commitOpHandler,
+        expectedValueReplacement,
+        committedValueReplacement,
+        key -> true);
+  }
+
+  /** Build a commit while keeping excluded operations visible for rename pairing. */
+  @Nonnull
+  CommitObj buildCommitObj(
+      @Nonnull CreateCommit createCommit,
+      @Nonnull ConflictHandler conflictHandler,
+      CommitOpHandler commitOpHandler,
+      @Nonnull ValueReplacement expectedValueReplacement,
+      @Nonnull ValueReplacement committedValueReplacement,
+      @Nonnull Predicate<StoreKey> includeOperation)
       throws CommitConflictException, ObjNotFoundException;
 
   @Nonnull
