@@ -70,7 +70,7 @@ services:
 
   nessie:
     # IMPORTANT: when upgrading Nessie images, make sure to update the spark-sql packages as well
-    image: ghcr.io/projectnessie/nessie:0.110.0
+    image: ghcr.io/projectnessie/nessie:0.110.1
     ports:
       # API port
       - "19120:19120"
@@ -147,7 +147,7 @@ services:
 
   # Grafana
   grafana:
-    image: docker.io/grafana/grafana:13.3.1
+    image: docker.io/grafana/grafana:13.3.2
     depends_on:
       - prometheus
     ports:
@@ -248,7 +248,7 @@ services:
       retries: 15
 
   postgres:
-    image: postgres:18.7
+    image: postgres:19.0
     ports:
       - "5432:5432"
     # set shared memory limit when using docker-compose
@@ -266,7 +266,7 @@ services:
       retries: 15
 
   nessie-cli:
-      image: ghcr.io/projectnessie/nessie-cli:0.110.0
+      image: ghcr.io/projectnessie/nessie-cli:0.110.1
       depends_on:
         nessie:
           condition: service_healthy
