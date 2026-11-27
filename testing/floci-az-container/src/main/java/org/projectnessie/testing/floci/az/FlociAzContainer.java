@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.Base58;
@@ -67,6 +68,7 @@ public class FlociAzContainer extends GenericContainer<FlociAzContainer>
   @Override
   public void start() {
     super.start();
+    ContainerStarter.verifyRunning(this);
 
     createStorageContainer();
   }

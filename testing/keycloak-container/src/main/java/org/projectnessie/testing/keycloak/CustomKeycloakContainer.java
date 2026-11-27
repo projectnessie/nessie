@@ -46,6 +46,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
@@ -264,6 +265,7 @@ public class CustomKeycloakContainer extends ExtendableKeycloakContainer<CustomK
   public void start() {
     LOGGER.info("Starting Keycloak...");
     super.start();
+    ContainerStarter.verifyRunning(this);
     LOGGER.info("Keycloak started, creating realm {}...", config.realmName());
 
     RealmRepresentation realm = createRealm();

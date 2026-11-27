@@ -19,6 +19,7 @@ import static org.projectnessie.gc.contents.jdbc.ITPostgresPersistenceSpi.docker
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -29,9 +30,9 @@ public class ITMySQLPersistenceSpi extends AbstractJdbcPersistenceSpi {
   @BeforeAll
   static void createDataSource() throws Exception {
     container =
-        new MariaDBDriverMySQLContainer(dockerImage("mysql").asCompatibleSubstituteFor("mysql"))
-            .withUrlParam("sslMode", "trust");
-    container.start();
+        ContainerStarter.startContainer(() ->
+            new MariaDBDriverMySQLContainer(dockerImage("mysql").asCompatibleSubstituteFor("mysql"))
+                .withUrlParam("sslMode", "trust"));
     initDataSource(container.getJdbcUrl());
   }
 

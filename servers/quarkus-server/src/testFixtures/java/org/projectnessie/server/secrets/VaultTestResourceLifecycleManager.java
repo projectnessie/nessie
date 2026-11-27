@@ -46,6 +46,7 @@ import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,19 +85,18 @@ public class VaultTestResourceLifecycleManager implements QuarkusTestResourceLif
   @Override
   public Map<String, String> start() {
     vaultContainer =
-        new VaultContainer<>(
-                ContainerSpecHelper.builder()
-                    .name("vault")
-                    .containerClass(VaultTestResourceLifecycleManager.class)
-                    .build()
-                    .dockerImageName(null)
-                    .asCompatibleSubstituteFor("vault"))
-            .withLogConsumer(c -> LOGGER.info("[VAULT] {}", c.getUtf8StringWithoutLineEnding()))
-            .withEnv("SKIP_SETCAP", "true")
-            .withVaultToken(VAULT_ROOT_TOKEN)
-            .withInitCommand("auth enable userpass");
-
-    vaultContainer.start();
+        ContainerStarter.startContainer(() ->
+            new VaultContainer<>(
+                    ContainerSpecHelper.builder()
+                        .name("vault")
+                        .containerClass(VaultTestResourceLifecycleManager.class)
+                        .build()
+                        .dockerImageName(null)
+                        .asCompatibleSubstituteFor("vault"))
+                .withLogConsumer(c -> LOGGER.info("[VAULT] {}", c.getUtf8StringWithoutLineEnding()))
+                .withEnv("SKIP_SETCAP", "true")
+                .withVaultToken(VAULT_ROOT_TOKEN)
+                .withInitCommand("auth enable userpass"));
 
     try {
       VaultClient vaultClient =

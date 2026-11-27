@@ -17,10 +17,10 @@ package org.projectnessie.versioned.storage.bigtabletests;
 
 import java.util.Optional;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.versioned.storage.bigtable.BigTableBackendFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -55,34 +55,23 @@ public class BigTableBackendContainerTestFactory extends AbstractBigTableBackend
             .build()
             .dockerImageName(null);
 
-    for (int retry = 0; ; retry++) {
-      GenericContainer<?> c =
-          new GenericContainer<>(imageName)
-              .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-              .withExposedPorts(BIGTABLE_PORT)
-              .withCommand(
-                  "gcloud",
-                  "beta",
-                  "emulators",
-                  "bigtable",
-                  "start",
-                  "--verbosity=info", // debug, info, warning, error, critical, none
-                  "--host-port=0.0.0.0:" + BIGTABLE_PORT);
-      containerNetworkId.ifPresent(c::withNetworkMode);
-      try {
-        c.start();
-        container = c;
-        break;
-      } catch (ContainerLaunchException e) {
-        c.close();
-        if (e.getCause() != null && retry < 3) {
-          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
-          continue;
-        }
-        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
-        throw new RuntimeException(e);
-      }
-    }
+    container =
+        ContainerStarter.startContainer(() -> {
+          GenericContainer<?> c =
+              new GenericContainer<>(imageName)
+                  .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                  .withExposedPorts(BIGTABLE_PORT)
+                  .withCommand(
+                      "gcloud",
+                      "beta",
+                      "emulators",
+                      "bigtable",
+                      "start",
+                      "--verbosity=info", // debug, info, warning, error, critical, none
+                      "--host-port=0.0.0.0:" + BIGTABLE_PORT);
+          containerNetworkId.ifPresent(c::withNetworkMode);
+          return c;
+        });
 
     emulatorPort = containerNetworkId.isPresent() ? BIGTABLE_PORT : container.getFirstMappedPort();
     emulatorHost =
