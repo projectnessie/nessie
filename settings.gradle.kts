@@ -54,12 +54,11 @@ if (isCI && configurationCacheRequested) {
 val baseVersion = file("version.txt").readText().trim()
 
 pluginManagement {
-  repositories {
-    if (providers.systemProperty("withMavenLocal").map(String::toBoolean).getOrElse(false)) {
+  if (providers.systemProperty("withMavenLocal").map(String::toBoolean).getOrElse(false)) {
+    repositories {
       mavenLocal()
+      gradlePluginPortal()
     }
-    mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
-    gradlePluginPortal()
   }
 }
 
