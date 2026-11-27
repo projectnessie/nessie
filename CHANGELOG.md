@@ -20,6 +20,11 @@ as necessary. Empty sections will not end in the release notes.
 
 ### Fixes
 
+- GC: The sweep phase no longer deletes live files when multiple contents share a base location or
+  when one base location contains another one (#12363). This occurs when a new table uses the
+  location of a dropped table (`registerTable` or a re-created table), or with nested table
+  locations. GC now skips these base locations and logs a warning.
+
 ### Commits
 
 ## [0.110.0] Release (2026-11-06)
