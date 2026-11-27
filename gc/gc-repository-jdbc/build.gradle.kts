@@ -32,6 +32,7 @@ dependencies {
   implementation(libs.agroal.pool)
   implementation(libs.postgresql)
   implementation(libs.mariadb.java.client)
+  implementation(libs.mssql.jdbc)
   implementation(libs.h2)
 
   implementation(libs.slf4j.api)

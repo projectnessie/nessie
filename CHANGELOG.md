@@ -14,6 +14,8 @@ as necessary. Empty sections will not end in the release notes.
 
 ### New Features
 
+- JDBC2 version store: experimental support for **Microsoft SQL Server** (`jdbc:sqlserver://` URLs). The Nessie server, Server Admin tool, and GC tool ship the Microsoft JDBC driver and the Quarkus SQL Server datasource extension, configured via `quarkus.datasource.mssql.*`.
+
 ### Changes
 
 ### Deprecations
