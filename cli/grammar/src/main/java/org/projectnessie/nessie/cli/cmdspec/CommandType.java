@@ -32,6 +32,7 @@ public enum CommandType {
   SHOW_LOG("ShowLogStatement"),
   SHOW_CONTENT("ShowContentStatement"),
   SHOW_REFERENCE("ShowReferenceStatement"),
+  SHOW_DIFF("ShowDiffStatement"),
   USE_REFERENCE("UseReferenceStatement"),
   ;
 

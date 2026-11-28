@@ -50,6 +50,7 @@ TOKEN #Keyword
   | <LOG: "LOG">
   | <NOT: "NOT">
   | <SET: "SET">
+  | <DIFF: "DIFF">
   | <FROM: "FROM">
   | <INTO: "INTO">
   | <VIEW: "VIEW">

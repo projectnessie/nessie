@@ -105,8 +105,8 @@ HelpStatement
              { setOptionalNextTokenTypes(); }
            ]
          | <SHOW>
-           { setOptionalNextTokenTypes(TokenType.LOG, TokenType.TABLE, TokenType.VIEW, TokenType.NAMESPACE, TokenType.REFERENCE); }
-           [ <LOG> | <TABLE> | <VIEW> | <NAMESPACE> | <REFERENCE>
+           { setOptionalNextTokenTypes(TokenType.LOG, TokenType.TABLE, TokenType.VIEW, TokenType.NAMESPACE, TokenType.REFERENCE, TokenType.DIFF); }
+           [ <LOG> | <TABLE> | <VIEW> | <NAMESPACE> | <REFERENCE> | <DIFF>
              { setOptionalNextTokenTypes(); }
            ]
          | <ASSIGN>
@@ -428,6 +428,7 @@ ShowStatement
     ( ShowLogStatement
     | ShowContentStatement
     | ShowReferenceStatement
+    | ShowDiffStatement
     )
     ;
 
@@ -498,6 +499,49 @@ ShowReferenceStatement
           { setOptionalNextTokenTypes(); }
         ]
         /at/=TimestampOrCommit
+      ]
+      #if !omitSparkSql
+      [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
+      #endif
+    ;
+
+ShowDiffStatement
+    : <DIFF>
+      { setOptionalNextTokenTypes(TokenType.FROM, TokenType.TO); }
+      [ <FROM>
+        { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG);
+          completionType = CompletionType.REFERENCE_NAME; }
+        [ /fromType/=ReferenceType
+          { setOptionalNextTokenTypes(); completionType = CompletionType.REFERENCE_NAME; }
+        ]
+        /from/=ExistingReference
+        { completionType = CompletionType.NONE;
+          setOptionalNextTokenTypes(TokenType.AT, TokenType.TO); }
+        [ <AT>
+          { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+          [ <TIMESTAMP> | <COMMIT>
+            { setOptionalNextTokenTypes(); }
+          ]
+          /fromAt/=TimestampOrCommit
+          { setOptionalNextTokenTypes(TokenType.TO); }
+        ]
+      ]
+      <TO>
+      { setOptionalNextTokenTypes(TokenType.BRANCH, TokenType.TAG);
+        completionType = CompletionType.REFERENCE_NAME; }
+      [ /toType/=ReferenceType
+        { setOptionalNextTokenTypes(); completionType = CompletionType.REFERENCE_NAME; }
+      ]
+      /to/=ExistingReference
+      { completionType = CompletionType.NONE;
+        setOptionalNextTokenTypes(TokenType.AT, TokenType.IN); }
+      [ <AT>
+        { setOptionalNextTokenTypes(TokenType.TIMESTAMP, TokenType.COMMIT); }
+        [ <TIMESTAMP> | <COMMIT>
+          { setOptionalNextTokenTypes(); }
+        ]
+        /toAt/=TimestampOrCommit
+        { setOptionalNextTokenTypes(TokenType.IN); }
       ]
       #if !omitSparkSql
       [ <IN> { setOptionalNextTokenTypes(); } /inCatalog/=CatalogName ]
