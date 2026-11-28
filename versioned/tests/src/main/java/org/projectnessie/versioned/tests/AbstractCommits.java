@@ -40,12 +40,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.error.ReferenceConflicts;
 import org.projectnessie.model.CommitMeta;
@@ -54,21 +56,30 @@ import org.projectnessie.model.Conflict.ConflictType;
 import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.MergeBehavior;
+import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operation.Delete;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operation.Unchanged;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.CommitResult;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.ImmutableTransplantOp;
 import org.projectnessie.versioned.KeyEntry;
+import org.projectnessie.versioned.MergeConflictException;
+import org.projectnessie.versioned.MergeTransplantResultBase;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceInfo;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TransplantResult;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStore.CommitValidator;
+import org.projectnessie.versioned.VersionStore.MergeOp;
+import org.projectnessie.versioned.VersionStore.TransplantOp;
 import org.projectnessie.versioned.paging.PaginationIterator;
 import org.projectnessie.versioned.testworker.OnRefOnly;
 
@@ -806,6 +817,466 @@ public abstract class AbstractCommits extends AbstractNestedVersionStore {
           .containsKey(renamed)
           .doesNotContainKey(original);
     }
+  }
+
+  enum RenameReplay {
+    MERGE,
+    TRANSPLANT
+  }
+
+  @ParameterizedTest
+  @EnumSource(RenameReplay.class)
+  void replayRename(RenameReplay replay) throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey renamed = ContentKey.of("renamed");
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create table").put("original", IcebergTable.of("loc", 1, 2, 3, 4)).toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    Hash rename = commit("Rename table").delete("original").put("renamed", table).toBranch(source);
+    commit("Unrelated target change").put("other", V_1_1).toBranch(target);
+
+    switch (replay) {
+      case MERGE ->
+          store()
+              .merge(MergeOp.builder().fromRef(source).fromHash(rename).toBranch(target).build());
+      case TRANSPLANT ->
+          store()
+              .transplant(
+                  TransplantOp.builder()
+                      .fromRef(source)
+                      .addSequenceToTransplant(rename)
+                      .toBranch(target)
+                      .build());
+    }
+
+    Map<ContentKey, ContentResult> values =
+        store().getValues(target, List.of(original, renamed), false);
+    assertThat(values).containsOnlyKeys(renamed);
+    assertThat(requireNonNull(values.get(renamed)).content()).isEqualTo(table);
+  }
+
+  static Stream<Arguments> transplantRenameOriginalBehaviors() {
+    return Stream.of(
+        arguments(MergeBehavior.DROP, false, false),
+        arguments(MergeBehavior.FORCE, false, false),
+        arguments(MergeBehavior.DROP, true, false),
+        arguments(MergeBehavior.FORCE, true, false),
+        arguments(MergeBehavior.DROP, true, true));
+  }
+
+  @ParameterizedTest
+  @MethodSource("transplantRenameOriginalBehaviors")
+  void transplantRenameWithChangedOriginal(
+      MergeBehavior originalBehavior, boolean updateAfterRename, boolean forceUpdate)
+      throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey renamed = ContentKey.of("renamed");
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create table")
+            .put("original", IcebergTable.of("initial", 1, 2, 3, 4))
+            .toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    Hash rename = commit("Rename table").delete("original").put("renamed", table).toBranch(source);
+    Content editedTable = IcebergTable.of("edited-target", 2, 2, 3, 4, table.getId());
+    commit("Edit original on target").put("original", editedTable).toBranch(target);
+
+    ImmutableTransplantOp.Builder transplant =
+        TransplantOp.builder()
+            .fromRef(source)
+            .toBranch(target)
+            .addSequenceToTransplant(rename)
+            .putMergeKeyBehaviors(original, MergeKeyBehavior.of(original, originalBehavior));
+    Content renamedTable = table;
+    if (updateAfterRename) {
+      renamedTable = IcebergTable.of("edited-source", 3, 2, 3, 4, table.getId());
+      transplant.addSequenceToTransplant(
+          commit("Edit renamed table on source").put("renamed", renamedTable).toBranch(source));
+    }
+
+    if (forceUpdate) {
+      transplant.putMergeKeyBehaviors(renamed, MergeKeyBehavior.of(renamed, MergeBehavior.FORCE));
+    }
+
+    boolean force = originalBehavior == MergeBehavior.FORCE;
+    if (updateAfterRename && !force && !forceUpdate) {
+      soft.assertThatThrownBy(() -> store().transplant(transplant.build()))
+          .isInstanceOf(MergeConflictException.class)
+          .hasMessageContaining("renamed");
+    } else {
+      TransplantResult result = store().transplant(transplant.build());
+      soft.assertThat(result.wasSuccessful()).isTrue();
+      soft.assertThat(result.wasApplied()).isEqualTo(force);
+    }
+
+    ContentKey resultingKey = force ? renamed : original;
+    Map<ContentKey, ContentResult> values =
+        store().getValues(target, List.of(original, renamed), false);
+    soft.assertThat(values).containsOnlyKeys(resultingKey);
+    soft.assertThat(values.get(resultingKey))
+        .extracting(ContentResult::content)
+        .isEqualTo(force ? renamedTable : editedTable);
+  }
+
+  static Stream<Arguments> chainedRenameOriginalBehaviors() {
+    return Stream.of(
+        arguments(MergeBehavior.DROP, true, false, false),
+        arguments(MergeBehavior.FORCE, true, false, false),
+        arguments(MergeBehavior.DROP, false, false, false),
+        arguments(MergeBehavior.DROP, true, true, false),
+        arguments(MergeBehavior.DROP, true, false, true));
+  }
+
+  @ParameterizedTest
+  @MethodSource("chainedRenameOriginalBehaviors")
+  void transplantChainedRenameWithForcedSecondRemoval(
+      MergeBehavior originalBehavior,
+      boolean originalChanged,
+      boolean separateTransplants,
+      boolean occupiedNext)
+      throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey renamed = ContentKey.of("renamed");
+    ContentKey next = ContentKey.of("next");
+    ContentKey independent = ContentKey.of("independent");
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create table")
+            .put("original", IcebergTable.of("initial", 1, 2, 3, 4))
+            .toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    Hash rename = commit("Rename table").delete("original").put("renamed", table).toBranch(source);
+    Hash renameAgain =
+        commit("Rename table again and create another table")
+            .delete("renamed")
+            .put("next", table)
+            .put("independent", IcebergTable.of("independent", 1, 2, 3, 4))
+            .toBranch(source);
+    Content editedTable = IcebergTable.of("edited-target", 2, 2, 3, 4, table.getId());
+    if (originalChanged) {
+      commit("Edit original on target").put("original", editedTable).toBranch(target);
+    }
+
+    if (occupiedNext) {
+      commit("Occupy next on target")
+          .put("next", IcebergTable.of("occupied", 1, 2, 3, 4))
+          .toBranch(target);
+    }
+
+    ImmutableTransplantOp.Builder transplant =
+        TransplantOp.builder().fromRef(source).toBranch(target);
+    if (separateTransplants) {
+      TransplantResult first =
+          store()
+              .transplant(
+                  TransplantOp.builder()
+                      .fromRef(source)
+                      .toBranch(target)
+                      .addSequenceToTransplant(rename)
+                      .putMergeKeyBehaviors(
+                          original, MergeKeyBehavior.of(original, originalBehavior))
+                      .build());
+      soft.assertThat(first.wasSuccessful()).isTrue();
+      soft.assertThat(first.wasApplied()).isFalse();
+      soft.assertThat(store().getValue(target, original, false).content()).isEqualTo(editedTable);
+    } else {
+      transplant
+          .addSequenceToTransplant(rename)
+          .putMergeKeyBehaviors(original, MergeKeyBehavior.of(original, originalBehavior));
+    }
+    TransplantOp operation =
+        transplant
+            .addSequenceToTransplant(renameAgain)
+            .putMergeKeyBehaviors(renamed, MergeKeyBehavior.of(renamed, MergeBehavior.FORCE))
+            .build();
+
+    if (occupiedNext) {
+      List<ContentKey> keys = List.of(original, renamed, next, independent);
+      Map<ContentKey, ContentResult> expected = store().getValues(target, keys, false);
+      soft.assertThatThrownBy(() -> store().transplant(operation))
+          .isInstanceOf(MergeConflictException.class)
+          .hasMessageContaining("next");
+      soft.assertThat(store().getValues(target, keys, false)).isEqualTo(expected);
+      return;
+    }
+
+    TransplantResult result = store().transplant(operation);
+
+    boolean renamedOnTarget = !originalChanged || originalBehavior == MergeBehavior.FORCE;
+    ContentKey resultingKey = renamedOnTarget ? next : original;
+    Map<ContentKey, ContentResult> values =
+        store().getValues(target, List.of(original, renamed, next, independent), false);
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    soft.assertThat(result.wasApplied()).isTrue();
+    soft.assertThat(values).containsOnlyKeys(resultingKey, independent);
+    soft.assertThat(values.get(resultingKey))
+        .extracting(ContentResult::content)
+        .isEqualTo(renamedOnTarget ? table : editedTable);
+    soft.assertThat(values.get(independent))
+        .extracting(ContentResult::content)
+        .isEqualTo(store().getValue(source, independent, false).content());
+  }
+
+  @Test
+  void transplantRenameWhenOriginalWasRenamedOnTarget() throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey local = ContentKey.of("local");
+    ContentKey next = ContentKey.of("next");
+    ContentKey independent = ContentKey.of("independent");
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create table")
+            .put("original", IcebergTable.of("initial", 1, 2, 3, 4))
+            .toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    Hash rename =
+        commit("Rename table and create another table")
+            .delete("original")
+            .put("next", table)
+            .put("independent", IcebergTable.of("independent", 1, 2, 3, 4))
+            .toBranch(source);
+    commit("Rename table locally").delete("original").put("local", table).toBranch(target);
+
+    TransplantResult result =
+        store()
+            .transplant(
+                TransplantOp.builder()
+                    .fromRef(source)
+                    .toBranch(target)
+                    .addSequenceToTransplant(rename)
+                    .putMergeKeyBehaviors(
+                        original, MergeKeyBehavior.of(original, MergeBehavior.FORCE))
+                    .build());
+
+    Map<ContentKey, ContentResult> values =
+        store().getValues(target, List.of(original, local, next, independent), false);
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    soft.assertThat(result.wasApplied()).isTrue();
+    soft.assertThat(values).containsOnlyKeys(local, independent);
+    soft.assertThat(values.get(local)).extracting(ContentResult::content).isEqualTo(table);
+    soft.assertThat(values.get(independent))
+        .extracting(ContentResult::content)
+        .isEqualTo(store().getValue(source, independent, false).content());
+  }
+
+  enum RenameTargetConflict {
+    REPLACED_ORIGINAL,
+    REPLACED_ORIGINAL_AND_OCCUPIED_DESTINATION,
+    DROP_OCCUPIED_DESTINATION,
+    DROP_OCCUPIED_DESTINATION_AND_READD_ORIGINAL
+  }
+
+  static Stream<Arguments> replayRenameTargetConflicts() {
+    return Stream.of(RenameReplay.values())
+        .flatMap(replay ->
+            Stream.of(RenameTargetConflict.values())
+                .filter(conflict ->
+                    replay == RenameReplay.MERGE
+                        || conflict
+                            != RenameTargetConflict.DROP_OCCUPIED_DESTINATION_AND_READD_ORIGINAL)
+                .map(conflict -> arguments(replay, conflict)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("replayRenameTargetConflicts")
+  void replayRenameWithConflictingTarget(RenameReplay replay, RenameTargetConflict conflict)
+      throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey next = ContentKey.of("next");
+    ContentKey independent = ContentKey.of("independent");
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create original table")
+            .put("original", IcebergTable.of("initial", 1, 2, 3, 4))
+            .toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    var renameCommit =
+        commit("Rename and update original, plus create another table")
+            .delete("original")
+            .put("next", IcebergTable.of("renamed", 2, 2, 3, 4, table.getId()))
+            .put("independent", IcebergTable.of("independent", 1, 2, 3, 4));
+    boolean readdOriginal =
+        conflict == RenameTargetConflict.DROP_OCCUPIED_DESTINATION_AND_READD_ORIGINAL;
+    Hash rename = renameCommit.toBranch(source);
+    Hash replayHead =
+        readdOriginal
+            ? commit("Reuse the original name")
+                .put("original", IcebergTable.of("new original", 1, 2, 3, 4))
+                .toBranch(source)
+            : rename;
+
+    boolean dropDestination =
+        readdOriginal || conflict == RenameTargetConflict.DROP_OCCUPIED_DESTINATION;
+    if (!dropDestination) {
+      commit("Drop original").delete("original").toBranch(target);
+      commit("Create a different table under original")
+          .put("original", IcebergTable.of("replacement", 1, 2, 3, 4))
+          .toBranch(target);
+    }
+    if (conflict != RenameTargetConflict.REPLACED_ORIGINAL) {
+      commit("Create a different table under next")
+          .put("next", IcebergTable.of("occupied", 1, 2, 3, 4))
+          .toBranch(target);
+    }
+    Map<ContentKey, ContentResult> expected =
+        store().getValues(target, List.of(original, next), false);
+    MergeKeyBehavior forceOriginal = MergeKeyBehavior.of(original, MergeBehavior.FORCE);
+    MergeKeyBehavior destination =
+        MergeKeyBehavior.of(next, dropDestination ? MergeBehavior.DROP : MergeBehavior.NORMAL);
+    ThrowingCallable operation =
+        () ->
+            replayRenameWithBehaviors(
+                replay, source, target, replayHead, forceOriginal, destination);
+
+    boolean expectConflict =
+        conflict == RenameTargetConflict.REPLACED_ORIGINAL_AND_OCCUPIED_DESTINATION;
+    if (expectConflict) {
+      soft.assertThatThrownBy(operation)
+          .isInstanceOf(MergeConflictException.class)
+          .hasMessageContaining("next");
+    } else {
+      soft.assertThatCode(operation).doesNotThrowAnyException();
+    }
+
+    Map<ContentKey, ContentResult> values =
+        store().getValues(target, List.of(original, next, independent), false);
+    soft.assertThat(values).containsAllEntriesOf(expected);
+    if (expectConflict) {
+      soft.assertThat(values).hasSize(expected.size());
+    } else {
+      soft.assertThat(values).hasSize(expected.size() + 1);
+      soft.assertThat(values.get(independent))
+          .extracting(ContentResult::content)
+          .isEqualTo(store().getValue(source, independent, false).content());
+    }
+  }
+
+  static Stream<Arguments> reusingOriginalBehaviors() {
+    return Stream.of(RenameReplay.values())
+        .flatMap(replay ->
+            Stream.of(
+                arguments(replay, MergeBehavior.FORCE, MergeBehavior.DROP),
+                arguments(replay, MergeBehavior.DROP, MergeBehavior.NORMAL),
+                arguments(replay, MergeBehavior.NORMAL, MergeBehavior.NORMAL),
+                arguments(replay, MergeBehavior.FORCE, MergeBehavior.NORMAL)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("reusingOriginalBehaviors")
+  void replayRenameThatReusesOriginal(
+      RenameReplay replay, MergeBehavior originalBehavior, MergeBehavior destinationBehavior)
+      throws Exception {
+    BranchName target = BranchName.of("rename-target");
+    BranchName source = BranchName.of("rename-source");
+    ContentKey original = ContentKey.of("original");
+    ContentKey next = ContentKey.of("next");
+    ContentKey independent = ContentKey.of("independent");
+    List<ContentKey> keys = List.of(original, next, independent);
+
+    store().create(target, Optional.empty());
+    Hash base =
+        commit("Create original table")
+            .put("original", IcebergTable.of("initial", 1, 2, 3, 4))
+            .toBranch(target);
+    Content table = requireNonNull(store().getValue(target, original, false).content());
+    store().create(source, Optional.of(base));
+    Content renamed = IcebergTable.of("renamed", 2, 2, 3, 4, table.getId());
+    Hash rename =
+        commit("Rename and replace original in the same commit")
+            .delete("original")
+            .put("original", IcebergTable.of("replacement", 1, 2, 3, 4))
+            .put("next", renamed)
+            .put("independent", IcebergTable.of("independent", 1, 2, 3, 4))
+            .toBranch(source);
+    Map<ContentKey, ContentResult> sourceValues = store().getValues(source, keys, false);
+    soft.assertThat(sourceValues).containsOnlyKeys(original, next, independent);
+    soft.assertThat(sourceValues.get(original).content().getId()).isNotEqualTo(table.getId());
+    soft.assertThat(sourceValues.get(next).content()).isEqualTo(renamed);
+
+    if (destinationBehavior == MergeBehavior.DROP) {
+      commit("Occupy destination on target")
+          .put("next", IcebergTable.of("occupied", 1, 2, 3, 4))
+          .toBranch(target);
+    } else if (originalBehavior != MergeBehavior.NORMAL) {
+      commit("Edit original on target")
+          .put("original", IcebergTable.of("edited-target", 3, 2, 3, 4, table.getId()))
+          .toBranch(target);
+    } else {
+      commit("Unrelated change").put("other", V_1_1).toBranch(target);
+    }
+    Map<ContentKey, ContentResult> before = store().getValues(target, keys, false);
+
+    MergeTransplantResultBase result =
+        replayRenameWithBehaviors(
+            replay,
+            source,
+            target,
+            rename,
+            MergeKeyBehavior.of(original, originalBehavior),
+            MergeKeyBehavior.of(next, destinationBehavior));
+
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    soft.assertThat(result.wasApplied()).isTrue();
+    Map<ContentKey, ContentResult> actual = store().getValues(target, keys, false);
+    if (originalBehavior == MergeBehavior.DROP || destinationBehavior == MergeBehavior.DROP) {
+      soft.assertThat(actual).containsAllEntriesOf(before).hasSize(before.size() + 1);
+      soft.assertThat(actual.get(independent)).isEqualTo(sourceValues.get(independent));
+    } else {
+      soft.assertThat(actual).isEqualTo(sourceValues);
+    }
+  }
+
+  private MergeTransplantResultBase replayRenameWithBehaviors(
+      RenameReplay replay,
+      BranchName source,
+      BranchName target,
+      Hash commit,
+      MergeKeyBehavior original,
+      MergeKeyBehavior destination)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    return switch (replay) {
+      case MERGE ->
+          store()
+              .merge(
+                  MergeOp.builder()
+                      .fromRef(source)
+                      .fromHash(commit)
+                      .toBranch(target)
+                      .putMergeKeyBehaviors(original.getKey(), original)
+                      .putMergeKeyBehaviors(destination.getKey(), destination)
+                      .build());
+      case TRANSPLANT ->
+          store()
+              .transplant(
+                  TransplantOp.builder()
+                      .fromRef(source)
+                      .addSequenceToTransplant(commit)
+                      .toBranch(target)
+                      .putMergeKeyBehaviors(original.getKey(), original)
+                      .putMergeKeyBehaviors(destination.getKey(), destination)
+                      .build());
+    };
   }
 
   @Test
