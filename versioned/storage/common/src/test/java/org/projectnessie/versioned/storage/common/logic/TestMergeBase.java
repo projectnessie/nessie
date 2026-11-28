@@ -26,8 +26,10 @@ import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ
 import static org.projectnessie.versioned.storage.common.persist.ObjId.randomObjId;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -283,7 +285,8 @@ public class TestMergeBase {
   @ParameterizedTest
   @CsvSource(value = {"true,false", "true,true", "false,false", "false,true"})
   void afterCrossMerge(boolean respectMergeParents, boolean reverse) {
-    CommitObj a = repo.add(repo.initialCommit());
+    CommitObj tail = longCommonTail();
+    CommitObj a = repo.add(repo.buildCommit("a", tail));
     CommitObj b = repo.add(repo.buildCommit("b", a));
     CommitObj c = repo.add(repo.buildCommit("c", a));
     CommitObj d = repo.add(repo.buildCommit("d", b).addSecondaryParents(c.id()));
@@ -301,7 +304,71 @@ public class TestMergeBase {
                 .identifyMergeBase())
         .isEqualTo(respectMergeParents ? (reverse ? c.id() : b.id()) : a.id());
 
-    soft.assertThat(repo.loaded).doesNotContain(repo.root);
+    if (respectMergeParents) {
+      soft.assertThat(repo.loaded).containsExactlyInAnyOrder(a, b, c, d, e, f, g);
+    } else {
+      soft.assertThat(repo.loaded).containsExactlyInAnyOrder(tail, a, b, c, d, e, f, g);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void afterCrossMergeWithUnevenBranches(boolean reverse) {
+    CommitObj a = repo.add(repo.buildCommit("a", longCommonTail()));
+    CommitObj b = repo.add(repo.buildCommit("b", a));
+    CommitObj first = repo.add(repo.buildCommit("first", a));
+    CommitObj second = repo.add(repo.buildCommit("second", first));
+    CommitObj third = repo.add(repo.buildCommit("third", second));
+    CommitObj c = repo.add(repo.buildCommit("c", third));
+    CommitObj d = repo.add(repo.buildCommit("d", b).addSecondaryParents(c.id()));
+    CommitObj e = repo.add(repo.buildCommit("e", c).addSecondaryParents(b.id()));
+
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(reverse ? d.id() : e.id())
+                .fromCommitId(reverse ? e.id() : d.id())
+                .build()
+                .identifyMergeBase())
+        .isIn(b.id(), c.id());
+
+    soft.assertThat(repo.loaded)
+        .contains(a, b, first, second, third, c, d, e)
+        .hasSizeLessThanOrEqualTo(12);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void afterCrossMergeWithSideBranchEnteringBelowTheJoin(boolean reverse) {
+    CommitObj q = longCommonTail();
+    CommitObj p = repo.add(repo.buildCommit("p", q));
+    CommitObj a = repo.add(repo.buildCommit("a", p));
+    CommitObj side = repo.add(repo.buildCommit("side", q));
+    CommitObj b = repo.add(repo.buildCommit("b", a).addSecondaryParents(side.id()));
+    CommitObj c = repo.add(repo.buildCommit("c", a));
+    CommitObj d = repo.add(repo.buildCommit("d", b).addSecondaryParents(c.id()));
+    CommitObj e = repo.add(repo.buildCommit("e", c).addSecondaryParents(b.id()));
+    CommitObj f = repo.add(repo.buildCommit("f", d));
+    CommitObj g = repo.add(repo.buildCommit("g", e));
+
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(reverse ? f.id() : g.id())
+                .fromCommitId(reverse ? g.id() : f.id())
+                .build()
+                .identifyMergeBase())
+        .isIn(b.id(), c.id());
+
+    soft.assertThat(repo.loaded).contains(a, side, b, c, d, e, f, g).hasSizeLessThanOrEqualTo(10);
+  }
+
+  private CommitObj longCommonTail() {
+    CommitObj tail = repo.add(repo.initialCommit());
+    for (int i = 0; i < 1000; i++) {
+      tail = repo.add(repo.buildCommit("common tail " + i, tail));
+    }
+    return tail;
   }
 
   /**
@@ -377,6 +444,70 @@ public class TestMergeBase {
         .isEqualTo(respectMergeParents ? f.id() : a.id());
 
     soft.assertThat(repo.loaded).doesNotContain(repo.root);
+  }
+
+  @Test
+  void discardAncestorReachedThroughAnUnprocessedSecondaryParent() {
+    CommitObj root = repo.add(repo.initialCommit());
+    CommitObj first = repo.add(repo.buildCommit("first on long branch", root));
+    CommitObj second = repo.add(repo.buildCommit("second on long branch", first));
+    CommitObj older = repo.add(repo.buildCommit("older", second));
+    CommitObj shortcut =
+        repo.add(repo.buildCommit("shortcut", root).addSecondaryParents(older.id()));
+    CommitObj nearest = repo.add(repo.buildCommit("nearest", shortcut));
+    CommitObj bridge = repo.add(repo.buildCommit("bridge", root).addSecondaryParents(nearest.id()));
+    CommitObj target = repo.add(repo.buildCommit("target", older).addSecondaryParents(bridge.id()));
+    CommitObj source =
+        repo.add(repo.buildCommit("source", older).addSecondaryParents(nearest.id()));
+
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(target.id())
+                .fromCommitId(source.id())
+                .build()
+                .identifyMergeBase())
+        .isEqualTo(nearest.id());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+  void checksLongSecondaryParentChain(boolean linked, boolean reverse) {
+    CommitObj root = repo.add(repo.initialCommit());
+    CommitObj older = root;
+    for (int i = 0; i < 4; i++) {
+      older = repo.add(repo.buildCommit("first-parent commit " + i, older));
+    }
+
+    CommitObj.Builder shortcut = repo.buildCommit("shortcut", root);
+    if (linked) {
+      shortcut.addSecondaryParents(older.id());
+    }
+    CommitObj previous = repo.add(shortcut);
+    List<CommitObj> chain = new ArrayList<>();
+    chain.add(previous);
+    for (int i = 0; i < 128; i++) {
+      previous =
+          repo.add(
+              repo.buildCommit("secondary link " + i, root).addSecondaryParents(previous.id()));
+      chain.add(previous);
+    }
+    CommitObj nearest = repo.add(repo.buildCommit("nearest", previous));
+    CommitObj bridge = repo.add(repo.buildCommit("bridge", root).addSecondaryParents(nearest.id()));
+    CommitObj target = repo.add(repo.buildCommit("target", older).addSecondaryParents(bridge.id()));
+    CommitObj source =
+        repo.add(repo.buildCommit("source", older).addSecondaryParents(nearest.id()));
+
+    soft.assertThat(
+            MergeBase.builder()
+                .loadCommit(repo::loadCommit)
+                .targetCommitId(reverse ? source.id() : target.id())
+                .fromCommitId(reverse ? target.id() : source.id())
+                .build()
+                .identifyMergeBase())
+        .isEqualTo(linked ? nearest.id() : older.id());
+
+    soft.assertThat(repo.loaded).containsAll(chain);
   }
 
   @Test

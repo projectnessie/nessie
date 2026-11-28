@@ -236,6 +236,37 @@ public abstract class AbstractMergeScenarios extends AbstractNestedVersionStore 
     buildMerge().dryRun().from("b3").assertMergeBase("b2", e);
   }
 
+  @Test
+  void mergeAppliesDeleteFromNearestSecondaryAncestor() throws VersionStoreException {
+    Commit t = buildCommit().createTable("t").commitToNewBranch("target");
+    store().create(BranchName.of("side"), Optional.of(t.getHash()));
+    branches.put("side", t.getHash());
+    buildCommit().createTable("u").commitTo("target");
+    Commit v = buildCommit().createTable("v").commitTo("target");
+    Commit k = buildCommit().createTable("k").commitToNewBranch("source", "target", v);
+    buildMerge().from("source").merge("side");
+    buildMerge().from("side").merge("target");
+    Commit dropK = buildCommit().delete("k").commitTo("source");
+
+    BranchName target = BranchName.of("target");
+    MergeResult result =
+        store()
+            .merge(
+                VersionStore.MergeOp.builder()
+                    .fromRef(BranchName.of("source"))
+                    .fromHash(dropK.getHash())
+                    .toBranch(target)
+                    .build());
+
+    ContentKey tableT = ContentKey.of("t");
+    ContentKey tableU = ContentKey.of("u");
+    ContentKey tableV = ContentKey.of("v");
+    soft.assertThat(result.getCommonAncestor()).isEqualTo(k.getHash());
+    soft.assertThat(
+            store().getValues(target, List.of(tableT, tableU, tableV, ContentKey.of("k")), false))
+        .containsOnlyKeys(tableT, tableU, tableV);
+  }
+
   /**
    * Merge two previous merges. <code><pre>
    *      ---- B ---- E ---- G ---- I ---- K      b2
