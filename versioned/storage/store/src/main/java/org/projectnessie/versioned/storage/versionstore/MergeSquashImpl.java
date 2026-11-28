@@ -17,6 +17,7 @@ package org.projectnessie.versioned.storage.versionstore;
 
 import static org.projectnessie.model.CommitMeta.fromMessage;
 import static org.projectnessie.versioned.storage.common.logic.Logics.commitLogic;
+import static org.projectnessie.versioned.storage.common.persist.ObjId.EMPTY_OBJ_ID;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.hashToObjId;
 import static org.projectnessie.versioned.storage.versionstore.TypeMapping.objIdToHash;
 
@@ -82,6 +83,10 @@ final class MergeSquashImpl extends BaseMergeTransplantSquash implements Merge {
   }
 
   private ObjId identifyMergeBase(ObjId fromId) throws ReferenceNotFoundException {
+    if (EMPTY_OBJ_ID.equals(fromId) && !EMPTY_OBJ_ID.equals(headId())) {
+      // A source without commits has no changes relative to the empty root.
+      return EMPTY_OBJ_ID;
+    }
     CommitLogic commitLogic = commitLogic(persist);
     try {
       return commitLogic.findMergeBase(headId(), fromId);

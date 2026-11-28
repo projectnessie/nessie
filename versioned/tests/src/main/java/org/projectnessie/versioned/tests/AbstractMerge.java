@@ -43,6 +43,7 @@ import org.projectnessie.model.MergeKeyBehavior;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
+import org.projectnessie.versioned.ContentResult;
 import org.projectnessie.versioned.GetNamedRefsParams;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.MergeConflictException;
@@ -424,6 +425,56 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       Hash newTargetHead = iterator.next().getHash();
       assertThat(newTargetHead).isEqualTo(targetHead);
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeFromBranchWithoutCommits(boolean dryRun) throws VersionStoreException {
+    BranchName source = BranchName.of("empty-source");
+    Hash sourceHead = store().create(source, Optional.empty()).getHash();
+    ContentKey key = ContentKey.of("t4");
+    ContentResult original = requireNonNull(store().getValue(MAIN_BRANCH, key, false));
+
+    MergeResult result =
+        store()
+            .merge(
+                MergeOp.builder()
+                    .fromRef(source)
+                    .fromHash(sourceHead)
+                    .toBranch(MAIN_BRANCH)
+                    .expectedHash(Optional.of(thirdCommit))
+                    .dryRun(dryRun)
+                    .build());
+
+    soft.assertThat(result)
+        .extracting(
+            MergeResult::wasApplied,
+            MergeResult::wasSuccessful,
+            MergeResult::getResultantTargetHash,
+            MergeResult::getCommonAncestor,
+            MergeResult::getEffectiveTargetHash)
+        .containsExactly(false, true, thirdCommit, sourceHead, thirdCommit);
+    soft.assertThat(store().getValue(MAIN_BRANCH, key, false)).isEqualTo(original);
+  }
+
+  @Test
+  protected void mergeIntoBranchWithoutCommits() throws VersionStoreException {
+    BranchName target = BranchName.of("empty-target");
+    Hash targetHead = store().create(target, Optional.empty()).getHash();
+
+    soft.assertThatThrownBy(() ->
+            store()
+                .merge(
+                    MergeOp.builder()
+                        .fromRef(MAIN_BRANCH)
+                        .fromHash(thirdCommit)
+                        .toBranch(target)
+                        .expectedHash(Optional.of(targetHead))
+                        .build()))
+        .isInstanceOf(ReferenceNotFoundException.class)
+        .hasMessageStartingWith("No common ancestor in parents of ");
+    soft.assertThat(store().getNamedRef(target.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(targetHead);
   }
 
   @ParameterizedTest
