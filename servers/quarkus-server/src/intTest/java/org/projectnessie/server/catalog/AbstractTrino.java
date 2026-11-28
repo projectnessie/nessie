@@ -33,6 +33,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.nessie.testing.trino.TrinoContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -75,13 +76,9 @@ public abstract class AbstractTrino {
 
     tweakTrinoProperties(props);
 
-    trinoContainer = new TrinoContainer().withCatalog("nessie", props).withNetworkMode("bridge");
-    try {
-      trinoContainer.start();
-    } catch (Exception e) {
-      trinoContainer = null;
-      throw e;
-    }
+    trinoContainer =
+        ContainerStarter.startContainer(
+            () -> new TrinoContainer().withCatalog("nessie", props).withNetworkMode("bridge"));
   }
 
   protected void tweakTrinoProperties(Properties props) {}

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -76,6 +77,7 @@ public class FlociGcpContainer extends GenericContainer<FlociGcpContainer>
   @Override
   public void start() {
     super.start();
+    ContainerStarter.verifyRunning(this);
 
     try (Storage storage = newStorage()) {
       storage.create(BucketInfo.newBuilder(bucket).build());

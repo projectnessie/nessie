@@ -20,9 +20,9 @@ import static org.testcontainers.shaded.com.google.common.base.Preconditions.che
 import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -64,24 +64,13 @@ public abstract class ContainerBackendTestFactory extends AbstractJdbc2BackendTe
       throw new IllegalStateException("Already started");
     }
 
-    for (int retry = 0; ; retry++) {
-      @SuppressWarnings("resource")
-      JdbcDatabaseContainer<?> c = createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER));
-      containerNetworkId.ifPresent(c::withNetworkMode);
-      try {
-        c.start();
-        container = c;
-        break;
-      } catch (ContainerLaunchException e) {
-        c.close();
-        if (e.getCause() != null && retry < 3) {
-          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
-          continue;
-        }
-        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
-        throw new RuntimeException(e);
-      }
-    }
+    container =
+        ContainerStarter.startContainer(() -> {
+          JdbcDatabaseContainer<?> c =
+              createContainer().withLogConsumer(new Slf4jLogConsumer(LOGGER));
+          containerNetworkId.ifPresent(c::withNetworkMode);
+          return c;
+        });
 
     super.start();
   }

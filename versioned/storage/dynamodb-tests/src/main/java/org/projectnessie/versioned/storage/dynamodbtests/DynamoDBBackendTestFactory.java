@@ -20,6 +20,7 @@ import static software.amazon.awssdk.regions.Region.US_WEST_2;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackend;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendConfig;
 import org.projectnessie.versioned.storage.dynamodb.DynamoDBBackendFactory;
@@ -27,7 +28,6 @@ import org.projectnessie.versioned.storage.dynamodb.ImmutableDynamoDBBackendConf
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -87,26 +87,15 @@ public class DynamoDBBackendTestFactory implements BackendTestFactory {
             .build()
             .dockerImageName(null);
 
-    for (int retry = 0; ; retry++) {
-      GenericContainer<?> c =
-          new GenericContainer<>(dockerImage)
-              .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-              .withExposedPorts(DYNAMODB_PORT);
-      containerNetworkId.ifPresent(c::withNetworkMode);
-      try {
-        c.start();
-        container = c;
-        break;
-      } catch (ContainerLaunchException e) {
-        c.close();
-        if (e.getCause() != null && retry < 3) {
-          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
-          continue;
-        }
-        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
-        throw new RuntimeException(e);
-      }
-    }
+    container =
+        ContainerStarter.startContainer(() -> {
+          GenericContainer<?> c =
+              new GenericContainer<>(dockerImage)
+                  .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                  .withExposedPorts(DYNAMODB_PORT);
+          containerNetworkId.ifPresent(c::withNetworkMode);
+          return c;
+        });
 
     Integer port = containerNetworkId.isPresent() ? DYNAMODB_PORT : container.getFirstMappedPort();
     String host =

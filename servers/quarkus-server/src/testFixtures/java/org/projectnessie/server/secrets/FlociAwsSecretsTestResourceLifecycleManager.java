@@ -32,6 +32,7 @@ import org.projectnessie.catalog.secrets.Secret;
 import org.projectnessie.catalog.secrets.SecretType;
 import org.projectnessie.catalog.secrets.TokenSecret;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.quarkus.config.QuarkusSecretsConfig.ExternalSecretsManagerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,16 +72,16 @@ public class FlociAwsSecretsTestResourceLifecycleManager
   @Override
   public Map<String, String> start() {
     floci =
-        new FlociContainer(
-                ContainerSpecHelper.builder()
-                    .name("floci")
-                    .containerClass(FlociAwsSecretsTestResourceLifecycleManager.class)
-                    .build()
-                    .dockerImageName(null)
-                    .asCompatibleSubstituteFor("floci/floci"))
-            .withLogConsumer(c -> LOGGER.info("[FLOCI] {}", c.getUtf8StringWithoutLineEnding()));
-
-    floci.start();
+        ContainerStarter.startContainer(() ->
+            new FlociContainer(
+                    ContainerSpecHelper.builder()
+                        .name("floci")
+                        .containerClass(FlociAwsSecretsTestResourceLifecycleManager.class)
+                        .build()
+                        .dockerImageName(null)
+                        .asCompatibleSubstituteFor("floci/floci"))
+                .withLogConsumer(
+                    c -> LOGGER.info("[FLOCI] {}", c.getUtf8StringWithoutLineEnding())));
 
     URI secretsManagerEndpoint = URI.create(floci.getEndpoint());
 

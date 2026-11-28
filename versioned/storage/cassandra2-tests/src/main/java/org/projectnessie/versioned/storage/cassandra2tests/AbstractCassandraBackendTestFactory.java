@@ -26,13 +26,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.versioned.storage.cassandra2.Cassandra2Backend;
 import org.projectnessie.versioned.storage.cassandra2.Cassandra2BackendConfig;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.cassandra.CassandraContainer;
-import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -116,27 +116,16 @@ public abstract class AbstractCassandraBackendTestFactory implements BackendTest
             .dockerImageName(null)
             .asCompatibleSubstituteFor("cassandra");
 
-    for (int retry = 0; ; retry++) {
-      CassandraContainer c =
-          new CassandraContainer(dockerImageName)
-              .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-              .withCommand(args.toArray(new String[0]));
-      configureContainer(c);
-      containerNetworkId.ifPresent(c::withNetworkMode);
-      try {
-        c.start();
-        container = c;
-        break;
-      } catch (ContainerLaunchException e) {
-        c.close();
-        if (e.getCause() != null && retry < 3) {
-          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
-          continue;
-        }
-        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
-        throw new RuntimeException(e);
-      }
-    }
+    container =
+        ContainerStarter.startContainer(() -> {
+          CassandraContainer c =
+              new CassandraContainer(dockerImageName)
+                  .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                  .withCommand(args.toArray(new String[0]));
+          configureContainer(c);
+          containerNetworkId.ifPresent(c::withNetworkMode);
+          return c;
+        });
 
     int port = containerNetworkId.isPresent() ? CQL_PORT : container.getMappedPort(CQL_PORT);
     String host =

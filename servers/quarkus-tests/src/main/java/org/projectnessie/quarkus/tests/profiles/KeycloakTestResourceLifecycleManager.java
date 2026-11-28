@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.testing.keycloak.CustomKeycloakContainer;
 
 /**
@@ -175,9 +176,7 @@ public class KeycloakTestResourceLifecycleManager
 
   @Override
   public Map<String, String> start() {
-    keycloak = containerConfig.createContainer();
-
-    keycloak.start();
+    keycloak = ContainerStarter.startContainer(containerConfig::createContainer);
 
     return Map.of(
         "keycloak.url",

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.projectnessie.versioned.storage.common.persist.Backend;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackend;
 import org.projectnessie.versioned.storage.mongodb.MongoDBBackendConfig;
@@ -27,7 +28,6 @@ import org.projectnessie.versioned.storage.mongodb.MongoDBBackendFactory;
 import org.projectnessie.versioned.storage.testextension.BackendTestFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -59,33 +59,32 @@ public class MongoDBBackendTestFactory implements BackendTestFactory {
             .dockerImageName(null)
             .asCompatibleSubstituteFor("mongo");
 
-    for (int retry = 0; ; retry++) {
-      MongoDBContainer c =
-          new MongoDBContainer(dockerImage).withLogConsumer(new Slf4jLogConsumer(LOGGER));
-      containerNetworkId.ifPresent(c::withNetworkMode);
-      try {
-        c.start();
-        container = c;
-        break;
-      } catch (ContainerLaunchException e) {
-        c.close();
-        if (e.getCause() != null && retry < 3) {
-          LOGGER.warn("Launch of container {} failed, will retry...", c.getDockerImageName(), e);
-          continue;
-        }
-        LOGGER.error("Launch of container {} failed", c.getDockerImageName(), e);
-        throw new RuntimeException(e);
+    MongoDBContainer started =
+        ContainerStarter.startContainer(() -> {
+          MongoDBContainer c =
+              new MongoDBContainer(dockerImage).withLogConsumer(new Slf4jLogConsumer(LOGGER));
+          containerNetworkId.ifPresent(c::withNetworkMode);
+          return c;
+        });
+
+    try {
+      String url = started.getReplicaSetUrl(MONGO_DB_NAME);
+
+      if (containerNetworkId.isPresent()) {
+        String hostPort = started.getHost() + ':' + started.getMappedPort(MONGO_PORT);
+        String networkHostPort =
+            started.getCurrentContainerInfo().getConfig().getHostName() + ':' + MONGO_PORT;
+        url = url.replace(hostPort, networkHostPort);
       }
-    }
 
-    connectionString = container.getReplicaSetUrl(MONGO_DB_NAME);
-
-    if (containerNetworkId.isPresent()) {
-      String hostPort = container.getHost() + ':' + container.getMappedPort(MONGO_PORT);
-      String networkHostPort =
-          container.getCurrentContainerInfo().getConfig().getHostName() + ':' + MONGO_PORT;
-      connectionString = connectionString.replace(hostPort, networkHostPort);
+      connectionString = url;
+    } catch (RuntimeException e) {
+      // Do not keep a broken container, so that a subsequent start() does not fail with "Already
+      // started".
+      started.close();
+      throw e;
     }
+    container = started;
   }
 
   @Override

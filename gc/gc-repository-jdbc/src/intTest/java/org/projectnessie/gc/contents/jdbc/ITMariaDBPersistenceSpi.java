@@ -19,6 +19,7 @@ import static org.projectnessie.gc.contents.jdbc.ITPostgresPersistenceSpi.docker
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.testcontainers.mariadb.MariaDBContainer;
 
 public class ITMariaDBPersistenceSpi extends AbstractJdbcPersistenceSpi {
@@ -28,9 +29,9 @@ public class ITMariaDBPersistenceSpi extends AbstractJdbcPersistenceSpi {
   @BeforeAll
   static void createDataSource() throws Exception {
     container =
-        new MariaDBContainer(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
-            .withUrlParam("sslMode", "trust");
-    container.start();
+        ContainerStarter.startContainer(() ->
+            new MariaDBContainer(dockerImage("mariadb").asCompatibleSubstituteFor("mariadb"))
+                .withUrlParam("sslMode", "trust"));
     initDataSource(container.getJdbcUrl());
   }
 

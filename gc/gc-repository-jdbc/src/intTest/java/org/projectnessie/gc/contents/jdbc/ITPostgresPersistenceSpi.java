@@ -18,6 +18,7 @@ package org.projectnessie.gc.contents.jdbc;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -28,8 +29,8 @@ public class ITPostgresPersistenceSpi extends AbstractJdbcPersistenceSpi {
   @BeforeAll
   static void createDataSource() throws Exception {
 
-    container = new PostgreSQLContainer(dockerImage("postgres"));
-    container.start();
+    container =
+        ContainerStarter.startContainer(() -> new PostgreSQLContainer(dockerImage("postgres")));
 
     initDataSource(container.getJdbcUrl());
   }

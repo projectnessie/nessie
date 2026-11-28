@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.projectnessie.nessie.testing.containerspec.ContainerSpecHelper;
+import org.projectnessie.nessie.testing.containerspec.ContainerStarter;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.Base58;
@@ -163,6 +164,7 @@ public final class FlociS3Container extends FlociContainer implements FlociS3Acc
   @Override
   public void start() {
     super.start();
+    ContainerStarter.verifyRunning(this);
 
     URI endpoint = URI.create(getEndpoint());
     this.hostPort = endpoint.getHost() + ":" + endpoint.getPort();
