@@ -25,12 +25,11 @@ if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_11)) {
 
 val baseVersion = file("../version.txt").readText().trim()
 
-pluginManagement {
-  repositories {
-    mavenCentral() // prefer Maven Central, in case Gradle's repo has issues
-    gradlePluginPortal()
-    if (System.getProperty("withMavenLocal").toBoolean()) {
+if (System.getProperty("withMavenLocal").toBoolean()) {
+  pluginManagement {
+    repositories {
       mavenLocal()
+      gradlePluginPortal()
     }
   }
 }
