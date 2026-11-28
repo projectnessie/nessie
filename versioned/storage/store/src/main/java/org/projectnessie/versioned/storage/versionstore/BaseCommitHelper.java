@@ -459,9 +459,6 @@ class BaseCommitHelper {
             // discriminator
             if (key != null) {
               if (conflict.conflictType() == KEY_EXISTS) {
-                // This is rather a hack to ignore conflicts when merging namespaces. If both the
-                // source and target payload is NAMESPACE, let the target content "win" (aka no
-                // change).
                 CommitOp op = conflict.op();
                 CommitOp ex = conflict.existing();
                 if (op != null && ex != null && op.payload() == ex.payload()) {
@@ -470,8 +467,10 @@ class BaseCommitHelper {
                     // drop the conflicting operation on the floor.
                     return ConflictResolution.DROP;
                   }
-                  if (NAMESPACE.equals(contentTypeForPayload(op.payload()))) {
-                    return ConflictResolution.ADD;
+                  if (NAMESPACE.equals(contentTypeForPayload(op.payload()))
+                      && mergeBehaviors.mergeBehavior(key) == MergeBehavior.NORMAL) {
+                    // Keep the target namespace when both branches created it independently.
+                    return ConflictResolution.DROP;
                   }
                 }
               }

@@ -23,6 +23,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.projectnessie.versioned.testworker.OnRefOnly.newOnRef;
 import static org.projectnessie.versioned.testworker.OnRefOnly.onRef;
 
+import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -40,6 +41,7 @@ import org.projectnessie.model.Content;
 import org.projectnessie.model.ContentKey;
 import org.projectnessie.model.MergeBehavior;
 import org.projectnessie.model.MergeKeyBehavior;
+import org.projectnessie.model.Namespace;
 import org.projectnessie.model.Operation.Put;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Commit;
@@ -424,6 +426,72 @@ public abstract class AbstractMerge extends AbstractNestedVersionStore {
       Hash newTargetHead = iterator.next().getHash();
       assertThat(newTargetHead).isEqualTo(targetHead);
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  protected void mergeIndependentlyCreatedNamespaces(boolean force) throws VersionStoreException {
+    BranchName source = BranchName.of("namespace-source");
+    store().create(source, Optional.of(initialHash));
+    ContentKey key = ContentKey.of("ns");
+    Map<String, String> sourceProperties = Map.of("owner", "source");
+    Map<String, String> targetProperties = Map.of("owner", "target");
+    Hash sourceHead =
+        commit("Create source namespace")
+            .put("ns", Namespace.of(sourceProperties, "ns"))
+            .toBranch(source);
+    Hash targetHead =
+        commit("Create target namespace")
+            .put("ns", Namespace.of(targetProperties, "ns"))
+            .toBranch(MAIN_BRANCH);
+
+    MergeResult result =
+        store()
+            .merge(
+                MergeOp.builder()
+                    .fromRef(source)
+                    .fromHash(sourceHead)
+                    .toBranch(MAIN_BRANCH)
+                    .expectedHash(Optional.of(targetHead))
+                    .defaultMergeBehavior(force ? MergeBehavior.FORCE : MergeBehavior.NORMAL)
+                    .build());
+
+    Namespace namespace = (Namespace) store().getValue(MAIN_BRANCH, key, false).content();
+    soft.assertThat(result.wasSuccessful()).isTrue();
+    soft.assertThat(result.wasApplied()).isEqualTo(force);
+    soft.assertThat(namespace.getProperties())
+        .isEqualTo(force ? sourceProperties : targetProperties);
+  }
+
+  @Test
+  protected void mergeConflictsOnChangedNamespace() throws VersionStoreException {
+    BranchName source = BranchName.of("namespace-source");
+    ContentKey key = ContentKey.of("ns");
+    Hash base = commit("Create namespace").put("ns", Namespace.of("ns")).toBranch(MAIN_BRANCH);
+    store().create(source, Optional.of(base));
+    String id = store().getValue(MAIN_BRANCH, key, false).content().getId();
+    Hash sourceHead =
+        commit("Change source namespace")
+            .put("ns", Namespace.of(Map.of("owner", "source"), "ns").withId(id))
+            .toBranch(source);
+    Hash targetHead =
+        commit("Change target namespace")
+            .put("ns", Namespace.of(Map.of("owner", "target"), "ns").withId(id))
+            .toBranch(MAIN_BRANCH);
+
+    soft.assertThatThrownBy(() ->
+            store()
+                .merge(
+                    MergeOp.builder()
+                        .fromRef(source)
+                        .fromHash(sourceHead)
+                        .toBranch(MAIN_BRANCH)
+                        .expectedHash(Optional.of(targetHead))
+                        .build()))
+        .isInstanceOf(MergeConflictException.class);
+    soft.assertThat(
+            store().getNamedRef(MAIN_BRANCH.getName(), GetNamedRefsParams.DEFAULT).getHash())
+        .isEqualTo(targetHead);
   }
 
   @ParameterizedTest
